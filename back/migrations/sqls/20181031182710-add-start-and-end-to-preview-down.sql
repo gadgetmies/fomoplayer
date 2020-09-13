@@ -1,0 +1,2 @@
+alter table store__track_preview drop column store__track_preview_start_ms;
+alter table store__track_preview drop column store__track_preview_end_ms;

@@ -1,0 +1,2 @@
+alter table store__track_preview add column store__track_preview_start_ms integer;
+alter table store__track_preview add column store__track_preview_end_ms integer;

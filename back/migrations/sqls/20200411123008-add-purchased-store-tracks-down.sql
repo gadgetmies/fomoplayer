@@ -1,0 +1,1 @@
+DROP TABLE user__store__track_purchased;

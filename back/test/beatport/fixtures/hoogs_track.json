@@ -1,0 +1,127 @@
+{
+  "active": true,
+  "artists": [
+    {
+      "id": 112415,
+      "name": "Hoogs",
+      "slug": "hoogs"
+    }
+  ],
+  "audio_format": "mp3",
+  "bpm": 88,
+  "component": "My Beatport - Tracks",
+  "component_type": null,
+  "date": {
+    "published": "2018-10-26",
+    "released": "2018-10-26"
+  },
+  "duration": {
+    "milliseconds": 220800,
+    "minutes": "3:40"
+  },
+  "exclusive": false,
+  "formats": {
+    "aiff": {
+      "code": "EUR",
+      "display": "€0.75",
+      "symbol": "€",
+      "value": 0.75
+    },
+    "wav": {
+      "code": "EUR",
+      "display": "€0.75",
+      "symbol": "€",
+      "value": 0.75
+    }
+  },
+  "genres": [
+    {
+      "id": 1,
+      "name": "Drum & Bass",
+      "slug": "drum-and-bass"
+    }
+  ],
+  "guest_pick": false,
+  "id": 11136878,
+  "images": {
+    "dynamic": {
+      "id": 20400737,
+      "url": "https://geo-media.beatport.com/image_size/{w}x{h}/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg"
+    },
+    "large": {
+      "height": 500,
+      "id": 20400737,
+      "url": "https://geo-media.beatport.com/image/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg",
+      "width": 500
+    },
+    "medium": {
+      "height": 60,
+      "id": 7289453,
+      "url": "https://geo-media.beatport.com/image/20bc9ce0-cef6-4b6b-858c-5138e596a02c.jpg",
+      "width": 60
+    },
+    "small": {
+      "height": 30,
+      "id": 7289452,
+      "url": "https://geo-media.beatport.com/image/448286dc-d9b7-4e39-a1be-6abf592f1d37.jpg",
+      "width": 30
+    }
+  },
+  "key": "D♯ min",
+  "label": {
+    "id": 14974,
+    "name": "Digital Terror Records",
+    "slug": "digital-terror-records"
+  },
+  "mix": "Original Mix",
+  "name": "A Monster",
+  "preorder": false,
+  "preview": {
+    "mp3": {
+      "offset": {
+        "end": 208320,
+        "start": 88320
+      },
+      "url": "https://geo-samples.beatport.com/track/5559f80f-7e7c-47ea-bb97-e62dada12c58.LOFI.mp3"
+    },
+    "mp4": {
+      "offset": {
+        "end": 208320,
+        "start": 88320
+      },
+      "url": "https://geo-samples.beatport.com/track/5559f80f-7e7c-47ea-bb97-e62dada12c58.LOFI.mp4"
+    }
+  },
+  "price": {
+    "code": "EUR",
+    "display": "€1.56",
+    "symbol": "€",
+    "value": 1.56
+  },
+  "purchase": 1,
+  "purchase_type": null,
+  "release": {
+    "id": 2411401,
+    "name": "Monster",
+    "slug": "monster"
+  },
+  "remixers": [],
+  "sale_type": "purchase",
+  "slug": "a-monster-original-mix",
+  "sponsored": false,
+  "sub_genres": [],
+  "title": "A Monster (Original Mix)",
+  "type": "track",
+  "waveform": {
+    "dynamic": {
+      "id": 20400832,
+      "url": "https://geo-media.beatport.com/image_size/{w}x{h}/fc826c55-e330-469b-9acc-d6bfc113dd75.png"
+    },
+    "large": {
+      "height": 250,
+      "id": 20400832,
+      "url": "https://geo-media.beatport.com/image/fc826c55-e330-469b-9acc-d6bfc113dd75.png",
+      "width": 1500
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "multi_store_player",
+  "version": "1.0.0",
+  "description": "",
+  "main": "ecosystem.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "cd front; npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elysion/multi_store_player.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/elysion/multi_store_player/issues"
+  },
+  "homepage": "https://github.com/elysion/multi_store_player#readme",
+  "dependencies": {
+    "pm2": "^3.2.2",
+    "prettier": "^1.14.3"
+  }
+}

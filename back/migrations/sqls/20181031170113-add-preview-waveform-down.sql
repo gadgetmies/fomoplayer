@@ -1,0 +1,1 @@
+drop table store__track_preview_waveform;

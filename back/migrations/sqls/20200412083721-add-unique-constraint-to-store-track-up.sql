@@ -1,0 +1,1 @@
+alter table store__track add unique (store__track_store_id, store_id, track_id);

@@ -1,0 +1,20 @@
+.waveform_container {
+    position: relative;
+    height: 31px;
+}
+
+.waveform {
+    height: 31px;
+    position: absolute;
+}
+
+.waveform-background {
+    width: 100%;
+}
+
+.waveform-position {
+    background: linear-gradient(to right, #b40089 0%, #ff008b 100%);
+    -webkit-mask-size: 100% 31px;
+    mask-size: 100% 31px;
+    width: 100%;
+}

@@ -1,0 +1,1 @@
+alter table user__artist__label_ignore drop constraint user__artist__label_ignore_unique;

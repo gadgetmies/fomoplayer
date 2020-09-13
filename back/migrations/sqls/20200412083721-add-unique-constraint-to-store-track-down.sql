@@ -1,0 +1,1 @@
+alter table store__track drop constraint store__track_store__track_store_id_store_id_track_id_key;
