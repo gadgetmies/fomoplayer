@@ -10,6 +10,14 @@
 
 .waveform-background {
     width: 100%;
+    opacity: 0.4;
+}
+
+.waveform_clip-edge-overlay {
+    height: 100%;
+    background: black;
+    opacity: 0.3;
+    position: absolute;
 }
 
 .waveform-position {

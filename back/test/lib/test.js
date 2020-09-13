@@ -1,6 +1,32 @@
 const R = require('ramda')
+const L = require('partial.lenses')
+require('colors')
 
-const noop = () => {}
+const noop = () => { }
+
+function getCallerFile() {
+  var originalFunc = Error.prepareStackTrace;
+
+  var callerfile;
+  try {
+    var err = new Error();
+    var currentfile;
+
+    Error.prepareStackTrace = function (err, stack) { return stack; };
+
+    currentfile = err.stack.shift().getFileName();
+
+    while (err.stack.length) {
+      callerfile = err.stack.shift().getFileName();
+
+      if (currentfile !== callerfile) break;
+    }
+  } catch (e) { }
+
+  Error.prepareStackTrace = originalFunc;
+
+  return callerfile;
+}
 
 module.exports.test = async suite => {
   const extractFnPaths = node =>
@@ -23,12 +49,32 @@ module.exports.test = async suite => {
       []
     )
 
-  const printStructure = node => {
-    return !R.is(Array)(node)
-      ? `<li>${JSON.stringify(node)}</li>`
-      : R.anyPass([R.isNil, R.isEmpty])(node[1])
-        ? `<li>${node[0]}</li>`
-        : `<li>${node[0]}<ul>${R.map(printStructure, node[1]).join('')}</ul></li>`
+  const printFail = (error, style = 'console') =>
+    style === 'console' ?
+      `${'FAIL'.red}: ${error}`: '<span class="fail">FAIL: ${error}s</span>'
+
+  const printPass = (style = 'console') =>
+    style === 'console' ?
+      'PASS'.green : '<span class="pass">PASS</span>'
+
+  const printName = (name, style = 'console') =>
+     style === 'console' ?
+       `• ${name.cyan}:\n` : `<span class="test">${name}:</span>\n`
+
+  const printChildren = (children, style = 'console') =>
+     style === 'console' ?
+       children.join('\n') : `<ul>\n${children.map(c => `<li>${c}</li>\n`).join('')}\n</ul>\n`
+
+  const printStructure = (node, style = 'console', indent = 2) => {
+    const indentString = Array(indent).join(' ');
+    return `\
+${printName(node[0], style)}${
+R.is(Array, node[1])
+  ? printChildren(node[1].map(n => indentString.concat(printStructure(n, style, indent + 2))), style)
+  : node[1].error !== null
+    ? indentString.concat(printFail(node[1].error, style))
+    : indentString.concat(printPass(style))
+}`
   }
 
   const run = async suite => {
@@ -38,9 +84,9 @@ module.exports.test = async suite => {
     try {
       setupResult = await setup()
     } catch (e) {
-      console.log(e)
+      console.error(e)
       return {
-        setupError: e
+        error: `Setup failed with: '${e.toString()}'`
       }
     }
 
@@ -50,18 +96,20 @@ module.exports.test = async suite => {
 
       let singleResult
       try {
-        singleResult = R.is(Function, restElement) ? [await restElement(setupResult)] : await run(restElement)
+        singleResult = R.is(Function, restElement) ? { error: R.defaultTo(null, await restElement(setupResult)) } : await run(restElement)
       } catch (e) {
         singleResult = { error: e.toString() }
       }
       result.push([key, singleResult])
     }
 
-    let teardownError
     try {
       await teardown(setupResult)
     } catch (e) {
-      teardownError = e
+      console.error(e)
+      return {
+        error: `Teardown failed with: '${e.toString()}'`
+      }
     }
 
     return [
@@ -69,8 +117,11 @@ module.exports.test = async suite => {
     ]
   }
 
-  const descriptions = ['root', collectDescriptions(suite)]
-  const result = await run(suite)
-  console.log(JSON.stringify(['root', result], null, 2))
-  console.log(printStructure(['root', result]))
+  const testFile = getCallerFile()
+  console.log('Running test suite: ', testFile)
+  const result = [testFile].concat([await run(suite)])
+  console.log(printStructure(result))
+  const errors = L.collect(L.satisfying(R.allPass([R.is(Object), R.has('error'), R.propIs(String, 'error')])), result)
+  const exitCode = errors.length === 0 ? 0 : 1
+  process.exit(exitCode)
 }

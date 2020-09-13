@@ -1,0 +1,60 @@
+body {
+  width: 200px;
+  font-family: 'Lato', sans-serif;
+  background-color: #333;
+  color: white;
+}
+
+button {
+  background-color: #b40089;
+  border: 0;
+  color: white;
+  transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  border-radius: .25rem;
+  padding: .375rem .75rem;
+  line-height: 1;
+  font-size: 0.7rem;
+  width: 100%;
+}
+
+button:disabled {
+  color: #fff;
+  background-color: #b5b5b5;
+}
+
+.sign-in-separator {
+  margin: 1em auto;
+  position: relative;
+  text-align: center;
+}
+
+.sign-in-separator:before {
+  left: 0;
+}
+
+.sign-in-separator:after {
+  right: 0;
+}
+
+.sign-in-separator:before, .sign-in-separator:after {
+  display: inline-block;
+  width: 43%;
+  border-top: 1px solid #bbb;
+  content: " ";
+  position: absolute;
+  top: .7em;
+}
+
+.login-input {
+  box-sizing: border-box;
+  background-color: white;
+  border: 0;
+  color: black;
+  transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  border-radius: .25rem;
+  padding: .375rem .75rem;
+  margin: .375rem 0;
+  line-height: 1;
+  font-size: 0.7rem;
+  width: 100%;
+}

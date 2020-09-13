@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+  "name": "Modify CSS and HTML on Beatport",
+  "version": "0.1.0",
+  "description": "Multi store player Beatport extension",
+  "app": {
+    "background": {
+      "scripts": [
+        "background.js"
+      ]
+    }
+  },
+  "permissions": [
+    "identity"
+  ]
+}

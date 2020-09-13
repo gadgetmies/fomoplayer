@@ -1,10 +1,10 @@
 const pg = require('../../../db/pg.js')
 const R = require('ramda')
-const SQL = require('sql-template-strings')
+const sql =require('sql-template-strings')
 
 module.exports.insertArtist = (tx, artistName) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`-- insert new artists
+  sql`-- insert new artists
 INSERT INTO artist (artist_name)
   SELECT ${artistName}
   WHERE NOT EXISTS (
@@ -16,7 +16,7 @@ INSERT INTO artist (artist_name)
 module.exports.insertUserTrack = (tx, username, insertedTrackId) =>
   tx.queryRowsAsync(
 // language=PostgreSQL
-    SQL`
+    sql`
 INSERT INTO user__track (track_id, meta_account_user_id)
 SELECT
 ${insertedTrackId},
@@ -29,7 +29,7 @@ ON CONFLICT DO NOTHING
 module.exports.findNewTracks = (tx, storeId, tracks) =>
   tx.queryRowsAsync(
 // language=PostgreSQL
-    SQL`-- find new tracks
+    sql`-- find new tracks
 SELECT track_id
 FROM json_to_recordset(${JSON.stringify(tracks)} :: JSON) AS tracks(track_id TEXT)
 WHERE track_id NOT IN (
@@ -39,14 +39,13 @@ WHERE track_id NOT IN (
 
 module.exports.insertTrackPreview = (tx, store__track_id, newStoreTrack) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`
+  sql`
 INSERT INTO store__track_preview
-  (store__track_id, store__track_preview_format, store__track_preview_start_ms, store__track_preview_end_ms, store__track_preview_track_duration_ms, store__track_preview_url)
+  (store__track_id, store__track_preview_format, store__track_preview_start_ms, store__track_preview_end_ms, store__track_preview_url)
   VALUES (
     ${store__track_id},
     'mp3',
     0,
-    ${parseInt(newStoreTrack.duration * 1000, 10)},
     ${parseInt(newStoreTrack.duration * 1000, 10)},
     ''
   )
@@ -57,13 +56,13 @@ module.exports.insertTrackWaveform =
   (tx, store__track_id, waveforms) =>
     tx.queryRowsAsync(
 // language=PostgreSQL
-      SQL`
+      sql`
 INSERT INTO store__track_preview_waveform (store__track_preview_id, store__track_preview_waveform_url) select store__track_preview_id, ${waveforms.large.url} from store__track_preview where store__track_id = ${store__track_id}
     `)
 
 module.exports.insertStoreTrack = (tx, storeId, trackId, trackStoreId, trackStoreDetails) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`
+  sql`
 INSERT INTO store__track (track_id, store_id, store__track_store_id, store__track_store_details, store__track_published, store__track_released)
 VALUES (
   ${trackId},
@@ -79,7 +78,7 @@ RETURNING store__track_id
 module.exports.insertNewTrackReturningTrackId = (tx, albumInfo, newStoreTrack) =>
   tx.queryRowsAsync(
 // language=PostgreSQL
-    SQL`WITH
+    sql`WITH
   authors AS (
       SELECT DISTINCT artist_id -- is distinct really needed?
       FROM store__artist
@@ -137,7 +136,7 @@ UNION ALL (SELECT track_id as existing_id
 
 module.exports.insertStoreArtist = (tx, storeId, artistName, storeArtistId, storeArtistDetails) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`
+  sql`
 INSERT INTO store__artist (artist_id, store_id, store__artist_store_id, store__artist_store_details)
   SELECT
   artist_id,
@@ -150,7 +149,7 @@ INSERT INTO store__artist (artist_id, store_id, store__artist_store_id, store__a
 
 module.exports.isNewArtist = (tx, storeId, storeArtistId) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`-- find new artists
+  sql`-- find new artists
 SELECT ${storeArtistId} NOT IN (
   SELECT store__artist_store_id
   from store__artist
@@ -162,7 +161,7 @@ SELECT ${storeArtistId} NOT IN (
 
 const getStoreId = module.exports.getStoreId = () => pg.queryRowsAsync(
   //language=PostgreSQL
-  SQL` --getStoreId
+  sql` --getStoreId
 SELECT store_id
   FROM store
   WHERE store_name = 'Bandcamp'`)
@@ -171,7 +170,7 @@ SELECT store_id
 module.exports.insertTrackToCart =
   (storeTrackId, cartName, username) => pg.queryRowsAsync(
 // language=PostgreSQL
-  SQL`--insertTrackToCart
+  sql`--insertTrackToCart
 INSERT INTO store__track__cart
   SELECT
     ${storeTrackId} AS store__track_id,
@@ -189,7 +188,7 @@ module.exports.queryTracksInCarts = username =>
     .then(storeId =>
       pg.queryRowsAsync(
         //language=PostgreSQL
-        SQL`-- queryItemsInCarts
+        sql`-- queryItemsInCarts
 SELECT coalesce(array_agg(track_id), ARRAY[] :: INT[]) as tracks_in_carts
 FROM track
   NATURAL JOIN store__track
@@ -204,16 +203,16 @@ and store_id= ${storeId}
     .then(R.prop('tracks_in_carts'))
 
 module.exports.ensureAlbumExists = async (tx, storeId, storeAlbum) => {
-  let releaseDetails = await tx.queryRowsAsync(SQL`
+  let releaseDetails = await tx.queryRowsAsync(sql`
     SELECT release_id FROM store__release WHERE store__release_url = ${storeAlbum.url}
   `)
   if (releaseDetails.length === 0) {
-    releaseDetails = await tx.queryRowsAsync(SQL`
+    releaseDetails = await tx.queryRowsAsync(sql`
       INSERT INTO release (release_name) VALUES (${storeAlbum.current.title})
       RETURNING release_id
     `)
   }
-  await tx.queryRowsAsync(SQL`
+  await tx.queryRowsAsync(sql`
     INSERT INTO store__release (store_id, release_id, store__release_url, store__release_store_id)
     VALUES (${storeId}, ${releaseDetails[0].release_id}, ${storeAlbum.url}, ${storeAlbum.id})
     ON CONFLICT DO NOTHING
@@ -223,7 +222,7 @@ module.exports.ensureAlbumExists = async (tx, storeId, storeAlbum) => {
 }
 
 module.exports.addTracksToAlbum = (tx, storeId, albumId, storeTrackIds) =>
-  tx.queryRowsAsync(SQL`
+  tx.queryRowsAsync(sql`
     INSERT INTO release__track (release_id, track_id)
       SELECT ${albumId}, store__track.track_id
       FROM store__track
@@ -232,7 +231,7 @@ module.exports.addTracksToAlbum = (tx, storeId, albumId, storeTrackIds) =>
   `)
 
   module.exports.queryAlbumUrl = (storeId, storeTrackId) =>
-    pg.queryRowsAsync(SQL`
+    pg.queryRowsAsync(sql`
       SELECT store__release_url
       FROM store__release
       NATURAL JOIN release
@@ -244,7 +243,7 @@ module.exports.addTracksToAlbum = (tx, storeId, albumId, storeTrackIds) =>
     `).then(([{store__release_url}]) => store__release_url)
 
 module.exports.queryTrackStoreId = (trackId) =>
-  pg.queryRowsAsync(SQL`
-  SELECT store__track_store_id FROM store__track WHERE track_id = ${trackId}
+  pg.queryRowsAsync(sql`
+  SELECT store__track_store_id FROM store__track WHERE store__track_id = ${trackId}
   `)
   .then(([{store__track_store_id}]) => store__track_store_id)

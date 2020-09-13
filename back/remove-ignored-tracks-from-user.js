@@ -1,9 +1,9 @@
-const SQL = require('sql-template-strings')
+const sql =require('sql-template-strings')
 
 const removeIgnoredTracksFromUser = (tx, username) =>
   tx.queryRowsAsync(
 // language=PostgreSQL
-    SQL`
+    sql`
 DELETE FROM user__track
 WHERE track_id IN (
   SELECT track_id

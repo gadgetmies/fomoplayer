@@ -5,7 +5,6 @@
   "homepage": ".",
   "dependencies": {
     "auto-bind": "^1.2.1",
-    "bp-api": "git+ssh://git@github.com/elysion/bp-api.git",
     "browser-detect": "^0.2.28",
     "karet": "^2.0.0",
     "karet.util": "^0.17.1",
@@ -15,9 +14,11 @@
     "react-clamp": "^1.0.5",
     "react-dom": "^16.2.0",
     "react-fontawesome": "^1.6.1",
+    "react-github-btn": "^1.1.1",
     "react-lazyload": "^2.3.0",
     "react-scripts": "^2.1.0",
-    "slideout": "^1.0.1"
+    "slideout": "^1.0.1",
+    "typeface-lato": "0.0.75"
   },
   "scripts": {
     "start": "PORT=5001 react-scripts start",

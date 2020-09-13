@@ -2,6 +2,7 @@ const BPromise = require('bluebird')
 const R = require('ramda')
 const { initWithSession } = require('request-in-session')
 const saferEval = require('safer-eval')
+const { log, error } = require('./logger')
 const rootUri = 'https://bandcamp.com'
 
 const scrapeJSON = R.curry((startString, stopString, string) => {
@@ -17,13 +18,14 @@ const handleErrorOrCallFn = R.curry((errorHandler, fn) => (err, res) => err ? er
 
 const getApi = session => {
   const api = {
-    getFanId: callback => session.getJson(`${rootUri}/api/fan/2/collection_summary`, handleErrorOrCallFn(callback, res => callback(null, res.fan_id))),
+    getFanId: callback => session.getJson(`${rootUri}/api/fan/2/collection_summary`, handleErrorOrCallFn(callback, res => res.error ? callback(res) : callback(null, res.fan_id)
+    )),
     getStories: (fan_id, since, callback) => // TODO: get tracks from entries instead from track_list
       session.postForm(`${rootUri}/fan_dash_feed_updates`, {
       fan_id,
       older_than: since
     }, handleErrorOrCallFn(callback, res => {
-      return callback(null, JSON.parse(res).stories)
+      return callback(null, JSON.parse(res).stories.filter(R.propEq('story_type', 'nr')))
     })),
     getAlbum: (itemUrl, callback) => {
       return session.get(itemUrl,
@@ -32,7 +34,7 @@ const getApi = session => {
           try {
             return callback(null, {...getAlbumInfo(res), url: itemUrl})
           } catch (e) {
-            console.error(`Failed to fetch album info for ${itemUrl}`, e)
+            error(`Failed to fetch album info for ${itemUrl}`, e)
             throw e
           }
         }))
@@ -50,15 +52,14 @@ const handleCreateSessionResponse = callback => (err, session) => {
     return callback(err)
   }
   const api = getApi(session)
-  const ensureLoginSuccessful = () => api.getFanId(err => {
+
+  return api.getFanId((err, res) => {
     if (err) {
-      callback(err)
+      return callback(err)
     } else {
-      callback(null, api)
+      return callback(null, api)
     }
   })
-
-  return ensureLoginSuccessful()
 }
 
 const initializers = {

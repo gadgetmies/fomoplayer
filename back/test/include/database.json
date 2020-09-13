@@ -1,8 +1,0 @@
-{
-  "default": "test",
-  "test": {
-    "driver": "pg",
-    "host": "localhost",
-    "database": "multi-store-player-test"
-  }
-}

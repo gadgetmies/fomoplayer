@@ -7,7 +7,7 @@ class ExternalLink extends Component {
   render() {
     return (
       <a
-        className={`${this.props.className || ''} external-link`}
+        className={`${this.props.className || ''} external-link link`}
         target='_blank'
         {...(R.dissoc('children', this.props))}
       >
