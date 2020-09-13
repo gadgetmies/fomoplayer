@@ -3,6 +3,8 @@ const BPromise = require('bluebird')
 const using = BPromise.using
 const pg = require('../../../db/pg.js')
 const removeIgnoredTracksFromUser = require('../../../remove-ignored-tracks-from-user.js')
+const { log, error } = require('./logger')
+const { getOperation, createOperation } = require('../../../operations.js')
 
 const {
   insertArtist,
@@ -25,9 +27,24 @@ const {
 let sessions = {}
 let storeDbId = null
 
+class SessionNotFoundError extends Error {
+  constructor(...args) {
+    super(...args)
+  }
+}
+
+module.exports.errors = {
+  SessionNotFoundError
+}
+
 module.exports.hasValidSession = username => Object.keys(sessions).includes(username)
 
-let getSession = module.exports.getSession = username => sessions[username]
+let getSession = module.exports.getSession = username => {
+  if (!this.hasValidSession(username)) {
+    throw new SessionNotFoundError(`Session not found for ${username}`)
+  }
+  return sessions[username]
+}
 
 module.exports.setSession = (username, session) => sessions[username] = session
 
@@ -69,35 +86,42 @@ const addTracksFromAlbumToUser = (tx, username, album) =>
         insertedTrackId => insertUserTrack(tx, username, insertedTrackId))
         .tap(() => removeIgnoredTracksFromUser(tx, username)))
 
+const getRefreshStatus = module.exports.getRefreshStatus = (username, uuid) => getOperation(username, uuid)
+
+const startRefreshUserTracks = module.exports.startRefreshUserTracks = (username, since = Date.now(), fetchTimes = 10) => {
+  log(`Refreshing tracks from ${username}'s Bandcamp`)
+  return createOperation('refresh-bandcamp', username, {}, () => refreshUserTracks(username, since, fetchTimes)
+  )
+}
+
 const refreshUserTracks = module.exports.refreshUserTracks = (username, since = Date.now(), fetchTimes = 10) => {
-  console.log(`Refreshing tracks from ${username}'s Bandcamp`)
   return getStories(username, since)
     .then(stories => BPromise.mapSeries(stories.entries, story => getAlbum(username, story.item_url))
       .then(albums => BPromise.using(pg.getTransaction(), async tx => {
-          const storeId = await getStoreDbId()
-          const insertedTracks = await BPromise.mapSeries(albums, async album => {
-            const albumInDb = await ensureAlbumExists(tx, storeId, album)
-            const insertedTracks = await addTracksFromAlbumToUser(tx, username, album)
-            await addTracksToAlbum(tx, storeId, albumInDb, album.trackinfo.map(R.prop('track_id')))
-            return insertedTracks
-          }).then(R.flatten)
+        const storeId = await getStoreDbId()
+        const insertedTracks = await BPromise.mapSeries(albums, async album => {
+          const albumInDb = await ensureAlbumExists(tx, storeId, album)
+          const insertedTracks = await addTracksFromAlbumToUser(tx, username, album)
+          await addTracksToAlbum(tx, storeId, albumInDb, album.trackinfo.map(R.prop('track_id')))
+          return insertedTracks
+        }).then(R.flatten)
 
-          console.log(`Inserted ${insertedTracks.length} new tracks to ${username}.\
-Remaining fetches: ${fetchTimes - 1}.`)
-          return { insertedTracks, oldestStoryDate: stories.oldest_story_date }
-        })))
-    .tap(({oldestStoryDate}) => {
+        log(`Inserted ${insertedTracks.length} new tracks to ${username}.\
+ Remaining fetches: ${fetchTimes - 1}.`)
+        return { insertedTracks, oldestStoryDate: stories.oldest_story_date }
+      })))
+    .tap(({ oldestStoryDate }) => {
       if (fetchTimes === 1) {
-        console.log(`Done refreshing tracks for ${username}.`)
+        log(`Done refreshing tracks for ${username}.`)
         return BPromise.resolve()
       }
       return refreshUserTracks(username, oldestStoryDate, fetchTimes - 1)
     })
     .catch(e => {
-      console.error(`Failed to insert tracks for user ${username}`, e)
-      return []
+      error(`Failed to insert tracks for user ${username}`, e)
+      throw e
     })
-  }
+}
 
 const insertNewAlbumTracksToDb =
   (tx, album) =>
@@ -105,7 +129,7 @@ const insertNewAlbumTracksToDb =
       .tap(storeId => ensureArtistExist(tx, album, storeId))
       .then(storeId => {
         const trackinfoWithCleanTitles = album.trackinfo
-          .map(R.evolve({title: title => title.replace(`${album.artist} - `, '') }))
+          .map(R.evolve({ title: title => title.replace(`${album.artist} - `, '') }))
         // Tracks without previews are of little use
         return findNewTracks(tx, storeId, trackinfoWithCleanTitles.filter(R.propSatisfies(R.complement(R.isNil), ['file'])))
           // TODO: do this in db
@@ -115,7 +139,7 @@ const insertNewAlbumTracksToDb =
             //await ensureLabelsExist(tx, newTracks, storeId) // TODO: is this even necessary for Bandcamp stuff?
             return await ensureTracksExist(tx, album.current, newTracks, storeId)
               .catch(e => {
-                console.error('ensureTracksExist failed for', JSON.stringify(newTracks), e)
+                error('ensureTracksExist failed for', JSON.stringify(newTracks), e)
                 return BPromise.reject(e)
               })
           })
@@ -133,16 +157,17 @@ const ensureArtistExist = async (tx, album, storeId) =>
 const ensureTracksExist = async (tx, albumInfo, newStoreTracks, storeId) =>
   BPromise.mapSeries(newStoreTracks,
     newStoreTrack => insertNewTrackReturningTrackId(tx, albumInfo, newStoreTrack)
-      .then(([{track_id}]) => track_id)
+      .then(([{ track_id }]) => track_id)
       // .tap(track_id => insertTrackToLabel(tx, track_id, newStoreTrack.label_id))
       .tap(track_id => insertStoreTrack(tx, storeId, track_id, newStoreTrack.track_id, newStoreTrack)
-        .tap(([{store__track_id}]) => insertTrackPreview(tx, store__track_id, newStoreTrack))))
+        .tap(([{ store__track_id }]) => insertTrackPreview(tx, store__track_id, newStoreTrack))))
 
 module.exports.addTrackToCart = (trackId, username, cart = 'default') =>
   insertTrackToCart(trackId, cart, username)
 
 module.exports.getTracksInCarts = queryTracksInCarts
 
+// TODO: Update to use store__track_preview
 module.exports.getPreviewUrl = async (username, id, format) => {
   const storeId = await getStoreDbId()
   const albumUrl = await queryAlbumUrl(storeId, id)

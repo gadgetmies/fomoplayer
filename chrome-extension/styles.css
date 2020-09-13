@@ -1,0 +1,26 @@
+.header-bg-wrap {
+  border-bottom: 3px solid #b40089 !important;
+}
+
+@media screen and (min-width: 568px)
+{
+#sync-button-nav {
+    display: -webkit-flex;
+    display: flex;
+}
+}
+
+#sync-button-nav {
+    margin-right: 2rem;
+    -webkit-flex: 0 0 auto;
+    flex: 0 0 auto;
+    -webkit-align-items: center;
+    align-items: center;
+}
+
+#sync-button-nav button {
+  margin-bottom: 0;
+  height: 3.5rem;
+  text-shadow: none;
+  color: #262626;
+}

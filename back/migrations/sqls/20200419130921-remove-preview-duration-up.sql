@@ -1,0 +1,1 @@
+ALTER TABLE store__track_preview DROP COLUMN store__track_preview_track_duration_ms;

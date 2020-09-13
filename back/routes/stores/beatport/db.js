@@ -1,31 +1,32 @@
 const pg = require('../../../db/pg.js')
 const R = require('ramda')
-const SQL = require('sql-template-strings')
+const sql = require('sql-template-strings')
 
 module.exports.insertArtist = (tx, artistName) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`-- insert new artists
+  sql`-- insert new artists
 INSERT INTO artist (artist_name)
   VALUES (${artistName})
   ON CONFLICT DO NOTHING`)
 
-module.exports.insertUserTrack = (tx, username, insertedTrackId) =>
+module.exports.addStoreTracksToUser = (tx, userId, tracks) =>
   tx.queryRowsAsync(
 // language=PostgreSQL
-    SQL`
+    sql`
 INSERT INTO user__track (track_id, meta_account_user_id)
 SELECT
-${insertedTrackId},
-meta_account_user_id
-FROM meta_account
-WHERE meta_account_username = ${username}
+track_id,
+${userId}
+FROM store__track
+WHERE store__track_store_id :: TEXT = ANY(${R.pluck('id', tracks)})
 ON CONFLICT DO NOTHING
+RETURNING track_id
 `)
 
 module.exports.findNewTracks = (tx, bpStoreId, tracks) =>
   tx.queryRowsAsync(
 // language=PostgreSQL
-    SQL`-- find new tracks
+    sql`-- find new tracks
 SELECT id
 FROM json_to_recordset(
 ${JSON.stringify(
@@ -39,15 +40,14 @@ WHERE id :: TEXT NOT IN (
 
 module.exports.insertTrackPreview = (tx, store__track_id, previews) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`
-INSERT INTO store__track_preview (store__track_id, store__track_preview_url, store__track_preview_format, store__track_preview_start_ms, store__track_preview_end_ms, store__track_preview_track_duration_ms)
+  sql`
+INSERT INTO store__track_preview (store__track_id, store__track_preview_url, store__track_preview_format, store__track_preview_start_ms, store__track_preview_end_ms)
   SELECT
     ${store__track_id},
     value ->> 'url',
     key :: PREVIEW_FORMAT,
     (value -> 'offset' ->> 'start') :: INTEGER,
-    (value -> 'offset' ->> 'end') :: INTEGER,
-    (value -> 'duration' ->> 'milliseconds') :: INTEGER
+    (value -> 'offset' ->> 'end') :: INTEGER
   FROM json_each(${JSON.stringify(previews)} :: JSON) -- todo: JSON -> JSONB?
   WHERE value ->> 'url' IS NOT NULL
   RETURNING store__track_preview_id
@@ -57,13 +57,13 @@ module.exports.insertTrackWaveform =
   (tx, store__track_id, waveforms) =>
     tx.queryRowsAsync(
 // language=PostgreSQL
-      SQL`
+      sql`
 INSERT INTO store__track_preview_waveform (store__track_preview_id, store__track_preview_waveform_url) select store__track_preview_id, ${waveforms.large.url} from store__track_preview where store__track_id = ${store__track_id}
     `)
 
 module.exports.insertStoreTrack = (tx, bpStoreId, trackId, trackStoreId, trackStoreDetails) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`
+  sql`
 INSERT INTO store__track (track_id, store_id, store__track_store_id, store__track_store_details, store__track_published, store__track_released)
 VALUES (
   ${trackId},
@@ -78,7 +78,7 @@ RETURNING store__track_id
 
 module.exports.insertTrackToLabel = (tx, trackId, labelId) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`INSERT INTO track__label (track_id, label_id)
+  sql`INSERT INTO track__label (track_id, label_id)
   SELECT
     ${trackId},
     label_id
@@ -90,7 +90,7 @@ module.exports.insertTrackToLabel = (tx, trackId, labelId) => tx.queryRowsAsync(
 module.exports.insertPurchasedTracksByIds = (tx, bpStoreId, username, purchasedTrackIds) =>
   tx.queryRowsAsync(
 // language=PostgreSQL
-    SQL`
+    sql`
     INSERT INTO user__store__track_purchased (meta_account_user_id, store__track_id)
     SELECT meta_account_user_id, store__track_id FROM meta_account, store__track WHERE
       meta_account_username = ${username} AND
@@ -104,7 +104,7 @@ module.exports.insertPurchasedTracksByIds = (tx, bpStoreId, username, purchasedT
 module.exports.insertNewTrackReturningTrackId = (tx, newStoreTrack) =>
   tx.queryRowsAsync(
 // language=PostgreSQL
-    SQL`WITH
+    sql`WITH
     new_track_authors AS (
       SELECT DISTINCT
         id,
@@ -158,7 +158,7 @@ module.exports.insertNewTrackReturningTrackId = (tx, newStoreTrack) =>
       FROM exiting_track_details
       WHERE
         track_title = ${newStoreTrack.name} AND
-        (track_mix IS NULL OR track_mix = ${newStoreTrack.mix}) AND
+        (track_mix IS NULL OR LOWER(track_mix) = LOWER(${newStoreTrack.mix})) AND
         artists = (SELECT ARRAY(SELECT artist_id
                                 FROM authors
                                 ORDER BY artist_id))
@@ -214,7 +214,7 @@ UNION ALL (SELECT track_id as existing_id
 
 module.exports.ensureStoreLabelExists = (tx, bpStoreId, labelName, storeLabelId, labelStoreDetails) => tx.queryRowsAsync(
   // language=PostgreSQL
-  SQL`-- ensure store label exists
+  sql`-- ensure store label exists
 INSERT INTO store__label (label_id, store_id, store__label_store_id, store__label_store_details)
   SELECT
     label_id,
@@ -227,7 +227,7 @@ INSERT INTO store__label (label_id, store_id, store__label_store_id, store__labe
 
 module.exports.ensureLabelExists = (tx, labelName) => tx.queryRowsAsync(
   // language=PostgreSQL
-  SQL`-- ensure label exists
+  sql`-- ensure label exists
 INSERT INTO label (label_name)
   SELECT ${labelName}
   WHERE NOT exists(
@@ -238,7 +238,7 @@ INSERT INTO label (label_name)
 
 module.exports.findNewLabels = (tx, bpStoreId, storeLabels) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`-- find new artists
+  sql`-- find new artists
 SELECT id
 FROM json_to_recordset(${JSON.stringify(storeLabels)} :: JSON) AS labels(id INT)
 WHERE id NOT IN (
@@ -249,20 +249,20 @@ WHERE id NOT IN (
 
 module.exports.insertStoreArtist = (tx, bpStoreId, artistName, storeArtistId, storeArtistDetails) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`
-INSERT INTO store__artist (artist_id, store_id, store__artist_store_id, store__artist_store_details)
+  sql`
+INSERT INTO store__artist (artist_id, store_id, store__artist_store_id)
   SELECT
   artist_id,
   ${bpStoreId},
-  ${storeArtistId},
-  ${storeArtistDetails} :: JSONB
+  ${storeArtistId}
   FROM artist
   WHERE lower(artist_name) = lower(${artistName})
+  ON CONFLICT DO NOTHING
 `)
 
 module.exports.findNewArtists = (tx, bpStoreId, storeArtists) => tx.queryRowsAsync(
 // language=PostgreSQL
-  SQL`-- find new artists
+  sql`-- find new artists
 SELECT id
 FROM json_to_recordset(${JSON.stringify(storeArtists)} :: JSON) AS artists(id INT)
 WHERE id NOT IN (
@@ -273,13 +273,13 @@ WHERE store_id = ${bpStoreId}
 
 module.exports.getStoreId = storeName => pg.queryRowsAsync(
   //language=PostgreSQL
-  SQL`SELECT store_id
+  sql`SELECT store_id
   FROM store
   WHERE store_name = ${storeName}`)
   .then(([{ store_id }]) => store_id)
 
 module.exports.queryPreviewUrl = (id, format, bpStoreId) => pg.queryRowsAsync(
-  SQL`
+  sql`
   SELECT store__track_preview_url
   FROM store__track_preview NATURAL JOIN store__track
   WHERE store__track_id = ${id} AND store__track_preview_format = ${format} AND store_id = ${bpStoreId}

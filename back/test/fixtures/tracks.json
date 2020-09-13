@@ -1,0 +1,6506 @@
+[
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 112415,
+        "name": "Hoogs",
+        "slug": "hoogs"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 88,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 220800,
+      "minutes": "3:40"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11136878,
+    "images": {
+      "dynamic": {
+        "id": 20400737,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20400737,
+        "url": "https://geo-media.beatport.com/image/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 7289453,
+        "url": "https://geo-media.beatport.com/image/20bc9ce0-cef6-4b6b-858c-5138e596a02c.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 7289452,
+        "url": "https://geo-media.beatport.com/image/448286dc-d9b7-4e39-a1be-6abf592f1d37.jpg",
+        "width": 30
+      }
+    },
+    "key": "D♯ min",
+    "label": {
+      "id": 14974,
+      "name": "Digital Terror Records",
+      "slug": "digital-terror-records"
+    },
+    "mix": "Original Mix",
+    "name": "A Monster",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 208320,
+          "start": 88320
+        },
+        "url": "https://geo-samples.beatport.com/track/5559f80f-7e7c-47ea-bb97-e62dada12c58.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 208320,
+          "start": 88320
+        },
+        "url": "https://geo-samples.beatport.com/track/5559f80f-7e7c-47ea-bb97-e62dada12c58.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2411401,
+      "name": "Monster",
+      "slug": "monster"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "a-monster-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "A Monster (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20400832,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/fc826c55-e330-469b-9acc-d6bfc113dd75.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20400832,
+        "url": "https://geo-media.beatport.com/image/fc826c55-e330-469b-9acc-d6bfc113dd75.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 112415,
+        "name": "Hoogs",
+        "slug": "hoogs"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 88,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 268800,
+      "minutes": "4:28"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11136879,
+    "images": {
+      "dynamic": {
+        "id": 20400737,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20400737,
+        "url": "https://geo-media.beatport.com/image/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 7289453,
+        "url": "https://geo-media.beatport.com/image/20bc9ce0-cef6-4b6b-858c-5138e596a02c.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 7289452,
+        "url": "https://geo-media.beatport.com/image/448286dc-d9b7-4e39-a1be-6abf592f1d37.jpg",
+        "width": 30
+      }
+    },
+    "key": "G min",
+    "label": {
+      "id": 14974,
+      "name": "Digital Terror Records",
+      "slug": "digital-terror-records"
+    },
+    "mix": "Original Mix",
+    "name": "Look Away",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 227520,
+          "start": 107520
+        },
+        "url": "https://geo-samples.beatport.com/track/86cc1620-ac5b-4ccc-ad83-7d50d402c610.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 227520,
+          "start": 107520
+        },
+        "url": "https://geo-samples.beatport.com/track/86cc1620-ac5b-4ccc-ad83-7d50d402c610.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2411401,
+      "name": "Monster",
+      "slug": "monster"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "look-away-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Look Away (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20400780,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/5ebe5c6c-2965-4c4b-a89d-3d482704b815.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20400780,
+        "url": "https://geo-media.beatport.com/image/5ebe5c6c-2965-4c4b-a89d-3d482704b815.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 112415,
+        "name": "Hoogs",
+        "slug": "hoogs"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 88,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 222172,
+      "minutes": "3:42"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11136880,
+    "images": {
+      "dynamic": {
+        "id": 20400737,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20400737,
+        "url": "https://geo-media.beatport.com/image/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 7289453,
+        "url": "https://geo-media.beatport.com/image/20bc9ce0-cef6-4b6b-858c-5138e596a02c.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 7289452,
+        "url": "https://geo-media.beatport.com/image/448286dc-d9b7-4e39-a1be-6abf592f1d37.jpg",
+        "width": 30
+      }
+    },
+    "key": "G♯ min",
+    "label": {
+      "id": 14974,
+      "name": "Digital Terror Records",
+      "slug": "digital-terror-records"
+    },
+    "mix": "Original Mix",
+    "name": "Jungle Demon",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 208868,
+          "start": 88868
+        },
+        "url": "https://geo-samples.beatport.com/track/2077eea4-7608-41fc-a809-fec2b56da902.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 208868,
+          "start": 88868
+        },
+        "url": "https://geo-samples.beatport.com/track/2077eea4-7608-41fc-a809-fec2b56da902.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2411401,
+      "name": "Monster",
+      "slug": "monster"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "jungle-demon-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Jungle Demon (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20400814,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/c59a5d74-c0e9-4d6c-bf5e-f18e9164e7c3.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20400814,
+        "url": "https://geo-media.beatport.com/image/c59a5d74-c0e9-4d6c-bf5e-f18e9164e7c3.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 112415,
+        "name": "Hoogs",
+        "slug": "hoogs"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 175,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 222172,
+      "minutes": "3:42"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11136881,
+    "images": {
+      "dynamic": {
+        "id": 20400737,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20400737,
+        "url": "https://geo-media.beatport.com/image/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 7289453,
+        "url": "https://geo-media.beatport.com/image/20bc9ce0-cef6-4b6b-858c-5138e596a02c.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 7289452,
+        "url": "https://geo-media.beatport.com/image/448286dc-d9b7-4e39-a1be-6abf592f1d37.jpg",
+        "width": 30
+      }
+    },
+    "key": "A min",
+    "label": {
+      "id": 14974,
+      "name": "Digital Terror Records",
+      "slug": "digital-terror-records"
+    },
+    "mix": "Original Mix",
+    "name": "Ouija",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 208868,
+          "start": 88868
+        },
+        "url": "https://geo-samples.beatport.com/track/6a5aeee7-5348-4eb8-82ae-154936afe7db.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 208868,
+          "start": 88868
+        },
+        "url": "https://geo-samples.beatport.com/track/6a5aeee7-5348-4eb8-82ae-154936afe7db.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2411401,
+      "name": "Monster",
+      "slug": "monster"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "ouija-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Ouija (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20400846,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/e8a9e820-9f9a-4c40-bb69-058912f728f7.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20400846,
+        "url": "https://geo-media.beatport.com/image/e8a9e820-9f9a-4c40-bb69-058912f728f7.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 152,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 158413,
+      "minutes": "2:38"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151013,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "C min",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "222 / Unknowable",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 158413,
+          "start": 38413
+        },
+        "url": "https://geo-samples.beatport.com/track/aef16918-0d8e-4d89-924c-bd7944366b62.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 158413,
+          "start": 38413
+        },
+        "url": "https://geo-samples.beatport.com/track/aef16918-0d8e-4d89-924c-bd7944366b62.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "222-unknowable-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "222 / Unknowable (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378348,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/d112b60d-9d39-405f-ac6b-094924ee890e.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378348,
+        "url": "https://geo-media.beatport.com/image/d112b60d-9d39-405f-ac6b-094924ee890e.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 75,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 122106,
+      "minutes": "2:02"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151014,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "C maj",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "Different Sound",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 122106,
+          "start": 2106
+        },
+        "url": "https://geo-samples.beatport.com/track/e9eb5107-8d7f-4a85-b472-38dfc6371132.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 122106,
+          "start": 2106
+        },
+        "url": "https://geo-samples.beatport.com/track/e9eb5107-8d7f-4a85-b472-38dfc6371132.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "different-sound-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Different Sound (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378309,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/7f7938ab-7300-449e-bc70-c993131694a1.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378309,
+        "url": "https://geo-media.beatport.com/image/7f7938ab-7300-449e-bc70-c993131694a1.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 150,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 193866,
+      "minutes": "3:13"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151015,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "A♯ maj",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "Arbiter's Theme",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 193866,
+          "start": 73866
+        },
+        "url": "https://geo-samples.beatport.com/track/4584a3c5-31cf-4a0a-8c48-f99ff63dbb1e.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 193866,
+          "start": 73866
+        },
+        "url": "https://geo-samples.beatport.com/track/4584a3c5-31cf-4a0a-8c48-f99ff63dbb1e.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "arbiters-theme-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Arbiter's Theme (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378354,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/b1d40b1b-b380-4cac-b96e-e4101e15538f.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378354,
+        "url": "https://geo-media.beatport.com/image/b1d40b1b-b380-4cac-b96e-e4101e15538f.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 80,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 272773,
+      "minutes": "4:32"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151016,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "F min",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "Understanding the Possibility",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 229109,
+          "start": 109109
+        },
+        "url": "https://geo-samples.beatport.com/track/5aa3963c-b50a-4c77-be68-3a9f29d52129.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 229109,
+          "start": 109109
+        },
+        "url": "https://geo-samples.beatport.com/track/5aa3963c-b50a-4c77-be68-3a9f29d52129.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "understanding-the-possibility-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Understanding the Possibility (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378333,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/d4ceab43-9291-4a16-a407-b3570ddc4ec0.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378333,
+        "url": "https://geo-media.beatport.com/image/d4ceab43-9291-4a16-a407-b3570ddc4ec0.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 150,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 162680,
+      "minutes": "2:42"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151017,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "D min",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "Soundtrack to the Machine",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 162680,
+          "start": 42680
+        },
+        "url": "https://geo-samples.beatport.com/track/2a59c7f6-9abb-43bc-b971-ab7980b948b4.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 162680,
+          "start": 42680
+        },
+        "url": "https://geo-samples.beatport.com/track/2a59c7f6-9abb-43bc-b971-ab7980b948b4.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "soundtrack-to-the-machine-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Soundtrack to the Machine (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378344,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/a91beffb-759c-4d68-942b-5c4f1ab59b6b.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378344,
+        "url": "https://geo-media.beatport.com/image/a91beffb-759c-4d68-942b-5c4f1ab59b6b.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 120,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 268160,
+      "minutes": "4:28"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151018,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "F♯ maj",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "Everything All at Once",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 227264,
+          "start": 107264
+        },
+        "url": "https://geo-samples.beatport.com/track/9a175dfe-c16a-41fe-b039-a53f75fcb394.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 227264,
+          "start": 107264
+        },
+        "url": "https://geo-samples.beatport.com/track/9a175dfe-c16a-41fe-b039-a53f75fcb394.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "everything-all-at-once-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Everything All at Once (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378370,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ee7ed643-da9a-4f44-a403-008912ffa7b8.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378370,
+        "url": "https://geo-media.beatport.com/image/ee7ed643-da9a-4f44-a403-008912ffa7b8.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 75,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 189133,
+      "minutes": "3:09"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151019,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "D♯ maj",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "In Your Head",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 189133,
+          "start": 69133
+        },
+        "url": "https://geo-samples.beatport.com/track/aa70a0de-2b50-4b73-8f22-3afd06c60984.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 189133,
+          "start": 69133
+        },
+        "url": "https://geo-samples.beatport.com/track/aa70a0de-2b50-4b73-8f22-3afd06c60984.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "in-your-head-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "In Your Head (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378362,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce16371f-98b7-4ce1-954f-67a3a25b0b54.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378362,
+        "url": "https://geo-media.beatport.com/image/ce16371f-98b7-4ce1-954f-67a3a25b0b54.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 164,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 369280,
+      "minutes": "6:09"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151020,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "A♯ maj",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "Time",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 267712,
+          "start": 147712
+        },
+        "url": "https://geo-samples.beatport.com/track/35b5380c-12ff-4bf8-bef9-b1a8999b6971.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 267712,
+          "start": 147712
+        },
+        "url": "https://geo-samples.beatport.com/track/35b5380c-12ff-4bf8-bef9-b1a8999b6971.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "time-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Time (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378372,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/86cca956-e3b7-4dcc-8097-01f4900c40a5.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378372,
+        "url": "https://geo-media.beatport.com/image/86cca956-e3b7-4dcc-8097-01f4900c40a5.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 150,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 203706,
+      "minutes": "3:23"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151021,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "C♯ min",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "That Look in Your Eye",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 201482,
+          "start": 81482
+        },
+        "url": "https://geo-samples.beatport.com/track/4c982778-7e0b-4b57-933e-9e6e9f71139d.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 201482,
+          "start": 81482
+        },
+        "url": "https://geo-samples.beatport.com/track/4c982778-7e0b-4b57-933e-9e6e9f71139d.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "that-look-in-your-eye-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "That Look in Your Eye (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378371,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/710c9402-9b80-4dab-a92d-eb72c68bcdcd.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378371,
+        "url": "https://geo-media.beatport.com/image/710c9402-9b80-4dab-a92d-eb72c68bcdcd.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 150,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 198746,
+      "minutes": "3:18"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151022,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "F♯ maj",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "Iridescent Leaves Floating Downstream",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 198746,
+          "start": 78746
+        },
+        "url": "https://geo-samples.beatport.com/track/4a464d9f-d294-4578-9926-50b6842ebab0.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 198746,
+          "start": 78746
+        },
+        "url": "https://geo-samples.beatport.com/track/4a464d9f-d294-4578-9926-50b6842ebab0.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "iridescent-leaves-floating-downstream-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Iridescent Leaves Floating Downstream (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378382,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/1ac9c8a6-2221-4b00-886e-58970e560bcc.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378382,
+        "url": "https://geo-media.beatport.com/image/1ac9c8a6-2221-4b00-886e-58970e560bcc.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 261479,
+        "name": "G Jones",
+        "slug": "g-jones"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 120,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 340013,
+      "minutes": "5:40"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 85,
+        "name": "Leftfield Bass",
+        "slug": "leftfield-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11151023,
+    "images": {
+      "dynamic": {
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20378283,
+        "url": "https://geo-media.beatport.com/image/ce80fa0e-08c2-4ca7-82a5-a449cd41a8e0.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15307987,
+        "url": "https://geo-media.beatport.com/image/242f1b6a-40f4-434f-8678-3903305748c7.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "F min",
+    "label": {
+      "id": 61602,
+      "name": "Illusory Records",
+      "slug": "illusory-records"
+    },
+    "mix": "Original Mix",
+    "name": "Forgotten Dreams",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 256005,
+          "start": 136005
+        },
+        "url": "https://geo-samples.beatport.com/track/35b953a9-d78e-4da6-b917-16812fcb003b.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 256005,
+          "start": 136005
+        },
+        "url": "https://geo-samples.beatport.com/track/35b953a9-d78e-4da6-b917-16812fcb003b.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2414887,
+      "name": "The Ineffable Truth",
+      "slug": "the-ineffable-truth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "forgotten-dreams-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Forgotten Dreams (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20378369,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/80f849b0-5500-4207-a9fd-11d85d9c7097.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20378369,
+        "url": "https://geo-media.beatport.com/image/80f849b0-5500-4207-a9fd-11d85d9c7097.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 229,
+        "name": "Legion",
+        "slug": "legion"
+      },
+      {
+        "id": 145947,
+        "name": "Logam",
+        "slug": "logam"
+      },
+      {
+        "id": 674648,
+        "name": "Tyler Hill",
+        "slug": "tyler-hill"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 87,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 264827,
+      "minutes": "4:24"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11152688,
+    "images": {
+      "dynamic": {
+        "id": 20382258,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/20b56f95-0edd-4dbe-a953-6d08d34f774e.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20382258,
+        "url": "https://geo-media.beatport.com/image/20b56f95-0edd-4dbe-a953-6d08d34f774e.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 14560480,
+        "url": "https://geo-media.beatport.com/image/104fd058-f3fa-46c1-a55e-fa7b125ac979.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "F♯ min",
+    "label": {
+      "id": 395,
+      "name": "RAM Records",
+      "slug": "ram-records"
+    },
+    "mix": "Original Mix",
+    "name": "I Blame Myself",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 225930,
+          "start": 105930
+        },
+        "url": "https://geo-samples.beatport.com/track/015275e4-1460-4ca4-af92-37540973bda1.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 225930,
+          "start": 105930
+        },
+        "url": "https://geo-samples.beatport.com/track/015275e4-1460-4ca4-af92-37540973bda1.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2415204,
+      "name": "I Blame Myself",
+      "slug": "i-blame-myself"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "i-blame-myself-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "I Blame Myself (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20382443,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/7ac8e678-2d4c-45a2-a61d-5df0ad892594.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20382443,
+        "url": "https://geo-media.beatport.com/image/7ac8e678-2d4c-45a2-a61d-5df0ad892594.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 35625,
+        "name": "Mat Zo",
+        "slug": "mat-zo"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 125,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 449280,
+      "minutes": "7:29"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 15,
+        "name": "Progressive House",
+        "slug": "progressive-house"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11172334,
+    "images": {
+      "dynamic": {
+        "id": 20417002,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/229559c3-9c0e-40e1-9928-a6f4100fb28e.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20417002,
+        "url": "https://geo-media.beatport.com/image/229559c3-9c0e-40e1-9928-a6f4100fb28e.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 14195878,
+        "url": "https://geo-media.beatport.com/image/d1094d9b-c6c1-4fea-8c6f-91676d0f460c.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "D min",
+    "label": {
+      "id": 804,
+      "name": "Anjunabeats",
+      "slug": "anjunabeats"
+    },
+    "mix": "Original Mix",
+    "name": "See It When I Believe It",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 299712,
+          "start": 179712
+        },
+        "url": "https://geo-samples.beatport.com/track/54491da0-b3a9-4dec-a061-5fd44020b68f.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 299712,
+          "start": 179712
+        },
+        "url": "https://geo-samples.beatport.com/track/54491da0-b3a9-4dec-a061-5fd44020b68f.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2419660,
+      "name": "No Words EP",
+      "slug": "no-words-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "see-it-when-i-believe-it-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "See It When I Believe It (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20417020,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/3e2a4792-a659-40f1-a89d-19b92c6b93aa.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20417020,
+        "url": "https://geo-media.beatport.com/image/3e2a4792-a659-40f1-a89d-19b92c6b93aa.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 35625,
+        "name": "Mat Zo",
+        "slug": "mat-zo"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 124,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 432468,
+      "minutes": "7:12"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 15,
+        "name": "Progressive House",
+        "slug": "progressive-house"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11172335,
+    "images": {
+      "dynamic": {
+        "id": 20417002,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/229559c3-9c0e-40e1-9928-a6f4100fb28e.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20417002,
+        "url": "https://geo-media.beatport.com/image/229559c3-9c0e-40e1-9928-a6f4100fb28e.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 14195878,
+        "url": "https://geo-media.beatport.com/image/d1094d9b-c6c1-4fea-8c6f-91676d0f460c.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "G min",
+    "label": {
+      "id": 804,
+      "name": "Anjunabeats",
+      "slug": "anjunabeats"
+    },
+    "mix": "Original Mix",
+    "name": "Meaning Lost All Words",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 292987,
+          "start": 172987
+        },
+        "url": "https://geo-samples.beatport.com/track/56b66840-41cb-48cc-af96-1a843c65d06b.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 292987,
+          "start": 172987
+        },
+        "url": "https://geo-samples.beatport.com/track/56b66840-41cb-48cc-af96-1a843c65d06b.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2419660,
+      "name": "No Words EP",
+      "slug": "no-words-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "meaning-lost-all-words-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Meaning Lost All Words (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20417025,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ece78cdd-d1f7-4d53-b414-fe38fbeb2d9b.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20417025,
+        "url": "https://geo-media.beatport.com/image/ece78cdd-d1f7-4d53-b414-fe38fbeb2d9b.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 35625,
+        "name": "Mat Zo",
+        "slug": "mat-zo"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 124,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 449032,
+      "minutes": "7:29"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 15,
+        "name": "Progressive House",
+        "slug": "progressive-house"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11172336,
+    "images": {
+      "dynamic": {
+        "id": 20417002,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/229559c3-9c0e-40e1-9928-a6f4100fb28e.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20417002,
+        "url": "https://geo-media.beatport.com/image/229559c3-9c0e-40e1-9928-a6f4100fb28e.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 14195878,
+        "url": "https://geo-media.beatport.com/image/d1094d9b-c6c1-4fea-8c6f-91676d0f460c.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "D♯ min",
+    "label": {
+      "id": 804,
+      "name": "Anjunabeats",
+      "slug": "anjunabeats"
+    },
+    "mix": "Original Mix",
+    "name": "Says Without Going",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 299612,
+          "start": 179612
+        },
+        "url": "https://geo-samples.beatport.com/track/7fcd3571-ed57-4d67-b91c-4d866f334fcc.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 299612,
+          "start": 179612
+        },
+        "url": "https://geo-samples.beatport.com/track/7fcd3571-ed57-4d67-b91c-4d866f334fcc.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2419660,
+      "name": "No Words EP",
+      "slug": "no-words-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "says-without-going-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Says Without Going (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20417043,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/a66cbc6a-fa92-46c9-a4f7-b5a2b99e655c.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20417043,
+        "url": "https://geo-media.beatport.com/image/a66cbc6a-fa92-46c9-a4f7-b5a2b99e655c.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 16768,
+        "name": "Zeds Dead",
+        "slug": "zeds-dead"
+      },
+      {
+        "id": 46904,
+        "name": "Redman",
+        "slug": "redman"
+      },
+      {
+        "id": 192968,
+        "name": "Jayceeoh",
+        "slug": "jayceeoh"
+      },
+      {
+        "id": 566138,
+        "name": "1000volts",
+        "slug": "1000volts"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 150,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 160026,
+      "minutes": "2:40"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 18,
+        "name": "Dubstep",
+        "slug": "dubstep"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11181140,
+    "images": {
+      "dynamic": {
+        "id": 20432759,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/01a89702-ea53-4bb2-bffb-812477052d49.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20432759,
+        "url": "https://geo-media.beatport.com/image/01a89702-ea53-4bb2-bffb-812477052d49.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 491533,
+        "url": "https://geo-media.beatport.com/image/0bcac30e-f61d-431a-ba1e-b63302708d75.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "D min",
+    "label": {
+      "id": 69987,
+      "name": "Deadbeats",
+      "slug": "deadbeats"
+    },
+    "mix": "Holly Remix",
+    "name": "KIll Em",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 160026,
+          "start": 40026
+        },
+        "url": "https://geo-samples.beatport.com/track/bfd93d29-474a-43a9-add5-ce06f53e04a7.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 160026,
+          "start": 40026
+        },
+        "url": "https://geo-samples.beatport.com/track/bfd93d29-474a-43a9-add5-ce06f53e04a7.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2421684,
+      "name": "Kill Em",
+      "slug": "kill-em"
+    },
+    "remixers": [
+      {
+        "id": 151663,
+        "name": "Holly",
+        "slug": "holly"
+      }
+    ],
+    "sale_type": "purchase",
+    "slug": "kill-em-holly-remix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "KIll Em (Holly Remix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20432783,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/c9936dba-81fb-4b32-8111-57d5b38f9d6d.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20432783,
+        "url": "https://geo-media.beatport.com/image/c9936dba-81fb-4b32-8111-57d5b38f9d6d.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 630492,
+        "name": "Torbjørn",
+        "slug": "torbj-rn"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 85,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 205593,
+      "minutes": "3:25"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11181876,
+    "images": {
+      "dynamic": {
+        "id": 20434547,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/474df297-8f51-4036-a999-b3924ca497f2.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20434547,
+        "url": "https://geo-media.beatport.com/image/474df297-8f51-4036-a999-b3924ca497f2.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 3018722,
+        "url": "https://geo-media.beatport.com/image/f25e8c52-2608-470c-9282-b316973456bc.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 3018721,
+        "url": "https://geo-media.beatport.com/image/ab17a2b9-4ac6-42d8-9d4a-144b3c2e5699.jpg",
+        "width": 30
+      }
+    },
+    "key": "F♯ min",
+    "label": {
+      "id": 21512,
+      "name": "Bass Hound Records",
+      "slug": "bass-hound-records"
+    },
+    "mix": "Sigrah Remix",
+    "name": "Man's Got Game",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 202237,
+          "start": 82237
+        },
+        "url": "https://geo-samples.beatport.com/track/10440646-376e-47e8-b440-b598f70591ca.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 202237,
+          "start": 82237
+        },
+        "url": "https://geo-samples.beatport.com/track/10440646-376e-47e8-b440-b598f70591ca.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2421861,
+      "name": "Man's Got Game EP",
+      "slug": "mans-got-game-ep"
+    },
+    "remixers": [
+      {
+        "id": 386795,
+        "name": "Sigrah",
+        "slug": "sigrah"
+      }
+    ],
+    "sale_type": "purchase",
+    "slug": "mans-got-game-sigrah-remix",
+    "sponsored": false,
+    "sub_genres": [
+      {
+        "id": 191,
+        "name": "Halftime",
+        "slug": "halftime"
+      }
+    ],
+    "title": "Man's Got Game (Sigrah Remix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20434882,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/55c00d89-b0eb-4e8c-ac05-f13a0fae715f.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20434882,
+        "url": "https://geo-media.beatport.com/image/55c00d89-b0eb-4e8c-ac05-f13a0fae715f.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 44376,
+        "name": "Nymfo",
+        "slug": "nymfo"
+      },
+      {
+        "id": 117618,
+        "name": "BeauDamian",
+        "slug": "beaudamian"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 160,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 181500,
+      "minutes": "3:01"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 18,
+        "name": "Dubstep",
+        "slug": "dubstep"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11188921,
+    "images": {
+      "dynamic": {
+        "id": 20447721,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/3a8e1b29-3ac3-4cd1-8c30-182e8e1a2929.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20447721,
+        "url": "https://geo-media.beatport.com/image/3a8e1b29-3ac3-4cd1-8c30-182e8e1a2929.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 12350404,
+        "url": "https://geo-media.beatport.com/image/35b2a218-1f2e-4874-8052-9f5a859decd4.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "D min",
+    "label": {
+      "id": 52216,
+      "name": "bitbird",
+      "slug": "bitbird"
+    },
+    "mix": "Original Mix",
+    "name": "Bounce",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 181500,
+          "start": 61500
+        },
+        "url": "https://geo-samples.beatport.com/track/4a6e1c86-1af8-4052-b178-c35f5955c223.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 181500,
+          "start": 61500
+        },
+        "url": "https://geo-samples.beatport.com/track/4a6e1c86-1af8-4052-b178-c35f5955c223.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2423690,
+      "name": "Bipolar",
+      "slug": "bipolar"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "bounce-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Bounce (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20447730,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/64fa3f5d-92c1-4a4e-994b-2278930acf64.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20447730,
+        "url": "https://geo-media.beatport.com/image/64fa3f5d-92c1-4a4e-994b-2278930acf64.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 5344,
+        "name": "Macca",
+        "slug": "macca"
+      },
+      {
+        "id": 182181,
+        "name": "T.r.a.c.",
+        "slug": "t-r-a-c"
+      },
+      {
+        "id": 202328,
+        "name": "Loz Contreras",
+        "slug": "loz-contreras"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 86,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 296937,
+      "minutes": "4:56"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11191721,
+    "images": {
+      "dynamic": {
+        "id": 20452338,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/de028935-e603-4bdb-b708-34a560b3bcd5.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20452338,
+        "url": "https://geo-media.beatport.com/image/de028935-e603-4bdb-b708-34a560b3bcd5.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 98501,
+        "url": "https://geo-media.beatport.com/image/a592faa9-9cf8-43d5-bd03-2f907497c685.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 98502,
+        "url": "https://geo-media.beatport.com/image/51fee39b-eced-486b-afe3-9aa194cf952d.jpg",
+        "width": 30
+      }
+    },
+    "key": "A min",
+    "label": {
+      "id": 1894,
+      "name": "Liquid V",
+      "slug": "liquid-v"
+    },
+    "mix": "Original Mix",
+    "name": "Leaps and Bounds (feat. T.R.A.C.)",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 238774,
+          "start": 118774
+        },
+        "url": "https://geo-samples.beatport.com/track/8b7c4c52-a443-4546-afc7-5c4004c85af9.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 238774,
+          "start": 118774
+        },
+        "url": "https://geo-samples.beatport.com/track/8b7c4c52-a443-4546-afc7-5c4004c85af9.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2424319,
+      "name": "Leaps and Bounds (feat. T.R.A.C.)",
+      "slug": "leaps-and-bounds-feat-t-r-a-c"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "leaps-and-bounds-feat-t-r-a-c-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Leaps and Bounds (feat. T.R.A.C.) (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20452364,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/a1609967-245c-4ce0-81b8-7001d32a23be.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20452364,
+        "url": "https://geo-media.beatport.com/image/a1609967-245c-4ce0-81b8-7001d32a23be.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 51955,
+        "name": "Skepta",
+        "slug": "skepta"
+      },
+      {
+        "id": 322480,
+        "name": "Chip",
+        "slug": "chip"
+      },
+      {
+        "id": 724182,
+        "name": "Ambush Buzzworl",
+        "slug": "ambush-buzzworl"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 127,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 281574,
+      "minutes": "4:41"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 38,
+        "name": "Hip-Hop / R&B",
+        "slug": "hip-hop-r-and-b"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11193131,
+    "images": {
+      "dynamic": {
+        "id": 20454737,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/718cb647-db52-4d44-8c6a-9ca90a94271c.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20454737,
+        "url": "https://geo-media.beatport.com/image/718cb647-db52-4d44-8c6a-9ca90a94271c.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 491533,
+        "url": "https://geo-media.beatport.com/image/0bcac30e-f61d-431a-ba1e-b63302708d75.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "A min",
+    "label": {
+      "id": 73772,
+      "name": "Buzzworl Entertainment Limited",
+      "slug": "buzzworl-entertainment-limited"
+    },
+    "mix": "Remix",
+    "name": "Jumpy",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 232629,
+          "start": 112629
+        },
+        "url": "https://geo-samples.beatport.com/track/441104b9-d872-4c9a-9868-041e2618d816.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 232629,
+          "start": 112629
+        },
+        "url": "https://geo-samples.beatport.com/track/441104b9-d872-4c9a-9868-041e2618d816.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2424594,
+      "name": "Jumpy",
+      "slug": "jumpy"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "jumpy-remix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Jumpy (Remix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20454739,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/491ae5a7-a22f-4bb7-9ac8-4f4b516c5ea4.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20454739,
+        "url": "https://geo-media.beatport.com/image/491ae5a7-a22f-4bb7-9ac8-4f4b516c5ea4.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 60187,
+        "name": "Foreign Beggars",
+        "slug": "foreign-beggars"
+      },
+      {
+        "id": 241431,
+        "name": "Wiwek",
+        "slug": "wiwek"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 170,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 172275,
+      "minutes": "2:52"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 17,
+        "name": "Electro House",
+        "slug": "electro-house"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11193187,
+    "images": {
+      "dynamic": {
+        "id": 20454999,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/9e81b582-7722-4641-b07d-c23f884825a2.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20454999,
+        "url": "https://geo-media.beatport.com/image/9e81b582-7722-4641-b07d-c23f884825a2.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 20414735,
+        "url": "https://geo-media.beatport.com/image/907e95cf-257c-487d-8a92-2cdf7e7968f5.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "D♯ min",
+    "label": {
+      "id": 73768,
+      "name": "Maha Vana",
+      "slug": "maha-vana"
+    },
+    "mix": "Original Mix",
+    "name": "Choose your Poison feat. Foreign Beggars",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 172275,
+          "start": 52275
+        },
+        "url": "https://geo-samples.beatport.com/track/552cd8f5-1e49-4021-b9a6-4615b1c24f0d.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 172275,
+          "start": 52275
+        },
+        "url": "https://geo-samples.beatport.com/track/552cd8f5-1e49-4021-b9a6-4615b1c24f0d.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2424630,
+      "name": "Choose Your Poison",
+      "slug": "choose-your-poison"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "choose-your-poison-feat-foreign-beggars-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Choose your Poison feat. Foreign Beggars (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20455002,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/78eca48c-cd93-45c6-ac27-00f1c8eb418f.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20455002,
+        "url": "https://geo-media.beatport.com/image/78eca48c-cd93-45c6-ac27-00f1c8eb418f.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 206402,
+        "name": "My Nu Leng",
+        "slug": "my-nu-leng"
+      },
+      {
+        "id": 479371,
+        "name": "Holy Goof",
+        "slug": "holy-goof"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 133,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 357000,
+      "minutes": "5:57"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 86,
+        "name": "Garage / Bassline / Grime",
+        "slug": "garage-bassline-grime"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11127213,
+    "images": {
+      "dynamic": {
+        "id": 20336074,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/4827b11b-9ba8-425e-95e9-fa0c22e0e3b7.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20336074,
+        "url": "https://geo-media.beatport.com/image/4827b11b-9ba8-425e-95e9-fa0c22e0e3b7.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 15615921,
+        "url": "https://geo-media.beatport.com/image/badee916-30d0-41fe-a676-498086d77681.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "F maj",
+    "label": {
+      "id": 62621,
+      "name": "Maraki Records",
+      "slug": "maraki-records"
+    },
+    "mix": "Original Mix",
+    "name": "Gully feat. Takura",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 262800,
+          "start": 142800
+        },
+        "url": "https://geo-samples.beatport.com/track/b9134368-834d-4ccd-9119-aecf6e037fe3.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 262800,
+          "start": 142800
+        },
+        "url": "https://geo-samples.beatport.com/track/b9134368-834d-4ccd-9119-aecf6e037fe3.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2409176,
+      "name": "Gully (feat. Takura)",
+      "slug": "gully-feat-takura"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "gully-feat-takura-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Gully feat. Takura (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20336169,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/d49caf72-db8e-4cb0-abaf-234eef5a804c.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20336169,
+        "url": "https://geo-media.beatport.com/image/d49caf72-db8e-4cb0-abaf-234eef5a804c.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 172363,
+        "name": "Paint",
+        "slug": "paint"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 120,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 512000,
+      "minutes": "8:32"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 39,
+        "name": "Dance",
+        "slug": "dance"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11104050,
+    "images": {
+      "dynamic": {
+        "id": 20293276,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/13a3122b-6cf3-4f15-aae2-d77b17945e59.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20293276,
+        "url": "https://geo-media.beatport.com/image/13a3122b-6cf3-4f15-aae2-d77b17945e59.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 504261,
+        "url": "https://geo-media.beatport.com/image/8b620f47-1812-4981-be97-db76ff1d8630.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 504260,
+        "url": "https://geo-media.beatport.com/image/bc6128fd-0772-4c9d-83f7-21caea6c55d3.jpg",
+        "width": 30
+      }
+    },
+    "key": "E min",
+    "label": {
+      "id": 14032,
+      "name": "WAX'N'SOUL",
+      "slug": "waxnsoul"
+    },
+    "mix": "Original Mix",
+    "name": "Its All Above Us",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 324800,
+          "start": 204800
+        },
+        "url": "https://geo-samples.beatport.com/track/05069914-ef4a-44ae-8326-2d7628be0447.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 324800,
+          "start": 204800
+        },
+        "url": "https://geo-samples.beatport.com/track/05069914-ef4a-44ae-8326-2d7628be0447.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2403821,
+      "name": "Dance Grenade",
+      "slug": "dance-grenade"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "its-all-above-us-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Its All Above Us (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20293740,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/d257b578-d326-4ec5-b36d-163635c5bfe6.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20293740,
+        "url": "https://geo-media.beatport.com/image/d257b578-d326-4ec5-b36d-163635c5bfe6.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 13900,
+        "name": "Gamma",
+        "slug": "gamma"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 122,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 502398,
+      "minutes": "8:22"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 11,
+        "name": "Tech House",
+        "slug": "tech-house"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11105415,
+    "images": {
+      "dynamic": {
+        "id": 20295128,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/bc652da4-cca9-4c1b-920a-3431a6e61e0c.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20295128,
+        "url": "https://geo-media.beatport.com/image/bc652da4-cca9-4c1b-920a-3431a6e61e0c.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 65643,
+        "url": "https://geo-media.beatport.com/image/34d2d7d7-603f-46b6-b5ab-f561937b50b6.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 65644,
+        "url": "https://geo-media.beatport.com/image/a7ca9409-3636-46fe-9226-0dd10b9635d1.jpg",
+        "width": 30
+      }
+    },
+    "key": "A min",
+    "label": {
+      "id": 3278,
+      "name": "Le Bien Et Le Mal Recordings",
+      "slug": "le-bien-et-le-mal-recordings"
+    },
+    "mix": "Face Off Late Nite Remix",
+    "name": "Love Again (Feat. Chelsea)",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 320959,
+          "start": 200959
+        },
+        "url": "https://geo-samples.beatport.com/track/6e4bc942-87ea-491e-b337-33cf04c6d2c9.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 320959,
+          "start": 200959
+        },
+        "url": "https://geo-samples.beatport.com/track/6e4bc942-87ea-491e-b337-33cf04c6d2c9.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2404064,
+      "name": "Techhouse Trip",
+      "slug": "techhouse-trip"
+    },
+    "remixers": [
+      {
+        "id": 3785,
+        "name": "Face Off",
+        "slug": "face-off"
+      }
+    ],
+    "sale_type": "purchase",
+    "slug": "love-again-feat-chelsea-face-off-late-nite-remix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Love Again (Feat. Chelsea) (Face Off Late Nite Remix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20295748,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/470e8fbf-3889-4eba-805b-1163e72474a8.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20295748,
+        "url": "https://geo-media.beatport.com/image/470e8fbf-3889-4eba-805b-1163e72474a8.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 140852,
+        "name": "Pierce Fulton",
+        "slug": "pierce-fulton"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 170,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 281240,
+      "minutes": "4:41"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11109561,
+    "images": {
+      "dynamic": {
+        "id": 20304123,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/796d44a8-d450-47c2-95fc-2577e996fb82.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20304123,
+        "url": "https://geo-media.beatport.com/image/796d44a8-d450-47c2-95fc-2577e996fb82.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 491533,
+        "url": "https://geo-media.beatport.com/image/0bcac30e-f61d-431a-ba1e-b63302708d75.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "C♯ maj",
+    "label": {
+      "id": 21942,
+      "name": "iCompilations",
+      "slug": "icompilations"
+    },
+    "mix": "S.P.Y Remix",
+    "name": "Kuaga (Lost Time)",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 232496,
+          "start": 112496
+        },
+        "url": "https://geo-samples.beatport.com/track/f0857718-c826-4e85-897c-b1abb1ab7f5e.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 232496,
+          "start": 112496
+        },
+        "url": "https://geo-samples.beatport.com/track/f0857718-c826-4e85-897c-b1abb1ab7f5e.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2404988,
+      "name": "Halloween House Party 2018",
+      "slug": "halloween-house-party-2018"
+    },
+    "remixers": [
+      {
+        "id": 183646,
+        "name": "S.P.Y",
+        "slug": "s-p-y"
+      }
+    ],
+    "sale_type": "purchase",
+    "slug": "kuaga-lost-time-s-p-y-remix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Kuaga (Lost Time) (S.P.Y Remix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20304200,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/9f73eb63-51a7-4b14-8518-d4df99cf6774.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20304200,
+        "url": "https://geo-media.beatport.com/image/9f73eb63-51a7-4b14-8518-d4df99cf6774.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 720596,
+        "name": "LVNA (S)",
+        "slug": "lvna-s"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 113,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 215871,
+      "minutes": "3:35"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 5,
+        "name": "House",
+        "slug": "house"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11109562,
+    "images": {
+      "dynamic": {
+        "id": 20304123,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/796d44a8-d450-47c2-95fc-2577e996fb82.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20304123,
+        "url": "https://geo-media.beatport.com/image/796d44a8-d450-47c2-95fc-2577e996fb82.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 491533,
+        "url": "https://geo-media.beatport.com/image/0bcac30e-f61d-431a-ba1e-b63302708d75.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "D min",
+    "label": {
+      "id": 21942,
+      "name": "iCompilations",
+      "slug": "icompilations"
+    },
+    "mix": "Fracture Remix",
+    "name": "Waiting For",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 206348,
+          "start": 86348
+        },
+        "url": "https://geo-samples.beatport.com/track/b36f58e2-82e3-4023-a567-484745baf93c.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 206348,
+          "start": 86348
+        },
+        "url": "https://geo-samples.beatport.com/track/b36f58e2-82e3-4023-a567-484745baf93c.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2404988,
+      "name": "Halloween House Party 2018",
+      "slug": "halloween-house-party-2018"
+    },
+    "remixers": [
+      {
+        "id": 58467,
+        "name": "Fracture",
+        "slug": "fracture"
+      }
+    ],
+    "sale_type": "purchase",
+    "slug": "waiting-for-fracture-remix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Waiting For (Fracture Remix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20304208,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/562c8fc4-69e0-4f2d-9fd8-16d86a86478c.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20304208,
+        "url": "https://geo-media.beatport.com/image/562c8fc4-69e0-4f2d-9fd8-16d86a86478c.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 6574,
+        "name": "Quartz",
+        "slug": "quartz"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 113,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 349760,
+      "minutes": "5:49"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11112258,
+    "images": {
+      "dynamic": {
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/94be221a-4cca-49e0-8677-45514e3de9d6.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image/94be221a-4cca-49e0-8677-45514e3de9d6.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 123905,
+        "url": "https://geo-media.beatport.com/image/5b03af28-690f-43e9-abe7-832cf1056395.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 123906,
+        "url": "https://geo-media.beatport.com/image/48d8d7d0-15bd-4031-b42b-7b5b2aece91f.jpg",
+        "width": 30
+      }
+    },
+    "key": "F♯ min",
+    "label": {
+      "id": 6564,
+      "name": "Metalheadz",
+      "slug": "metalheadz"
+    },
+    "mix": "Original Mix",
+    "name": "Hall of Mirrors",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 259904,
+          "start": 139904
+        },
+        "url": "https://geo-samples.beatport.com/track/3d8c7d84-dcbb-4e58-a05e-ec9ab2e7fba4.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 259904,
+          "start": 139904
+        },
+        "url": "https://geo-samples.beatport.com/track/3d8c7d84-dcbb-4e58-a05e-ec9ab2e7fba4.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2405657,
+      "name": "Hall of Mirrors",
+      "slug": "hall-of-mirrors"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "hall-of-mirrors-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Hall of Mirrors (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20308554,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/5a07fc87-5481-4a2c-b7ab-7d3473e7152e.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20308554,
+        "url": "https://geo-media.beatport.com/image/5a07fc87-5481-4a2c-b7ab-7d3473e7152e.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 6574,
+        "name": "Quartz",
+        "slug": "quartz"
+      },
+      {
+        "id": 316248,
+        "name": "Survey",
+        "slug": "survey"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 86,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 314695,
+      "minutes": "5:14"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11112259,
+    "images": {
+      "dynamic": {
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/94be221a-4cca-49e0-8677-45514e3de9d6.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image/94be221a-4cca-49e0-8677-45514e3de9d6.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 123905,
+        "url": "https://geo-media.beatport.com/image/5b03af28-690f-43e9-abe7-832cf1056395.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 123906,
+        "url": "https://geo-media.beatport.com/image/48d8d7d0-15bd-4031-b42b-7b5b2aece91f.jpg",
+        "width": 30
+      }
+    },
+    "key": "G♯ min",
+    "label": {
+      "id": 6564,
+      "name": "Metalheadz",
+      "slug": "metalheadz"
+    },
+    "mix": "Original Mix",
+    "name": "End Title",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 245878,
+          "start": 125878
+        },
+        "url": "https://geo-samples.beatport.com/track/de745e40-79e0-49bd-a573-3d6998e2d1ed.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 245878,
+          "start": 125878
+        },
+        "url": "https://geo-samples.beatport.com/track/de745e40-79e0-49bd-a573-3d6998e2d1ed.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2405657,
+      "name": "Hall of Mirrors",
+      "slug": "hall-of-mirrors"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "end-title-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "End Title (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20308579,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/3e6e40d9-3e47-4e96-9741-d49714c0bf0d.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20308579,
+        "url": "https://geo-media.beatport.com/image/3e6e40d9-3e47-4e96-9741-d49714c0bf0d.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 6574,
+        "name": "Quartz",
+        "slug": "quartz"
+      },
+      {
+        "id": 11103,
+        "name": "Gremlinz",
+        "slug": "gremlinz"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 170,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 352801,
+      "minutes": "5:52"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11112261,
+    "images": {
+      "dynamic": {
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/94be221a-4cca-49e0-8677-45514e3de9d6.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image/94be221a-4cca-49e0-8677-45514e3de9d6.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 123905,
+        "url": "https://geo-media.beatport.com/image/5b03af28-690f-43e9-abe7-832cf1056395.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 123906,
+        "url": "https://geo-media.beatport.com/image/48d8d7d0-15bd-4031-b42b-7b5b2aece91f.jpg",
+        "width": 30
+      }
+    },
+    "key": "F maj",
+    "label": {
+      "id": 6564,
+      "name": "Metalheadz",
+      "slug": "metalheadz"
+    },
+    "mix": "Original Mix",
+    "name": "Oblong Druid",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 261120,
+          "start": 141120
+        },
+        "url": "https://geo-samples.beatport.com/track/02877cf2-66b9-428a-be39-e3c88cca7340.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 261120,
+          "start": 141120
+        },
+        "url": "https://geo-samples.beatport.com/track/02877cf2-66b9-428a-be39-e3c88cca7340.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2405657,
+      "name": "Hall of Mirrors",
+      "slug": "hall-of-mirrors"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "oblong-druid-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Oblong Druid (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20308608,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/4075ba99-4c2e-4046-9e2e-89f89c5e848a.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20308608,
+        "url": "https://geo-media.beatport.com/image/4075ba99-4c2e-4046-9e2e-89f89c5e848a.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 6574,
+        "name": "Quartz",
+        "slug": "quartz"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 87,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 273867,
+      "minutes": "4:33"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11112262,
+    "images": {
+      "dynamic": {
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/94be221a-4cca-49e0-8677-45514e3de9d6.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image/94be221a-4cca-49e0-8677-45514e3de9d6.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 123905,
+        "url": "https://geo-media.beatport.com/image/5b03af28-690f-43e9-abe7-832cf1056395.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 123906,
+        "url": "https://geo-media.beatport.com/image/48d8d7d0-15bd-4031-b42b-7b5b2aece91f.jpg",
+        "width": 30
+      }
+    },
+    "key": "E maj",
+    "label": {
+      "id": 6564,
+      "name": "Metalheadz",
+      "slug": "metalheadz"
+    },
+    "mix": "Original Mix",
+    "name": "Tunnel Vision",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 229546,
+          "start": 109546
+        },
+        "url": "https://geo-samples.beatport.com/track/3197298b-8097-445b-af81-69ac84bc893d.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 229546,
+          "start": 109546
+        },
+        "url": "https://geo-samples.beatport.com/track/3197298b-8097-445b-af81-69ac84bc893d.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2405657,
+      "name": "Hall of Mirrors",
+      "slug": "hall-of-mirrors"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "tunnel-vision-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Tunnel Vision (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20308557,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/43bdf223-94f7-47d6-a585-c13ed4f988a3.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20308557,
+        "url": "https://geo-media.beatport.com/image/43bdf223-94f7-47d6-a585-c13ed4f988a3.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 6574,
+        "name": "Quartz",
+        "slug": "quartz"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 86,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 366608,
+      "minutes": "6:06"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11112263,
+    "images": {
+      "dynamic": {
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/94be221a-4cca-49e0-8677-45514e3de9d6.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image/94be221a-4cca-49e0-8677-45514e3de9d6.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 123905,
+        "url": "https://geo-media.beatport.com/image/5b03af28-690f-43e9-abe7-832cf1056395.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 123906,
+        "url": "https://geo-media.beatport.com/image/48d8d7d0-15bd-4031-b42b-7b5b2aece91f.jpg",
+        "width": 30
+      }
+    },
+    "key": "A maj",
+    "label": {
+      "id": 6564,
+      "name": "Metalheadz",
+      "slug": "metalheadz"
+    },
+    "mix": "Original Mix",
+    "name": "Ghastly",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 266643,
+          "start": 146643
+        },
+        "url": "https://geo-samples.beatport.com/track/e24cc277-0230-4a6d-955e-ec1736063b75.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 266643,
+          "start": 146643
+        },
+        "url": "https://geo-samples.beatport.com/track/e24cc277-0230-4a6d-955e-ec1736063b75.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2405657,
+      "name": "Hall of Mirrors",
+      "slug": "hall-of-mirrors"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "ghastly-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Ghastly (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20308585,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/3b2f52cd-4106-49a3-9ed7-0af9b53603e9.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20308585,
+        "url": "https://geo-media.beatport.com/image/3b2f52cd-4106-49a3-9ed7-0af9b53603e9.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 6574,
+        "name": "Quartz",
+        "slug": "quartz"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 115,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 313694,
+      "minutes": "5:13"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11112264,
+    "images": {
+      "dynamic": {
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/94be221a-4cca-49e0-8677-45514e3de9d6.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20308482,
+        "url": "https://geo-media.beatport.com/image/94be221a-4cca-49e0-8677-45514e3de9d6.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 123905,
+        "url": "https://geo-media.beatport.com/image/5b03af28-690f-43e9-abe7-832cf1056395.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 123906,
+        "url": "https://geo-media.beatport.com/image/48d8d7d0-15bd-4031-b42b-7b5b2aece91f.jpg",
+        "width": 30
+      }
+    },
+    "key": "D♯ min",
+    "label": {
+      "id": 6564,
+      "name": "Metalheadz",
+      "slug": "metalheadz"
+    },
+    "mix": "Alone Inside",
+    "name": "Goodbye",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 245477,
+          "start": 125477
+        },
+        "url": "https://geo-samples.beatport.com/track/cacf042a-0305-432b-b50f-d793d9cddbe3.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 245477,
+          "start": 125477
+        },
+        "url": "https://geo-samples.beatport.com/track/cacf042a-0305-432b-b50f-d793d9cddbe3.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2405657,
+      "name": "Hall of Mirrors",
+      "slug": "hall-of-mirrors"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "goodbye-alone-inside",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Goodbye (Alone Inside)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20308596,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/8ae10864-74a6-47ae-ad61-18594948a94f.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20308596,
+        "url": "https://geo-media.beatport.com/image/8ae10864-74a6-47ae-ad61-18594948a94f.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 43938,
+        "name": "Mutated Forms",
+        "slug": "mutated-forms"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 85,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 300142,
+      "minutes": "5:00"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11113373,
+    "images": {
+      "dynamic": {
+        "id": 20310360,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/85c3d7d4-cb48-47ee-9893-72d74f0b8e15.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20310360,
+        "url": "https://geo-media.beatport.com/image/85c3d7d4-cb48-47ee-9893-72d74f0b8e15.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 481509,
+        "url": "https://geo-media.beatport.com/image/127b78e4-7421-4862-8767-e29320e63a24.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 481508,
+        "url": "https://geo-media.beatport.com/image/f18bd901-b2a5-4133-80b0-48f4487c322f.jpg",
+        "width": 30
+      }
+    },
+    "key": "B min",
+    "label": {
+      "id": 6029,
+      "name": "Spearhead Records",
+      "slug": "spearhead-records"
+    },
+    "mix": "Original Mix",
+    "name": "Flashbacks",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 240056,
+          "start": 120056
+        },
+        "url": "https://geo-samples.beatport.com/track/41c70296-5ea0-46fb-8b34-234e79d92c3d.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 240056,
+          "start": 120056
+        },
+        "url": "https://geo-samples.beatport.com/track/41c70296-5ea0-46fb-8b34-234e79d92c3d.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2405921,
+      "name": "Flashbacks EP",
+      "slug": "flashbacks-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "flashbacks-original-mix",
+    "sponsored": false,
+    "sub_genres": [
+      {
+        "id": 5,
+        "name": "Liquid",
+        "slug": "liquid"
+      }
+    ],
+    "title": "Flashbacks (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20310370,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/0b8153f2-2dff-4fc9-ae87-ab6ead1a5ec6.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20310370,
+        "url": "https://geo-media.beatport.com/image/0b8153f2-2dff-4fc9-ae87-ab6ead1a5ec6.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 43938,
+        "name": "Mutated Forms",
+        "slug": "mutated-forms"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 85,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 254341,
+      "minutes": "4:14"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11113374,
+    "images": {
+      "dynamic": {
+        "id": 20310360,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/85c3d7d4-cb48-47ee-9893-72d74f0b8e15.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20310360,
+        "url": "https://geo-media.beatport.com/image/85c3d7d4-cb48-47ee-9893-72d74f0b8e15.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 481509,
+        "url": "https://geo-media.beatport.com/image/127b78e4-7421-4862-8767-e29320e63a24.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 481508,
+        "url": "https://geo-media.beatport.com/image/f18bd901-b2a5-4133-80b0-48f4487c322f.jpg",
+        "width": 30
+      }
+    },
+    "key": "F maj",
+    "label": {
+      "id": 6029,
+      "name": "Spearhead Records",
+      "slug": "spearhead-records"
+    },
+    "mix": "Original Mix",
+    "name": "Grow",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 221736,
+          "start": 101736
+        },
+        "url": "https://geo-samples.beatport.com/track/96ed850f-46e0-4426-b417-d8740c31d203.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 221736,
+          "start": 101736
+        },
+        "url": "https://geo-samples.beatport.com/track/96ed850f-46e0-4426-b417-d8740c31d203.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2405921,
+      "name": "Flashbacks EP",
+      "slug": "flashbacks-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "grow-original-mix",
+    "sponsored": false,
+    "sub_genres": [
+      {
+        "id": 5,
+        "name": "Liquid",
+        "slug": "liquid"
+      }
+    ],
+    "title": "Grow (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20310373,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/b0a6106a-e72d-4e3d-9472-e8ab7028f524.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20310373,
+        "url": "https://geo-media.beatport.com/image/b0a6106a-e72d-4e3d-9472-e8ab7028f524.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 43938,
+        "name": "Mutated Forms",
+        "slug": "mutated-forms"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 85,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 345007,
+      "minutes": "5:45"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11113375,
+    "images": {
+      "dynamic": {
+        "id": 20310360,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/85c3d7d4-cb48-47ee-9893-72d74f0b8e15.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20310360,
+        "url": "https://geo-media.beatport.com/image/85c3d7d4-cb48-47ee-9893-72d74f0b8e15.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 481509,
+        "url": "https://geo-media.beatport.com/image/127b78e4-7421-4862-8767-e29320e63a24.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 481508,
+        "url": "https://geo-media.beatport.com/image/f18bd901-b2a5-4133-80b0-48f4487c322f.jpg",
+        "width": 30
+      }
+    },
+    "key": "C maj",
+    "label": {
+      "id": 6029,
+      "name": "Spearhead Records",
+      "slug": "spearhead-records"
+    },
+    "mix": "Original Mix",
+    "name": "Avoid & Ignore",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 258002,
+          "start": 138002
+        },
+        "url": "https://geo-samples.beatport.com/track/e3a47c38-1228-4bb9-9724-81e70eb02df4.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 258002,
+          "start": 138002
+        },
+        "url": "https://geo-samples.beatport.com/track/e3a47c38-1228-4bb9-9724-81e70eb02df4.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2405921,
+      "name": "Flashbacks EP",
+      "slug": "flashbacks-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "avoid-and-ignore-original-mix",
+    "sponsored": false,
+    "sub_genres": [
+      {
+        "id": 5,
+        "name": "Liquid",
+        "slug": "liquid"
+      }
+    ],
+    "title": "Avoid & Ignore (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20310371,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/664b1945-53ba-4f34-9b4f-fe3e030931bc.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20310371,
+        "url": "https://geo-media.beatport.com/image/664b1945-53ba-4f34-9b4f-fe3e030931bc.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 43938,
+        "name": "Mutated Forms",
+        "slug": "mutated-forms"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 86,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 274858,
+      "minutes": "4:34"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11113376,
+    "images": {
+      "dynamic": {
+        "id": 20310360,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/85c3d7d4-cb48-47ee-9893-72d74f0b8e15.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20310360,
+        "url": "https://geo-media.beatport.com/image/85c3d7d4-cb48-47ee-9893-72d74f0b8e15.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 481509,
+        "url": "https://geo-media.beatport.com/image/127b78e4-7421-4862-8767-e29320e63a24.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 481508,
+        "url": "https://geo-media.beatport.com/image/f18bd901-b2a5-4133-80b0-48f4487c322f.jpg",
+        "width": 30
+      }
+    },
+    "key": "D maj",
+    "label": {
+      "id": 6029,
+      "name": "Spearhead Records",
+      "slug": "spearhead-records"
+    },
+    "mix": "Original Mix",
+    "name": "Narcissist",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 229943,
+          "start": 109943
+        },
+        "url": "https://geo-samples.beatport.com/track/433373eb-08b1-4743-9038-321f7f0374f9.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 229943,
+          "start": 109943
+        },
+        "url": "https://geo-samples.beatport.com/track/433373eb-08b1-4743-9038-321f7f0374f9.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2405921,
+      "name": "Flashbacks EP",
+      "slug": "flashbacks-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "narcissist-original-mix",
+    "sponsored": false,
+    "sub_genres": [
+      {
+        "id": 5,
+        "name": "Liquid",
+        "slug": "liquid"
+      }
+    ],
+    "title": "Narcissist (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20310383,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/7bbf63c1-f6fe-4c94-9b89-25d5612528c3.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20310383,
+        "url": "https://geo-media.beatport.com/image/7bbf63c1-f6fe-4c94-9b89-25d5612528c3.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 460920,
+        "name": "Shiken Hanzo",
+        "slug": "shiken-hanzo"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 113,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 304997,
+      "minutes": "5:04"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11117471,
+    "images": {
+      "dynamic": {
+        "id": 20316509,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/86ee2031-e735-4da4-a2f2-23fe3c5d2d0c.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20316509,
+        "url": "https://geo-media.beatport.com/image/86ee2031-e735-4da4-a2f2-23fe3c5d2d0c.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 269292,
+        "url": "https://geo-media.beatport.com/image/48de3c57-3cce-4ffe-9696-a5099f2e71dc.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 269291,
+        "url": "https://geo-media.beatport.com/image/c1ee5b18-326a-4ee0-bc97-1f33ec5cb200.jpg",
+        "width": 30
+      }
+    },
+    "key": "D min",
+    "label": {
+      "id": 11037,
+      "name": "Samurai Music",
+      "slug": "samurai-music"
+    },
+    "mix": "Original Mix",
+    "name": "Myth",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 241998,
+          "start": 121998
+        },
+        "url": "https://geo-samples.beatport.com/track/3c90832e-a76a-4842-a319-4dd18205b9f5.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 241998,
+          "start": 121998
+        },
+        "url": "https://geo-samples.beatport.com/track/3c90832e-a76a-4842-a319-4dd18205b9f5.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2406899,
+      "name": "Myth",
+      "slug": "myth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "myth-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Myth (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20316780,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/3b382754-9a2b-474a-993a-ec191e628e86.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20316780,
+        "url": "https://geo-media.beatport.com/image/3b382754-9a2b-474a-993a-ec191e628e86.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 460920,
+        "name": "Shiken Hanzo",
+        "slug": "shiken-hanzo"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 170,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 391251,
+      "minutes": "6:31"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11117472,
+    "images": {
+      "dynamic": {
+        "id": 20316509,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/86ee2031-e735-4da4-a2f2-23fe3c5d2d0c.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20316509,
+        "url": "https://geo-media.beatport.com/image/86ee2031-e735-4da4-a2f2-23fe3c5d2d0c.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 269292,
+        "url": "https://geo-media.beatport.com/image/48de3c57-3cce-4ffe-9696-a5099f2e71dc.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 269291,
+        "url": "https://geo-media.beatport.com/image/c1ee5b18-326a-4ee0-bc97-1f33ec5cb200.jpg",
+        "width": 30
+      }
+    },
+    "key": "G♯ maj",
+    "label": {
+      "id": 11037,
+      "name": "Samurai Music",
+      "slug": "samurai-music"
+    },
+    "mix": "Original Mix",
+    "name": "Cloud of Sparrows",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 276500,
+          "start": 156500
+        },
+        "url": "https://geo-samples.beatport.com/track/109539e7-c030-42cf-a5d6-6f49304f05a3.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 276500,
+          "start": 156500
+        },
+        "url": "https://geo-samples.beatport.com/track/109539e7-c030-42cf-a5d6-6f49304f05a3.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2406899,
+      "name": "Myth",
+      "slug": "myth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "cloud-of-sparrows-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Cloud of Sparrows (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20316745,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/b90f2e1f-4a5a-4442-ac34-6fb01cff14fa.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20316745,
+        "url": "https://geo-media.beatport.com/image/b90f2e1f-4a5a-4442-ac34-6fb01cff14fa.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 460920,
+        "name": "Shiken Hanzo",
+        "slug": "shiken-hanzo"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 116,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 271885,
+      "minutes": "4:31"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11117473,
+    "images": {
+      "dynamic": {
+        "id": 20316509,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/86ee2031-e735-4da4-a2f2-23fe3c5d2d0c.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20316509,
+        "url": "https://geo-media.beatport.com/image/86ee2031-e735-4da4-a2f2-23fe3c5d2d0c.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 269292,
+        "url": "https://geo-media.beatport.com/image/48de3c57-3cce-4ffe-9696-a5099f2e71dc.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 269291,
+        "url": "https://geo-media.beatport.com/image/c1ee5b18-326a-4ee0-bc97-1f33ec5cb200.jpg",
+        "width": 30
+      }
+    },
+    "key": "A maj",
+    "label": {
+      "id": 11037,
+      "name": "Samurai Music",
+      "slug": "samurai-music"
+    },
+    "mix": "Original Mix",
+    "name": "Yebira",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 228754,
+          "start": 108754
+        },
+        "url": "https://geo-samples.beatport.com/track/7b51ff88-337f-4cdf-a564-db60ff6114a8.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 228754,
+          "start": 108754
+        },
+        "url": "https://geo-samples.beatport.com/track/7b51ff88-337f-4cdf-a564-db60ff6114a8.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2406899,
+      "name": "Myth",
+      "slug": "myth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "yebira-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Yebira (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20316799,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/33d25b00-e5c7-4c89-91b1-4dc5cb2e9d15.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20316799,
+        "url": "https://geo-media.beatport.com/image/33d25b00-e5c7-4c89-91b1-4dc5cb2e9d15.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 460920,
+        "name": "Shiken Hanzo",
+        "slug": "shiken-hanzo"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 85,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 320441,
+      "minutes": "5:20"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11117474,
+    "images": {
+      "dynamic": {
+        "id": 20316509,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/86ee2031-e735-4da4-a2f2-23fe3c5d2d0c.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20316509,
+        "url": "https://geo-media.beatport.com/image/86ee2031-e735-4da4-a2f2-23fe3c5d2d0c.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 269292,
+        "url": "https://geo-media.beatport.com/image/48de3c57-3cce-4ffe-9696-a5099f2e71dc.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 269291,
+        "url": "https://geo-media.beatport.com/image/c1ee5b18-326a-4ee0-bc97-1f33ec5cb200.jpg",
+        "width": 30
+      }
+    },
+    "key": "A min",
+    "label": {
+      "id": 11037,
+      "name": "Samurai Music",
+      "slug": "samurai-music"
+    },
+    "mix": "Original Mix",
+    "name": "Kunai",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 248176,
+          "start": 128176
+        },
+        "url": "https://geo-samples.beatport.com/track/33f57530-f0a8-408b-ace5-f49bfa55c49b.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 248176,
+          "start": 128176
+        },
+        "url": "https://geo-samples.beatport.com/track/33f57530-f0a8-408b-ace5-f49bfa55c49b.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2406899,
+      "name": "Myth",
+      "slug": "myth"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "kunai-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Kunai (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20316836,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/26c97191-41db-45f6-8d5b-59a94ac9ab89.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20316836,
+        "url": "https://geo-media.beatport.com/image/26c97191-41db-45f6-8d5b-59a94ac9ab89.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 231134,
+        "name": "Tapolsky & VovKING",
+        "slug": "tapolsky-and-vovking"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 87,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 233778,
+      "minutes": "3:53"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11117922,
+    "images": {
+      "dynamic": {
+        "id": 20317151,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/dd5904dc-e5dd-4a89-bd7a-104accbb5d05.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20317151,
+        "url": "https://geo-media.beatport.com/image/dd5904dc-e5dd-4a89-bd7a-104accbb5d05.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 20092690,
+        "url": "https://geo-media.beatport.com/image/7409e087-96e5-4ee0-ab2e-09aa6e9dbeaa.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "G min",
+    "label": {
+      "id": 3419,
+      "name": "Technique Recordings",
+      "slug": "technique-recordings"
+    },
+    "mix": "Original Mix",
+    "name": "Talk To Me",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 213511,
+          "start": 93511
+        },
+        "url": "https://geo-samples.beatport.com/track/8a3706a5-f047-4ad5-b555-9c15496304cf.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 213511,
+          "start": 93511
+        },
+        "url": "https://geo-samples.beatport.com/track/8a3706a5-f047-4ad5-b555-9c15496304cf.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2406996,
+      "name": "The 2nd EP",
+      "slug": "the-2nd-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "talk-to-me-original-mix",
+    "sponsored": false,
+    "sub_genres": [
+      {
+        "id": 5,
+        "name": "Liquid",
+        "slug": "liquid"
+      }
+    ],
+    "title": "Talk To Me (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20317485,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/bcc8d530-8240-49c4-a0b7-2a09169299bd.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20317485,
+        "url": "https://geo-media.beatport.com/image/bcc8d530-8240-49c4-a0b7-2a09169299bd.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 231134,
+        "name": "Tapolsky & VovKING",
+        "slug": "tapolsky-and-vovking"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 116,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 191727,
+      "minutes": "3:11"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11117923,
+    "images": {
+      "dynamic": {
+        "id": 20317151,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/dd5904dc-e5dd-4a89-bd7a-104accbb5d05.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20317151,
+        "url": "https://geo-media.beatport.com/image/dd5904dc-e5dd-4a89-bd7a-104accbb5d05.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 20092690,
+        "url": "https://geo-media.beatport.com/image/7409e087-96e5-4ee0-ab2e-09aa6e9dbeaa.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "B min",
+    "label": {
+      "id": 3419,
+      "name": "Technique Recordings",
+      "slug": "technique-recordings"
+    },
+    "mix": "Original Mix",
+    "name": "Cool ID",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 191727,
+          "start": 71727
+        },
+        "url": "https://geo-samples.beatport.com/track/7e4e41fb-ffae-4898-9d96-725c9553f535.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 191727,
+          "start": 71727
+        },
+        "url": "https://geo-samples.beatport.com/track/7e4e41fb-ffae-4898-9d96-725c9553f535.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2406996,
+      "name": "The 2nd EP",
+      "slug": "the-2nd-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "cool-id-original-mix",
+    "sponsored": false,
+    "sub_genres": [
+      {
+        "id": 5,
+        "name": "Liquid",
+        "slug": "liquid"
+      }
+    ],
+    "title": "Cool ID (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20317384,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ed9d64c8-8a95-4e50-b45e-bb6b27b529d1.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20317384,
+        "url": "https://geo-media.beatport.com/image/ed9d64c8-8a95-4e50-b45e-bb6b27b529d1.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 231134,
+        "name": "Tapolsky & VovKING",
+        "slug": "tapolsky-and-vovking"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 86,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 207981,
+      "minutes": "3:27"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11117924,
+    "images": {
+      "dynamic": {
+        "id": 20317151,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/dd5904dc-e5dd-4a89-bd7a-104accbb5d05.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20317151,
+        "url": "https://geo-media.beatport.com/image/dd5904dc-e5dd-4a89-bd7a-104accbb5d05.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 20092690,
+        "url": "https://geo-media.beatport.com/image/7409e087-96e5-4ee0-ab2e-09aa6e9dbeaa.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "G♯ maj",
+    "label": {
+      "id": 3419,
+      "name": "Technique Recordings",
+      "slug": "technique-recordings"
+    },
+    "mix": "Original Mix",
+    "name": "Ledra",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 203192,
+          "start": 83192
+        },
+        "url": "https://geo-samples.beatport.com/track/7b5e904e-1179-4c37-b843-44f5f7d9aabb.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 203192,
+          "start": 83192
+        },
+        "url": "https://geo-samples.beatport.com/track/7b5e904e-1179-4c37-b843-44f5f7d9aabb.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2406996,
+      "name": "The 2nd EP",
+      "slug": "the-2nd-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "ledra-original-mix",
+    "sponsored": false,
+    "sub_genres": [
+      {
+        "id": 5,
+        "name": "Liquid",
+        "slug": "liquid"
+      }
+    ],
+    "title": "Ledra (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20317545,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/1e81d383-ec27-49cb-be8b-45038811b4f6.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20317545,
+        "url": "https://geo-media.beatport.com/image/1e81d383-ec27-49cb-be8b-45038811b4f6.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 231134,
+        "name": "Tapolsky & VovKING",
+        "slug": "tapolsky-and-vovking"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 86,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 238027,
+      "minutes": "3:58"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11117925,
+    "images": {
+      "dynamic": {
+        "id": 20317151,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/dd5904dc-e5dd-4a89-bd7a-104accbb5d05.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20317151,
+        "url": "https://geo-media.beatport.com/image/dd5904dc-e5dd-4a89-bd7a-104accbb5d05.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 20092690,
+        "url": "https://geo-media.beatport.com/image/7409e087-96e5-4ee0-ab2e-09aa6e9dbeaa.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 491534,
+        "url": "https://geo-media.beatport.com/image/2f6f6a3e-6730-4cdd-a63d-61d9bfdfc4f1.jpg",
+        "width": 30
+      }
+    },
+    "key": "E min",
+    "label": {
+      "id": 3419,
+      "name": "Technique Recordings",
+      "slug": "technique-recordings"
+    },
+    "mix": "Original Mix",
+    "name": "Chase You Down",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 215210,
+          "start": 95210
+        },
+        "url": "https://geo-samples.beatport.com/track/69349759-5a3b-4422-a671-2fd87e76587c.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 215210,
+          "start": 95210
+        },
+        "url": "https://geo-samples.beatport.com/track/69349759-5a3b-4422-a671-2fd87e76587c.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2406996,
+      "name": "The 2nd EP",
+      "slug": "the-2nd-ep"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "chase-you-down-original-mix",
+    "sponsored": false,
+    "sub_genres": [
+      {
+        "id": 5,
+        "name": "Liquid",
+        "slug": "liquid"
+      }
+    ],
+    "title": "Chase You Down (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20317416,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/3bc0ee3b-be9a-40d8-b703-2577b063d066.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20317416,
+        "url": "https://geo-media.beatport.com/image/3bc0ee3b-be9a-40d8-b703-2577b063d066.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 182080,
+        "name": "Torn",
+        "slug": "torn"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 85,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 378499,
+      "minutes": "6:18"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11118650,
+    "images": {
+      "dynamic": {
+        "id": 20318220,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/e9829f83-3c47-4b10-ba45-2dc7dc031d79.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20318220,
+        "url": "https://geo-media.beatport.com/image/e9829f83-3c47-4b10-ba45-2dc7dc031d79.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 269292,
+        "url": "https://geo-media.beatport.com/image/48de3c57-3cce-4ffe-9696-a5099f2e71dc.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 269291,
+        "url": "https://geo-media.beatport.com/image/c1ee5b18-326a-4ee0-bc97-1f33ec5cb200.jpg",
+        "width": 30
+      }
+    },
+    "key": "A min",
+    "label": {
+      "id": 11037,
+      "name": "Samurai Music",
+      "slug": "samurai-music"
+    },
+    "mix": "Original Mix",
+    "name": "Internal",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 271399,
+          "start": 151399
+        },
+        "url": "https://geo-samples.beatport.com/track/4c256c84-cda8-4e0d-8ace-f3bbd7e9d80a.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 271399,
+          "start": 151399
+        },
+        "url": "https://geo-samples.beatport.com/track/4c256c84-cda8-4e0d-8ace-f3bbd7e9d80a.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2407147,
+      "name": "Internal",
+      "slug": "internal"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "internal-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Internal (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20318697,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/53778ddc-77e9-46b8-9a29-ad41c0f0f867.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20318697,
+        "url": "https://geo-media.beatport.com/image/53778ddc-77e9-46b8-9a29-ad41c0f0f867.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 182080,
+        "name": "Torn",
+        "slug": "torn"
+      }
+    ],
+    "audio_format": "mp3",
+    "bpm": 113,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-10-26",
+      "released": "2018-10-26"
+    },
+    "duration": {
+      "milliseconds": 402057,
+      "minutes": "6:42"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "id": 11118651,
+    "images": {
+      "dynamic": {
+        "id": 20318220,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/e9829f83-3c47-4b10-ba45-2dc7dc031d79.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 20318220,
+        "url": "https://geo-media.beatport.com/image/e9829f83-3c47-4b10-ba45-2dc7dc031d79.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 269292,
+        "url": "https://geo-media.beatport.com/image/48de3c57-3cce-4ffe-9696-a5099f2e71dc.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 269291,
+        "url": "https://geo-media.beatport.com/image/c1ee5b18-326a-4ee0-bc97-1f33ec5cb200.jpg",
+        "width": 30
+      }
+    },
+    "key": "D min",
+    "label": {
+      "id": 11037,
+      "name": "Samurai Music",
+      "slug": "samurai-music"
+    },
+    "mix": "Original Mix",
+    "name": "Acheron feat. Homemade Weapons",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 280822,
+          "start": 160822
+        },
+        "url": "https://geo-samples.beatport.com/track/c001da75-595b-4b90-8275-a7cd6f71798c.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 280822,
+          "start": 160822
+        },
+        "url": "https://geo-samples.beatport.com/track/c001da75-595b-4b90-8275-a7cd6f71798c.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.56",
+      "symbol": "€",
+      "value": 1.56
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2407147,
+      "name": "Internal",
+      "slug": "internal"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "acheron-feat-homemade-weapons-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "Acheron feat. Homemade Weapons (Original Mix)",
+    "type": "track",
+    "waveform": {
+      "dynamic": {
+        "id": 20318684,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/ea0c417e-c406-4d47-8ea2-7e5610c3957b.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 20318684,
+        "url": "https://geo-media.beatport.com/image/ea0c417e-c406-4d47-8ea2-7e5610c3957b.png",
+        "width": 1500
+      }
+    }
+  }
+]

@@ -3,6 +3,7 @@ import * as R from 'ramda'
 import FontAwesome from 'react-fontawesome'
 import PillButton from './PillButton.js'
 import ExternalLink from './ExternalLink'
+import SpinnerButton from './SpinnerButton'
 
 class Share extends Component {
   constructor(props) {
@@ -62,7 +63,8 @@ class Track extends Component {
     super(props)
     this.state = {
       cartButtonDisabled: false,
-      ignoreArtistsByLabelDisabled: false
+      ignoreArtistsByLabelsDisabled: false,
+      heardHover: false
     }
   }
 
@@ -82,6 +84,10 @@ class Track extends Component {
     return this.props.inCart.includes(store.name.toLowerCase())
   }
 
+  setHeardHover(toState) {
+    return this.setState({heardHover: toState})
+  }
+
   render() {
     return <tr
       ref={'row'}
@@ -98,8 +104,11 @@ class Track extends Component {
       <td style={{ flex: 0.5, overflow: 'hidden' }}>
         {
           this.props.heard ? null :
-            <button className="button table-cell-button">
-              <FontAwesome name="circle"/>
+            <button className="button table-cell-button"
+              onClick={this.props.onDoubleClick.bind(this)}
+              onMouseEnter={() => this.setHeardHover(true)}
+              onMouseLeave={() => this.setHeardHover(false)}>
+              { this.state.heardHover ? <FontAwesome name="play"/> : <FontAwesome name="circle"/> }
             </button>
         }
       </td>
@@ -114,7 +123,7 @@ class Track extends Component {
         }
       </td>
       <td style={{ flex: 3, overflow: 'hidden' }}>
-        {this.props.title}
+        {this.props.title} {this.props.mix ? `(${this.props.mix})` : ''}
       </td>
       <td style={{ flex: 2, overflow: 'hidden' }}>
         {
@@ -132,7 +141,7 @@ class Track extends Component {
           {/*+ Follow*/}
         {/*</PillButton>*/}
       </td>
-      <td style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+      {/* <td style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
         {
           this.props.stores.map(store =>
             <PillButton
@@ -150,7 +159,7 @@ class Track extends Component {
               {this.isInCart(store) ? '-' : '+'} {store.name}
             </PillButton>
           )}
-      </td>
+      </td> */}
       <td style={{ flex: 1, overflow: 'hidden' }} className="unfollow-row">
         {/*<PillButton className={'table-cell-button'}>*/}
           {/*by genre*/}
@@ -159,9 +168,10 @@ class Track extends Component {
           this.props.label ?
         <PillButton
           className={'table-cell-button'}
+          disabled={this.state.ignoreArtistsByLabelsDisabled}
           onClick={() => {
-            this.setState({ ignoreArtistsByLabelDisabled: true })
-            this.props.onIgnoreArtistsByLabel()
+            this.setState({ ignoreArtistsByLabelsDisabled: true })
+            this.props.onIgnoreArtistsByLabels()
           }}
         >
           by label
@@ -178,18 +188,23 @@ class Track extends Component {
 class Tracks extends Component {
   constructor(props) {
     super(props)
-    this.state = { selectedTrack: (props.tracks[0] || {}).id, currentTrack: -1 }
+    this.state = {
+      selectedTrack: (props.tracks[0] || {}).id,
+      currentTrack: -1,
+      markingHeard: false
+    }
   }
 
   renderTracks(tracks, carts) {
-    return tracks.map(({ id, title, artists, remixers, label, heard, stores }) => {
+    return tracks.map(({ id, title, mix, artists, remixers, labels, heard, stores }) => {
       // if (!R.isEmpty(carts)) debugger
       return <Track
         id={id}
         title={title}
         artists={artists}
+        mix={mix}
         remixers={remixers}
-        label={label.name}
+        label={R.pluck('name', labels).join(', ')}
         stores={stores}
         selected={this.state.selectedTrack === id}
         playing={this.props.currentTrack === id}
@@ -210,39 +225,109 @@ class Tracks extends Component {
         // }}
         onAddToCart={this.props.onAddToCart}
         onRemoveFromCart={this.props.onRemoveFromCart}
-        onIgnoreArtistsByLabel={() => this.props.onIgnoreArtistsByLabel(
-          artists.map(artist => ({
-            artistId: artist.id,
-            labelId: label.id
-          }))
-        )}
+        onIgnoreArtistsByLabels={() => this.props.onIgnoreArtistsByLabels({
+            artistIds: artists.map(R.prop('id')),
+            labelIds: labels.map(R.prop('id'))
+          })
+        }
       />
     })
   }
 
   render() {
-    return <table className="tracks-table" style={{ height: "100%", overflow: "hidden", display: "block" }}>
-      <thead style={{ width: "100%", display: "block" }}>
-      <tr style={{ width: "100%", display: "flex" }}>
-        <th colSpan={9} style={{flex: 1}}>New tracks: {this.props.newTracks} / {this.props.totalTracks} </th>
-      </tr>
-      <tr style={{ width: "100%", display: "flex" }}>
-        <th style={{ flex: 0.5, overflow: 'hidden' }} className={'table-button-cell-header'}>New</th>
-        <th style={{ flex: 3, overflow: 'hidden' }}>Artist</th>
-        <th style={{ flex: 3, overflow: 'hidden' }}>Title</th>
-        <th style={{ flex: 2, overflow: 'hidden' }}>Remixer</th>
-        <th style={{flex: 2, overflow: 'hidden'}}>Label</th>
-        <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Cart</th>
-        <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Unfollow Artists</th>
-        <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Open in</th>
-      </tr>
-      </thead>
-      <tbody style={{ height: "calc(100% - 100px)", overflow: "scroll", display: "block" }}>
-      {
-        this.renderTracks(this.props.tracks, this.props.carts)
-      }
-      </tbody>
-    </table>
+    return <>
+      <div style={{display: 'flex', alignItems: 'center', color: 'white'}}>
+        <div style={{height: '100%', flex: 1, padding: 4}}>
+          <SpinnerButton
+            size={'small'}
+            loading={this.state.markingHeard}
+            onClick={async () => {
+              this.setState({markingHeard: true})
+              await this.props.onMarkAllHeardClicked()
+              this.setState({markingHeard: false})
+            }}
+            style={{margin: 2, height: '100%', width: 150, margin: 4}}
+            label={'Mark all heard'}
+            loadingLabel={'Marking all heard'}
+            />
+          <SpinnerButton
+            size={'small'}
+            loading={this.state.updatingTracks}
+            onClick={async () => {
+              this.setState({updatingTracks: true})
+              try {
+                await this.props.onUpdateTracksClicked()
+              } finally {
+                this.setState({updatingTracks: false})
+              }
+            }}
+            style={{margin: 2, height: '100%', width: 150, margin: 4}}
+            label={'Update list'}
+            loadingLabel={'Updating list'}
+            />
+            <div className='state-select-button--container'>
+              <input type='radio' id='tracklist-state-new' name='tracklist-state' className='state-select-button--button' defaultChecked={this.props.listState === 'new'} onChange={this.props.onShowNewClicked}/>
+              <label className='state-select-button--button' htmlFor='tracklist-state-new'>
+                New tracks
+              </label>
+              <input type='radio' id='tracklist-state-heard' name='tracklist-state' className='state-select-button--button' defaultChecked={this.props.listState === 'heard'} onChange={this.props.onShowHeardClicked}/>
+              <label className='state-select-button--button' htmlFor='tracklist-state-heard'>
+                Recently played
+              </label>
+            </div>
+        </div>
+        <div style={{flex: 1, textAlign: 'right', padding: 4}}>
+          <PillButton style={{padding: 4, '-webkit-filter': '', backgroundColor: '#444', color: 'white'}}>
+            New: {this.props.newTracks}
+          </PillButton>
+          <PillButton style={{ padding: 4, '-webkit-filter': '', backgroundColor: '#444', color: 'white'}}>
+            Total: {this.props.totalTracks}
+          </PillButton>
+        </div>
+      </div>
+      <table className="tracks-table" style={{ height: "100%", overflow: "hidden", display: "block" }}>
+        <thead style={{ width: "100%", display: "block" }}>
+        <tr style={{ width: "100%", display: "flex" }}>
+          <th style={{ flex: 0.5, overflow: 'hidden' }} className={'table-button-cell-header'}>New</th>
+          <th style={{ flex: 3, overflow: 'hidden' }}>Artist</th>
+          <th style={{ flex: 3, overflow: 'hidden' }}>Title</th>
+          <th style={{ flex: 2, overflow: 'hidden' }}>Remixer</th>
+          <th style={{flex: 2, overflow: 'hidden'}}>Label</th>
+          {/* <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Cart</th> */}
+          <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Unfollow{/*Artists*/}</th>
+          <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Open in</th>
+        </tr>
+        </thead>
+        {/* Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table */}
+        <tbody style={{ height: "calc(100% - 166px)", overflow: "scroll", display: "block" }}>
+        {
+          this.renderTracks(this.props.tracks, this.props.carts)
+        }
+        {
+          this.props.listState === 'new' ?
+          <tr style={{display: 'block'}}>
+            <td style={{display: 'block'}}>
+            <SpinnerButton
+                size={'large'}
+                loading={this.state.updatingTracks}
+                onClick={async () => {
+                  this.setState({updatingTracks: true})
+                  try {
+                    await this.props.onUpdateTracksClicked()
+                  } finally {
+                    this.setState({updatingTracks: false})
+                  }
+                }}
+                style={{margin: 'auto', height: '100%', display: 'block'}}
+                label={'Load more'}
+                loadingLabel={'Loading'}
+                />
+            </td>
+          </tr> : null
+        }
+        </tbody>
+      </table>
+    </>
   }
 }
 

@@ -1,7 +1,12 @@
 import config from './config.js'
 
-const requestJSONwithCredentials = ({url, path, method = 'GET', body}) =>
-  fetch(url ? url : `${config.apiUrl}${path}`, {
+const requestJSONwithCredentials = (...args) =>
+  requestWithCredentials(...args).then(async res => {
+    return await res.json()
+  })
+
+const requestWithCredentials = async ({ url, path, method = 'GET', body }) => {
+  const res = await fetch(url ? url : `${config.apiUrl}${path}`, {
     method,
     body: body ? JSON.stringify(body) : undefined,
     credentials: 'include',
@@ -11,4 +16,16 @@ const requestJSONwithCredentials = ({url, path, method = 'GET', body}) =>
     }
   })
 
-export default requestJSONwithCredentials
+  if (res.ok) {
+    return res
+  }
+  else {
+    console.error('Request failed', res)
+    throw new Error('Request failed')
+  }
+}
+
+export {
+  requestJSONwithCredentials,
+  requestWithCredentials
+}
