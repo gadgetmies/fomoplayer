@@ -78,6 +78,12 @@ export default class Login extends Component {
             this.submitLogin()
           }}
         >
+          <a
+            href={this.props.googleLoginPath}
+            className={`button login-button button-push_button-${this.props.size} button-push_button-primary`}>
+            Continue with Google
+          </a>
+          <div className="login-separator">or</div>
           <label className="login-label">
             <span className={`login-label-text login-label-text-${this.props.size}`}>Username</span>
             <input type="text" name={`username-${this.props.loginName}`}
@@ -104,11 +110,6 @@ export default class Login extends Component {
           {
             this.state.loginError ? 'Login failed' : ''
           }
-          <div class="login-separator">or</div>
-          <button
-            className={`button login-button button-push_button-${this.props.size} button-push_button-primary`}>
-            Continue with Google
-          </button>
         </form>
       }
     </div>
