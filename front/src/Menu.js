@@ -41,7 +41,7 @@ export default class Menu extends Component {
       await BPromise.each(['beatport', 'bandcamp'],
         store => requestWithCredentials({ path: `/stores/${store}/logout/`, method: 'POST' }))
 
-      await requestWithCredentials({ path: '/logout', method: 'POST' })
+      await requestWithCredentials({ path: this.props.logoutPath, method: 'POST' })
     } catch (e) {
       console.error('Logout failed', e)
     }

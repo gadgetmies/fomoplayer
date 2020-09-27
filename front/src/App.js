@@ -8,6 +8,7 @@ import './App.css'
 import SlideoutPanel from './SlideoutPanel.js'
 
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
+import config from './config.js'
 
 import 'typeface-lato'
 
@@ -93,6 +94,7 @@ class App extends Component {
         this.state.loggedIn ?
           <>
             <Menu ref="menu"
+              logoutPath={'/auth/logout'}
               loggedIn={this.state.loggedIn}
               onLogoutDone={this.onLogoutDone.bind(this)}
               onStoreLoginDone={() => { }} //this.onStoreLoginDone.bind(this)}
@@ -130,8 +132,9 @@ class App extends Component {
               <Login
                 onLoginDone={this.onLoginDone.bind(this)}
                 onLogoutDone={this.onLogoutDone.bind(this)}
-                loginPath={'/login'}
-                logoutPath={'/logout'} />
+                googleLoginPath={`${config.apiUrl}/auth/login/google`}
+                loginPath={'/auth/login'}
+                logoutPath={'/auth/logout'} />
             </div>
           </div>
       }
