@@ -126,7 +126,7 @@ class Player extends Component {
 
   async ignoreArtistsByLabels(artistsAndLabels) {
     await requestWithCredentials({
-      path: `/ignore/label`,
+      path: `/ignores/labels`,
       method: 'POST',
       body: artistsAndLabels
     })
