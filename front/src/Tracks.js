@@ -277,10 +277,10 @@ class Tracks extends Component {
             </div>
         </div>
         <div style={{flex: 1, textAlign: 'right', padding: 4}}>
-          <PillButton style={{padding: 4, '-webkit-filter': '', backgroundColor: '#444', color: 'white'}}>
+          <PillButton style={{padding: 4, WebkitFilter: '', backgroundColor: '#444', color: 'white'}}>
             New: {this.props.newTracks}
           </PillButton>
-          <PillButton style={{ padding: 4, '-webkit-filter': '', backgroundColor: '#444', color: 'white'}}>
+          <PillButton style={{ padding: 4, WebkitFilter: '', backgroundColor: '#444', color: 'white'}}>
             Total: {this.props.totalTracks}
           </PillButton>
         </div>
