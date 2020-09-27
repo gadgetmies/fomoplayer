@@ -246,7 +246,7 @@ class Tracks extends Component {
               await this.props.onMarkAllHeardClicked()
               this.setState({markingHeard: false})
             }}
-            style={{margin: 2, height: '100%', width: 150, margin: 4}}
+            style={{height: '100%', width: 150, margin: 4}}
             label={'Mark all heard'}
             loadingLabel={'Marking all heard'}
             />
