@@ -119,6 +119,10 @@ class Player extends Component {
     this.jumpTracks(1)
   }
 
+  playNextPreview() {
+    // TODO
+  }
+
   playNextUnheard() {
     const firstUnplayed = this.getTracks().findIndex(R.propEq('heard', false))
     this.jumpTracks(firstUnplayed - this.getCurrentTrackIndex())
@@ -167,33 +171,32 @@ class Player extends Component {
     return (
       <>
         <Preview
-          key={'preview'}
-          showHint={tracks.length === 0}
-          currentTrack={this.state.currentTrack}
-
-          onMenuClicked={() => this.props.onMenuClicked()}
-          onPrevious={() => this.playPreviousTrack()}
-          onNext={() => this.playNextTrack()}
-        />
-        <Tracks
-          key={'tracks'}
-          carts={this.props.carts}
-          tracks={tracks}
-          listState={this.state.listState}
-          newTracks={this.props.newTracks - this.state.listenedTracks}
-          totalTracks={this.props.totalTracks}
-          currentTrack={(this.state.currentTrack || {}).id}
-          onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
-          onUpdateTracksClicked={this.props.onUpdateTracksClicked}
-          onAddToCart={this.addToCart}
-          onRemoveFromCart={this.removeFromCart}
-          onIgnoreArtistsByLabels={this.ignoreArtistsByLabels}
-          onPreviewRequested={id => {
-            const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
-            this.setCurrentTrack(requestedTrack)
-          }}
-          onShowNewClicked={this.setListState.bind(this, 'new')}
-          onShowHeardClicked={this.setListState.bind(this, 'heard')}
+        key={'preview'}
+        showHint={tracks.length === 0}
+        currentTrack={this.state.currentTrack}
+        onError={() => this.playNextPreview()}
+        onMenuClicked={() => this.props.onMenuClicked()}
+        onPrevious={() => this.playPreviousTrack()}
+        onNext={() => this.playNextTrack()} />
+      <Tracks
+        key={'tracks'}
+        carts={this.props.carts}
+        tracks={tracks}
+        listState={this.state.listState}
+        newTracks={this.props.newTracks - this.state.listenedTracks}
+        totalTracks={this.props.totalTracks}
+        currentTrack={(this.state.currentTrack || {}).id}
+        onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
+        onUpdateTracksClicked={this.props.onUpdateTracksClicked}
+        onAddToCart={this.addToCart}
+        onRemoveFromCart={this.removeFromCart}
+        onIgnoreArtistsByLabels={this.ignoreArtistsByLabels}
+        onPreviewRequested={id => {
+          const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
+          this.setCurrentTrack(requestedTrack)
+        }}
+        onShowNewClicked={this.setListState.bind(this, 'new')}
+        onShowHeardClicked={this.setListState.bind(this, 'heard')}
         />
       </>
     )

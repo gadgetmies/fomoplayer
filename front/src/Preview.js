@@ -20,6 +20,14 @@ class Preview extends Component {
     this.state = { playing: false, position: 0 }
   }
 
+  onError() {
+    const error = this.getPlayer().error
+
+    if (error.code !== 1) {
+      this.props.onError(error)
+    }
+  }
+
   setPlaying(playing) {
     this.setState({ playing })
   }
@@ -65,6 +73,7 @@ class Preview extends Component {
     const mp3Preview = L.get(['previews', L.satisfying(safePropEq('format', 'mp3'))], this.props.currentTrack)
     const waveform = L.get(['previews', L.elems, 'waveform', L.satisfying(R.identity)], this.props.currentTrack)
     const totalDuration = this.props.currentTrack.duration
+    // TODO: match with the preview being played also in case the first preview does not work
     const startOffset = mp3Preview.start_ms
     const endPosition = mp3Preview.end_ms
     const toPositionPercent = currentPosition => ((currentPosition + startOffset) / totalDuration) * 100
@@ -129,19 +138,19 @@ class Preview extends Component {
             <audio
               className="fluid"
               ref="player0"
-              autoPlay={true}
-              onEnded={() => {
-                this.setPlaying(false)
-                this.props.onNext()
-              }}
-
-              onPlaying={() => this.setPlaying(true)}
-              onPause={() => this.setPlaying(false)}
-              onTimeUpdate={({ currentTarget: { currentTime } }) => {
-                this.setState({ position: currentTime * 1000 })
-              }}
-              controlsList="nodownload"
-              src={`${config.apiUrl}/tracks/${this.props.currentTrack.id}/preview.mp3`}
+            autoPlay={true}
+            onEnded={() => {
+              this.setPlaying(false)
+              this.props.onNext()
+            }}
+            onError={() => this.onError()}
+            onPlaying={() => this.setPlaying(true)}
+            onPause={() => this.setPlaying(false)}
+            onTimeUpdate={({ currentTarget: { currentTime } }) => {
+              this.setState({ position: currentTime * 1000 })
+            }}
+            controlsList="nodownload"
+            src={`${config.apiUrl}/tracks/${this.props.currentTrack.id}/preview.mp3`}
             />
           }
         </div>
