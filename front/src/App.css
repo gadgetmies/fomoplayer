@@ -310,6 +310,32 @@ audio {
 .login-button {
     width: 100%;
     margin-top: 1rem;
+    display: block;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.login-separator {
+    margin: 1em auto;
+    position: relative;
+    text-align: center;
+}
+
+.login-separator:before {
+    left: 0;
+}
+
+.login-separator:after {
+    right: 0;
+}
+
+.login-separator:before, .login-separator:after {
+    display: inline-block;
+    width: 43%;
+    border-top: 1px solid #bbb;
+    content: " ";
+    position: absolute;
+    top: .7em;
 }
 
 .menu-container {
