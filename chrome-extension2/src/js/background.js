@@ -26,7 +26,8 @@ const bandcampReleasesTransform = L.collect([L.elems, L.choose(release => ['trac
   id: 'id',
   title: 'title',
   artists: L.partsOf(L.pick({
-    name: R.always(release.artist)
+    name: R.always(release.artist),
+    role: R.always('author')
   })),
   duration: ['duration', L.multiply(1000)],
   release: R.always({
