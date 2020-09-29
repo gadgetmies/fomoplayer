@@ -135,7 +135,7 @@ module.exports.insertNewTrackReturningTrackId = (tx, newStoreTrack) =>
       SELECT
         t.track_id,
         t.track_title,
-        t.track_mix,
+        t.track_version,
         array_agg(DISTINCT a.artist_id
         ORDER BY a.artist_id) AS artists,
         array_agg(DISTINCT r.artist_id
@@ -158,7 +158,7 @@ module.exports.insertNewTrackReturningTrackId = (tx, newStoreTrack) =>
       FROM exiting_track_details
       WHERE
         track_title = ${newStoreTrack.name} AND
-        (track_mix IS NULL OR LOWER(track_mix) = LOWER(${newStoreTrack.mix})) AND
+        (track_version IS NULL OR LOWER(track_version) = LOWER(${newStoreTrack.mix})) AND
         artists = (SELECT ARRAY(SELECT artist_id
                                 FROM authors
                                 ORDER BY artist_id))
@@ -179,7 +179,7 @@ module.exports.insertNewTrackReturningTrackId = (tx, newStoreTrack) =>
         )
   ),
     inserted_track AS (
-    INSERT INTO track (track_title, track_mix, track_duration_ms)
+    INSERT INTO track (track_title, track_version, track_duration_ms)
       SELECT ${newStoreTrack.name}, ${newStoreTrack.mix}, ${newStoreTrack.duration.milliseconds}
       WHERE NOT exists(SELECT 1
                        FROM existing_track)
