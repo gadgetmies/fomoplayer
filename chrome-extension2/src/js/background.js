@@ -92,7 +92,7 @@ const bpKeysToCamelot = {
 }
 
 const beatportTracksTransform = L.collect(['tracks', L.elems, L.pick({
-  title: 'title',
+  title: [L.props('title', 'mix'), L.reread(({ title, mix }) => title.replace(` (${mix})`, ''))],
   version: 'mix',
   id: ['id', L.reread(idToString)],
   artists: L.partsOf(L.branch({
