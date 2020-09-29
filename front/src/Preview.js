@@ -40,7 +40,7 @@ class Preview extends Component {
   }
 
   trackTitle(track) {
-    return track ? `${track.title} ${track.mix ? `(${track.mix})` : ''}` : ''
+    return track ? `${track.title} ${track.version ? `(${track.version})` : ''}` : ''
   }
 
   render() {

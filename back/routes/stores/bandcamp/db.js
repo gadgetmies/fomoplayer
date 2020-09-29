@@ -89,7 +89,7 @@ module.exports.insertNewTrackReturningTrackId = (tx, albumInfo, newStoreTrack) =
       SELECT
         t.track_id,
         t.track_title,
-        t.track_mix,
+        t.track_version,
         array_agg(DISTINCT a.artist_id
         ORDER BY a.artist_id) AS artists
       FROM track t
@@ -111,7 +111,7 @@ module.exports.insertNewTrackReturningTrackId = (tx, albumInfo, newStoreTrack) =
                                 ORDER BY artist_id))
   ),
     inserted_track AS (
-    INSERT INTO track (track_title, track_mix, track_duration_ms)
+    INSERT INTO track (track_title, track_version, track_duration_ms)
       SELECT ${newStoreTrack.title}, '', ${parseInt(newStoreTrack.duration * 1000, 10)}
       WHERE NOT exists(SELECT 1
                        FROM existing_track)

@@ -164,7 +164,7 @@ SELECT
   track_duration_ms     AS duration,
   track_added           AS added,
   authors.authors       AS artists,
-  track_mix             AS mix,
+  track_version         AS version,
   CASE WHEN labels.labels IS NULL
     THEN '[]' :: JSON
   ELSE labels.labels END AS labels,
@@ -387,8 +387,8 @@ module.exports.addStoreTrack = async (storeUrl, labelId, releaseId, artists, tra
     .queryRowsAsync(
       sql`SELECT track_id
 from track natural join track__artist natural join artist
-where LOWER(track_title) = ${track.title.toLowerCase()} AND
-      LOWER(track_mix) = ${track.version.toLowerCase()} -- TODO: rename track_mix to track_version
+where LOWER(track_title) = LOWER(${track.title}) AND
+      (${track.version}::TEXT IS NULL OR LOWER(track_version) = LOWER(${track.version}))
 GROUP BY track_id
 HAVING ARRAY_AGG(artist_id) = ${R.pluck('id', artists)} -- TODO: also verify that the artist roles match
 `).then(getTrackIdFromResult)
