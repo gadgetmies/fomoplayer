@@ -5,6 +5,7 @@ const pg = require('../../../db/pg.js')
 const removeIgnoredTracksFromUser = require('../../../remove-ignored-tracks-from-user.js')
 const { log, error } = require('./logger')
 const { getOperation, createOperation } = require('../../../operations.js')
+const { getAlbumAsync } = require('./bandcamp-api.js')
 
 const {
   insertArtist,
@@ -73,7 +74,7 @@ const getStoreDbId = () => {
 const getStories = (module.exports.getStories = (username, since) =>
   getSession(username).getStoriesAsync(getFanId(username), since))
 
-const getAlbum = (module.exports.getAlbum = (username, itemUrl) => getSession(username).getAlbumAsync(itemUrl))
+const getAlbum = (module.exports.getAlbum = (username, itemUrl) => getAlbum(itemUrl))
 
 const addTracksFromAlbumToUser = (tx, username, album) =>
   insertNewAlbumTracksToDb(tx, album).then(insertedTrackIds =>
@@ -180,7 +181,7 @@ module.exports.getTracksInCarts = queryTracksInCarts
 module.exports.getPreviewUrl = async (username, id, format) => {
   const storeId = await getStoreDbId()
   const albumUrl = await queryAlbumUrl(storeId, id)
-  const albumInfo = await getAlbum(username, albumUrl)
+  const albumInfo = await getAlbumAsync(albumUrl)
   const trackStoreId = await queryTrackStoreId(id)
   return await albumInfo.trackinfo.find(R.propEq('track_id', parseInt(trackStoreId, 10))).file['mp3-128']
 }
