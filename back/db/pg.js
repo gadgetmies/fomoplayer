@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 
 const env = require('../env.js')
 console.log('Initiating server with env: ', env)

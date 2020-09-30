@@ -35,7 +35,7 @@ module.exports.hasValidSession = username => Object.keys(beatportSessions).inclu
 
 module.exports.getSession = username => beatportSessions[username]
 
-module.exports.setSession = (username, session) => beatportSessions[username] = session
+module.exports.setSession = (username, session) => (beatportSessions[username] = session)
 
 module.exports.deleteSession = username => {
   delete beatportSessions[username]
@@ -53,31 +53,29 @@ const getBeatportStoreDbId = () => {
   if (beatportStoreDbId) {
     return BPromise.resolve(beatportStoreDbId)
   } else {
-    return getStoreId('Beatport')
-      .then(store_id => {
-        beatportStoreDbId = store_id
-        return beatportStoreDbId
-      })
+    return getStoreId('Beatport').then(store_id => {
+      beatportStoreDbId = store_id
+      return beatportStoreDbId
+    })
   }
 }
 
 const addTracksToUser = (tx, userId, tracks) =>
-  insertNewTracksToDb(tx, tracks)
-    .then(insertedTracks => {
-      log(`Inserted ${insertedTracks.length} new tracks to db`)
-      return addStoreTracksToUser(tx, userId, tracks)
-        .tap(() => removeIgnoredTracksFromUser(tx, userId))
-    })
+  insertNewTracksToDb(tx, tracks).then(insertedTracks => {
+    log(`Inserted ${insertedTracks.length} new tracks to db`)
+    return addStoreTracksToUser(tx, userId, tracks).tap(() => removeIgnoredTracksFromUser(tx, userId))
+  })
 
-const getRefreshStatus = module.exports.getRefreshStatus = (username, uuid) => getOperation(username, uuid)
+const getRefreshStatus = (module.exports.getRefreshStatus = (username, uuid) => getOperation(username, uuid))
 
-const startRefreshUserTracks = module.exports.startRefreshUserTracks = (username, firstPage = 1, lastPage = 20) => {
+const startRefreshUserTracks = (module.exports.startRefreshUserTracks = (username, firstPage = 1, lastPage = 20) => {
   log(`Refreshing tracks from ${username}'s Beatport`)
-  return createOperation('refresh-beatport', username, { username, firstPage, lastPage },
-    () => refreshUserTracks(username, firstPage, lastPage))
-}
+  return createOperation('refresh-beatport', username, { username, firstPage, lastPage }, () =>
+    refreshUserTracks(username, firstPage, lastPage)
+  )
+})
 
-const addNewTracksToUser = module.exports.addNewTracksToUser = async (userId, tracks) => {
+const addNewTracksToUser = (module.exports.addNewTracksToUser = async (userId, tracks) => {
   console.log(tracks)
   try {
     const insertedTracks = await BPromise.using(pg.getTransaction(), tx => addTracksToUser(tx, userId, tracks))
@@ -86,18 +84,19 @@ const addNewTracksToUser = module.exports.addNewTracksToUser = async (userId, tr
     error(JSON.stringify(tracks))
     error('Failed to insert tracks (data above)', e)
   }
-}
+})
 
 const refreshNewTracks = (username, firstPage, lastPage) =>
-  firstPage > lastPage ? BPromise.resolve() :
-    beatportSessions[username]
-      .getMyBeatportTracksAsync(lastPage) // TODO: fetch while there were new tracks found
-      .then(({ tracks }) => addNewTracksToUser(username, tracks))
-      .tap(() => refreshNewTracks(username, firstPage, lastPage - 1))
+  firstPage > lastPage
+    ? BPromise.resolve()
+    : beatportSessions[username]
+        .getMyBeatportTracksAsync(lastPage) // TODO: fetch while there were new tracks found
+        .then(({ tracks }) => addNewTracksToUser(username, tracks))
+        .tap(() => refreshNewTracks(username, firstPage, lastPage - 1))
 
-const insertDownloadedTracksToUser = module.exports.insertDownloadedTracksToUser = (username, tracks) => {
+const insertDownloadedTracksToUser = (module.exports.insertDownloadedTracksToUser = (username, tracks) => {
   console.log(tracks)
-  return BPromise.using(pg.getTransaction(), async (tx) => {
+  return BPromise.using(pg.getTransaction(), async tx => {
     const beatportStoreDbId = await getBeatportStoreDbId()
     const insertedNewTracks = await insertNewTracksToDb(tx, tracks)
     const addedTracks = await addStoreTracksToUser(tx, username, tracks)
@@ -105,47 +104,54 @@ const insertDownloadedTracksToUser = module.exports.insertDownloadedTracksToUser
       await setTrackHeard(trackId, username, true) // TODO: destructure trackId from one of the arrays (currently returns an object)
     }
     log(`Inserted ${insertedNewTracks.length} new tracks to ${username} from downloaded tracks`)
-    const insertedPurchasedTracks = await insertPurchasedTracksByIds(tx, beatportStoreDbId, username, R.pluck('id', tracks))
+    const insertedPurchasedTracks = await insertPurchasedTracksByIds(
+      tx,
+      beatportStoreDbId,
+      username,
+      R.pluck('id', tracks)
+    )
     log(`Inserted ${insertedPurchasedTracks.length} downloaded tracks to ${username}`)
   })
-}
+})
 
 const refreshDownloadedTracks = (username, firstPage, lastPage) =>
-  firstPage > lastPage ? BPromise.resolve() :
-    beatportSessions[username]
-      .getDownloadedTracksAsync(lastPage) // TODO: fetch while there were new tracks found
-      .then(async ({ tracks }) => {
-        try {
-          log(`Processing page ${lastPage} of ${username}'s downloaded tracks on Beatport`)
-          await insertDownloadedTracksToUser(username, tracks)
-          await refreshDownloadedTracks(username, firstPage, lastPage - 1)
-        } catch (e) {
-          error(JSON.stringify(tracks))
-          error('Failed to insert tracks (data above)', e)
-          return []
-        }
-      })
+  firstPage > lastPage
+    ? BPromise.resolve()
+    : beatportSessions[username]
+        .getDownloadedTracksAsync(lastPage) // TODO: fetch while there were new tracks found
+        .then(async ({ tracks }) => {
+          try {
+            log(`Processing page ${lastPage} of ${username}'s downloaded tracks on Beatport`)
+            await insertDownloadedTracksToUser(username, tracks)
+            await refreshDownloadedTracks(username, firstPage, lastPage - 1)
+          } catch (e) {
+            error(JSON.stringify(tracks))
+            error('Failed to insert tracks (data above)', e)
+            return []
+          }
+        })
 
-module.exports.getPreviewUrl = (id, format) => getBeatportStoreDbId()
-  .then(bpStoreId => queryPreviewUrl(id, format, bpStoreId))
+module.exports.getPreviewUrl = (id, format) =>
+  getBeatportStoreDbId().then(bpStoreId => queryPreviewUrl(id, format, bpStoreId))
 
-const refreshUserTracks = module.exports.refreshUserTracks = (username, firstPage = 1, lastPage = 20) => {
+const refreshUserTracks = (module.exports.refreshUserTracks = (username, firstPage = 1, lastPage = 20) => {
   log(`Refreshing new tracks from page ${lastPage} of ${username}'s My Beatport`)
-  return BPromise.all([refreshNewTracks(username, firstPage, lastPage), refreshDownloadedTracks(username, firstPage, lastPage)])
-}
+  return BPromise.all([
+    refreshNewTracks(username, firstPage, lastPage),
+    refreshDownloadedTracks(username, firstPage, lastPage)
+  ])
+})
 
-const insertNewTracksToDb =
-  (tx, tracks) =>
-    getBeatportStoreDbId()
-      .then(bpStoreId =>
-        findNewTracks(tx, bpStoreId, tracks)
-          .then(R.innerJoin(R.eqProps('id'), tracks))
-          .then(async newTracks => {
-            await ensureArtistsExist(tx, newTracks, bpStoreId)
-            await ensureLabelsExist(tx, newTracks, bpStoreId)
-            return await ensureTracksExist(tx, newTracks, bpStoreId)
-          })
-      )
+const insertNewTracksToDb = (tx, tracks) =>
+  getBeatportStoreDbId().then(bpStoreId =>
+    findNewTracks(tx, bpStoreId, tracks)
+      .then(R.innerJoin(R.eqProps('id'), tracks))
+      .then(async newTracks => {
+        await ensureArtistsExist(tx, newTracks, bpStoreId)
+        await ensureLabelsExist(tx, newTracks, bpStoreId)
+        return await ensureTracksExist(tx, newTracks, bpStoreId)
+      })
+  )
 
 const extractArtistsAndRemixers = R.pipe(
   R.chain(R.props(['artists', 'remixers'])),
@@ -161,33 +167,42 @@ const ensureArtistsExist = async (tx, newTracks, bpStoreId) =>
     .then(storeArtists =>
       findNewArtists(tx, bpStoreId, storeArtists)
         .then(R.innerJoin(R.eqProps('id'), storeArtists))
-        .then(
-          newStoreArtists =>
-            BPromise.each(newStoreArtists,
-              newStoreArtist => insertArtist(tx, newStoreArtist.name)
-                .tap(() => insertStoreArtist(tx, bpStoreId, newStoreArtist.name, newStoreArtist.id, JSON.stringify(newStoreArtist))))))
+        .then(newStoreArtists =>
+          BPromise.each(newStoreArtists, newStoreArtist =>
+            insertArtist(tx, newStoreArtist.name).tap(() =>
+              insertStoreArtist(tx, bpStoreId, newStoreArtist.name, newStoreArtist.id, JSON.stringify(newStoreArtist))
+            )
+          )
+        )
+    )
 
-const ensureLabelsExist =
-  async (tx, newStoreTracks, bpStoreId) =>
-    BPromise.resolve(newStoreTracks)
-      .map(R.prop('label'))
-      .then(R.uniqBy(R.prop('id')))
-      .then(storeLabels =>
-        findNewLabels(tx, bpStoreId, storeLabels)
-          .then(R.innerJoin(R.eqProps('id'), storeLabels))
-          .then(newStoreLabels =>
-            BPromise.each(newStoreLabels,
-              newStoreLabel => ensureLabelExists(tx, newStoreLabel.name)
-                .tap(() => ensureStoreLabelExists(tx, bpStoreId, newStoreLabel.name, newStoreLabel.id, JSON.stringify(newStoreLabel))))))
+const ensureLabelsExist = async (tx, newStoreTracks, bpStoreId) =>
+  BPromise.resolve(newStoreTracks)
+    .map(R.prop('label'))
+    .then(R.uniqBy(R.prop('id')))
+    .then(storeLabels =>
+      findNewLabels(tx, bpStoreId, storeLabels)
+        .then(R.innerJoin(R.eqProps('id'), storeLabels))
+        .then(newStoreLabels =>
+          BPromise.each(newStoreLabels, newStoreLabel =>
+            ensureLabelExists(tx, newStoreLabel.name).tap(() =>
+              ensureStoreLabelExists(tx, bpStoreId, newStoreLabel.name, newStoreLabel.id, JSON.stringify(newStoreLabel))
+            )
+          )
+        )
+    )
 
 const ensureTracksExist = async (tx, newStoreTracks, bpStoreId) =>
-  BPromise.mapSeries(newStoreTracks,
-    newStoreTrack => insertNewTrackReturningTrackId(tx, newStoreTrack)
+  BPromise.mapSeries(newStoreTracks, newStoreTrack =>
+    insertNewTrackReturningTrackId(tx, newStoreTrack)
       .then(([{ track_id }]) => track_id)
       .tap(track_id => insertTrackToLabel(tx, track_id, newStoreTrack.label.id))
-      .tap(track_id => insertStoreTrack(tx, bpStoreId, track_id, newStoreTrack.id, newStoreTrack)
-        .tap(([{ store__track_id }]) => insertTrackPreview(tx, store__track_id, newStoreTrack.preview))
-        .tap(([{ store__track_id }]) => insertTrackWaveform(tx, store__track_id, newStoreTrack.waveform))))
+      .tap(track_id =>
+        insertStoreTrack(tx, bpStoreId, track_id, newStoreTrack.id, newStoreTrack)
+          .tap(([{ store__track_id }]) => insertTrackPreview(tx, store__track_id, newStoreTrack.preview))
+          .tap(([{ store__track_id }]) => insertTrackWaveform(tx, store__track_id, newStoreTrack.waveform))
+      )
+  )
 
 module.exports.test = {
   insertNewTracksToDb,

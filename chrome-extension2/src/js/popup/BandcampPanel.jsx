@@ -32,37 +32,55 @@ sendTracks(1, ${fetchCount})
 `
 
 export default function BandcampPanel({ isCurrent, setRunning, running, key }) {
-  return <div key='bandcamp-panel' key={key}>
-    <h2>Bandcamp</h2>
-    {!isCurrent ?
-      <p><button id="bandcamp-open"
-        onClick={() =>
-          chrome.tabs.create({ active: true, url: `https://bandcamp.com` })}>Open Bandcamp</button></p> :
-      <>
+  return (
+    <div key="bandcamp-panel" key={key}>
+      <h2>Bandcamp</h2>
+      {!isCurrent ? (
         <p>
-          <button id="bandcamp-current" disabled={running} onClick={() => {
-            chrome.tabs.executeScript({
-              code: `chrome.runtime.sendMessage({
+          <button id="bandcamp-open" onClick={() => chrome.tabs.create({ active: true, url: `https://bandcamp.com` })}>
+            Open Bandcamp
+          </button>
+        </p>
+      ) : (
+        <>
+          <p>
+            <button
+              id="bandcamp-current"
+              disabled={running}
+              onClick={() => {
+                chrome.tabs.executeScript({
+                  code: `chrome.runtime.sendMessage({
                       type: 'tracks', store: 'bandcamp', data: window.TralbumData, done: true
                     })`
-            })
-          }}>Send tracks from current page</button><br />
-        </p>
-        <h3>Sync (Requires login)</h3>
-        <p>
-          <button id="bandcamp-feed" disabled={running} onClick={() => {
-            setRunning(true)
-            try {
-              chrome.tabs.executeScript({
-                code: sendBandcampFeedScript('new', 2)
-              })
-            } catch (e) {
-              console.error(e)
-              setRunning(false)
-            }
-          }}>Feed</button>
-        </p>
-      </>
-    }
-  </div>
+                })
+              }}
+            >
+              Send tracks from current page
+            </button>
+            <br />
+          </p>
+          <h3>Sync (Requires login)</h3>
+          <p>
+            <button
+              id="bandcamp-feed"
+              disabled={running}
+              onClick={() => {
+                setRunning(true)
+                try {
+                  chrome.tabs.executeScript({
+                    code: sendBandcampFeedScript('new', 2)
+                  })
+                } catch (e) {
+                  console.error(e)
+                  setRunning(false)
+                }
+              }}
+            >
+              Feed
+            </button>
+          </p>
+        </>
+      )}
+    </div>
+  )
 }

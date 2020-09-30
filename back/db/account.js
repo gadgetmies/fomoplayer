@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 
 const BPromise = require('bluebird')
 const sql = require('sql-template-strings')
@@ -8,23 +8,28 @@ const using = BPromise.using
 const accountAPI = {
   authenticate: (username, password) =>
     using(pgrm.getConnection(), connection =>
-      connection.queryAsync(
-        //language=PostgreSQL
-        sql`SELECT 1
+      connection
+        .queryAsync(
+          //language=PostgreSQL
+          sql`SELECT 1
 FROM meta_account
 WHERE meta_account_username = lower(${username}) AND
-      meta_account_passwd = crypt(${password}, meta_account_passwd)`)
+      meta_account_passwd = crypt(${password}, meta_account_passwd)`
+        )
         .then(result => result.rowCount === 1)
     ),
   findByUsername: username =>
     //language=PostgreSQL
-    pgrm.queryRowsAsync(sql`
+    pgrm
+      .queryRowsAsync(
+        sql`
       SELECT
         meta_account_user_id AS id,
         meta_account_username AS username,
         meta_account_details  AS details
       FROM meta_account
-      WHERE meta_account_username = lower(${username})`)
+      WHERE meta_account_username = lower(${username})`
+      )
       .then(([details]) => {
         if (!details) {
           throw new Error(`User not found with username: ${username}`)

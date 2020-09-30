@@ -11,21 +11,17 @@ const requestWithCredentials = async ({ url, path, method = 'GET', body }) => {
     body: body ? JSON.stringify(body) : undefined,
     credentials: 'include',
     headers: {
-      'Accept': 'application/json',
+      Accept: 'application/json',
       'Content-Type': 'application/json'
     }
   })
 
   if (res.ok) {
     return res
-  }
-  else {
+  } else {
     console.error('Request failed', res)
     throw new Error('Request failed')
   }
 }
 
-export {
-  requestJSONwithCredentials,
-  requestWithCredentials
-}
+export { requestJSONwithCredentials, requestWithCredentials }
