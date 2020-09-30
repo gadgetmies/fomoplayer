@@ -276,7 +276,7 @@ class Tracks extends Component {
                   this.setState({ updatingTracks: false })
                 }
               }}
-              style={{ margin: 2, height: '100%', width: 150, margin: 4 }}
+              style={{ height: '100%', width: 150, margin: 4 }}
               label={'Update list'}
               loadingLabel={'Updating list'}
             />
