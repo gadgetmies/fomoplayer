@@ -258,7 +258,7 @@ class Tracks extends Component {
     return (
       <>
         <div style={{ display: 'flex', alignItems: 'center', color: 'white' }}>
-          <div style={{ height: '100%', flex: 1, padding: 4 }}>
+          <div style={{ height: '100%', flex: 2, padding: 4 }}>
             <SpinnerButton
               size={'small'}
               loading={this.state.markingHeard}
@@ -317,6 +317,15 @@ class Tracks extends Component {
                 <option>Open key notation</option>
                 <option>Camelot</option>
                 <option>Diatonic keys</option>
+              </select>
+            </label>
+            <label style={{ marginLeft: '1rem' }}>
+              <span style={{ fontSize: '0.7rem' }}>Keys compatible with:</span>
+              <select style={{ marginLeft: 4, height: 29, border: "2px solid #222" }}
+                      className="button button-push_button-small button-push_button-primary">
+                <option>1m</option>
+                <option>2m</option>
+                <option>3m</option>
               </select>
             </label>
           </div>
