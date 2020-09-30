@@ -75,6 +75,19 @@ module.exports.queryUserTracks = username =>
     UNION ALL
     SELECT track_id, user__track_heard, score FROM heard_tracks
   ),
+  keys AS (
+    SELECT
+      lt.track_id,
+      json_agg(json_build_object(
+        'system', key_system_code,
+        'key', key_name
+      )) AS keys
+    FROM limited_tracks lt
+      NATURAL JOIN track__key
+      NATURAL JOIN key_system
+      NATURAL JOIN key_name
+    GROUP BY 1
+  ),
     authors AS (
       SELECT
         lt.track_id,
@@ -172,6 +185,9 @@ SELECT
   CASE WHEN remixers.remixers IS NULL
     THEN '[]' :: JSON
   ELSE remixers.remixers END AS remixers,
+  CASE WHEN keys.keys IS NULL
+    THEN '[]' :: JSON
+  ELSE keys.keys END AS keys,
   previews.previews as previews,
   stores.stores,
   stores.release_date AS released,
@@ -183,6 +199,7 @@ FROM limited_tracks lt
   NATURAL JOIN stores
   NATURAL LEFT JOIN labels
   NATURAL LEFT JOIN remixers
+  NATURAL LEFT JOIN keys
   ),
   new_tracks_with_details AS (
     SELECT json_agg(t) AS new_tracks FROM (
@@ -482,6 +499,15 @@ VALUES (${previewId}, ${track.waveform.url})
         }
       })
     )
+  }
+
+  if (track.key) {
+    await pg.queryAsync(sql`INSERT INTO track__key (track_id, key_id)
+SELECT ${trackId}, key_id
+FROM key_name
+WHERE key_name = ${track.key}
+ON CONFLICT ON CONSTRAINT track__key_track_id_key_id_key DO NOTHING
+`)
   }
 
   return trackId

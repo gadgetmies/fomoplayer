@@ -373,6 +373,24 @@ audio {
   padding: 0;
 }
 
+.comma-list {
+  padding-left: 0;
+  display: inline;
+  list-style: none;
+}
+
+.comma-list li {
+  display: inline;
+}
+
+.comma-list li:after {
+  content: ", ";
+}
+
+.comma-list li:last-child:after {
+  content: "";
+}
+
 .expand-collapse-button {
   width: 100%;
   height: 2em;
