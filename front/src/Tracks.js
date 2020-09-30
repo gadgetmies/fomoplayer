@@ -310,6 +310,15 @@ class Tracks extends Component {
                 Recently played
               </label>
             </div>
+            <label style={{ marginLeft: '1rem' }}>
+              <span style={{ fontSize: '0.7rem' }}>Key system:</span>
+              <select style={{ marginLeft: 4, height: 29, border: "2px solid #222" }}
+                      className="button button-push_button-small button-push_button-primary">
+                <option>Open key notation</option>
+                <option>Camelot</option>
+                <option>Diatonic keys</option>
+              </select>
+            </label>
           </div>
           <div style={{ flex: 1, textAlign: 'right', padding: 4 }}>
             <PillButton style={{ padding: 4, WebkitFilter: '', backgroundColor: '#444', color: 'white' }}>
