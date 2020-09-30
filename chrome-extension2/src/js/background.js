@@ -22,7 +22,7 @@ chrome.runtime.onInstalled.addListener(function() {
 
 const idToString = id => id.toString()
 
-const bandcampReleasesTransform = L.collect([L.elems, L.choose(release => ['trackinfo', L.elems, L.pick({
+const bandcampReleasesTransform = L.collect([L.elems, L.choose(release => ['trackinfo', L.filter(R.prop('file')), L.elems, L.pick({
   id: 'id',
   title: 'title',
   artists: L.partsOf(L.pick({
