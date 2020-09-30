@@ -181,7 +181,7 @@ class Track extends Component {
             </PillButton>
           )}
       </td> */}
-        <td style={{ flex: 1, overflow: 'hidden' }} className="unfollow-row">
+        <td style={{ flex: 1 }} className="unfollow-row">
           {/*<PillButton className={'table-cell-button'}>*/}
           {/*by genre*/}
           {/*</PillButton>*/}
@@ -198,8 +198,8 @@ class Track extends Component {
             </PillButton>
           ) : null}
         </td>
-        <td style={{ flex: 1, overflow: 'hidden' }}>
-          <Share stores={this.props.stores} artists={this.props.artists} title={this.props.title} />
+        <td style={{ flex: 1 }}>
+          <Share stores={this.props.stores} artists={this.props.artists} title={this.props.title}/>
         </td>
       </tr>
     )
