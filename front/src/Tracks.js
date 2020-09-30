@@ -151,7 +151,7 @@ class Track extends Component {
             ))
           )}
         </td>
-        <td style={{ flex: 2, overflow: 'hidden', height: '100%', textOverflow: 'ellipsis' }}>
+        <td style={{ flex: 2, overflow: 'hidden', height: '100%' }}>
           {this.props.label}
           {/*<PillButton>*/}
           {/*+ Follow*/}
