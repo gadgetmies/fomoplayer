@@ -1,8 +1,8 @@
-const sql =require('sql-template-strings')
+const sql = require('sql-template-strings')
 
 const removeIgnoredTracksFromUser = (tx, username) =>
   tx.queryRowsAsync(
-// language=PostgreSQL
+    // language=PostgreSQL
     sql`
 DELETE FROM user__track
 WHERE track_id IN (
@@ -16,6 +16,7 @@ WHERE track_id IN (
     NATURAL JOIN track
   WHERE meta_account_username = ${username}
 )
-`)
+`
+  )
 
 module.exports = removeIgnoredTracksFromUser

@@ -15,7 +15,7 @@ import 'typeface-lato'
 // import injectTapEventPlugin from 'react-tap-event-plugin';
 // injectTapEventPlugin();
 
-const defaultTracksData = { tracks: {new: [], heard: []}, meta: { totalTracks: 0, newTracks: 0 } }
+const defaultTracksData = { tracks: { new: [], heard: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
 class App extends Component {
   constructor(props) {
@@ -42,9 +42,11 @@ class App extends Component {
   }
 
   setCarts(store, carts) {
-    this.setState(R.evolve({
-      carts: R.assoc(store, carts)
-    }))
+    this.setState(
+      R.evolve({
+        carts: R.assoc(store, carts)
+      })
+    )
   }
 
   updateCarts(store) {
@@ -63,10 +65,12 @@ class App extends Component {
   }
 
   async updateTracks() {
-    const { meta: { 'new': newTracks, total: totalTracks }, tracks } =
-      await requestJSONwithCredentials({
-        path: `/tracks`
-      })
+    const {
+      meta: { new: newTracks, total: totalTracks },
+      tracks
+    } = await requestJSONwithCredentials({
+      path: `/tracks`
+    })
 
     this.setState({ tracksData: { tracks, meta: { newTracks, totalTracks } } })
   }
@@ -84,26 +88,24 @@ class App extends Component {
     this.updateCarts(store)
   }
 
-  async updateLogins() {
-
-  }
+  async updateLogins() {}
 
   render() {
-    return <div className="root" style={{ height: "100%", overflow: "hidden" }}>
-      {this.state.loading ? 'Loading...' :
-        this.state.loggedIn ?
+    return (
+      <div className="root" style={{ height: '100%', overflow: 'hidden' }}>
+        {this.state.loading ? (
+          'Loading...'
+        ) : this.state.loggedIn ? (
           <>
-            <Menu ref="menu"
+            <Menu
+              ref="menu"
               logoutPath={'/auth/logout'}
               loggedIn={this.state.loggedIn}
               onLogoutDone={this.onLogoutDone.bind(this)}
-              onStoreLoginDone={() => { }} //this.onStoreLoginDone.bind(this)}
+              onStoreLoginDone={() => {}} //this.onStoreLoginDone.bind(this)}
               onUpdateTracks={this.updateTracks.bind(this)}
-            ></Menu>
-            <SlideoutPanel
-              ref="slideout"
-              onOpen={this.updateLogins.bind(this)}
-            >
+            />
+            <SlideoutPanel ref="slideout" onOpen={this.updateLogins.bind(this)}>
               <Player
                 onMenuClicked={() => {
                   this.refs['slideout'].toggle()
@@ -114,31 +116,35 @@ class App extends Component {
                 tracks={this.state.tracksData.tracks}
                 newTracks={this.state.tracksData.meta.newTracks}
                 totalTracks={this.state.tracksData.meta.totalTracks}
-                onAddToCart={(store => this.updateCarts(store))}
-                onRemoveFromCart={(store => this.updateCarts(store))}
-              ></Player>
+                onAddToCart={store => this.updateCarts(store)}
+                onRemoveFromCart={store => this.updateCarts(store)}
+              />
             </SlideoutPanel>
           </>
-          :
-          <div className='align-center-container' style={{ height: '100%' }}>
-            <div style={{
-              width: '50%',
-              borderRadius: 10,
-              padding: 20,
-              backgroundColor: '#ccc',
-              boxShadow: 'rgba(0, 0, 0, 0.27) 2px 2px 40px 0px',
-            }}>
+        ) : (
+          <div className="align-center-container" style={{ height: '100%' }}>
+            <div
+              style={{
+                width: '50%',
+                borderRadius: 10,
+                padding: 20,
+                backgroundColor: '#ccc',
+                boxShadow: 'rgba(0, 0, 0, 0.27) 2px 2px 40px 0px'
+              }}
+            >
               <h1 style={{ marginTop: 0, textAlign: 'center' }}>Login</h1>
               <Login
                 onLoginDone={this.onLoginDone.bind(this)}
                 onLogoutDone={this.onLogoutDone.bind(this)}
                 googleLoginPath={`${config.apiUrl}/auth/login/google`}
                 loginPath={'/auth/login'}
-                logoutPath={'/auth/logout'} />
+                logoutPath={'/auth/logout'}
+              />
             </div>
           </div>
-      }
-    </div >
+        )}
+      </div>
+    )
   }
 }
 

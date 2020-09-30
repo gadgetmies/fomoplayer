@@ -3,9 +3,10 @@ const sql = require('sql-template-strings')
 const R = require('ramda')
 
 module.exports.queryUserTracks = username =>
-  pg.queryRowsAsync(
-    // language=PostgreSQL
-    sql`WITH
+  pg
+    .queryRowsAsync(
+      // language=PostgreSQL
+      sql`WITH
     logged_user AS (
       SELECT meta_account_user_id
       FROM meta_account
@@ -206,7 +207,9 @@ FROM limited_tracks lt
     new_tracks_with_details,
     heard_tracks_with_details,
     user_tracks_meta
-`).then(R.head)
+`
+    )
+    .then(R.head)
 
 module.exports.addArtistOnLabelToIgnore = (tx, artistId, labelId, username) =>
   tx.queryAsync(
@@ -246,8 +249,9 @@ WHERE
   )
 
 module.exports.getLongestPreviewForTrack = (id, format, skip) =>
-  pg.queryRowsAsync(
-    sql`
+  pg
+    .queryRowsAsync(
+      sql`
     SELECT store__track_id AS "storeTrackId" , lower(store_name) AS "storeCode"
     FROM
       store__track_preview NATURAL JOIN
@@ -258,7 +262,8 @@ module.exports.getLongestPreviewForTrack = (id, format, skip) =>
     OFFSET ${skip}
     LIMIT 1;
     `
-  ).then(R.head)
+    )
+    .then(R.head)
 
 module.exports.getTrackIdForStoreTrack = (storeUrl, id, url) =>
   pg
@@ -270,7 +275,8 @@ from track
 where store_url = ${storeUrl}
   and (store__track_store_id = ${id} OR store__track_url = ${url})
 `
-  ).then(R.path([0, 'track_id']))
+    )
+    .then(R.path([0, 'track_id']))
 
 module.exports.addTrackToUser = (userId, trackId) =>
   pg.queryAsync(sql`INSERT INTO user__track (track_id, meta_account_user_id)
@@ -288,16 +294,21 @@ module.exports.ensureLabelExists = async (storeUrl, label) => {
       sql`
 SELECT label_id from label where LOWER(label_name) = LOWER(${label.name})
 `
-    ).then(getLabelIdFromResult)
+    )
+    .then(getLabelIdFromResult)
 
   if (!labelId) {
-    labelId = await pg.queryRowsAsync(sql`insert into label (label_name)
+    labelId = await pg
+      .queryRowsAsync(
+        sql`insert into label (label_name)
 values (${label.name})
 returning label_id
-`).then(getLabelIdFromResult)
+`
+      )
+      .then(getLabelIdFromResult)
   }
 
-    await pg.queryRowsAsync(sql`insert into store__label (store__label_store_id, store__label_url, store_id, label_id)
+  await pg.queryRowsAsync(sql`insert into store__label (store__label_store_id, store__label_url, store_id, label_id)
 select ${label.id}, ${label.url}, store_id, ${labelId}
 from store
 where store_url = ${storeUrl}
@@ -311,12 +322,16 @@ ON CONFLICT ON CONSTRAINT store__label_store__label_store_id_store_id_key
 module.exports.ensureReleaseExists = async (storeUrl, release) => {
   const getReleaseIdFromResult = getFieldFromResult('release_id')
 
-  let releaseId = await pg.queryRowsAsync(sql`SELECT release_id
+  let releaseId = await pg
+    .queryRowsAsync(
+      sql`SELECT release_id
 from store__release
          natural join store
 where store_url = ${storeUrl}
   and (store__release_store_id = ${release.id} or store__release_url = ${release.url})
-`).then(getReleaseIdFromResult)
+`
+    )
+    .then(getReleaseIdFromResult)
 
   if (!releaseId) {
     releaseId = await pg
@@ -324,14 +339,19 @@ where store_url = ${storeUrl}
         sql`
 SELECT release_id from release where LOWER(release_name) = LOWER(${release.title})
 `
-    ).then(getReleaseIdFromResult)
+      )
+      .then(getReleaseIdFromResult)
   }
 
   if (!releaseId) {
-    releaseId = await pg.queryRowsAsync(sql`insert into release (release_name)
+    releaseId = await pg
+      .queryRowsAsync(
+        sql`insert into release (release_name)
 values (${release.title})
 returning release_id
-`).then(getReleaseIdFromResult)
+`
+      )
+      .then(getReleaseIdFromResult)
 
     await pg.queryRowsAsync(sql`insert into store__release (store__release_store_id, store__release_url, store_id, release_id)
 select ${release.id}, ${release.url}, store_id, ${releaseId}
@@ -346,12 +366,16 @@ where store_url = ${storeUrl}
 module.exports.ensureArtistExists = async (storeUrl, artist) => {
   const getArtistIdFromResult = getFieldFromResult('artist_id')
 
-  let artistId = await pg.queryRowsAsync(sql`SELECT artist_id
+  let artistId = await pg
+    .queryRowsAsync(
+      sql`SELECT artist_id
 from store__artist
          natural join store
 where store_url = ${storeUrl}
   and (store__artist_store_id = ${artist.id} or store__artist_url = ${artist.url})
-`).then(getArtistIdFromResult)
+`
+    )
+    .then(getArtistIdFromResult)
 
   if (!artistId) {
     artistId = await pg
@@ -359,7 +383,8 @@ where store_url = ${storeUrl}
         sql`
 SELECT artist_id from artist where LOWER(artist_name) = LOWER(${artist.name})
 `
-    ).then(getArtistIdFromResult)
+      )
+      .then(getArtistIdFromResult)
   }
 
   if (!artistId) {
@@ -368,7 +393,9 @@ SELECT artist_id from artist where LOWER(artist_name) = LOWER(${artist.name})
         sql`insert into artist (artist_name)
 values (${artist.name})
 returning artist_id
-`).then(getArtistIdFromResult)
+`
+      )
+      .then(getArtistIdFromResult)
 
     await pg.queryRowsAsync(sql`insert into store__artist (store__artist_store_id, store__artist_url, store_id, artist_id)
 select ${artist.id}, ${artist.url}, store_id, ${artistId}
@@ -391,7 +418,9 @@ where LOWER(track_title) = LOWER(${track.title}) AND
       (${track.version}::TEXT IS NULL OR LOWER(track_version) = LOWER(${track.version}))
 GROUP BY track_id
 HAVING ARRAY_AGG(artist_id) = ${R.pluck('id', artists)} -- TODO: also verify that the artist roles match
-`).then(getTrackIdFromResult)
+`
+    )
+    .then(getTrackIdFromResult)
 
   if (!trackId) {
     trackId = await pg
@@ -399,7 +428,9 @@ HAVING ARRAY_AGG(artist_id) = ${R.pluck('id', artists)} -- TODO: also verify tha
         sql`INSERT INTO track (track_title, track_version, track_duration_ms)
 VALUES (${track.title}, ${track.version}, ${track.duration_ms})
 RETURNING track_id
-`).then(getTrackIdFromResult)
+`
+      )
+      .then(getTrackIdFromResult)
 
     for (const { id, role } of artists) {
       await pg.queryAsync(sql`
@@ -421,7 +452,9 @@ select ${trackId}, store_id, ${track.id}, ${track.url}, ${track}
 from store
 where store_url = LOWER(${storeUrl})
 returning store__track_id
-`).then(getFieldFromResult('store__track_id'))
+`
+      )
+      .then(getFieldFromResult('store__track_id'))
 
     if (releaseId) {
       await pg.queryAsync(sql`
@@ -430,8 +463,11 @@ INSERT INTO release__track (release_id, track_id) VALUES (${releaseId}, ${trackI
     }
 
     // TODO: Make waveforms preview independent? (to make them available for tracks from stores without waveforms)
-    await Promise.all(track.previews.map(async preview => {
-        const previewId = await pg.queryRowsAsync(sql`INSERT INTO store__track_preview
+    await Promise.all(
+      track.previews.map(async preview => {
+        const previewId = await pg
+          .queryRowsAsync(
+            sql`INSERT INTO store__track_preview
 (store__track_id, store__track_preview_url, store__track_preview_format, store__track_preview_start_ms,
  store__track_preview_end_ms)
 values (${storeTrackId}, ${preview.url}, ${preview.format}, ${preview.start_ms}, ${preview.stop_ms})

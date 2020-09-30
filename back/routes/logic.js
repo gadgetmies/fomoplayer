@@ -3,11 +3,23 @@ const pg = require('../db/pg.js')
 const { apiRoot } = require('../config.js')
 const R = require('ramda')
 
-const { getTrackIdForStoreTrack, addTrackToUser, ensureReleaseExists, ensureArtistExists, ensureLabelExists, addStoreTrack } = require('./db.js')
+const {
+  getTrackIdForStoreTrack,
+  addTrackToUser,
+  ensureReleaseExists,
+  ensureArtistExists,
+  ensureLabelExists,
+  addStoreTrack
+} = require('./db.js')
 
 const removeIgnoredTracksFromUser = require('../remove-ignored-tracks-from-user.js')
-const { queryUserTracks, addArtistOnLabelToIgnore, setTrackHeard, setAllHeard, getLongestPreviewForTrack } =
-  require('./db.js')
+const {
+  queryUserTracks,
+  addArtistOnLabelToIgnore,
+  setTrackHeard,
+  setAllHeard,
+  getLongestPreviewForTrack
+} = require('./db.js')
 
 module.exports.queryUserTracks = queryUserTracks
 module.exports.getTracksM3u = username =>
@@ -34,8 +46,9 @@ module.exports.addArtistsOnLabelsToIgnore = (username, { artistIds, labelIds }) 
   )
 
 module.exports.getStorePreviewRedirectForTrack = (id, format, skip) =>
-  getLongestPreviewForTrack(id, format, skip)
-    .then(({ storeCode, storeTrackId }) => `${apiRoot}/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`)
+  getLongestPreviewForTrack(id, format, skip).then(
+    ({ storeCode, storeTrackId }) => `${apiRoot}/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`
+  )
 
 module.exports.addStoreTrackToUser = async (storeUrl, user, track) => {
   console.log(track)

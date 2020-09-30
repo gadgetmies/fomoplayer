@@ -2,7 +2,7 @@ const router = require('express').Router()
 //const bodyParser = require('body-parser')
 // router.use(bodyParser.json())
 
-const {addStoreTrackToUser} = require('./logic.js')
+const { addStoreTrackToUser } = require('./logic.js')
 
 module.exports = async (req, res, next) => {
   try {
