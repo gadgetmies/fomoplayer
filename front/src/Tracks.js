@@ -157,6 +157,11 @@ class Track extends Component {
           {/*+ Follow*/}
           {/*</PillButton>*/}
         </td>
+        <td style={{ flex: 1 }}>
+          <ul className="comma-list">
+            {this.props.keys.filter(R.propEq('system', 'open-key')).map(({ key }) => <li key={key}>{key}</li>)}
+          </ul>
+        </td>
         {/* <td style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
         {
           this.props.stores.map(store =>
@@ -212,7 +217,7 @@ class Tracks extends Component {
   }
 
   renderTracks(tracks, carts) {
-    return tracks.map(({ id, title, mix, artists, remixers, labels, heard, stores }) => {
+    return tracks.map(({ id, title, mix, artists, remixers, labels, keys, heard, stores }) => {
       // if (!R.isEmpty(carts)) debugger
       return (
         <Track
@@ -222,6 +227,7 @@ class Tracks extends Component {
           mix={mix}
           remixers={remixers}
           label={R.pluck('name', labels).join(', ')}
+          keys={keys}
           stores={stores}
           selected={this.state.selectedTrack === id}
           playing={this.props.currentTrack === id}
@@ -316,23 +322,24 @@ class Tracks extends Component {
         </div>
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
           <thead style={{ width: '100%', display: 'block' }}>
-            <tr style={{ width: '100%', display: 'flex' }}>
-              <th style={{ flex: 0.5, overflow: 'hidden' }} className={'table-button-cell-header'}>
-                New
-              </th>
-              <th style={{ flex: 3, overflow: 'hidden' }}>Artist</th>
-              <th style={{ flex: 3, overflow: 'hidden' }}>Title</th>
-              <th style={{ flex: 2, overflow: 'hidden' }}>Remixer</th>
-              <th style={{ flex: 2, overflow: 'hidden' }}>Label</th>
-              {/* <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Cart</th> */}
-              <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>
-                Unfollow
-                {/*Artists*/}
-              </th>
-              <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>
-                Open in
-              </th>
-            </tr>
+          <tr style={{ width: '100%', display: 'flex' }}>
+            <th style={{ flex: 0.5, overflow: 'hidden' }} className={'table-button-cell-header'}>
+              New
+            </th>
+            <th style={{ flex: 3, overflow: 'hidden' }}>Artist</th>
+            <th style={{ flex: 3, overflow: 'hidden' }}>Title</th>
+            <th style={{ flex: 2, overflow: 'hidden' }}>Remixer</th>
+            <th style={{ flex: 2, overflow: 'hidden' }}>Label</th>
+            <th style={{ flex: 1, overflow: 'hidden' }}>Key</th>
+            {/* <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Cart</th> */}
+            <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>
+              Unfollow
+              {/*Artists*/}
+            </th>
+            <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>
+              Open in
+            </th>
+          </tr>
           </thead>
           {/* Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table */}
           <tbody style={{ height: 'calc(100% - 166px)', overflow: 'scroll', display: 'block' }}>

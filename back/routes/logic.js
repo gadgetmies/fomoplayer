@@ -52,22 +52,18 @@ module.exports.getStorePreviewRedirectForTrack = (id, format, skip) =>
 
 module.exports.addStoreTrackToUser = async (storeUrl, user, track) => {
   console.log(track)
-  let trackId = await getTrackIdForStoreTrack(storeUrl, track.id)
+  let labelId
+  let releaseId
 
-  if (!trackId) {
-    let labelId
-    let releaseId
-
-    if (track.label) {
-      labelId = await ensureLabelExists(storeUrl, track.label)
-    }
-    if (track.release) {
-      releaseId = await ensureReleaseExists(storeUrl, track.release)
-    }
-    const artists = await Promise.all(track.artists.map(artist => ensureArtistExists(storeUrl, artist)))
-
-    trackId = await addStoreTrack(storeUrl, labelId, releaseId, artists, track)
+  if (track.label) {
+    labelId = await ensureLabelExists(storeUrl, track.label)
   }
+  if (track.release) {
+    releaseId = await ensureReleaseExists(storeUrl, track.release)
+  }
+  const artists = await Promise.all(track.artists.map(artist => ensureArtistExists(storeUrl, artist)))
+
+  trackId = await addStoreTrack(storeUrl, labelId, releaseId, artists, track)
 
   return addTrackToUser(user, trackId)
 }
