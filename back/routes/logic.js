@@ -1,8 +1,13 @@
 const BPromise = require('bluebird')
 const pg = require('../db/pg.js')
+const { apiRoot } = require('../config.js')
+const R = require('ramda')
+
+const { getTrackIdForStoreTrack, addTrackToUser, ensureReleaseExists, ensureArtistExists, ensureLabelExists, addStoreTrack } = require('./db.js')
 
 const removeIgnoredTracksFromUser = require('../remove-ignored-tracks-from-user.js')
-const { queryUserTracks, addArtistOnLabelToIgnore, setTrackHeard, getLongestPreviewForTrack } = require('./db.js')
+const { queryUserTracks, addArtistOnLabelToIgnore, setTrackHeard, setAllHeard, getLongestPreviewForTrack } =
+  require('./db.js')
 
 module.exports.queryUserTracks = queryUserTracks
 module.exports.getTracksM3u = username =>
@@ -18,15 +23,38 @@ module.exports.getTracksM3u = username =>
   })
 
 module.exports.setTrackHeard = setTrackHeard
+module.exports.setAllHeard = setAllHeard
 
 module.exports.addArtistOnLabelToIgnore = addArtistOnLabelToIgnore
-module.exports.addArtistsOnLabelsToIgnore = (username, artistsAndLabels) =>
+module.exports.addArtistsOnLabelsToIgnore = (username, { artistIds, labelIds }) =>
   BPromise.using(pg.getTransaction(), tx =>
-    BPromise.each(artistsAndLabels, ({ artistId, labelId }) =>
+    BPromise.each(R.xprod(artistIds, labelIds), ([artistId, labelId]) =>
       addArtistOnLabelToIgnore(tx, artistId, labelId, username).tap(() => removeIgnoredTracksFromUser(tx, username))
     )
   )
 
-module.exports.getStorePreviewRedirectForTrack = (id, format) =>
-  getLongestPreviewForTrack(id, format)
-    .then(({storeCode, storeTrackId}) => `/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`)
+module.exports.getStorePreviewRedirectForTrack = (id, format, skip) =>
+  getLongestPreviewForTrack(id, format, skip)
+    .then(({ storeCode, storeTrackId }) => `${apiRoot}/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`)
+
+module.exports.addStoreTrackToUser = async (storeUrl, user, track) => {
+  console.log(track)
+  let trackId = await getTrackIdForStoreTrack(storeUrl, track.id)
+
+  if (!trackId) {
+    let labelId
+    let releaseId
+
+    if (track.label) {
+      labelId = await ensureLabelExists(storeUrl, track.label)
+    }
+    if (track.release) {
+      releaseId = await ensureReleaseExists(storeUrl, track.release)
+    }
+    const artists = await Promise.all(track.artists.map(artist => ensureArtistExists(storeUrl, artist)))
+
+    trackId = await addStoreTrack(storeUrl, labelId, releaseId, artists, track)
+  }
+
+  return addTrackToUser(user, trackId)
+}

@@ -2,12 +2,16 @@ const R = require('ramda')
 const BPromise = require('bluebird')
 const using = BPromise.using
 const pg = require('../../../db/pg.js')
+// TODO: is it ok to reference the db files like this?
+const account = require('../../../db/account.js')
 const removeIgnoredTracksFromUser = require('../../../remove-ignored-tracks-from-user.js')
 const { setTrackHeard } = require('../../logic.js')
+const { log, error } = require('./logger')
+const { createOperation, getOperation } = require('../../../operations.js')
 
 const {
   insertArtist,
-  insertUserTrack,
+  addStoreTracksToUser,
   insertTrackToLabel,
   findNewTracks,
   insertTrackPreview,
@@ -57,65 +61,76 @@ const getBeatportStoreDbId = () => {
   }
 }
 
-const addTracksToUser = (tx, username, tracks) =>
+const addTracksToUser = (tx, userId, tracks) =>
   insertNewTracksToDb(tx, tracks)
-    .then(insertedTrackIds =>
-      BPromise.each(insertedTrackIds,
-        insertedTrackId => insertUserTrack(tx, username, insertedTrackId))
-        .tap(() => removeIgnoredTracksFromUser(tx, username)))
+    .then(insertedTracks => {
+      log(`Inserted ${insertedTracks.length} new tracks to db`)
+      return addStoreTracksToUser(tx, userId, tracks)
+        .tap(() => removeIgnoredTracksFromUser(tx, userId))
+    })
+
+const getRefreshStatus = module.exports.getRefreshStatus = (username, uuid) => getOperation(username, uuid)
+
+const startRefreshUserTracks = module.exports.startRefreshUserTracks = (username, firstPage = 1, lastPage = 20) => {
+  log(`Refreshing tracks from ${username}'s Beatport`)
+  return createOperation('refresh-beatport', username, { username, firstPage, lastPage },
+    () => refreshUserTracks(username, firstPage, lastPage))
+}
+
+const addNewTracksToUser = module.exports.addNewTracksToUser = async (userId, tracks) => {
+  console.log(tracks)
+  try {
+    const insertedTracks = await BPromise.using(pg.getTransaction(), tx => addTracksToUser(tx, userId, tracks))
+    log(`Inserted ${insertedTracks.length} new tracks to user with ID: ${JSON.stringify(userId)}`)
+  } catch (e) {
+    error(JSON.stringify(tracks))
+    error('Failed to insert tracks (data above)', e)
+  }
+}
 
 const refreshNewTracks = (username, firstPage, lastPage) =>
   firstPage > lastPage ? BPromise.resolve() :
-  beatportSessions[username]
-    .getMyBeatportTracksAsync(lastPage) // TODO: fetch while there were new tracks found
-    .then(R.prop('tracks'))
-    .tap(tracks => console.log(tracks))
-    .then(tracks => BPromise.using(pg.getTransaction(), tx => addTracksToUser(tx, username, tracks))
-      .catch(e => {
-        console.error(JSON.stringify(tracks))
-        console.error('Failed to insert tracks (data above)', e)
-        return []
-      })
-    )
-    .tap(insertedTracks =>
-      console.log(`Inserted ${insertedTracks.length} new tracks to ${username} from page ${lastPage}`))
-    .tap(() => refreshNewTracks(username, firstPage, lastPage - 1))
+    beatportSessions[username]
+      .getMyBeatportTracksAsync(lastPage) // TODO: fetch while there were new tracks found
+      .then(({ tracks }) => addNewTracksToUser(username, tracks))
+      .tap(() => refreshNewTracks(username, firstPage, lastPage - 1))
+
+const insertDownloadedTracksToUser = module.exports.insertDownloadedTracksToUser = (username, tracks) => {
+  console.log(tracks)
+  return BPromise.using(pg.getTransaction(), async (tx) => {
+    const beatportStoreDbId = await getBeatportStoreDbId()
+    const insertedNewTracks = await insertNewTracksToDb(tx, tracks)
+    const addedTracks = await addStoreTracksToUser(tx, username, tracks)
+    for (const trackId of [...addedTracks, ...insertedNewTracks]) {
+      await setTrackHeard(trackId, username, true) // TODO: destructure trackId from one of the arrays (currently returns an object)
+    }
+    log(`Inserted ${insertedNewTracks.length} new tracks to ${username} from downloaded tracks`)
+    const insertedPurchasedTracks = await insertPurchasedTracksByIds(tx, beatportStoreDbId, username, R.pluck('id', tracks))
+    log(`Inserted ${insertedPurchasedTracks.length} downloaded tracks to ${username}`)
+  })
+}
 
 const refreshDownloadedTracks = (username, firstPage, lastPage) =>
   firstPage > lastPage ? BPromise.resolve() :
     beatportSessions[username]
       .getDownloadedTracksAsync(lastPage) // TODO: fetch while there were new tracks found
-      .then(R.prop('tracks'))
-      .then(tracks => BPromise.using(pg.getTransaction(), async tx =>
-        {
-          try {
-            const beatportStoreDbId = await getBeatportStoreDbId()
-            const insertedNewTracks = await insertNewTracksToDb(tx, tracks)
-            for (const trackId of insertedNewTracks) {
-              setTrackHeard(trackId, username, true)
-            }
-            console.log(
-              `Inserted ${insertedNewTracks.length} new tracks to ${username} from downloaded tracks page\
- ${lastPage}`)
-            const insertedPurchasedTracks =
-              await insertPurchasedTracksByIds(tx, beatportStoreDbId, username, R.pluck('id', tracks))
-            console.log(
-              `Inserted ${insertedPurchasedTracks.length} downloaded tracks to ${username} from page ${lastPage}`)
-          } catch (e) {
-            console.error(JSON.stringify(tracks))
-            console.error('Failed to insert tracks (data above)', e)
-            return []
-          }
+      .then(async ({ tracks }) => {
+        try {
+          log(`Processing page ${lastPage} of ${username}'s downloaded tracks on Beatport`)
+          await insertDownloadedTracksToUser(username, tracks)
+          await refreshDownloadedTracks(username, firstPage, lastPage - 1)
+        } catch (e) {
+          error(JSON.stringify(tracks))
+          error('Failed to insert tracks (data above)', e)
+          return []
         }
-      )
-      .tap(() => refreshDownloadedTracks(username, firstPage, lastPage - 1))
-    )
+      })
 
 module.exports.getPreviewUrl = (id, format) => getBeatportStoreDbId()
   .then(bpStoreId => queryPreviewUrl(id, format, bpStoreId))
 
-module.exports.refreshUserTracks = (username, firstPage = 1, lastPage = 100) => {
-  console.log(`Refreshing new tracks from page ${lastPage} of ${username}'s My Beatport`)
+const refreshUserTracks = module.exports.refreshUserTracks = (username, firstPage = 1, lastPage = 20) => {
+  log(`Refreshing new tracks from page ${lastPage} of ${username}'s My Beatport`)
   return BPromise.all([refreshNewTracks(username, firstPage, lastPage), refreshDownloadedTracks(username, firstPage, lastPage)])
 }
 
@@ -168,13 +183,14 @@ const ensureLabelsExist =
 const ensureTracksExist = async (tx, newStoreTracks, bpStoreId) =>
   BPromise.mapSeries(newStoreTracks,
     newStoreTrack => insertNewTrackReturningTrackId(tx, newStoreTrack)
-      .then(([{track_id}]) => track_id)
+      .then(([{ track_id }]) => track_id)
       .tap(track_id => insertTrackToLabel(tx, track_id, newStoreTrack.label.id))
       .tap(track_id => insertStoreTrack(tx, bpStoreId, track_id, newStoreTrack.id, newStoreTrack)
-        .tap(([{store__track_id}]) => insertTrackPreview(tx, store__track_id, newStoreTrack.preview))
-        .tap(([{store__track_id}]) => insertTrackWaveform(tx, store__track_id, newStoreTrack.waveform))))
+        .tap(([{ store__track_id }]) => insertTrackPreview(tx, store__track_id, newStoreTrack.preview))
+        .tap(([{ store__track_id }]) => insertTrackWaveform(tx, store__track_id, newStoreTrack.waveform))))
 
 module.exports.test = {
   insertNewTracksToDb,
-  addTracksToUser
+  addTracksToUser,
+  insertDownloadedTracksToUser
 }

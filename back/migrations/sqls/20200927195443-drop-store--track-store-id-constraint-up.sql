@@ -1,0 +1,1 @@
+ALTER TABLE store__track DROP CONSTRAINT store__track_store__track_store_id_key;

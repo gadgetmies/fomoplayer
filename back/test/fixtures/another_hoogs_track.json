@@ -1,0 +1,127 @@
+{
+  "active": true,
+  "artists": [
+    {
+      "id": 112415,
+      "name": "Hoogs",
+      "slug": "hoogs"
+    }
+  ],
+  "audio_format": "mp3",
+  "bpm": 88,
+  "component": "My Beatport - Tracks",
+  "component_type": null,
+  "date": {
+    "published": "2018-10-26",
+    "released": "2018-10-26"
+  },
+  "duration": {
+    "milliseconds": 268800,
+    "minutes": "4:28"
+  },
+  "exclusive": false,
+  "formats": {
+    "aiff": {
+      "code": "EUR",
+      "display": "€0.75",
+      "symbol": "€",
+      "value": 0.75
+    },
+    "wav": {
+      "code": "EUR",
+      "display": "€0.75",
+      "symbol": "€",
+      "value": 0.75
+    }
+  },
+  "genres": [
+    {
+      "id": 1,
+      "name": "Drum & Bass",
+      "slug": "drum-and-bass"
+    }
+  ],
+  "guest_pick": false,
+  "id": 11136879,
+  "images": {
+    "dynamic": {
+      "id": 20400737,
+      "url": "https://geo-media.beatport.com/image_size/{w}x{h}/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg"
+    },
+    "large": {
+      "height": 500,
+      "id": 20400737,
+      "url": "https://geo-media.beatport.com/image/7c923f12-daf9-4d1f-820f-f513cf1c11b8.jpg",
+      "width": 500
+    },
+    "medium": {
+      "height": 60,
+      "id": 7289453,
+      "url": "https://geo-media.beatport.com/image/20bc9ce0-cef6-4b6b-858c-5138e596a02c.jpg",
+      "width": 60
+    },
+    "small": {
+      "height": 30,
+      "id": 7289452,
+      "url": "https://geo-media.beatport.com/image/448286dc-d9b7-4e39-a1be-6abf592f1d37.jpg",
+      "width": 30
+    }
+  },
+  "key": "G min",
+  "label": {
+    "id": 14974,
+    "name": "Digital Terror Records",
+    "slug": "digital-terror-records"
+  },
+  "mix": "Original Mix",
+  "name": "Look Away",
+  "preorder": false,
+  "preview": {
+    "mp3": {
+      "offset": {
+        "end": 227520,
+        "start": 107520
+      },
+      "url": "https://geo-samples.beatport.com/track/86cc1620-ac5b-4ccc-ad83-7d50d402c610.LOFI.mp3"
+    },
+    "mp4": {
+      "offset": {
+        "end": 227520,
+        "start": 107520
+      },
+      "url": "https://geo-samples.beatport.com/track/86cc1620-ac5b-4ccc-ad83-7d50d402c610.LOFI.mp4"
+    }
+  },
+  "price": {
+    "code": "EUR",
+    "display": "€1.56",
+    "symbol": "€",
+    "value": 1.56
+  },
+  "purchase": 1,
+  "purchase_type": null,
+  "release": {
+    "id": 2411401,
+    "name": "Monster",
+    "slug": "monster"
+  },
+  "remixers": [],
+  "sale_type": "purchase",
+  "slug": "look-away-original-mix",
+  "sponsored": false,
+  "sub_genres": [],
+  "title": "Look Away (Original Mix)",
+  "type": "track",
+  "waveform": {
+    "dynamic": {
+      "id": 20400780,
+      "url": "https://geo-media.beatport.com/image_size/{w}x{h}/5ebe5c6c-2965-4c4b-a89d-3d482704b815.png"
+    },
+    "large": {
+      "height": 250,
+      "id": 20400780,
+      "url": "https://geo-media.beatport.com/image/5ebe5c6c-2965-4c4b-a89d-3d482704b815.png",
+      "width": 1500
+    }
+  }
+}

@@ -1,0 +1,303 @@
+[
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 56565,
+        "name": "MC Fats",
+        "slug": "mc-fats"
+      },
+      {
+        "id": 204159,
+        "name": "L-Side",
+        "slug": "l-side"
+      }
+    ],
+    "audioFormatId": 1,
+    "audio_format": "mp3",
+    "bpm": 87,
+    "component": "None",
+    "component_type": null,
+    "date": {
+      "published": "2018-02-02",
+      "released": "2018-02-02"
+    },
+    "downloadId": 123456789,
+    "duration": {
+      "milliseconds": 309053,
+      "minutes": "5:09"
+    },
+    "encodeStatus": "COMPLETE",
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "hype": false,
+    "id": 10227365,
+    "images": {
+      "dynamic": {
+        "id": 18627561,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/af962764-ddec-44b3-ad59-5d9838db3346.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 18627561,
+        "url": "https://geo-media.beatport.com/image/af962764-ddec-44b3-ad59-5d9838db3346.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 5360298,
+        "url": "https://geo-media.beatport.com/image/60b731d6-3326-42a0-b132-cfe710cd5941.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 5360297,
+        "url": "https://geo-media.beatport.com/image/18bc9524-1927-4a94-86db-f47a382048f7.jpg",
+        "width": 30
+      }
+    },
+    "is_available_for_streaming": true,
+    "key": "A min",
+    "label": {
+      "id": 1893,
+      "name": "V Recordings",
+      "slug": "v-recordings"
+    },
+    "mix": "Original Mix",
+    "name": "High Times",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 243621,
+          "start": 123621
+        },
+        "url": "https://geo-samples.beatport.com/track/99b82ca1-b9c2-4a42-9792-9d5a656f3100.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 243621,
+          "start": 123621
+        },
+        "url": "https://geo-samples.beatport.com/track/99b82ca1-b9c2-4a42-9792-9d5a656f3100.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.30",
+      "symbol": "€",
+      "value": 1.3
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2212050,
+      "name": "High Times",
+      "slug": "high-times"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "high-times-original-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "High Times (Original Mix)",
+    "type": "track",
+    "upgrades": {
+      "aiff": {
+        "code": "USD",
+        "display": "$0.50",
+        "symbol": "$",
+        "value": 0.5
+      },
+      "wav": {
+        "code": "USD",
+        "display": "$0.50",
+        "symbol": "$",
+        "value": 0.5
+      }
+    },
+    "waveform": {
+      "dynamic": {
+        "id": 18627657,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/0ab47a8f-b03a-4499-a4bb-c92f3c8aad76.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 18627657,
+        "url": "https://geo-media.beatport.com/image/0ab47a8f-b03a-4499-a4bb-c92f3c8aad76.png",
+        "width": 1500
+      }
+    }
+  },
+  {
+    "active": true,
+    "artists": [
+      {
+        "id": 56565,
+        "name": "MC Fats",
+        "slug": "mc-fats"
+      },
+      {
+        "id": 204159,
+        "name": "L-Side",
+        "slug": "l-side"
+      }
+    ],
+    "audioFormatId": 1,
+    "audio_format": "mp3",
+    "bpm": 87,
+    "component": "My Beatport - Tracks",
+    "component_type": null,
+    "date": {
+      "published": "2018-02-02",
+      "released": "2018-02-02"
+    },
+    "downloadId": 123456789,
+    "duration": {
+      "milliseconds": 308965,
+      "minutes": "5:08"
+    },
+    "exclusive": false,
+    "formats": {
+      "aiff": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      },
+      "wav": {
+        "code": "EUR",
+        "display": "€0.75",
+        "symbol": "€",
+        "value": 0.75
+      }
+    },
+    "genres": [
+      {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-and-bass"
+      }
+    ],
+    "guest_pick": false,
+    "hype": false,
+    "id": 10227367,
+    "images": {
+      "dynamic": {
+        "id": 18627561,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/af962764-ddec-44b3-ad59-5d9838db3346.jpg"
+      },
+      "large": {
+        "height": 500,
+        "id": 18627561,
+        "url": "https://geo-media.beatport.com/image/af962764-ddec-44b3-ad59-5d9838db3346.jpg",
+        "width": 500
+      },
+      "medium": {
+        "height": 60,
+        "id": 5360298,
+        "url": "https://geo-media.beatport.com/image/60b731d6-3326-42a0-b132-cfe710cd5941.jpg",
+        "width": 60
+      },
+      "small": {
+        "height": 30,
+        "id": 5360297,
+        "url": "https://geo-media.beatport.com/image/18bc9524-1927-4a94-86db-f47a382048f7.jpg",
+        "width": 30
+      }
+    },
+    "is_available_for_streaming": true,
+    "key": "A min",
+    "label": {
+      "id": 1893,
+      "name": "V Recordings",
+      "slug": "v-recordings"
+    },
+    "mix": "Dub Mix",
+    "name": "High Times",
+    "preorder": false,
+    "preview": {
+      "mp3": {
+        "offset": {
+          "end": 243586,
+          "start": 123586
+        },
+        "url": "https://geo-samples.beatport.com/track/acdd33b7-610a-47b1-a2bd-c9b3b62d87cc.LOFI.mp3"
+      },
+      "mp4": {
+        "offset": {
+          "end": 243586,
+          "start": 123586
+        },
+        "url": "https://geo-samples.beatport.com/track/acdd33b7-610a-47b1-a2bd-c9b3b62d87cc.LOFI.mp4"
+      }
+    },
+    "price": {
+      "code": "EUR",
+      "display": "€1.30",
+      "symbol": "€",
+      "value": 1.3
+    },
+    "purchase": 1,
+    "purchase_type": null,
+    "release": {
+      "id": 2212050,
+      "name": "High Times",
+      "slug": "high-times"
+    },
+    "remixers": [],
+    "sale_type": "purchase",
+    "slug": "high-times-dub-mix",
+    "sponsored": false,
+    "sub_genres": [],
+    "title": "High Times (Dub Mix)",
+    "type": "track",
+    "upgrades": {
+      "aiff": {
+        "code": "USD",
+        "display": "$0.50",
+        "symbol": "$",
+        "value": 0.5
+      },
+      "wav": {
+        "code": "USD",
+        "display": "$0.50",
+        "symbol": "$",
+        "value": 0.5
+      }
+    },
+    "waveform": {
+      "dynamic": {
+        "id": 18627650,
+        "url": "https://geo-media.beatport.com/image_size/{w}x{h}/93ed6461-e8c0-4533-9ef4-a5eddec4729f.png"
+      },
+      "large": {
+        "height": 250,
+        "id": 18627650,
+        "url": "https://geo-media.beatport.com/image/93ed6461-e8c0-4533-9ef4-a5eddec4729f.png",
+        "width": 1500
+      }
+    }
+  }
+]
