@@ -80,7 +80,7 @@ export default class Popup extends React.Component {
         >
           Reset
         </button>
-        {!this.state.loggedIn ? <Login/> : [currentComponent, ...rest]}
+        {!this.state.loggedIn ? <Login /> : [currentComponent, ...rest]}
       </>
     )
   }

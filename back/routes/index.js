@@ -44,8 +44,7 @@ router.patch('/tracks/', ({ user: { username }, body: { heard }, res, next }) =>
 })
 
 // TODO: add genre to database?
-router.post('/ignores/genres', ({ user: { username }, body: { artistId, storeId, genre } }, res, next) => {
-})
+router.post('/ignores/genres', ({ user: { username }, body: { artistId, storeId, genre } }, res, next) => {})
 
 router.post('/ignores/labels', ({ user: { username }, body }, res, next) =>
   addArtistsOnLabelsToIgnore(username, body)

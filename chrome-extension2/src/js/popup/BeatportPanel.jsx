@@ -51,35 +51,56 @@ export default function BeatportPanel({ isCurrent, setRunning, running, key }) {
     })
   }
 
-  return <div key='beatport-panel' key={key}>
-    <h2>Beatport</h2>
-    {!isCurrent ?
-      <button id="beatport-open"
-              onClick={() => chrome.tabs.create({ active: true, url: `https://www.beatport.com` })}>Open
-        Beatport</button> :
-      <>
-        <p>
-          <button id="beatport-current" disabled={running} onClick={() => {
-            chrome.tabs.query({ active: true, currentWindow: true }, function(tabArray) {
-              sendTracks(`() => ${getCurrentUrl(tabArray)}`, 'new', 1)
-            })
-          }}>Send tracks from current page
-          </button>
-        </p>
-        <h3>Sync (Requires login)</h3>
-        <p>
-          <button id="beatport-new" disabled={running} onClick={() => {
-            sendTracks(myBeatportUrlFn, 'new', 1)
-          }}>My Beatport
-          </button>
-        </p>
-        <p>
-          <button id="beatport-downloaded" disabled={running} onClick={() => {
-            sendTracks(myDownloadsUrlFn, 'downloaded')
-          }}>Downloaded
-          </button>
-        </p>
-      </>
-    }
-  </div>
+  return (
+    <div key="beatport-panel" key={key}>
+      <h2>Beatport</h2>
+      {!isCurrent ? (
+        <button
+          id="beatport-open"
+          onClick={() => chrome.tabs.create({ active: true, url: `https://www.beatport.com` })}
+        >
+          Open Beatport
+        </button>
+      ) : (
+        <>
+          <p>
+            <button
+              id="beatport-current"
+              disabled={running}
+              onClick={() => {
+                chrome.tabs.query({ active: true, currentWindow: true }, function(tabArray) {
+                  sendTracks(`() => ${getCurrentUrl(tabArray)}`, 'new', 1)
+                })
+              }}
+            >
+              Send tracks from current page
+            </button>
+          </p>
+          <h3>Sync (Requires login)</h3>
+          <p>
+            <button
+              id="beatport-new"
+              disabled={running}
+              onClick={() => {
+                sendTracks(myBeatportUrlFn, 'new', 1)
+              }}
+            >
+              My Beatport
+            </button>
+          </p>
+          <p>
+            <button
+              id="beatport-downloaded"
+              disabled={running}
+              onClick={() => {
+                sendTracks(myDownloadsUrlFn, 'downloaded')
+              }}
+            >
+              Downloaded
+            </button>
+          </p>
+        </>
+      )}
+    </div>
+  )
 }

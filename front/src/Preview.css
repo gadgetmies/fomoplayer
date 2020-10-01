@@ -1,28 +1,28 @@
 .waveform_container {
-    position: relative;
-    height: 31px;
+  position: relative;
+  height: 31px;
 }
 
 .waveform {
-    height: 31px;
-    position: absolute;
+  height: 31px;
+  position: absolute;
 }
 
 .waveform-background {
-    width: 100%;
-    opacity: 0.4;
+  width: 100%;
+  opacity: 0.4;
 }
 
 .waveform_clip-edge-overlay {
-    height: 100%;
-    background: black;
-    opacity: 0.3;
-    position: absolute;
+  height: 100%;
+  background: black;
+  opacity: 0.3;
+  position: absolute;
 }
 
 .waveform-position {
-    background: linear-gradient(to right, #b40089 0%, #ff008b 100%);
-    -webkit-mask-size: 100% 31px;
-    mask-size: 100% 31px;
-    width: 100%;
+  background: linear-gradient(to right, #b40089 0%, #ff008b 100%);
+  -webkit-mask-size: 100% 31px;
+  mask-size: 100% 31px;
+  width: 100%;
 }

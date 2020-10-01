@@ -8,11 +8,12 @@ class ExternalLink extends Component {
     return (
       <a
         className={`${this.props.className || ''} external-link link`}
-        target='_blank'
-        {...(R.dissoc('children', this.props))}
+        target="_blank"
+        {...R.dissoc('children', this.props)}
       >
-        {this.props.children}&nbsp;
-        <FontAwesome name="external-link"/>
+        {this.props.children}
+        &nbsp;
+        <FontAwesome name="external-link" />
       </a>
     )
   }

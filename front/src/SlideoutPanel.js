@@ -2,7 +2,7 @@ import * as Slideout from 'slideout'
 import React, { Component } from 'react'
 
 class SlideoutPanel extends Component {
-  constructor () {
+  constructor() {
     super()
     this.state = {
       slideout: undefined
@@ -11,10 +11,10 @@ class SlideoutPanel extends Component {
 
   componentDidMount() {
     const slideout = new Slideout({
-      'panel': document.getElementById('panel'),
-      'menu': document.getElementById('menu'),
-      'padding': 256,
-      'tolerance': 70
+      panel: document.getElementById('panel'),
+      menu: document.getElementById('menu'),
+      padding: 256,
+      tolerance: 70
     })
 
     slideout.on('open', this.props.onOpen)
@@ -29,9 +29,11 @@ class SlideoutPanel extends Component {
   }
 
   render() {
-    return <div id="panel" style={{ height: "100%", overflow: "hidden" }}>
-      {this.props.children}
-    </div>
+    return (
+      <div id="panel" style={{ height: '100%', overflow: 'hidden' }}>
+        {this.props.children}
+      </div>
+    )
   }
 }
 

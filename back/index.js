@@ -14,7 +14,7 @@ const auth = require('./routes/auth.js')
 const compression = require('compression')
 
 const dbMigrate = require('db-migrate').getInstance(true, { config: `${__dirname}/database.json` })
-  ; (process.env.RESET_DB_ON_INIT ? dbMigrate.reset() : Promise.resolve()).then(() => dbMigrate.up())
+;(process.env.RESET_DB_ON_INIT ? dbMigrate.reset() : Promise.resolve()).then(() => dbMigrate.up())
 
 const app = express()
 app.use(compression())
@@ -41,8 +41,7 @@ app.options('*', cors()) // include before other routes
 
 app.use(bodyParser.json({ limit: '50mb', extended: true }))
 
-const ensureAuthenticated = (req, res, next) =>
-  req.isAuthenticated() ? next() : res.status(401).end()
+const ensureAuthenticated = (req, res, next) => (req.isAuthenticated() ? next() : res.status(401).end())
 
 app.use('/api/auth', auth)
 
@@ -50,7 +49,6 @@ app.use('/api/auth', auth)
 app.post(/\/api\/tracks$/, passport.authenticate('jwt', { session: false }), require('./routes/tracks.js'))
 
 app.use('/api', ensureAuthenticated, require('./routes/index.js'))
-
 
 app.use((err, req, res, next) => {
   console.error(err)

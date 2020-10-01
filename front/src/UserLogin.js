@@ -47,7 +47,7 @@ export default class Login extends Component {
     try {
       await requestWithCredentials({
         path: this.props.logoutPath,
-        method: 'POST',
+        method: 'POST'
       })
 
       this.setState({ loggingOut: false, loggedIn: false, logoutError: false })
@@ -58,59 +58,66 @@ export default class Login extends Component {
   }
 
   render() {
-    return <div
-      className={this.props.className}>
-      {this.state.loggedIn ?
-        <>
-          <button
-            disabled={this.state.loggingOut}
-            className={`button login-button button-push_button-${this.props.size} button-push_button-primary`}
-            onClick={this.submitLogout.bind(this)}>
-            Logout
+    return (
+      <div className={this.props.className}>
+        {this.state.loggedIn ? (
+          <>
+            <button
+              disabled={this.state.loggingOut}
+              className={`button login-button button-push_button-${this.props.size} button-push_button-primary`}
+              onClick={this.submitLogout.bind(this)}
+            >
+              Logout
             </button>
-          {
-            this.state.logoutError ? <span>Logout failed.</span> : null
-          }
-        </> :
-        <form
-          onSubmit={e => {
-            e.preventDefault()
-            this.submitLogin()
-          }}
-        >
-          <label className="login-label">
-            <span className={`login-label-text login-label-text-${this.props.size}`}>Username</span>
-            <input type="text" name={`username-${this.props.loginName}`}
-              autoComplete={`username-${this.props.loginName}`}
-              disabled={this.state.loggingIn}
-              onInput={e => this.setState({ username: e.target.value })}
-              className={`text-input login-input text-input-${this.props.size}`}
-            />
-          </label>
-          <label className="login-label">
-            <span className={`login-label-text login-label-text-${this.props.size}`}>Password</span>
-            <input type="password" name={`password-${this.props.loginName}`}
-              autoComplete={`password-${this.props.loginName}`}
-              disabled={this.state.loggingIn}
-              onInput={e => this.setState({ password: e.target.value })}
-              className={`text-input login-input text-input-${this.props.size}`}
-            />
-          </label>
-          <button
-            type='submit'
-            className={`button login-button button-push_button-${this.props.size} button-push_button-primary`}
-            disabled={this.state.loggingIn || this.state.loggedIn}
-          >Login</button>
-          {
-            this.state.loginError ? 'Login failed' : ''
-          }
-          <div class="login-separator">or</div>
-          <button
-            className={`button login-button button-push_button-${this.props.size} button-push_button-primary`}>
-            Continue with Google
-          </button>
-        </form>
-      }
-    </div>
+            {this.state.logoutError ? <span>Logout failed.</span> : null}
+          </>
+        ) : (
+          <form
+            onSubmit={e => {
+              e.preventDefault()
+              this.submitLogin()
+            }}
+          >
+            <a
+              href={this.props.googleLoginPath}
+              className={`button login-button button-push_button-${this.props.size} button-push_button-primary`}
+            >
+              Continue with Google
+            </a>
+            <div className="login-separator">or</div>
+            <label className="login-label">
+              <span className={`login-label-text login-label-text-${this.props.size}`}>Username</span>
+              <input
+                type="text"
+                name={`username-${this.props.loginName}`}
+                autoComplete={`username-${this.props.loginName}`}
+                disabled={this.state.loggingIn}
+                onInput={e => this.setState({ username: e.target.value })}
+                className={`text-input login-input text-input-${this.props.size}`}
+              />
+            </label>
+            <label className="login-label">
+              <span className={`login-label-text login-label-text-${this.props.size}`}>Password</span>
+              <input
+                type="password"
+                name={`password-${this.props.loginName}`}
+                autoComplete={`password-${this.props.loginName}`}
+                disabled={this.state.loggingIn}
+                onInput={e => this.setState({ password: e.target.value })}
+                className={`text-input login-input text-input-${this.props.size}`}
+              />
+            </label>
+            <button
+              type="submit"
+              className={`button login-button button-push_button-${this.props.size} button-push_button-primary`}
+              disabled={this.state.loggingIn || this.state.loggedIn}
+            >
+              Login
+            </button>
+            {this.state.loginError ? 'Login failed' : ''}
+          </form>
+        )}
+      </div>
+    )
   }
 }

@@ -92,13 +92,14 @@ router.post('/login', ({ body: { username, password, sessionCookieValue, csrfTok
     log(`Using session for user ${user.username}`)
     return res.send('ok')
   } else {
-    (username && password ?
-      bpApi.initAsync(username, password) :
-      bpApi.initWithSessionAsync(sessionCookieValue, csrfToken)
-    ).then(session => {
-      log(`Storing session for user ${user.username}`)
-      setSession(user.username, session)
-    })
+    ;(username && password
+      ? bpApi.initAsync(username, password)
+      : bpApi.initWithSessionAsync(sessionCookieValue, csrfToken)
+    )
+      .then(session => {
+        log(`Storing session for user ${user.username}`)
+        setSession(user.username, session)
+      })
       .tap(() => res.send('ok'))
       .catch(next)
   }

@@ -17,5 +17,11 @@ WHERE store_id = (
   from store
   where store_name = 'Bandcamp');
 
+DELETE FROM store__label
+WHERE store_id = (
+    SELECT store_id
+    from store
+    where store_name = 'Bandcamp');
+
 DELETE FROM store
 WHERE store_name = 'Bandcamp';

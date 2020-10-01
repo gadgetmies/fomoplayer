@@ -28,8 +28,7 @@ router.get('/tracks', ({ user: { username }, query: { older_than } }, res, next)
   return getTracks(username)
     .tap(tracks => res.send(tracks))
     .catch(next)
-}
-)
+})
 
 router.get('/tracks/:id/preview.:format', ({ user: { username }, params: { id, format } }, res, next) =>
   getPreviewUrl(username, id, format)
@@ -66,7 +65,7 @@ router.post('/login', async ({ body: { client_id, identity, session, cookie }, u
   }
 })
 
-router.get('/refresh/:uuid', async ({ user: {username}, params: { uuid } }, res, next) => {
+router.get('/refresh/:uuid', async ({ user: { username }, params: { uuid } }, res, next) => {
   try {
     res.send(await getRefreshStatus(username, uuid))
   } catch (e) {
@@ -75,7 +74,7 @@ router.get('/refresh/:uuid', async ({ user: {username}, params: { uuid } }, res,
   }
 })
 
-router.post('/refresh', async ({ user: {username} }, res, next) => {
+router.post('/refresh', async ({ user: { username } }, res, next) => {
   try {
     const uuid = await startRefreshUserTracks(username)
     return res.send({ uuid })
@@ -105,7 +104,7 @@ router.get('/session/', ({ user: { username } = { username: undefined } }, res) 
 
 router.get('/carts', ({ user }, res, next) =>
   getTracksInCarts(user)
-    .catch((e) => error('Getting carts failed', e))
+    .catch(e => error('Getting carts failed', e))
     .tap(idsOfItemsInCarts => res.send(idsOfItemsInCarts))
     .catch(next)
 )
