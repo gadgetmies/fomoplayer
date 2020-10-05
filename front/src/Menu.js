@@ -17,7 +17,7 @@ export default class Menu extends Component {
   }
 
   updateLogins() {
-    return BPromise.each(['beatport', 'bandcamp'], store =>
+    return BPromise.each(['beatport'], store =>
       requestJSONwithCredentials({ path: `/stores/${store}/session/` })
         .catch(e => ({ valid: false }))
         .then(({ valid }) => {
@@ -37,7 +37,7 @@ export default class Menu extends Component {
 
   logout = async () => {
     try {
-      await BPromise.each(['beatport', 'bandcamp'], store =>
+      await BPromise.each(['beatport'], store =>
         requestWithCredentials({ path: `/stores/${store}/logout/`, method: 'POST' })
       )
 
@@ -100,25 +100,6 @@ export default class Menu extends Component {
                   loggedInContent={
                     <RefreshButton
                       store={'beatport'}
-                      onUpdateTracks={this.props.onUpdateTracks}
-                      className="menu-item"
-                    />
-                  }
-                />
-              </li>
-              <li className={'store-list-item'} key={'bandcamp'}>
-                <h3>Bandcamp</h3>
-                <CookieLogin
-                  loginPath={'/stores/bandcamp/login'}
-                  logoutPath={'/stores/bandcamp/logout'}
-                  size={'large'}
-                  loggedIn={this.state.validSessions.has('bandcamp')}
-                  onLoginDone={this.updateLogins.bind(this)}
-                  onLogoutDone={this.updateLogins.bind(this)}
-                  loggedInContent={
-                    <RefreshButton
-                      store={'bandcamp'}
-                      size={'large'}
                       onUpdateTracks={this.props.onUpdateTracks}
                       className="menu-item"
                     />
