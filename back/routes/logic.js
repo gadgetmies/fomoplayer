@@ -51,7 +51,6 @@ module.exports.getStorePreviewRedirectForTrack = (id, format, skip) =>
   )
 
 module.exports.addStoreTrackToUser = async (storeUrl, user, track) => {
-  console.log(track)
   let labelId
   let releaseId
 

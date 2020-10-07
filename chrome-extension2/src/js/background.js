@@ -297,7 +297,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           }
           let path = message.data.type === 'new' ? 'tracks' : 'downloaded'
 
-          console.log(bandcampTracksCache, bandcampReleasesTransform(bandcampTracksCache))
           try {
             await fetch(`http://localhost:4000/api/${path}`, {
               method: 'POST',

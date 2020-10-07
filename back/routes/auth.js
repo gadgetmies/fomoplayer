@@ -17,7 +17,6 @@ router.get('/login/google/return', passport.authenticate('openidconnect', { fail
   req,
   res
 ) {
-  console.log(req.path)
   res.redirect('/')
 })
 
