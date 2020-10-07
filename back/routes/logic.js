@@ -63,7 +63,9 @@ module.exports.addStoreTrackToUser = async (storeUrl, user, track) => {
   }
   const artists = await Promise.all(track.artists.map(artist => ensureArtistExists(storeUrl, artist)))
 
-  trackId = await addStoreTrack(storeUrl, labelId, releaseId, artists, track)
+  const trackId = await addStoreTrack(storeUrl, labelId, releaseId, artists, track)
 
-  return addTrackToUser(user, trackId)
+  await addTrackToUser(user, trackId)
+
+  return trackId
 }

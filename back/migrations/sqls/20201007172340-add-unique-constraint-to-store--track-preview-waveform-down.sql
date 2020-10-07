@@ -1,0 +1,2 @@
+ALTER TABLE store__track_preview_waveform
+    DROP CONSTRAINT store__track_preview_waveform_store__track_preview_id_url_key;

@@ -1,4 +1,5 @@
 const router = require('express').Router()
+const { serviceURL, apiRoot } = require('../config.js')
 //const bodyParser = require('body-parser')
 // router.use(bodyParser.json())
 
@@ -6,10 +7,13 @@ const { addStoreTrackToUser } = require('./logic.js')
 
 module.exports = async (req, res, next) => {
   try {
-    for (const track of req.body) {
-      await addStoreTrackToUser(req.headers['x-multi-store-player-store'], req.user.id, track)
-    }
-    res.status(204).send()
+    const addedTracks = await Promise.all(req.body.map(async track => {
+        const trackId = await addStoreTrackToUser(req.headers['x-multi-store-player-store'], req.user.id, track)
+        console.log(trackId)
+        return `${serviceURL}${apiRoot}/tracks/${trackId}`
+      })
+    )
+    res.status(201).send(addedTracks)
   } catch (e) {
     next(e)
   }
