@@ -22,6 +22,7 @@ chrome.runtime.onInstalled.addListener(function() {
 
 const idToString = id => id.toString()
 
+const durationLens = ['duration', L.multiply(1000)]
 const bandcampReleasesTransform = L.collect([
   L.elems,
   L.choose(release => [
@@ -37,11 +38,11 @@ const bandcampReleasesTransform = L.collect([
           role: R.always('author')
         })
       ),
-      duration: ['duration', L.multiply(1000)],
+      duration_ms: durationLens,
       release: R.always({
         release_date: new Date(release.album_release_date).toISOString(),
         url: release.url,
-        name: release.current.title,
+        title: release.current.title,
         id: release.id.toString(10)
       }),
       label: R.always({
@@ -51,7 +52,10 @@ const bandcampReleasesTransform = L.collect([
       }),
       previews: L.partsOf(
         L.pick({
-          url: ['file', 'mp3-128']
+          url: ['file', 'mp3-128'],
+          format: R.always('mp3'),
+          start_ms: R.always(0),
+          end_ms: durationLens
         })
       ),
       store_details: []
