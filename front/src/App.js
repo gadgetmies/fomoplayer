@@ -99,7 +99,7 @@ class App extends Component {
           <>
             <Menu
               ref="menu"
-              logoutPath={'/auth/logout'}
+              logoutPath={`/auth/logout`}
               loggedIn={this.state.loggedIn}
               onLogoutDone={this.onLogoutDone.bind(this)}
               onStoreLoginDone={() => {}} //this.onStoreLoginDone.bind(this)}
@@ -136,7 +136,7 @@ class App extends Component {
               <Login
                 onLoginDone={this.onLoginDone.bind(this)}
                 onLogoutDone={this.onLogoutDone.bind(this)}
-                googleLoginPath={`${config.apiUrl}/auth/login/google`}
+                googleLoginPath={`${config.apiURL}/auth/login/google`}
                 loginPath={'/auth/login'}
                 logoutPath={'/auth/logout'}
               />

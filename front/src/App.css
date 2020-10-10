@@ -85,6 +85,12 @@ body {
   white-space: nowrap;
 }
 
+.open-in-column {
+  flex: 0;
+  max-width: 75px;
+  min-width: 75px;
+}
+
 a.link {
   color: white;
   text-decoration: none;

@@ -1,3 +1,7 @@
+const colorTrace = require('color-stacktrace')
+colorTrace.init(Error)
+
+const config = require('./config.js')
 const express = require('express')
 const passport = require('passport')
 const passportSetup = require('./passport-setup.js')
@@ -7,8 +11,6 @@ const pgSession = require('connect-pg-simple')(session)
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 
-const config = require('./config.js')
-const account = require('./db/account.js')
 const auth = require('./routes/auth.js')
 
 const compression = require('compression')

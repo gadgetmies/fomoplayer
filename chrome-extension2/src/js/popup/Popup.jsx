@@ -12,17 +12,20 @@ const panels = [
     component: MultiStorePlayer
   },
   {
-    matcher: /^.*\.beatport\.com/,
+    matcher: /^https:\/\/.*\.beatport\.com/,
     component: BeatportPanel
   },
   {
-    matcher: /^.*\.?bandcamp\.com/,
+    matcher: /^https:\/\/.*\.?bandcamp\.com/,
     component: BandcampPanel
   }
 ]
 
 const getCurrentUrl = tabArray => tabArray[0].url
-const getCurrentHostname = tabArray => new URL(getCurrentUrl(tabArray)).hostname
+const getCurrentHostname = tabArray => {
+  console.log(new URL(getCurrentUrl(tabArray)).origin)
+  return new URL(getCurrentUrl(tabArray)).origin
+}
 
 export default class Popup extends React.Component {
   constructor(props) {
@@ -61,7 +64,10 @@ export default class Popup extends React.Component {
   render() {
     console.log(this.state)
     const panelProps = { setRunning: this.setRunning.bind(this), running: this.state.running }
-    const current = panels.find(panel => this.state.currentHostname.match(panel.matcher))
+    const current = panels.find(panel => {
+      console.log(panel.matcher.toString())
+      return this.state.currentHostname.match(panel.matcher)
+    })
     const currentComponent = current
       ? current.component({ isCurrent: true, ...panelProps, key: current.matcher.toString() })
       : null

@@ -1,24 +1,23 @@
-const R = require('ramda')
-const os = require('os')
-const secrets = require('./secrets.development.js')
+let nodeEnv = process.env.NODE_ENV || 'development'
+require('dotenv').config({path: `.env.${nodeEnv}`})
 
-const getIPv4AddressOfInterface = interfaceName =>
-  os.networkInterfaces()[interfaceName].find(R.propEq('family', 'IPv4')).address
+const resolveServiceURL = require('../shared/resolveServiceURL.js')
+const sharedConfig = require('shared')(nodeEnv).config
 
-const currentIp = getIPv4AddressOfInterface('en7')
-console.log('Current IP: ', currentIp)
+const port = sharedConfig.API_PORT
+const interfaceName = sharedConfig.INTERFACE
+const frontendURL = resolveServiceURL(sharedConfig.FRONTEND_URL, interfaceName, sharedConfig.FRONTEND_PORT)
+const apiURL = resolveServiceURL(sharedConfig.API_URL, interfaceName, port, '/api')
 
 module.exports = {
   allowedOrigins: [
-    'http://localhost:4001',
-    `http://${currentIp}:4001`,
-    'http://localhost:5001',
-    `http://${currentIp}:5001`,
-    'chrome-extension://ihanagknldeedffhfcmbmjdcheapeafi',
+    frontendURL,
     'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn'
   ],
-  port: process.env.PORT || 4000,
-  apiRoot: '/api',
-  serviceURL: 'http://localhost:5001',
-  ...secrets
+  port,
+  apiURL,
+  frontendURL,
+  googleClientId: process.env.GOOGLE_CLIENT_ID,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  sessionSecret: process.env.SESSION_SECRET
 }

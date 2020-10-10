@@ -1,35 +1,36 @@
-var WebpackDevServer = require('webpack-dev-server'),
-  webpack = require('webpack'),
-  config = require('../webpack.config'),
-  env = require('./env'),
-  path = require('path')
+const WebpackDevServer = require('webpack-dev-server')
+const webpack = require('webpack')
+const webPackConfig = require('../webpack.config.js')
+const config = require('./config.js')
+const path = require('path')
 
-var options = config.chromeExtensionBoilerplate || {}
-var excludeEntriesToHotReload = options.notHotReload || []
+const options = webPackConfig.chromeExtensionBoilerplate || {}
+const excludeEntriesToHotReload = options.notHotReload || []
+const port = config.PORT
 
-for (var entryName in config.entry) {
+for (const entryName in webPackConfig.entry) {
   if (excludeEntriesToHotReload.indexOf(entryName) === -1) {
-    config.entry[entryName] = [
-      'webpack-dev-server/client?http://localhost:' + env.PORT,
+    webPackConfig.entry[entryName] = [
+      'webpack-dev-server/client?http://localhost:' + port,
       'webpack/hot/dev-server'
-    ].concat(config.entry[entryName])
+    ].concat(webPackConfig.entry[entryName])
   }
 }
 
-config.plugins = [new webpack.HotModuleReplacementPlugin()].concat(config.plugins || [])
+webPackConfig.plugins = [new webpack.HotModuleReplacementPlugin()].concat(webPackConfig.plugins || [])
 
-delete config.chromeExtensionBoilerplate
+delete webPackConfig.chromeExtensionBoilerplate
 
-var compiler = webpack(config)
+const compiler = webpack(webPackConfig)
 
-var server = new WebpackDevServer(compiler, {
+const server = new WebpackDevServer(compiler, {
   hot: true,
   contentBase: path.join(__dirname, '../build'),
-  sockPort: env.PORT,
+  sockPort: port,
   headers: {
     'Access-Control-Allow-Origin': '*'
   },
   disableHostCheck: true
 })
 
-server.listen(env.PORT)
+server.listen(port)

@@ -1,5 +1,6 @@
 const router = require('express').Router()
 const passport = require('passport')
+const { frontendURL, apiURL } = require('../config.js')
 
 router.post('/logout', function(req, res) {
   req.logout()
@@ -13,11 +14,11 @@ router.get('/logout', function(req, res) {
 
 router.get('/login/google', passport.authenticate('openidconnect'))
 
-router.get('/login/google/return', passport.authenticate('openidconnect', { failureRedirect: '/auth/login' }), function(
+router.get('/login/google/return', passport.authenticate('openidconnect', { failureRedirect: `${apiURL}/auth/login` }), function(
   req,
   res
 ) {
-  res.redirect('/')
+  res.redirect(`${frontendURL}`)
 })
 
 router.post('/login', passport.authenticate('local'), (req, res) => res.status(204).end())

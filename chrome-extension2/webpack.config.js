@@ -1,7 +1,6 @@
 const { DefinePlugin, EnvironmentPlugin } = require('webpack')
 const path = require('path')
 const fileSystem = require('fs')
-const env = require('./utils/env')
 const CleanWebpackPlugin = require('clean-webpack-plugin').CleanWebpackPlugin
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
@@ -9,20 +8,11 @@ const WriteFilePlugin = require('write-file-webpack-plugin')
 
 const config = require('./utils/config.js')
 
-// load the secrets
-let alias = {}
-
-const secretsPath = path.join(__dirname, 'secrets.' + env.NODE_ENV + '.js')
-const secrets = require(secretsPath)
-
+const nodeEnv = process.env.NODE_ENV || 'development'
 const fileExtensions = ['jpg', 'jpeg', 'png', 'gif', 'eot', 'otf', 'svg', 'ttf', 'woff', 'woff2']
 
-if (fileSystem.existsSync(secretsPath)) {
-  alias['secrets'] = secretsPath
-}
-
 let options = {
-  mode: process.env.NODE_ENV || env.NODE_ENV,
+  mode: nodeEnv === 'development' ? 'development' : 'production',
   entry: {
     popup: path.join(__dirname, 'src', 'js', 'popup.js'),
     //    options: path.join(__dirname, "src", "js", "options.js"),
@@ -55,7 +45,6 @@ let options = {
     ]
   },
   resolve: {
-    alias: alias,
     extensions: fileExtensions.map(extension => '.' + extension).concat(['.jsx', '.js', '.css'])
   },
   plugins: [
@@ -73,10 +62,10 @@ let options = {
             JSON.stringify({
               description: process.env.npm_package_description,
               version: process.env.npm_package_version,
-              key: secrets.EXTENSION_KEY,
+              key: config.EXTENSION_KEY,
               oauth2: {
-                client_id: secrets.GOOGLE_CLIENT_ID,
-                scopes: [config.PLAYER_API_URL]
+                client_id: config.GOOGLE_CLIENT_ID,
+                scopes: [config.PLAYER_API_URL] // TODO: does the path need to be removed?
               },
               ...JSON.parse(content.toString())
             })
@@ -103,7 +92,7 @@ let options = {
   ]
 }
 
-if (env.NODE_ENV === 'development') {
+if (nodeEnv === 'development') {
   options.devtool = 'cheap-module-eval-source-map'
 }
 

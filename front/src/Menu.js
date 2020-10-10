@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import SessionLogin from './SessionLogin.js'
-import CookieLogin from './CookieLogin.js'
 import RefreshButton from './RefreshButton'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
 import BPromise from 'bluebird'

@@ -1,6 +1,6 @@
 const BPromise = require('bluebird')
 const pg = require('../db/pg.js')
-const { apiRoot } = require('../config.js')
+const { apiURL } = require('../config.js')
 const R = require('ramda')
 
 const {
@@ -47,7 +47,7 @@ module.exports.addArtistsOnLabelsToIgnore = (username, { artistIds, labelIds }) 
 
 module.exports.getStorePreviewRedirectForTrack = (id, format, skip) =>
   getLongestPreviewForTrack(id, format, skip).then(
-    ({ storeCode, storeTrackId }) => `${apiRoot}/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`
+    ({ storeCode, storeTrackId }) => `${apiURL}/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`
   )
 
 module.exports.addStoreTrackToUser = async (storeUrl, user, track) => {

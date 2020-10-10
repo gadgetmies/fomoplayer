@@ -1,0 +1,17 @@
+{
+  "name": "multi-store-player-shared-config",
+  "version": "1.0.0",
+  "description": "Shared constants for keeping backend, frontend and Chrome Extension configs in sync",
+  "main": "index.js",
+  "bin": {
+    "get-frontend-port": "./get-frontend-port.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^8.2.0"
+  }
+}

@@ -1,5 +1,6 @@
 import * as L from 'partial.lenses'
 import * as R from 'ramda'
+import { PLAYER_API_URL } from '../../utils/config.js'
 
 chrome.runtime.onInstalled.addListener(function() {
   // Replace all rules ...
@@ -274,7 +275,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         console.log(message.data, beatportTracksTransform(message.data))
         const path = message.data.type === 'new' ? 'tracks' : 'downloaded'
         try {
-          fetch(`http://localhost:4000/api/${path}`, {
+          fetch(`${JSON.parse(PLAYER_API_URL)}/${path}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -302,7 +303,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           let path = message.data.type === 'new' ? 'tracks' : 'downloaded'
 
           try {
-            await fetch(`http://localhost:4000/api/${path}`, {
+            await fetch(`${PLAYER_API_URL}/${path}`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

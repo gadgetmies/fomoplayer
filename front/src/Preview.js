@@ -48,14 +48,6 @@ class Preview extends Component {
     const menu = (
       <button style={{ position: 'absolute', margin: 10, color: 'white' }} onClick={() => this.props.onMenuClicked()}>
         <FontAwesome name="bars" />{' '}
-        {this.props.showHint ? (
-          <>
-            <FontAwesome name="long-arrow-left" />
-            &nbsp;Start here!
-          </>
-        ) : (
-          ''
-        )}
       </button>
     )
     if (!this.props.currentTrack) {
@@ -141,7 +133,7 @@ class Preview extends Component {
                 this.setState({ position: currentTime * 1000 })
               }}
               controlsList="nodownload"
-              src={`${config.apiUrl}/tracks/${this.props.currentTrack.id}/preview.mp3`}
+              src={`${config.apiURL}/tracks/${this.props.currentTrack.id}/preview.mp3`}
             />
           }
         </div>

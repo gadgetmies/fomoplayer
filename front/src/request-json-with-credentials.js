@@ -6,7 +6,7 @@ const requestJSONwithCredentials = (...args) =>
   })
 
 const requestWithCredentials = async ({ url, path, method = 'GET', body }) => {
-  const res = await fetch(url ? url : `${config.apiUrl}${path}`, {
+  const res = await fetch(url ? url : `${config.apiURL}${path}`, {
     method,
     body: body ? JSON.stringify(body) : undefined,
     credentials: 'include',

@@ -2,7 +2,6 @@
 
 const config = require('./config.js')
 const passport = require('passport')
-const Strategy = require('passport-local').Strategy
 const account = require('./db/account.js')
 const LocalStrategy = require('passport-local').Strategy
 const OpenIDStrategy = require('passport-openidconnect').Strategy
@@ -26,7 +25,7 @@ module.exports = function passportSetup() {
         authorizationURL: 'https://accounts.google.com/o/oauth2/auth',
         tokenURL: 'https://www.googleapis.com/oauth2/v3/token',
         userInfoURL: 'https://openidconnect.googleapis.com/v1/userinfo',
-        callbackURL: `${config.serviceURL}/api/auth/login/google/return`
+        callbackURL: `${config.apiURL}/auth/login/google/return`
       },
       async (accessToken, refreshToken, profile, done) => {
         try {

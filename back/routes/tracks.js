@@ -1,5 +1,5 @@
 const router = require('express').Router()
-const { serviceURL, apiRoot } = require('../config.js')
+const { apiURL } = require('../config.js')
 //const bodyParser = require('body-parser')
 // router.use(bodyParser.json())
 
@@ -10,7 +10,7 @@ module.exports = async (req, res, next) => {
     const addedTracks = await Promise.all(req.body.map(async track => {
         const trackId = await addStoreTrackToUser(req.headers['x-multi-store-player-store'], req.user.id, track)
         console.log(trackId)
-        return `${serviceURL}${apiRoot}/tracks/${trackId}`
+        return `${apiURL}/tracks/${trackId}`
       })
     )
     res.status(201).send(addedTracks)

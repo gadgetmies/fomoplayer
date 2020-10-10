@@ -10,6 +10,7 @@
     "bluebird": "^3.5.2",
     "body-parser": "^1.18.3",
     "bp-api": "git://git@github.com:elysion/bp-api.git#v3.0.1",
+    "color-stacktrace": "^1.0.3",
     "colors": "^1.4.0",
     "compression": "^1.7.3",
     "connect-ensure-login": "^0.1.1",
@@ -19,6 +20,7 @@
     "cors": "^2.8.4",
     "db-migrate": "^0.11.11",
     "db-migrate-pg": "^0.4.0",
+    "dotenv": "^8.2.0",
     "ejs": "^2.6.1",
     "express": "^4.16.4",
     "express-session": "^1.15.6",
@@ -38,6 +40,7 @@
     "ramda": "^0.25.0",
     "request-in-session": "git://git@github.com:elysion/request-in-session.git#v1.2.1",
     "safer-eval": "^1.3.1",
+    "shared": "file:../shared",
     "sql-template-strings": "^2.2.2"
   },
   "devDependencies": {

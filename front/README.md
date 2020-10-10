@@ -1,3 +1,15 @@
+# Frontend for the Multi Store Player
+
+Start the development server simply by running
+```shell script
+npm start
+```
+
+The app uses port 5002 by default. This can be configured via the `PORT` environment variable as using the `dotenv` files such as the `.env.example`. The frontend server by default proxies requests to `/api/`-path to the backend in order to prevent CORS issues. This behaviour is configured in the `src/setupProxy.js`.
+
+Create React App stuff
+---
+
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
 
 Below you will find some information on how to perform common tasks.<br>

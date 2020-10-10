@@ -20,50 +20,50 @@ class Share extends Component {
           className={'table-cell-button expand-collapse-button'}
           onClick={() => this.setState({ open: !this.state.open })}
         >
-          <FontAwesome name={this.state.open ? 'caret-up' : 'caret-down'} />
+          <FontAwesome name={this.state.open ? 'caret-up' : 'caret-down'}/>
         </PillButton>
         {this.state.open
-          ? [
-              <br />,
-              <ul className={'no-style-list'}>
-                {this.props.stores.find(R.propEq('code', 'beatport')) ? (
-                  <li>
-                    <ExternalLink
-                      href={`https://www.beatport.com/track/${this.props.title.toLowerCase().replace(' ', '-')}/${
-                        this.props.stores.find(R.propEq('code', 'beatport')).trackId
-                      }`}
-                    >
-                      Beatport
-                    </ExternalLink>
-                  </li>
-                ) : null}
-                {this.props.stores.find(R.propEq('code', 'bandcamp')) ? (
-                  <li>
-                    <ExternalLink href={`${this.props.stores.find(R.propEq('code', 'bandcamp')).url}`}>
-                      Bandcamp
-                    </ExternalLink>
-                  </li>
-                ) : null}
+          ? <>
+            <br/>
+            <ul className={'no-style-list'}>
+              {this.props.stores.find(R.propEq('code', 'beatport')) ? (
                 <li>
                   <ExternalLink
-                    href={`https://www.youtube.com/results?search_query=${this.props.artists
-                      .map(R.prop('name'))
-                      .join('+')}+${this.props.title}`}
-                  >
-                    YouTube
-                  </ExternalLink>
-                </li>
-                <li>
-                  <ExternalLink
-                    href={`https://open.spotify.com/search/${this.props.artists.map(R.prop('name')).join(' ')} ${
-                      this.props.title
+                    href={`https://www.beatport.com/track/${this.props.title.toLowerCase().replace(' ', '-')}/${
+                      this.props.stores.find(R.propEq('code', 'beatport')).trackId
                     }`}
                   >
-                    Spotify
+                    Beatport
                   </ExternalLink>
                 </li>
-              </ul>
-            ]
+              ) : null}
+              {this.props.stores.find(R.propEq('code', 'bandcamp')) ? (
+                <li>
+                  <ExternalLink href={`${this.props.stores.find(R.propEq('code', 'bandcamp')).url}`}>
+                    Bandcamp
+                  </ExternalLink>
+                </li>
+              ) : null}
+              <li>
+                <ExternalLink
+                  href={`https://www.youtube.com/results?search_query=${this.props.artists
+                    .map(R.prop('name'))
+                    .join('+')}+${this.props.title}`}
+                >
+                  YouTube
+                </ExternalLink>
+              </li>
+              <li>
+                <ExternalLink
+                  href={`https://open.spotify.com/search/${this.props.artists.map(R.prop('name')).join(' ')} ${
+                    this.props.title
+                  }`}
+                >
+                  Spotify
+                </ExternalLink>
+              </li>
+            </ul>
+          </>
           : null}
       </>
     )
@@ -122,7 +122,7 @@ class Track extends Component {
               onMouseEnter={() => this.setHeardHover(true)}
               onMouseLeave={() => this.setHeardHover(false)}
             >
-              {this.state.heardHover ? <FontAwesome name="play" /> : <FontAwesome name="circle" />}
+              {this.state.heardHover ? <FontAwesome name="play"/> : <FontAwesome name="circle"/>}
             </button>
           )}
         </td>
@@ -198,7 +198,7 @@ class Track extends Component {
             </PillButton>
           ) : null}
         </td>
-        <td style={{ flex: 1 }}>
+        <td className='open-in-column'>
           <Share stores={this.props.stores} artists={this.props.artists} title={this.props.title}/>
         </td>
       </tr>
@@ -217,41 +217,43 @@ class Tracks extends Component {
   }
 
   renderTracks(tracks, carts) {
-    return tracks.map(({ id, title, mix, artists, remixers, labels, keys, heard, stores }) => {
-      // if (!R.isEmpty(carts)) debugger
-      return (
-        <Track
-          id={id}
-          title={title}
-          artists={artists}
-          mix={mix}
-          remixers={remixers}
-          label={R.pluck('name', labels).join(', ')}
-          keys={keys}
-          stores={stores}
-          selected={this.state.selectedTrack === id}
-          playing={this.props.currentTrack === id}
-          heard={heard}
-          inCart={stores.filter(({ code, trackId }) => (carts[code] || []).includes(trackId)).map(({ code }) => code)}
-          key={id}
-          // onClick={() => this.setState({ selectedTrack: id })}
-          onDoubleClick={() => {
-            this.props.onPreviewRequested(id)
-          }}
-          // onTouchTap={() => {
-          //   this.props.onPreviewRequested(id)
-          // }}
-          onAddToCart={this.props.onAddToCart}
-          onRemoveFromCart={this.props.onRemoveFromCart}
-          onIgnoreArtistsByLabels={() =>
-            this.props.onIgnoreArtistsByLabels({
-              artistIds: artists.map(R.prop('id')),
-              labelIds: labels.map(R.prop('id'))
-            })
-          }
-        />
-      )
-    })
+    return tracks.length === 0 ? <tr style={{ display: 'block' }}>
+        <td>No tracks available</td>
+      </tr> :
+      tracks.map(({ id, title, mix, artists, remixers, labels, keys, heard, stores }) => {
+        return (
+          <Track
+            id={id}
+            title={title}
+            artists={artists}
+            mix={mix}
+            remixers={remixers}
+            label={R.pluck('name', labels).join(', ')}
+            keys={keys}
+            stores={stores}
+            selected={this.state.selectedTrack === id}
+            playing={this.props.currentTrack === id}
+            heard={heard}
+            inCart={stores.filter(({ code, trackId }) => (carts[code] || []).includes(trackId)).map(({ code }) => code)}
+            key={id}
+            // onClick={() => this.setState({ selectedTrack: id })}
+            onDoubleClick={() => {
+              this.props.onPreviewRequested(id)
+            }}
+            // onTouchTap={() => {
+            //   this.props.onPreviewRequested(id)
+            // }}
+            onAddToCart={this.props.onAddToCart}
+            onRemoveFromCart={this.props.onRemoveFromCart}
+            onIgnoreArtistsByLabels={() =>
+              this.props.onIgnoreArtistsByLabels({
+                artistIds: artists.map(R.prop('id')),
+                labelIds: labels.map(R.prop('id'))
+              })
+            }
+          />
+        )
+      })
   }
 
   render() {
@@ -336,35 +338,35 @@ class Tracks extends Component {
               Unfollow
               {/*Artists*/}
             </th>
-            <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>
+            <th className='open-in-column'>
               Open in
             </th>
           </tr>
           </thead>
           {/* Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table */}
           <tbody style={{ height: 'calc(100% - 166px)', overflow: 'scroll', display: 'block' }}>
-            {this.renderTracks(this.props.tracks, this.props.carts)}
-            {this.props.listState === 'new' ? (
-              <tr style={{ display: 'block' }}>
-                <td style={{ display: 'block' }}>
-                  <SpinnerButton
-                    size={'large'}
-                    loading={this.state.updatingTracks}
-                    onClick={async () => {
-                      this.setState({ updatingTracks: true })
-                      try {
-                        await this.props.onUpdateTracksClicked()
-                      } finally {
-                        this.setState({ updatingTracks: false })
-                      }
-                    }}
-                    style={{ margin: 'auto', height: '100%', display: 'block' }}
-                    label={'Load more'}
-                    loadingLabel={'Loading'}
-                  />
-                </td>
-              </tr>
-            ) : null}
+          {this.renderTracks(this.props.tracks, this.props.carts)}
+          {this.props.listState === 'new' ? (
+            <tr style={{ display: 'block' }}>
+              <td style={{ display: 'block' }}>
+                <SpinnerButton
+                  size={'large'}
+                  loading={this.state.updatingTracks}
+                  onClick={async () => {
+                    this.setState({ updatingTracks: true })
+                    try {
+                      await this.props.onUpdateTracksClicked()
+                    } finally {
+                      this.setState({ updatingTracks: false })
+                    }
+                  }}
+                  style={{ margin: 'auto', height: '100%', display: 'block' }}
+                  label={'Load more'}
+                  loadingLabel={'Loading'}
+                />
+              </td>
+            </tr>
+          ) : null}
           </tbody>
         </table>
       </>

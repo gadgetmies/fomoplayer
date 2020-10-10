@@ -1,5 +1,4 @@
 import React from 'React'
-import * as R from 'ramda'
 import waitFunction from './wait.js'
 
 const sendBeatportTracksScript = (urlTemplate, type, pageCount = 10) => `
