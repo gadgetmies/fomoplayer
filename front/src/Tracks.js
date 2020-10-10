@@ -194,7 +194,7 @@ class Track extends Component {
                 this.props.onIgnoreArtistsByLabels()
               }}
             >
-              by label
+              artist on label
             </PillButton>
           ) : null}
         </td>
