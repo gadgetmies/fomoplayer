@@ -388,11 +388,11 @@ module.exports.ensureArtistExists = async (storeUrl, artist) => {
 
   let artistId = await pg
     .queryRowsAsync(
-      sql`SELECT artist_id
-from store__artist
-         natural join store
-where store_url = ${storeUrl}
-  and (store__artist_store_id = ${artist.id} or store__artist_url = ${artist.url})
+      sql`
+SELECT artist_id
+FROM store__artist
+NATURAL JOIN store
+WHERE store_url = ${storeUrl} AND (store__artist_store_id = ${artist.id} OR store__artist_url = ${artist.url})
 `
     )
     .then(getArtistIdFromResult)
@@ -401,7 +401,12 @@ where store_url = ${storeUrl}
     artistId = await pg
       .queryRowsAsync(
         sql`
-SELECT artist_id from artist where LOWER(artist_name) = LOWER(${artist.name})
+SELECT artist_id
+FROM artist
+         NATURAL JOIN store__artist
+         NATURAL JOIN store
+WHERE LOWER(artist_name) = LOWER(${artist.name})
+  AND store_url <> ${storeUrl}
 `
       )
       .then(getArtistIdFromResult)
@@ -410,17 +415,20 @@ SELECT artist_id from artist where LOWER(artist_name) = LOWER(${artist.name})
   if (!artistId) {
     artistId = await pg
       .queryRowsAsync(
-        sql`insert into artist (artist_name)
-values (${artist.name})
-returning artist_id
+        sql`
+INSERT INTO artist (artist_name)
+VALUES (${artist.name})
+RETURNING artist_id
 `
       )
       .then(getArtistIdFromResult)
 
-    await pg.queryRowsAsync(sql`insert into store__artist (store__artist_store_id, store__artist_url, store_id, artist_id)
-select ${artist.id}, ${artist.url}, store_id, ${artistId}
-from store
-where store_url = ${storeUrl} 
+    await pg.queryRowsAsync(sql`
+INSERT INTO store__artist (store__artist_store_id, store__artist_url, store_id, artist_id)
+SELECT ${artist.id}, ${artist.url}, store_id, ${artistId}
+FROM store
+WHERE store_url = ${storeUrl}
+ON CONFLICT ON CONSTRAINT store__artist_store__artist_store_id_store_id_key DO NOTHING
 `)
   }
 
@@ -430,6 +438,8 @@ where store_url = ${storeUrl}
 module.exports.addStoreTrack = async (storeUrl, labelId, releaseId, artists, track) => {
   const getTrackIdFromResult = getFieldFromResult('track_id')
 
+  const sortedArtists = R.sortBy(R.prop('id'), artists)
+
   let trackId = await pg
     .queryRowsAsync(
       sql`SELECT track_id
@@ -437,7 +447,8 @@ from track natural join track__artist natural join artist
 where LOWER(track_title) = LOWER(${track.title}) AND
       (${track.version}::TEXT IS NULL OR LOWER(track_version) = LOWER(${track.version}))
 GROUP BY track_id
-HAVING ARRAY_AGG(artist_id) = ${R.pluck('id', artists)} -- TODO: also verify that the artist roles match
+HAVING ARRAY_AGG(artist_id ORDER BY artist_id) = ${R.pluck('id', sortedArtists)} AND
+       ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedArtists)}
 `
     )
     .then(getTrackIdFromResult)
@@ -452,6 +463,9 @@ RETURNING track_id
 `
       )
       .then(getTrackIdFromResult)
+
+    console.log(`Inserted new track with id: ${trackId}`)
+
   } else {
     console.log(`Updating duration of track ${trackId} to ${track.duration_ms} if null`)
     await pg.queryAsync(sql`

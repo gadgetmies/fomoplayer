@@ -4,7 +4,6 @@ const { apiURL } = require('../config.js')
 const R = require('ramda')
 
 const {
-  getTrackIdForStoreTrack,
   addTrackToUser,
   ensureReleaseExists,
   ensureArtistExists,
