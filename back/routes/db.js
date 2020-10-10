@@ -370,10 +370,13 @@ returning release_id
       )
       .then(getReleaseIdFromResult)
 
-    await pg.queryRowsAsync(sql`insert into store__release (store__release_store_id, store__release_url, store_id, release_id)
-select ${release.id}, ${release.url}, store_id, ${releaseId}
-from store
-where store_url = ${storeUrl} 
+    await pg.queryRowsAsync(sql`
+INSERT INTO store__release (store__release_store_id, store__release_url, store_id, release_id)
+SELECT ${release.id}, ${release.url}, store_id, ${releaseId}
+FROM store
+WHERE store_url = ${storeUrl}
+ON CONFLICT ON CONSTRAINT store__release_store_id_store__release_store_id_key
+DO NOTHING
 `)
   }
 
