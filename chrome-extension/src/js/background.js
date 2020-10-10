@@ -109,6 +109,7 @@ const bpKeysToCamelot = {
   'D min': '12m'
 }
 
+const previewUrlPath = [1, 'url']
 const beatportTracksTransform = L.collect([
   'tracks',
   L.elems,
@@ -149,10 +150,11 @@ const beatportTracksTransform = L.collect([
     previews: L.partsOf([
       'preview',
       L.keyed,
+      L.filter(R.path(previewUrlPath)),
       L.elems,
       L.pick({
         format: 0,
-        url: [1, 'url'],
+        url: previewUrlPath,
         start_ms: [1, 'offset', 'start'],
         end_ms: [1, 'offset', 'end']
       })
