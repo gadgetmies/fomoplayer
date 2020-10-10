@@ -1,5 +1,5 @@
 {
-  "name": "chrome-extension-webpack",
+  "name": "multi_store_player_chrome_extension",
   "version": "0.0.1",
   "description": "A boilerplate to chrome extension with webpack",
   "scripts": {
