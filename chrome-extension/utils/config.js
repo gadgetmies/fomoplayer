@@ -1,5 +1,4 @@
 const nodeEnv = process.env.NODE_ENV || 'development'
-const config = require(`./config.${nodeEnv}.js`)
 const sharedConfig = require('shared')(nodeEnv).config
 
 module.exports = {
@@ -8,5 +7,6 @@ module.exports = {
   PLAYER_UI_MATCHER: new RegExp(`^${sharedConfig.FRONTEND_URL}`),
   PORT: process.env.PORT,
   NODE_ENV: nodeEnv,
-  ...config
+  EXTENSION_KEY: process.env.EXTENSION_KEY,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID
 }

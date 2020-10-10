@@ -1,6 +1,5 @@
 const { DefinePlugin, EnvironmentPlugin } = require('webpack')
 const path = require('path')
-const fileSystem = require('fs')
 const CleanWebpackPlugin = require('clean-webpack-plugin').CleanWebpackPlugin
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
@@ -9,6 +8,9 @@ const WriteFilePlugin = require('write-file-webpack-plugin')
 const config = require('./utils/config.js')
 
 const nodeEnv = process.env.NODE_ENV || 'development'
+const sharedConfig = require('shared')(nodeEnv).config
+const sharedConfigKeys = Object.keys(sharedConfig)
+
 const fileExtensions = ['jpg', 'jpeg', 'png', 'gif', 'eot', 'otf', 'svg', 'ttf', 'woff', 'woff2']
 
 let options = {
@@ -52,7 +54,7 @@ let options = {
     new CleanWebpackPlugin(),
     new DefinePlugin(config),
     // expose and write the allowed env vars on the compiled bundle
-    new EnvironmentPlugin(['NODE_ENV']),
+    new EnvironmentPlugin(['NODE_ENV', ...sharedConfigKeys]),
     new CopyWebpackPlugin([
       {
         from: 'src/manifest.json',
