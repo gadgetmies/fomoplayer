@@ -22,12 +22,9 @@ const panels = [
 ]
 
 const getCurrentUrl = tabArray => tabArray[0].url
-const getCurrentHostname = tabArray => {
-  console.log(new URL(getCurrentUrl(tabArray)).origin)
-  return new URL(getCurrentUrl(tabArray)).origin
-}
+const getCurrentHostname = tabArray => getCurrentUrl(tabArray)
 
-export default class Popup extends React.Component {
+export default class Root extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
@@ -39,7 +36,6 @@ export default class Popup extends React.Component {
     const that = this
 
     chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-      console.log(message)
       if (message.type === 'login') {
         that.setState({ loggedIn: message.success })
       } else if (message.type === 'logout') {
@@ -62,12 +58,8 @@ export default class Popup extends React.Component {
   }
 
   render() {
-    console.log(this.state)
     const panelProps = { setRunning: this.setRunning.bind(this), running: this.state.running }
-    const current = panels.find(panel => {
-      console.log(panel.matcher.toString())
-      return this.state.currentHostname.match(panel.matcher)
-    })
+    const current = panels.find(panel => this.state.currentHostname.match(panel.matcher))
     const currentComponent = current
       ? current.component({ isCurrent: true, ...panelProps, key: current.matcher.toString() })
       : null
@@ -78,10 +70,7 @@ export default class Popup extends React.Component {
       <>
         <button
           onClick={() =>
-            chrome.storage.local.clear(() => {
-              console.log('Logging out')
-              this.setState({ running: false, loggedIn: false })
-            })
+            chrome.storage.local.clear(() => this.setState({ running: false, loggedIn: false }))
           }
         >
           Reset
