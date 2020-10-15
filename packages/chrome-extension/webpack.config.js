@@ -8,7 +8,7 @@ const WriteFilePlugin = require('write-file-webpack-plugin')
 const config = require('./utils/config.js')
 
 const nodeEnv = process.env.NODE_ENV || 'development'
-const sharedConfig = require('shared')(nodeEnv).config
+const sharedConfig = require('multi-store-player-shared-config')(nodeEnv).config
 const sharedConfigKeys = Object.keys(sharedConfig)
 
 const fileExtensions = ['jpg', 'jpeg', 'png', 'gif', 'eot', 'otf', 'svg', 'ttf', 'woff', 'woff2']

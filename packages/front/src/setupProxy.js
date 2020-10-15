@@ -1,5 +1,5 @@
 const { createProxyMiddleware } = require('http-proxy-middleware')
-const { resolveServiceURL } = require('shared')(process.env.NODE_ENV)
+const { resolveServiceURL } = require('multi-store-player-shared-config')(process.env.NODE_ENV)
 
 module.exports = function(app) {
   app.use(

@@ -2,7 +2,7 @@ let nodeEnv = process.env.NODE_ENV || 'development'
 require('dotenv').config({path: `.env.${nodeEnv}`})
 
 const resolveServiceURL = require('../shared/resolveServiceURL.js')
-const sharedConfig = require('shared')(nodeEnv).config
+const sharedConfig = require('multi-store-player-shared-config')(nodeEnv).config
 
 const port = sharedConfig.API_PORT
 const interfaceName = sharedConfig.INTERFACE

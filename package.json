@@ -5,7 +5,7 @@
   "main": "ecosystem.config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "cd front; npm run build"
+    "build": "yarn workspace multi_store_player_front build"
   },
   "repository": {
     "type": "git",
@@ -20,5 +20,9 @@
   "dependencies": {
     "pm2": "^3.2.2",
     "prettier": "^1.14.3"
-  }
+  },
+  "private": true,
+  "workspaces": [
+    "packages/**"
+  ]
 }

@@ -18,7 +18,7 @@
     "react-github-btn": "^1.1.1",
     "react-lazyload": "^2.3.0",
     "react-scripts": "^2.1.8",
-    "shared": "file:../shared",
+    "multi-store-player-shared-config": "1.0.0",
     "slideout": "^1.0.1",
     "typeface-lato": "0.0.75"
   },

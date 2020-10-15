@@ -12,7 +12,7 @@
     "ramda": "^0.27.1",
     "react": "16.12.0",
     "react-dom": "16.12.0",
-    "shared": "file:../shared",
+    "multi-store-player-shared-config": "1.0.0",
     "typeface-lato": "^0.0.75"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 const nodeEnv = process.env.NODE_ENV || 'development'
-const sharedConfig = require('shared')(nodeEnv).config
+const sharedConfig = require('multi-store-player-shared-config')(nodeEnv).config
 
 module.exports = {
   PLAYER_API_URL: JSON.stringify(sharedConfig.API_URL),
