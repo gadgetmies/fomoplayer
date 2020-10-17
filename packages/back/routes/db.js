@@ -48,17 +48,48 @@ module.exports.queryUserTracks = username =>
     NATURAL LEFT JOIN user_artist_scores
     GROUP BY 1
   ),
-  new_tracks_with_scores AS (
-    SELECT
-      track_id,
-      user__track_heard,
-      label_score + 5 * artist_score AS score
-    FROM new_tracks
-    NATURAL JOIN label_scores
-    NATURAL JOIN artist_scores
-    ORDER BY score DESC, track_added DESC
-    LIMIT 200
+  user_score_weights AS (
+    SELECT user_track_score_weight_code, user_track_score_weight_multiplier
+    FROM user_track_score_weight
+    NATURAL JOIN logged_user
   ),
+  new_tracks_with_scores AS (
+      SELECT track_id,
+             user__track_heard,
+             label_score * COALESCE(label_multiplier, 0) +
+             artist_score * COALESCE(artist_multiplier, 0) +
+             COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
+             COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) AS score
+      FROM (SELECT track_id,
+                   user__track_heard,
+                   label_score,
+                   artist_score,
+                   track_added,
+                   (SELECT user_track_score_weight_multiplier
+                    FROM user_score_weights
+                    WHERE user_track_score_weight_code = 'label'
+                   ) AS label_multiplier,
+                   (SELECT user_track_score_weight_multiplier
+                    FROM user_score_weights
+                    WHERE user_track_score_weight_code = 'artist'
+                   ) AS artist_multiplier,
+                   (SELECT user_track_score_weight_multiplier
+                    FROM user_score_weights
+                    WHERE user_track_score_weight_code = 'date_added'
+                   ) AS date_added_multiplier,
+                   (SELECT user_track_score_weight_multiplier
+                    FROM user_score_weights
+                    WHERE user_track_score_weight_code = 'date_released'
+                   ) AS date_released_multiplier
+            FROM new_tracks
+                     NATURAL JOIN label_scores
+                     NATURAL JOIN artist_scores
+           ) AS tracks
+             LEFT JOIN track_date_added_score AS added_score USING (track_id)
+             LEFT JOIN track_date_released_score AS released_score USING (track_id)
+      ORDER BY score DESC
+      LIMIT 200
+    ),
   heard_tracks AS (
     SELECT
       track_id,
