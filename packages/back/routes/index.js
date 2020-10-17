@@ -12,11 +12,16 @@ const {
 
 router.use(bodyParser.json())
 
-router.get('/tracks/:id/preview.:format', ({ params: { id, format, skip } }, res, next) =>
-  getStorePreviewRedirectForTrack(id, format, skip)
-    .tap(url => res.redirect(url))
-    .catch(next)
-)
+router.get('/tracks/:id/preview.:format', async (req, res, next) => {
+  const { params: { id, format, offset } } = req
+  try {
+    req.url = await getStorePreviewRedirectForTrack(id, format, offset)
+    next()
+  } catch(e) {
+    console.error(e)
+    next()
+  }
+})
 
 router.get('/tracks', ({ user: { username } }, res, next) =>
   queryUserTracks(username)
@@ -29,6 +34,12 @@ router.get('/tracks/playlist.pls', ({ user: { username } }, res, next) =>
     .tap(m3u => res.send(m3u))
     .catch(next)
 )
+
+router.get('/tracks/:id', ({ user: { username }, params: { id } }, res, next
+) => {
+  // TODO
+  res.send(JSON.stringify({}))
+})
 
 router.post('/tracks/:id', ({ user: { username }, params: { id }, body: { heard } }, res, next) => {
   // language=PostgreSQL

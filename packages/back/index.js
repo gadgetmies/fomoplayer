@@ -1,21 +1,20 @@
 const colorTrace = require('color-stacktrace')
 colorTrace.init(Error)
 
-const config = require('./config.js')
 const express = require('express')
 const passport = require('passport')
-const passportSetup = require('./passport-setup.js')
 const session = require('express-session')
 const cors = require('cors')
 const pgSession = require('connect-pg-simple')(session)
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
-
-const auth = require('./routes/auth.js')
-
 const compression = require('compression')
 
-const dbMigrate = require('db-migrate').getInstance(true, { config: `${__dirname}/database.json` })
+const config = require('./config.js')
+const passportSetup = require('./passport-setup.js')
+const auth = require('./routes/auth.js')
+
+const dbMigrate = require('db-migrate').getInstance(true)
 ;(process.env.RESET_DB_ON_INIT ? dbMigrate.reset() : Promise.resolve()).then(() => dbMigrate.up())
 
 const app = express()
@@ -23,7 +22,7 @@ app.use(compression())
 app.use(
   session({
     store: new pgSession({
-      conString: 'postgres://localhost/multi-store-player',
+      conString: process.env.DATABASE_URL,
       tableName: 'meta_session'
     }),
     secret: config.sessionSecret,

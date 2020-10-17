@@ -1,7 +1,7 @@
 'use strict'
 
 const env = {
-  dbUrl: process.env.DB_URL,
+  dbUrl: process.env.DATABASE_URL,
   statementTimeout: process.env.STATEMENT_TIMEOUT,
 }
 

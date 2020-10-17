@@ -14,7 +14,8 @@ router.get('/logout', function(req, res) {
 
 router.get('/login/google', passport.authenticate('openidconnect'))
 
-router.get('/login/google/return', passport.authenticate('openidconnect', { failureRedirect: `${apiURL}/auth/login` }), function(
+// TODO: What should the failureRedirect point to?
+router.get('/login/google/return', passport.authenticate('openidconnect', { failureRedirect: `${frontendURL}/auth/login` }), function(
   req,
   res
 ) {

@@ -44,10 +44,10 @@ module.exports.addArtistsOnLabelsToIgnore = (username, { artistIds, labelIds }) 
     )
   )
 
-module.exports.getStorePreviewRedirectForTrack = (id, format, skip) =>
-  getLongestPreviewForTrack(id, format, skip).then(
-    ({ storeCode, storeTrackId }) => `${apiURL}/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`
-  )
+module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
+  const { storeCode, storeTrackId } = await getLongestPreviewForTrack(id, format, skip)
+  return `/api/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`
+}
 
 module.exports.addStoreTrackToUser = async (storeUrl, user, track) => {
   let labelId
