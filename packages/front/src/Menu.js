@@ -3,8 +3,8 @@ import SessionLogin from './SessionLogin.js'
 import RefreshButton from './RefreshButton'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
 import BPromise from 'bluebird'
-import GitHubButton from 'react-github-btn'
 import './Menu.css'
+import FontAwesome from 'react-fontawesome'
 
 export default class Menu extends Component {
   constructor(props) {
@@ -62,23 +62,32 @@ export default class Menu extends Component {
           >
             Logout
           </button>
-          <GitHubButton
-            href="https://github.com/gadgetmies/multi_store_player/"
-            data-icon="octicon-mark-githubocticon-issue-opened"
-            data-size="large"
-            aria-label="View gadgetmies/multi_store_player on GitHub"
-          >
-            View on GitHub
-          </GitHubButton>
-          <br />
-          <GitHubButton
-            href="https://github.com/gadgetmies/multi_store_player/issues"
-            data-icon="octicon-issue-opened"
-            data-size="large"
-            aria-label="Issue gadgetmies/multi_store_player on GitHub"
-          >
-            Create an issue
-          </GitHubButton>
+          <p>
+            <a href={'https://github.com/gadgetmies/multi_store_player'}
+               className={`button menu-item button-push_button-large button-push_button-primary link`}
+               target="_blank"
+               rel="noopener noreferrer"
+            >
+              <FontAwesome name="github" />&nbsp;
+              Instructions
+            </a>
+            <a href={'https://github.com/gadgetmies/multi_store_player#chrome-extension'}
+              className={`button menu-item button-push_button-large button-push_button-primary link`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FontAwesome name="chrome" />&nbsp;
+              Chrome Extension
+            </a>
+            <a href={'https://github.com/gadgetmies/multi_store_player/issues'}
+              className={`button menu-item button-push_button-large button-push_button-primary link`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FontAwesome name="exclamation-circle" />&nbsp;
+              Report an issue
+            </a>
+          </p>
         </div>
       </div>
     )
