@@ -1,54 +1,20 @@
 import React, { Component } from 'react'
-import SessionLogin from './SessionLogin.js'
-import RefreshButton from './RefreshButton'
-import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
-import BPromise from 'bluebird'
+import { requestWithCredentials } from './request-json-with-credentials.js'
 import './Menu.css'
 import FontAwesome from 'react-fontawesome'
 
 export default class Menu extends Component {
   constructor(props) {
     super(props)
-
-    this.state = {
-      validSessions: new Set()
-    }
-  }
-
-  updateLogins() {
-    return BPromise.each(['beatport'], store =>
-      requestJSONwithCredentials({ path: `/stores/${store}/session/` })
-        .catch(e => ({ valid: false }))
-        .then(({ valid }) => {
-          const newValidSessions = new Set(this.state.validSessions)
-          newValidSessions[valid ? 'add' : 'delete'](store)
-
-          if (valid) {
-            this.props.onStoreLoginDone(store)
-          }
-
-          return this.setState({
-            validSessions: newValidSessions
-          })
-        })
-    )
   }
 
   logout = async () => {
     try {
-      await BPromise.each(['beatport'], store =>
-        requestWithCredentials({ path: `/stores/${store}/logout/`, method: 'POST' })
-      )
-
       await requestWithCredentials({ path: this.props.logoutPath, method: 'POST' })
     } catch (e) {
       console.error('Logout failed', e)
     }
     this.props.onLogoutDone()
-  }
-
-  componentDidMount() {
-    this.updateLogins()
   }
 
   render() {
