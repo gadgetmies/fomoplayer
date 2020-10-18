@@ -150,6 +150,8 @@ button::-moz-focus-inner {
 
 .button {
   /*padding: 5px;*/
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .truncate {
