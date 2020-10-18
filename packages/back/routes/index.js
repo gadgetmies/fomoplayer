@@ -15,8 +15,7 @@ router.use(bodyParser.json())
 router.get('/tracks/:id/preview.:format', async (req, res, next) => {
   const { params: { id, format, offset } } = req
   try {
-    req.url = await getStorePreviewRedirectForTrack(id, format, offset)
-    next()
+    res.redirect(await getStorePreviewRedirectForTrack(id, format, offset))
   } catch(e) {
     console.error(e)
     next()
