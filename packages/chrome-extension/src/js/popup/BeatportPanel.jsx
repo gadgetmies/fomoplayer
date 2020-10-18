@@ -81,7 +81,7 @@ export default function BeatportPanel({ isCurrent, setRunning, running, key }) {
               id="beatport-new"
               disabled={running}
               onClick={() => {
-                sendTracks(myBeatportUrlFn, 'new', 1)
+                sendTracks(myBeatportUrlFn, 'new', 10)
               }}
             >
               My Beatport
@@ -92,7 +92,7 @@ export default function BeatportPanel({ isCurrent, setRunning, running, key }) {
               id="beatport-downloaded"
               disabled={running}
               onClick={() => {
-                sendTracks(myDownloadsUrlFn, 'downloaded')
+                sendTracks(myDownloadsUrlFn, 'downloaded', 10)
               }}
             >
               Downloaded
