@@ -215,8 +215,36 @@ class Tracks extends Component {
     this.state = {
       selectedTrack: (props.tracks[0] || {}).id,
       currentTrack: -1,
-      markingHeard: false
+      markingHeard: false,
+      currentBelowScreen: false,
+      currentAboveScreen: false
     }
+    this.handleScroll = this.handleScroll.bind(this)
+  }
+
+  handleScroll() {
+    let currentBelowScreen = false
+    let currentAboveScreen = false
+    const current = document.querySelector('.playing')
+
+    if (current) {
+      const currentRect = current.getBoundingClientRect()
+      const parentRect = current.parentElement.getBoundingClientRect()
+      if (currentRect.y - parentRect.y - currentRect.height > parentRect.height) {
+        currentBelowScreen = true
+      } else if (currentRect.y - parentRect.y < 0) {
+        currentAboveScreen = true
+      }
+    }
+    this.setState({ currentBelowScreen, currentAboveScreen })
+  }
+
+  scrollCurrentIntoView() {
+    const current = document.querySelector('.playing')
+    const currentRect = current.getBoundingClientRect()
+    const parent = current.parentElement
+    const parentRect = parent.getBoundingClientRect()
+    parent.scrollBy(0, currentRect.y - parentRect.y)
   }
 
   renderTracks(tracks, carts) {
@@ -261,6 +289,12 @@ class Tracks extends Component {
   }
 
   render() {
+    const scrollToCurrentButton =
+      <button className={'button button-push_button-small button-push_button-primary button-push_button-glow'}
+              onClick={this.scrollCurrentIntoView}
+      >
+        Scroll to current
+      </button>
     return (
       <>
         <div style={{ display: 'flex', alignItems: 'center', color: 'white' }}>
@@ -349,7 +383,14 @@ class Tracks extends Component {
           </tr>
           </thead>
           {/* Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table */}
-          <tbody style={{ height: 'calc(100% - 166px)', overflow: 'scroll', display: 'block' }}>
+          <tbody style={{ height: 'calc(100% - 166px)', overflow: 'scroll', display: 'block' }}
+                 onScroll={this.handleScroll}
+          >
+          <tr style={{ width: '100%', background: 'none', position: 'absolute' }}>
+            <td style={{ width: '100%', display: this.state.currentAboveScreen ? 'block' : 'none', textAlign: 'center' }}>
+              {scrollToCurrentButton}
+            </td>
+          </tr>
           {this.renderTracks(this.props.tracks, this.props.carts)}
           {this.props.listState === 'new' ? (
             <tr style={{ display: 'block' }}>
@@ -372,6 +413,11 @@ class Tracks extends Component {
               </td>
             </tr>
           ) : null}
+          <tr style={{ width: '100%', background: 'none', position: 'absolute', bottom: 0 }}>
+            <td style={{ width: '100%', display: this.state.currentBelowScreen ? 'block' : 'none', textAlign: 'center' }}>
+              {scrollToCurrentButton}
+            </td>
+          </tr>
           </tbody>
         </table>
       </>

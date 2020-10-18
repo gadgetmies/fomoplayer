@@ -211,6 +211,10 @@ button::-moz-focus-inner {
   background-color: #b5b5b5;
 }
 
+.button-push_button-glow {
+  box-shadow: 0 0 10px 0 #990075;
+}
+
 .text-input {
   padding: 0.375rem 0.75rem;
   font-size: 1rem;
