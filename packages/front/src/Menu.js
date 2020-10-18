@@ -79,34 +79,6 @@ export default class Menu extends Component {
           >
             Create an issue
           </GitHubButton>
-          <h2>Stores</h2>
-          {
-            <ul className={'store-list'}>
-              <li className={'store-list-item'} key={'beatport'}>
-                <h3>Beatport</h3>
-                <SessionLogin
-                  loginPath={'/stores/beatport/login'}
-                  logoutPath={'/stores/beatport/logout'}
-                  size={'large'}
-                  loginName={'beatport'}
-                  sessionProperties={{
-                    csrfToken: 'CSRF Token',
-                    sessionCookieValue: 'Session'
-                  }}
-                  onLoginDone={this.updateLogins.bind(this)}
-                  onLogoutDone={this.updateLogins.bind(this)}
-                  loggedIn={this.state.validSessions.has('beatport')}
-                  loggedInContent={
-                    <RefreshButton
-                      store={'beatport'}
-                      onUpdateTracks={this.props.onUpdateTracks}
-                      className="menu-item"
-                    />
-                  }
-                />
-              </li>
-            </ul>
-          }
         </div>
       </div>
     )
