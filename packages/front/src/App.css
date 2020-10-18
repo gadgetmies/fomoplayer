@@ -74,7 +74,7 @@ body {
   font-weight: 700;
 }
 
-.tracks-table tbody tr:hover .table-cell-button {
+.tracks-table tbody tr:hover .table-cell-button:not(:disabled) {
   opacity: 1;
 }
 
