@@ -157,6 +157,9 @@ class Track extends Component {
           {/*+ Follow*/}
           {/*</PillButton>*/}
         </td>
+        <td style={{flex: 1}}>
+          {this.props.released}
+        </td>
         <td style={{ flex: 1 }}>
           <ul className="comma-list">
             {this.props.keys.filter(R.propEq('system', 'open-key')).map(({ key }) => <li key={key}>{key}</li>)}
@@ -220,7 +223,7 @@ class Tracks extends Component {
     return tracks.length === 0 ? <tr style={{ display: 'block' }}>
         <td>No tracks available</td>
       </tr> :
-      tracks.map(({ id, title, mix, artists, remixers, labels, keys, heard, stores }) => {
+      tracks.map(({ id, title, mix, artists, remixers, labels, released, keys, heard, stores }) => {
         return (
           <Track
             id={id}
@@ -229,6 +232,7 @@ class Tracks extends Component {
             mix={mix}
             remixers={remixers}
             label={R.pluck('name', labels).join(', ')}
+            released={released}
             keys={keys}
             stores={stores}
             selected={this.state.selectedTrack === id}
@@ -332,6 +336,7 @@ class Tracks extends Component {
             <th style={{ flex: 3, overflow: 'hidden' }}>Title</th>
             <th style={{ flex: 2, overflow: 'hidden' }}>Remixer</th>
             <th style={{ flex: 2, overflow: 'hidden' }}>Label</th>
+            <th style={{ flex: 1, overflow: 'hidden' }}>Released</th>
             <th style={{ flex: 1, overflow: 'hidden' }}>Key</th>
             {/* <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Cart</th> */}
             <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>
