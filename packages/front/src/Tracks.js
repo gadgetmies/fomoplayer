@@ -343,7 +343,7 @@ class Tracks extends Component {
               Unfollow
               {/*Artists*/}
             </th>
-            <th className='open-in-column'>
+            <th className='open-in-column table-button-cell-header'>
               Open in
             </th>
           </tr>
