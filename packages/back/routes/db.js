@@ -7,10 +7,15 @@ module.exports.queryUserTracks = username =>
     .queryRowsAsync(
       // language=PostgreSQL
       sql`WITH
-    logged_user AS (
-      SELECT meta_account_user_id
-      FROM meta_account
-      WHERE meta_account_username = ${username}
+  logged_user AS (
+    SELECT meta_account_user_id
+    FROM meta_account
+    WHERE meta_account_username = ${username}
+  ),
+  user_purchased_tracks AS (
+    SELECT track_id FROM user__store__track_purchased 
+        NATURAL JOIN store__track 
+        NATURAL JOIN logged_user
   ),
   user_tracks_meta AS (
     SELECT
@@ -18,6 +23,7 @@ module.exports.queryUserTracks = username =>
       COUNT(*) FILTER (WHERE user__track_heard IS NULL) as new
     FROM user__track
     NATURAL JOIN logged_user
+    WHERE track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
   ),
   new_tracks AS (
     SELECT
@@ -27,7 +33,8 @@ module.exports.queryUserTracks = username =>
     FROM logged_user
       NATURAL JOIN user__track
       NATURAL JOIN track
-    WHERE user__track_heard IS NULL
+    WHERE user__track_heard IS NULL AND 
+          track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
     GROUP BY 1, 2, 3
   ),
   label_scores AS (
@@ -517,9 +524,13 @@ SELECT store_id FROM store WHERE store_url = ${storeUrl}
 
   await pg.queryRowsAsync(
     sql`INSERT INTO store__track
-(track_id, store_id, store__track_store_id, store__track_url, store__track_store_details)
-VALUES (${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track})
-ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_track_id_key DO NOTHING
+(track_id, store_id, store__track_store_id, store__track_url, store__track_released, store__track_published, store__track_store_details)
+VALUES (${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track})
+ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_track_id_key DO UPDATE SET
+store__track_url = ${track.url},
+store__track_released = ${track.released},
+store__track_published = ${track.published},
+store__track_store_details = ${track}
 `
   )
 
@@ -587,4 +598,15 @@ ON CONFLICT ON CONSTRAINT track__key_track_id_key_id_key DO NOTHING
   }
 
   return trackId
+}
+
+module.exports.addPurchasedTrackToUser = async (userId, storeTrackId) => {
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`
+    INSERT INTO user__store__track_purchased (meta_account_user_id, store__track_id)
+    SELECT ${userId}, store__track_id FROM store__track WHERE store__track_store_id = ${storeTrackId}
+    ON CONFLICT ON CONSTRAINT user__store__track_purchased_meta_account_user_id_store__tr_key DO NOTHING
+    `
+  )
 }

@@ -8,7 +8,8 @@ const {
   ensureReleaseExists,
   ensureArtistExists,
   ensureLabelExists,
-  addStoreTrack
+  addStoreTrack,
+  addPurchasedTrackToUser
 } = require('./db.js')
 
 const removeIgnoredTracksFromUser = require('../remove-ignored-tracks-from-user.js')
@@ -49,7 +50,7 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
   return `/api/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`
 }
 
-module.exports.addStoreTrackToUser = async (storeUrl, user, track) => {
+module.exports.addStoreTrackToUser = async (storeUrl, user, track, type) => {
   let labelId
   let releaseId
 
@@ -63,7 +64,12 @@ module.exports.addStoreTrackToUser = async (storeUrl, user, track) => {
 
   const trackId = await addStoreTrack(storeUrl, labelId, releaseId, artists, track)
 
-  await addTrackToUser(user, trackId)
+  await addTrackToUser(user.id, trackId)
+
+  if (type === 'purchased') {
+    await addPurchasedTrackToUser(user.id, track.id)
+  }
+  // TODO: Update materialized views
 
   return trackId
 }

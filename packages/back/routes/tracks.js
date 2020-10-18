@@ -5,11 +5,12 @@ const { apiURL } = require('../config.js')
 
 const { addStoreTrackToUser } = require('./logic.js')
 
-module.exports = async (req, res, next) => {
+module.exports = type => async (req, res, next) => {
   try {
     console.log('Start processing received tracks')
-    const addedTracks = await Promise.all(req.body.map(async track => {
-        const trackId = await addStoreTrackToUser(req.headers['x-multi-store-player-store'], req.user.id, track)
+    const addedTracks = await Promise.all(
+      req.body.map(async track => {
+        const trackId = await addStoreTrackToUser(req.headers['x-multi-store-player-store'], req.user, track, type)
         return `${apiURL}/tracks/${trackId}`
       })
     )

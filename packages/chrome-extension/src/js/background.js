@@ -117,6 +117,7 @@ const beatportTracksTransform = L.collect([
     title: [L.props('title', 'mix'), L.reread(({ title, mix }) => title.replace(` (${mix})`, ''))],
     version: 'mix',
     id: ['id', L.reread(idToString)],
+    url: [L.props('slug', 'id'), L.reread(beatportUrl('track'))],
     artists: L.partsOf(
       L.branch({
         artists: [
@@ -275,7 +276,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (message.store === 'beatport') {
       chrome.storage.local.get(['token'], ({ token }) => {
         console.log(message.data, beatportTracksTransform(message.data))
-        const path = message.data.type === 'new' ? 'tracks' : 'downloaded'
+        const path = message.data.type === 'new' ? 'tracks' : 'purchased'
         try {
           fetch(`${JSON.parse(PLAYER_API_URL)}/${path}`, {
             method: 'POST',
@@ -302,7 +303,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             chrome.tabs.remove(bandcampTabId)
             bandcampTabId = undefined
           }
-          let path = message.data.type === 'new' ? 'tracks' : 'downloaded'
+          let path = message.data.type === 'new' ? 'tracks' : 'purchased'
 
           try {
             await fetch(`${PLAYER_API_URL}/${path}`, {

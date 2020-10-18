@@ -48,7 +48,9 @@ const ensureAuthenticated = (req, res, next) => (req.isAuthenticated() ? next() 
 app.use('/api/auth', auth)
 
 // TODO: How to use the jwt on /api/tracks POST handler without blocking other API calls?
-app.post(/\/api\/tracks$/, passport.authenticate('jwt', { session: false }), require('./routes/tracks.js'))
+const trackHandler = require('./routes/tracks.js')
+app.post(/\/api\/tracks$/, passport.authenticate('jwt', { session: false }), trackHandler('new'))
+app.post(/\/api\/purchased$/, passport.authenticate('jwt', { session: false }), trackHandler('purchased'))
 
 app.use('/api', ensureAuthenticated, require('./routes/index.js'))
 
