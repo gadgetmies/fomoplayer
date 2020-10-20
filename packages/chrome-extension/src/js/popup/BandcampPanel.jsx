@@ -4,7 +4,7 @@ import waitFunction from './wait.js'
 const sendBandcampFeedScript = (type, fetchCount) => `
 ${waitFunction}
 
-async function sendTracks(firstPage, lastPage, olderThan = Date.now()) {
+async function sendFeedTracks(firstPage, lastPage, olderThan = Date.now()) {
   if (firstPage > lastPage) {
     return
   }
@@ -25,11 +25,40 @@ async function sendTracks(firstPage, lastPage, olderThan = Date.now()) {
   const newReleases = feed.stories.entries.filter(({story_type}) => story_type === 'nr')
   chrome.runtime.sendMessage({type: 'releases', store: 'bandcamp', data: newReleases})
   console.log(feed.stories.oldest_story_date)
-  sendTracks(firstPage + 1, lastPage, feed.stories.oldest_story_date)
+  sendFeedTracks(firstPage + 1, lastPage, feed.stories.oldest_story_date)
 }
 
-sendTracks(1, ${fetchCount})
+sendFeedTracks(1, ${fetchCount})
 `
+
+const sendBandcampPageScript = (pageUrl) => `
+${waitFunction}
+
+var iframe = document.getElementById('playables-frame') || document.createElement('iframe')
+iframe.style.display = "none"
+iframe.src = "${pageUrl}"
+iframe.id = 'playables-frame'
+document.body.appendChild(iframe)
+
+var script = document.createElement('script')
+script.text = \`
+  ${waitFunction}
+  wait(() => window.TralbumData, playables => {
+    var script = document.getElementById('playables') || document.createElement('script')
+    script.type = 'text/plain'
+    script.id = 'playables'
+    script.text = JSON.stringify({type: 'new', tracks: playables})
+    document.documentElement.appendChild(script)
+  })
+\`
+iframe.contentWindow.document.documentElement.appendChild(script)
+
+wait(() => iframe.contentWindow.document.getElementById('playables'), (result) => {
+  chrome.runtime.sendMessage({type: 'tracks', done: true, store: 'bandcamp', data: JSON.parse(result.text)})
+})
+`
+
+const getCurrentUrl = tabArray => tabArray[0].url
 
 export default function BandcampPanel({ isCurrent, setRunning, running, key }) {
   return (
@@ -48,10 +77,11 @@ export default function BandcampPanel({ isCurrent, setRunning, running, key }) {
               id="bandcamp-current"
               disabled={running}
               onClick={() => {
-                chrome.tabs.executeScript({
-                  code: `chrome.runtime.sendMessage({
-                      type: 'tracks', store: 'bandcamp', data: window.TralbumData, done: true
-                    })`
+                setRunning(true)
+                chrome.tabs.query({ active: true, currentWindow: true }, function(tabArray) {
+                  chrome.tabs.executeScript({
+                    code: sendBandcampPageScript(getCurrentUrl(tabArray))
+                  })
                 })
               }}
             >
