@@ -39,6 +39,8 @@ const bandcampReleasesTransform = L.collect([
           role: R.always('author')
         })
       ),
+      released: R.always(release.current.release_date),
+      published: R.always(release.current.publish_date),
       duration_ms: durationLens,
       release: R.always({
         release_date: new Date(release.album_release_date).toISOString(),
@@ -306,7 +308,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           let path = message.data.type === 'new' ? 'tracks' : 'purchased'
 
           try {
-            await fetch(`${PLAYER_API_URL}/${path}`, {
+            await fetch(`${JSON.parse(PLAYER_API_URL)}/${path}`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
