@@ -68,7 +68,7 @@ export default function BeatportPanel({ isCurrent, setRunning, running, key }) {
               disabled={running}
               onClick={() => {
                 chrome.tabs.query({ active: true, currentWindow: true }, function(tabArray) {
-                  sendTracks(`() => ${getCurrentUrl(tabArray)}`, 'new', 1)
+                  sendTracks(`() => "${getCurrentUrl(tabArray)}"`, 'new', 1)
                 })
               }}
             >
