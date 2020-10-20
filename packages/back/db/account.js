@@ -59,7 +59,7 @@ WHERE meta_account_username = lower(${username}) AND
           (meta_account_username, meta_account_user_id_issuer, meta_account_user_id_subject, meta_account_passwd)
         VALUES
           (${subject}, ${issuer}, ${subject}, 'No password for token auth')
-        RETURNING meta_account_username, meta_account_details
+        RETURNING meta_account_user_id AS id, meta_account_username AS username, meta_account_details AS details
         `)
       return newUser
     }
