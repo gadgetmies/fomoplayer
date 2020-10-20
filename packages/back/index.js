@@ -1,6 +1,8 @@
 const colorTrace = require('color-stacktrace')
 colorTrace.init(Error)
 
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
+
 const express = require('express')
 const passport = require('passport')
 const session = require('express-session')
