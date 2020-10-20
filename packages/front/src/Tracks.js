@@ -76,7 +76,8 @@ class Track extends Component {
     this.state = {
       cartButtonDisabled: false,
       ignoreArtistsByLabelsDisabled: false,
-      heardHover: false
+      heardHover: false,
+      heard: props.heard
     }
   }
 
@@ -115,16 +116,14 @@ class Track extends Component {
         className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''}`}
       >
         <td style={{ flex: 0.5, overflow: 'hidden' }}>
-          {this.props.heard ? null : (
-            <button
-              className="button table-cell-button"
-              onClick={this.props.onDoubleClick.bind(this)}
-              onMouseEnter={() => this.setHeardHover(true)}
-              onMouseLeave={() => this.setHeardHover(false)}
-            >
-              {this.state.heardHover ? <FontAwesome name="play"/> : <FontAwesome name="circle"/>}
-            </button>
-          )}
+          <button
+            className="button table-cell-button"
+            onClick={this.props.onDoubleClick.bind(this)}
+            onMouseEnter={() => this.setHeardHover(true)}
+            onMouseLeave={() => this.setHeardHover(false)}
+          >
+            {this.state.heardHover ? <FontAwesome name="play"/> : !!this.props.heard ? null : (<FontAwesome name="circle"/>)}
+          </button>
         </td>
         <td style={{ flex: 3, overflow: 'hidden' }}>
           {R.intersperse(
