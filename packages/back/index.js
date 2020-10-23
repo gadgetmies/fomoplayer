@@ -56,6 +56,8 @@ app.post(/\/api\/purchased$/, passport.authenticate('jwt', { session: false }), 
 
 app.use('/api', ensureAuthenticated, require('./routes/index.js'))
 
+app.use(express.static('public'))
+
 app.use((err, req, res, next) => {
   console.error(err)
   res.status(err.status || 500)

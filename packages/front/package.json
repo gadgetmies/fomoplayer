@@ -24,7 +24,7 @@
   },
   "scripts": {
     "start": "REACT_APP_ENV=$NODE_ENV PORT=$(npx -p shared get-frontend-port) react-scripts start",
-    "build": "REACT_APP_ENV=$NODE_ENV react-scripts build",
+    "build": "REACT_APP_ENV=$NODE_ENV API_URL=$API_URL react-scripts build && cp -r build ../back/public",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
     "start:prod": "PORT=$(npx -p shared get-frontend-port) npx http-server build"
