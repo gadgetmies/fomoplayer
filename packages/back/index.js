@@ -2,6 +2,8 @@ const colorTrace = require('color-stacktrace')
 colorTrace.init(Error)
 
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
+const dbMigrate = require('db-migrate').getInstance(true)
+;(process.env.RESET_DB_ON_INIT ? dbMigrate.reset() : Promise.resolve()).then(() => dbMigrate.up())
 
 const express = require('express')
 const passport = require('passport')
@@ -16,9 +18,6 @@ const config = require('./config.js')
 const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
 require('./job-scheduling.js')
-
-const dbMigrate = require('db-migrate').getInstance(true)
-;(process.env.RESET_DB_ON_INIT ? dbMigrate.reset() : Promise.resolve()).then(() => dbMigrate.up())
 
 const app = express()
 app.use(compression())
