@@ -1,7 +1,6 @@
 -- begin;
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-ALTER DATABASE "multi-store-player" SET time ZONE 'Europe/Helsinki';
 
 CREATE TYPE TRACK__ARTIST_ROLE AS ENUM ('author', 'remixer');
 CREATE TYPE PREVIEW_FORMAT AS ENUM ('mp3', 'mp4');
