@@ -334,7 +334,7 @@ class Tracks extends Component {
               label={'Update list'}
               loadingLabel={'Updating list'}
             />
-            <div className="state-select-button--container">
+            <div className="state-select-button--container noselect">
               <input
                 type="radio"
                 id="tracklist-state-new"
@@ -375,7 +375,7 @@ class Tracks extends Component {
           </div>
         </div>
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
-          <thead style={{ width: '100%', display: 'block' }}>
+          <thead style={{ width: '100%', display: 'block' }} className={'noselect'}>
             <tr style={{ width: '100%', display: 'flex' }}>
               <th style={{ flex: 0.5, overflow: 'hidden' }} className={'table-button-cell-header'}>
                 New

@@ -66,7 +66,7 @@ class Preview extends Component {
     const toPositionPercent = currentPosition => ((currentPosition + startOffset) / totalDuration) * 100
 
     return (
-      <div className="preview">
+      <div className="preview noselect">
         {menu}
         <TrackTitle
           className="preview-title"
@@ -87,14 +87,21 @@ class Preview extends Component {
           <div
             className="fluid waveform_container"
             style={{ flex: 10 }}
-            onClick={e => {
+
+            onMouseDown={e => {
               const trackPositionPercent = (e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth
+              if (totalDuration * trackPositionPercent > endPosition) return
               const previewPositionInSeconds = (totalDuration * trackPositionPercent - startOffset) / 1000
               this.getPlayer().currentTime = previewPositionInSeconds
             }}
           >
             {waveform ? (
-              <img alt="waveform" src={waveform} className="waveform waveform-background" />
+              <img
+                alt="waveform"
+                src={waveform}
+                className="waveform waveform-background"
+                onDragStart={e => e.preventDefault()}
+              />
             ) : (
               <div className="waveform waveform-background" />
             )}
