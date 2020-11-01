@@ -193,7 +193,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       if (message.data.tracks) {
         bandcampTracksCache.push(message.data.tracks)
       }
-      if (currentBandcampReleaseIndex === bandcampReleases.length - 1) {
+      if (message.done || currentBandcampReleaseIndex === bandcampReleases.length - 1) {
         if (bandcampTabId !== undefined) {
           chrome.tabs.remove(bandcampTabId)
           bandcampTabId = undefined
