@@ -66,23 +66,39 @@ class Preview extends Component {
           <table>
             <tbody>
               <tr>
-                <td><span className="keyboard-shortcut">Q</span></td>
+                <td>
+                  <span className="keyboard-shortcut">Q</span>
+                </td>
                 <td>Previous</td>
               </tr>
               <tr>
-                <td><span className="keyboard-shortcut">E</span></td>
+                <td>
+                  <span className="keyboard-shortcut">W</span>
+                </td>
+                <td>Toggle playback</td>
+              </tr>
+              <tr>
+                <td>
+                  <span className="keyboard-shortcut">E</span>
+                </td>
                 <td>Next</td>
               </tr>
               <tr>
-                <td><span className="keyboard-shortcut">R</span></td>
+                <td>
+                  <span className="keyboard-shortcut">R</span>
+                </td>
                 <td>Next new</td>
               </tr>
               <tr>
-                <td><span className="keyboard-shortcut">A</span></td>
+                <td>
+                  <span className="keyboard-shortcut">A</span>
+                </td>
                 <td>Scan forward</td>
               </tr>
               <tr>
-                <td><span className="keyboard-shortcut">D</span></td>
+                <td>
+                  <span className="keyboard-shortcut">D</span>
+                </td>
                 <td>Scan backward</td>
               </tr>
             </tbody>

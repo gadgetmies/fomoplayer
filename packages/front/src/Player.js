@@ -43,6 +43,9 @@ class Player extends Component {
           case 'q':
             this.playPreviousTrack()
             break
+          case 'w':
+            that.preview.current.togglePlaying()
+            break
           case 'r':
             this.playNextUnheard()
             break
