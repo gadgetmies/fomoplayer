@@ -1,180 +1,6 @@
-import * as L from 'partial.lenses'
+import { bandcampReleasesTransform } from './transforms/bandcamp'
+import { beatportTracksTransform } from './transforms/beatport'
 import * as R from 'ramda'
-import { PLAYER_API_URL } from '../../utils/config.js'
-
-chrome.runtime.onInstalled.addListener(function() {
-  // Replace all rules ...
-  chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
-    // With a new rule ...
-    chrome.declarativeContent.onPageChanged.addRules([
-      {
-        // That fires when a page's URL contains a 'g' ...
-        conditions: [
-          new chrome.declarativeContent.PageStateMatcher({
-            pageUrl: { hostEquals: 'www.google.com', schemes: ['https'] }
-          })
-        ],
-        // And shows the extension's page action.
-        actions: [new chrome.declarativeContent.ShowPageAction()]
-      }
-    ])
-  })
-})
-
-const idToString = id => id.toString()
-
-const durationLens = ['duration', L.multiply(1000)]
-const bandcampReleasesTransform = L.collect([
-  L.elems,
-  L.choose(release => [
-    'trackinfo',
-    L.filter(R.prop('file')),
-    L.elems,
-    L.pick({
-      id: 'id',
-      title: 'title',
-      artists: L.partsOf(
-        L.pick({
-          name: R.always(release.artist),
-          role: R.always('author')
-        })
-      ),
-      released: R.always(release.current.release_date),
-      published: R.always(release.current.publish_date),
-      duration_ms: durationLens,
-      release: R.always({
-        release_date: new Date(release.album_release_date).toISOString(),
-        url: release.url,
-        title: release.current.title,
-        id: release.id.toString(10)
-      }),
-      label: R.always({
-        id: release.current.band_id.toString(10),
-        url: release.url.substr(0, release.url.search(/[^/:]\//) + 1),
-        name: release.url.match(/https:\/\/([^.]*)/)[1]
-      }),
-      previews: L.partsOf(
-        L.pick({
-          url: ['file', 'mp3-128'],
-          format: R.always('mp3'),
-          start_ms: R.always(0),
-          end_ms: durationLens
-        })
-      ),
-      store_details: []
-    })
-  ])
-])
-
-const beatportUrl = type => ({ id, slug }) => `https://www.beatport.com/${type}/${slug}/${id}`
-
-const sharedArtistPropsLens = {
-  name: 'name',
-  id: ['id', L.reread(n => n.toString(10))],
-  url: [L.props('slug', 'id'), L.reread(beatportUrl('artist'))]
-}
-
-const bpKeysToCamelot = {
-  'C maj': '1d',
-  'G maj': '2d',
-  'D maj': '3d',
-  'A maj': '4d',
-  'E maj': '5d',
-  'B maj': '6d',
-  'F♯ maj': '7d',
-  'G♭ maj': '7d',
-  'C♯ maj': '8d',
-  'D♭ maj': '8d',
-  'G♯ maj': '9d',
-  'A♭ maj': '9d',
-  'D♯ maj': '10d',
-  'E♭ maj': '10d',
-  'A♯ maj': '11d',
-  'B♭ maj': '11d',
-  'F maj': '12d',
-  'A min': '1m',
-  'E min': '2m',
-  'B min': '3m',
-  'F♯ min': '4m',
-  'G♭ min': '4m',
-  'C♯ min': '5m',
-  'D♭ min': '5m',
-  'G♯ min': '6m',
-  'A♭ min': '6m',
-  'D♯ min': '7m',
-  'E♭ min': '7m',
-  'A♯ min': '8m',
-  'B♭ min': '8m',
-  'F min': '9m',
-  'C min': '10m',
-  'G min': '11m',
-  'D min': '12m'
-}
-
-const previewUrlPath = [1, 'url']
-const beatportTracksTransform = L.collect([
-  'tracks',
-  L.elems,
-  L.pick({
-    title: [L.props('title', 'mix'), L.reread(({ title, mix }) => title.replace(` (${mix})`, ''))],
-    version: 'mix',
-    id: ['id', L.reread(idToString)],
-    url: [L.props('slug', 'id'), L.reread(beatportUrl('track'))],
-    artists: L.partsOf(
-      L.branch({
-        artists: [
-          L.elems,
-          L.pick({
-            ...sharedArtistPropsLens,
-            role: R.always('author')
-          })
-        ],
-        remixers: [
-          L.elems,
-          L.pick({
-            ...sharedArtistPropsLens,
-            role: R.always('remixer')
-          })
-        ]
-      })
-    ),
-    genres: L.partsOf(['genres', L.elems, 'name']),
-    duration_ms: ['duration', 'milliseconds'],
-    release: [
-      'release',
-      L.pick({
-        id: ['id', L.reread(idToString)],
-        title: 'name',
-        url: [L.props('slug', 'id'), L.reread(beatportUrl('release'))]
-      })
-    ],
-    released: ['date', 'released'],
-    published: ['date', 'published'],
-    previews: L.partsOf([
-      'preview',
-      L.keyed,
-      L.filter(R.path(previewUrlPath)),
-      L.elems,
-      L.pick({
-        format: 0,
-        url: previewUrlPath,
-        start_ms: [1, 'offset', 'start'],
-        end_ms: [1, 'offset', 'end']
-      })
-    ]),
-    label: [
-      'label',
-      L.pick({
-        id: ['id', L.reread(idToString)],
-        name: 'name',
-        url: [L.props('slug', 'id'), L.reread(beatportUrl('label'))]
-      })
-    ],
-    waveform: ['waveform', 'large', L.props('url')],
-    key: ['key', L.reread(bpKey => bpKeysToCamelot[bpKey])],
-    store_details: []
-  })
-])
 
 const fetchGoogleToken = handler => {
   var manifest = chrome.runtime.getManifest()
@@ -227,7 +53,7 @@ var wait = (test, success) => {
 }
 `
 
-const sendBandcampItemsScript = (type, isLast) => `
+const sendBandcampItemsScript = type => `
 ${waitFunction}
 
 var script = document.createElement('script')
@@ -247,7 +73,7 @@ script.text = \`
 document.documentElement.appendChild(script)
 
 wait(() => document.getElementById('playables'), (result) => {
-  chrome.runtime.sendMessage({type: 'tracks', store: 'bandcamp', done: ${isLast}, data: JSON.parse(result.text)})
+  chrome.runtime.sendMessage({type: 'tracks', store: 'bandcamp', data: JSON.parse(result.text)})
 })
 `
 
@@ -256,12 +82,36 @@ let currentBandcampReleaseIndex = 0
 let bandcampReleases = []
 let bandcampTabId = undefined
 
-const fetchInTab = isLast =>
+let beatportTracksCache = []
+
+const fetchInTab = () =>
   chrome.tabs.executeScript(bandcampTabId, {
-    code: sendBandcampItemsScript('new', currentBandcampReleaseIndex === bandcampReleases.length - 1)
+    code: sendBandcampItemsScript('tracks')
   })
 
+const clearStatus = () => {
+  chrome.storage.local.set(
+    {
+      operationStatus: '',
+      operationProgress: 0
+    },
+    () => {
+      chrome.runtime.sendMessage({ type: 'done' })
+    }
+  )
+}
+
 const fetchNextItem = () => {
+  chrome.storage.local.set(
+    {
+      operationStatus: 'Fetcing tracks',
+      operationProgress: parseInt((currentBandcampReleaseIndex / bandcampReleases.length) * 100)
+    },
+    () => {
+      chrome.runtime.sendMessage({ type: 'refresh' })
+    }
+  )
+
   const itemUrl = bandcampReleases[currentBandcampReleaseIndex].item_url
   if (bandcampTabId !== undefined) {
     chrome.tabs.remove(bandcampTabId)
@@ -273,59 +123,86 @@ const fetchNextItem = () => {
   })
 }
 
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-  if (message.type === 'tracks') {
-    if (message.store === 'beatport') {
-      chrome.storage.local.get(['token'], ({ token }) => {
-        console.log(message.data, beatportTracksTransform(message.data))
-        const path = message.data.type === 'new' ? 'tracks' : 'purchased'
-        try {
-          fetch(`${JSON.parse(PLAYER_API_URL)}/${path}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              authorization: `Bearer ${token}`,
-              'x-multi-store-player-store': 'https://www.beatport.com'
-            },
-            body: JSON.stringify(beatportTracksTransform(message.data))
-          })
-        } catch (e) {
-          console.error('Sending Beatport tracks failed', e)
-        }
+const handleError = error => {
+  clearStatus()
+  chrome.storage.local.set({ error })
+  chrome.runtime.sendMessage({ type: 'error', ...error })
+}
 
-        chrome.runtime.sendMessage({ type: 'done' })
-      })
+const sendTracks = (storeUrl, type = 'tracks', tracks) => {
+  chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
+    try {
+      const chunks = R.splitEvery(100, tracks)
+      const chunkIndexes = R.range(0, chunks.length)
+
+      for (const i of chunkIndexes) {
+        chrome.storage.local.set({
+          operationStatus: `Sending tracks`,
+          operationProgress: parseInt((i / chunks.length) * 100)
+        })
+        chrome.runtime.sendMessage({ type: 'refresh' })
+
+        const res = await fetch(`${appUrl}/api/${type}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+            'x-multi-store-player-store': storeUrl
+          },
+          body: JSON.stringify(chunks[i])
+        })
+
+        if (!res.ok) {
+          const status = await res.text()
+          throw new Error(`Response not ok, status: ${res.status} ${res.statusText} ${status}`)
+        }
+      }
+      clearStatus()
+    } catch (e) {
+      const message = {
+        message: `Failed to send tracks from ${storeUrl}`,
+        stack: JSON.stringify({
+          url: `${appUrl}/api/${type}`,
+          storeUrl,
+          stack: e.stack,
+          time: new Date().toUTCString()
+        })
+      }
+      handleError(message)
+    }
+  })
+}
+
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  if (message.type === 'operationStatus') {
+    chrome.storage.local.set({ operationStatus: message.text, operationProgress: message.progress })
+    chrome.runtime.sendMessage({ type: 'refresh' })
+  } else if (message.type === 'clearError') {
+    chrome.storage.local.remove('error')
+    chrome.runtime.sendMessage({ type: 'refresh' })
+  } else if (message.type === 'error') {
+    handleError(message)
+  } else if (message.type === 'tracks') {
+    if (message.store === 'beatport') {
+      beatportTracksCache = beatportTracksCache.concat(message.data.tracks)
+      if (message.done) {
+        sendTracks('https://www.beatport.com', message.data.type, beatportTracksTransform(beatportTracksCache))
+        beatportTracksCache = []
+      }
     } else if (message.store === 'bandcamp') {
       if (message.data.tracks) {
         bandcampTracksCache.push(message.data.tracks)
       }
-      if (message.done) {
-        chrome.storage.local.get(['token'], async ({ token }) => {
-          if (bandcampTabId !== undefined) {
-            chrome.tabs.remove(bandcampTabId)
-            bandcampTabId = undefined
-          }
-          let path = message.data.type === 'new' ? 'tracks' : 'purchased'
+      if (currentBandcampReleaseIndex === bandcampReleases.length - 1) {
+        if (bandcampTabId !== undefined) {
+          chrome.tabs.remove(bandcampTabId)
+          bandcampTabId = undefined
+        }
 
-          try {
-            await fetch(`${JSON.parse(PLAYER_API_URL)}/${path}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                authorization: `Bearer ${token}`,
-                'x-multi-store-player-store': 'https://bandcamp.com'
-              },
-              body: JSON.stringify(bandcampReleasesTransform(bandcampTracksCache))
-            })
-          } catch (e) {
-            console.error('Sending Bandcamp tracks failed', e)
-          }
-
-          currentBandcampReleaseIndex = 0
-          bandcampTracksCache = []
-          bandcampReleases = []
-          chrome.runtime.sendMessage({ type: 'done' })
-        })
+        sendTracks('https://bandcamp.com', message.data.type, bandcampReleasesTransform(bandcampTracksCache))
+        currentBandcampReleaseIndex = 0
+        bandcampTracksCache = []
+        bandcampReleases = []
       } else {
         currentBandcampReleaseIndex++
         fetchNextItem()
@@ -333,7 +210,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     }
   } else if (message.type === 'releases') {
     bandcampReleases = bandcampReleases.concat(message.data)
-    if (currentBandcampReleaseIndex === 0) {
+    if (message.done) {
       fetchNextItem()
     }
   } else if (message.type === 'logging-out') {
@@ -350,4 +227,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       chrome.runtime.sendMessage({ type: 'login', success })
     })
   }
+
+  return true
+})
+
+chrome.storage.local.get(['enabledStores', 'appUrl'], ({ appUrl, enabledStores }) => {
+  chrome.storage.local.set({
+    enabledStores: enabledStores ? enabledStores : { beatport: true, bandcamp: true },
+    appUrl: appUrl ? appUrl : 'https://multi-store-player.herokuapp.com'
+  })
 })

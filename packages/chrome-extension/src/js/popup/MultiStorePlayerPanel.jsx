@@ -1,25 +1,31 @@
-import React from 'React'
+import React from 'react'
 
-export default function MultiStorePlayerPanel({ isCurrent, running, key }) {
-  return (
-    <div key={key}>
-      <h2>Player</h2>
-      <p>
-        <button
-          id="player-logout"
-          disabled={running}
-          onClick={() => chrome.runtime.sendMessage({ type: 'logging-out' })}
-        >
-          Logout
-        </button>
-      </p>
-      <p>
-        {!isCurrent ? (
-          <button id="player-open" onClick={() => chrome.tabs.create({ active: true, url: PLAYER_UI_URL })}>
-            Open Player
+export default class MultiStorePlayerPanel extends React.Component {
+  constructor(props) {
+    super(props)
+  }
+
+  render() {
+    return (
+      <div>
+        <h2>Player</h2>
+        <p>
+          <button
+            id="player-logout"
+            disabled={this.props.running}
+            onClick={() => chrome.runtime.sendMessage({ type: 'logging-out' })}
+          >
+            Logout
           </button>
-        ) : null}
-      </p>
-    </div>
-  )
+        </p>
+        <p>
+          {!this.props.isCurrent ? (
+            <button id="player-open" onClick={() => chrome.tabs.create({ active: true, url: this.props.appUrl })}>
+              Open Player
+            </button>
+          ) : null}
+        </p>
+      </div>
+    )
+  }
 }

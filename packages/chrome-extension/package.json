@@ -8,11 +8,12 @@
   },
   "dependencies": {
     "dotenv": "^8.2.0",
+    "multi-store-player-shared-config": "1.0.0",
+    "new-github-issue-url": "^0.2.1",
     "partial.lenses": "^14.17.0",
     "ramda": "^0.27.1",
     "react": "16.12.0",
     "react-dom": "16.12.0",
-    "multi-store-player-shared-config": "1.0.0",
     "typeface-lato": "^0.0.75"
   },
   "devDependencies": {

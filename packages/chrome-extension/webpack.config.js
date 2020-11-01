@@ -17,7 +17,7 @@ let options = {
   mode: nodeEnv === 'development' ? 'development' : 'production',
   entry: {
     popup: path.join(__dirname, 'src', 'js', 'popup.js'),
-    //    options: path.join(__dirname, "src", "js", "options.js"),
+    options: path.join(__dirname, 'src', 'js', 'options.js'),
     background: path.join(__dirname, 'src', 'js', 'background.js')
   },
   output: {
@@ -67,7 +67,7 @@ let options = {
               key: config.EXTENSION_KEY,
               oauth2: {
                 client_id: config.GOOGLE_CLIENT_ID,
-                scopes: [config.PLAYER_API_URL] // TODO: does the path need to be removed?
+                scopes: [""]
               },
               ...JSON.parse(content.toString())
             })
@@ -80,11 +80,11 @@ let options = {
       filename: 'popup.html',
       chunks: ['popup']
     }),
-    /*    new HtmlWebpackPlugin({
-          template: path.join(__dirname, "src", "options.html"),
-          filename: "options.html",
-          chunks: ["options"]
-        }),*/
+    new HtmlWebpackPlugin({
+      template: path.join(__dirname, 'src', 'options.html'),
+      filename: 'options.html',
+      chunks: ['options']
+    }),
     // new HtmlWebpackPlugin({
     //   template: path.join(__dirname, "src", "background.html"),
     //   filename: "background.html",
