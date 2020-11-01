@@ -48,14 +48,56 @@ class Preview extends Component {
     this.getPlayer().volume = volume
   }
 
+  scan(step) {
+    this.getPlayer().currentTime = this.getPlayer().currentTime + step
+  }
+
   render() {
     const menu = (
       <button style={{ position: 'absolute', margin: 10, color: 'white' }} onClick={() => this.props.onMenuClicked()}>
-        <FontAwesome name="bars" />{' '}
+        <FontAwesome name="bars" />
       </button>
     )
+    const shortcuts = (
+      <div style={{ float: 'right', color: 'white', margin: 10 }} className="popup-container">
+        <FontAwesome name="keyboard-o" className="popup-anchor" style={{ right: 0, top: 0, margin: 10 }} />
+        <div className="popup-content" style={{ right: 0, top: 0, margin: '0 5 5 5', paddingRight: 50 }}>
+          <h2 style={{ marginTop: 0 }}>Shortcuts</h2>
+          <table>
+            <tbody>
+              <tr>
+                <td><span className="keyboard-shortcut">Q</span></td>
+                <td>Previous</td>
+              </tr>
+              <tr>
+                <td><span className="keyboard-shortcut">E</span></td>
+                <td>Next</td>
+              </tr>
+              <tr>
+                <td><span className="keyboard-shortcut">R</span></td>
+                <td>Next new</td>
+              </tr>
+              <tr>
+                <td><span className="keyboard-shortcut">A</span></td>
+                <td>Scan forward</td>
+              </tr>
+              <tr>
+                <td><span className="keyboard-shortcut">D</span></td>
+                <td>Scan backward</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+
     if (!this.props.currentTrack) {
-      return <div className="preview">{menu}</div>
+      return (
+        <div className="preview">
+          {menu}
+          {shortcuts}
+        </div>
+      )
     }
 
     const mp3Preview = L.get(['previews', L.satisfying(safePropEq('format', 'mp3'))], this.props.currentTrack)
@@ -68,6 +110,7 @@ class Preview extends Component {
     return (
       <div className="preview noselect">
         {menu}
+        {shortcuts}
         <TrackTitle
           className="preview-title"
           artists={(this.props.currentTrack || { artists: [] }).artists}
@@ -87,7 +130,6 @@ class Preview extends Component {
           <div
             className="fluid waveform_container"
             style={{ flex: 10 }}
-
             onMouseDown={e => {
               const trackPositionPercent = (e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth
               if (totalDuration * trackPositionPercent > endPosition) return

@@ -15,6 +15,8 @@ class Player extends Component {
       listState: 'new'
     }
 
+    this.preview = React.createRef()
+
     // if (this.props.tracks.length !== 0) {
     //   const storedTrack = JSON.parse(localStorage.getItem('currentTrack') || '{}')
     //   const currentTrack = storedTrack.track_id && this.props.tracks.find(R.propEq('track_id', storedTrack.track_id)) ||
@@ -24,6 +26,7 @@ class Player extends Component {
   }
 
   componentDidMount() {
+    const that = this
     document.addEventListener('keydown', event => {
       if (
         event instanceof KeyboardEvent &&
@@ -42,6 +45,12 @@ class Player extends Component {
             break
           case 'r':
             this.playNextUnheard()
+            break
+          case 'd':
+            that.preview.current.scan(10)
+            break
+          case 'a':
+            that.preview.current.scan(-10)
             break
           default:
         }
@@ -170,10 +179,10 @@ class Player extends Component {
           key={'preview'}
           showHint={tracks.length === 0}
           currentTrack={this.state.currentTrack}
-
           onMenuClicked={() => this.props.onMenuClicked()}
           onPrevious={() => this.playPreviousTrack()}
           onNext={() => this.playNextTrack()}
+          ref={this.preview}
         />
         <Tracks
           key={'tracks'}

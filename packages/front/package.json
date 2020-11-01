@@ -10,6 +10,7 @@
     "karet": "^2.0.0",
     "karet.util": "^0.17.1",
     "kefir": "^3.8.0",
+    "multi-store-player-shared-config": "1.0.0",
     "partial.lenses": "^14.12.0",
     "react": "^16.2.0",
     "react-clamp": "^1.0.5",
@@ -18,7 +19,6 @@
     "react-github-btn": "^1.1.1",
     "react-lazyload": "^2.3.0",
     "react-scripts": "^2.1.8",
-    "multi-store-player-shared-config": "1.0.0",
     "slideout": "^1.0.1",
     "typeface-lato": "0.0.75"
   },
