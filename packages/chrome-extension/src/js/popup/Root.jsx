@@ -6,6 +6,7 @@ import BeatportPanel from './BeatportPanel.jsx'
 import BandcampPanel from './BandcampPanel.jsx'
 import MultiStorePlayerPanel from './MultiStorePlayerPanel.jsx'
 import Error from './Error.jsx'
+import Status from './Status.jsx'
 
 const getCurrentUrl = tabArray => tabArray[0].url
 const getCurrentHostname = tabArray => getCurrentUrl(tabArray)
@@ -116,9 +117,14 @@ export default class Root extends React.Component {
         ) : !this.state.loggedIn ? (
           <Login />
         ) : (
-          components.map(component =>
-            React.createElement(component.component, { isCurrent: component === current, ...panelProps })
-          )
+          <>
+            {this.state.running ? (
+              <Status message={this.state.operationStatus} progress={this.state.operationProgress} />
+            ) : null}
+            {components.map(component =>
+              React.createElement(component.component, { isCurrent: component === current, ...panelProps })
+            )}
+          </>
         )}
       </>
     )

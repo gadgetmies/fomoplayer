@@ -1,6 +1,5 @@
 import React from 'react'
 import waitFunction from './wait.js'
-import Status from './Status.jsx'
 
 const sendBeatportTracksScript = (urlTemplate, type, pageCount = 10) => `
 ${waitFunction}
@@ -15,6 +14,8 @@ function sendTracks(firstPage, lastPage) {
     if (firstPage > lastPage) {
       return
     }
+    
+    chrome.runtime.sendMessage({type: 'operationStatus', text: 'Fetcing tracks', progress: firstPage / lastPage * 100})
   
     var iframe = document.getElementById('playables-frame') || document.createElement('iframe')
     iframe.style.display = "none"
@@ -42,8 +43,6 @@ function sendTracks(firstPage, lastPage) {
       })
     \`
     iframe.contentWindow.document.documentElement.appendChild(script)
-  
-    chrome.runtime.sendMessage({type: 'operationStatus', text: 'Fetcing tracks', progress: firstPage / lastPage * 100})
   
     wait(() => iframe.contentWindow.document.getElementById('playables'), (result) => {
       chrome.runtime.sendMessage({type: 'tracks', done: firstPage === lastPage, store: 'beatport', data: JSON.parse(result.text)})
@@ -112,14 +111,12 @@ export default class BeatportPanel extends React.Component {
           >
             Open Beatport
           </button>
-        ) : this.props.running ? (
-          <Status message={this.props.operationStatus} progress={this.props.operationProgress}/>
         ) : (
           <>
             <p>
               <button
                 id="beatport-current"
-                disabled={!this.state.hasPlayables}
+                disabled={this.props.running || !this.state.hasPlayables}
                 onClick={() => {
                   const that = this
                   chrome.tabs.query({ active: true, currentWindow: true }, function(tabArray) {
@@ -134,7 +131,7 @@ export default class BeatportPanel extends React.Component {
             <p>
               <button
                 id="beatport-new"
-                disabled={!this.state.loggedIn}
+                disabled={this.props.running || !this.state.loggedIn}
                 onClick={() => {
                   this.sendTracks(myBeatportUrlFn, 'tracks', 20)
                 }}
@@ -145,7 +142,7 @@ export default class BeatportPanel extends React.Component {
             <p>
               <button
                 id="beatport-downloaded"
-                disabled={!this.state.loggedIn}
+                disabled={this.props.running || !this.state.loggedIn}
                 onClick={() => {
                   this.sendTracks(myDownloadsUrlFn, 'purchased', 20)
                 }}

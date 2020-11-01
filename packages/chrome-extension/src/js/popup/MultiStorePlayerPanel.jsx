@@ -1,4 +1,5 @@
 import React from 'react'
+import Status from './Status'
 
 export default class MultiStorePlayerPanel extends React.Component {
   constructor(props) {

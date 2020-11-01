@@ -1,6 +1,5 @@
 import React from 'react'
 import waitFunction from './wait.js'
-import Status from './Status'
 
 const sendErrorFunction = `
 function sendError(errorText) {
@@ -132,14 +131,12 @@ export default class BandcampPanel extends React.Component {
               Open Bandcamp
             </button>
           </p>
-        ) : this.props.running ? (
-          <Status message={this.props.operationStatus} progress={this.props.operationProgress} />
         ) : (
           <>
             <p>
               <button
                 id="bandcamp-current"
-                disabled={!this.state.hasPlayables}
+                disabled={this.props.running || !this.state.hasPlayables}
                 onClick={() => {
                   this.props.setRunning(true)
                   chrome.tabs.query({ active: true, currentWindow: true }, function(tabArray) {
@@ -165,7 +162,7 @@ export default class BandcampPanel extends React.Component {
             <p>
               <button
                 id="bandcamp-feed"
-                disabled={!this.state.loggedIn || this.state.onSubdomain}
+                disabled={this.props.running || !this.state.loggedIn || this.state.onSubdomain}
                 onClick={() => {
                   this.props.setRunning(true)
                   try {

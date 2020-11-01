@@ -2,9 +2,17 @@ import React from 'react'
 
 export default function Progress({ percent, height, barColor, bgColor, ...props }) {
   return (
-    <div
+    <span
       {...props}
-      style={{ height: '0.5em', padding: 1, background: bgColor, borderRadius: '0.25em', ...props.style }}
+      style={{
+        height: '0.5em',
+        width: '100%',
+        padding: 1,
+        background: bgColor,
+        borderRadius: '0.25em',
+        display: 'block',
+        ...props.style
+      }}
     >
       <span
         style={{
@@ -16,6 +24,6 @@ export default function Progress({ percent, height, barColor, bgColor, ...props 
           transition: 'width 1s'
         }}
       />
-    </div>
+    </span>
   )
 }
