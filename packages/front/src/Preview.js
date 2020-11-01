@@ -6,18 +6,17 @@ import * as L from 'partial.lenses'
 import './Preview.css'
 import browser from 'browser-detect'
 import config from './config'
+import Progress from './Progress.jsx'
 
-const safePropEq = (prop, value) =>
-  R.pipe(
-    R.defaultTo({}),
-    R.propEq(prop, value)
-  )
+const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
 class Preview extends Component {
   constructor(props) {
     super(props)
 
     this.state = { playing: false, position: 0 }
+
+    this.setVolume = this.setVolume.bind(this)
   }
 
   setPlaying(playing) {
@@ -42,6 +41,11 @@ class Preview extends Component {
 
   trackTitle(track) {
     return track ? `${track.title} ${track.version ? `(${track.version})` : ''}` : ''
+  }
+
+  setVolume(volume) {
+    this.setState({ volume: volume * 100 })
+    this.getPlayer().volume = volume
   }
 
   render() {
@@ -82,6 +86,7 @@ class Preview extends Component {
           </button>
           <div
             className="fluid waveform_container"
+            style={{ flex: 10 }}
             onClick={e => {
               const trackPositionPercent = (e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth
               const previewPositionInSeconds = (totalDuration * trackPositionPercent - startOffset) / 1000
@@ -117,25 +122,30 @@ class Preview extends Component {
               }}
             />
           </div>
-          {
-            <audio
-              className="fluid"
-              ref="player0"
-              autoPlay={true}
-              onEnded={() => {
-                this.setPlaying(false)
-                this.props.onNext()
-              }}
-
-              onPlaying={() => this.setPlaying(true)}
-              onPause={() => this.setPlaying(false)}
-              onTimeUpdate={({ currentTarget: { currentTime } }) => {
-                this.setState({ position: currentTime * 1000 })
-              }}
-              controlsList="nodownload"
-              src={`${config.apiURL}/tracks/${this.props.currentTrack.id}/preview.mp3`}
-            />
-          }
+          <Progress
+            percent={this.state.volume}
+            barColor="#b40089"
+            bgColor="transparent"
+            style={{ margin: 'auto 0', flex: 1, padding: '0.5em' }}
+            onClick={e => {
+              this.setVolume((e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth)
+            }}
+          />
+          <audio
+            ref="player0"
+            autoPlay={true}
+            onEnded={() => {
+              this.setPlaying(false)
+              this.props.onNext()
+            }}
+            onPlaying={() => this.setPlaying(true)}
+            onPause={() => this.setPlaying(false)}
+            onTimeUpdate={({ currentTarget: { currentTime } }) => {
+              this.setState({ position: currentTime * 1000 })
+            }}
+            controlsList="nodownload"
+            src={`${config.apiURL}/tracks/${this.props.currentTrack.id}/preview.mp3`}
+          />
         </div>
       </div>
     )
