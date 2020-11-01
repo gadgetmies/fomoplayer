@@ -480,7 +480,15 @@ module.exports.addStoreTrack = async (storeUrl, labelId, releaseId, artists, tra
 
   let trackId = await pg
     .queryRowsAsync(
-      sql`SELECT track_id
+      sql`
+SELECT track_id FROM track NATURAL JOIN store__track WHERE store__track_store_id = ${track.id}`
+    )
+    .then(getTrackIdFromResult)
+
+  if (!trackId) {
+    trackId = await pg
+      .queryRowsAsync(
+        sql`SELECT track_id
 from track natural join track__artist natural join artist
 where LOWER(track_title) = LOWER(${track.title}) AND
       (${track.version}::TEXT IS NULL OR LOWER(track_version) = LOWER(${track.version}))
@@ -488,8 +496,9 @@ GROUP BY track_id
 HAVING ARRAY_AGG(artist_id ORDER BY artist_id) = ${R.pluck('id', sortedArtists)} AND
        ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedArtists)}
 `
-    )
-    .then(getTrackIdFromResult)
+      )
+      .then(getTrackIdFromResult)
+  }
 
   if (!trackId) {
     trackId = await pg
@@ -503,7 +512,6 @@ RETURNING track_id
       .then(getTrackIdFromResult)
 
     console.log(`Inserted new track with id: ${trackId}`)
-
   } else {
     console.log(`Updating duration of track ${trackId} to ${track.duration_ms} if null`)
     await pg.queryAsync(sql`
@@ -518,9 +526,13 @@ ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_ke
       `)
   }
 
-  const storeId = await pg.queryRowsAsync(sql`
+  const storeId = await pg
+    .queryRowsAsync(
+      sql`
 SELECT store_id FROM store WHERE store_url = ${storeUrl}
-`).then(getFieldFromResult('store_id'))
+`
+    )
+    .then(getFieldFromResult('store_id'))
 
   await pg.queryRowsAsync(
     sql`INSERT INTO store__track
@@ -534,13 +546,15 @@ store__track_store_details = ${track}
 `
   )
 
-  const storeTrackId = await pg.queryRowsAsync(
-    sql`
+  const storeTrackId = await pg
+    .queryRowsAsync(
+      sql`
 SELECT store__track_id FROM store__track 
 WHERE store_id = ${storeId} AND
       track_id = ${trackId} AND
       store__track_store_id = ${track.id}
-    `)
+    `
+    )
     .then(getFieldFromResult('store__track_id'))
 
   // TODO: Make waveforms preview independent? (to make them available for tracks from stores without waveforms)
@@ -557,11 +571,14 @@ ON CONFLICT ON CONSTRAINT store__track_preview_store__track_id_preview_url_key D
       store__track_preview_start_ms = COALESCE(EXCLUDED.store__track_preview_start_ms, ${preview.start_ms}),
       store__track_preview_format = COALESCE(EXCLUDED.store__track_preview_format, ${preview.format})
 `)
-      const previewId = await pg.queryRowsAsync(sql`
+      const previewId = await pg
+        .queryRowsAsync(
+          sql`
 SELECT store__track_preview_id FROM store__track_preview 
 WHERE store__track_preview_url = ${preview.url} AND
       store__track_id = ${storeTrackId}
-`)
+`
+        )
         .then(getFieldFromResult('store__track_preview_id'))
 
       if (track.waveform) {
@@ -581,7 +598,8 @@ ON CONFLICT ON CONSTRAINT release__track_release_id_track_id_key DO NOTHING
 `)
   }
 
-  if (labelId) { // TODO: associate label to release instead of track?
+  if (labelId) {
+    // TODO: associate label to release instead of track?
     await pg.queryAsync(sql`
 INSERT INTO track__label (track_id, label_id) VALUES (${trackId}, ${labelId})
 ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING
