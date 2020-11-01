@@ -120,7 +120,7 @@ class Player extends Component {
   }
 
   playNextUnheard() {
-    const firstUnplayed = this.getTracks().findIndex(R.propEq('heard', false))
+    const firstUnplayed = this.getTracks().findIndex(R.propSatisfies(R.isNil, 'heard'))
     this.jumpTracks(firstUnplayed - this.getCurrentTrackIndex())
   }
 
