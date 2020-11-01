@@ -20,11 +20,11 @@ class Share extends Component {
           className={'table-cell-button expand-collapse-button'}
           onClick={() => this.setState({ open: !this.state.open })}
         >
-          <FontAwesome name={this.state.open ? 'caret-up' : 'caret-down'}/>
+          <FontAwesome name={this.state.open ? 'caret-up' : 'caret-down'} />
         </PillButton>
-        {this.state.open
-          ? <>
-            <br/>
+        {this.state.open ? (
+          <>
+            <br />
             <ul className={'no-style-list'}>
               {this.props.stores.find(R.propEq('code', 'beatport')) ? (
                 <li>
@@ -64,7 +64,7 @@ class Share extends Component {
               </li>
             </ul>
           </>
-          : null}
+        ) : null}
       </>
     )
   }
@@ -122,7 +122,11 @@ class Track extends Component {
             onMouseEnter={() => this.setHeardHover(true)}
             onMouseLeave={() => this.setHeardHover(false)}
           >
-            {this.state.heardHover ? <FontAwesome name="play"/> : !!this.props.heard ? null : (<FontAwesome name="circle"/>)}
+            {this.state.heardHover ? (
+              <FontAwesome name="play" />
+            ) : !!this.props.heard ? null : (
+              <FontAwesome name="circle" />
+            )}
           </button>
         </td>
         <td style={{ flex: 3, overflow: 'hidden' }}>
@@ -156,12 +160,12 @@ class Track extends Component {
           {/*+ Follow*/}
           {/*</PillButton>*/}
         </td>
-        <td style={{flex: 1}}>
-          {this.props.released}
-        </td>
+        <td style={{ flex: 1 }}>{this.props.released}</td>
         <td style={{ flex: 1 }}>
           <ul className="comma-list">
-            {this.props.keys.filter(R.propEq('system', 'open-key')).map(({ key }) => <li key={key}>{key}</li>)}
+            {this.props.keys.filter(R.propEq('system', 'open-key')).map(({ key }) => (
+              <li key={key}>{key}</li>
+            ))}
           </ul>
         </td>
         {/* <td style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
@@ -200,8 +204,8 @@ class Track extends Component {
             </PillButton>
           ) : null}
         </td>
-        <td className='open-in-column'>
-          <Share stores={this.props.stores} artists={this.props.artists} title={this.props.title}/>
+        <td className="open-in-column">
+          <Share stores={this.props.stores} artists={this.props.artists} title={this.props.title} />
         </td>
       </tr>
     )
@@ -247,9 +251,11 @@ class Tracks extends Component {
   }
 
   renderTracks(tracks, carts) {
-    return tracks.length === 0 ? <tr style={{ display: 'block' }}>
+    return tracks.length === 0 ? (
+      <tr style={{ display: 'block' }}>
         <td>No tracks available</td>
-      </tr> :
+      </tr>
+    ) : (
       tracks.map(({ id, title, mix, artists, remixers, labels, released, keys, heard, stores }) => {
         return (
           <Track
@@ -285,15 +291,18 @@ class Tracks extends Component {
           />
         )
       })
+    )
   }
 
   render() {
-    const scrollToCurrentButton =
-      <button className={'button button-push_button-small button-push_button-primary button-push_button-glow'}
-              onClick={this.scrollCurrentIntoView}
+    const scrollToCurrentButton = (
+      <button
+        className={'button button-push_button-small button-push_button-primary button-push_button-glow'}
+        onClick={this.scrollCurrentIntoView}
       >
         Scroll to current
       </button>
+    )
     return (
       <>
         <div style={{ display: 'flex', alignItems: 'center', color: 'white' }}>
@@ -351,72 +360,89 @@ class Tracks extends Component {
             </div>
           </div>
           <div style={{ flex: 1, textAlign: 'right', padding: 4 }}>
-            <PillButton style={{ padding: 4, WebkitFilter: '', backgroundColor: '#444', color: 'white' }}>
+            <div
+              className="pill"
+              style={{ margin: 2, padding: 4, backgroundColor: '#222', color: 'white', opacity: 0.7 }}
+            >
               New: {this.props.newTracks}
-            </PillButton>
-            <PillButton style={{ padding: 4, WebkitFilter: '', backgroundColor: '#444', color: 'white' }}>
+            </div>
+            <div
+              className="pill"
+              style={{ margin: 2, padding: 4, backgroundColor: '#222', color: 'white', opacity: 0.7 }}
+            >
               Total: {this.props.totalTracks}
-            </PillButton>
+            </div>
           </div>
         </div>
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
           <thead style={{ width: '100%', display: 'block' }}>
-          <tr style={{ width: '100%', display: 'flex' }}>
-            <th style={{ flex: 0.5, overflow: 'hidden' }} className={'table-button-cell-header'}>
-              New
-            </th>
-            <th style={{ flex: 3, overflow: 'hidden' }}>Artist</th>
-            <th style={{ flex: 3, overflow: 'hidden' }}>Title</th>
-            <th style={{ flex: 2, overflow: 'hidden' }}>Remixer</th>
-            <th style={{ flex: 2, overflow: 'hidden' }}>Label</th>
-            <th style={{ flex: 1, overflow: 'hidden' }}>Released</th>
-            <th style={{ flex: 1, overflow: 'hidden' }}>Key</th>
-            {/* <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Cart</th> */}
-            <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>
-              Unfollow
-              {/*Artists*/}
-            </th>
-            <th className='open-in-column table-button-cell-header'>
-              Open in
-            </th>
-          </tr>
+            <tr style={{ width: '100%', display: 'flex' }}>
+              <th style={{ flex: 0.5, overflow: 'hidden' }} className={'table-button-cell-header'}>
+                New
+              </th>
+              <th style={{ flex: 3, overflow: 'hidden' }}>Artist</th>
+              <th style={{ flex: 3, overflow: 'hidden' }}>Title</th>
+              <th style={{ flex: 2, overflow: 'hidden' }}>Remixer</th>
+              <th style={{ flex: 2, overflow: 'hidden' }}>Label</th>
+              <th style={{ flex: 1, overflow: 'hidden' }}>Released</th>
+              <th style={{ flex: 1, overflow: 'hidden' }}>Key</th>
+              {/* <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Cart</th> */}
+              <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>
+                Unfollow
+                {/*Artists*/}
+              </th>
+              <th className="open-in-column table-button-cell-header">Open in</th>
+            </tr>
           </thead>
           {/* Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table */}
-          <tbody style={{ height: 'calc(100% - 166px)', overflow: 'scroll', display: 'block' }}
-                 onScroll={this.handleScroll}
+          <tbody
+            style={{ height: 'calc(100% - 166px)', overflow: 'scroll', display: 'block' }}
+            onScroll={this.handleScroll}
           >
-          <tr style={{ width: '100%', background: 'none', position: 'absolute' }}>
-            <td style={{ width: '100%', display: this.state.currentAboveScreen ? 'block' : 'none', textAlign: 'center' }}>
-              {scrollToCurrentButton}
-            </td>
-          </tr>
-          {this.renderTracks(this.props.tracks, this.props.carts)}
-          {this.props.listState === 'new' ? (
-            <tr style={{ display: 'block' }}>
-              <td style={{ display: 'block' }}>
-                <SpinnerButton
-                  size={'large'}
-                  loading={this.state.updatingTracks}
-                  onClick={async () => {
-                    this.setState({ updatingTracks: true })
-                    try {
-                      await this.props.onUpdateTracksClicked()
-                    } finally {
-                      this.setState({ updatingTracks: false })
-                    }
-                  }}
-                  style={{ margin: 'auto', height: '100%', display: 'block' }}
-                  label={'Load more'}
-                  loadingLabel={'Loading'}
-                />
+            <tr style={{ width: '100%', background: 'none', position: 'absolute' }}>
+              <td
+                style={{
+                  width: '100%',
+                  display: this.state.currentAboveScreen ? 'block' : 'none',
+                  textAlign: 'center'
+                }}
+              >
+                {scrollToCurrentButton}
               </td>
             </tr>
-          ) : null}
-          <tr style={{ width: '100%', background: 'none', position: 'absolute', bottom: 0 }}>
-            <td style={{ width: '100%', display: this.state.currentBelowScreen ? 'block' : 'none', textAlign: 'center' }}>
-              {scrollToCurrentButton}
-            </td>
-          </tr>
+            {this.renderTracks(this.props.tracks, this.props.carts)}
+            {this.props.listState === 'new' ? (
+              <tr style={{ display: 'block' }}>
+                <td style={{ display: 'block' }}>
+                  <SpinnerButton
+                    size={'large'}
+                    loading={this.state.updatingTracks}
+                    onClick={async () => {
+                      this.setState({ updatingTracks: true })
+                      try {
+                        await this.props.onUpdateTracksClicked()
+                      } finally {
+                        this.setState({ updatingTracks: false })
+                      }
+                    }}
+                    style={{ margin: 'auto', height: '100%', display: 'block' }}
+                    label={'Load more'}
+                    loadingLabel={'Loading'}
+                  />
+                </td>
+              </tr>
+            ) : null}
+            <tr style={{ width: '100%', background: 'none', position: 'absolute', bottom: 0 }}>
+              <td
+                style={{
+                  width: '100%',
+                  display: this.state.currentBelowScreen ? 'block' : 'none',
+                  textAlign: 'center'
+                }}
+              >
+                {scrollToCurrentButton}
+              </td>
+            </tr>
           </tbody>
         </table>
       </>
