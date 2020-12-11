@@ -94,7 +94,7 @@ module.exports.queryUserTracks = username =>
            ) AS tracks
              LEFT JOIN track_date_added_score AS added_score USING (track_id)
              LEFT JOIN track_date_released_score AS released_score USING (track_id)
-      ORDER BY score DESC
+      ORDER BY score DESC NULLS LAST
       LIMIT 200
     ),
   heard_tracks AS (
@@ -241,7 +241,7 @@ FROM limited_tracks lt
   ),
   new_tracks_with_details AS (
     SELECT json_agg(t) AS new_tracks FROM (
-      SELECT * FROM tracks_with_details WHERE heard IS NULL ORDER BY score DESC, added DESC
+      SELECT * FROM tracks_with_details WHERE heard IS NULL ORDER BY score DESC NULLS LAST, added DESC
     ) t
   ),
   heard_tracks_with_details AS (
