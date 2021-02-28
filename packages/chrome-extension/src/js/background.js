@@ -1,5 +1,5 @@
 import { bandcampReleasesTransform } from './transforms/bandcamp'
-import { beatportTracksTransform } from './transforms/beatport'
+import { beatportTracksTransform, beatportLibraryTransform } from './transforms/beatport'
 import * as R from 'ramda'
 
 const fetchGoogleToken = handler => {
@@ -264,6 +264,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     sendArtists('https://www.beatport.com', message.data)
   } else if (message.type === 'labels') {
     sendLabels('https://www.beatport.com', message.data)
+  } else if (message.type === 'purchased') {
+    if (message.store === 'beatport') {
+      sendTracks('https://www.beatport.com', 'purchased', beatportLibraryTransform(message.data))
+    }
   } else if (message.type === 'tracks') {
     if (message.store === 'beatport') {
       beatportTracksCache = beatportTracksCache.concat(message.data.tracks)

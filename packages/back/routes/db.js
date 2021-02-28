@@ -618,14 +618,17 @@ ON CONFLICT ON CONSTRAINT track__key_track_id_key_id_key DO NOTHING
   return trackId
 }
 
-module.exports.addPurchasedTrackToUser = async (userId, storeTrackId) => {
-  pg.queryRowsAsync(
+module.exports.addPurchasedTrackToUser = async (userId, storeTrack) => {
+  await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`
-    INSERT INTO user__store__track_purchased (meta_account_user_id, store__track_id)
-    SELECT ${userId}, store__track_id FROM store__track WHERE store__track_store_id = ${storeTrackId}
-    ON CONFLICT ON CONSTRAINT user__store__track_purchased_meta_account_user_id_store__tr_key DO NOTHING
-    `
+    sql`INSERT INTO user__store__track_purchased (meta_account_user_id, user__store__track_purchased_time, store__track_id)
+SELECT ${userId}, ${storeTrack.purchased}, store__track_id
+FROM store__track
+WHERE store__track_store_id = ${storeTrack.id}
+ON CONFLICT
+    ON CONSTRAINT user__store__track_purchased_meta_account_user_id_store__tr_key
+    DO UPDATE SET user__store__track_purchased_time = ${storeTrack.purchased}
+`
   )
 }
 

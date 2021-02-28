@@ -83,8 +83,28 @@ async function sendArtistsAndLabels() {
 sendArtistsAndLabels()
 `
 
+const sendBeatportMyLibraryScript = () => `
+${waitFunction}
+
+function sendError(errorText) {
+  chrome.runtime.sendMessage({type: 'error', message: 'Failed to send Beatport tracks', stack: errorText})
+}
+
+async function sendMyLibrary() {
+  try {
+    chrome.runtime.sendMessage({type: 'operationStatus', text: 'Fetching library', progress: 20})
+    const myBeatportResponse = await fetch('https://www.beatport.com/api/v4/my/downloads?page=1&per_page=5000')
+    const myLibrary = await myBeatportResponse.json()
+    chrome.runtime.sendMessage({type: 'purchased', store: 'beatport', data: myLibrary.results})
+  } catch (e) {
+    sendError(e.stack)
+  }
+}
+
+sendMyLibrary()
+`
+
 const myBeatportUrlFn = 'page => `https://www.beatport.com/my-beatport?page=${page}&per-page=150`'
-const myDownloadsUrlFn = 'page => `https://www.beatport.com/downloads/downloaded?page=${page}`'
 const getCurrentUrl = tabArray => tabArray[0].url
 
 export default class BeatportPanel extends React.Component {
@@ -101,6 +121,21 @@ export default class BeatportPanel extends React.Component {
       })
     } catch (e) {
       chrome.runtime.sendMessage({ type: 'error', message: 'Failed to send Beatport tracks!', stack: e.stack })
+    }
+  }
+
+  sendMyLibrary() {
+    try {
+      this.props.setRunning(true)
+      chrome.tabs.executeScript({
+        code: sendBeatportMyLibraryScript()
+      })
+    } catch (e) {
+      chrome.runtime.sendMessage({
+        type: 'error',
+        message: 'Failed to send My Library tracks!',
+        stack: e.stack
+      })
     }
   }
 
@@ -194,10 +229,10 @@ export default class BeatportPanel extends React.Component {
                 id="beatport-downloaded"
                 disabled={this.props.running || !this.state.loggedIn}
                 onClick={() => {
-                  this.sendTracks(myDownloadsUrlFn, 'purchased', 20)
+                  this.sendMyLibrary()
                 }}
               >
-                Downloaded
+                My Library
               </button>
             </p>
           </>
