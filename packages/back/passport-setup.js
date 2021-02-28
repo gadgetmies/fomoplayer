@@ -42,7 +42,7 @@ module.exports = function passportSetup() {
   const JwtStrategy = require('passport-jwt').Strategy
   const ExtractJwt = require('passport-jwt').ExtractJwt
   const jwksRsa = require('jwks-rsa')
-  const allowedIssuers = ['accounts.google.com']
+  const allowedIssuers = ['accounts.google.com', 'https://accounts.google.com']
 
   const verify = async (jwt_payload, done) => {
     if (jwt_payload && jwt_payload.sub && allowedIssuers.includes(jwt_payload.iss)) {

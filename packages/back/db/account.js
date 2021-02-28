@@ -50,7 +50,8 @@ WHERE meta_account_username = lower(${username}) AND
     return details
   },
   findOrCreateByIdentifier: async (issuer, subject) => {
-    const existingUser = await accountAPI.findByIdentifier(issuer, subject)
+    const issuerWithoutProtocol = issuer.replace('https://', '')
+    const existingUser = await accountAPI.findByIdentifier(issuerWithoutProtocol, subject)
     if (existingUser) {
       return existingUser
     } else {
