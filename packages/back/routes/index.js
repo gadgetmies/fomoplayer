@@ -12,7 +12,8 @@ const {
   addStoreArtistToUser,
   addStoreLabelToUser,
   removeArtistWatchesFromUser,
-  removeLabelWatchesFromUser
+  removeLabelWatchesFromUser,
+  getLongestPreviewForTrack
 } = require('./logic.js')
 
 const { apiURL } = require('../config.js')
@@ -20,10 +21,14 @@ const { apiURL } = require('../config.js')
 router.use(bodyParser.json())
 
 router.get('/tracks/:id/preview.:format', async (req, res, next) => {
-  const { params: { id, format, offset } } = req
+  const {
+    params: { id, format, offset }
+  } = req
   try {
-    res.redirect(await getStorePreviewRedirectForTrack(id, format, offset))
-  } catch(e) {
+    const { storeCode, storeTrackId } = await getLongestPreviewForTrack(id, format, offset)
+    const { getPreviewUrl } = require(`./stores/${storeCode}/logic.js`)
+    res.redirect(await getPreviewUrl(storeTrackId, format))
+  } catch (e) {
     console.error(e)
     next()
   }

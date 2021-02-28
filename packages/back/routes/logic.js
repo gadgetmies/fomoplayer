@@ -52,6 +52,8 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
   return `${apiURL}/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`
 }
 
+module.exports.getLongestPreviewForTrack = getLongestPreviewForTrack
+
 module.exports.addStoreTrackToUsers = async (storeUrl, userIds, track, type) => {
   let labelId
   let releaseId

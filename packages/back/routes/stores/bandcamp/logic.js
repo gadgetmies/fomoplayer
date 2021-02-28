@@ -24,7 +24,7 @@ const getStoreDbId = () => {
 const getAlbum = (module.exports.getAlbum = (username, itemUrl) => getAlbum(itemUrl))
 
 // TODO: Update to use store__track_preview
-module.exports.getPreviewUrl = async (username, id, format) => {
+module.exports.getPreviewUrl = async (id, format) => {
   const storeId = await getStoreDbId()
   const albumUrl = await queryAlbumUrl(storeId, id)
   const albumInfo = await getAlbumAsync(albumUrl)

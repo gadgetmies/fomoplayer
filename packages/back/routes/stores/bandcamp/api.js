@@ -9,7 +9,7 @@ const {
 } = require('./logic.js')
 
 router.get('/tracks/:id/preview.:format', ({ user: { username }, params: { id, format } }, res, next) =>
-  getPreviewUrl(username, id, format)
+  getPreviewUrl(id, format)
     .then(url => res.redirect(url))
     .catch(next)
 )
