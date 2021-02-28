@@ -6,8 +6,8 @@ FROM track
 GROUP BY track_id;
 REFRESH MATERIALIZED VIEW track_date_released_score;
 
-INSERT INTO job (job_id, job_name)
-VALUES (3, 'updateDateReleasedScore');
+INSERT INTO job (job_name)
+VALUES ('updateDateReleasedScore');
 
 INSERT INTO job_schedule (job_id, job_schedule)
 SELECT job_id, '0 0 * * *'
