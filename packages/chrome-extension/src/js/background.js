@@ -256,6 +256,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     chrome.storage.local.set({ operationStatus: message.text, operationProgress: message.progress })
     chrome.runtime.sendMessage({ type: 'refresh' })
   } else if (message.type === 'clearError') {
+    clearStatus()
     chrome.storage.local.remove('error')
     chrome.runtime.sendMessage({ type: 'refresh' })
   } else if (message.type === 'error') {
