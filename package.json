@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "ecosystem.config.js",
+  "engines": {
+    "node": "12.x"
+  },
   "scripts": {
     "start:back": "yarn workspace multi_store_player_back start",
     "start:front": "yarn workspace multi_store_player_front start",

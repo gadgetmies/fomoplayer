@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "homepage": ".",
+  "engines": {
+    "node": "12.x"
+  },
   "dependencies": {
     "auto-bind": "^1.2.1",
     "browser-detect": "^0.2.28",
