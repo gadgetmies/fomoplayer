@@ -353,6 +353,7 @@ SELECT label_id from label where LOWER(label_name) = LOWER(${label.name})
     .then(getLabelIdFromResult)
 
   if (!labelId) {
+    console.log(`Label ${label.name} not found, inserting`)
     labelId = await pg
       .queryRowsAsync(
         sql`insert into label (label_name)
@@ -436,6 +437,7 @@ WHERE store_url = ${storeUrl} AND (store__artist_store_id = ${artist.id} OR stor
     .then(getArtistIdFromResult)
 
   if (!artistId) {
+    console.log(`Artist ${artist.name} not found, inserting`)
     artistId = await pg
       .queryRowsAsync(
         sql`
@@ -513,7 +515,6 @@ RETURNING track_id
 
     console.log(`Inserted new track with id: ${trackId}`)
   } else {
-    console.log(`Updating duration of track ${trackId} to ${track.duration_ms} if null`)
     await pg.queryAsync(sql`
 UPDATE track SET track_duration_ms = COALESCE(track_duration_ms, ${track.duration_ms}) WHERE track_id = ${trackId}
 `)
