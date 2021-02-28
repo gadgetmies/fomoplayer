@@ -2,8 +2,8 @@ const colorTrace = require('color-stacktrace')
 colorTrace.init(Error)
 
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
-const dbMigrate = require('db-migrate').getInstance(true)
-;(process.env.RESET_DB_ON_INIT ? dbMigrate.reset() : Promise.resolve()).then(() => dbMigrate.up())
+// const dbMigrate = require('db-migrate').getInstance(true)
+// ;(process.env.RESET_DB_ON_INIT ? dbMigrate.reset() : Promise.resolve()).then(() => dbMigrate.up())
 
 const express = require('express')
 const passport = require('passport')
