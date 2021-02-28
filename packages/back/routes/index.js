@@ -7,8 +7,15 @@ const {
   setAllHeard,
   getTracksM3u,
   addArtistsOnLabelsToIgnore,
-  getStorePreviewRedirectForTrack
+  getStorePreviewRedirectForTrack,
+  addStoreTrackToUsers,
+  addStoreArtistToUser,
+  addStoreLabelToUser,
+  removeArtistWatchesFromUser,
+  removeLabelWatchesFromUser
 } = require('./logic.js')
+
+const { apiURL } = require('../config.js')
 
 router.use(bodyParser.json())
 
@@ -63,5 +70,60 @@ router.post('/ignores/labels', ({ user: { username }, body }, res, next) =>
 )
 
 router.use('/stores', require('./stores/index.js'))
+
+const tracksHandler = type => async (req, res, next) => {
+  try {
+    console.log('Start processing received tracks')
+
+    let addedTracks = []
+    for (const track of req.body) {
+      const trackId = await addStoreTrackToUsers(req.headers['x-multi-store-player-store'], [req.user.id], track, type)
+      addedTracks.push(`${apiURL}/tracks/${trackId}`)
+    }
+
+    res.status(201).send(addedTracks)
+  } catch (e) {
+    next(e)
+  }
+}
+
+router.post('/tracks', tracksHandler('new'))
+router.post('/purchased', tracksHandler('purchased'))
+
+router.post('/artists', async ({ user, body, headers }, res, next) => {
+  try {
+    console.log('Start processing received artists')
+    const storeUrl = headers['x-multi-store-player-store']
+
+    await removeArtistWatchesFromUser(storeUrl, user)
+    let addedArtists = []
+    for (const artist of body) {
+      const artistId = await addStoreArtistToUser(storeUrl, user, artist)
+      addedArtists.push(`${apiURL}/artists/${artistId}`)
+    }
+
+    res.status(201).send(addedArtists)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/labels', async ({ user, body, headers }, res, next) => {
+  try {
+    console.log('Start processing received labels')
+    const storeUrl = headers['x-multi-store-player-store']
+
+    await removeLabelWatchesFromUser(storeUrl, user)
+    let addedLabels = []
+    for (const label of body) {
+      const labelId = await addStoreLabelToUser(storeUrl, user, label)
+      addedLabels.push(`${apiURL}/labels/${labelId}`)
+    }
+
+    res.status(201).send(addedLabels)
+  } catch (e) {
+    next(e)
+  }
+})
 
 module.exports = router
