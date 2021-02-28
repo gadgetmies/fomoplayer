@@ -301,8 +301,8 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       fetchNextItem()
     }
   } else if (message.type === 'logging-out') {
-    chrome.storage.local.set({ token: null }, () => {
-      chrome.runtime.sendMessage({ type: 'logout' })
+    chrome.storage.local.remove('token', () => {
+      chrome.runtime.sendMessage({ type: 'refresh' })
     })
   } else if (message.type === 'oauth-login') {
     fetchGoogleToken(success => {
