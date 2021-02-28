@@ -1,4 +1,4 @@
-import React, { useEffect } from 'React'
+import React from 'React'
 
 export default class Root extends React.Component {
   constructor(props) {
