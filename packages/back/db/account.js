@@ -55,11 +55,12 @@ WHERE meta_account_username = lower(${username}) AND
     if (existingUser) {
       return existingUser
     } else {
+      const username = `${issuerWithoutProtocol}_${subject}`
       const [newUser] = await pgrm.queryRowsAsync(sql`
         INSERT INTO meta_account
           (meta_account_username, meta_account_user_id_issuer, meta_account_user_id_subject, meta_account_passwd)
         VALUES
-          (${subject}, ${issuer}, ${subject}, 'No password for token auth')
+          (${username}, ${issuerWithoutProtocol}, ${subject}, 'No password for token auth')
         RETURNING meta_account_user_id AS id, meta_account_username AS username, meta_account_details AS details
         `)
       return newUser
