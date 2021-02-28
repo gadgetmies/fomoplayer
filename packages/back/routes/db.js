@@ -333,11 +333,12 @@ where store_url = ${storeUrl}
     )
     .then(R.path([0, 'track_id']))
 
-module.exports.addTrackToUser = (userId, trackId) =>
-  pg.queryAsync(sql`INSERT INTO user__track (track_id, meta_account_user_id)
+module.exports.addTrackToUser = async (userId, trackId) => {
+  await pg.queryAsync(sql`INSERT INTO user__track (track_id, meta_account_user_id)
 VALUES (${trackId}, ${userId})
 ON CONFLICT ON CONSTRAINT user__track_track_id_meta_account_user_id_key DO NOTHING
 `)
+}
 
 const getFieldFromResult = field => R.path([0, field])
 
@@ -559,9 +560,8 @@ WHERE store_id = ${storeId} AND
     .then(getFieldFromResult('store__track_id'))
 
   // TODO: Make waveforms preview independent? (to make them available for tracks from stores without waveforms)
-  await Promise.all(
-    track.previews.map(async preview => {
-      await pg.queryAsync(sql`
+  for (const preview of track.previews) {
+    await pg.queryAsync(sql`
 INSERT INTO store__track_preview
 (store__track_id, store__track_preview_url, store__track_preview_format, store__track_preview_start_ms,
  store__track_preview_end_ms)
@@ -572,25 +572,24 @@ ON CONFLICT ON CONSTRAINT store__track_preview_store__track_id_preview_url_key D
       store__track_preview_start_ms = COALESCE(EXCLUDED.store__track_preview_start_ms, ${preview.start_ms}),
       store__track_preview_format = COALESCE(EXCLUDED.store__track_preview_format, ${preview.format})
 `)
-      const previewId = await pg
-        .queryRowsAsync(
-          sql`
+    const previewId = await pg
+      .queryRowsAsync(
+        sql`
 SELECT store__track_preview_id FROM store__track_preview 
 WHERE store__track_preview_url = ${preview.url} AND
       store__track_id = ${storeTrackId}
 `
-        )
-        .then(getFieldFromResult('store__track_preview_id'))
+      )
+      .then(getFieldFromResult('store__track_preview_id'))
 
-      if (track.waveform) {
-        await pg.queryAsync(sql`
+    if (track.waveform) {
+      await pg.queryAsync(sql`
 INSERT INTO store__track_preview_waveform (store__track_preview_id, store__track_preview_waveform_url)
 VALUES (${previewId}, ${track.waveform.url})
 ON CONFLICT ON CONSTRAINT store__track_preview_waveform_store__track_preview_id_url_key DO NOTHING
 `)
-      }
-    })
-  )
+    }
+  }
 
   if (releaseId) {
     await pg.queryAsync(sql`
