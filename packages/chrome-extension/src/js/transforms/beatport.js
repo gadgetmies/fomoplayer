@@ -1,5 +1,5 @@
-import * as L from 'partial.lenses'
-import * as R from 'ramda'
+const L = require('partial.lenses')
+const R = require('ramda')
 
 const idToString = id => id.toString()
 
@@ -50,10 +50,13 @@ const bpKeysToCamelot = {
 
 const previewUrlPath = [1, 'url']
 
-export const beatportTracksTransform = L.collect([
+module.exports.beatportTracksTransform = L.collect([
   L.elems,
   L.pick({
-    title: [L.props('title', 'mix'), L.reread(({ title, mix }) => title.replace(` (${mix})`, ''))],
+    title: [
+      L.props('title', 'name', 'mix'),
+      L.reread(({ title, name, mix }) => (title || name).replace(` (${mix})`, ''))
+    ],
     version: 'mix',
     id: ['id', L.reread(idToString)],
     url: [L.props('slug', 'id'), L.reread(beatportUrl('track'))],

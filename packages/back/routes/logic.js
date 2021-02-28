@@ -9,17 +9,19 @@ const {
   ensureArtistExists,
   ensureLabelExists,
   addStoreTrack,
-  addPurchasedTrackToUser
-} = require('./db.js')
-
-const removeIgnoredTracksFromUser = require('../remove-ignored-tracks-from-user.js')
-const {
+  addPurchasedTrackToUser,
   queryUserTracks,
   addArtistOnLabelToIgnore,
   setTrackHeard,
   setAllHeard,
-  getLongestPreviewForTrack
+  getLongestPreviewForTrack,
+  addArtistWatch,
+  addLabelWatch,
+  removeArtistWatchesFromUser,
+  removeLabelWatchesFromUser
 } = require('./db.js')
+
+const removeIgnoredTracksFromUser = require('../remove-ignored-tracks-from-user.js')
 
 module.exports.queryUserTracks = queryUserTracks
 module.exports.getTracksM3u = username =>
@@ -50,7 +52,7 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
   return `${apiURL}/stores/${storeCode}/tracks/${storeTrackId}/preview.${format}`
 }
 
-module.exports.addStoreTrackToUser = async (storeUrl, user, track, type) => {
+module.exports.addStoreTrackToUsers = async (storeUrl, userIds, track, type) => {
   let labelId
   let releaseId
 
@@ -60,16 +62,38 @@ module.exports.addStoreTrackToUser = async (storeUrl, user, track, type) => {
   if (track.release) {
     releaseId = await ensureReleaseExists(storeUrl, track.release)
   }
-  const artists = await Promise.all(track.artists.map(artist => ensureArtistExists(storeUrl, artist)))
+
+  let artists = []
+  for (const artist of track.artists) {
+    const res = await ensureArtistExists(storeUrl, artist)
+    artists.push(res)
+  }
 
   const trackId = await addStoreTrack(storeUrl, labelId, releaseId, artists, track)
 
-  await addTrackToUser(user.id, trackId)
+  for (const userId of userIds) {
+    await addTrackToUser(userId, trackId)
 
-  if (type === 'purchased') {
-    await addPurchasedTrackToUser(user.id, track.id)
+    if (type === 'purchased') {
+      await addPurchasedTrackToUser(userId, track)
+    }
   }
   // TODO: Update materialized views
 
   return trackId
+}
+
+module.exports.removeArtistWatchesFromUser = removeArtistWatchesFromUser
+module.exports.removeLabelWatchesFromUser = removeLabelWatchesFromUser
+
+module.exports.addStoreArtistToUser = async (storeUrl, user, artist) => {
+  const { id } = await ensureArtistExists(storeUrl, artist)
+  await addArtistWatch(user.id, id)
+  return id
+}
+
+module.exports.addStoreLabelToUser = async (storeUrl, user, label) => {
+  const labelId = await ensureLabelExists(storeUrl, label)
+  await addLabelWatch(user.id, labelId)
+  return labelId
 }

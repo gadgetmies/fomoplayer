@@ -173,6 +173,84 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
   })
 }
 
+const sendArtists = (storeUrl, artists) => {
+  chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
+    try {
+      chrome.storage.local.set({
+        operationStatus: `Sending artists`,
+        operationProgress: 0
+      })
+      chrome.runtime.sendMessage({ type: 'refresh' })
+
+      const res = await fetch(`${appUrl}/api/artists`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: `Bearer ${token}`,
+          'x-multi-store-player-store': storeUrl
+        },
+        body: JSON.stringify(artists)
+      })
+
+      if (!res.ok) {
+        const status = await res.text()
+        throw new Error(`Response not ok, status: ${res.status} ${res.statusText} ${status}`)
+      }
+      clearStatus()
+    } catch (e) {
+      const message = {
+        message: `Failed to send artists from ${storeUrl}`,
+        stack: JSON.stringify({
+          url: `${appUrl}/api/artists`,
+          storeUrl,
+          stack: e.stack,
+          time: new Date().toUTCString()
+        })
+      }
+      handleError(message)
+    }
+  })
+}
+
+const sendLabels = (storeUrl, labels) => {
+  chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
+    try {
+      chrome.storage.local.set({
+        operationStatus: `Sending labels`,
+        operationProgress: 0
+      })
+      chrome.runtime.sendMessage({ type: 'refresh' })
+
+      const res = await fetch(`${appUrl}/api/labels`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: `Bearer ${token}`,
+          'x-multi-store-player-store': storeUrl
+        },
+        body: JSON.stringify(labels)
+      })
+
+      if (!res.ok) {
+        const status = await res.text()
+        throw new Error(`Response not ok, status: ${res.status} ${res.statusText} ${status}`)
+      }
+      clearStatus()
+    } catch (e) {
+      const message = {
+        message: `Failed to send labels from ${storeUrl}`,
+        stack: JSON.stringify({
+          url: `${appUrl}/api/labels`,
+          storeUrl,
+          stack: e.stack,
+          time: new Date().toUTCString()
+        })
+      }
+      handleError(message)
+    }
+  })
+}
+
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.type === 'operationStatus') {
     chrome.storage.local.set({ operationStatus: message.text, operationProgress: message.progress })
@@ -182,6 +260,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     chrome.runtime.sendMessage({ type: 'refresh' })
   } else if (message.type === 'error') {
     handleError(message)
+  } else if (message.type === 'artists') {
+    sendArtists('https://www.beatport.com', message.data)
+  } else if (message.type === 'labels') {
+    sendLabels('https://www.beatport.com', message.data)
   } else if (message.type === 'tracks') {
     if (message.store === 'beatport') {
       beatportTracksCache = beatportTracksCache.concat(message.data.tracks)

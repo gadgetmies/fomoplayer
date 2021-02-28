@@ -59,6 +59,30 @@ function sendTracks(firstPage, lastPage) {
 sendTracks(1, ${pageCount})
 `
 
+const sendBeatportArtistsAndLabelsScript = () => `
+${waitFunction}
+
+function sendError(errorText) {
+  chrome.runtime.sendMessage({type: 'error', message: 'Failed to send Beatport tracks', stack: errorText})
+}
+
+async function sendArtistsAndLabels() {
+  try {
+    chrome.runtime.sendMessage({type: 'operationStatus', text: 'Fetching artists and labels', progress: 20})
+    const myBeatportResponse = await fetch('https://www.beatport.com/api/my-beatport')
+    const artistsAndLabels = await myBeatportResponse.json()
+    const artistIds = artistsAndLabels.artists.map(({id, url, name}) => ({id, url, name}))
+    const labelIds = artistsAndLabels.labels.map(({id, url, name}) => ({id, url, name}))
+    chrome.runtime.sendMessage({type: 'artists', done: true, store: 'beatport', data: artistIds})
+    chrome.runtime.sendMessage({type: 'labels', done: true, store: 'beatport', data: labelIds})
+  } catch (e) {
+    sendError(e.stack)
+  }
+}
+
+sendArtistsAndLabels()
+`
+
 const myBeatportUrlFn = 'page => `https://www.beatport.com/my-beatport?page=${page}&per-page=150`'
 const myDownloadsUrlFn = 'page => `https://www.beatport.com/downloads/downloaded?page=${page}`'
 const getCurrentUrl = tabArray => tabArray[0].url
@@ -77,6 +101,21 @@ export default class BeatportPanel extends React.Component {
       })
     } catch (e) {
       chrome.runtime.sendMessage({ type: 'error', message: 'Failed to send Beatport tracks!', stack: e.stack })
+    }
+  }
+
+  sendArtistsAndLabels() {
+    try {
+      this.props.setRunning(true)
+      chrome.tabs.executeScript({
+        code: sendBeatportArtistsAndLabelsScript()
+      })
+    } catch (e) {
+      chrome.runtime.sendMessage({
+        type: 'error',
+        message: 'Failed to send My Beatport artists and labels!',
+        stack: e.stack
+      })
     }
   }
 
@@ -137,6 +176,17 @@ export default class BeatportPanel extends React.Component {
                 }}
               >
                 My Beatport
+              </button>
+            </p>
+            <p>
+              <button
+                id="beatport-new"
+                disabled={this.props.running || !this.state.loggedIn}
+                onClick={() => {
+                  this.sendArtistsAndLabels()
+                }}
+              >
+                My Beatport artists and labels
               </button>
             </p>
             <p>

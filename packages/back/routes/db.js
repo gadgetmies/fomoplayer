@@ -628,3 +628,82 @@ module.exports.addPurchasedTrackToUser = async (userId, storeTrackId) => {
     `
   )
 }
+
+module.exports.addArtistWatch = async (userId, artistId) => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`INSERT INTO store__artist_watch (store__artist_id)
+SELECT store__artist_id
+FROM store__artist
+         NATURAL JOIN artist
+WHERE artist_id = ${artistId}
+ON CONFLICT DO NOTHING
+  `
+  )
+
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`INSERT INTO store__artist_watch__user (store__artist_watch_id, meta_account_user_id)
+SELECT store__artist_watch_id, ${userId}
+FROM store__artist_watch
+         NATURAL JOIN store__artist
+         NATURAL JOIN artist
+WHERE artist_id = ${artistId}
+ON CONFLICT DO NOTHING
+  `
+  )
+}
+
+module.exports.addLabelWatch = async (userId, labelId) => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`INSERT INTO store__label_watch (store__label_id)
+SELECT store__label_id
+FROM store__label
+         NATURAL JOIN label
+WHERE label_id = ${labelId}
+ON CONFLICT DO NOTHING
+  `
+  )
+
+  await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`INSERT INTO store__label_watch__user (store__label_watch_id, meta_account_user_id)
+SELECT store__label_watch_id, ${userId}
+FROM store__label_watch
+NATURAL JOIN store__label
+WHERE label_id = ${labelId}
+ON CONFLICT DO NOTHING
+  `
+  )
+}
+
+module.exports.removeArtistWatchesFromUser = async (storeUrl, user) => {
+  // language=PostgreSQL
+  await pg.queryAsync(
+    sql`DELETE
+FROM store__artist_watch__user
+WHERE meta_account_user_id = ${user.id}
+  AND store__artist_watch_id IN
+      (SELECT store__artist_watch_id
+       FROM store__artist_watch
+                NATURAL JOIN store__artist
+                NATURAL JOIN store
+       WHERE store_url = ${storeUrl})
+    `)
+}
+
+module.exports.removeLabelWatchesFromUser = async (storeUrl, user) => {
+  // language=PostgreSQL
+  await pg.queryAsync(
+    sql`DELETE
+FROM store__label_watch__user
+WHERE meta_account_user_id = ${user.id}
+  AND store__label_watch_id IN
+      (SELECT store__label_watch_id
+       FROM store__label_watch
+                NATURAL JOIN store__label
+                NATURAL JOIN store
+       WHERE store_url = ${storeUrl})
+    `)
+}
