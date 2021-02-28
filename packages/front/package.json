@@ -13,7 +13,6 @@
     "multi-store-player-shared-config": "1.0.0",
     "partial.lenses": "^14.12.0",
     "react": "^16.2.0",
-    "react-clamp": "^1.0.5",
     "react-dom": "^16.2.0",
     "react-fontawesome": "^1.6.1",
     "react-github-btn": "^1.1.1",
