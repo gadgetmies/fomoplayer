@@ -120,7 +120,7 @@ export default class BeatportPanel extends React.Component {
         code: sendBeatportTracksScript(urlTemplate, type, pageCount)
       })
     } catch (e) {
-      chrome.runtime.sendMessage({ type: 'error', message: 'Failed to send Beatport tracks!', stack: e.stack })
+      chrome.runtime.sendMessage({ type: 'error', message: 'Failed to send My Beatport tracks!', stack: e.stack })
     }
   }
 
@@ -201,7 +201,7 @@ export default class BeatportPanel extends React.Component {
                 Send tracks from current page
               </button>
             </p>
-            <h3>Sync (Requires login)</h3>
+            <h3>Sync (requires login)</h3>
             <p>
               <button
                 id="beatport-new"
@@ -210,7 +210,7 @@ export default class BeatportPanel extends React.Component {
                   this.sendTracks(myBeatportUrlFn, 'tracks', 20)
                 }}
               >
-                My Beatport
+                My Beatport tracks
               </button>
             </p>
             <p>
