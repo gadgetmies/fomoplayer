@@ -7,7 +7,11 @@ export default class Root extends React.Component {
 
     const that = this
     chrome.storage.local.get(['appUrl', 'enabledStores'], function({ appUrl, enabledStores }) {
-      that.setState({ appUrl, storedAppUrl: appUrl, enabledStores })
+      that.setState({
+        appUrl,
+        storedAppUrl: appUrl,
+        enabledStores: enabledStores || { beatport: true, bandcamp: true }
+      })
     })
 
     this.toggleStore = this.toggleStore.bind(this)
