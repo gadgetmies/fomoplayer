@@ -50,22 +50,13 @@ const ensureAuthenticated = (req, res, next) => {
 
 app.use('/api/auth', auth)
 
+const authenticateJwt = passport.authenticate('jwt',{ session: false })
+
 app.use(
   '/api',
   (req, res, next) => {
     if (req.headers.authorization) {
-      passport.authenticate('jwt', function(err, user, info) {
-        if (err) {
-          console.error('JWT authentication failed', err)
-          next(err)
-        }
-        req.logIn(user, { session: false }, function(err) {
-          if (err) {
-            return next(err)
-          }
-          next()
-        })
-      })(req, res, next)
+      authenticateJwt(req, res, next)
     } else {
       ensureAuthenticated(req, res, next)
     }
