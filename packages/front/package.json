@@ -4,7 +4,7 @@
   "private": true,
   "homepage": ".",
   "engines": {
-    "node": "14.x"
+    "node": "12.x"
   },
   "dependencies": {
     "auto-bind": "^1.2.1",
@@ -19,7 +19,7 @@
     "react-fontawesome": "^1.6.1",
     "react-github-btn": "^1.1.1",
     "react-lazyload": "^2.3.0",
-    "react-scripts": "^2.1.8",
+    "react-scripts": "^4.0.3",
     "slideout": "^1.0.1",
     "typeface-lato": "0.0.75"
   },

@@ -8,7 +8,7 @@
     "start:prod": "node index.js"
   },
   "engines": {
-    "node": "14.x"
+    "node": "12.x"
   },
   "dependencies": {
     "bluebird": "^3.5.2",
