@@ -9,7 +9,6 @@
   "dependencies": {
     "auto-bind": "^1.2.1",
     "browser-detect": "^0.2.28",
-    "http-proxy-middleware": "^1.0.5",
     "karet": "^2.0.0",
     "karet.util": "^0.17.1",
     "kefir": "^3.8.0",
