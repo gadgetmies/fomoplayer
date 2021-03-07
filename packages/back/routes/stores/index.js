@@ -9,10 +9,17 @@ const getDirectories = source =>
     .map(name => join(source, name))
     .filter(isDirectory)
 
-getDirectories(__dirname).map(storeDir => {
+const moduleEntries = getDirectories(__dirname).map(storeDir => {
   const storeName = storeDir.substring(storeDir.lastIndexOf('/') + 1)
-  console.log(`Initiating routes for ${storeName}`)
-  router.use(`/${storeName}`, require(`${storeDir}/index.js`))
+  return [storeName, require(`${storeDir}/index.js`)]
 })
 
-module.exports = router
+moduleEntries.forEach(([name, module]) => {
+  console.log(`Initiating routes for ${name}`)
+  router.use(`/${name}`, module.router)
+})
+
+const modules = Object.fromEntries(moduleEntries)
+
+module.exports.router = router
+module.exports.modules = modules

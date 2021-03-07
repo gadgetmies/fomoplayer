@@ -1,17 +1,5 @@
 const pg = require('../../../db/pg.js')
-const R = require('ramda')
 const sql = require('sql-template-strings')
-
-module.exports.getStoreId = () =>
-  pg
-    .queryRowsAsync(
-      //language=PostgreSQL
-      sql` --getStoreId
-SELECT store_id
-  FROM store
-  WHERE store_name = 'Bandcamp'`
-    )
-    .then(([{ store_id }]) => store_id)
 
 module.exports.queryAlbumUrl = (storeId, storeTrackId) =>
   pg

@@ -292,16 +292,6 @@ WHERE store_id = ${bpStoreId}
 )`
   )
 
-module.exports.getStoreId = storeName =>
-  pg
-    .queryRowsAsync(
-      //language=PostgreSQL
-      sql`SELECT store_id
-  FROM store
-  WHERE store_name = ${storeName}`
-    )
-    .then(([{ store_id }]) => store_id)
-
 module.exports.queryPreviewUrl = (id, format, bpStoreId) =>
   pg
     .queryRowsAsync(

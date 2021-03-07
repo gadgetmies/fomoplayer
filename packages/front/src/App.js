@@ -69,7 +69,7 @@ class App extends Component {
       meta: { new: newTracks, total: totalTracks },
       tracks
     } = await requestJSONwithCredentials({
-      path: `/tracks`
+      path: `/me/tracks`
     })
 
     this.setState({ tracksData: { tracks, meta: { newTracks, totalTracks } } })
@@ -77,7 +77,7 @@ class App extends Component {
 
   async markAllHeard() {
     await requestWithCredentials({
-      path: `/tracks`,
+      path: `/me/tracks`,
       method: 'PATCH',
       body: { heard: true }
     })

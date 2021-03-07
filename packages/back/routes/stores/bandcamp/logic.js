@@ -1,9 +1,9 @@
 const R = require('ramda')
 const BPromise = require('bluebird')
+const { queryStoreId } = require('../../shared/db/store.js')
 const { getAlbumAsync } = require('./bandcamp-api.js')
 
 const {
-  getStoreId,
   queryAlbumUrl,
   queryTrackStoreId
 } = require('./db.js')
@@ -14,7 +14,7 @@ const getStoreDbId = () => {
   if (storeDbId) {
     return BPromise.resolve(storeDbId)
   } else {
-    return getStoreId('Bandcamp').then(store_id => {
+    return queryStoreId('Bandcamp').then(store_id => {
       storeDbId = store_id
       return storeDbId
     })

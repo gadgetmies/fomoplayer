@@ -1,10 +1,8 @@
 const R = require('ramda')
 const BPromise = require('bluebird')
-const using = BPromise.using
 const pg = require('../../../db/pg.js')
-// TODO: is it ok to reference the db files like this?
-const account = require('../../../db/account.js')
-const removeIgnoredTracksFromUser = require('../../../remove-ignored-tracks-from-user.js')
+const { removeIgnoredTracksFromUser } = require('../../shared/db/user.js')
+const { queryStoreId } = require('../../shared/db/store.js')
 const { setTrackHeard } = require('../../logic.js')
 const { log, error } = require('./logger')
 const { createOperation, getOperation } = require('../../../operations.js')
@@ -24,7 +22,6 @@ const {
   findNewLabels,
   insertStoreArtist,
   findNewArtists,
-  getStoreId,
   queryPreviewUrl
 } = require('./db.js')
 
@@ -53,7 +50,7 @@ const getBeatportStoreDbId = () => {
   if (beatportStoreDbId) {
     return BPromise.resolve(beatportStoreDbId)
   } else {
-    return getStoreId('Beatport').then(store_id => {
+    return queryStoreId('Beatport').then(store_id => {
       beatportStoreDbId = store_id
       return beatportStoreDbId
     })
@@ -153,11 +150,7 @@ const insertNewTracksToDb = (tx, tracks) =>
       })
   )
 
-const extractArtistsAndRemixers = R.pipe(
-  R.chain(R.props(['artists', 'remixers'])),
-  R.flatten,
-  R.uniqBy(R.prop('id'))
-)
+const extractArtistsAndRemixers = R.pipe(R.chain(R.props(['artists', 'remixers'])), R.flatten, R.uniqBy(R.prop('id')))
 
 // TODO: add exclude: {label: [], genre: [] } to store__artist (?)
 // TODO: --> create new artist if excludes match the current track

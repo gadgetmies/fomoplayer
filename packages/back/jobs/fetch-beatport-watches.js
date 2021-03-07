@@ -2,7 +2,7 @@ const pg = require('../db/pg.js')
 const sql = require('sql-template-strings')
 const BPromise = require('bluebird')
 const bpApi = require('bp-api')
-const { addStoreTrackToUsers } = require('../routes/logic')
+const { addStoreTrackToUsers } = require('../routes/users/logic.js')
 const { beatportTracksTransform } = require('../../chrome-extension/src/js/transforms/beatport')
 
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
@@ -36,16 +36,16 @@ LIMIT 50
       for (const track of transformed) {
         await addStoreTrackToUsers('https://www.beatport.com', users, track)
       }
-    } catch (e) {
-      console.error(`Failed to fetch tracks for artist with Beatport id ${id}`)
-    }
 
-    await pg.queryAsync(
-      // language=PostgreSQL
-      sql`UPDATE store__artist_watch
+      await pg.queryAsync(
+        // language=PostgreSQL
+        sql`UPDATE store__artist_watch
 SET store__artist_watch_last_update = NOW()
 WHERE store__artist_id = (SELECT store__artist_id FROM store__artist WHERE store__artist_store_id = ${id})`
-    )
+      )
+    } catch (e) {
+      console.error(`Failed to fetch tracks for artist with Beatport id ${id}`, e)
+    }
   }
 }
 
@@ -78,16 +78,16 @@ LIMIT 50
       for (const track of transformed) {
         await addStoreTrackToUsers('https://www.beatport.com', users, track)
       }
-    } catch (e) {
-      console.error(`Failed to fetch tracks for label with Beatport id ${id}`)
-    }
 
-    await pg.queryAsync(
-      // language=PostgreSQL
-      sql`UPDATE store__label_watch
+      await pg.queryAsync(
+        // language=PostgreSQL
+        sql`UPDATE store__label_watch
 SET store__label_watch_last_update = NOW()
 WHERE store__label_id = (SELECT store__label_id FROM store__label WHERE store__label_store_id = ${id})`
-    )
+      )
+    } catch (e) {
+      console.error(`Failed to fetch tracks for label with Beatport id ${id}`, e)
+    }
   }
 }
 

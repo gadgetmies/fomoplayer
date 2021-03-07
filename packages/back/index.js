@@ -18,6 +18,7 @@ const config = require('./config.js')
 const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
 require('./job-scheduling.js')
+const { GeneralError } = require('./routes/shared/httpErrors')
 
 const app = express()
 app.use(compression())
@@ -66,11 +67,22 @@ app.use(
 
 app.use(express.static('public'))
 
-app.use((err, req, res, next) => {
+const handleErrors = (err, req, res, next) => {
   console.error(err)
-  res.status(err.status || 500)
-  res.send('error')
-})
+  if (err instanceof GeneralError) {
+    return res.status(err.getCode()).json({
+      status: 'error',
+      message: err.message
+    });
+  }
+
+  return res.status(500).json({
+    status: 'error',
+    message: err.message
+  });
+}
+
+app.use(handleErrors)
 
 app.listen(config.port)
 console.log(`Listening on port: ${config.port}`)

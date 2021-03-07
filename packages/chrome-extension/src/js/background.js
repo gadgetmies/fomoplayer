@@ -142,7 +142,7 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
         })
         chrome.runtime.sendMessage({ type: 'refresh' })
 
-        const res = await fetch(`${appUrl}/api/${type}`, {
+        const res = await fetch(`${appUrl}/api/me/${type}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
       const message = {
         message: `Failed to send tracks from ${storeUrl}`,
         stack: JSON.stringify({
-          url: `${appUrl}/api/${type}`,
+          url: `${appUrl}/api/me/${type}`,
           storeUrl,
           stack: e.stack,
           time: new Date().toUTCString()
@@ -182,7 +182,7 @@ const sendArtists = (storeUrl, artists) => {
       })
       chrome.runtime.sendMessage({ type: 'refresh' })
 
-      const res = await fetch(`${appUrl}/api/artists`, {
+      const res = await fetch(`${appUrl}/api/me/follows/artists`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -201,7 +201,7 @@ const sendArtists = (storeUrl, artists) => {
       const message = {
         message: `Failed to send artists from ${storeUrl}`,
         stack: JSON.stringify({
-          url: `${appUrl}/api/artists`,
+          url: `${appUrl}/api/me/follows/artists`,
           storeUrl,
           stack: e.stack,
           time: new Date().toUTCString()
@@ -221,7 +221,7 @@ const sendLabels = (storeUrl, labels) => {
       })
       chrome.runtime.sendMessage({ type: 'refresh' })
 
-      const res = await fetch(`${appUrl}/api/labels`, {
+      const res = await fetch(`${appUrl}/api/me/follows/labels`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -240,7 +240,7 @@ const sendLabels = (storeUrl, labels) => {
       const message = {
         message: `Failed to send labels from ${storeUrl}`,
         stack: JSON.stringify({
-          url: `${appUrl}/api/labels`,
+          url: `${appUrl}/api/me/follows/labels`,
           storeUrl,
           stack: e.stack,
           time: new Date().toUTCString()

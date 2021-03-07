@@ -67,7 +67,7 @@ class Player extends Component {
     localStorage.setItem('currentTrack', JSON.stringify(track))
     this.setState({ currentTrack: track })
     await requestWithCredentials({
-      path: `/tracks/${track.id}`,
+      path: `/me/tracks/${track.id}`,
       method: 'POST',
       body: { heard: true }
     })
@@ -144,7 +144,7 @@ class Player extends Component {
 
   async ignoreArtistsByLabels(artistsAndLabels) {
     await requestWithCredentials({
-      path: `/ignores/labels`,
+      path: `/me/ignores/labels`,
       method: 'POST',
       body: artistsAndLabels
     })
