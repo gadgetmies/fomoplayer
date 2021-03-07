@@ -17,6 +17,56 @@ WHERE job_run_ended IS NULL
 
 let scheduled = {}
 
+const runJob = async jobName => {
+  console.log(`Running job ${jobName}`)
+
+  const [{ running }] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`SELECT EXISTS(SELECT 1
+            FROM job_run
+                     NATURAL JOIN job
+            WHERE job_name = ${jobName}
+              AND job_run_ended IS NULL
+         ) AS running`
+  )
+
+  if (running) {
+    console.log(`Previous run of job ${jobName} still in progress`)
+    return
+  }
+
+  const [{ job_run_id }] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`INSERT INTO job_run (job_id)
+SELECT job_id
+FROM job
+WHERE job_name = ${jobName}
+RETURNING job_run_id`
+  )
+
+  let result
+  let success
+  try {
+    success = true
+    result = await jobs[jobName]()
+  } catch (e) {
+    success = false
+    result = e
+    console.error(`Job ${jobName} run failed (job_run_id: ${job_run_id}). Check job_run_result for details`)
+  }
+
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`UPDATE job_run
+SET job_run_ended   = NOW(),
+  job_run_success = ${success},
+  job_run_result  = ${result}
+WHERE job_run_id = ${job_run_id}`
+  )
+
+  console.log(`Job ${jobName} run complete`)
+}
+
 const jobs = {
   updateJobs: async () => {
     console.log('Updating job schedules')
@@ -50,55 +100,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
       }
 
       scheduled[name] = {
-        task: cron.schedule(schedule, async () => {
-          console.log(`Running job ${name}`)
-
-          const [{ running }] = await pg.queryRowsAsync(
-            // language=PostgreSQL
-            sql`SELECT EXISTS(SELECT 1
-              FROM job_run
-                       NATURAL JOIN job
-              WHERE job_name = ${name}
-                AND job_run_ended IS NULL
-           ) AS running`
-          )
-
-          if (running) {
-            console.log(`Previous run of job ${name} still in progress`)
-            return
-          }
-
-          const [{ job_run_id }] = await pg.queryRowsAsync(
-            // language=PostgreSQL
-            sql`INSERT INTO job_run (job_id)
-SELECT job_id
-FROM job
-WHERE job_name = ${name}
-RETURNING job_run_id`
-          )
-
-          let result
-          let success
-          try {
-            success = true
-            result = await jobs[name]()
-          } catch (e) {
-            success = false
-            result = e
-            console.error(`Job ${name} run failed (job_run_id: ${job_run_id}). Check job_run_result for details`)
-          }
-
-          await pg.queryAsync(
-            // language=PostgreSQL
-            sql`UPDATE job_run
-SET job_run_ended   = NOW(),
-    job_run_success = ${success},
-    job_run_result  = ${result}
-WHERE job_run_id = ${job_run_id}`
-          )
-
-          console.log(`Job ${name} run complete`)
-        }),
+        task: cron.schedule(schedule, () => runJob(name)),
         schedule
       }
     }
@@ -123,3 +125,5 @@ REFRESH MATERIALIZED VIEW track_date_released_score
 }
 
 jobs.updateJobs()
+
+module.exports = runJob
