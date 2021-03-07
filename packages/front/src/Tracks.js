@@ -306,7 +306,7 @@ class Tracks extends Component {
     return (
       <>
         <div style={{ display: 'flex', alignItems: 'center', color: 'white' }}>
-          <div style={{ height: '100%', flex: 1, padding: 4 }}>
+          <div style={{ height: '100%', flex: 1, padding: 4 }} className="input-layout">
             <SpinnerButton
               size={'small'}
               loading={this.state.markingHeard}
@@ -315,7 +315,7 @@ class Tracks extends Component {
                 await this.props.onMarkAllHeardClicked()
                 this.setState({ markingHeard: false })
               }}
-              style={{ height: '100%', width: 150, margin: 4 }}
+              style={{ height: '100%', width: 150 }}
               label={'Mark all heard'}
               loadingLabel={'Marking all heard'}
             />
@@ -330,7 +330,7 @@ class Tracks extends Component {
                   this.setState({ updatingTracks: false })
                 }
               }}
-              style={{ height: '100%', width: 150, margin: 4 }}
+              style={{ height: '100%', width: 150 }}
               label={'Update list'}
               loadingLabel={'Updating list'}
             />

@@ -487,3 +487,11 @@ input[type='radio']:checked + .state-select-button--button {
   border: 1px solid white;
   color: black;
 }
+
+.input-layout > * {
+  margin-left: 4px;
+}
+
+.input-layout > *:first-child {
+  margin-left: 0;
+}
