@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
 
-const artistNamesToString = R.pipe(
+export const artistNamesToString = R.pipe(
   R.pluck('name'),
   R.join(', ')
 )

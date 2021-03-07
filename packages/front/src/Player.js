@@ -3,6 +3,8 @@ import Tracks from './Tracks.js'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
+import MediaSession from '@mebtte/react-media-session'
+import { artistNamesToString } from './TrackTitle'
 
 class Player extends Component {
   constructor(props) {
@@ -136,6 +138,10 @@ class Player extends Component {
     this.jumpTracks(firstUnplayed - this.getCurrentTrackIndex())
   }
 
+  setPlaying(playing) {
+    this.preview.current.setPlaying(playing)
+  }
+
   async ignoreArtistsByLabels(artistsAndLabels) {
     await requestWithCredentials({
       path: `/ignores/labels`,
@@ -176,12 +182,23 @@ class Player extends Component {
 
   render() {
     const tracks = this.getTracks()
+    const currentTrack = this.state.currentTrack
     return (
       <>
+        <MediaSession
+          title={currentTrack ? currentTrack.title : ''}
+          artist={currentTrack ? artistNamesToString(currentTrack.artists) : ''}
+          onPlay={() => this.setPlaying(true)}
+          onPause={() => this.setPlaying(false)}
+          onSeekBackward={() => console.log('seek backward')}
+          onSeekForward={() => console.log('seek forward')}
+          onPreviousTrack={() => this.playPreviousTrack()}
+          onNextTrack={() => this.playNextTrack()}
+        />
         <Preview
           key={'preview'}
           showHint={tracks.length === 0}
-          currentTrack={this.state.currentTrack}
+          currentTrack={currentTrack}
           onMenuClicked={() => this.props.onMenuClicked()}
           onPrevious={() => this.playPreviousTrack()}
           onNext={() => this.playNextTrack()}
@@ -194,7 +211,7 @@ class Player extends Component {
           listState={this.state.listState}
           newTracks={this.props.newTracks - this.state.listenedTracks}
           totalTracks={this.props.totalTracks}
-          currentTrack={(this.state.currentTrack || {}).id}
+          currentTrack={(currentTrack || {}).id}
           onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onAddToCart={this.addToCart}
@@ -203,6 +220,7 @@ class Player extends Component {
           onPreviewRequested={id => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
             this.setCurrentTrack(requestedTrack)
+            this.setPlaying(true)
           }}
           onShowNewClicked={this.setListState.bind(this, 'new')}
           onShowHeardClicked={this.setListState.bind(this, 'heard')}

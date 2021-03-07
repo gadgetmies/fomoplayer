@@ -7,6 +7,7 @@
     "node": "12.x"
   },
   "dependencies": {
+    "@mebtte/react-media-session": "^1.1.1",
     "auto-bind": "^1.2.1",
     "browser-detect": "^0.2.28",
     "karet": "^2.0.0",
