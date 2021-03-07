@@ -4,3 +4,26 @@ body {
   font-family: sans-serif;
   color: white;
 }
+
+@font-face { font-family: StoreIcon; src: url('./stores.woff'); }
+
+.store-icon {
+  display: inline-block;
+  font: normal normal normal 14px/1 StoreIcon;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.store-icon-bandcamp::before {
+  content: "\e902";
+}
+
+.store-icon-beatport::before {
+  content: "\e901";
+}
+
+.store-icon-spotify::before {
+  content: "\e900";
+}

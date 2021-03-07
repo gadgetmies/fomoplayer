@@ -95,7 +95,11 @@ class Settings extends Component {
                   }}
                 >
                   <span className="pill-button-contents">
-                    {playlist.storeName === 'Spotify' ? <FontAwesome name="spotify" /> : null} {playlist.title} <FontAwesome name="close" />
+                    <span
+                      aria-hidden="true"
+                      className={`store-icon store-icon-${playlist.storeName.toLowerCase()}`}
+                    ></span>{' '}
+                    {playlist.title} <FontAwesome name="close" />
                   </span>
                 </button>
               </li>

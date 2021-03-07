@@ -1,6 +1,11 @@
 const R = require('ramda')
 const BPromise = require('bluebird')
+const bpApi = require('bp-api')
+const { decode } = require('html-entities')
+
 const pg = require('../../../db/pg.js')
+const { BadRequest } = require('../../shared/httpErrors')
+const { insertUserPlaylistFollow } = require('../../shared/db/user')
 const { removeIgnoredTracksFromUser } = require('../../shared/db/user.js')
 const { queryStoreId } = require('../../shared/db/store.js')
 const { setTrackHeard } = require('../../logic.js')
@@ -24,6 +29,8 @@ const {
   findNewArtists,
   queryPreviewUrl
 } = require('./db.js')
+
+const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
 
 let beatportSessions = {}
 let beatportStoreDbId = null
@@ -196,6 +203,16 @@ const ensureTracksExist = async (tx, newStoreTracks, bpStoreId) =>
           .tap(([{ store__track_id }]) => insertTrackWaveform(tx, store__track_id, newStoreTrack.waveform))
       )
   )
+
+module.exports.addPlaylistFollow = async (userId, playlistUrl) => {
+  const { title, tracks } = await bpApiStatic.getTracksOnPageAsync(playlistUrl)
+
+  if (!title || !tracks) {
+    throw new BadRequest('Unable to fetch details from url')
+  }
+
+  return await insertUserPlaylistFollow(userId, 'Beatport', playlistUrl, decode(title.replace(' :: Beatport', '')))
+}
 
 module.exports.test = {
   insertNewTracksToDb,

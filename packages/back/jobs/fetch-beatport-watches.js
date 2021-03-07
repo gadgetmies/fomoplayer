@@ -91,9 +91,51 @@ WHERE store__label_id = (SELECT store__label_id FROM store__label WHERE store__l
   }
 }
 
+const fetchPlaylists = async function() {
+  const beatportPlaylistUrls = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`SELECT playlist_store_id               AS url,
+       array_agg(meta_account_user_id) AS users
+FROM user__playlist_watch
+         NATURAL JOIN playlist
+         NATURAL JOIN store
+WHERE store_name = 'Beatport'
+  AND (user__playlist_watch_last_update IS NULL OR user__playlist_watch_last_update + interval '6 hours' < NOW())
+GROUP BY 1, user__playlist_watch_last_update
+ORDER BY user__playlist_watch_last_update DESC NULLS FIRST
+LIMIT 50
+`
+  )
+
+  count = 1
+  for (const { url, users } of beatportPlaylistUrls) {
+    try {
+      console.log(`Fetching tracks for playlist ${count}/${beatportPlaylistUrls.length}`)
+      count++
+
+      const playlist = await bpApiStatic.getTracksOnPageAsync(url)
+      const transformed = beatportTracksTransform(playlist.tracks)
+
+      for (const track of transformed) {
+        await addStoreTrackToUsers('https://www.beatport.com', users, track)
+      }
+
+      await pg.queryAsync(
+        // language=PostgreSQL
+        sql`UPDATE user__playlist_watch
+SET user__playlist_watch_last_update = NOW()
+WHERE playlist_id = (SELECT playlist_id FROM playlist WHERE playlist_store_id = ${url})`
+      )
+    } catch (e) {
+      console.error(`Failed to fetch tracks for label with Beatport url ${url}`, e)
+    }
+  }
+}
+
 const fetchBeatportWatches = async () => {
   await fetchArtists()
   await fetchLabels()
+  await fetchPlaylists()
 }
 
 module.exports = fetchBeatportWatches

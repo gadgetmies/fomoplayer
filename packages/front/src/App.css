@@ -253,15 +253,6 @@ button::-moz-focus-inner {
   vertical-align: middle;
 }
 
-.table-cell-button:only-child {
-  width: 100%;
-  height: 100%;
-}
-
-.table-cell-button:not(:only-child) {
-  flex: 1;
-}
-
 .tracks-table th.table-button-cell-header {
   text-align: center;
 }
@@ -367,7 +358,7 @@ audio {
   display: inline-block;
   font-size: 75%;
   margin: 1px;
-  padding: 0 5px;
+  padding: 5px;
 }
 
 .pill-button {
