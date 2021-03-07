@@ -11,7 +11,7 @@
     "node": "12.x"
   },
   "dependencies": {
-    "bluebird": "^3.5.2",
+    "bluebird": "^3.7.2",
     "body-parser": "^1.18.3",
     "bp-api": "elysion/bp-api#v3.1.2",
     "color-stacktrace": "^1.0.3",
