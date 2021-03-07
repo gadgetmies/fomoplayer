@@ -166,6 +166,7 @@ FROM artist
          NATURAL JOIN store
 WHERE meta_account_user_id = ${userId}
 GROUP BY 1, 2
+ORDER BY 1
 `
   )
 }
@@ -181,6 +182,7 @@ FROM label
          NATURAL JOIN store
 WHERE meta_account_user_id = ${userId}
 GROUP BY 1, 2
+ORDER BY 1
     `
   )
 }
@@ -192,7 +194,9 @@ module.exports.queryUserPlaylistFollows = async userId => {
 FROM playlist
          NATURAL JOIN user__playlist_watch
          NATURAL JOIN store
-WHERE meta_account_user_id = ${userId}`
+WHERE meta_account_user_id = ${userId}
+ORDER BY 1
+`
   )
 }
 
