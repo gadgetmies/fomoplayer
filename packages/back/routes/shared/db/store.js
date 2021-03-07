@@ -144,15 +144,15 @@ RETURNING artist_id
 `
       )
       .then(getArtistIdFromResult)
+  }
 
-    await tx.queryRowsAsync(sql`
+  await tx.queryRowsAsync(sql`
 INSERT INTO store__artist (store__artist_store_id, store__artist_url, store_id, artist_id)
 SELECT ${artist.id}, ${artist.url}, store_id, ${artistId}
 FROM store
 WHERE store_url = ${storeUrl}
 ON CONFLICT ON CONSTRAINT store__artist_store__artist_store_id_store_id_key DO NOTHING
 `)
-  }
 
   return { id: artistId, role: artist.role }
 }
