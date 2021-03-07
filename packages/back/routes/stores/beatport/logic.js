@@ -214,6 +214,18 @@ module.exports.addPlaylistFollow = async (userId, playlistUrl) => {
   return await insertUserPlaylistFollow(userId, 'Beatport', playlistUrl, decode(title.replace(' :: Beatport', '')))
 }
 
+module.exports.getArtistName = async url => {
+  const { title } = await bpApiStatic.getTracksOnPageAsync(url)
+  console.log(title)
+  return title.replace(' music download - Beatport', '')
+}
+
+module.exports.getLabelName = async url => {
+  const { title } = await bpApiStatic.getTracksOnPageAsync(url)
+  console.log(title)
+  return title.replace(' artists &amp; music download - Beatport', '')
+}
+
 module.exports.test = {
   insertNewTracksToDb,
   addTracksToUser,

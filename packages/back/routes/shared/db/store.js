@@ -15,7 +15,12 @@ module.exports.queryStoreId = storeName =>
 module.exports.queryStores = async () =>
   pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT store_id AS id, LOWER(store_name) AS name, store_url AS url, store_playlist_regex AS "playlistRegex"
+    sql`SELECT store_id             AS id,
+       LOWER(store_name)    AS name,
+       store_url            AS url,
+       store_artist_regex   AS "artistRegex",
+       store_label_regex    AS "labelRegex",
+       store_playlist_regex AS "playlistRegex"
 FROM store`
   )
 

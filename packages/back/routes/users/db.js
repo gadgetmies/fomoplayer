@@ -40,6 +40,18 @@ WHERE artist_id = ${artistId}
 ON CONFLICT DO NOTHING
   `
   )
+
+  return (
+    await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`SELECT store__artist_watch_id AS "followId"
+FROM store__artist_watch
+         NATURAL JOIN store__artist_watch__user
+         NATURAL JOIN store__artist
+WHERE meta_account_user_id = ${userId}
+  AND artist_id = ${artistId}`
+    )
+  )[0].followId
 }
 
 module.exports.addLabelWatch = async (tx, userId, labelId) => {
@@ -64,6 +76,18 @@ WHERE label_id = ${labelId}
 ON CONFLICT DO NOTHING
   `
   )
+
+  return (
+    await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`SELECT store__label_watch_id AS "followId"
+FROM store__label_watch
+         NATURAL JOIN store__label_watch__user
+         NATURAL JOIN store__label
+WHERE meta_account_user_id = ${userId}
+  AND label_id = ${labelId}`
+    )
+  )[0].followId
 }
 
 module.exports.deleteArtistWatchesFromUser = async (storeUrl, user) => {
@@ -134,25 +158,29 @@ WHERE meta_account_user_id = ${userId}
 module.exports.queryUserArtistFollows = async userId => {
   return pg.queryAsync(
     // language=PostgreSQL
-    sql`SELECT artist_name AS name, artist_id AS id
+    sql`SELECT artist_name AS name, artist_id AS id, array_agg(json_build_object('name', store_name, 'id', store_id)) AS stores
 FROM artist
          NATURAL JOIN store__artist
          NATURAL JOIN store__artist_watch
          NATURAL JOIN store__artist_watch__user
+         NATURAL JOIN store
 WHERE meta_account_user_id = ${userId}
-    `
+GROUP BY 1, 2
+`
   )
 }
 
 module.exports.queryUserLabelFollows = async userId => {
   return pg.queryAsync(
     // language=PostgreSQL
-    sql`SELECT label_name AS name, label_id AS id
+    sql`SELECT label_name AS name, label_id AS id, array_agg(json_build_object('name', store_name, 'id', store_id)) AS stores
 FROM label
          NATURAL JOIN store__label
          NATURAL JOIN store__label_watch
          NATURAL JOIN store__label_watch__user
+         NATURAL JOIN store
 WHERE meta_account_user_id = ${userId}
+GROUP BY 1, 2
     `
   )
 }

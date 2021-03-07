@@ -79,16 +79,38 @@ const tracksHandler = type => async (req, res, next) => {
 router.post('/tracks', tracksHandler('new'))
 router.post('/purchased', tracksHandler('purchased'))
 
-router.post('/follows/artists', async ({ user, body, headers }, res, next) => {
+router.post('/follows/artists', async ({ user: { id: userId }, body, headers }, res, next) => {
   try {
-    console.log('Start processing received artists')
     const storeUrl = headers['x-multi-store-player-store']
+    const stores = await queryStores()
 
-    await removeArtistWatchesFromUser(storeUrl, user)
     let addedArtists = []
     for (const artist of body) {
-      const artistId = await addStoreArtistToUser(storeUrl, user, artist)
-      addedArtists.push(`${apiURL}/artists/${artistId}`)
+      let artistDetails = { url: (storeUrl !== undefined ? storeUrl : '') + artist.url }
+      const matchingStore = stores.find(({ url, artistRegex }) => {
+        const urlMatch = artistDetails.url.match(artistRegex)
+        if (urlMatch !== null) {
+          artistDetails.id = urlMatch[1]
+        }
+        return storeUrl === url || artistDetails.id !== undefined
+      })
+
+      console.log('foo', matchingStore)
+
+      if (matchingStore === null) {
+        return next(BadRequest(`Invalid artist URL ${artist.url}`))
+      }
+
+      if (artist.name === undefined) {
+        console.log(`Fetching artist name from ${artist.url}`)
+        artistDetails.name = await storeModules[matchingStore.name].logic.getArtistName(artist.url)
+      }
+
+      const { artistId, followId } = await addStoreArtistToUser(matchingStore.url, userId, artistDetails)
+      addedArtists.push({
+        artist: `${apiURL}/artists/${artistId}`,
+        follow: `${apiURL}/users/${userId}/follows/artists/${followId}`
+      })
     }
 
     res.status(201).send(addedArtists)
@@ -97,16 +119,36 @@ router.post('/follows/artists', async ({ user, body, headers }, res, next) => {
   }
 })
 
-router.post('/follows/labels', async ({ user, body, headers }, res, next) => {
+router.post('/follows/labels', async ({ user: { id: userId }, body, headers }, res, next) => {
   try {
-    console.log('Start processing received labels')
     const storeUrl = headers['x-multi-store-player-store']
+    const stores = await queryStores()
 
-    await removeLabelWatchesFromUser(storeUrl, user)
     let addedLabels = []
     for (const label of body) {
-      const labelId = await addStoreLabelToUser(storeUrl, user, label)
-      addedLabels.push(`${apiURL}/labels/${labelId}`)
+      let labelDetails = { url: (storeUrl !== undefined ? storeUrl : '') + label.url }
+      const matchingStore = stores.find(({ url, labelRegex }) => {
+        const urlMatch = labelDetails.url.match(labelRegex)
+        if (urlMatch !== null) {
+          labelDetails.id = urlMatch[1]
+        }
+        return storeUrl === url || labelDetails.id !== undefined
+      })
+
+      if (matchingStore === null) {
+        return next(BadRequest(`Invalid label URL ${label.url}`))
+      }
+
+      if (label.name === undefined) {
+        console.log(`Fetching label name from ${label.url}`)
+        labelDetails.name = await storeModules[matchingStore.name].logic.getLabelName(label.url)
+      }
+
+      const { labelId, followId } = await addStoreLabelToUser(matchingStore.url, userId, labelDetails)
+      addedLabels.push({
+        label: `${apiURL}/labels/${labelId}`,
+        follow: `${apiURL}/users/${userId}/follows/labels/${followId}`
+      })
     }
 
     res.status(201).send(addedLabels)
@@ -157,23 +199,27 @@ router.delete('/follows/playlists/:id', async ({ params: { id }, user: { id: aut
   }
 })
 
-router.post('/follows/playlists', async ({ user: { id: userId }, body: { url: playlistUrl } }, res, next) => {
+router.post('/follows/playlists', async ({ user: { id: userId }, body }, res, next) => {
   try {
     const stores = await queryStores()
-    const matchingStore = stores.find(({ playlistRegex }) => playlistUrl.match(playlistRegex))
 
-    if (matchingStore === null) {
-      return next(BadRequest('Invalid playlist URL'))
+    let addedPlaylists = []
+    for (const { url: playlistUrl } of body) {
+      const matchingStore = stores.find(({ playlistRegex }) => playlistUrl.match(playlistRegex))
+
+      if (matchingStore === null) {
+        return next(BadRequest('Invalid playlist URL'))
+      }
+
+      const { name: storeName } = matchingStore
+      const storeModule = storeModules[storeName]
+      const { playlistId, followId } = await storeModule.logic.addPlaylistFollow(userId, playlistUrl)
+      addedPlaylists.push({
+        playlist: `${apiURL}/playlists/${playlistId}`,
+        follow: `${apiURL}/users/${userId}/follows/playlists/${followId}`
+      })
     }
-
-    const { name: storeName } = matchingStore
-    const storeModule = storeModules[storeName]
-    const { playlistId, followId } = await storeModule.logic.addPlaylistFollow(userId, playlistUrl)
-
-    res.send({
-      playlist: `${apiURL}/playlists/${playlistId}`,
-      follow: `${apiURL}/users/${userId}/follows/playlists/${followId}`
-    })
+    res.send(addedPlaylists)
   } catch (e) {
     next(e)
   }

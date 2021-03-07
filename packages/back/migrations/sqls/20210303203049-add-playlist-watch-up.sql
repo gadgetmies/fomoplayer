@@ -20,10 +20,9 @@ INSERT INTO store (store_name, store_url)
 VALUES ('Spotify', 'https://www.spotify.com');
 
 ALTER TABLE store ADD COLUMN store_playlist_regex TEXT;
-UPDATE store SET store_playlist_regex = '/https:\/\/www\.beatport\.com\/.*/' WHERE store_name = 'Beatport';
-UPDATE store SET store_playlist_regex = '/^https:\/\/.*\.bandcamp\.com\/.*/' WHERE store_name = 'Bandcamp';
-UPDATE store SET store_playlist_regex = '/^https:\/\/open.spotify.com\/playlist\/([0-9A-Za-z]*)' WHERE store_name = 'Spotify';
-ALTER TABLE store ALTER COLUMN store_playlist_regex SET NOT NULL;
+UPDATE store SET store_playlist_regex = '/^https:\/\/www\.beatport\.com/' WHERE store_name = 'Beatport';
+UPDATE store SET store_playlist_regex = '/^https:\/\/([^.]+)\.bandcamp\.com/' WHERE store_name = 'Bandcamp';
+UPDATE store SET store_playlist_regex = '/^https:\/\/open.spotify.com\/playlist\/([0-9A-Za-z]+)/' WHERE store_name = 'Spotify';
 
 INSERT INTO job (job_name)
 VALUES ('fetchSpotifyWatches');

@@ -64,8 +64,8 @@ class Settings extends Component {
             <div className="input-layout">
               <input
                 className="text-input text-input-small"
-                value={this.state.playlist}
-                onChange={e => this.setState({ playlist: e.target.value })}
+                value={this.state.playlistUrl}
+                onChange={e => this.setState({ playlistUrl: e.target.value })}
               />
               <button
                 className="button button-push_button-small button-push_button-primary"
@@ -73,9 +73,9 @@ class Settings extends Component {
                   await requestJSONwithCredentials({
                     path: '/me/follows/playlists',
                     method: 'POST',
-                    body: { url: this.state.playlist }
+                    body: [{ url: this.state.playlist }]
                   })
-                  this.setState({ playlist: '' })
+                  this.setState({ playlistUrl: '' })
                   await this.updatePlaylistFollows()
                 }}
               >
@@ -110,8 +110,25 @@ class Settings extends Component {
             Add artists to follow:
             <br />
             <div className="input-layout">
-              <input className="text-input text-input-small" />
-              <button className="button button-push_button-small button-push_button-primary">Add</button>
+              <input
+                className="text-input text-input-small"
+                value={this.state.artistUrl}
+                onChange={e => this.setState({ artistUrl: e.target.value })}
+              />
+              <button
+                className="button button-push_button-small button-push_button-primary"
+                onClick={async () => {
+                  await requestJSONwithCredentials({
+                    path: '/me/follows/artists',
+                    method: 'POST',
+                    body: [{ url: this.state.artistUrl }]
+                  })
+                  this.setState({ artistUrl: '' })
+                  await this.updateArtistFollows()
+                }}
+              >
+                Add
+              </button>
             </div>
           </label>
           <ul className="no-style-list follow-list">
@@ -125,8 +142,12 @@ class Settings extends Component {
                   }}
                 >
                   <span className="pill-button-contents">
-                    {artist.name}&nbsp;
-                    <FontAwesome name="close" />
+                    {artist.stores.map(({ name: storeName }) => (
+                      <>
+                        <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`}></span>{' '}
+                      </>
+                    ))}
+                    {artist.name} <FontAwesome name="close" />
                   </span>
                 </button>
               </li>
@@ -137,8 +158,25 @@ class Settings extends Component {
             Add labels to follow:
             <br />
             <div className="input-layout">
-              <input className="text-input text-input-small" />
-              <button className="button button-push_button-small button-push_button-primary">Add</button>
+              <input
+                className="text-input text-input-small"
+                value={this.state.labelUrl}
+                onChange={e => this.setState({ labelUrl: e.target.value })}
+              />
+              <button
+                className="button button-push_button-small button-push_button-primary"
+                onClick={async () => {
+                  await requestJSONwithCredentials({
+                    path: '/me/follows/labels',
+                    method: 'POST',
+                    body: [{ url: this.state.labelUrl }]
+                  })
+                  this.setState({ labelUrl: '' })
+                  await this.updateLabelFollows()
+                }}
+              >
+                Add
+              </button>
             </div>
           </label>
           <ul className="no-style-list follow-list">
@@ -152,7 +190,12 @@ class Settings extends Component {
                   }}
                 >
                   <span className="pill-button-contents">
-                    {label.name}&nbsp;
+                    {label.stores.map(({ name: storeName }) => (
+                      <>
+                        <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`}></span>{' '}
+                      </>
+                    ))}
+                    {label.name}{' '}
                     <FontAwesome name="close" />
                   </span>
                 </button>

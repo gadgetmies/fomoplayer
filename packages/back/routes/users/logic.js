@@ -92,19 +92,19 @@ module.exports.removeArtistWatchFromUser = deleteArtistWatchFromUser
 module.exports.removeLabelWatchesFromUser = deleteLabelWatchesFromUser
 module.exports.removeLabelWatchFromUser = deleteLabelWatchFromUser
 
-module.exports.addStoreArtistToUser = async (storeUrl, user, artist) => {
+module.exports.addStoreArtistToUser = async (storeUrl, userId, artist) => {
   return using(pg.getTransaction(), async tx => {
-    const { id } = await ensureArtistExists(tx, storeUrl, artist)
-    await addArtistWatch(tx, user.id, id)
-    return id
+    const { id: artistId } = await ensureArtistExists(tx, storeUrl, artist)
+    const followId = await addArtistWatch(tx, userId, artistId)
+    return { artistId, followId }
   })
 }
 
-module.exports.addStoreLabelToUser = async (storeUrl, user, label) => {
+module.exports.addStoreLabelToUser = async (storeUrl, userId, label) => {
   return using(pg.getTransaction(), async tx => {
     const labelId = await ensureLabelExists(tx, storeUrl, label)
-    await addLabelWatch(tx, user.id, labelId)
-    return labelId
+    const followId = await addLabelWatch(tx, userId, labelId)
+    return { labelId, followId }
   })
 }
 
