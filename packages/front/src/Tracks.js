@@ -13,7 +13,13 @@ class Share extends Component {
     }
   }
 
+  getStoreTrackByStoreCode(code) {
+    return this.props.stores.find(R.propEq('code', code))
+  }
+
   render() {
+    const spotifyTrack = this.getStoreTrackByStoreCode('spotify')
+    const beaportTrack = this.getStoreTrackByStoreCode('beatport')
     return (
       <>
         <PillButton
@@ -26,22 +32,23 @@ class Share extends Component {
           <>
             <br />
             <ul className={'no-style-list'}>
-              {this.props.stores.find(R.propEq('code', 'beatport')) ? (
+              {beaportTrack ? (
                 <li>
                   <ExternalLink
-                    href={`https://www.beatport.com/track/${this.props.title.toLowerCase().replace(' ', '-')}/${
-                      this.props.stores.find(R.propEq('code', 'beatport')).trackId
-                    }`}
+                    href={
+                      beaportTrack.url ||
+                      `https://www.beatport.com/track/${this.props.title.toLowerCase().replace(' ', '-')}/${
+                        beaportTrack.trackId
+                      }`
+                    }
                   >
                     Beatport
                   </ExternalLink>
                 </li>
               ) : null}
-              {this.props.stores.find(R.propEq('code', 'bandcamp')) ? (
+              {this.getStoreTrackByStoreCode('bandcamp') ? (
                 <li>
-                  <ExternalLink href={`${this.props.stores.find(R.propEq('code', 'bandcamp')).url}`}>
-                    Bandcamp
-                  </ExternalLink>
+                  <ExternalLink href={`${this.getStoreTrackByStoreCode('bandcamp').url}`}>Bandcamp</ExternalLink>
                 </li>
               ) : null}
               <li>
@@ -55,9 +62,13 @@ class Share extends Component {
               </li>
               <li>
                 <ExternalLink
-                  href={`https://open.spotify.com/search/${this.props.artists.map(R.prop('name')).join(' ')} ${
-                    this.props.title
-                  }`}
+                  href={
+                    spotifyTrack
+                      ? spotifyTrack.url
+                      : `https://open.spotify.com/search/${this.props.artists.map(R.prop('name')).join(' ')} ${
+                          this.props.title
+                        }`
+                  }
                 >
                   Spotify
                 </ExternalLink>

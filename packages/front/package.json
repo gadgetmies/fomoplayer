@@ -20,6 +20,7 @@
     "react-fontawesome": "^1.6.1",
     "react-github-btn": "^1.1.1",
     "react-lazyload": "^2.3.0",
+    "react-router-dom": "^5.2.0",
     "react-scripts": "^4.0.3",
     "slideout": "^1.0.1",
     "typeface-lato": "0.0.75",

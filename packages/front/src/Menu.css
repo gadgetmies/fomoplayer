@@ -1,3 +1,12 @@
+.menu-container {
+  background-color: #ccc;
+  color: black;
+}
+
+.menu-stores {
+  padding: 0 30px;
+}
+
 .store-list {
   list-style: none;
   padding-left: 0;

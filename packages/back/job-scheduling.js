@@ -2,6 +2,7 @@ const sql = require('sql-template-strings')
 const pg = require('./db/pg.js')
 const cron = require('node-cron')
 const fetchBeatportWatches = require('./jobs/fetch-beatport-watches')
+const fetchSpotifyWatches = require('./jobs/fetch-spotify-watches')
 
 pg.queryAsync(
   // language=PostgreSQL
@@ -120,6 +121,13 @@ REFRESH MATERIALIZED VIEW track_date_released_score
       await fetchBeatportWatches()
     } catch (e) {
       console.error('Failed refreshing Beatport watches', e)
+    }
+  },
+  fetchSpotifyWatches: async () => {
+    try {
+      await fetchSpotifyWatches()
+    } catch (e) {
+      console.error('Failed refreshing Spotify watches', e)
     }
   }
 }

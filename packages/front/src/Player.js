@@ -100,6 +100,7 @@ class Player extends Component {
     return R.findIndex(R.propEq('id', track.id), this.getTracks())
   }
 
+  // TODO: move to /me/carts
   async addToCart(store, id) {
     await requestJSONwithCredentials({
       path: `/stores/${store}/carts/default`,
@@ -142,6 +143,7 @@ class Player extends Component {
     this.preview.current.setPlaying(playing)
   }
 
+  // TODO: change to POST {ignore: true} /me/labels/?
   async ignoreArtistsByLabels(artistsAndLabels) {
     await requestWithCredentials({
       path: `/me/ignores/labels`,
@@ -199,7 +201,6 @@ class Player extends Component {
           key={'preview'}
           showHint={tracks.length === 0}
           currentTrack={currentTrack}
-          onMenuClicked={() => this.props.onMenuClicked()}
           onPrevious={() => this.playPreviousTrack()}
           onNext={() => this.playNextTrack()}
           ref={this.preview}

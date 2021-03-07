@@ -235,6 +235,13 @@ button::-moz-focus-inner {
   box-shadow: 0 0 0 0.2rem rgba(180, 0, 137, 0.25);
 }
 
+.text-input-small {
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  line-height: 1;
+  font-size: 0.7rem;
+}
+
 .fluid {
   flex: 1;
 }
@@ -354,14 +361,6 @@ audio {
   top: 0.7em;
 }
 
-.menu-container {
-  background-color: #ccc;
-}
-
-.menu-stores {
-  padding: 30px;
-}
-
 .pill {
   border-radius: 3px;
   text-align: center;
@@ -383,6 +382,10 @@ audio {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.no-style-link {
+  text-decoration: none;
 }
 
 .comma-list {
@@ -448,8 +451,9 @@ input[type='radio']:checked + .state-select-button--button {
   -khtml-user-select: none; /* Konqueror HTML */
   -moz-user-select: none; /* Old versions of Firefox */
   -ms-user-select: none; /* Internet Explorer/Edge */
-  user-select: none; /* Non-prefixed version, currently
-                                  supported by Chrome, Edge, Opera and Firefox */
+  user-select: none;
+  /* Non-prefixed version, currently
+                                     supported by Chrome, Edge, Opera and Firefox */
 }
 
 .popup-container {
@@ -478,14 +482,39 @@ input[type='radio']:checked + .state-select-button--button {
   text-align: center;
   width: 1.5em;
   height: 1.5em;
-  background: rgb(222,222,222);
-  background: -moz-linear-gradient(180deg, rgba(222,222,222,1) 0%, rgba(255,255,255,1) 100%);
-  background: -webkit-linear-gradient(180deg, rgba(222,222,222,1) 0%, rgba(255,255,255,1) 100%);
-  background: linear-gradient(180deg, rgba(222,222,222,1) 0%, rgba(255,255,255,1) 100%);
+  background: rgb(222, 222, 222);
+  background: -moz-linear-gradient(180deg, rgba(222, 222, 222, 1) 0%, rgba(255, 255, 255, 1) 100%);
+  background: -webkit-linear-gradient(180deg, rgba(222, 222, 222, 1) 0%, rgba(255, 255, 255, 1) 100%);
+  background: linear-gradient(180deg, rgba(222, 222, 222, 1) 0%, rgba(255, 255, 255, 1) 100%);
   display: inline-block;
   border-radius: 0.25em;
   border: 1px solid white;
   color: black;
+}
+
+.page-container {
+  padding-left: 3em;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.page-container::-webkit-scrollbar {
+  width: 0;
+}
+
+.follow-list {
+  max-height: 150px;
+  overflow-y: scroll;
+  margin: 0.5em 0;
+}
+
+.follow-list::-webkit-scrollbar {
+  width: 0;
+}
+
+.follow-list li {
+  display: inline-block;
+  margin: 1pt;
 }
 
 .input-layout > * {

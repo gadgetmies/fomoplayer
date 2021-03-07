@@ -9,12 +9,15 @@ const {
   getUserPlaylistFollows,
   getUserTracks,
   removeArtistWatchesFromUser,
+  removeArtistWatchFromUser,
   removeLabelWatchesFromUser,
+  removeLabelWatchFromUser,
+  removePlaylistFollowFromUser,
   setAllHeard,
   setTrackHeard
 } = require('./logic')
 
-const getStores = require('../shared/db/store.js')
+const { queryStores } = require('../shared/db/store.js')
 
 const router = require('express').Router()
 const { apiURL } = require('../../config')
@@ -117,9 +120,13 @@ router.get('/follows/artists', async ({ user: { id: authUserId } }, res, next) =
   res.send(artistFollows)
 })
 
-router.get('/follows/playlists', async ({ user: { id: authUserId } }, res, next) => {
-  const playlists = await getUserPlaylistFollows(authUserId)
-  res.send(playlists)
+router.delete('/follows/artists/:id', async ({ params: { id }, user: { id: authUserId } }, res, next) => {
+  try {
+    await removeArtistWatchFromUser(authUserId, id)
+    res.status(204).send()
+  } catch (e) {
+    next(e)
+  }
 })
 
 router.get('/follows/labels', async ({ user: { id: authUserId } }, res, next) => {
@@ -127,22 +134,49 @@ router.get('/follows/labels', async ({ user: { id: authUserId } }, res, next) =>
   res.send(labelFollows)
 })
 
-router.post('/follows/playlists', async ({ user: { id: authUserId }, body: { url: playlistUrl } }, res, next) => {
-  const stores = await getStores()
-  const matchingStore = stores.find(({ playlistRegex }) => playlistUrl.match(playlistRegex))
-
-  if (matchingStore === null) {
-    throw new BadRequest('Invalid playlist URL')
+router.delete('/follows/labels/:id', async ({ params: { id }, user: { id: authUserId } }, res, next) => {
+  try {
+    await removeLabelWatchFromUser(authUserId, id)
+    res.status(204).send()
+  } catch (e) {
+    next(e)
   }
+})
 
-  const { name: storeName } = matchingStore
-  const storeModule = storeModules[storeName]
-  storeModule.han
+router.get('/follows/playlists', async ({ user: { id: authUserId } }, res, next) => {
+  const playlists = await getUserPlaylistFollows(authUserId)
+  res.send(playlists)
+})
 
-  res.send({
-    playlist: `${apiURL}/playlists/${playlistId}`,
-    follow: `${apiURL}/users/${authUserId}/follows/playlists/${followId}`
-  })
+router.delete('/follows/playlists/:id', async ({ params: { id }, user: { id: authUserId } }, res, next) => {
+  try {
+    await removePlaylistFollowFromUser(authUserId, id)
+    res.status(204).send()
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/follows/playlists', async ({ user: { id: userId }, body: { url: playlistUrl } }, res, next) => {
+  try {
+    const stores = await queryStores()
+    const matchingStore = stores.find(({ playlistRegex }) => playlistUrl.match(playlistRegex))
+
+    if (matchingStore === null) {
+      return next(BadRequest('Invalid playlist URL'))
+    }
+
+    const { name: storeName } = matchingStore
+    const storeModule = storeModules[storeName]
+    const { playlistId, followId } = await storeModule.logic.addPlaylistFollow(userId, playlistUrl)
+
+    res.send({
+      playlist: `${apiURL}/playlists/${playlistId}`,
+      follow: `${apiURL}/users/${userId}/follows/playlists/${followId}`
+    })
+  } catch (e) {
+    next(e)
+  }
 })
 
 module.exports = router

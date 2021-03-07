@@ -87,11 +87,6 @@ class Preview extends Component {
   }
 
   render() {
-    const menu = (
-      <button style={{ position: 'absolute', margin: 10, color: 'white' }} onClick={() => this.props.onMenuClicked()}>
-        <FontAwesome name="bars" />
-      </button>
-    )
     const shortcuts = (
       <div style={{ float: 'right', color: 'white', margin: 10 }} className="popup-container">
         <FontAwesome name="keyboard-o" className="popup-anchor" style={{ right: 0, top: 0, margin: 10 }} />
@@ -144,7 +139,6 @@ class Preview extends Component {
     if (!this.props.currentTrack) {
       return (
         <div className="preview">
-          {menu}
           {shortcuts}
         </div>
       )
@@ -159,7 +153,6 @@ class Preview extends Component {
 
     return (
       <div className="preview noselect">
-        {menu}
         {shortcuts}
         <TrackTitle
           className="preview-title"

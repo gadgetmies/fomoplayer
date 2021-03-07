@@ -10,12 +10,15 @@ const {
   addLabelWatch,
   addPurchasedTrackToUser,
   addTrackToUser,
+  deletePlaylistFollowFromUser,
   queryUserArtistFollows,
   queryUserLabelFollows,
   queryUserPlaylistFollows,
   queryUserTracks,
-  removeArtistWatchesFromUser,
-  removeLabelWatchesFromUser,
+  deleteArtistWatchesFromUser,
+  deleteArtistWatchFromUser,
+  deleteLabelWatchesFromUser,
+  deleteLabelWatchFromUser,
   setAllHeard,
   setTrackHeard
 } = require('./db')
@@ -84,8 +87,10 @@ module.exports.addStoreTrackToUsers = async (storeUrl, userIds, track, type) => 
   })
 }
 
-module.exports.removeArtistWatchesFromUser = removeArtistWatchesFromUser
-module.exports.removeLabelWatchesFromUser = removeLabelWatchesFromUser
+module.exports.removeArtistWatchesFromUser = deleteArtistWatchesFromUser
+module.exports.removeArtistWatchFromUser = deleteArtistWatchFromUser
+module.exports.removeLabelWatchesFromUser = deleteLabelWatchesFromUser
+module.exports.removeLabelWatchFromUser = deleteLabelWatchFromUser
 
 module.exports.addStoreArtistToUser = async (storeUrl, user, artist) => {
   return using(pg.getTransaction(), async tx => {
@@ -102,3 +107,6 @@ module.exports.addStoreLabelToUser = async (storeUrl, user, label) => {
     return labelId
   })
 }
+
+module.exports.removePlaylistFollowFromUser = async (userId, playlistId) =>
+  deletePlaylistFollowFromUser(userId, playlistId)

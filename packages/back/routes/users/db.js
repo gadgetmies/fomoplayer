@@ -66,7 +66,7 @@ ON CONFLICT DO NOTHING
   )
 }
 
-module.exports.removeArtistWatchesFromUser = async (storeUrl, user) => {
+module.exports.deleteArtistWatchesFromUser = async (storeUrl, user) => {
   // language=PostgreSQL
   await pg.queryAsync(
     sql`DELETE
@@ -82,7 +82,24 @@ WHERE meta_account_user_id = ${user.id}
   )
 }
 
-module.exports.removeLabelWatchesFromUser = async (storeUrl, user) => {
+module.exports.deleteArtistWatchFromUser = async (userId, artistId) => {
+  console.log({ userId, artistId })
+  // language=PostgreSQL
+  await pg.queryAsync(
+    sql`DELETE
+FROM store__artist_watch__user
+WHERE meta_account_user_id = ${userId}
+  AND store__artist_watch_id IN
+      (SELECT store__artist_watch_id
+       FROM store__artist_watch
+                NATURAL JOIN store__artist
+                NATURAL JOIN store
+       WHERE artist_id = ${artistId})
+    `
+  )
+}
+
+module.exports.deleteLabelWatchesFromUser = async (storeUrl, user) => {
   // language=PostgreSQL
   await pg.queryAsync(
     sql`DELETE
@@ -94,6 +111,22 @@ WHERE meta_account_user_id = ${user.id}
                 NATURAL JOIN store__label
                 NATURAL JOIN store
        WHERE store_url = ${storeUrl})
+    `
+  )
+}
+
+module.exports.deleteLabelWatchFromUser = async (userId, labelId) => {
+  // language=PostgreSQL
+  await pg.queryAsync(
+    sql`DELETE
+FROM store__label_watch__user
+WHERE meta_account_user_id = ${userId}
+  AND store__label_watch_id IN
+      (SELECT store__label_watch_id
+       FROM store__label_watch
+                NATURAL JOIN store__label
+                NATURAL JOIN store
+       WHERE label_id = ${labelId})
     `
   )
 }
@@ -445,4 +478,16 @@ module.exports.addTrackToUser = async (tx, userId, trackId) => {
 VALUES (${trackId}, ${userId})
 ON CONFLICT ON CONSTRAINT user__track_track_id_meta_account_user_id_key DO NOTHING
 `)
+}
+
+module.exports.deletePlaylistFollowFromUser = async (userId, playlistId) => {
+  const res = await pg.queryAsync(
+    // language=PostgreSQL
+    sql`DELETE
+FROM user__playlist_watch
+WHERE meta_account_user_id = ${userId}
+  AND playlist_id = ${playlistId}`
+  )
+
+  console.log(res)
 }
