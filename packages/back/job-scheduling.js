@@ -83,6 +83,14 @@ WHERE (job_run_started < NOW() - interval '10 days' AND job_run_success = TRUE)
 SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job_schedule
   `)
 
+    for (const scheduledName of Object.keys(scheduled)) {
+      if (!jobSchedules.find(({ name }) => name === scheduledName)) {
+        console.log(`Removing schedule of job '${scheduledName}'`)
+        scheduled[scheduledName].task.destroy()
+        delete scheduled[scheduledName]
+      }
+    }
+
     for (const { name, schedule } of jobSchedules) {
       if (scheduled[name]) {
         if (scheduled[name].schedule === schedule) {
