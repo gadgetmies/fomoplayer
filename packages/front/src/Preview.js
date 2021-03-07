@@ -7,6 +7,7 @@ import './Preview.css'
 import browser from 'browser-detect'
 import config from './config'
 import Progress from './Progress.jsx'
+import WaveformGenerator from 'waveform-generator-web'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -14,7 +15,7 @@ class Preview extends Component {
   constructor(props) {
     super(props)
 
-    this.state = { playing: false, position: 0 }
+    this.state = { playing: false, position: 0, waveform: undefined, totalDuration: undefined }
 
     this.setVolume = this.setVolume.bind(this)
   }
@@ -31,12 +32,45 @@ class Preview extends Component {
     return this.refs['player0']
   }
 
-  componentWillUpdate(_, { playing }) {
+  componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
     if (browser().name === 'safari') return
 
     if (this.state.playing !== playing) {
-      this.getPlayer()[playing ? 'play' : 'pause']()
+      const player = this.getPlayer()
+      if (player) {
+        player[playing ? 'play' : 'pause']()
+      }
     }
+
+    if (this.props.currentTrack !== nextTrack) {
+      const waveform = this.getWaveform(nextTrack)
+      if (!waveform) {
+        const preview = this.getPreview(nextTrack)
+        return this.updateWaveform(preview.url)
+      }
+    }
+  }
+
+  getPreview(track) {
+    return L.get(['previews', L.satisfying(safePropEq('format', 'mp3'))], track)
+  }
+
+  getWaveform(track) {
+    return L.get(['previews', L.elems, 'waveform', L.satisfying(R.identity)], track)
+  }
+
+  async updateWaveform(previewUrl) {
+    const blob = await fetch(previewUrl).then(r => r.blob())
+    const fileArrayBuffer = await blob.arrayBuffer()
+    const waveformGenerator = new WaveformGenerator(fileArrayBuffer)
+    const pngWaveformURL = await waveformGenerator.getWaveform({
+      waveformWidth: 1024,
+      waveformHeight: 170,
+      waveformColor: '#cbcbcb'
+    })
+    const audioContext = new AudioContext()
+    const audioBuffer = await audioContext.decodeAudioData(fileArrayBuffer)
+    this.setState({ waveform: pngWaveformURL, totalDuration: audioBuffer.duration * 1000 })
   }
 
   trackTitle(track) {
@@ -116,11 +150,11 @@ class Preview extends Component {
       )
     }
 
-    const mp3Preview = L.get(['previews', L.satisfying(safePropEq('format', 'mp3'))], this.props.currentTrack)
-    const waveform = L.get(['previews', L.elems, 'waveform', L.satisfying(R.identity)], this.props.currentTrack)
-    const totalDuration = this.props.currentTrack.duration
-    const startOffset = mp3Preview.start_ms
-    const endPosition = mp3Preview.end_ms
+    const mp3Preview = this.getPreview(this.props.currentTrack)
+    const waveform = this.state.waveform || this.getWaveform(this.props.currentTrack)
+    const totalDuration = this.state.totalDuration || this.props.currentTrack.duration
+    const startOffset = mp3Preview.start_ms || 0
+    const endPosition = mp3Preview.end_ms || this.state.totalDuration
     const toPositionPercent = currentPosition => ((currentPosition + startOffset) / totalDuration) * 100
 
     return (

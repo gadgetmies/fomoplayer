@@ -22,7 +22,8 @@
     "react-lazyload": "^2.3.0",
     "react-scripts": "^4.0.3",
     "slideout": "^1.0.1",
-    "typeface-lato": "0.0.75"
+    "typeface-lato": "0.0.75",
+    "waveform-generator-web": "^0.0.4"
   },
   "scripts": {
     "start": "REACT_APP_ENV=$NODE_ENV PORT=$(npx -p shared get-frontend-port) react-scripts start",
