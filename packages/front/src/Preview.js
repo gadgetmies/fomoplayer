@@ -174,6 +174,7 @@ class Preview extends Component {
             className="fluid waveform_container"
             style={{ flex: 10 }}
             onMouseDown={e => {
+              if (e.button !== 0) return
               const trackPositionPercent = (e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth
               if (totalDuration * trackPositionPercent > endPosition) return
               const previewPositionInSeconds = (totalDuration * trackPositionPercent - startOffset) / 1000
