@@ -2,6 +2,7 @@ const colorTrace = require('color-stacktrace')
 colorTrace.init(Error)
 
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
+const pg = require('./db/pg')
 // const dbMigrate = require('db-migrate').getInstance(true)
 // ;(process.env.RESET_DB_ON_INIT ? dbMigrate.reset() : Promise.resolve()).then(() => dbMigrate.up())
 
@@ -24,7 +25,7 @@ app.use(compression())
 app.use(
   session({
     store: new pgSession({
-      conString: process.env.DATABASE_URL,
+      pool: pg.pool,
       tableName: 'meta_session'
     }),
     secret: config.sessionSecret,
