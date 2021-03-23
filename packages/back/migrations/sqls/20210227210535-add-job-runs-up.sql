@@ -1,4 +1,4 @@
-CREATE TABLE job_run
+CREATE TABLE IF NOT EXISTS job_run
 (
     job_run_id      SERIAL PRIMARY KEY,
     job_id          INTEGER REFERENCES job (job_id),
