@@ -207,7 +207,7 @@ router.post('/follows/playlists', async ({ user: { id: userId }, body }, res, ne
     for (const { url: playlistUrl } of body) {
       const matchingStore = stores.find(({ playlistRegex }) => playlistUrl.match(playlistRegex))
 
-      if (matchingStore === null) {
+      if (matchingStore === undefined) {
         return next(BadRequest('Invalid playlist URL'))
       }
 
