@@ -73,7 +73,7 @@ class Settings extends Component {
                   await requestJSONwithCredentials({
                     path: '/me/follows/playlists',
                     method: 'POST',
-                    body: [{ url: this.state.playlist }]
+                    body: [{ url: this.state.playlistUrl }]
                   })
                   this.setState({ playlistUrl: '' })
                   await this.updatePlaylistFollows()
