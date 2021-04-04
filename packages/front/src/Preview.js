@@ -145,7 +145,7 @@ class Preview extends Component {
     }
 
     const mp3Preview = this.getPreview(this.props.currentTrack)
-    const waveform = this.state.waveform || this.getWaveform(this.props.currentTrack)
+    const waveform = this.getWaveform(this.props.currentTrack) || this.state.waveform
     const totalDuration = this.state.totalDuration || this.props.currentTrack.duration
     const startOffset = mp3Preview.start_ms || 0
     const endPosition = mp3Preview.end_ms || this.state.totalDuration
