@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "start": "supervisor index.js",
-    "start:prod": "node index.js"
+    "start:prod": "node index.js",
+    "db-migrate:prod": "db-migrate -e prod up"
   },
   "engines": {
     "node": "12.x"

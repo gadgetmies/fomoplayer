@@ -3,5 +3,9 @@
     "driver": "pg",
     "host": "localhost",
     "database": "multi-store-player"
+  },
+  "prod": {
+    "driver": "pg",
+    "ssl": true
   }
 }

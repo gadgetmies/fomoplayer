@@ -4,8 +4,6 @@ const config = require('./config.js')
 
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
 const pg = require('./db/pg')
-const dbMigrate = require('db-migrate').getInstance(true)
-;(process.env.RESET_DB_ON_INIT ? dbMigrate.reset() : Promise.resolve()).then(() => dbMigrate.up())
 
 const express = require('express')
 const passport = require('passport')
