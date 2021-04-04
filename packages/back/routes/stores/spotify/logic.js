@@ -36,10 +36,5 @@ module.exports.addPlaylistFollow = async (userId, playlistUrl) => {
     throw new BadRequest('Fetching playlist details failed')
   }
 
-  return await insertUserPlaylistFollow(
-    userId,
-    'Spotify',
-    spotifyPlaylistId,
-    `${author}: ${playlistTitle}`
-  )
+  return await insertUserPlaylistFollow(userId, 'Spotify', spotifyPlaylistId, `${author}: ${playlistTitle}`)
 }
