@@ -50,6 +50,7 @@ const bpKeysToCamelot = {
 
 const previewUrlPath = [1, 'url']
 
+const removeOriginalMix = L.cond([R.equals('Original Mix'), L.zero], [[]])
 module.exports.beatportTracksTransform = L.collect([
   L.elems,
   L.pick({
@@ -57,7 +58,7 @@ module.exports.beatportTracksTransform = L.collect([
       L.props('title', 'name', 'mix'),
       L.reread(({ title, name, mix }) => (title || name).replace(` (${mix})`, ''))
     ],
-    version: 'mix',
+    version: ['mix', removeOriginalMix],
     id: ['id', L.reread(idToString)],
     url: [L.props('slug', 'id'), L.reread(beatportUrl('track'))],
     artists: L.partsOf(
@@ -120,7 +121,7 @@ module.exports.beatportLibraryTransform = L.collect([
   L.elems,
   L.pick({
     title: ['name'],
-    version: 'mix_name',
+    version: ['mix_name', removeOriginalMix],
     id: ['id', L.reread(idToString)],
     url: [L.props('slug', 'id'), L.reread(beatportUrl('track'))],
     artists: L.partsOf(
