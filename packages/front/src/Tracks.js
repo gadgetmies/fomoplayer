@@ -4,6 +4,7 @@ import FontAwesome from 'react-fontawesome'
 import PillButton from './PillButton.js'
 import ExternalLink from './ExternalLink'
 import SpinnerButton from './SpinnerButton'
+import StoreIcon from './StoreIcon'
 
 class Share extends Component {
   constructor(props) {
@@ -20,6 +21,9 @@ class Share extends Component {
   render() {
     const spotifyTrack = this.getStoreTrackByStoreCode('spotify')
     const beaportTrack = this.getStoreTrackByStoreCode('beatport')
+    const bandcampTrack = this.getStoreTrackByStoreCode('bandcamp')
+    const searchString = `${this.props.artists.map(R.prop('name')).join('+')}+${this.props.title}`
+
     return (
       <>
         <PillButton
@@ -32,45 +36,30 @@ class Share extends Component {
           <>
             <br />
             <ul className={'no-style-list'}>
-              {beaportTrack ? (
+              {beaportTrack ? null : (
                 <li>
-                  <ExternalLink
-                    href={
-                      beaportTrack.url ||
-                      `https://www.beatport.com/track/${this.props.title.toLowerCase().replace(' ', '-')}/${
-                        beaportTrack.trackId
-                      }`
-                    }
-                  >
-                    Beatport
+                  <ExternalLink href={`https://www.beatport.com/search?q=${searchString}`}>
+                    <StoreIcon code="beatport" />
                   </ExternalLink>
                 </li>
-              ) : null}
-              {this.getStoreTrackByStoreCode('bandcamp') ? (
+              )}
+              {bandcampTrack ? null : (
                 <li>
-                  <ExternalLink href={`${this.getStoreTrackByStoreCode('bandcamp').url}`}>Bandcamp</ExternalLink>
+                  <ExternalLink href={`https://bandcamp.com/search?q=${searchString}`}>
+                    <StoreIcon code="bandcamp" />
+                  </ExternalLink>
                 </li>
-              ) : null}
+              )}
+              {spotifyTrack ? null : (
+                <li>
+                  <ExternalLink href={`https://open.spotify.com/search/${searchString}`}>
+                    <StoreIcon code="spotify" />
+                  </ExternalLink>
+                </li>
+              )}
               <li>
-                <ExternalLink
-                  href={`https://www.youtube.com/results?search_query=${this.props.artists
-                    .map(R.prop('name'))
-                    .join('+')}+${this.props.title}`}
-                >
-                  YouTube
-                </ExternalLink>
-              </li>
-              <li>
-                <ExternalLink
-                  href={
-                    spotifyTrack
-                      ? spotifyTrack.url
-                      : `https://open.spotify.com/search/${this.props.artists.map(R.prop('name')).join(' ')} ${
-                          this.props.title
-                        }`
-                  }
-                >
-                  Spotify
+                <ExternalLink href={`https://www.youtube.com/results?search_query=${searchString}`}>
+                  <FontAwesome name="youtube" />
                 </ExternalLink>
               </li>
             </ul>
@@ -112,7 +101,16 @@ class Track extends Component {
     return this.setState({ heardHover: toState })
   }
 
+  getStoreTrackByStoreCode(code) {
+    return this.props.stores.find(R.propEq('code', code))
+  }
+
   render() {
+    const spotifyTrack = this.getStoreTrackByStoreCode('spotify')
+    const beaportTrack = this.getStoreTrackByStoreCode('beatport')
+    const bandcampTrack = this.getStoreTrackByStoreCode('bandcamp')
+    const searchString = `${this.props.artists.map(R.prop('name')).join('+')}+${this.props.title}`
+
     return (
       <tr
         ref={'row'}
@@ -198,7 +196,7 @@ class Track extends Component {
             </PillButton>
           )}
       </td> */}
-        <td style={{ flex: 1 }} className="unfollow-row">
+        <td style={{ flex: 1.2 }} className="unfollow-row">
           {/*<PillButton className={'table-cell-button'}>*/}
           {/*by genre*/}
           {/*</PillButton>*/}
@@ -215,8 +213,42 @@ class Track extends Component {
             </PillButton>
           ) : null}
         </td>
-        <td className="open-in-column">
-          <Share stores={this.props.stores} artists={this.props.artists} title={this.props.title} />
+        <td style={{ flex: 1, textAlign: 'center' }}>
+          {R.intersperse(
+            ' ',
+            this.props.stores.map(store => (
+              <ExternalLink showIcon={false} href={store.url} title={`Open in ${store.name}`} className={'link'}>
+                <StoreIcon code={store.code} />
+              </ExternalLink>
+            ))
+          )}
+        </td>
+        <td className="search-column">
+          {/*<Share stores={this.props.stores} artists={this.props.artists} title={this.props.title} />*/}
+          {beaportTrack ? null : (
+            <>
+              <ExternalLink showIcon={false} href={`https://www.beatport.com/search?q=${searchString}`}>
+                <StoreIcon code="beatport" />
+              </ExternalLink>{' '}
+            </>
+          )}
+          {bandcampTrack ? null : (
+            <>
+              <ExternalLink showIcon={false} href={`https://bandcamp.com/search?q=${searchString}`}>
+                <StoreIcon code="bandcamp" />
+              </ExternalLink>{' '}
+            </>
+          )}
+          {spotifyTrack ? null : (
+            <>
+              <ExternalLink showIcon={false} href={`https://open.spotify.com/search/${searchString}`}>
+                <StoreIcon code="spotify" />
+              </ExternalLink>{' '}
+            </>
+          )}
+          <ExternalLink showIcon={false} href={`https://www.youtube.com/results?search_query=${searchString}`}>
+            <FontAwesome name="youtube" />
+          </ExternalLink>
         </td>
       </tr>
     )
@@ -398,11 +430,12 @@ class Tracks extends Component {
               <th style={{ flex: 1, overflow: 'hidden' }}>Released</th>
               <th style={{ flex: 1, overflow: 'hidden' }}>Key</th>
               {/* <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Cart</th> */}
-              <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>
+              <th style={{ flex: 1.2, overflow: 'hidden' }} className={'table-button-cell-header'}>
                 Unfollow
                 {/*Artists*/}
               </th>
-              <th className="open-in-column table-button-cell-header">Open in</th>
+              <th style={{ flex: 1, textAlign: 'center' }}>Stores</th>
+              <th className="search-column table-button-cell-header">Search</th>
             </tr>
           </thead>
           {/* Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table */}

@@ -85,10 +85,11 @@ body {
   white-space: nowrap;
 }
 
-.open-in-column {
+.search-column {
   flex: 0;
   max-width: 75px;
   min-width: 75px;
+  text-align: center;
 }
 
 a.link {
