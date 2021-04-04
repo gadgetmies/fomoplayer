@@ -43,6 +43,7 @@ class Preview extends Component {
     }
 
     if (this.props.currentTrack !== nextTrack) {
+      this.setState({ position: 0, waveform: undefined, totalDuration: undefined })
       const waveform = this.getWaveform(nextTrack)
       if (!waveform) {
         const preview = this.getPreview(nextTrack)
@@ -146,7 +147,7 @@ class Preview extends Component {
 
     const mp3Preview = this.getPreview(this.props.currentTrack)
     const waveform = this.getWaveform(this.props.currentTrack) || this.state.waveform
-    const totalDuration = this.state.totalDuration || this.props.currentTrack.duration
+    const totalDuration = this.props.currentTrack.duration || this.state.totalDuration
     const startOffset = mp3Preview.start_ms || 0
     const endPosition = mp3Preview.end_ms || this.state.totalDuration
     const toPositionPercent = currentPosition => ((currentPosition + startOffset) / totalDuration) * 100
