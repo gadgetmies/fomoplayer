@@ -95,8 +95,6 @@ router.post('/follows/artists', async ({ user: { id: userId }, body, headers }, 
         return storeUrl === url || artistDetails.id !== undefined
       })
 
-      console.log('foo', matchingStore)
-
       if (matchingStore === null) {
         return next(BadRequest(`Invalid artist URL ${artist.url}`))
       }
