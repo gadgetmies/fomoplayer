@@ -49,7 +49,7 @@ const ensureAuthenticated = (req, res, next) => {
 
 app.use('/api/auth', auth)
 
-const authenticateJwt = passport.authenticate('jwt',{ session: false })
+const authenticateJwt = passport.authenticate('jwt', { session: false })
 
 app.use(
   '/api',
@@ -71,13 +71,13 @@ const handleErrors = (err, req, res, next) => {
     return res.status(err.getCode()).json({
       status: 'error',
       message: err.message
-    });
+    })
   }
 
   return res.status(500).json({
     status: 'error',
     message: err.message
-  });
+  })
 }
 
 app.use(handleErrors)
