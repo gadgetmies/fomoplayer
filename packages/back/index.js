@@ -17,7 +17,6 @@ const compression = require('compression')
 const config = require('./config.js')
 const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
-require('./job-scheduling.js')
 const { GeneralError } = require('./routes/shared/httpErrors')
 
 const app = express()
@@ -86,3 +85,5 @@ app.use(handleErrors)
 
 app.listen(config.port)
 console.log(`Listening on port: ${config.port}`)
+
+require('./job-scheduling.js').init()

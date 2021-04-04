@@ -4,9 +4,10 @@ const cron = require('node-cron')
 const fetchBeatportWatches = require('./jobs/fetch-beatport-watches')
 const fetchSpotifyWatches = require('./jobs/fetch-spotify-watches')
 
-pg.queryAsync(
-  // language=PostgreSQL
-  sql`UPDATE job_run
+const init = async () => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`UPDATE job_run
 SET job_run_ended   = NOW(),
     job_run_success = false,
     job_run_result  = '{
@@ -14,7 +15,10 @@ SET job_run_ended   = NOW(),
     }' :: JSON
 WHERE job_run_ended IS NULL
 `
-)
+  )
+
+  await jobs.updateJobs()
+}
 
 let scheduled = {}
 
@@ -72,7 +76,7 @@ const jobs = {
   updateJobs: async () => {
     console.log('Updating job schedules')
     await pg.queryAsync(
-    // language=PostgreSQL
+      // language=PostgreSQL
       sql`DELETE
 FROM job_run
 WHERE (job_run_started < NOW() - interval '10 days' AND job_run_success = TRUE)
@@ -140,6 +144,7 @@ REFRESH MATERIALIZED VIEW track_date_released_score
   }
 }
 
-jobs.updateJobs()
-
-module.exports = runJob
+module.exports = {
+  init,
+  runJob
+}
