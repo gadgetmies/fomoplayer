@@ -61,9 +61,7 @@ module.exports.insertTrackWaveform = (tx, store__track_id, waveforms) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`
-INSERT INTO store__track_preview_waveform (store__track_preview_id, store__track_preview_waveform_url) select store__track_preview_id, ${
-      waveforms.large.url
-    } from store__track_preview where store__track_id = ${store__track_id}
+INSERT INTO store__track_preview_waveform (store__track_preview_id, store__track_preview_waveform_url) select store__track_preview_id, ${waveforms.large.url} from store__track_preview where store__track_id = ${store__track_id}
     `
   )
 
@@ -291,14 +289,3 @@ FROM store__artist
 WHERE store_id = ${bpStoreId}
 )`
   )
-
-module.exports.queryPreviewUrl = (id, format, bpStoreId) =>
-  pg
-    .queryRowsAsync(
-      sql`
-  SELECT store__track_preview_url
-  FROM store__track_preview NATURAL JOIN store__track
-  WHERE store__track_id = ${id} AND store__track_preview_format = ${format} AND store_id = ${bpStoreId}
-  `
-    )
-    .then(([{ store__track_preview_url }]) => store__track_preview_url)

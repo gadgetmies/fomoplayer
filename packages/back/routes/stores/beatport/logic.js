@@ -4,6 +4,7 @@ const bpApi = require('bp-api')
 const { decode } = require('html-entities')
 
 const pg = require('../../../db/pg.js')
+const { queryPreviewUrl } = require('../../shared/db/preview')
 const { BadRequest } = require('../../shared/httpErrors')
 const { insertUserPlaylistFollow } = require('../../shared/db/user')
 const { removeIgnoredTracksFromUser } = require('../../shared/db/user.js')
@@ -26,8 +27,7 @@ const {
   ensureLabelExists,
   findNewLabels,
   insertStoreArtist,
-  findNewArtists,
-  queryPreviewUrl
+  findNewArtists
 } = require('./db.js')
 
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)

@@ -2,6 +2,7 @@ const sql = require('sql-template-strings')
 const R = require('ramda')
 const { using } = require('bluebird')
 const pg = require('../../db/pg.js')
+const { apiURL } = require('../../config')
 
 module.exports.addPurchasedTrackToUser = async (userId, storeTrack) => {
   await pg.queryRowsAsync(
@@ -354,17 +355,18 @@ module.exports.queryUserTracks = username =>
         json_agg(
           json_build_object(
             'format', store__track_preview_format,
-            'url', store__track_preview_url,
+            'url', ${apiURL} || '/stores/' || lower(store_name) || '/tracks/' || store__track_store_id || '/preview.mp3' ,
             'start_ms', store__track_preview_start_ms,
             'end_ms', store__track_preview_end_ms,
             'waveform', store__track_preview_waveform_url
           )
-          ORDER BY store__track_preview_end_ms - store__track_preview_start_ms DESC
+          ORDER BY store__track_preview_end_ms - store__track_preview_start_ms DESC NULLS LAST
         ) AS previews
       FROM limited_tracks lt
         NATURAL JOIN store__track
         NATURAL JOIN store__track_preview
         NATURAL LEFT JOIN store__track_preview_waveform
+        NATURAL JOIN store
       GROUP BY 1
   ),
   store_tracks AS (

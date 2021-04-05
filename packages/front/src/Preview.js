@@ -8,6 +8,7 @@ import browser from 'browser-detect'
 import config from './config'
 import Progress from './Progress.jsx'
 import WaveformGenerator from 'waveform-generator-web'
+import { requestWithCredentials } from './request-json-with-credentials'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -32,22 +33,21 @@ class Preview extends Component {
     return this.refs['player0']
   }
 
-  componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
-    if (browser().name === 'safari') return
-
-    if (this.state.playing !== playing) {
-      const player = this.getPlayer()
-      if (player) {
-        player[playing ? 'play' : 'pause']()
+  async componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
+    if (this.props.currentTrack !== nextTrack) {
+      const preview = this.getPreview(nextTrack)
+      const previewUrl = await (await requestWithCredentials({ url: preview.url })).text()
+      this.setState({ position: 0, waveform: undefined, totalDuration: undefined, previewUrl })
+      const waveform = this.getWaveform(nextTrack)
+      if (!waveform) {
+        return this.updateWaveform(previewUrl)
       }
     }
 
-    if (this.props.currentTrack !== nextTrack) {
-      this.setState({ position: 0, waveform: undefined, totalDuration: undefined })
-      const waveform = this.getWaveform(nextTrack)
-      if (!waveform) {
-        const preview = this.getPreview(nextTrack)
-        return this.updateWaveform(preview.url)
+    if (this.state.playing !== playing && browser().name !== 'safari') {
+      const player = this.getPlayer()
+      if (player) {
+        player[playing ? 'play' : 'pause']()
       }
     }
   }
@@ -238,7 +238,7 @@ class Preview extends Component {
               this.setState({ position: currentTime * 1000 })
             }}
             controlsList="nodownload"
-            src={`${config.apiURL}/tracks/${this.props.currentTrack.id}/preview.mp3`}
+            src={this.state.previewUrl}
           />
         </div>
       </div>
