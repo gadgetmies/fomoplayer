@@ -54,10 +54,15 @@ const authenticateJwt = passport.authenticate('jwt', { session: false })
 app.use(
   '/api',
   (req, res, next) => {
-    if (req.headers.authorization) {
-      authenticateJwt(req, res, next)
-    } else {
-      ensureAuthenticated(req, res, next)
+    try {
+      if (req.headers.authorization) {
+        authenticateJwt(req, res, next)
+      } else {
+        ensureAuthenticated(req, res, next)
+      }
+    } catch (e) {
+      console.error(e)
+      next(e)
     }
   },
   require('./routes/index.js')
