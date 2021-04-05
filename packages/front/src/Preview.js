@@ -138,11 +138,7 @@ class Preview extends Component {
     )
 
     if (!this.props.currentTrack) {
-      return (
-        <div className="preview">
-          {shortcuts}
-        </div>
-      )
+      return <div className="preview">{shortcuts}</div>
     }
 
     const mp3Preview = this.getPreview(this.props.currentTrack)
