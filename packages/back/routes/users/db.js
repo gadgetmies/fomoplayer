@@ -205,268 +205,154 @@ module.exports.queryUserTracks = username =>
   pg
     .queryRowsAsync(
       // language=PostgreSQL
-      sql`WITH
-  logged_user AS (
+      sql`WITH logged_user AS (
     SELECT meta_account_user_id
     FROM meta_account
     WHERE meta_account_username = ${username}
-  ),
-  user_purchased_tracks AS (
-    SELECT track_id FROM user__store__track_purchased 
-        NATURAL JOIN store__track 
-        NATURAL JOIN logged_user
-  ),
-  user_tracks_meta AS (
-    SELECT
-      COUNT(*) as total,
-      COUNT(*) FILTER (WHERE user__track_heard IS NULL) as new
-    FROM user__track
-    NATURAL JOIN logged_user
-    WHERE track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
-  ),
-  new_tracks AS (
-    SELECT
-      track_id,
-      track_added,
-      user__track_heard
-    FROM logged_user
-      NATURAL JOIN user__track
-      NATURAL JOIN track
-    NATURAL JOIN store__track
-    NATURAL JOIN store
-    WHERE user__track_heard IS NULL AND 
-          track_id NOT IN (SELECT track_id FROM user_purchased_tracks) AND store_name = 'Spotify'
-    GROUP BY 1, 2, 3
-  ),
-  label_scores AS (
-    SELECT
-      track_id,
-      SUM(COALESCE(user_label_scores_score, 0)) AS label_score
-    FROM new_tracks
-    NATURAL LEFT JOIN track__label
-    NATURAL LEFT JOIN user_label_scores
-    GROUP BY 1
-  ),
-  artist_scores AS (
-    SELECT
-      track_id,
-      SUM(COALESCE(user_artist_scores_score, 0)) AS artist_score
-    FROM new_tracks
-    NATURAL JOIN track__artist
-    NATURAL LEFT JOIN user_artist_scores
-    GROUP BY 1
-  ),
-  user_score_weights AS (
-    SELECT user_track_score_weight_code, user_track_score_weight_multiplier
-    FROM user_track_score_weight
-    NATURAL JOIN logged_user
-  ),
-  new_tracks_with_scores AS (
-      SELECT track_id,
-             user__track_heard,
-             label_score * COALESCE(label_multiplier, 0) +
-             artist_score * COALESCE(artist_multiplier, 0) +
-             COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
-             COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) AS score
-      FROM (SELECT track_id,
-                   user__track_heard,
-                   label_score,
-                   artist_score,
-                   track_added,
-                   (SELECT user_track_score_weight_multiplier
-                    FROM user_score_weights
-                    WHERE user_track_score_weight_code = 'label'
-                   ) AS label_multiplier,
-                   (SELECT user_track_score_weight_multiplier
-                    FROM user_score_weights
-                    WHERE user_track_score_weight_code = 'artist'
-                   ) AS artist_multiplier,
-                   (SELECT user_track_score_weight_multiplier
-                    FROM user_score_weights
-                    WHERE user_track_score_weight_code = 'date_added'
-                   ) AS date_added_multiplier,
-                   (SELECT user_track_score_weight_multiplier
-                    FROM user_score_weights
-                    WHERE user_track_score_weight_code = 'date_released'
-                   ) AS date_released_multiplier
-            FROM new_tracks
-                     NATURAL JOIN label_scores
-                     NATURAL JOIN artist_scores
-           ) AS tracks
-             LEFT JOIN track_date_added_score AS added_score USING (track_id)
-             LEFT JOIN track_date_released_score AS released_score USING (track_id)
-      ORDER BY score DESC NULLS LAST
-      LIMIT 200
-    ),
-  heard_tracks AS (
-    SELECT
-      track_id,
-      user__track_heard,
-      NULL :: NUMERIC AS score
-    FROM user__track
-    NATURAL JOIN logged_user
-    WHERE user__track_heard IS NOT NULL
-    ORDER BY user__track_heard DESC
-    LIMIT 50
-  ),
-  limited_tracks AS (
-    SELECT track_id, user__track_heard, score FROM new_tracks_with_scores
-    UNION ALL
-    SELECT track_id, user__track_heard, score FROM heard_tracks
-  ),
-  keys AS (
-    SELECT
-      lt.track_id,
-      json_agg(json_build_object(
-        'system', key_system_code,
-        'key', key_name
-      )) AS keys
-    FROM limited_tracks lt
-      NATURAL JOIN track__key
-      NATURAL JOIN key_system
-      NATURAL JOIN key_name
-    GROUP BY 1
-  ),
-    authors AS (
-      SELECT
-        lt.track_id,
-        json_agg(
-            json_build_object('name', a.artist_name, 'id', a.artist_id)
-        ) AS authors
-      FROM limited_tracks lt
-        JOIN track__artist ta ON (ta.track_id = lt.track_id AND ta.track__artist_role = 'author')
-        JOIN artist a ON (a.artist_id = ta.artist_id)
-      GROUP BY 1
-  ),
-    remixers AS (
-      SELECT
-        lt.track_id,
-        json_agg(
-            json_build_object('name', a.artist_name, 'id', a.artist_id)
-        ) AS remixers
-      FROM limited_tracks lt
-        JOIN track__artist ta ON (ta.track_id = lt.track_id AND ta.track__artist_role = 'remixer')
-        JOIN artist a ON (a.artist_id = ta.artist_id)
-      GROUP BY 1
-  ),
-    previews AS (
-      SELECT
-        lt.track_id,
-        json_agg(
-          json_build_object(
-            'format', store__track_preview_format,
-            'url', ${apiURL} || '/stores/' || lower(store_name) || '/tracks/' || store__track_store_id || '/preview.mp3' ,
-            'start_ms', store__track_preview_start_ms,
-            'end_ms', store__track_preview_end_ms,
-            'waveform', store__track_preview_waveform_url
-          )
-          ORDER BY store__track_preview_end_ms - store__track_preview_start_ms DESC NULLS LAST
-        ) AS previews
-      FROM limited_tracks lt
-        NATURAL JOIN store__track
-        NATURAL JOIN store__track_preview
-        NATURAL LEFT JOIN store__track_preview_waveform
-        NATURAL JOIN store
-      GROUP BY 1
-  ),
-  store_tracks AS (
-      SELECT distinct on (lt.track_id, store_id)
-        track_id,
-        store_id,
-        store__track_id,
-        store__track_released,
-        store__track_url,
-        store_name,
-        store__track_store_id,
-        store__release_url
-      FROM limited_tracks lt
-        NATURAL JOIN store__track
-        NATURAL JOIN store
-        NATURAL LEFT JOIN release__track
-        NATURAL LEFT JOIN release
-        NATURAL LEFT JOIN store__release
-  ),
-    stores AS (
-      SELECT
-        track_id,
-        min(store__track_released) as release_date,
-        json_agg(
-            json_build_object(
-                'name', store_name,
-                'code', lower(store_name),
-                'id', store_id,
-                'trackId', store__track_store_id,
-                'url', store__track_url,
-                'release', json_build_object('url', store__release_url)
-            )
-        ) AS stores
-      FROM store_tracks
-      GROUP BY 1
-  ),
-  labels AS (
-    SELECT
-        track_id,
-        json_agg(json_build_object('name', label_name, 'id', label_id)) AS labels
-      FROM limited_tracks
-      NATURAL JOIN track__label
-      NATURAL JOIN label
-      GROUP BY 1
-  ),
-  tracks_with_details AS (
-SELECT
-  lt.track_id           AS id,
-  track_title           AS title,
-  user__track_heard     AS heard,
-  track_duration_ms     AS duration,
-  track_added           AS added,
-  authors.authors       AS artists,
-  track_version         AS version,
-  CASE WHEN labels.labels IS NULL
-    THEN '[]' :: JSON
-  ELSE labels.labels END AS labels,
-  CASE WHEN remixers.remixers IS NULL
-    THEN '[]' :: JSON
-  ELSE remixers.remixers END AS remixers,
-  CASE WHEN keys.keys IS NULL
-    THEN '[]' :: JSON
-  ELSE keys.keys END AS keys,
-  previews.previews as previews,
-  stores.stores,
-  stores.release_date AS released,
-  score
-FROM limited_tracks lt
-  NATURAL JOIN track
-  NATURAL JOIN authors
-  NATURAL JOIN previews
-  NATURAL JOIN stores
-  NATURAL LEFT JOIN labels
-  NATURAL LEFT JOIN remixers
-  NATURAL LEFT JOIN keys
-  ),
-  new_tracks_with_details AS (
-    SELECT json_agg(t) AS new_tracks FROM (
-      SELECT * FROM tracks_with_details WHERE heard IS NULL ORDER BY score DESC NULLS LAST, added DESC
-    ) t
-  ),
-  heard_tracks_with_details AS (
-    SELECT json_agg(t) AS heard_tracks FROM (
-      SELECT * FROM tracks_with_details WHERE heard IS NOT NULL ORDER BY heard DESC
-    ) t
-  )
-  SELECT
-    json_build_object(
-      'new', CASE WHEN new_tracks IS NULL THEN '[]'::JSON ELSE new_tracks END,
-      'heard', CASE WHEN heard_tracks IS NULL THEN '[]'::JSON ELSE heard_tracks END
-    ) as tracks,
-    json_build_object(
-      'total', total,
-      'new', new
-    ) as meta
-  FROM
-    new_tracks_with_details,
-    heard_tracks_with_details,
-    user_tracks_meta
-`
+),
+     user_purchased_tracks AS (
+         SELECT track_id
+         FROM user__store__track_purchased
+                  NATURAL JOIN store__track
+                  NATURAL JOIN logged_user
+     ),
+     user_tracks_meta AS (
+         SELECT COUNT(*)                                          as total,
+                COUNT(*) FILTER (WHERE user__track_heard IS NULL) as new
+         FROM user__track
+                  NATURAL JOIN logged_user
+         WHERE track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
+     ),
+     new_tracks AS (
+         SELECT track_id,
+                track_added,
+                user__track_heard
+         FROM logged_user
+                  NATURAL JOIN user__track
+                  NATURAL JOIN track
+                  NATURAL JOIN store__track
+                  NATURAL JOIN store
+         WHERE user__track_heard IS NULL
+           AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
+           AND store_name = 'Spotify'
+         GROUP BY 1, 2, 3
+     ),
+     label_scores AS (
+         SELECT track_id,
+                SUM(COALESCE(user_label_scores_score, 0)) AS label_score
+         FROM new_tracks
+                  NATURAL LEFT JOIN track__label
+                  NATURAL LEFT JOIN user_label_scores
+         GROUP BY 1
+     ),
+     artist_scores AS (
+         SELECT track_id,
+                SUM(COALESCE(user_artist_scores_score, 0)) AS artist_score
+         FROM new_tracks
+                  NATURAL JOIN track__artist
+                  NATURAL LEFT JOIN user_artist_scores
+         GROUP BY 1
+     ),
+     user_score_weights AS (
+         SELECT user_track_score_weight_code, user_track_score_weight_multiplier
+         FROM user_track_score_weight
+                  NATURAL JOIN logged_user
+     ),
+     new_tracks_with_scores AS (
+         SELECT track_id,
+                user__track_heard,
+                label_score * COALESCE(label_multiplier, 0) +
+                artist_score * COALESCE(artist_multiplier, 0) +
+                COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
+                COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) AS score
+         FROM (SELECT track_id,
+                      user__track_heard,
+                      label_score,
+                      artist_score,
+                      track_added,
+                      (SELECT user_track_score_weight_multiplier
+                       FROM user_score_weights
+                       WHERE user_track_score_weight_code = 'label'
+                      ) AS label_multiplier,
+                      (SELECT user_track_score_weight_multiplier
+                       FROM user_score_weights
+                       WHERE user_track_score_weight_code = 'artist'
+                      ) AS artist_multiplier,
+                      (SELECT user_track_score_weight_multiplier
+                       FROM user_score_weights
+                       WHERE user_track_score_weight_code = 'date_added'
+                      ) AS date_added_multiplier,
+                      (SELECT user_track_score_weight_multiplier
+                       FROM user_score_weights
+                       WHERE user_track_score_weight_code = 'date_released'
+                      ) AS date_released_multiplier
+               FROM new_tracks
+                        NATURAL JOIN label_scores
+                        NATURAL JOIN artist_scores
+              ) AS tracks
+                  LEFT JOIN track_date_added_score AS added_score USING (track_id)
+                  LEFT JOIN track_date_released_score AS released_score USING (track_id)
+         ORDER BY score DESC NULLS LAST
+         LIMIT 200
+     ),
+     heard_tracks AS (
+         SELECT track_id,
+                user__track_heard,
+                NULL :: NUMERIC AS score
+         FROM user__track
+                  NATURAL JOIN logged_user
+         WHERE user__track_heard IS NOT NULL
+         ORDER BY user__track_heard DESC
+         LIMIT 50
+     ),
+     limited_tracks AS (
+         SELECT track_id, user__track_heard, score
+         FROM new_tracks_with_scores
+         UNION ALL
+         SELECT track_id, user__track_heard, score
+         FROM heard_tracks
+     ),
+     tracks_with_details AS (
+         SELECT track_id AS id,
+                title,
+                heard,
+                duration,
+                added,
+                artists,
+                version,
+                labels,
+                remixers,
+                keys,
+                previews,
+                stores,
+                released,
+                score
+         FROM limited_tracks lt
+                  JOIN track_details((SELECT ARRAY_AGG(track_id) FROM limited_tracks), ${apiURL}) td USING (track_id)
+     ),
+     new_tracks_with_details AS (
+         SELECT json_agg(t) AS new_tracks
+         FROM (
+                  SELECT * FROM tracks_with_details WHERE heard IS NULL ORDER BY score DESC NULLS LAST, added DESC
+              ) t
+     ),
+     heard_tracks_with_details AS (
+         SELECT json_agg(t) AS heard_tracks
+         FROM (
+                  SELECT * FROM tracks_with_details WHERE heard IS NOT NULL ORDER BY heard DESC
+              ) t
+     )
+SELECT json_build_object(
+               'new', CASE WHEN new_tracks IS NULL THEN '[]'::JSON ELSE new_tracks END,
+               'heard', CASE WHEN heard_tracks IS NULL THEN '[]'::JSON ELSE heard_tracks END
+           ) as tracks,
+       json_build_object(
+               'total', total,
+               'new', new
+           ) as meta
+FROM new_tracks_with_details,
+     heard_tracks_with_details,
+     user_tracks_meta`
     )
     .then(R.head)
 
