@@ -5,6 +5,7 @@ import PillButton from './PillButton.js'
 import ExternalLink from './ExternalLink'
 import SpinnerButton from './SpinnerButton'
 import StoreIcon from './StoreIcon'
+import { requestWithCredentials } from './request-json-with-credentials'
 
 class Share extends Component {
   constructor(props) {
@@ -263,9 +264,11 @@ class Tracks extends Component {
       currentTrack: -1,
       markingHeard: false,
       currentBelowScreen: false,
-      currentAboveScreen: false
+      currentAboveScreen: false,
+      search: ''
     }
     this.handleScroll = this.handleScroll.bind(this)
+    this.searchDebounce = undefined
   }
 
   handleScroll() {
@@ -291,6 +294,23 @@ class Tracks extends Component {
     const parent = current.parentElement
     const parentRect = parent.getBoundingClientRect()
     parent.scrollBy(0, currentRect.y - parentRect.y)
+  }
+
+  async setSearch(search) {
+    this.setState({ search })
+    if (search === '') {
+      this.props.onSearchResults(undefined)
+      return
+    }
+
+    if (this.searchDebounce) {
+      clearTimeout(this.searchDebounce)
+      this.searchDebounce = undefined
+    }
+    this.searchDebounce = setTimeout(async () => {
+      const results = await (await requestWithCredentials({ path: `/tracks?q=${search}` })).json()
+      this.props.onSearchResults(results)
+    }, 500)
   }
 
   renderTracks(tracks, carts) {
@@ -401,8 +421,17 @@ class Tracks extends Component {
                 Recently played
               </label>
             </div>
+            <label style={{ margin: 4 }}>
+              <input
+                className="search"
+                placeholder="Search"
+                onChange={e => this.setSearch(e.target.value)}
+                value={this.state.search}
+              />
+              <FontAwesome name="search" style={{ opacity: 0.7, margin: 4 }} />
+            </label>
           </div>
-          <div style={{ flex: 1, textAlign: 'right', padding: 4 }}>
+          <div style={{ textAlign: 'right', padding: 4 }}>
             <div
               className="pill"
               style={{ margin: 2, padding: 4, backgroundColor: '#222', color: 'white', opacity: 0.7 }}

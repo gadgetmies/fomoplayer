@@ -2,6 +2,7 @@ const { apiURL } = require('../config.js')
 
 const {
   getLongestPreviewForTrack,
+  searchForTracks
 } = require('./db.js')
 
 module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
@@ -10,3 +11,4 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
 }
 
 module.exports.getLongestPreviewForTrack = getLongestPreviewForTrack
+module.exports.searchForTracks = searchForTracks

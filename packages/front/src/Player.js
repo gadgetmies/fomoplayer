@@ -30,14 +30,20 @@ class Player extends Component {
   componentDidMount() {
     const that = this
     document.addEventListener('keydown', event => {
-      if (
-        event instanceof KeyboardEvent &&
-        !event.target.form &&
-        !event.altKey &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.shiftKey
-      ) {
+      console.log(event.target instanceof HTMLInputElement)
+      if (event instanceof KeyboardEvent) {
+        if (
+          event.target.form ||
+          event.altKey ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.target instanceof HTMLInputElement
+        ) {
+          event.stopPropagation()
+          return
+        }
+
         switch (event.key) {
           case 'e':
             this.playNextTrack()
@@ -156,7 +162,15 @@ class Player extends Component {
     this.setState({ listState })
   }
 
+  setSearchResults(searchResults) {
+    this.setState({ searchResults })
+  }
+
   getTracks() {
+    if (this.state.searchResults) {
+      return this.state.searchResults
+    }
+
     const heardTracks = this.state.heardTracks
     let tracks
 
@@ -225,6 +239,7 @@ class Player extends Component {
           }}
           onShowNewClicked={this.setListState.bind(this, 'new')}
           onShowHeardClicked={this.setListState.bind(this, 'heard')}
+          onSearchResults={this.setSearchResults.bind(this)}
         />
       </>
     )

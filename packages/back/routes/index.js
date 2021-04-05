@@ -1,7 +1,7 @@
 const bodyParser = require('body-parser')
 
 const router = require('express').Router()
-const { getLongestPreviewForTrack } = require('./logic.js')
+const { getLongestPreviewForTrack, searchForTracks } = require('./logic.js')
 const { Unauthorized } = require('./shared/httpErrors')
 
 router.use(bodyParser.json())
@@ -23,6 +23,15 @@ router.get('/tracks/:id/preview.:format', async (req, res, next) => {
 router.get('/tracks/:id', ({ user: { username }, params: { id } }, res, next) => {
   // TODO
   res.send(JSON.stringify({}))
+})
+
+router.get('/tracks/', async ({ query: { q } }, res, next) => {
+  try {
+    res.send(await searchForTracks(q))
+  } catch (e) {
+    console.error(e)
+    next(e)
+  }
 })
 
 router.use('/stores', require('./stores/index.js').router)
