@@ -3284,13 +3284,13 @@ boom@0.4.x:
   dependencies:
     hoek "0.9.x"
 
-bp-api@elysion/bp-api#v3.1.3:
-  version "3.1.3"
-  resolved "https://codeload.github.com/elysion/bp-api/tar.gz/83a7777cf660243000a02f3c305ec9e743c0c7b6"
+bp-api@elysion/bp-api#v3.1.5:
+  version "3.1.5"
+  resolved "https://codeload.github.com/elysion/bp-api/tar.gz/8fbe099e0d123519164e7ea3ceea113de47a5855"
   dependencies:
     ramda "^0.25.0"
     request "^2.88.2"
-    request-in-session elysion/request-in-session#v1.2.2
+    request-in-session elysion/request-in-session#v1.2.3
 
 brace-expansion@^1.1.7:
   version "1.1.11"
@@ -6744,6 +6744,11 @@ html-entities@^1.2.1, html-entities@^1.3.1:
   resolved "https://registry.yarnpkg.com/html-entities/-/html-entities-1.4.0.tgz#cfbd1b01d2afaf9adca1b10ae7dffab98c71d2dc"
   integrity sha512-8nxjcBcd8wovbeKx7h3wTji4e6+rhaVuPNpMqwWgnHh+N9ToqsCs6XztWRBPQ+UtzsoMAdKZtUENoVzU/EMtZA==
 
+html-entities@^2.1.0:
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/html-entities/-/html-entities-2.3.2.tgz#760b404685cb1d794e4f4b744332e3b00dcfe488"
+  integrity sha512-c3Ab/url5ksaT0WyleslpBEthOzWhrjQbg75y7XUsfSzi3Dgzt0l8w5e7DylRn15MTlMMD58dTfzddNS2kcAjQ==
+
 html-escaper@^2.0.0:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/html-escaper/-/html-escaper-2.0.2.tgz#dfd60027da36a36dfcbe236262c00a5822681453"
@@ -8609,7 +8614,7 @@ lodash@4.17.19:
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
   integrity sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==
 
-"lodash@>=3.5 <5", lodash@^4.17.10, lodash@^4.17.11, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.20, lodash@^4.17.3, lodash@^4.17.4, lodash@^4.17.5:
+"lodash@>=3.5 <5", lodash@^4.17.10, lodash@^4.17.11, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.20, lodash@^4.17.21, lodash@^4.17.3, lodash@^4.17.5:
   version "4.17.21"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
@@ -11049,7 +11054,7 @@ promisify-any@2.0.1:
     co-bluebird "^1.1.0"
     is-generator "^1.0.2"
 
-prompt-sync@^4.1.5:
+prompt-sync@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/prompt-sync/-/prompt-sync-4.2.0.tgz#0198f73c5b70e3b03e4b9033a50540a7c9a1d7f4"
   integrity sha512-BuEzzc5zptP5LsgV5MZETjDaKSWfchl5U9Luiu8SKp7iZWD5tZalOxvNcZRwv+d2phNFr8xlbxmFNcRKfJOzJw==
@@ -11789,18 +11794,18 @@ repeating@^1.1.0:
   dependencies:
     is-finite "^1.0.0"
 
-request-in-session@elysion/request-in-session#v1.2.2:
-  version "1.2.2"
-  resolved "https://codeload.github.com/elysion/request-in-session/tar.gz/356437665c55b637a941de85e875fdabcbc2e2c8"
+request-in-session@elysion/request-in-session#v1.2.3:
+  version "1.2.3"
+  resolved "https://codeload.github.com/elysion/request-in-session/tar.gz/8464746a02ddf1b6332252fac614991d906dedfc"
   dependencies:
     bluebird "^3.7.2"
-    lodash "^4.17.4"
-    minimist "^1.2.0"
-    prompt-sync "^4.1.5"
+    lodash "^4.17.21"
+    minimist "^1.2.5"
+    prompt-sync "^4.2.0"
     request "^2.88.2"
-    request-promise "^4.2.5"
-    tough-cookie "^2.3.3"
-    tough-cookie-filestore "0.0.1"
+    request-promise "^4.2.6"
+    tough-cookie "^4.0.0"
+    tough-cookie-filestore "^0.0.1"
 
 request-promise-core@1.1.4:
   version "1.1.4"
@@ -11818,7 +11823,7 @@ request-promise-native@^1.0.8:
     stealthy-require "^1.1.1"
     tough-cookie "^2.3.3"
 
-request-promise@^4.2.5:
+request-promise@^4.2.6:
   version "4.2.6"
   resolved "https://registry.yarnpkg.com/request-promise/-/request-promise-4.2.6.tgz#7e7e5b9578630e6f598e3813c0f8eb342a27f0a2"
   integrity sha512-HCHI3DJJUakkOr8fNoCc73E5nU5bqITjOYFMDrKHYOXWXrgD/SBaC7LjwuPymUprRyuF06UK7hd/lMHkmUXglQ==
@@ -13362,14 +13367,14 @@ toposort@^1.0.0:
   resolved "https://registry.yarnpkg.com/toposort/-/toposort-1.0.7.tgz#2e68442d9f64ec720b8cc89e6443ac6caa950029"
   integrity sha1-LmhELZ9k7HILjMieZEOsbKqVACk=
 
-tough-cookie-filestore@0.0.1:
+tough-cookie-filestore@^0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/tough-cookie-filestore/-/tough-cookie-filestore-0.0.1.tgz#0bf2308ed293a50ba0733ed7d6289601485570b6"
   integrity sha1-C/IwjtKTpQugcz7X1iiWAUhVcLY=
   dependencies:
     tough-cookie "~0.12.1"
 
-tough-cookie@>=0.12.0:
+tough-cookie@>=0.12.0, tough-cookie@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/tough-cookie/-/tough-cookie-4.0.0.tgz#d822234eeca882f991f0f908824ad2622ddbece4"
   integrity sha512-tHdtEpQCMrc1YLrMaqXXcj6AxhYi/xgit6mZu1+EDWUn+qhUf8wMQoFIy9NXuq23zAwtcB0t/MjACGR18pcRbg==
