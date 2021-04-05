@@ -157,7 +157,7 @@ WHERE meta_account_user_id = ${userId}
 }
 
 module.exports.queryUserArtistFollows = async userId => {
-  return pg.queryAsync(
+  return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`SELECT artist_name AS name, artist_id AS id, array_agg(json_build_object('name', store_name, 'id', store_id)) AS stores
 FROM artist
@@ -173,7 +173,7 @@ ORDER BY 1
 }
 
 module.exports.queryUserLabelFollows = async userId => {
-  return pg.queryAsync(
+  return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`SELECT label_name AS name, label_id AS id, array_agg(json_build_object('name', store_name, 'id', store_id)) AS stores
 FROM label
