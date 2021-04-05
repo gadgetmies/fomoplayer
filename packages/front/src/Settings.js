@@ -11,7 +11,10 @@ class Settings extends Component {
       playlistUrl: '',
       artistFollows: [],
       labelFollows: [],
-      playlistFollows: []
+      playlistFollows: [],
+      updatingArtistFollows: false,
+      updatingLabelFollows: false,
+      updatingPlaylistFollows: false
     }
   }
 
@@ -70,8 +73,10 @@ class Settings extends Component {
                 onChange={e => this.setState({ playlistUrl: e.target.value })}
               />
               <button
+                disabled={this.state.updatingPlaylistFollows}
                 className="button button-push_button-small button-push_button-primary"
                 onClick={async () => {
+                  this.setState({ updatingPlaylistFollows: true })
                   await requestJSONwithCredentials({
                     path: '/me/follows/playlists',
                     method: 'POST',
@@ -79,6 +84,7 @@ class Settings extends Component {
                   })
                   this.setState({ playlistUrl: '' })
                   await this.updatePlaylistFollows()
+                  this.setState({ updatingPlaylistFollows: false })
                 }}
               >
                 Add
@@ -89,11 +95,14 @@ class Settings extends Component {
             {this.state.playlistFollows.map(playlist => (
               <li>
                 <button
+                  disabled={this.state.updatingPlaylistFollows}
                   key={playlist.id}
                   className="button pill pill-button"
                   onClick={async () => {
+                    this.setState({ updatingPlaylistFollows: true })
                     await requestWithCredentials({ path: `/me/follows/playlists/${playlist.id}`, method: 'DELETE' })
                     await this.updatePlaylistFollows()
+                    this.setState({ updatingPlaylistFollows: false })
                   }}
                 >
                   <span className="pill-button-contents">
@@ -118,8 +127,10 @@ class Settings extends Component {
                 onChange={e => this.setState({ artistUrl: e.target.value })}
               />
               <button
+                disabled={this.state.updatingArtistFollows}
                 className="button button-push_button-small button-push_button-primary"
                 onClick={async () => {
+                  this.setState({ updatingArtistFollows: true })
                   await requestJSONwithCredentials({
                     path: '/me/follows/artists',
                     method: 'POST',
@@ -127,6 +138,7 @@ class Settings extends Component {
                   })
                   this.setState({ artistUrl: '' })
                   await this.updateArtistFollows()
+                  this.setState({ updatingArtistFollows: false })
                 }}
               >
                 Add
@@ -137,10 +149,13 @@ class Settings extends Component {
             {this.state.artistFollows.map(artist => (
               <li>
                 <button
+                  disabled={this.state.updatingArtistFollows}
                   className="button pill pill-button"
                   onClick={async () => {
+                    this.setState({ updatingArtistFollows: true })
                     await requestWithCredentials({ path: `/me/follows/artists/${artist.id}`, method: 'DELETE' })
                     await this.updateArtistFollows()
+                    this.setState({ updatingArtistFollows: false })
                   }}
                 >
                   <span className="pill-button-contents">
@@ -166,8 +181,10 @@ class Settings extends Component {
                 onChange={e => this.setState({ labelUrl: e.target.value })}
               />
               <button
+                disabled={this.state.updatingLabelFollows}
                 className="button button-push_button-small button-push_button-primary"
                 onClick={async () => {
+                  this.setState({ updatingLabelFollows: true })
                   await requestJSONwithCredentials({
                     path: '/me/follows/labels',
                     method: 'POST',
@@ -175,6 +192,7 @@ class Settings extends Component {
                   })
                   this.setState({ labelUrl: '' })
                   await this.updateLabelFollows()
+                  this.setState({ updatingLabelFollows: false })
                 }}
               >
                 Add
@@ -185,10 +203,13 @@ class Settings extends Component {
             {this.state.labelFollows.map(label => (
               <li>
                 <button
+                  disabled={this.state.updatingLabelFollows}
                   className="button pill pill-button"
                   onClick={async () => {
+                    this.setState({ updatingLabelFollows: true })
                     await requestWithCredentials({ path: `/me/follows/labels/${label.id}`, method: 'DELETE' })
                     await this.updateLabelFollows()
+                    this.setState({ updatingLabelFollows: false })
                   }}
                 >
                   <span className="pill-button-contents">
@@ -197,8 +218,7 @@ class Settings extends Component {
                         <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`}></span>{' '}
                       </>
                     ))}
-                    {label.name}{' '}
-                    <FontAwesome name="close" />
+                    {label.name} <FontAwesome name="close" />
                   </span>
                 </button>
               </li>
