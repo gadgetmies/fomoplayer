@@ -22,13 +22,23 @@ WHERE track_id IN (
 `
   )
 
-module.exports.insertUserPlaylistFollow = async (userId, storeName, playlistId, playlistTitle) => {
+module.exports.insertUserPlaylistFollow = async (
+  userId,
+  storeName,
+  playlistId,
+  playlistTitle,
+  playlistType = undefined
+) => {
+  console.log('insert user playlist follow', playlistId, playlistTitle, playlistType)
   return using(pg.getTransaction(), async tx => {
     const res = await tx.queryRowsAsync(
       // language=PostgreSQL
       sql`SELECT playlist_id AS id
 FROM playlist
+         NATURAL JOIN store_playlist_type
 WHERE playlist_store_id = ${playlistId}
+  AND ((${playlistType}::TEXT IS NULL AND store_playlist_type_store_id IS NULL) OR
+       store_playlist_type_store_id = ${playlistType})
   AND store_id = (SELECT store_id FROM store WHERE store_name = ${storeName})
 `
     )
@@ -39,8 +49,13 @@ WHERE playlist_store_id = ${playlistId}
     } else {
       const r = await tx.queryRowsAsync(
         // language=PostgreSQL
-        sql`INSERT INTO playlist (playlist_store_id, playlist_title, store_id)
-    (SELECT ${playlistId}, ${playlistTitle}, store_id FROM store WHERE store_name = ${storeName})
+        sql`INSERT INTO playlist (playlist_store_id, playlist_title, store_playlist_type_id)
+    (SELECT ${playlistId}, ${playlistTitle}, store_playlist_type_id
+     FROM store
+              NATURAL JOIN store_playlist_type
+     WHERE store_name = ${storeName}
+       AND ((${playlistType}::TEXT IS NULL AND store_playlist_type_store_id IS NULL) OR
+            store_playlist_type_store_id = ${playlistType}))
 RETURNING playlist_id AS id`
       )
 

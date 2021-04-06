@@ -21,6 +21,7 @@ module.exports.getPreviewUrl = (id, format) =>
   getSpotifyStoreDbId().then(spotifyStoreId => queryPreviewUrl(id, format, spotifyStoreId))
 
 module.exports.addPlaylistFollow = async (userId, playlistUrl) => {
+  // TODO: Use regex from db
   const spotifyPlaylistId = playlistUrl.match(/^https:\/\/open.spotify.com\/playlist\/([0-9A-Za-z]*)/)[1]
   if (!spotifyPlaylistId) {
     throw new BadRequest('Invalid Spotify URL')
@@ -37,4 +38,12 @@ module.exports.addPlaylistFollow = async (userId, playlistUrl) => {
   }
 
   return await insertUserPlaylistFollow(userId, 'Spotify', spotifyPlaylistId, `${author}: ${playlistTitle}`)
+}
+
+module.exports.getArtistName = async url => {
+  // TODO: get regex from db
+  const artistId = url.match('^https:\/\/open\.spotify\.com\/artist\/([0-9A-Za-z]+)')[1]
+  const { name } = await spotifyApi.getArtist(artistId)
+  console.log(name)
+  return name
 }

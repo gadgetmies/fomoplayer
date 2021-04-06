@@ -4,6 +4,7 @@ const sql = require('sql-template-strings')
 module.exports.queryAlbumUrl = (storeId, storeTrackId) =>
   pg
     .queryRowsAsync(
+      // language=PostgreSQL
       sql`
       SELECT store__release_url
       FROM store__release
@@ -11,7 +12,7 @@ module.exports.queryAlbumUrl = (storeId, storeTrackId) =>
       NATURAL JOIN release__track
       NATURAL JOIN store__track
       WHERE
-        store__track_id = ${storeTrackId} AND
+        store__track_store_id = ${storeTrackId}::TEXT AND
         store_id = ${storeId}
     `
     )
@@ -20,6 +21,7 @@ module.exports.queryAlbumUrl = (storeId, storeTrackId) =>
 module.exports.queryTrackStoreId = trackId =>
   pg
     .queryRowsAsync(
+      // language=PostgreSQL
       sql`
   SELECT store__track_store_id FROM store__track WHERE store__track_id = ${trackId}
   `

@@ -1,33 +1,81 @@
 const R = require('ramda')
 const BPromise = require('bluebird')
-const { queryStoreId } = require('../../shared/db/store.js')
-const { getAlbumAsync } = require('./bandcamp-api.js')
-
+const { insertUserPlaylistFollow } = require('../../shared/db/user.js')
+const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
 const {
-  queryAlbumUrl,
-  queryTrackStoreId
-} = require('./db.js')
+  getReleaseAsync,
+  getTagAsync,
+  getArtistAsync,
+  getLabelAsync,
+  getPageDetailsAsync
+} = require('./bandcamp-api.js')
+
+const { queryAlbumUrl, queryTrackStoreId } = require('./db.js')
 
 let storeDbId = null
+const storeName = 'Bandcamp'
 
 const getStoreDbId = () => {
   if (storeDbId) {
     return BPromise.resolve(storeDbId)
   } else {
-    return queryStoreId('Bandcamp').then(store_id => {
+    return queryStoreId(storeName).then(store_id => {
       storeDbId = store_id
       return storeDbId
     })
   }
 }
 
-const getAlbum = (module.exports.getAlbum = (username, itemUrl) => getAlbum(itemUrl))
-
 // TODO: Update to use store__track_preview
 module.exports.getPreviewUrl = async (id, format) => {
   const storeId = await getStoreDbId()
   const albumUrl = await queryAlbumUrl(storeId, id)
-  const albumInfo = await getAlbumAsync(albumUrl)
-  const trackStoreId = await queryTrackStoreId(id)
-  return await albumInfo.trackinfo.find(R.propEq('track_id', parseInt(trackStoreId, 10))).file['mp3-128']
+  const albumInfo = await getReleaseAsync(albumUrl)
+  return await albumInfo.trackinfo.find(R.propEq('track_id', parseInt(id, 10))).file['mp3-128']
 }
+
+const getTagFromUrl = function(playlistUrl) {
+  const match = playlistUrl.match(/^https:\/\/bandcamp.com\/tag\/([^/?]+)/)
+  return match[1]
+}
+
+module.exports.addPlaylistFollow = async (userId, playlistUrl, playlistType) => {
+  let id
+  let name
+  if (playlistType === 'tag') {
+    // TODO: fetch regex from db
+    const tag = getTagFromUrl(playlistUrl)
+    if (!tag) {
+      throw new BadRequest('Invalid Bandcamp playlist URL')
+    }
+
+    const res = await getTagAsync(tag)
+    id = res.id
+    name = res.name
+
+    if (!id || !name) {
+      throw new BadRequest('Fetching playlist details failed')
+    }
+  }
+
+  return await insertUserPlaylistFollow(userId, 'Bandcamp', id, name, playlistType)
+}
+
+module.exports.getArtistName = async url => {
+  const { name } = await getArtistAsync(url)
+  console.log(name)
+  return name
+}
+
+module.exports.getLabelName = async url => {
+  const { name } = await getLabelAsync(url)
+  console.log(name)
+  return name
+}
+
+const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
+  if (type === 'tag') {
+    const res = await getTagAsync(getTagFromUrl(url))
+    return res.name
+  }
+})

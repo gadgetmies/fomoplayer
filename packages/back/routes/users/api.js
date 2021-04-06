@@ -17,7 +17,7 @@ const {
   setTrackHeard
 } = require('./logic')
 
-const { queryStores } = require('../shared/db/store.js')
+const { queryStoreRegexes } = require('../shared/db/store.js')
 
 const router = require('express').Router()
 const { apiURL } = require('../../config')
@@ -82,12 +82,12 @@ router.post('/purchased', tracksHandler('purchased'))
 router.post('/follows/artists', async ({ user: { id: userId }, body, headers }, res, next) => {
   try {
     const storeUrl = headers['x-multi-store-player-store']
-    const stores = await queryStores()
+    const storesRegexes = await queryStoreRegexes()
 
     let addedArtists = []
     for (const artist of body) {
       let artistDetails = { url: (storeUrl !== undefined ? storeUrl : '') + artist.url }
-      const matchingStore = stores.find(({ url, artistRegex }) => {
+      const matchingStore = storesRegexes.find(({ url, regex: { artist: artistRegex } }) => {
         const urlMatch = artistDetails.url.match(artistRegex)
         if (urlMatch !== null) {
           artistDetails.id = urlMatch[1]
@@ -120,12 +120,12 @@ router.post('/follows/artists', async ({ user: { id: userId }, body, headers }, 
 router.post('/follows/labels', async ({ user: { id: userId }, body, headers }, res, next) => {
   try {
     const storeUrl = headers['x-multi-store-player-store']
-    const stores = await queryStores()
+    const storeRegexes = await queryStoreRegexes()
 
     let addedLabels = []
     for (const label of body) {
       let labelDetails = { url: (storeUrl !== undefined ? storeUrl : '') + label.url }
-      const matchingStore = stores.find(({ url, labelRegex }) => {
+      const matchingStore = storeRegexes.find(({ url, regex: { label: labelRegex } }) => {
         const urlMatch = labelDetails.url.match(labelRegex)
         if (urlMatch !== null) {
           labelDetails.id = urlMatch[1]
@@ -199,11 +199,22 @@ router.delete('/follows/playlists/:id', async ({ params: { id }, user: { id: aut
 
 router.post('/follows/playlists', async ({ user: { id: userId }, body }, res, next) => {
   try {
-    const stores = await queryStores()
+    const storeRegexes = await queryStoreRegexes()
 
     let addedPlaylists = []
     for (const { url: playlistUrl } of body) {
-      const matchingStore = stores.find(({ playlistRegex }) => playlistUrl.match(playlistRegex))
+      let matchingStore
+      let matchingRegex
+      for (const store of storeRegexes) {
+        matchingRegex = store.regex.playlist.find(({ regex }) => {
+          return playlistUrl.match(regex) !== null
+        })
+
+        if (matchingRegex !== undefined) {
+          matchingStore = store
+          break
+        }
+      }
 
       if (matchingStore === undefined) {
         return next(new BadRequest('Invalid playlist URL'))
@@ -211,7 +222,11 @@ router.post('/follows/playlists', async ({ user: { id: userId }, body }, res, ne
 
       const { name: storeName } = matchingStore
       const storeModule = storeModules[storeName]
-      const { playlistId, followId } = await storeModule.logic.addPlaylistFollow(userId, playlistUrl)
+      const { playlistId, followId } = await storeModule.logic.addPlaylistFollow(
+        userId,
+        playlistUrl,
+        matchingRegex.typeId
+      )
       addedPlaylists.push({
         playlist: `${apiURL}/playlists/${playlistId}`,
         follow: `${apiURL}/users/${userId}/follows/playlists/${followId}`

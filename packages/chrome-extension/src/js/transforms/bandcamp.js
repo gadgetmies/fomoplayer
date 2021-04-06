@@ -1,9 +1,16 @@
-import * as L from 'partial.lenses'
-import * as R from 'ramda'
+const L = require('partial.lenses')
+const R = require('ramda')
 
 const durationLens = ['duration', L.multiply(1000), parseInt]
 
-export const bandcampReleasesTransform = L.collect([
+module.exports.bandcampTagTracksTransform = L.collect([
+  L.elems,
+  L.pick({
+    id: 'item_id'
+  })
+])
+
+module.exports.bandcampReleasesTransform = L.collect([
   L.elems,
   L.choose(release => [
     'trackinfo',
@@ -15,6 +22,7 @@ export const bandcampReleasesTransform = L.collect([
       artists: L.partsOf(
         L.pick({
           name: R.always(release.artist),
+          id: R.always(release.artist), // TODO: is there any other way of differentiating the artists?
           role: R.always('author')
         })
       ),
@@ -34,7 +42,7 @@ export const bandcampReleasesTransform = L.collect([
       }),
       previews: L.partsOf(
         L.pick({
-          url: ['file', 'mp3-128'],
+          // url: ['file', 'mp3-128'], // TODO: do not include the url because it will be fetched separately?
           format: R.always('mp3'),
           start_ms: R.always(0),
           end_ms: durationLens

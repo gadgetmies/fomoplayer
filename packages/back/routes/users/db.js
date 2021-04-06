@@ -191,9 +191,10 @@ ORDER BY 1
 module.exports.queryUserPlaylistFollows = async userId => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT playlist_title AS title, playlist_id AS id, store_name AS "storeName", store_id as "storeId"
+    sql`SELECT concat_ws(': ', store_playlist_type_label, playlist_title) AS title, playlist_id AS id, store_name AS "storeName", store_id as "storeId"
 FROM playlist
          NATURAL JOIN user__playlist_watch
+         NATURAL JOIN store_playlist_type
          NATURAL JOIN store
 WHERE meta_account_user_id = ${userId}
 ORDER BY 1

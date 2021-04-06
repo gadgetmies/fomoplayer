@@ -14,8 +14,8 @@ const fetchArtists = async function() {
        array_agg(meta_account_user_id) AS users
 FROM store__artist_watch
          NATURAL JOIN store__artist
-         NATURAL JOIN store
          NATURAL JOIN store__artist_watch__user
+         NATURAL JOIN store
 WHERE store_name = 'Beatport'
   AND (store__artist_watch_last_update IS NULL OR store__artist_watch_last_update + interval '6 hours' < NOW())
 GROUP BY 1, store__artist_watch_last_update
@@ -98,11 +98,12 @@ const fetchPlaylists = async function() {
        array_agg(meta_account_user_id) AS users
 FROM user__playlist_watch
          NATURAL JOIN playlist
+         NATURAL JOIN store_playlist_type
          NATURAL JOIN store
 WHERE store_name = 'Beatport'
-  AND (user__playlist_watch_last_update IS NULL OR user__playlist_watch_last_update + interval '6 hours' < NOW())
-GROUP BY 1, user__playlist_watch_last_update
-ORDER BY user__playlist_watch_last_update DESC NULLS FIRST
+  AND (playlist_last_update IS NULL OR playlist_last_update + interval '6 hours' < NOW())
+GROUP BY 1, playlist_last_update
+ORDER BY playlist_last_update DESC NULLS FIRST
 LIMIT 50
 `
   )
@@ -122,9 +123,9 @@ LIMIT 50
 
       await pg.queryAsync(
         // language=PostgreSQL
-        sql`UPDATE user__playlist_watch
-SET user__playlist_watch_last_update = NOW()
-WHERE playlist_id = (SELECT playlist_id FROM playlist WHERE playlist_store_id = ${url})`
+        sql`UPDATE playlist
+SET playlist_last_update = NOW()
+WHERE playlist_store_id = ${url}`
       )
     } catch (e) {
       console.error(`Failed to fetch tracks for label with Beatport url ${url}`, e)

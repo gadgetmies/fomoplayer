@@ -12,16 +12,25 @@ module.exports.queryStoreId = storeName =>
     )
     .then(([{ store_id }]) => store_id)
 
-module.exports.queryStores = async () =>
+module.exports.queryStoreRegexes = async () =>
   pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT store_id             AS id,
-       LOWER(store_name)    AS name,
-       store_url            AS url,
-       store_artist_regex   AS "artistRegex",
-       store_label_regex    AS "labelRegex",
-       store_playlist_regex AS "playlistRegex"
-FROM store`
+    sql`SELECT store_id          AS id,
+       LOWER(store_name) AS name,
+       store_url         AS url,
+       json_build_object(
+               'artist', store_artist_regex,
+               'label', store_label_regex,
+               'playlist', json_agg(
+                       json_build_object(
+                               'typeId', store_playlist_type_store_id,
+                               'regex', store_playlist_type_regex
+                           )
+                   )
+           )             AS regex
+FROM store
+         NATURAL JOIN store_playlist_type
+GROUP BY 1, 2, 3, store_artist_regex, store_label_regex`
   )
 
 const getFieldFromResult = field => R.path([0, field])
