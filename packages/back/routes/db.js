@@ -33,10 +33,10 @@ module.exports.searchForTracks = query =>
                             natural left join track__label
                             natural left join label
                    group by track_id, track_title, track_version
-                   having to_tsvector(track_title || ' ' ||
+                   having to_tsvector('simple', unaccent(track_title || ' ' ||
                                       coalesce(track_version, '') || ' ' ||
                                       string_agg(artist_name, ' ') || ' ' ||
-                                      string_agg(coalesce(label_name, ''), ' ')) @@
-                          to_tsquery(${(query.split(' ').join(' & '))})) as tracks)
+                                      string_agg(coalesce(label_name, ''), ' '))) @@
+                          websearch_to_tsquery('simple', unaccent(${query}))) as tracks)
         , ${apiURL})`
   )
