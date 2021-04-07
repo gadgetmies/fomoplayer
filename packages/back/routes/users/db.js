@@ -285,7 +285,7 @@ module.exports.queryUserTracks = username =>
                       ) AS date_added_multiplier,
                       (SELECT user_track_score_weight_multiplier
                        FROM user_score_weights
-                       WHERE user_track_score_weight_code = 'date_released'
+                       WHERE user_track_score_weight_code = 'date_published'
                       ) AS date_released_multiplier
                FROM new_tracks
                         NATURAL JOIN label_scores
