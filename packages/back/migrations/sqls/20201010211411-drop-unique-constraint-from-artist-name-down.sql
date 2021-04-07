@@ -1,2 +1,3 @@
-ALTER TABLE artist
-    ADD CONSTRAINT artist_artist_name_key UNIQUE (artist_name);
+-- TODO: Need to merge artists before adding the constraint
+-- ALTER TABLE artist
+--     ADD CONSTRAINT artist_artist_name_key UNIQUE (artist_name);
