@@ -1,8 +1,4 @@
 const router = require('express').Router()
-const bodyParser = require('body-parser')
-const { initWithSessionAsync } = require('./bandcamp-api.js')
-const R = require('ramda')
-const { log, error } = require('./logger')
 
 const {
   getPreviewUrl,
