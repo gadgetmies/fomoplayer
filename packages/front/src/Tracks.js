@@ -218,7 +218,12 @@ class Track extends Component {
           {R.intersperse(
             ' ',
             this.props.stores.map(store => (
-              <ExternalLink showIcon={false} href={store.url} title={`Open in ${store.name}`} className={'link'}>
+              <ExternalLink
+                showIcon={false}
+                href={store.url || store.release.url}
+                title={`Open in ${store.name}`}
+                className={'link'}
+              >
                 <StoreIcon code={store.code} />
               </ExternalLink>
             ))
