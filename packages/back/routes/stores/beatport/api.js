@@ -39,12 +39,6 @@ router.get('/', ({ user }, res, next) =>
     .catch(next)
 )
 
-router.get('/tracks/:id/preview.:format', ({ params: { id, format } }, res, next) =>
-  getPreviewUrl(id, format)
-    .then(url => res.send(url))
-    .catch(next)
-)
-
 router.get('/tracks', ({ user, query: { page } }, res, next) =>
   getSessionForRequest(user)
     .getMyBeatportTracksAsync(page)

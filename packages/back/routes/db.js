@@ -3,20 +3,25 @@ const R = require('ramda')
 const pg = require('../db/pg.js')
 const { apiURL } = require('../config')
 
-module.exports.getLongestPreviewForTrack = (id, format, skip) =>
+module.exports.queryLongestPreviewForTrack = (id, format, skip) =>
   pg
     .queryRowsAsync(
       // language=PostgreSQL
-      sql`
-    SELECT store__track_id AS "storeTrackId" , lower(store_name) AS "storeCode"
-    FROM
-      store__track_preview NATURAL JOIN
-      store__track  NATURAL JOIN
-      store
-    WHERE track_id = ${id} AND store__track_preview_format = ${format}
-    ORDER BY store__track_preview_end_ms - store__track_preview_start_ms DESC NULLS LAST
-    OFFSET ${skip}
-    LIMIT 1;
+      sql`SELECT
+  store__track_preview_url AS url
+, store__track_preview_id  AS "previewId"
+FROM
+  store__track_preview
+  NATURAL JOIN
+    store__track
+  NATURAL JOIN
+    store
+WHERE
+    track_id = ${id}
+AND store__track_preview_format = ${format}
+ORDER BY
+  store__track_preview_end_ms - store__track_preview_start_ms DESC NULLS LAST
+OFFSET ${skip} LIMIT 1;
     `
     )
     .then(R.head)

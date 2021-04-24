@@ -81,6 +81,8 @@ router.post('/purchased', tracksHandler('purchased'))
 
 router.post('/follows/artists', async ({ user: { id: userId }, body, headers }, res, next) => {
   try {
+    // TODO: try first to find from db
+
     const storeUrl = headers['x-multi-store-player-store']
     const storesRegexes = await queryStoreRegexes()
 
@@ -119,6 +121,8 @@ router.post('/follows/artists', async ({ user: { id: userId }, body, headers }, 
 
 router.post('/follows/labels', async ({ user: { id: userId }, body, headers }, res, next) => {
   try {
+    // TODO: try first to find from db
+
     const storeUrl = headers['x-multi-store-player-store']
     const storeRegexes = await queryStoreRegexes()
 
@@ -199,6 +203,8 @@ router.delete('/follows/playlists/:id', async ({ params: { id }, user: { id: aut
 
 router.post('/follows/playlists', async ({ user: { id: userId }, body }, res, next) => {
   try {
+    // TODO: try first to find from db
+
     const storeRegexes = await queryStoreRegexes()
 
     let addedPlaylists = []

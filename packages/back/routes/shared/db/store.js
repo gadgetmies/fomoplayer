@@ -126,7 +126,7 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist) => {
 SELECT artist_id
 FROM store__artist
 NATURAL JOIN store
-WHERE store_url = ${storeUrl} AND (store__artist_store_id = ${artist.id} OR store__artist_url = ${artist.url})
+WHERE store_url = ${storeUrl} AND (store__artist_store_id = ${artist.id} OR store__artist_url = ${artist.url}) -- TODO: add name matching for bandcamp support?
 `
     )
     .then(getArtistIdFromResult)
@@ -256,7 +256,6 @@ WHERE store_id = ${storeId} AND
     )
     .then(getFieldFromResult('store__track_id'))
 
-  // TODO: Make waveforms preview independent? (to make them available for tracks from stores without waveforms)
   for (const preview of track.previews) {
     await tx.queryAsync(sql`
 INSERT INTO store__track_preview

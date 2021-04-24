@@ -1,14 +1,17 @@
 const sql = require('sql-template-strings')
 const pg = require('../../../db/pg.js')
 
-module.exports.queryPreviewUrl = (trackStoreId, format, storeId) =>
+module.exports.queryPreviewDetails = previewId =>
   pg
     .queryRowsAsync(
       //language=PostgreSQL
       sql`
-  SELECT store__track_preview_url
+  SELECT store__track_preview_url AS url,
+    store__track_preview_start_ms AS start_ms,
+    store__track_preview_end_ms AS end_ms,
+    store__track_store_id AS store_track_id
   FROM store__track_preview NATURAL JOIN store__track
-  WHERE store__track_store_id = ${trackStoreId} AND store__track_preview_format = ${format} AND store_id = ${storeId}
+  WHERE store__track_preview_id = ${previewId}
   `
     )
-    .then(([{ store__track_preview_url }]) => store__track_preview_url)
+    .then(([details]) => details)

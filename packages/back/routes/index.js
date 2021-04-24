@@ -1,18 +1,13 @@
 const bodyParser = require('body-parser')
 
 const router = require('express-promise-router')()
-const { getLongestPreviewForTrack, searchForTracks, getFollowDetails } = require('./logic.js')
+const { getPreviewForTrack, searchForTracks, getFollowDetails } = require('./logic.js')
 const { Unauthorized } = require('./shared/httpErrors')
 
 router.use(bodyParser.json())
 
-router.get('/tracks/:id/preview.:format', async (req, res) => {
-  const {
-    params: { id, format, offset }
-  } = req
-  const { storeCode, storeTrackId } = await getLongestPreviewForTrack(id, format, offset)
-  const { getPreviewUrl } = require(`./stores/${storeCode}/logic.js`)
-  res.redirect(await getPreviewUrl(storeTrackId, format))
+router.get('/tracks/:id/preview.:format', async ({ params: { id, format, offset } }, res) => {
+  res.redirect(await getPreviewForTrack(id, format, offset))
 })
 
 router.get('/tracks/:id', ({ user: { username }, params: { id } }, res) => {

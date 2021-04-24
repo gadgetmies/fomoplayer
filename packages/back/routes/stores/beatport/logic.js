@@ -3,7 +3,6 @@ const BPromise = require('bluebird')
 const bpApi = require('bp-api')
 
 const pg = require('../../../db/pg.js')
-const { queryPreviewUrl } = require('../../shared/db/preview')
 const { BadRequest } = require('../../shared/httpErrors')
 const { insertUserPlaylistFollow } = require('../../shared/db/user')
 const { removeIgnoredTracksFromUser } = require('../../shared/db/user.js')
@@ -135,9 +134,6 @@ const refreshDownloadedTracks = (username, firstPage, lastPage) =>
             return []
           }
         })
-
-module.exports.getPreviewUrl = (id, format) =>
-  getBeatportStoreDbId().then(bpStoreId => queryPreviewUrl(id, format, bpStoreId))
 
 const refreshUserTracks = (module.exports.refreshUserTracks = (username, firstPage = 1, lastPage = 20) => {
   log(`Refreshing new tracks from page ${lastPage} of ${username}'s My Beatport`)

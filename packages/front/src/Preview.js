@@ -16,6 +16,7 @@ class Preview extends Component {
     super(props)
 
     this.state = { playing: false, position: 0, waveform: undefined, totalDuration: undefined }
+    this.audioContext = new AudioContext()
 
     this.setVolume = this.setVolume.bind(this)
   }
@@ -35,11 +36,21 @@ class Preview extends Component {
   async componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
     if (this.props.currentTrack !== nextTrack) {
       const preview = this.getPreview(nextTrack)
-      const previewUrl = await (await requestWithCredentials({ url: preview.url })).text()
+      let previewUrl = preview.url
+      if (previewUrl === null) {
+        const details = await (
+          await requestWithCredentials({ path: `/stores/${preview.store}/previews/${preview.id}` })
+        ).json()
+        previewUrl = details.url
+      }
       this.setState({ position: 0, waveform: undefined, totalDuration: undefined, previewUrl })
       const waveform = this.getWaveform(nextTrack)
       if (!waveform) {
-        return this.updateWaveform(previewUrl)
+        try {
+          return await this.updateWaveform(previewUrl)
+        } catch (e) {
+          console.error(e)
+        }
       }
     }
 
@@ -68,8 +79,8 @@ class Preview extends Component {
       waveformHeight: 170,
       waveformColor: '#cbcbcb'
     })
-    const audioContext = new AudioContext()
-    const audioBuffer = await audioContext.decodeAudioData(fileArrayBuffer)
+
+    const audioBuffer = await this.audioContext.decodeAudioData(fileArrayBuffer)
     this.setState({ waveform: pngWaveformURL, totalDuration: audioBuffer.duration * 1000 })
   }
 

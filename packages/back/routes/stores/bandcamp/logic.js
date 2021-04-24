@@ -1,5 +1,6 @@
 const R = require('ramda')
 const BPromise = require('bluebird')
+const { queryPreviewDetails } = require('../../shared/db/preview.js')
 const { insertUserPlaylistFollow } = require('../../shared/db/user.js')
 const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
 const {
@@ -26,12 +27,17 @@ const getStoreDbId = () => {
   }
 }
 
-// TODO: Update to use store__track_preview
-module.exports.getPreviewUrl = async (id, format) => {
+module.exports.getPreviewDetails = async (previewId) => {
   const storeId = await getStoreDbId()
-  const albumUrl = await queryAlbumUrl(storeId, id)
+  const details = await queryPreviewDetails(previewId)
+  const storeTrackId = details.store_track_id
+  const albumUrl = await queryAlbumUrl(storeId, storeTrackId)
   const albumInfo = await getReleaseAsync(albumUrl)
-  return await albumInfo.trackinfo.find(R.propEq('track_id', parseInt(id, 10))).file['mp3-128']
+  const url = await albumInfo.trackinfo.find(R.propEq('track_id', parseInt(storeTrackId, 10))).file['mp3-128']
+  return {
+    ...details,
+    url: url
+  }
 }
 
 const getTagFromUrl = function(playlistUrl) {

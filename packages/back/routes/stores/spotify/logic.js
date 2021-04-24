@@ -2,7 +2,6 @@ const BPromise = require('bluebird')
 const { BadRequest } = require('../../shared/httpErrors')
 const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
 const { insertUserPlaylistFollow } = require('../../shared/db/user.js')
-const { queryPreviewUrl } = require('../../shared/db/preview.js')
 const spotifyApi = require('../../shared/spotify.js')
 
 const storeName = 'Spotify'
@@ -18,9 +17,6 @@ const getSpotifyStoreDbId = () => {
     })
   }
 }
-
-module.exports.getPreviewUrl = (id, format) =>
-  getSpotifyStoreDbId().then(spotifyStoreId => queryPreviewUrl(id, format, spotifyStoreId))
 
 const getPlaylistDetails = async playlistId => {
   const details = await spotifyApi.getPlaylist(playlistId)
