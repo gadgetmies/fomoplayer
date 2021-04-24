@@ -29,7 +29,6 @@ module.exports.insertUserPlaylistFollow = async (
   playlistTitle,
   playlistType = undefined
 ) => {
-  console.log('insert user playlist follow', playlistId, playlistTitle, playlistType)
   return using(pg.getTransaction(), async tx => {
     const res = await tx.queryRowsAsync(
       // language=PostgreSQL

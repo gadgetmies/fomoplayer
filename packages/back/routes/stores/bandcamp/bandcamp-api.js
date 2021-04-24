@@ -50,9 +50,7 @@ const getPageTitle = pageSource => {
 
 const getName = dom => {
   const siteNameElement = dom.window.document.querySelector('[property="og:site_name"]')
-  console.log(JSON.stringify({ siteNameElement }, null, 2))
   const nameFromTitle = dom.window.document.title.split(' | ')[1]
-  console.log(JSON.stringify({ nameFromTitle }, null, 2))
   return (siteNameElement !== null && siteNameElement.getAttribute('content')) || nameFromTitle
 }
 
@@ -106,13 +104,9 @@ const getTagReleases = (tag, callback) => {
 
 const getPageDetails = (url, callback) => {
   return getPageSource(url).then(res => {
-    console.log(JSON.stringify({ res: res.substring(0, 100) }, null, 2))
     const dom = new JSDOM(res)
-    console.log('foo')
     const pageTitle = getName(dom)
-    console.log('bar')
     const artistsLink = dom.window.document.querySelector('[href="/artists"]')
-    console.log(JSON.stringify({ artistsLink }, null, 2))
     return callback(null, {
       id: getIdFromUrl,
       name: pageTitle,
