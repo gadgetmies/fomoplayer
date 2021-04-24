@@ -33,24 +33,27 @@ class Preview extends Component {
     return this.refs['player0']
   }
 
-  async componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
+  updateTrack(track, previewUrl) {
+    this.setState({ previewUrl })
+    const waveform = this.getWaveform(track)
+    if (!waveform) {
+      this.updateWaveform(previewUrl).catch(e => {
+        console.error(e)
+      })
+    }
+  }
+
+  componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
     if (this.props.currentTrack !== nextTrack) {
       const preview = this.getPreview(nextTrack)
-      let previewUrl = preview.url
-      if (previewUrl === null) {
-        const details = await (
-          await requestWithCredentials({ path: `/stores/${preview.store}/previews/${preview.id}` })
-        ).json()
-        previewUrl = details.url
-      }
-      this.setState({ position: 0, waveform: undefined, totalDuration: undefined, previewUrl })
-      const waveform = this.getWaveform(nextTrack)
-      if (!waveform) {
-        try {
-          return await this.updateWaveform(previewUrl)
-        } catch (e) {
-          console.error(e)
-        }
+      this.setState({ position: 0, waveform: undefined, totalDuration: undefined })
+      if (preview.url === null) {
+        this.setState({ previewUrl: '' })
+        requestWithCredentials({ path: `/stores/${preview.store}/previews/${preview.id}` })
+          .then(res => res.json())
+          .then(({ url }) => this.updateTrack(nextTrack, url))
+      } else {
+        this.updateTrack(nextTrack, preview.url)
       }
     }
 
