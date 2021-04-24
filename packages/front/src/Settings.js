@@ -1,20 +1,22 @@
 import FontAwesome from 'react-fontawesome'
 import React, { Component } from 'react'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
+import SpinnerButton from './SpinnerButton'
+import Spinner from './Spinner'
 
 class Settings extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      artistUrl: '',
-      labelUrl: '',
-      playlistUrl: '',
+      followUrl: '',
       artistFollows: [],
       labelFollows: [],
       playlistFollows: [],
-      updatingArtistFollows: false,
-      updatingLabelFollows: false,
-      updatingPlaylistFollows: false
+      updatingFollows: false,
+      updatingFollowDetails: false,
+      followDetailsDebounce: undefined,
+      followDetails: undefined,
+      followDetailsUpdateAborted: false
     }
   }
 
@@ -62,89 +64,112 @@ class Settings extends Component {
         <div className="page-container">
           <h2>Settings</h2>
           <h3>Following</h3>
-          <h4>Playlists ({this.state.playlistFollows.length})</h4>
           <label>
-            Add playlists to follow:
-            <br />
+            Add URL to follow:
             <div className="input-layout">
               <input
                 className="text-input text-input-small"
-                value={this.state.playlistUrl}
-                onChange={e => this.setState({ playlistUrl: e.target.value })}
-              />
-              <button
-                disabled={this.state.updatingPlaylistFollows}
-                className="button button-push_button-small button-push_button-primary"
-                onClick={async () => {
-                  this.setState({ updatingPlaylistFollows: true })
-                  await requestJSONwithCredentials({
-                    path: '/me/follows/playlists',
-                    method: 'POST',
-                    body: [{ url: this.state.playlistUrl }]
-                  })
-                  this.setState({ playlistUrl: '' })
-                  await this.updatePlaylistFollows()
-                  this.setState({ updatingPlaylistFollows: false })
+                disabled={this.state.updatingFollows}
+                value={this.state.followUrl}
+                onChange={e => {
+                  // TODO: replace aborted and debounce with flatmapLatest
+                  this.setState({ followUrl: e.target.value, followDetails: undefined, updatingFollowDetails: false })
+                  if (this.state.followDetailsDebounce) {
+                    clearTimeout(this.state.followDetailsDebounce)
+                    this.setState({
+                      followDetailsDebounce: undefined,
+                      followDetailsUpdateAborted: this.state.followDetailsDebounce !== undefined
+                    })
+                  }
+
+                  if (e.target.value === '') {
+                    return
+                  }
+                  this.setState({ updatingFollowDetails: true, followDetailsUpdateAborted: false })
+                  const timeout = setTimeout(async () => {
+                    try {
+                      const results = await (
+                        await requestWithCredentials({ path: `/followDetails?url=${this.state.followUrl}` })
+                      ).json()
+                      if (this.state.followDetailsUpdateAborted) return
+                      this.setState({ followDetails: results, updatingFollowDetails: false })
+                    } catch (e) {
+                      console.error('Error updating follow details', e)
+                      clearTimeout(this.state.followDetailsDebounce)
+                      this.setState({
+                        updatingFollowDetails: false,
+                        followDetailsDebounce: undefined
+                      })
+                    }
+                  }, 500)
+                  this.setState({ followDetailsDebounce: timeout })
                 }}
-              >
-                Add
-              </button>
+              />
             </div>
+            <br />
+            {this.state.updatingFollowDetails ? (
+              <Spinner size="large" />
+            ) : this.state.followDetails === undefined ? null : (
+              <div>
+                <SpinnerButton
+                  className="button button-push_button-small button-push_button-primary"
+                  disabled={this.state.updatingFollows || this.state.followDetails === undefined}
+                  loading={this.state.updatingFollows}
+                  onClick={async () => {
+                    this.setState({ updatingFollows: true })
+                    await requestJSONwithCredentials({
+                      path: `/me/follows/${this.state.followDetails.type}s`,
+                      method: 'POST',
+                      body: [{ url: this.state.followUrl }]
+                    })
+                    this.setState({ followUrl: '', followDetails: undefined })
+                    await this.updateFollows()
+                    this.setState({ updatingFollows: false })
+                  }}
+                >
+                  <FontAwesome name="plus" /> Add {this.state.followDetails.type.replace(/^\w/, c => c.toUpperCase())}:{' '}
+                  <span class="pill" style={{ backgroundColor: 'white', color: 'black' }}>
+                    <span
+                      aria-hidden="true"
+                      className={`store-icon store-icon-${this.state.followDetails.store}`}
+                    ></span>{' '}
+                    {this.state.followDetails.label}
+                  </span>
+                </SpinnerButton>
+              </div>
+            )}
           </label>
+          <h4>Playlists ({this.state.playlistFollows.length})</h4>
           <ul className="no-style-list follow-list">
             {this.state.playlistFollows.map(playlist => (
               <li>
-                <button
+                <span
                   disabled={this.state.updatingPlaylistFollows}
                   key={playlist.id}
                   className="button pill pill-button"
-                  onClick={async () => {
-                    this.setState({ updatingPlaylistFollows: true })
-                    await requestWithCredentials({ path: `/me/follows/playlists/${playlist.id}`, method: 'DELETE' })
-                    await this.updatePlaylistFollows()
-                    this.setState({ updatingPlaylistFollows: false })
-                  }}
                 >
                   <span className="pill-button-contents">
                     <span
                       aria-hidden="true"
                       className={`store-icon store-icon-${playlist.storeName.toLowerCase()}`}
                     ></span>{' '}
-                    {playlist.title} <FontAwesome name="close" />
+                    {playlist.title}{' '}
+                    <button
+                      onClick={async () => {
+                        this.setState({ updatingPlaylistFollows: true })
+                        await requestWithCredentials({ path: `/me/follows/playlists/${playlist.id}`, method: 'DELETE' })
+                        await this.updatePlaylistFollows()
+                        this.setState({ updatingPlaylistFollows: false })
+                      }}
+                    >
+                      <FontAwesome name="close" />
+                    </button>
                   </span>
-                </button>
+                </span>
               </li>
             ))}
           </ul>
           <h4>Artists ({this.state.artistFollows.length})</h4>
-          <label>
-            Add artists to follow:
-            <br />
-            <div className="input-layout">
-              <input
-                className="text-input text-input-small"
-                value={this.state.artistUrl}
-                onChange={e => this.setState({ artistUrl: e.target.value })}
-              />
-              <button
-                disabled={this.state.updatingArtistFollows}
-                className="button button-push_button-small button-push_button-primary"
-                onClick={async () => {
-                  this.setState({ updatingArtistFollows: true })
-                  await requestJSONwithCredentials({
-                    path: '/me/follows/artists',
-                    method: 'POST',
-                    body: [{ url: this.state.artistUrl }]
-                  })
-                  this.setState({ artistUrl: '' })
-                  await this.updateArtistFollows()
-                  this.setState({ updatingArtistFollows: false })
-                }}
-              >
-                Add
-              </button>
-            </div>
-          </label>
           <ul className="no-style-list follow-list">
             {this.state.artistFollows.map(artist => (
               <li>
@@ -171,34 +196,6 @@ class Settings extends Component {
             ))}
           </ul>
           <h4>Labels ({this.state.labelFollows.length})</h4>
-          <label>
-            Add labels to follow:
-            <br />
-            <div className="input-layout">
-              <input
-                className="text-input text-input-small"
-                value={this.state.labelUrl}
-                onChange={e => this.setState({ labelUrl: e.target.value })}
-              />
-              <button
-                disabled={this.state.updatingLabelFollows}
-                className="button button-push_button-small button-push_button-primary"
-                onClick={async () => {
-                  this.setState({ updatingLabelFollows: true })
-                  await requestJSONwithCredentials({
-                    path: '/me/follows/labels',
-                    method: 'POST',
-                    body: [{ url: this.state.labelUrl }]
-                  })
-                  this.setState({ labelUrl: '' })
-                  await this.updateLabelFollows()
-                  this.setState({ updatingLabelFollows: false })
-                }}
-              >
-                Add
-              </button>
-            </div>
-          </label>
           <ul className="no-style-list follow-list">
             {this.state.labelFollows.map(label => (
               <li>

@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import './SpinnerButton.css'
+import Spinner from './Spinner'
 
 class SpinnerButton extends Component {
   static defaultProps = {
@@ -10,20 +10,19 @@ class SpinnerButton extends Component {
     return (
       <button
         type="submit"
-        disabled={this.props.loading}
+        disabled={this.props.disabled || this.props.loading}
         className={`button button-push_button-${this.props.size} button-push_button-primary ${this.props.className}`}
         style={this.props.style}
         onClick={this.props.onClick}
       >
-        {this.props.loading ? (
+        {this.props.children !== undefined ? (
+          <>
+            {this.props.children} {this.props.loading ? <Spinner size={this.props.size} /> : null}
+          </>
+        ) : this.props.loading ? (
           <>
             {this.props.loadingLabel}
-            <div className={`loading-indicator loading-indicator__${this.props.size}`}>
-              <div />
-              <div />
-              <div />
-              <div />
-            </div>
+            <Spinner />
           </>
         ) : (
           this.props.label

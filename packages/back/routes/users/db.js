@@ -159,15 +159,32 @@ WHERE meta_account_user_id = ${userId}
 module.exports.queryUserArtistFollows = async userId => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT artist_name AS name, artist_id AS id, array_agg(json_build_object('name', store_name, 'id', store_id)) AS stores
-FROM artist
-         NATURAL JOIN store__artist
-         NATURAL JOIN store__artist_watch
-         NATURAL JOIN store__artist_watch__user
-         NATURAL JOIN store
-WHERE meta_account_user_id = ${userId}
-GROUP BY 1, 2
-ORDER BY 1
+    sql`-- queryUserArtistFollows
+WITH
+  distinct_store_artists AS (
+    SELECT DISTINCT
+      artist_name
+    , artist_id
+    , store_name
+    , store_id
+    FROM
+      artist
+      NATURAL JOIN store__artist
+      NATURAL JOIN store__artist_watch
+      NATURAL JOIN store__artist_watch__user
+      NATURAL JOIN store
+    WHERE
+      meta_account_user_id = ${userId}
+  )
+SELECT
+  artist_name                                                      AS name
+, artist_id                                                        AS id
+, array_agg(json_build_object('name', store_name, 'id', store_id)) AS stores
+FROM distinct_store_artists
+GROUP BY
+  1, 2
+ORDER BY
+  1
 `
   )
 }
@@ -175,15 +192,32 @@ ORDER BY 1
 module.exports.queryUserLabelFollows = async userId => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT label_name AS name, label_id AS id, array_agg(json_build_object('name', store_name, 'id', store_id)) AS stores
-FROM label
-         NATURAL JOIN store__label
-         NATURAL JOIN store__label_watch
-         NATURAL JOIN store__label_watch__user
-         NATURAL JOIN store
-WHERE meta_account_user_id = ${userId}
-GROUP BY 1, 2
-ORDER BY 1
+    sql`-- queryUserLabelFollows
+WITH
+  distinct_store_labels AS (
+    SELECT DISTINCT
+      label_name
+    , label_id
+    , store_name
+    , store_id
+    FROM
+      label
+      NATURAL JOIN store__label
+      NATURAL JOIN store__label_watch
+      NATURAL JOIN store__label_watch__user
+      NATURAL JOIN store
+    WHERE
+      meta_account_user_id = ${userId}
+  )
+SELECT
+  label_name                                                       AS name
+, label_id                                                         AS id
+, array_agg(json_build_object('name', store_name, 'id', store_id)) AS stores
+FROM distinct_store_labels
+GROUP BY
+  1, 2
+ORDER BY
+  1
     `
   )
 }
@@ -235,7 +269,6 @@ module.exports.queryUserTracks = username =>
                   NATURAL JOIN store
          WHERE user__track_heard IS NULL
            AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
-           AND store_name = 'Spotify'
          GROUP BY 1, 2, 3
      ),
      label_scores AS (
@@ -333,7 +366,7 @@ module.exports.queryUserTracks = username =>
      ),
      new_tracks_with_details AS (
          SELECT json_agg(t) AS new_tracks
-         FROM (
+         FROM ( -- TODO: Why is the order by needed also here (also in new_tracks_with_scores)
                   SELECT * FROM tracks_with_details WHERE heard IS NULL ORDER BY score DESC NULLS LAST, added DESC
               ) t
      ),
@@ -402,13 +435,11 @@ ON CONFLICT ON CONSTRAINT user__track_track_id_meta_account_user_id_key DO NOTHI
 }
 
 module.exports.deletePlaylistFollowFromUser = async (userId, playlistId) => {
-  const res = await pg.queryAsync(
+  await pg.queryAsync(
     // language=PostgreSQL
     sql`DELETE
 FROM user__playlist_watch
 WHERE meta_account_user_id = ${userId}
   AND playlist_id = ${playlistId}`
   )
-
-  console.log(res)
 }

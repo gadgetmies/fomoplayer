@@ -1,14 +1,13 @@
 const R = require('ramda')
 const BPromise = require('bluebird')
 const bpApi = require('bp-api')
-const { decode } = require('html-entities')
 
 const pg = require('../../../db/pg.js')
 const { queryPreviewUrl } = require('../../shared/db/preview')
 const { BadRequest } = require('../../shared/httpErrors')
 const { insertUserPlaylistFollow } = require('../../shared/db/user')
 const { removeIgnoredTracksFromUser } = require('../../shared/db/user.js')
-const { queryStoreId } = require('../../shared/db/store.js')
+const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
 const { setTrackHeard } = require('../../logic.js')
 const { log, error } = require('./logger')
 const { createOperation, getOperation } = require('../../../operations.js')
@@ -34,6 +33,8 @@ const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
 
 let beatportSessions = {}
 let beatportStoreDbId = null
+// TODO: add export?
+const storeName = 'Beatport'
 
 module.exports.hasValidSession = username => Object.keys(beatportSessions).includes(username)
 
@@ -57,7 +58,7 @@ const getBeatportStoreDbId = () => {
   if (beatportStoreDbId) {
     return BPromise.resolve(beatportStoreDbId)
   } else {
-    return queryStoreId('Beatport').then(store_id => {
+    return queryStoreId(storeName).then(store_id => {
       beatportStoreDbId = store_id
       return beatportStoreDbId
     })
@@ -205,25 +206,53 @@ const ensureTracksExist = async (tx, newStoreTracks, bpStoreId) =>
   )
 
 module.exports.addPlaylistFollow = async (userId, playlistUrl) => {
-  const { title, tracks } = await bpApiStatic.getTracksOnPageAsync(playlistUrl)
+  const title = await bpApiStatic.getTitleAsync(playlistUrl)
 
-  if (!title || !tracks) {
+  if (!title) {
     throw new BadRequest('Unable to fetch details from url')
   }
 
-  return await insertUserPlaylistFollow(userId, 'Beatport', playlistUrl, decode(title.replace(' :: Beatport', '')))
+  return await insertUserPlaylistFollow(userId, storeName, playlistUrl, title)
 }
 
-module.exports.getArtistName = async url => {
-  const { title } = await bpApiStatic.getTracksOnPageAsync(url)
-  console.log(title)
+const getArtistName = (module.exports.getArtistName = async url => {
+  const title = await bpApiStatic.getTitleAsync(url)
   return title.replace(' music download - Beatport', '')
-}
+})
 
-module.exports.getLabelName = async url => {
-  const { title } = await bpApiStatic.getTracksOnPageAsync(url)
-  console.log(title)
-  return title.replace(' artists &amp; music download - Beatport', '')
+const getLabelName = (module.exports.getLabelName = async url => {
+  const title = await bpApiStatic.getTitleAsync(url)
+  return title.replace(' artists & music download - Beatport', '')
+})
+
+const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
+  return await bpApiStatic.getTitleAsync(url)
+})
+
+module.exports.getFollowDetails = async url => {
+  const regexes = await queryFollowRegexes(storeName)
+  const store = storeName.toLowerCase()
+  let label
+
+  console.log(JSON.stringify({ regexes }, null, 2))
+
+  for (const { regex, type } of regexes) {
+    if (url.match(regex)) {
+      if (type === 'artist') {
+        label = await getArtistName(url)
+      } else if (type === 'label') {
+        label = await getLabelName(url)
+      } else if (type === 'playlist') {
+        label = await getPlaylistName(type, url)
+      } else {
+        throw new Error('URL did not match any regex')
+      }
+
+      return { label, type, store }
+    }
+  }
+
+  return undefined
 }
 
 module.exports.test = {

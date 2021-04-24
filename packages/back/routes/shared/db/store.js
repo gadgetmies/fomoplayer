@@ -314,3 +314,28 @@ ON CONFLICT ON CONSTRAINT track__key_track_id_key_id_key DO NOTHING
 
   return trackId
 }
+
+module.exports.queryFollowRegexes = store =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryFollowRegexes
+SELECT
+  regex
+, type
+FROM
+  ((SELECT store_name, store_artist_regex AS regex, 'artist' AS type FROM store)
+   UNION ALL
+   (SELECT store_name, store_label_regex AS regex, 'label' AS type FROM store)
+   UNION ALL
+   (SELECT
+      store_name
+    , store_playlist_type_regex                          AS regex
+    , coalesce(store_playlist_type_store_id, 'playlist') AS type
+    FROM
+      store
+      NATURAL JOIN store_playlist_type
+    ORDER BY store_playlist_type_priority)) AS a
+WHERE
+  store_name = ${store}
+`
+  )
