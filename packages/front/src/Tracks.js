@@ -265,10 +265,10 @@ class Tracks extends Component {
       markingHeard: false,
       currentBelowScreen: false,
       currentAboveScreen: false,
-      search: ''
+      search: '',
+      searchDebounce: undefined
     }
     this.handleScroll = this.handleScroll.bind(this)
-    this.searchDebounce = undefined
   }
 
   handleScroll() {
@@ -303,14 +303,15 @@ class Tracks extends Component {
       return
     }
 
-    if (this.searchDebounce) {
-      clearTimeout(this.searchDebounce)
-      this.searchDebounce = undefined
+    if (this.state.searchDebounce) {
+      clearTimeout(this.state.searchDebounce)
     }
-    this.searchDebounce = setTimeout(async () => {
+
+    const timeout = setTimeout(async () => {
       const results = await (await requestWithCredentials({ path: `/tracks?q=${search}` })).json()
       this.props.onSearchResults(results)
     }, 500)
+    this.setState({ searchDebounce: timeout })
   }
 
   renderTracks(tracks, carts) {
