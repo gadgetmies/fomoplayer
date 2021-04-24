@@ -63,6 +63,21 @@ WHERE meta_account_username = lower(${username}) AND
           (${username}, ${issuerWithoutProtocol}, ${subject}, 'No password for token auth')
         RETURNING meta_account_user_id AS id, meta_account_username AS username, meta_account_details AS details
         `)
+
+      const id = newUser.id
+      await pgrm.queryRowsAsync(
+        // language=PostgreSQL
+        sql`
+INSERT INTO user_track_score_weight
+  (user_track_score_weight_multiplier, user_track_score_weight_code, meta_account_user_id)
+VALUES
+  (1, 'label', ${id}),
+  (5, 'artist', ${id}),
+  (-0.1, 'date_published', ${id}),
+  (-0.1, 'date_added', ${id})
+`
+      )
+
       return newUser
     }
   }
