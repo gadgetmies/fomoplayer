@@ -1,37 +1,27 @@
 const bodyParser = require('body-parser')
 
-const router = require('express').Router()
 const { getLongestPreviewForTrack, searchForTracks } = require('./logic.js')
+const router = require('express-promise-router')()
 const { Unauthorized } = require('./shared/httpErrors')
 
 router.use(bodyParser.json())
 
-router.get('/tracks/:id/preview.:format', async (req, res, next) => {
+router.get('/tracks/:id/preview.:format', async (req, res) => {
   const {
     params: { id, format, offset }
   } = req
-  try {
-    const { storeCode, storeTrackId } = await getLongestPreviewForTrack(id, format, offset)
-    const { getPreviewUrl } = require(`./stores/${storeCode}/logic.js`)
-    res.redirect(await getPreviewUrl(storeTrackId, format))
-  } catch (e) {
-    console.error(e)
-    next()
-  }
+  const { storeCode, storeTrackId } = await getLongestPreviewForTrack(id, format, offset)
+  const { getPreviewUrl } = require(`./stores/${storeCode}/logic.js`)
+  res.redirect(await getPreviewUrl(storeTrackId, format))
 })
 
-router.get('/tracks/:id', ({ user: { username }, params: { id } }, res, next) => {
+router.get('/tracks/:id', ({ user: { username }, params: { id } }, res) => {
   // TODO
   res.send(JSON.stringify({}))
 })
 
-router.get('/tracks/', async ({ query: { q } }, res, next) => {
-  try {
-    res.send(await searchForTracks(q))
-  } catch (e) {
-    console.error(e)
-    next(e)
-  }
+router.get('/tracks/', async ({ query: { q } }, res) => {
+  res.send(await searchForTracks(q))
 })
 
 router.use('/stores', require('./stores/index.js').router)
@@ -39,11 +29,10 @@ router.use('/stores', require('./stores/index.js').router)
 const usersRouter = require('./users/index.js')
 router.use(
   '/users/:userId',
-  ({ params: { userId: paramUserId }, user: { id: authUserId } }, res, next) => {
+  ({ params: { userId: paramUserId }, user: { id: authUserId } }) => {
     if (Number(paramUserId) !== authUserId) {
-      return next(new Unauthorized('Unauthorized'))
+      throw new Unauthorized('Unauthorized')
     }
-    next()
   },
   usersRouter
 )

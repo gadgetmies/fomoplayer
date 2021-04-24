@@ -28,6 +28,7 @@
     "dotenv": "^8.2.0",
     "ejs": "^2.6.1",
     "express": "^4.16.4",
+    "express-promise-router": "^4.1.0",
     "express-session": "^1.15.6",
     "google-auth-library": "^6.0.6",
     "html-entities": "^2.1.0",
