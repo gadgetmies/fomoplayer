@@ -53,8 +53,9 @@ RETURNING job_run_id`
   let result
   let success
   try {
-    success = true
-    result = await jobs[jobName]()
+    const res = await jobs[jobName]()
+    result = res.result
+    success = res.success
   } catch (e) {
     success = false
     result = e
@@ -118,6 +119,8 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
         schedule
       }
     }
+
+    return { success: true }
   },
   updateDateAddedScore: async () => {
     await pg.queryAsync(sql`
@@ -131,23 +134,26 @@ REFRESH MATERIALIZED VIEW track_date_released_score
   },
   fetchBeatportWatches: async () => {
     try {
-      await fetchBeatportWatches()
+      return await fetchBeatportWatches()
     } catch (e) {
       console.error('Failed refreshing Beatport watches', e)
+      return { success: false, result: e }
     }
   },
   fetchSpotifyWatches: async () => {
     try {
-      await fetchSpotifyWatches()
+      return await fetchSpotifyWatches()
     } catch (e) {
       console.error('Failed refreshing Spotify watches', e)
+      return { success: false, result: e }
     }
   },
   fetchBandcampWatches: async () => {
     try {
-      await fetchBandcampWatches()
+      return await fetchBandcampWatches()
     } catch (e) {
       console.error('Failed refreshing Bandcamp watches', e)
+      return { success: false, result: e }
     }
   }
 }

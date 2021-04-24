@@ -8,6 +8,7 @@ const { beatportTracksTransform } = require('../../chrome-extension/src/js/trans
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
 
 const fetchArtists = async function() {
+  const errors = []
   const artistBeatportIds = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`SELECT store__artist_store_id          AS id,
@@ -34,7 +35,13 @@ LIMIT 50
       const transformed = beatportTracksTransform(artistTracks.tracks)
 
       for (const track of transformed) {
-        await addStoreTrackToUsers('https://www.beatport.com', users, track)
+        try {
+          await addStoreTrackToUsers('https://www.beatport.com', users, track)
+        } catch (e) {
+          const error = [`Failed to add track to users`, track, users, e]
+          console.error(...error)
+          errors.push(error)
+        }
       }
 
       await pg.queryAsync(
@@ -44,12 +51,17 @@ SET store__artist_watch_last_update = NOW()
 WHERE store__artist_id = (SELECT store__artist_id FROM store__artist WHERE store__artist_store_id = ${id})`
       )
     } catch (e) {
-      console.error(`Failed to fetch tracks for artist with Beatport id ${id}`, e)
+      const error = [`Failed to fetch tracks for artist with Beatport id ${id}`, e]
+      console.error(...error)
+      errors.push(error)
     }
   }
+
+  return errors
 }
 
 const fetchLabels = async function() {
+  const errors = []
   const labelBeatportIds = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`SELECT store__label_store_id           AS id,
@@ -76,7 +88,13 @@ LIMIT 50
       const transformed = beatportTracksTransform(labelTracks.tracks)
 
       for (const track of transformed) {
-        await addStoreTrackToUsers('https://www.beatport.com', users, track)
+        try {
+          await addStoreTrackToUsers('https://www.beatport.com', users, track)
+        } catch (e) {
+          const error = [`Failed to add track to users`, track, users, e]
+          console.error(...error)
+          errors.push(error)
+        }
       }
 
       await pg.queryAsync(
@@ -86,12 +104,17 @@ SET store__label_watch_last_update = NOW()
 WHERE store__label_id = (SELECT store__label_id FROM store__label WHERE store__label_store_id = ${id})`
       )
     } catch (e) {
-      console.error(`Failed to fetch tracks for label with Beatport id ${id}`, e)
+      const error = [`Failed to fetch tracks for label with Beatport id ${id}`, e]
+      console.error(...error)
+      errors.push(error)
     }
   }
+
+  return errors
 }
 
 const fetchPlaylists = async function() {
+  const errors = []
   const beatportPlaylistUrls = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`SELECT playlist_store_id               AS url,
@@ -108,7 +131,7 @@ LIMIT 50
 `
   )
 
-  count = 1
+  let count = 1
   for (const { url, users } of beatportPlaylistUrls) {
     try {
       console.log(`Fetching tracks for playlist ${count}/${beatportPlaylistUrls.length}`)
@@ -118,7 +141,13 @@ LIMIT 50
       const transformed = beatportTracksTransform(playlist.tracks)
 
       for (const track of transformed) {
-        await addStoreTrackToUsers('https://www.beatport.com', users, track)
+        try {
+          await addStoreTrackToUsers('https://www.beatport.com', users, track)
+        } catch (e) {
+          const error = [`Failed to add track to users`, track, users, e]
+          console.error(...error)
+          errors.push(error)
+        }
       }
 
       await pg.queryAsync(
@@ -128,15 +157,24 @@ SET playlist_last_update = NOW()
 WHERE playlist_store_id = ${url}`
       )
     } catch (e) {
-      console.error(`Failed to fetch tracks for label with Beatport url ${url}`, e)
+      const error = [`Failed to fetch tracks for label with Beatport url ${url}`, e]
+      console.error(...error)
+      errors.push(error)
     }
   }
+
+  return errors
 }
 
 const fetchBeatportWatches = async () => {
-  await fetchArtists()
-  await fetchLabels()
-  await fetchPlaylists()
+  const errors = []
+  errors.concat(await fetchArtists())
+  errors.concat(await fetchLabels())
+  errors.concat(await fetchPlaylists())
+  if (errors.length > 0) {
+    return { success: false, result: errors }
+  }
+  return { success: true }
 }
 
 module.exports = fetchBeatportWatches

@@ -6,6 +6,7 @@ const bandcampApi = require('../routes/stores/bandcamp/bandcamp-api.js')
 const { bandcampReleasesTransform } = require('../../chrome-extension/src/js/transforms/bandcamp.js')
 
 const handleReleases = async (releaseUrls, users) => {
+  const errors = []
   const newReleases = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`SELECT store__release_url AS "releaseUrl"
@@ -18,22 +19,32 @@ WHERE release_id IS NULL`
   let releaseDetails = []
   for (const { releaseUrl } of newReleases) {
     try {
-      console.log('fetching', releaseUrl)
       const releaseInfo = await bandcampApi.getReleaseAsync(releaseUrl)
       releaseDetails.push(releaseInfo)
     } catch (e) {
-      console.error('Failed to fetch release details from', releaseUrl)
+      const error = [`Failed to fetch release details from ${releaseUrl}`, e]
+      console.error(...error)
+      errors.push(error)
     }
   }
 
   const transformed = bandcampReleasesTransform(releaseDetails)
 
   for (const track of transformed) {
-    await addStoreTrackToUsers('https://bandcamp.com', users, track)
+    try {
+      await addStoreTrackToUsers('https://bandcamp.com', users, track)
+    } catch (e) {
+      const error = [`Failed to add track to users`, track, users, e]
+      console.error(...error)
+      errors.push(error)
+    }
   }
+
+  return errors
 }
 
 const fetchPlaylists = async () => {
+  const errors = []
   const playlistFollowDetails = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`SELECT playlist_store_id               AS id,
@@ -60,10 +71,8 @@ LIMIT 20
       let transformed
       if (type === 'tag') {
         const releases = await bandcampApi.getTagReleasesAsync(id)
-
         const releaseUrls = R.uniq(R.flatten(releases.map(R.prop('items'))).map(R.prop('tralbum_url')))
-
-        await handleReleases(releaseUrls, users)
+        errors.concat(await handleReleases(releaseUrls, users))
       }
 
       await pg.queryAsync(
@@ -73,12 +82,17 @@ LIMIT 20
       WHERE playlist_id = (SELECT playlist_id FROM playlist WHERE playlist_store_id = ${id})`
       )
     } catch (e) {
-      console.error(e)
+      const error = [`Failed to fetch playlist details for ${type}:${id}`, e]
+      console.error(...error)
+      errors.push(error)
     }
   }
+
+  return errors
 }
 
 const fetchArtists = async () => {
+  const errors = []
   // TODO: share implementation between stores?
   const artistFollowDetails = await pg.queryRowsAsync(
     // language=PostgreSQL
@@ -103,11 +117,8 @@ const fetchArtists = async () => {
       console.log(`Fetching tracks for artists ${count}/${artistFollowDetails.length}: ${id}`)
       count++
 
-      console.log(JSON.stringify({ url }, null, 2))
       const { releaseUrls } = await bandcampApi.getArtistAsync(url)
-      console.log(JSON.stringify({ releaseUrls }, null, 2))
-      await handleReleases(releaseUrls, users)
-      console.log('handle')
+      errors.concat(await handleReleases(releaseUrls, users))
       await pg.queryAsync(
         // language=PostgreSQL
         sql`UPDATE store__artist
@@ -115,12 +126,17 @@ const fetchArtists = async () => {
       WHERE store__artist_store_id = ${id}` // TODO: add index to the column
       )
     } catch (e) {
-      console.error(e)
+      const error = [`Failed to fetch artist details for ${url}`, e]
+      console.error(...error)
+      errors.push(error)
     }
   }
+
+  return errors
 }
 
 const fetchLabels = async () => {
+  const errors = []
   // TODO: share implementation between stores?
   const labelFollowDetails = await pg.queryRowsAsync(
     // language=PostgreSQL
@@ -146,7 +162,7 @@ const fetchLabels = async () => {
       count++
 
       const { releaseUrls } = await bandcampApi.getLabelAsync(url)
-      await handleReleases(releaseUrls, users)
+      errors.concat(await handleReleases(releaseUrls, users))
       await pg.queryAsync(
         // language=PostgreSQL
         sql`UPDATE store__label
@@ -154,15 +170,25 @@ const fetchLabels = async () => {
       WHERE store__label_store_id = ${id}` // TODO: add index to the column
       )
     } catch (e) {
-      console.error(e)
+      const error = [`Failed to fetch label details for ${url}`, e]
+      console.error(...error)
+      errors.push(error)
     }
   }
+
+  return errors
 }
 
 const fetchBandcampWatches = async () => {
-  await fetchPlaylists()
-  await fetchArtists()
-  await fetchLabels()
+  const errors = []
+  errors.concat(await fetchPlaylists())
+  errors.concat(await fetchArtists())
+  errors.concat(await fetchLabels())
+
+  if (errors.length > 0) {
+    return { success: false, result: errors }
+  }
+  return { success: true }
 }
 
 module.exports = fetchBandcampWatches

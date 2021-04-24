@@ -9,6 +9,7 @@ const {
 const spotifyApi = require('../routes/shared/spotify')
 
 const fetchPlaylists = async function() {
+  const errors = []
   const playlistFollowDetails = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`SELECT playlist_store_id               AS id,
@@ -33,12 +34,14 @@ LIMIT 20
 
       const res = await spotifyApi.getPlaylistTracks(id)
       const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
-      try {
-        for (const track of transformed) {
+      for (const track of transformed) {
+        try {
           await addStoreTrackToUsers('https://www.spotify.com', users, track)
+        } catch (e) {
+          const error = [`Failed to add track to users`, track, users, e]
+          console.error(...error)
+          errors.push(error)
         }
-      } catch (e) {
-        console.error(`Failed to fetch tracks for artist with Spotify id ${id}`, e)
       }
 
       await pg.queryAsync(
@@ -48,12 +51,17 @@ SET playlist_last_update = NOW()
 WHERE playlist_store_id = ${id}`
       )
     } catch (e) {
-      console.error(e)
+      const error = [`Failed to fetch playlist details for ${id}`, e]
+      console.error(...error)
+      errors.push(error)
     }
   }
+
+  return errors
 }
 
 const fetchArtists = async () => {
+  const errors = []
   const artistFollowDetails = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`SELECT store__artist_store_id               AS id,
@@ -81,12 +89,14 @@ LIMIT 20
       const albums = (await spotifyApi.getAlbums(albumIds)).body.albums
       const transformed = R.flatten(spotifyAlbumTracksTransform(albums))
 
-      try {
-        for (const track of transformed) {
+      for (const track of transformed) {
+        try {
           await addStoreTrackToUsers('https://www.spotify.com', users, track)
+        } catch (e) {
+          const error = [`Failed to add track to users`, track, users, e]
+          console.error(...error)
+          errors.push(error)
         }
-      } catch (e) {
-        console.error(`Failed to fetch tracks for artist with Spotify id ${id}`, e)
       }
 
       await pg.queryAsync(
@@ -96,14 +106,24 @@ SET store__artist_last_update = NOW()
 WHERE store__artist_store_id = ${id}`
       )
     } catch (e) {
-      console.error(e)
+      const error = [`Failed to fetch tracks for artist with Spotify id ${id}`, e]
+      console.error(...error)
+      errors.push(error)
     }
   }
+
+  return errors
 }
 
 const fetchSpotifyWatches = async () => {
-  await fetchPlaylists()
-  await fetchArtists()
+  const errors = []
+  errors.concat(await fetchPlaylists())
+  errors.concat(await fetchArtists())
+
+  if (errors.length > 0) {
+    return { success: false, result: errors }
+  }
+  return { success: true }
 }
 
 module.exports = fetchSpotifyWatches
