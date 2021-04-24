@@ -174,7 +174,8 @@ WITH
       NATURAL JOIN store__artist_watch__user
       NATURAL JOIN store
     WHERE
-      meta_account_user_id = ${userId}
+        meta_account_user_id = ${userId}
+    AND (store_name <> 'Bandcamp' OR store__artist_url IS NOT NULL)
   )
 SELECT
   artist_name                                                      AS name

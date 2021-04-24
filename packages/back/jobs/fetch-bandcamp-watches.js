@@ -96,19 +96,25 @@ const fetchArtists = async () => {
   // TODO: share implementation between stores?
   const artistFollowDetails = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT store__artist_store_id          AS id,
-               store__artist_url               AS url,
-               array_agg(meta_account_user_id) AS users
-        FROM store__artist_watch__user
-                 NATURAL JOIN store__artist_watch
-                 NATURAL JOIN store__artist
-                 NATURAL JOIN store
-        WHERE store_name = 'Bandcamp'
-          AND (store__artist_last_update IS NULL OR store__artist_last_update + interval '6 hours' < NOW())
-        GROUP BY 1, 2, store__artist_last_update
-        ORDER BY store__artist_last_update DESC NULLS FIRST
-        LIMIT 20
-    `
+    sql`SELECT
+  store__artist_store_id          AS id
+, store__artist_url               AS url
+, array_agg(meta_account_user_id) AS users
+FROM
+  store__artist_watch__user
+  NATURAL JOIN store__artist_watch
+  NATURAL JOIN store__artist
+  NATURAL JOIN store
+WHERE
+    store_name = 'Bandcamp'
+AND store__artist_url IS NOT NULL
+AND (store__artist_last_update IS NULL OR store__artist_last_update + INTERVAL '6 hours' < NOW())
+GROUP BY
+  1, 2, store__artist_last_update
+ORDER BY
+  store__artist_last_update DESC NULLS FIRST
+LIMIT 20
+`
   )
 
   let count = 1
