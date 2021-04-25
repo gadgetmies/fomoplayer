@@ -40,6 +40,12 @@ LIMIT 50
     try {
       const artistTracks = await bpApiStatic.getArtistTracksAsync(id, 1)
       const transformed = beatportTracksTransform(artistTracks.tracks)
+      if (transformed.length === 0) {
+        const error = `No tracks found for artist ${id}`
+        console.error(error)
+        errors.push([error])
+        continue
+      }
 
       for (const track of transformed) {
         try {
@@ -102,6 +108,12 @@ LIMIT 50
 
       const labelTracks = await bpApiStatic.getLabelTracksAsync(id, 1)
       const transformed = beatportTracksTransform(labelTracks.tracks)
+      if (transformed.length === 0) {
+        const error = `No tracks found for label ${id}`
+        console.error(error)
+        errors.push([error])
+        continue
+      }
 
       for (const track of transformed) {
         try {
@@ -164,6 +176,12 @@ LIMIT 50
 
       const playlist = await bpApiStatic.getTracksOnPageAsync(url)
       const transformed = beatportTracksTransform(playlist.tracks.tracks)
+      if (transformed.length === 0) {
+        const error = `No tracks found for playlist at ${url}`
+        console.error(error)
+        errors.push([error])
+        continue
+      }
 
       for (const track of transformed) {
         try {

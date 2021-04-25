@@ -29,6 +29,12 @@ WHERE release_id IS NULL`
   }
 
   const transformed = bandcampReleasesTransform(releaseDetails)
+  if (transformed.length === 0) {
+    const error = `No tracks found for releases ${releaseUrls.join(', ')}`
+    console.error(error)
+    errors.push([error])
+    return errors
+  }
 
   for (const track of transformed) {
     try {

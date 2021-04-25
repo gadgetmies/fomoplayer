@@ -41,6 +41,13 @@ LIMIT 20
 
       const res = await spotifyApi.getPlaylistTracks(id)
       const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
+      if (transformed.length === 0) {
+        const error = `No tracks found for playlist at ${id}`
+        console.error(error)
+        errors.push([error])
+        continue
+      }
+
       for (const track of transformed) {
         try {
           await addStoreTrackToUsers('https://www.spotify.com', users, track, { ...source, id })
@@ -104,6 +111,12 @@ LIMIT 20
       // TODO: Store albums as releases
       const albums = (await spotifyApi.getAlbums(albumIds)).body.albums
       const transformed = R.flatten(spotifyAlbumTracksTransform(albums))
+      if (transformed.length === 0) {
+        const error = `No tracks found for artist ${id}`
+        console.error(error)
+        errors.push([error])
+        continue
+      }
 
       for (const track of transformed) {
         try {
