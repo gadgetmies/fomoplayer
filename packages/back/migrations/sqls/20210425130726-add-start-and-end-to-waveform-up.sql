@@ -1,0 +1,4 @@
+ALTER TABLE store__track_preview_waveform
+  ADD COLUMN store__track_preview_waveform_start_ms INTEGER;
+ALTER TABLE store__track_preview_waveform
+  ADD COLUMN store__track_preview_waveform_end_ms INTEGER;

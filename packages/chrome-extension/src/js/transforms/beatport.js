@@ -49,7 +49,7 @@ const bpKeysToCamelot = {
 }
 
 const previewUrlPath = [1, 'url']
-
+const keyedPreviewsLens = ['preview', L.keyed, L.filter(R.path(previewUrlPath))]
 const removeOriginalMix = L.cond([R.equals('Original Mix'), L.zero], [[]])
 module.exports.beatportTracksTransform = L.collect([
   L.elems,
@@ -92,9 +92,7 @@ module.exports.beatportTracksTransform = L.collect([
     released: ['date', 'released'],
     published: ['date', 'published'],
     previews: L.partsOf([
-      'preview',
-      L.keyed,
-      L.filter(R.path(previewUrlPath)),
+      keyedPreviewsLens,
       L.elems,
       L.pick({
         format: 0,
@@ -111,7 +109,13 @@ module.exports.beatportTracksTransform = L.collect([
         url: [L.props('slug', 'id'), L.reread(beatportUrl('label'))]
       })
     ],
-    waveform: ['waveform', 'large', L.props('url')],
+    waveform: [
+      L.pick({
+        url: ['waveform', 'large', 'url'],
+        start_ms: [keyedPreviewsLens, 0, 1, 'offset', 'start'],
+        end_ms: [keyedPreviewsLens, 0, 1, 'offset', 'end']
+      })
+    ],
     key: ['key', L.reread(bpKey => bpKeysToCamelot[bpKey])],
     store_details: []
   })

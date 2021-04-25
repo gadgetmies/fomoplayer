@@ -76,15 +76,21 @@ RETURNING store__track_preview_id
 `
   )
 
-module.exports.insertTrackWaveform = (tx, store__track_id, waveforms, source) =>
+module.exports.insertTrackWaveform = (tx, store__track_id, waveforms, start, end, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- insertTrackWaveform
 INSERT INTO store__track_preview_waveform
-  (store__track_preview_id, store__track_preview_waveform_url, store__track_preview_waveform_source)
+  (store__track_preview_id,
+   store__track_preview_waveform_url,
+   store__track_preview_waveform_start_ms,
+   store__track_preview_waveform_end_ms,
+   store__track_preview_waveform_source)
 SELECT
   store__track_preview_id
 , ${waveforms.large.url}
+, ${start}
+, ${end}
 , ${source}
 FROM store__track_preview
 WHERE

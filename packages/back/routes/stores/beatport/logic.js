@@ -143,7 +143,14 @@ const ensureTracksExist = async (tx, newStoreTracks, bpStoreId, source) =>
       .tap(track_id =>
         insertStoreTrack(tx, bpStoreId, track_id, newStoreTrack.id, newStoreTrack, source)
           .tap(([{ store__track_id }]) => insertTrackPreview(tx, store__track_id, newStoreTrack.preview, source))
-          .tap(([{ store__track_id }]) => insertTrackWaveform(tx, store__track_id, newStoreTrack.waveform, source))
+          .tap(([{ store__track_id }]) => {
+            const [
+              {
+                offset: { start, end }
+              }
+            ] = newStoreTrack.preview
+            return insertTrackWaveform(tx, store__track_id, newStoreTrack.waveform, start, end, source)
+          })
       )
   )
 
