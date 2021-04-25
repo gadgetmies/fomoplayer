@@ -1,6 +1,6 @@
 const config = require(`./database.json`)
 process.env.NODE_ENV = 'test'
-const env = require('../../env.js')
+const env = require('../../config.js')
 
 module.exports = {
   initDb: async () => {
