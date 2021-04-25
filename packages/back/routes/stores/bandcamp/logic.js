@@ -92,9 +92,7 @@ module.exports.getFollowDetails = async url => {
   for (const { regex, type } of regexes) {
     if (url.match(regex)) {
       if (['artist', 'label'].includes(type)) {
-        console.log('artist or label')
         const { name, type: pageType } = await getPageDetailsAsync(url)
-        console.log(JSON.stringify({ name, pageType }, null, 2))
         return { label: name, type: pageType, store }
       } else if (type === 'tag') {
         const label = await getPlaylistName(type, url)

@@ -176,8 +176,6 @@ module.exports.getFollowDetails = async url => {
   const store = storeName.toLowerCase()
   let label
 
-  console.log(JSON.stringify({ regexes }, null, 2))
-
   for (const { regex, type } of regexes) {
     if (url.match(regex)) {
       if (type === 'artist') {
