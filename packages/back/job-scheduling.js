@@ -53,7 +53,7 @@ RETURNING job_run_id`
   let result
   let success
   try {
-    const res = await jobs[jobName]()
+    const res = await jobs[jobName]({ id: job_run_id, name: jobName })
     result = res.result
     success = res.success
   } catch (e) {
@@ -132,30 +132,9 @@ REFRESH MATERIALIZED VIEW track_date_added_score
 REFRESH MATERIALIZED VIEW track_date_released_score
     `)
   },
-  fetchBeatportWatches: async () => {
-    try {
-      return await fetchBeatportWatches()
-    } catch (e) {
-      console.error('Failed refreshing Beatport watches', e)
-      return { success: false, result: e }
-    }
-  },
-  fetchSpotifyWatches: async () => {
-    try {
-      return await fetchSpotifyWatches()
-    } catch (e) {
-      console.error('Failed refreshing Spotify watches', e)
-      return { success: false, result: e }
-    }
-  },
-  fetchBandcampWatches: async () => {
-    try {
-      return await fetchBandcampWatches()
-    } catch (e) {
-      console.error('Failed refreshing Bandcamp watches', e)
-      return { success: false, result: e }
-    }
-  }
+  fetchBeatportWatches,
+  fetchSpotifyWatches,
+  fetchBandcampWatches
 }
 
 module.exports = {

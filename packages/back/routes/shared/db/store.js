@@ -42,7 +42,7 @@ GROUP BY
 
 const getFieldFromResult = field => R.path([0, field])
 
-module.exports.ensureLabelExists = async (tx, storeUrl, label) => {
+module.exports.ensureLabelExists = async (tx, storeUrl, label, source) => {
   const getLabelIdFromResult = getFieldFromResult('label_id')
 
   let labelId = await tx
@@ -65,9 +65,9 @@ WHERE
         // language=PostgreSQL
         sql`-- ensureLabelExists INSERT INTO label
 INSERT INTO label
-  (label_name)
+  (label_name, label_source)
 VALUES
-  (${label.name})
+  (${label.name}, ${source})
 RETURNING label_id
 `
       )
@@ -78,12 +78,13 @@ RETURNING label_id
     // language=PostgreSQL
     sql`-- ensureLabelExists INSERT INTO store__label
 INSERT INTO store__label
-  (store__label_store_id, store__label_url, store_id, label_id)
+  (store__label_store_id, store__label_url, store_id, label_id, store__label_source)
 SELECT
   ${label.id}
 , ${label.url}
 , store_id
 , ${labelId}
+, ${source}
 FROM store
 WHERE
   store_url = ${storeUrl}
@@ -96,7 +97,7 @@ ON CONFLICT ON CONSTRAINT store__label_store__label_store_id_store_id_key
   return labelId
 }
 
-module.exports.ensureReleaseExists = async (tx, storeUrl, release) => {
+module.exports.ensureReleaseExists = async (tx, storeUrl, release, source) => {
   const getReleaseIdFromResult = getFieldFromResult('release_id')
 
   let releaseId = await tx
@@ -136,9 +137,9 @@ WHERE
         // language=PostgreSQL
         sql`-- ensureReleaseExists INSERT INTO release
 INSERT INTO release
-  (release_name)
+  (release_name, release_source)
 VALUES
-  (${release.title})
+  (${release.title}, ${source})
 RETURNING release_id
 `
       )
@@ -149,12 +150,13 @@ RETURNING release_id
     // language=PostgreSQL
     sql`-- ensureReleaseExists INSERT INTO store__release
 INSERT INTO store__release
-  (store__release_store_id, store__release_url, store_id, release_id)
+  (store__release_store_id, store__release_url, store_id, release_id, store__release_source)
 SELECT
   ${release.id}
 , ${release.url}
 , store_id
 , ${releaseId}
+, ${source}
 FROM store
 WHERE
   store_url = ${storeUrl}
@@ -168,7 +170,7 @@ ON CONFLICT ON CONSTRAINT store__release_store_id_store__release_store_id_key
   return releaseId
 }
 
-module.exports.ensureArtistExists = async (tx, storeUrl, artist) => {
+module.exports.ensureArtistExists = async (tx, storeUrl, artist, source) => {
   const getArtistIdFromResult = getFieldFromResult('artist_id')
 
   let artistId = await tx
@@ -214,9 +216,9 @@ AND store_url <> ${storeUrl}
         // language=PostgreSQL
         sql`-- ensureArtistExists INSERT INTO artist
 INSERT INTO artist
-  (artist_name)
+  (artist_name, artist_source)
 VALUES
-  (${artist.name})
+  (${artist.name}, ${source})
 RETURNING artist_id
 `
       )
@@ -227,12 +229,13 @@ RETURNING artist_id
     // language=PostgreSQL
     sql`-- ensureArtistExists INSERT INTO store__artist
 INSERT INTO store__artist
-  (store__artist_store_id, store__artist_url, store_id, artist_id)
+  (store__artist_store_id, store__artist_url, store_id, artist_id, store__artist_source)
 SELECT
   ${artist.id}
 , ${artist.url}
 , store_id
 , ${artistId}
+, ${source}
 FROM store
 WHERE
   store_url = ${storeUrl}
@@ -243,7 +246,7 @@ ON CONFLICT ON CONSTRAINT store__artist_store__artist_store_id_store_id_key DO N
   return { id: artistId, role: artist.role }
 }
 
-module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists, track) => {
+module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists, track, source) => {
   const getTrackIdFromResult = getFieldFromResult('track_id')
 
   const sortedArtists = R.sortBy(R.prop('id'), artists)
@@ -294,9 +297,9 @@ AND ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedA
         // language=PostgreSQL
         sql`-- addStoreTrack INSERT INTO track
 INSERT INTO track
-  (track_title, track_version, track_duration_ms)
+  (track_title, track_version, track_duration_ms, track_source)
 VALUES
-  (${track.title}, ${track.version}, ${track.duration_ms})
+  (${track.title}, ${track.version}, ${track.duration_ms}, ${source})
 RETURNING track_id
 `
       )
@@ -352,9 +355,10 @@ INSERT INTO store__track
    store__track_url,
    store__track_released,
    store__track_published,
-   store__track_store_details)
+   store__track_store_details,
+   store__track_source)
 VALUES
-  (${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track})
+  (${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track}, ${source})
 ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_track_id_key
   DO UPDATE
   SET
@@ -389,15 +393,15 @@ INSERT INTO store__track_preview
    store__track_preview_url,
    store__track_preview_format,
    store__track_preview_start_ms,
-   store__track_preview_end_ms)
+   store__track_preview_end_ms,
+   store__track_preview_source)
 VALUES
-  (${storeTrackId}, ${preview.url}, ${preview.format}, ${preview.start_ms}, ${preview.end_ms})
+  (${storeTrackId}, ${preview.url}, ${preview.format}, ${preview.start_ms}, ${preview.end_ms}, ${source})
 ON CONFLICT ON CONSTRAINT store__track_preview_store__track_id_preview_url_key
   DO UPDATE
   SET
     store__track_preview_end_ms   = COALESCE(excluded.store__track_preview_end_ms, ${preview.end_ms})
   , store__track_preview_start_ms = COALESCE(excluded.store__track_preview_start_ms, ${preview.start_ms})
-  , store__track_preview_format   = COALESCE(excluded.store__track_preview_format, ${preview.format})
 `
     )
     const previewId = await tx
@@ -419,9 +423,9 @@ AND store__track_id = ${storeTrackId}
         // language=PostgreSQL
         sql`-- addStoreTrack INSERT INTO store__track_preview_waveform
 INSERT INTO store__track_preview_waveform
-  (store__track_preview_id, store__track_preview_waveform_url)
+  (store__track_preview_id, store__track_preview_waveform_url, store__track_preview_waveform_source)
 VALUES
-  (${previewId}, ${track.waveform.url})
+  (${previewId}, ${track.waveform.url}, ${source})
 ON CONFLICT ON CONSTRAINT store__track_preview_waveform_store__track_preview_id_url_key DO NOTHING
 `
       )
@@ -460,10 +464,11 @@ ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING
       // language=PostgreSQL
       sql`-- addStoreTrack INSERT INTO track__key
 INSERT INTO track__key
-  (track_id, key_id)
+  (track_id, key_id, track__key_source)
 SELECT
   ${trackId}
 , key_id
+, ${source}
 FROM key_name
 WHERE
   key_name = ${track.key}

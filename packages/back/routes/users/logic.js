@@ -64,28 +64,34 @@ module.exports.addArtistsOnLabelsToIgnore = (username, { artistIds, labelIds }) 
     )
   )
 
-const addStoreTrackToUsers = (module.exports.addStoreTracksToUser = async (storeUrl, userIds, track, type) => {
+const addStoreTrackToUsers = (module.exports.addStoreTrackToUsers = async (
+  storeUrl,
+  userIds,
+  track,
+  source,
+  type = 'tracks'
+) => {
   return using(pg.getTransaction(), async tx => {
     let labelId
     let releaseId
 
     if (track.label) {
-      labelId = await ensureLabelExists(tx, storeUrl, track.label)
+      labelId = await ensureLabelExists(tx, storeUrl, track.label, source)
     }
     if (track.release) {
-      releaseId = await ensureReleaseExists(tx, storeUrl, track.release)
+      releaseId = await ensureReleaseExists(tx, storeUrl, track.release, source)
     }
 
     let artists = []
     for (const artist of track.artists) {
-      const res = await ensureArtistExists(tx, storeUrl, artist)
+      const res = await ensureArtistExists(tx, storeUrl, artist, source)
       artists.push(res)
     }
 
-    const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track)
+    const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, source)
 
     for (const userId of userIds) {
-      await addTrackToUser(tx, userId, trackId)
+      await addTrackToUser(tx, userId, trackId, source)
 
       if (type === 'purchased') {
         await addPurchasedTrackToUser(tx, userId, track)
@@ -102,18 +108,18 @@ module.exports.removeArtistWatchFromUser = deleteArtistWatchFromUser
 module.exports.removeLabelWatchesFromUser = deleteLabelWatchesFromUser
 module.exports.removeLabelWatchFromUser = deleteLabelWatchFromUser
 
-const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (storeUrl, userId, artist) => {
+const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (storeUrl, userId, artist, source) => {
   return using(pg.getTransaction(), async tx => {
-    const { id: artistId } = await ensureArtistExists(tx, storeUrl, artist)
-    const followId = await addArtistWatch(tx, userId, artistId)
+    const { id: artistId } = await ensureArtistExists(tx, storeUrl, artist, source)
+    const followId = await addArtistWatch(tx, userId, artistId, source)
     return { artistId, followId }
   })
 })
 
-const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUrl, userId, label) => {
+const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUrl, userId, label, source) => {
   return using(pg.getTransaction(), async tx => {
-    const labelId = await ensureLabelExists(tx, storeUrl, label)
-    const followId = await addLabelWatch(tx, userId, labelId)
+    const labelId = await ensureLabelExists(tx, storeUrl, label, source)
+    const followId = await addLabelWatch(tx, userId, labelId, source)
     return { labelId, followId }
   })
 })
@@ -121,7 +127,7 @@ const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUr
 module.exports.removePlaylistFollowFromUser = async (userId, playlistId) =>
   deletePlaylistFollowFromUser(userId, playlistId)
 
-module.exports.addArtistFollows = async (storeUrl, artists, userId) => {
+module.exports.addArtistFollows = async (storeUrl, artists, userId, source) => {
   // TODO: try first to find from db
   const storesRegexes = await queryStoreRegexes()
 
@@ -145,7 +151,7 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId) => {
       artistDetails.name = await storeModules[matchingStore.name].logic.getArtistName(url)
     }
 
-    const { artistId, followId } = await addStoreArtistToUser(matchingStore.url, userId, artistDetails)
+    const { artistId, followId } = await addStoreArtistToUser(matchingStore.url, userId, artistDetails, source)
     addedArtists.push({
       artist: `${apiURL}/artists/${artistId}`,
       follow: `${apiURL}/users/${userId}/follows/artists/${followId}`
@@ -155,7 +161,7 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId) => {
   return addedArtists
 }
 
-module.exports.addLabelFollows = async (storeUrl, labels, userId) => {
+module.exports.addLabelFollows = async (storeUrl, labels, userId, source) => {
   // TODO: try first to find from db
   const storeRegexes = await queryStoreRegexes()
 
@@ -179,7 +185,7 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId) => {
       labelDetails.name = await storeModules[matchingStore.name].logic.getLabelName(label.url)
     }
 
-    const { labelId, followId } = await addStoreLabelToUser(matchingStore.url, userId, labelDetails)
+    const { labelId, followId } = await addStoreLabelToUser(matchingStore.url, userId, labelDetails, source)
     addedLabels.push({
       label: `${apiURL}/labels/${labelId}`,
       follow: `${apiURL}/users/${userId}/follows/labels/${followId}`
@@ -189,12 +195,12 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId) => {
   return addedLabels
 }
 
-module.exports.addPlaylistFollows = async (playlists, userId) => {
+module.exports.addPlaylistFollows = async (playlists, userId, source) => {
   // TODO: try first to find from db
   const storeRegexes = await queryStoreRegexes()
 
   let addedPlaylists = []
-  for (const { url: playlistUrl } of body) {
+  for (const { url: playlistUrl } of playlists) {
     let matchingStore
     let matchingRegex
     for (const store of storeRegexes) {
@@ -217,7 +223,8 @@ module.exports.addPlaylistFollows = async (playlists, userId) => {
     const { playlistId, followId } = await storeModule.logic.addPlaylistFollow(
       userId,
       playlistUrl,
-      matchingRegex.typeId
+      matchingRegex.typeId,
+      source
     )
     addedPlaylists.push({
       playlist: `${apiURL}/playlists/${playlistId}`,
@@ -228,12 +235,12 @@ module.exports.addPlaylistFollows = async (playlists, userId) => {
   return addedPlaylists
 }
 
-module.exports.addStoreTracksToUser = async (storeUrl, type, tracks, userId) => {
+module.exports.addStoreTracksToUser = async (storeUrl, type, tracks, userId, source) => {
   console.log('Start processing received tracks')
 
   let addedTracks = []
   for (const track of tracks) {
-    const trackId = await addStoreTrackToUsers(storeUrl, userId, track, type)
+    const trackId = await addStoreTrackToUsers(storeUrl, [userId], track, type, source)
     addedTracks.push(`${apiURL}/tracks/${trackId}`)
   }
 

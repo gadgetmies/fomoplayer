@@ -8,20 +8,27 @@ const {
 } = require('../../chrome-extension/src/js/transforms/spotify')
 const spotifyApi = require('../routes/shared/spotify')
 
-const fetchPlaylists = async function() {
+const fetchPlaylists = async function(jobId) {
+  const source = { operation: 'spotify/fetchPlaylists', jobId }
   const errors = []
   const playlistFollowDetails = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT playlist_store_id               AS id,
-       array_agg(meta_account_user_id) AS users
-FROM user__playlist_watch
-         NATURAL JOIN playlist
-         NATURAL JOIN store_playlist_type
-         NATURAL JOIN store
-WHERE store_name = 'Spotify'
-  AND (playlist_last_update IS NULL OR playlist_last_update + interval '6 hours' < NOW())
-GROUP BY 1, playlist_last_update
-ORDER BY playlist_last_update DESC NULLS FIRST
+    sql`-- fetchPlaylists SELECT playlist_store_id
+SELECT
+  playlist_store_id               AS id
+, array_agg(meta_account_user_id) AS users
+FROM
+  user__playlist_watch
+  NATURAL JOIN playlist
+  NATURAL JOIN store_playlist_type
+  NATURAL JOIN store
+WHERE
+    store_name = 'Spotify'
+AND (playlist_last_update IS NULL OR playlist_last_update + INTERVAL '6 hours' < NOW())
+GROUP BY
+  1, playlist_last_update
+ORDER BY
+  playlist_last_update DESC NULLS FIRST
 LIMIT 20
 `
   )
@@ -36,20 +43,22 @@ LIMIT 20
       const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
       for (const track of transformed) {
         try {
-          await addStoreTrackToUsers('https://www.spotify.com', users, track)
+          await addStoreTrackToUsers('https://www.spotify.com', users, track, { ...source, id })
+          await pg.queryAsync(
+            // language=PostgreSQL
+            sql`-- fetchPlaylists UPDATE playlist
+UPDATE playlist
+SET
+  playlist_last_update = NOW()
+WHERE
+  playlist_store_id = ${id}`
+          )
         } catch (e) {
           const error = [`Failed to add track to users`, track, users, e]
           console.error(...error)
           errors.push(error)
         }
       }
-
-      await pg.queryAsync(
-        // language=PostgreSQL
-        sql`UPDATE playlist
-SET playlist_last_update = NOW()
-WHERE playlist_store_id = ${id}`
-      )
     } catch (e) {
       const error = [`Failed to fetch playlist details for ${id}`, e]
       console.error(...error)
@@ -60,20 +69,27 @@ WHERE playlist_store_id = ${id}`
   return errors
 }
 
-const fetchArtists = async () => {
+const fetchArtists = async jobId => {
+  const source = { operation: 'spotify/fetchArtists', jobId }
   const errors = []
   const artistFollowDetails = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT store__artist_store_id               AS id,
-       array_agg(meta_account_user_id) AS users
-FROM store__artist_watch__user
-         NATURAL JOIN store__artist_watch
-         NATURAL JOIN store__artist
-         NATURAL JOIN store
-WHERE store_name = 'Spotify'
-  AND (store__artist_last_update IS NULL OR store__artist_last_update + interval '6 hours' < NOW())
-GROUP BY 1, store__artist_last_update
-ORDER BY store__artist_last_update DESC NULLS FIRST
+    sql`-- fetchArtists SELECT store__artist_store_id
+SELECT
+  store__artist_store_id          AS id
+, array_agg(meta_account_user_id) AS users
+FROM
+  store__artist_watch__user
+  NATURAL JOIN store__artist_watch
+  NATURAL JOIN store__artist
+  NATURAL JOIN store
+WHERE
+    store_name = 'Spotify'
+AND (store__artist_last_update IS NULL OR store__artist_last_update + INTERVAL '6 hours' < NOW())
+GROUP BY
+  1, store__artist_last_update
+ORDER BY
+  store__artist_last_update DESC NULLS FIRST
 LIMIT 20
 `
   )
@@ -91,20 +107,22 @@ LIMIT 20
 
       for (const track of transformed) {
         try {
-          await addStoreTrackToUsers('https://www.spotify.com', users, track)
+          await addStoreTrackToUsers('https://www.spotify.com', users, track, { ...source, id })
+          await pg.queryAsync(
+            // language=PostgreSQL
+            sql`-- fetchArtists UPDATE store__artist
+UPDATE store__artist
+SET
+  store__artist_last_update = NOW()
+WHERE
+  store__artist_store_id = ${id}`
+          )
         } catch (e) {
           const error = [`Failed to add track to users`, track, users, e]
           console.error(...error)
           errors.push(error)
         }
       }
-
-      await pg.queryAsync(
-        // language=PostgreSQL
-        sql`UPDATE store__artist
-SET store__artist_last_update = NOW()
-WHERE store__artist_store_id = ${id}`
-      )
     } catch (e) {
       const error = [`Failed to fetch tracks for artist with Spotify id ${id}`, e]
       console.error(...error)
@@ -115,10 +133,10 @@ WHERE store__artist_store_id = ${id}`
   return errors
 }
 
-const fetchSpotifyWatches = async () => {
+const fetchSpotifyWatches = async ({ id: jobId }) => {
   const errors = []
-  errors.concat(await fetchPlaylists())
-  errors.concat(await fetchArtists())
+  errors.concat(await fetchPlaylists(jobId))
+  errors.concat(await fetchArtists(jobId))
 
   if (errors.length > 0) {
     return { success: false, result: errors }

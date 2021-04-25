@@ -7,20 +7,27 @@ const { beatportTracksTransform } = require('../../chrome-extension/src/js/trans
 
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
 
-const fetchArtists = async function() {
+const fetchArtists = async function(jobId) {
+  const source = { operation: 'beatport/fetchArtists', jobId }
   const errors = []
   const artistBeatportIds = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT store__artist_store_id          AS id,
-       array_agg(meta_account_user_id) AS users
-FROM store__artist_watch
-         NATURAL JOIN store__artist
-         NATURAL JOIN store__artist_watch__user
-         NATURAL JOIN store
-WHERE store_name = 'Beatport'
-  AND (store__artist_watch_last_update IS NULL OR store__artist_watch_last_update + interval '6 hours' < NOW())
-GROUP BY 1, store__artist_watch_last_update
-ORDER BY store__artist_watch_last_update DESC NULLS FIRST
+    sql`-- fetchArtists SELECT store__artist_store_id
+SELECT
+  store__artist_store_id          AS id
+, array_agg(meta_account_user_id) AS users
+FROM
+  store__artist_watch
+  NATURAL JOIN store__artist
+  NATURAL JOIN store__artist_watch__user
+  NATURAL JOIN store
+WHERE
+    store_name = 'Beatport'
+AND (store__artist_watch_last_update IS NULL OR store__artist_watch_last_update + INTERVAL '6 hours' < NOW())
+GROUP BY
+  1, store__artist_watch_last_update
+ORDER BY
+  store__artist_watch_last_update DESC NULLS FIRST
 LIMIT 50
 `
   )
@@ -36,20 +43,22 @@ LIMIT 50
 
       for (const track of transformed) {
         try {
-          await addStoreTrackToUsers('https://www.beatport.com', users, track)
+          await addStoreTrackToUsers('https://www.beatport.com', users, track, { ...source, id })
+          await pg.queryAsync(
+            // language=PostgreSQL
+            sql`-- fetchArtists UPDATE store__artist_watch
+UPDATE store__artist_watch
+SET
+  store__artist_watch_last_update = NOW()
+WHERE
+    store__artist_id = (SELECT store__artist_id FROM store__artist WHERE store__artist_store_id = ${id})`
+          )
         } catch (e) {
           const error = [`Failed to add track to users`, track, users, e]
           console.error(...error)
           errors.push(error)
         }
       }
-
-      await pg.queryAsync(
-        // language=PostgreSQL
-        sql`UPDATE store__artist_watch
-SET store__artist_watch_last_update = NOW()
-WHERE store__artist_id = (SELECT store__artist_id FROM store__artist WHERE store__artist_store_id = ${id})`
-      )
     } catch (e) {
       const error = [`Failed to fetch tracks for artist with Beatport id ${id}`, e]
       console.error(...error)
@@ -60,25 +69,32 @@ WHERE store__artist_id = (SELECT store__artist_id FROM store__artist WHERE store
   return errors
 }
 
-const fetchLabels = async function() {
+const fetchLabels = async function(jobId) {
+  const source = { operation: 'beatport/fetchLabels', jobId }
   const errors = []
   const labelBeatportIds = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT store__label_store_id           AS id,
-       array_agg(meta_account_user_id) AS users
-FROM store__label_watch
-         NATURAL JOIN store__label
-         NATURAL JOIN store
-         NATURAL JOIN store__label_watch__user
-WHERE store_name = 'Beatport'
-  AND (store__label_watch_last_update IS NULL OR store__label_watch_last_update + interval '6 hours' < NOW())
-GROUP BY 1, store__label_watch_last_update
-ORDER BY store__label_watch_last_update DESC NULLS FIRST
+    sql`-- fetchLabels SELECT store__label_store_id
+SELECT
+  store__label_store_id           AS id
+, array_agg(meta_account_user_id) AS users
+FROM
+  store__label_watch
+  NATURAL JOIN store__label
+  NATURAL JOIN store
+  NATURAL JOIN store__label_watch__user
+WHERE
+    store_name = 'Beatport'
+AND (store__label_watch_last_update IS NULL OR store__label_watch_last_update + INTERVAL '6 hours' < NOW())
+GROUP BY
+  1, store__label_watch_last_update
+ORDER BY
+  store__label_watch_last_update DESC NULLS FIRST
 LIMIT 50
 `
   )
 
-  count = 1
+  let count = 1
   for (const { id, users } of labelBeatportIds) {
     try {
       console.log(`Fetching tracks for label ${count}/${labelBeatportIds.length}`)
@@ -89,20 +105,22 @@ LIMIT 50
 
       for (const track of transformed) {
         try {
-          await addStoreTrackToUsers('https://www.beatport.com', users, track)
+          await addStoreTrackToUsers('https://www.beatport.com', users, track, { ...source, id })
+          await pg.queryAsync(
+            // language=PostgreSQL
+            sql`-- fetchLabels UPDATE store__label_watch
+UPDATE store__label_watch
+SET
+  store__label_watch_last_update = NOW()
+WHERE
+    store__label_id = (SELECT store__label_id FROM store__label WHERE store__label_store_id = ${id})`
+          )
         } catch (e) {
           const error = [`Failed to add track to users`, track, users, e]
           console.error(...error)
           errors.push(error)
         }
       }
-
-      await pg.queryAsync(
-        // language=PostgreSQL
-        sql`UPDATE store__label_watch
-SET store__label_watch_last_update = NOW()
-WHERE store__label_id = (SELECT store__label_id FROM store__label WHERE store__label_store_id = ${id})`
-      )
     } catch (e) {
       const error = [`Failed to fetch tracks for label with Beatport id ${id}`, e]
       console.error(...error)
@@ -113,20 +131,27 @@ WHERE store__label_id = (SELECT store__label_id FROM store__label WHERE store__l
   return errors
 }
 
-const fetchPlaylists = async function() {
+const fetchPlaylists = async function(jobId) {
+  const source = { operation: 'beatport/fetchPlaylists', jobId }
   const errors = []
   const beatportPlaylistUrls = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT playlist_store_id               AS url,
-       array_agg(meta_account_user_id) AS users
-FROM user__playlist_watch
-         NATURAL JOIN playlist
-         NATURAL JOIN store_playlist_type
-         NATURAL JOIN store
-WHERE store_name = 'Beatport'
-  AND (playlist_last_update IS NULL OR playlist_last_update + interval '6 hours' < NOW())
-GROUP BY 1, playlist_last_update
-ORDER BY playlist_last_update DESC NULLS FIRST
+    sql`-- fetchPlaylists SELECT playlist_store_id
+SELECT
+  playlist_store_id               AS url
+, array_agg(meta_account_user_id) AS users
+FROM
+  user__playlist_watch
+  NATURAL JOIN playlist
+  NATURAL JOIN store_playlist_type
+  NATURAL JOIN store
+WHERE
+    store_name = 'Beatport'
+AND (playlist_last_update IS NULL OR playlist_last_update + INTERVAL '6 hours' < NOW())
+GROUP BY
+  1, playlist_last_update
+ORDER BY
+  playlist_last_update DESC NULLS FIRST
 LIMIT 50
 `
   )
@@ -138,24 +163,26 @@ LIMIT 50
       count++
 
       const playlist = await bpApiStatic.getTracksOnPageAsync(url)
-      const transformed = beatportTracksTransform(playlist.tracks)
+      const transformed = beatportTracksTransform(playlist.tracks.tracks)
 
       for (const track of transformed) {
         try {
-          await addStoreTrackToUsers('https://www.beatport.com', users, track)
+          await addStoreTrackToUsers('https://www.beatport.com', users, track, { ...source, url })
+          await pg.queryAsync(
+            // language=PostgreSQL
+            sql`-- fetchPlaylists UPDATE playlist
+UPDATE playlist
+SET
+  playlist_last_update = NOW()
+WHERE
+  playlist_store_id = ${url}`
+          )
         } catch (e) {
           const error = [`Failed to add track to users`, track, users, e]
           console.error(...error)
           errors.push(error)
         }
       }
-
-      await pg.queryAsync(
-        // language=PostgreSQL
-        sql`UPDATE playlist
-SET playlist_last_update = NOW()
-WHERE playlist_store_id = ${url}`
-      )
     } catch (e) {
       const error = [`Failed to fetch tracks for label with Beatport url ${url}`, e]
       console.error(...error)
@@ -166,11 +193,11 @@ WHERE playlist_store_id = ${url}`
   return errors
 }
 
-const fetchBeatportWatches = async () => {
+const fetchBeatportWatches = async ({ id: jobId }) => {
   const errors = []
-  errors.concat(await fetchArtists())
-  errors.concat(await fetchLabels())
-  errors.concat(await fetchPlaylists())
+  errors.concat(await fetchArtists(jobId))
+  errors.concat(await fetchLabels(jobId))
+  errors.concat(await fetchPlaylists(jobId))
   if (errors.length > 0) {
     return { success: false, result: errors }
   }

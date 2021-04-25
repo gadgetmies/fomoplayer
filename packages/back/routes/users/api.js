@@ -44,7 +44,11 @@ const tracksHandler = type => async (
   { body: tracks, headers: { 'x-multi-store-player-store': storeUrl }, user: { id: userId } },
   res
 ) => {
-  const addedTracks = await addStoreTracksToUser(storeUrl, type, tracks, userId)
+  const addedTracks = await addStoreTracksToUser(storeUrl, type, tracks, userId, {
+    operation: 'tracksHandler',
+    type,
+    storeUrl
+  })
   res.status(201).send(addedTracks)
 }
 
@@ -53,13 +57,13 @@ router.post('/purchased', tracksHandler('purchased'))
 
 router.post('/follows/artists', async ({ user: { id: userId }, body, headers }, res) => {
   const storeUrl = headers['x-multi-store-player-store']
-  const addedArtists = await addArtistFollows(storeUrl, body, userId)
+  const addedArtists = await addArtistFollows(storeUrl, body, userId, { operation: '/follows/artists', storeUrl })
   res.status(201).send(addedArtists)
 })
 
 router.post('/follows/labels', async ({ user: { id: userId }, body, headers }, res) => {
   const storeUrl = headers['x-multi-store-player-store']
-  const addedLabels = await addLabelFollows(storeUrl, body, userId)
+  const addedLabels = await addLabelFollows(storeUrl, body, userId, { operation: '/follows/labels', storeUrl })
   res.status(201).send(addedLabels)
 })
 
@@ -94,7 +98,7 @@ router.delete('/follows/playlists/:id', async ({ params: { id }, user: { id: aut
 })
 
 router.post('/follows/playlists', async ({ user: { id: userId }, body }, res) => {
-  const addedPlaylists = await addPlaylistFollows(body, userId)
+  const addedPlaylists = await addPlaylistFollows(body, userId, { operation: '/follows/playlists' })
   res.send(addedPlaylists)
 })
 

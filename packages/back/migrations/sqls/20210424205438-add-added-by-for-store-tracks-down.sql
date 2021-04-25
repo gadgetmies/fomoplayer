@@ -1,0 +1,12 @@
+ALTER TABLE store__track
+  DROP COLUMN store__track_source;
+ALTER TABLE store__artist
+  DROP COLUMN store__artist_source;
+ALTER TABLE store__label
+  DROP COLUMN store__label_source;
+ALTER TABLE track
+  DROP COLUMN track_source;
+ALTER TABLE artist
+  DROP COLUMN artist_source;
+ALTER TABLE label
+  DROP COLUMN label_source;

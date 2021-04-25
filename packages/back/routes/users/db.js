@@ -548,16 +548,17 @@ WHERE
 `
   )
 
-module.exports.addTrackToUser = async (tx, userId, trackId) => {
+module.exports.addTrackToUser = async (tx, userId, trackId, source) => {
   await tx.queryAsync(
-  // language=PostgreSQL
+    // language=PostgreSQL
     sql`--addTrackToUser 
 INSERT INTO user__track
-  (track_id, meta_account_user_id)
+  (track_id, meta_account_user_id, user__track_source)
 VALUES
-  (${trackId}, ${userId})
+  (${trackId}, ${userId}, ${source})
 ON CONFLICT ON CONSTRAINT user__track_track_id_meta_account_user_id_key DO NOTHING
-`)
+`
+  )
 }
 
 module.exports.deletePlaylistFollowFromUser = async (userId, playlistId) => {

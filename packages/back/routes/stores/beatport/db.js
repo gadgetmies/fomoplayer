@@ -2,26 +2,27 @@ const pg = require('../../../db/pg.js')
 const R = require('ramda')
 const sql = require('sql-template-strings')
 
-module.exports.insertArtist = (tx, artistName) =>
+module.exports.insertArtist = (tx, artistName, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- insertArtist
 INSERT INTO artist
-  (artist_name)
+  (artist_name, artist_source)
 VALUES
-  (${artistName})
+  (${artistName}, ${source})
 ON CONFLICT DO NOTHING`
   )
 
-module.exports.addStoreTracksToUser = (tx, userId, tracks) =>
+module.exports.addStoreTracksToUser = (tx, userId, tracks, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- addStoreTracksToUser
 INSERT INTO user__track
-  (track_id, meta_account_user_id)
+  (track_id, meta_account_user_id, user__track_source)
 SELECT
   track_id
 , ${userId}
+, ${source}
 FROM store__track
 WHERE
   store__track_store_id :: TEXT = ANY (${R.pluck('id', tracks)})
@@ -49,7 +50,7 @@ WHERE
   )`
   )
 
-module.exports.insertTrackPreview = (tx, store__track_id, previews) =>
+module.exports.insertTrackPreview = (tx, store__track_id, previews, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- insertTrackPreview
@@ -58,13 +59,15 @@ INSERT INTO store__track_preview
    store__track_preview_url,
    store__track_preview_format,
    store__track_preview_start_ms,
-   store__track_preview_end_ms)
+   store__track_preview_end_ms,
+   store__track_preview_source)
 SELECT
   ${store__track_id}
 , value ->> 'url'
 , key :: PREVIEW_FORMAT
 , (value -> 'offset' ->> 'start') :: INTEGER
 , (value -> 'offset' ->> 'end') :: INTEGER
+, ${source}
 FROM
   json_each(${JSON.stringify(previews)} :: JSON) -- todo: JSON -> JSONB?
 WHERE
@@ -73,29 +76,38 @@ RETURNING store__track_preview_id
 `
   )
 
-module.exports.insertTrackWaveform = (tx, store__track_id, waveforms) =>
+module.exports.insertTrackWaveform = (tx, store__track_id, waveforms, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- insertTrackWaveform
 INSERT INTO store__track_preview_waveform
-  (store__track_preview_id, store__track_preview_waveform_url)
+  (store__track_preview_id, store__track_preview_waveform_url, store__track_preview_waveform_source)
 SELECT
   store__track_preview_id
 , ${waveforms.large.url}
+, ${source}
 FROM store__track_preview
 WHERE
   store__track_id = ${store__track_id}
 `
   )
 
-module.exports.insertStoreTrack = (tx, bpStoreId, trackId, trackStoreId, trackStoreDetails) =>
+module.exports.insertStoreTrack = (tx, bpStoreId, trackId, trackStoreId, trackStoreDetails, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- insertStoreTrack
 INSERT INTO store__track
-  (track_id, store_id, store__track_store_id, store__track_store_details, store__track_published, store__track_released)
+  (track_id,
+   store_id,
+   store__track_store_id,
+   store__track_store_details,
+   store__track_published,
+   store__track_released,
+   store__track_source)
 VALUES
-  (${trackId}, ${bpStoreId}, ${trackStoreId}, ${JSON.stringify(trackStoreDetails)} :: JSONB, ${trackStoreDetails.date.published}, ${trackStoreDetails.date.released})
+  (${trackId}, ${bpStoreId}, ${trackStoreId}, ${JSON.stringify(trackStoreDetails)} :: JSONB, ${
+      trackStoreDetails.date.published
+    }, ${trackStoreDetails.date.released}, ${source})
 RETURNING store__track_id
 `
   )
@@ -135,7 +147,7 @@ RETURNING meta_account_user_id, store__track_id
 `
   )
 
-module.exports.insertNewTrackReturningTrackId = (tx, newStoreTrack) =>
+module.exports.insertNewTrackReturningTrackId = (tx, newStoreTrack, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- insertNewTrackReturningTrackId
@@ -227,11 +239,12 @@ WITH
         )
 )
 , inserted_track AS (
-  INSERT INTO track (track_title, track_version, track_duration_ms)
+  INSERT INTO track (track_title, track_version, track_duration_ms, track_source)
     SELECT
       ${newStoreTrack.name}
     , ${newStoreTrack.mix}
     , ${newStoreTrack.duration.milliseconds}
+    , ${source}
     WHERE
       NOT exists(SELECT
                    1
@@ -273,7 +286,7 @@ UNION ALL
 `
   )
 
-module.exports.ensureStoreLabelExists = (tx, bpStoreId, labelName, storeLabelId, labelStoreDetails) =>
+module.exports.ensureStoreLabelExists = (tx, bpStoreId, labelName, storeLabelId, labelStoreDetails, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- ensureStoreLabelExists
@@ -284,20 +297,21 @@ SELECT
 , ${bpStoreId}
 , ${storeLabelId}
 , ${labelStoreDetails} :: JSON
+, ${source}
 FROM label
 WHERE
   lower(label_name) = lower(${labelName})
 `
   )
 
-module.exports.ensureLabelExists = (tx, labelName) =>
+module.exports.ensureLabelExists = (tx, labelName, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- ensureLabelExists
 INSERT INTO label
-  (label_name)
+  (label_name, label_source)
 SELECT
-  ${labelName}
+  ${labelName}, ${source}
 WHERE
   NOT exists(
       SELECT
@@ -325,16 +339,17 @@ WHERE
   )`
   )
 
-module.exports.insertStoreArtist = (tx, bpStoreId, artistName, storeArtistId, storeArtistDetails) =>
+module.exports.insertStoreArtist = (tx, bpStoreId, artistName, storeArtistId, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- insertStoreArtist
 INSERT INTO store__artist
-  (artist_id, store_id, store__artist_store_id)
+  (artist_id, store_id, store__artist_store_id, store__artist_source)
 SELECT
   artist_id
 , ${bpStoreId}
 , ${storeArtistId}
+, ${source}
 FROM artist
 WHERE
   lower(artist_name) = lower(${artistName})
