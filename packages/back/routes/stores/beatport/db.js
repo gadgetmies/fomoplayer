@@ -13,10 +13,10 @@ VALUES
 ON CONFLICT DO NOTHING`
   )
 
-module.exports.addStoreTracksToUser = (tx, userId, tracks, source) =>
+module.exports.insertStoreTracksToUser = (tx, userId, tracks, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
-    sql`-- addStoreTracksToUser
+    sql`-- insertStoreTracksToUser
 INSERT INTO user__track
   (track_id, meta_account_user_id, user__track_source)
 SELECT

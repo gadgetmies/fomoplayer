@@ -11,7 +11,7 @@ const { log, error } = require('./logger')
 
 const {
   insertArtist,
-  addStoreTracksToUser,
+  insertStoreTracksToUser,
   insertTrackToLabel,
   findNewTracks,
   insertTrackPreview,
@@ -67,7 +67,7 @@ const insertDownloadedTracksToUser = (module.exports.insertDownloadedTracksToUse
     const beatportStoreDbId = await getBeatportStoreDbId()
     const source = { operation: 'insertDownloadedTracksToUser' }
     const insertedNewTracks = await insertNewTracksToDb(tx, tracks, source)
-    const addedTracks = await addStoreTracksToUser(tx, username, tracks, source)
+    const addedTracks = await insertStoreTracksToUser(tx, username, tracks, source)
     for (const trackId of [...addedTracks, ...insertedNewTracks]) {
       await setTrackHeard(trackId, username, true) // TODO: destructure trackId from one of the arrays (currently returns an object)
     }
