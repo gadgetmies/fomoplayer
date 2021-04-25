@@ -19,10 +19,7 @@ const remixedTrack = R.pipe(
     ]
   })
 )(track)
-const editOfRemixedTrack = R.pipe(
-  L.modify(L.seq(['id'], ['release', 'id']), R.inc),
-  L.set('mix', 'Edit')
-)(remixedTrack)
+const editOfRemixedTrack = R.pipe(L.modify(L.seq(['id'], ['release', 'id']), R.inc), L.set('mix', 'Edit'))(remixedTrack)
 const assert = require('assert')
 const { test } = require('../../lib/test.js')
 
