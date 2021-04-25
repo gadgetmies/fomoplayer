@@ -4,7 +4,7 @@ const { using } = require('bluebird')
 const { initDb, pg } = require('../../lib/db.js')
 
 const firstTrack = require('../../fixtures/hoogs_track.json')
-const secondTrack = require('../..//fixtures/another_hoogs_track.json')
+const secondTrack = require('../../fixtures/another_hoogs_track.json')
 const bpLogic = require('../../../routes/stores/beatport/logic.js')
 const tracks = [firstTrack, secondTrack]
 const assert = require('assert')
