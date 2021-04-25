@@ -50,20 +50,23 @@ LIMIT 50
       for (const track of transformed) {
         try {
           await addStoreTrackToUsers('https://www.beatport.com', users, track, { ...source, id })
-          await pg.queryAsync(
-            // language=PostgreSQL
-            sql`-- fetchArtists UPDATE store__artist_watch
-UPDATE store__artist_watch
-SET
-  store__artist_watch_last_update = NOW()
-WHERE
-    store__artist_id = (SELECT store__artist_id FROM store__artist WHERE store__artist_store_id = ${id})`
-          )
         } catch (e) {
           const error = [`Failed to add track to users`, track, users, e]
           console.error(...error)
           errors.push(error)
         }
+      }
+
+      if (errors.length === 0) {
+        await pg.queryAsync(
+          // language=PostgreSQL
+          sql`-- fetchArtists UPDATE store__artist_watch
+UPDATE store__artist_watch
+SET
+  store__artist_watch_last_update = NOW()
+WHERE
+    store__artist_id = (SELECT store__artist_id FROM store__artist WHERE store__artist_store_id = ${id})`
+        )
       }
     } catch (e) {
       const error = [`Failed to fetch tracks for artist with Beatport id ${id}`, e]
@@ -118,20 +121,23 @@ LIMIT 50
       for (const track of transformed) {
         try {
           await addStoreTrackToUsers('https://www.beatport.com', users, track, { ...source, id })
-          await pg.queryAsync(
-            // language=PostgreSQL
-            sql`-- fetchLabels UPDATE store__label_watch
-UPDATE store__label_watch
-SET
-  store__label_watch_last_update = NOW()
-WHERE
-    store__label_id = (SELECT store__label_id FROM store__label WHERE store__label_store_id = ${id})`
-          )
         } catch (e) {
           const error = [`Failed to add track to users`, track, users, e]
           console.error(...error)
           errors.push(error)
         }
+      }
+
+      if (errors.length === 0) {
+        await pg.queryAsync(
+          // language=PostgreSQL
+          sql`-- fetchLabels UPDATE store__label_watch
+UPDATE store__label_watch
+SET
+  store__label_watch_last_update = NOW()
+WHERE
+    store__label_id = (SELECT store__label_id FROM store__label WHERE store__label_store_id = ${id})`
+        )
       }
     } catch (e) {
       const error = [`Failed to fetch tracks for label with Beatport id ${id}`, e]
@@ -186,20 +192,23 @@ LIMIT 50
       for (const track of transformed) {
         try {
           await addStoreTrackToUsers('https://www.beatport.com', users, track, { ...source, url })
-          await pg.queryAsync(
-            // language=PostgreSQL
-            sql`-- fetchPlaylists UPDATE playlist
-UPDATE playlist
-SET
-  playlist_last_update = NOW()
-WHERE
-  playlist_store_id = ${url}`
-          )
         } catch (e) {
           const error = [`Failed to add track to users`, track, users, e]
           console.error(...error)
           errors.push(error)
         }
+      }
+
+      if (errors.length === 0) {
+        await pg.queryAsync(
+          // language=PostgreSQL
+          sql`-- fetchPlaylists UPDATE playlist
+UPDATE playlist
+SET
+  playlist_last_update = NOW()
+WHERE
+  playlist_store_id = ${url}`
+        )
       }
     } catch (e) {
       const error = [`Failed to fetch tracks for label with Beatport url ${url}`, e]
