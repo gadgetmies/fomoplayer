@@ -13,7 +13,12 @@ const {
   setTrackHeard,
   addArtistFollows,
   addLabelFollows,
-  addPlaylistFollows
+  addPlaylistFollows,
+  createCart,
+  getUserCarts,
+  removeCart,
+  updateDefaultCart,
+  getDefaultCartDetails
 } = require('./logic')
 
 const router = require('express-promise-router')()
@@ -100,6 +105,25 @@ router.delete('/follows/playlists/:id', async ({ params: { id }, user: { id: aut
 router.post('/follows/playlists', async ({ user: { id: userId }, body }, res) => {
   const addedPlaylists = await addPlaylistFollows(body, userId, { operation: '/follows/playlists' })
   res.send(addedPlaylists)
+})
+
+router.get('/carts', async ({ user: { id: userId } }, res) => {
+  res.send(await getUserCarts(userId))
+})
+
+router.post('/carts', async ({ user: { id: userId }, body: { name } }, res) => {
+  const createdCart = await createCart(userId, name)
+  res.send(createdCart)
+})
+
+router.delete('/carts/:id', async ({ user: { id: userId }, params: { id } }, res) => {
+  await removeCart(userId, id)
+  res.status(204).send()
+})
+
+router.patch('/carts/default/tracks', async ({ user: { id: userId }, body: operations }, res) => {
+  await updateDefaultCart(userId, operations)
+  res.send(await getDefaultCartDetails(userId))
 })
 
 module.exports = router

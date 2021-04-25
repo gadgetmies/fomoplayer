@@ -81,7 +81,7 @@ class Player extends Component {
   }
 
   markAsPlayed(trackId) {
-    if (this.state.listState === 'heard') {
+    if (this.state.listState !== 'new') {
       return
     }
 
@@ -104,26 +104,6 @@ class Player extends Component {
 
   getTrackIndex(track) {
     return R.findIndex(R.propEq('id', track.id), this.getTracks())
-  }
-
-  // TODO: move to /me/carts
-  async addToCart(store, id) {
-    await requestJSONwithCredentials({
-      path: `/stores/${store}/carts/default`,
-      method: 'POST',
-      body: { trackId: id }
-    })
-    this.props.onAddToCart(store)
-  }
-
-  async removeFromCart(store, id) {
-    await requestJSONwithCredentials({
-      path: `/stores/${store}/carts/cart`,
-      method: 'DELETE',
-      body: { trackId: id }
-    })
-    // TODO: add removed notification?
-    this.props.onRemoveFromCart(store)
   }
 
   jumpTracks(numberOfTracksToJump) {
@@ -182,7 +162,7 @@ class Player extends Component {
           tracks[index] = heardTrack
         }
       })
-    } else {
+    } else if (this.state.listState === 'heard') {
       tracks = this.props.tracks.heard.slice()
       heardTracks.forEach(heardTrack => {
         const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
@@ -191,6 +171,8 @@ class Player extends Component {
         }
       })
       tracks = this.state.heardTracks.concat(tracks)
+    } else if (this.state.listState === 'cart') {
+      tracks = this.props.carts.find(R.prop('is_default')).tracks
     }
 
     return tracks
@@ -229,8 +211,8 @@ class Player extends Component {
           currentTrack={(currentTrack || {}).id}
           onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
-          onAddToCart={this.addToCart}
-          onRemoveFromCart={this.removeFromCart}
+          onAddToCart={this.props.onAddToCart}
+          onRemoveFromCart={this.props.onRemoveFromCart}
           onIgnoreArtistsByLabels={this.ignoreArtistsByLabels}
           onPreviewRequested={id => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
@@ -239,6 +221,7 @@ class Player extends Component {
           }}
           onShowNewClicked={this.setListState.bind(this, 'new')}
           onShowHeardClicked={this.setListState.bind(this, 'heard')}
+          onShowCartClicked={this.setListState.bind(this, 'cart')}
           onSearchResults={this.setSearchResults.bind(this)}
         />
       </>

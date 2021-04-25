@@ -37,6 +37,7 @@ class App extends Component {
   async componentDidMount() {
     try {
       await this.updateTracks()
+      await this.updateCarts()
       this.setState({ loggedIn: true })
     } catch (e) {
       console.error(e)
@@ -46,27 +47,48 @@ class App extends Component {
     this.setState({ loading: false })
   }
 
-  setCarts(store, carts) {
-    this.setState(
-      R.evolve({
-        carts: R.assoc(store, carts)
-      })
-    )
-  }
-
-  updateCarts(store) {
-    // return requestJSONwithCredentials({ path: `/stores/${store}/carts` })
-    //   .then(getJsonFromResults)
-    //   .then(carts => this.setCarts(store, carts))
-  }
-
   async onLoginDone() {
     this.setState({ loggedIn: true })
+    await this.updateCarts()
     await this.updateTracks()
   }
 
   onLogoutDone() {
     this.setState({ loggedIn: false, tracksData: defaultTracksData })
+  }
+
+  async updateCarts() {
+    const carts = await requestJSONwithCredentials({
+      path: `/me/carts`
+    })
+    this.setState({ carts })
+  }
+
+  async addToCart(id) {
+    const cartDetails = await requestJSONwithCredentials({
+      path: '/me/carts/default/tracks',
+      method: 'PATCH',
+      body: [{ op: 'add', trackId: id }]
+    })
+
+    this.updateCart(cartDetails)
+  }
+
+  async removeFromCart(id) {
+    const cartDetails = await requestJSONwithCredentials({
+      path: `/me/carts/default/tracks`,
+      method: 'PATCH',
+      body: [{ op: 'remove', trackId: id }]
+    })
+
+    this.updateCart(cartDetails)
+  }
+
+  updateCart(cartDetails) {
+    const index = this.state.carts.findIndex(R.propEq('id', cartDetails.id))
+    const clonedCarts = this.state.carts.slice()
+    clonedCarts[index] = cartDetails
+    this.setState({ carts: clonedCarts })
   }
 
   async updateTracks() {
@@ -87,10 +109,6 @@ class App extends Component {
       body: { heard: true }
     })
     this.updateTracks()
-  }
-
-  async onStoreLoginDone(store) {
-    this.updateCarts(store)
   }
 
   async updateLogins() {}
@@ -124,7 +142,10 @@ class App extends Component {
                 >
                   <FontAwesome name="bars" />
                 </button>
-                <Route path="/settings" render={() => <Settings />} />
+                <Route
+                  path="/settings"
+                  render={() => <Settings carts={this.state.carts} onUpdateCarts={this.updateCarts.bind(this)} />}
+                />
                 <Route
                   path="/"
                   render={() => (
@@ -135,8 +156,8 @@ class App extends Component {
                       tracks={this.state.tracksData.tracks}
                       newTracks={this.state.tracksData.meta.newTracks}
                       totalTracks={this.state.tracksData.meta.totalTracks}
-                      onAddToCart={store => this.updateCarts(store)}
-                      onRemoveFromCart={store => this.updateCarts(store)}
+                      onAddToCart={this.addToCart.bind(this)}
+                      onRemoveFromCart={this.removeFromCart.bind(this)}
                     />
                   )}
                 />

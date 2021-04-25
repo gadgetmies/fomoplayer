@@ -67,7 +67,7 @@ WHERE meta_account_username = lower(${username}) AND
       const id = newUser.id
       await pgrm.queryRowsAsync(
         // language=PostgreSQL
-        sql`
+        sql`-- insert default weights 
 INSERT INTO user_track_score_weight
   (user_track_score_weight_multiplier, user_track_score_weight_code, meta_account_user_id)
 VALUES
@@ -76,6 +76,13 @@ VALUES
   (-0.1, 'date_published', ${id}),
   (-0.1, 'date_added', ${id})
 `
+      )
+
+      await pgrm.queryRowsAsync(
+        // language=PostgreSQL
+        sql`-- Add default cart
+        INSERT INTO cart (cart_name, meta_account_user_id) VALUES ('Default', ${id}) 
+        `
       )
 
       return newUser

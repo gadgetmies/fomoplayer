@@ -16,7 +16,7 @@ const compression = require('compression')
 
 const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
-const { GeneralError } = require('./routes/shared/httpErrors')
+const { HttpError } = require('./routes/shared/httpErrors')
 
 const app = express()
 app.use(compression())
@@ -72,7 +72,7 @@ app.use(express.static('public'))
 
 const handleErrors = (err, req, res, next) => {
   console.error(err)
-  if (err instanceof GeneralError) {
+  if (err instanceof HttpError) {
     return res.status(err.getCode()).json({
       status: 'error',
       message: err.message

@@ -560,7 +560,7 @@ ON CONFLICT ON CONSTRAINT user__track_track_id_meta_account_user_id_key DO NOTHI
 }
 
 module.exports.deletePlaylistFollowFromUser = async (userId, playlistId) => {
-  await pg.queryAsync(
+  pg.queryAsync(
     // language=PostgreSQL
     sql`-- deletePlaylistFollowFromUser
 DELETE
@@ -570,3 +570,122 @@ WHERE
 AND playlist_id = ${playlistId}`
   )
 }
+
+module.exports.queryUserCarts = async userId => {
+  const carts = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryUserCarts
+SELECT
+  cart_id   AS id
+FROM cart
+WHERE
+  meta_account_user_id = ${userId}
+`
+  )
+
+  const cartDetails = []
+  for (const { id } of carts) {
+    console.log(JSON.stringify({ id }, null, 2))
+    const [details] = await queryCartDetails(id)
+    cartDetails.push(details)
+  }
+
+  return cartDetails
+}
+
+module.exports.insertCart = async (userId, name) =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--insertCart
+INSERT INTO cart
+  (cart_name, meta_account_user_id, cart_is_default)
+VALUES
+  (${name}, ${userId}, TRUE)
+RETURNING cart_id AS id, cart_name AS name`
+  )
+
+module.exports.queryCartOwner = async cartId => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryCartOwner
+SELECT
+  meta_account_user_id AS "ownerUserId"
+FROM cart
+WHERE
+  cart_id = ${cartId}
+`
+  )
+}
+
+const queryCartDetails = (module.exports.queryCartDetails = async cartId =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryCartDetails
+WITH
+  cart_tracks AS (SELECT array_agg(track_id) AS tracks FROM track__cart WHERE cart_id = ${cartId})
+, td AS (SELECT (track_details((SELECT tracks FROM cart_tracks), ${apiURL})).*)
+, renamed AS (SELECT track_id AS id, * FROM td)
+, tracks AS (SELECT json_agg(renamed.*) AS tracks FROM renamed)
+SELECT
+  cart_id                           AS id
+, cart_name                         AS name
+, COALESCE(cart_is_default, FALSE)  AS is_default,
+  CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks  
+FROM
+  cart,
+  tracks
+WHERE
+  cart_id = ${cartId}
+`
+  ))
+
+module.exports.deleteCart = async cartId =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- deleteCart
+DELETE
+FROM cart
+WHERE
+  cart_id = ${cartId}
+`
+  )
+
+module.exports.queryDefaultCartId = async userId => {
+  const [{ id }] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryDefaultCartId
+SELECT
+  cart_id AS id
+FROM cart
+WHERE
+    cart_is_default = TRUE
+AND meta_account_user_id = ${userId}
+`
+  )
+  return id
+}
+
+module.exports.insertTracksToCart = async (cartId, trackIds) =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--insertTracksToCart
+INSERT INTO track__cart
+  (cart_id, track_id)
+SELECT
+  ${cartId}
+, track_id
+FROM unnest(${trackIds}:: INTEGER[]) AS track_id
+ON CONFLICT ON CONSTRAINT track__cart_cart_id_track_id_key DO NOTHING`
+  )
+
+module.exports.deleteTracksFromCart = async (cartId, trackIds) =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--deleteTracksFromCart
+DELETE
+FROM track__cart
+WHERE
+    track_id = ANY (${trackIds})
+AND cart_id = ${cartId}
+`
+  )

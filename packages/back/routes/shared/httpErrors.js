@@ -1,4 +1,4 @@
-class GeneralError extends Error {
+class HttpError extends Error {
   constructor(message) {
     super()
     this.message = message
@@ -9,6 +9,8 @@ class GeneralError extends Error {
       return 400
     } else if (this instanceof Unauthorized) {
       return 401
+    } else if (this instanceof Forbidden) {
+      return 403
     } else if (this instanceof NotFound) {
       return 404
     }
@@ -16,13 +18,15 @@ class GeneralError extends Error {
   }
 }
 
-class BadRequest extends GeneralError {}
-class Unauthorized extends GeneralError {}
-class NotFound extends GeneralError {}
+class BadRequest extends HttpError {}
+class Unauthorized extends HttpError {}
+class Forbidden extends HttpError {}
+class NotFound extends HttpError {}
 
 module.exports = {
-  GeneralError,
+  HttpError,
   BadRequest,
   Unauthorized,
-  NotFound
+  NotFound,
+  Forbidden
 }

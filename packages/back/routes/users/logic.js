@@ -1,7 +1,7 @@
 const { using, each } = require('bluebird')
 const R = require('ramda')
 const pg = require('../../db/pg.js')
-const { BadRequest } = require('../shared/httpErrors')
+const { NotFound, Forbidden, BadRequest } = require('../shared/httpErrors')
 
 const {
   addStoreTrack,
@@ -27,7 +27,15 @@ const {
   deleteLabelWatchesFromUser,
   deleteLabelWatchFromUser,
   setAllHeard,
-  setTrackHeard
+  setTrackHeard,
+  queryUserCarts,
+  insertCart,
+  queryCartDetails,
+  deleteCart,
+  queryDefaultCartId,
+  insertTracksToCart,
+  deleteTracksFromCart,
+  queryCartOwner
 } = require('./db')
 
 const { modules: storeModules } = require('../stores/index.js')
@@ -245,4 +253,60 @@ module.exports.addStoreTracksToUser = async (storeUrl, type, tracks, userId, sou
   }
 
   return addedTracks
+}
+
+const verifyCartOwnership = async (userId, cartId) => {
+  const rows = await queryCartOwner(cartId)
+  if (rows.length === 0) {
+    throw new NotFound('Cart with id not found!')
+  } else if (rows[0].ownerUserId !== userId) {
+    throw new Forbidden('Cart owner does not match the session user!')
+  }
+}
+
+module.exports.getUserCarts = queryUserCarts
+module.exports.createCart = insertCart
+module.exports.removeCart = async (userId, cartId) => {
+  await verifyCartOwnership(userId, cartId)
+  await deleteCart(cartId)
+}
+
+const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId, trackIds) => {
+  await verifyCartOwnership(userId, cartId)
+  await insertTracksToCart(cartId, trackIds)
+})
+
+const addTracksToDefaultCart = (module.exports.addTracksToDefaultCart = async (userId, trackIds) => {
+  const id = await queryDefaultCartId(userId)
+  await addTracksToCart(userId, id, trackIds)
+})
+
+const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userId, cartId, trackIds) => {
+  await verifyCartOwnership(userId, cartId)
+  await deleteTracksFromCart(cartId, trackIds)
+})
+
+const removeTracksFromDefaultCart = (module.exports.removeTracksFromDefaultCart = async (userId, trackIds) => {
+  const id = await queryDefaultCartId(userId)
+  await removeTracksFromCart(userId, id, trackIds)
+})
+
+module.exports.updateDefaultCart = async (userId, operations) => {
+  const tracksToBeRemoved = operations.filter(R.propEq('op', 'remove')).map(R.prop('trackId'))
+  const tracksToBeAdded = operations.filter(R.propEq('op', 'add')).map(R.prop('trackId'))
+
+  console.log(JSON.stringify({ tracksToBeRemoved, tracksToBeAdded }, null, 2))
+  await removeTracksFromDefaultCart(userId, tracksToBeRemoved)
+  await addTracksToDefaultCart(userId, tracksToBeAdded)
+}
+
+const getCartDetails = (module.exports.getCartDetails = async (userId, cartId) => {
+  await verifyCartOwnership(userId, cartId)
+  const [details] = await queryCartDetails(cartId)
+  return details
+})
+
+module.exports.getDefaultCartDetails = async userId => {
+  const id = await queryDefaultCartId(userId)
+  return getCartDetails(userId, id)
 }

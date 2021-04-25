@@ -215,6 +215,20 @@ class Track extends Component {
           ) : null}
         </td>
         <td style={{ flex: 1, textAlign: 'center' }}>
+          <PillButton
+            className={'table-cell-button'}
+            onClick={async () => {
+              if (this.props.inCart) {
+                this.props.onRemoveFromCart(this.props.id)
+              } else {
+                this.props.onAddToCart(this.props.id)
+              }
+            }}
+          >
+            <FontAwesome name={this.props.inCart ? 'minus' : 'plus'} />
+          </PillButton>
+        </td>
+        <td style={{ flex: 1, textAlign: 'center' }}>
           {R.intersperse(
             ' ',
             this.props.stores.map(store => (
@@ -340,7 +354,7 @@ class Tracks extends Component {
             selected={this.state.selectedTrack === id}
             playing={this.props.currentTrack === id}
             heard={heard}
-            inCart={stores.filter(({ code, trackId }) => (carts[code] || []).includes(trackId)).map(({ code }) => code)}
+            inCart={this.props.carts.find(R.prop('is_default')).tracks.find(R.propEq('id', id))}
             key={id}
             // onClick={() => this.setState({ selectedTrack: id })}
             onDoubleClick={() => {
@@ -426,6 +440,17 @@ class Tracks extends Component {
               <label className="state-select-button--button" htmlFor="tracklist-state-heard">
                 Recently played
               </label>
+              <input
+                type="radio"
+                id="tracklist-state-cart"
+                name="tracklist-state"
+                className="state-select-button--button"
+                defaultChecked={this.props.listState === 'cart'}
+                onChange={this.props.onShowCartClicked}
+              />
+              <label className="state-select-button--button" htmlFor="tracklist-state-cart">
+                Cart
+              </label>
             </div>
             <label style={{ margin: 4 }}>
               <input
@@ -469,6 +494,7 @@ class Tracks extends Component {
                 Unfollow
                 {/*Artists*/}
               </th>
+              <th style={{ flex: 1, textAlign: 'center' }}>Cart</th>
               <th style={{ flex: 1, textAlign: 'center' }}>Stores</th>
               <th className="search-column table-button-cell-header">Search</th>
             </tr>
