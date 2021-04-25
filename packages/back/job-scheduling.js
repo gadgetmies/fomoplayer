@@ -125,14 +125,20 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
     return { success: true }
   },
   updateDateAddedScore: async () => {
-    await pg.queryAsync(sql`
+    await pg.queryAsync(
+      // language=PostgreSQL
+      sql`-- updateDateAddedScore
 REFRESH MATERIALIZED VIEW track_date_added_score
-    `)
+    `
+    )
   },
   updateDateReleasedScore: async () => {
-    await pg.queryAsync(sql`
+    await pg.queryAsync(
+      // language=PostgreSQL
+      sql`--updateDateReleasedScore
 REFRESH MATERIALIZED VIEW track_date_released_score
-    `)
+    `
+    )
   },
   fetchBeatportWatches,
   fetchSpotifyWatches,
