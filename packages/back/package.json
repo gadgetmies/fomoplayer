@@ -32,26 +32,28 @@
     "express-session": "^1.15.6",
     "google-auth-library": "^6.0.6",
     "html-entities": "^2.1.0",
+    "jsdom": "^16.5.3",
     "jwks-rsa": "^1.9.0",
     "m3u": "0.0.2",
     "morgan": "^1.10.0",
     "multi-store-player-shared-config": "1.0.0",
     "node-cron": "^2.0.3",
-    "oauth2-server": "^3.0.2",
+    "oauth2-server": "^3.1.1",
     "oauth2orize": "^1.11.0",
     "partial.lenses": "^14.12.0",
     "passport": "^0.4.0",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
     "passport-openidconnect": "0.0.2",
-    "pg": "^7.6.0",
     "pg-using-bluebird": "^4.0.1",
     "ramda": "^0.25.0",
+    "request-promise": "^4.2.6",
     "safer-eval": "^1.3.1",
     "spotify-web-api-node": "^5.0.2",
     "sql-template-strings": "^2.2.2"
   },
   "devDependencies": {
-    "supervisor": "^0.12.0"
+    "supervisor": "^0.12.0",
+    "@types/bluebird": "^3.5.33"
   }
 }
