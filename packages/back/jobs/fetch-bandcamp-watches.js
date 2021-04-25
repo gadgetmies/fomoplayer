@@ -71,7 +71,9 @@ LIMIT 20
 
       if (type === 'tag') {
         const releases = await bandcampApi.getTagReleasesAsync(id)
-        const releaseUrls = R.uniq(R.flatten(releases.map(R.prop('items'))).map(R.prop('tralbum_url')))
+        const releaseUrls = R.uniq(R.flatten(releases.map(R.prop('items'))).map(R.prop('tralbum_url'))).filter(
+          R.identity
+        )
         const err = await handleReleases(releaseUrls, users, { ...source, id })
         errors.concat(err)
 
