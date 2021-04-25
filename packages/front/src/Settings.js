@@ -12,8 +12,12 @@ class Settings extends Component {
       artistFollows: [],
       labelFollows: [],
       playlistFollows: [],
+      cartName: '',
       updatingFollows: false,
       updatingFollowDetails: false,
+      updatingCarts: false,
+      addingCart: false,
+      removingCart: false,
       followDetailsDebounce: undefined,
       followDetails: undefined,
       followDetailsUpdateAborted: false
@@ -62,6 +66,64 @@ class Settings extends Component {
     return (
       <>
         <div className="page-container">
+          <h2>Carts ({this.props.carts.length})</h2>
+          <label>
+            Add cart:
+            <div className="input-layout">
+              <input
+                className="text-input text-input-small"
+                disabled={this.state.updatingCarts}
+                value={this.state.cartName}
+                onChange={e => this.setState({ cartName: e.target.value })}
+              />
+              <SpinnerButton
+                className="button button-push_button-small button-push_button-primary"
+                loading={this.state.addingCart}
+                disabled={this.state.cartName === '' || this.state.addingCart || this.state.updatingCarts}
+                label="Add"
+                loadingLabel="Adding"
+                onClick={async () => {
+                  this.setState({ updatingCarts: true, addingCart: true })
+                  try {
+                    await requestJSONwithCredentials({
+                      path: `/me/carts`,
+                      method: 'POST',
+                      body: { name: this.state.cartName }
+                    })
+                    this.setState({ cartName: '' })
+                    await this.props.onUpdateCarts()
+                  } catch (e) {
+                    console.error(e)
+                  }
+                  this.setState({ updatingCarts: false, addingCart: false })
+                }}
+              />
+            </div>
+          </label>
+          <div>
+            <ul className="no-style-list follow-list">
+              {this.props.carts.map(cart => (
+                <li>
+                  <span disabled={this.state.updatingCarts} key={cart.id} className="button pill pill-button">
+                    <span className="pill-button-contents">
+                      {cart.name}{' '}
+                      <button
+                        disabled={this.state.addingCart || this.state.updatingCarts}
+                        onClick={async () => {
+                          this.setState({ updatingCarts: true })
+                          await requestWithCredentials({ path: `/me/carts/${cart.id}`, method: 'DELETE' })
+                          await this.props.onUpdateCarts()
+                          this.setState({ updatingCarts: false })
+                        }}
+                      >
+                        <FontAwesome name="close" />
+                      </button>
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
           <h2>Settings</h2>
           <h3>Following</h3>
           <label>
