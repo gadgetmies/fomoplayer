@@ -521,10 +521,9 @@ ON CONFLICT ON CONSTRAINT user__artist__label_ignore_unique DO NOTHING
 `
   )
 
-module.exports.setTrackHeard =
-  (trackId, username, heard) =>
+module.exports.setTrackHeard = (trackId, username, heard) =>
   pg.queryRowsAsync(
-// language=PostgreSQL
+    // language=PostgreSQL
     sql`-- setTrackHeard
 UPDATE user__track
 SET
@@ -535,10 +534,9 @@ AND meta_account_user_id = (SELECT meta_account_user_id FROM meta_account WHERE 
 `
   )
 
-module.exports.setAllHeard =
-  (username, heard) =>
+module.exports.setAllHeard = (username, heard) =>
   pg.queryAsync(
-// language=PostgreSQL
+    // language=PostgreSQL
     sql`-- setAllHeard
 UPDATE user__track
 SET
