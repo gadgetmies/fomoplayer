@@ -163,18 +163,23 @@ const fetchLabels = async jobId => {
   // TODO: share implementation between stores?
   const labelFollowDetails = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`SELECT store__label_store_id          AS id, -- TODO: use store__label_id instead?
-               store__label_url               AS url,
-               array_agg(meta_account_user_id) AS users
-        FROM store__label_watch__user
-                 NATURAL JOIN store__label_watch
-                 NATURAL JOIN store__label
-                 NATURAL JOIN store
-        WHERE store_name = 'Bandcamp'
-          AND (store__label_last_update IS NULL OR store__label_last_update + interval '6 hours' < NOW())
-        GROUP BY 1, 2, store__label_last_update
-        ORDER BY store__label_last_update DESC NULLS FIRST
-        LIMIT 20
+    sql`SELECT
+  store__label_store_id           AS id -- TODO: use store__label_id instead?
+, store__label_url                AS url
+, array_agg(meta_account_user_id) AS users
+FROM
+  store__label_watch__user
+  NATURAL JOIN store__label_watch
+  NATURAL JOIN store__label
+  NATURAL JOIN store
+WHERE
+    store_name = 'Bandcamp'
+AND (store__label_last_update IS NULL OR store__label_last_update + INTERVAL '6 hours' < NOW())
+GROUP BY
+  1, 2, store__label_last_update
+ORDER BY
+  store__label_last_update DESC NULLS FIRST
+LIMIT 20
     `
   )
 
