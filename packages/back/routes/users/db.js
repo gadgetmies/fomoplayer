@@ -150,7 +150,6 @@ AND store__artist_watch_id IN
 }
 
 module.exports.deleteArtistWatchFromUser = async (userId, artistId) => {
-  console.log({ userId, artistId })
   // language=PostgreSQL
   await pg.queryAsync(
     sql`-- deleteArtistWatchFromUser
@@ -594,7 +593,6 @@ WHERE
 
   const cartDetails = []
   for (const { id } of carts) {
-    console.log(JSON.stringify({ id }, null, 2))
     const [details] = await queryCartDetails(id)
     cartDetails.push(details)
   }

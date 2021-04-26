@@ -295,7 +295,6 @@ module.exports.updateDefaultCart = async (userId, operations) => {
   const tracksToBeRemoved = operations.filter(R.propEq('op', 'remove')).map(R.prop('trackId'))
   const tracksToBeAdded = operations.filter(R.propEq('op', 'add')).map(R.prop('trackId'))
 
-  console.log(JSON.stringify({ tracksToBeRemoved, tracksToBeAdded }, null, 2))
   await removeTracksFromDefaultCart(userId, tracksToBeRemoved)
   await addTracksToDefaultCart(userId, tracksToBeAdded)
 }
