@@ -491,7 +491,7 @@ class Tracks extends Component {
               <th style={{ flex: 1, overflow: 'hidden' }}>Key</th>
               {/* <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Cart</th> */}
               <th style={{ flex: 1.2, overflow: 'hidden' }} className={'table-button-cell-header'}>
-                Unfollow
+                Ignore
                 {/*Artists*/}
               </th>
               <th style={{ flex: 1, textAlign: 'center' }}>Cart</th>
