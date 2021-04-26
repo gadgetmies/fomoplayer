@@ -1,9 +1,10 @@
-const pg = require('../db/pg.js')
+const pg = require('../../db/pg.js')
 const R = require('ramda')
 const sql = require('sql-template-strings')
-const { addStoreTrackToUsers } = require('../routes/users/logic.js')
-const bandcampApi = require('../routes/stores/bandcamp/bandcamp-api.js')
-const { bandcampReleasesTransform } = require('../../chrome-extension/src/js/transforms/bandcamp.js')
+const { addStoreTrackToUsers } = require('../../routes/users/logic.js')
+const bandcampApi = require('../../routes/stores/bandcamp/bandcamp-api.js')
+const { fetchOperation } = require('./shared/fetch-operation')
+const { bandcampReleasesTransform } = require('../../../chrome-extension/src/js/transforms/bandcamp.js')
 
 const handleReleases = async (releaseUrls, users, source) => {
   const errors = []
@@ -223,4 +224,4 @@ const fetchBandcampWatches = async ({ id: jobId }) => {
   return { success: true }
 }
 
-module.exports = fetchBandcampWatches
+module.exports = fetchOperation(fetchBandcampWatches)

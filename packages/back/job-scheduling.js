@@ -1,9 +1,10 @@
 const sql = require('sql-template-strings')
 const pg = require('./db/pg.js')
 const cron = require('node-cron')
-const fetchBeatportWatches = require('./jobs/fetch-beatport-watches')
-const fetchSpotifyWatches = require('./jobs/fetch-spotify-watches')
-const fetchBandcampWatches = require('./jobs/fetch-bandcamp-watches')
+const fetchBeatportWatches = require('./jobs/watches/fetch-beatport-watches')
+const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
+const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')
+const { updateDateReleasedScore, updateDateAddedScore } = require('./jobs/scores')
 
 const init = async () => {
   await pg.queryAsync(
@@ -124,22 +125,8 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
 
     return { success: true }
   },
-  updateDateAddedScore: async () => {
-    await pg.queryAsync(
-      // language=PostgreSQL
-      sql`-- updateDateAddedScore
-REFRESH MATERIALIZED VIEW track_date_added_score
-    `
-    )
-  },
-  updateDateReleasedScore: async () => {
-    await pg.queryAsync(
-      // language=PostgreSQL
-      sql`--updateDateReleasedScore
-REFRESH MATERIALIZED VIEW track_date_released_score
-    `
-    )
-  },
+  updateDateAddedScore,
+  updateDateReleasedScore,
   fetchBeatportWatches,
   fetchSpotifyWatches,
   fetchBandcampWatches

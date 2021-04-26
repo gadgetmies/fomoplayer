@@ -1,9 +1,10 @@
-const pg = require('../db/pg.js')
+const pg = require('../../db/pg.js')
 const sql = require('sql-template-strings')
 const BPromise = require('bluebird')
 const bpApi = require('bp-api')
-const { addStoreTrackToUsers } = require('../routes/users/logic.js')
-const { beatportTracksTransform } = require('../../chrome-extension/src/js/transforms/beatport')
+const { fetchOperation } = require('./shared/fetch-operation')
+const { addStoreTrackToUsers } = require('../../routes/users/logic.js')
+const { beatportTracksTransform } = require('../../../chrome-extension/src/js/transforms/beatport')
 
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
 
@@ -231,4 +232,4 @@ const fetchBeatportWatches = async ({ id: jobId }) => {
   return { success: true }
 }
 
-module.exports = fetchBeatportWatches
+module.exports = fetchOperation(fetchBeatportWatches)

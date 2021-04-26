@@ -1,12 +1,13 @@
-const pg = require('../db/pg.js')
+const pg = require('../../db/pg.js')
 const R = require('ramda')
 const sql = require('sql-template-strings')
-const { addStoreTrackToUsers } = require('../routes/users/logic.js')
+const { addStoreTrackToUsers } = require('../../routes/users/logic.js')
 const {
   spotifyTracksTransform,
   spotifyAlbumTracksTransform
-} = require('../../chrome-extension/src/js/transforms/spotify')
-const spotifyApi = require('../routes/shared/spotify')
+} = require('../../../chrome-extension/src/js/transforms/spotify')
+const spotifyApi = require('../../routes/shared/spotify')
+const { fetchOperation } = require('./shared/fetch-operation')
 
 const fetchPlaylists = async function(jobId) {
   const source = { operation: 'spotify/fetchPlaylists', jobId }
@@ -157,4 +158,4 @@ const fetchSpotifyWatches = async ({ id: jobId }) => {
   return { success: true }
 }
 
-module.exports = fetchSpotifyWatches
+module.exports = fetchOperation(fetchSpotifyWatches)
