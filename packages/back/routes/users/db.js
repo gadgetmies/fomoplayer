@@ -384,7 +384,13 @@ WITH
   , label_score * COALESCE(label_multiplier, 0) +
     artist_score * COALESCE(artist_multiplier, 0) +
     COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
-    COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) AS score
+    COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) AS score,
+    json_build_object(
+      'label', json_build_object('score', label_score, 'multiplier', label_multiplier),
+      'artist', json_build_object('score', artist_score, 'multiplier', artist_multiplier),
+      'added', json_build_object('score', added_score.score, 'multiplier', date_added_multiplier),
+      'released', json_build_object('score', released_score.score, 'multiplier', date_released_multiplier)
+    ) AS score_details
   FROM
     (SELECT
        track_id
@@ -444,12 +450,14 @@ WITH
     track_id
   , user__track_heard
   , score
+  , score_details
   FROM new_tracks_with_scores
   UNION ALL
   SELECT
     track_id
   , user__track_heard
   , score
+  , NULL :: JSON AS score_details
   FROM heard_tracks
 )
 , tracks_with_details AS (
@@ -468,6 +476,7 @@ WITH
   , stores
   , released
   , score
+  , score_details
   FROM
     limited_tracks lt
     JOIN track_details((SELECT ARRAY_AGG(track_id) FROM limited_tracks), ${apiURL}) td USING (track_id)
