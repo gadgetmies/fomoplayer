@@ -67,6 +67,7 @@ class Settings extends Component {
       <>
         <div className="page-container">
           <h2>Settings</h2>
+          {/*
           <h3>Carts ({this.props.carts.length})</h3>
           <label>
             Add cart:
@@ -125,6 +126,7 @@ class Settings extends Component {
               ))}
             </ul>
           </div>
+          */}
           <h3>Following</h3>
           <label>
             Add URL to follow:
