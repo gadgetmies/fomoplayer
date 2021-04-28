@@ -354,7 +354,7 @@ class Tracks extends Component {
             selected={this.state.selectedTrack === id}
             playing={this.props.currentTrack === id}
             heard={heard}
-            inCart={this.props.carts.find(R.prop('is_default')).tracks.find(R.propEq('id', id))}
+            inCart={this.props.carts.find(R.prop('is_default')) ? this.props.carts.find(R.prop('is_default')).tracks.find(R.propEq('id', id)) : false}
             key={id}
             // onClick={() => this.setState({ selectedTrack: id })}
             onDoubleClick={() => {
