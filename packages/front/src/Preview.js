@@ -59,7 +59,7 @@ class Preview extends Component {
       }
     }
 
-    if (this.state.playing !== playing && browser().name !== 'safari') {
+    if (this.state.playing !== playing) {
       const player = this.getPlayer()
       if (player) {
         player[playing ? 'play' : 'pause']()
