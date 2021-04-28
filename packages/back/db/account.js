@@ -81,8 +81,11 @@ VALUES
       await pgrm.queryRowsAsync(
         // language=PostgreSQL
         sql`-- Add default cart
-        INSERT INTO cart (cart_name, meta_account_user_id) VALUES ('Default', ${id}) 
-        `
+INSERT INTO cart
+  (cart_name, meta_account_user_id, cart_is_default)
+VALUES
+  ('Default', ${id}, TRUE)
+`
       )
 
       return newUser
