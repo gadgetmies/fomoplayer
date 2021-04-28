@@ -16,7 +16,9 @@ class Preview extends Component {
     super(props)
 
     this.state = { playing: false, position: 0, waveform: undefined, totalDuration: undefined }
-    this.audioContext = new AudioContext()
+    if (window.AudioContext !== undefined) {
+      this.audioContext = new AudioContext()
+    }
 
     this.setVolume = this.setVolume.bind(this)
   }
@@ -36,7 +38,7 @@ class Preview extends Component {
   updateTrack(track, previewUrl) {
     this.setState({ previewUrl })
     const waveform = this.getWaveform(track)
-    if (!waveform) {
+    if (!waveform && this.audioContext) {
       this.updateWaveform(previewUrl).catch(e => {
         console.error(e)
       })
