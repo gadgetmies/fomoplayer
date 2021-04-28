@@ -14,7 +14,7 @@
   "dependencies": {
     "bluebird": "^3.7.2",
     "body-parser": "^1.18.3",
-    "bp-api": "elysion/bp-api#v3.1.5",
+    "bp-api": "elysion/bp-api#v3.1.6",
     "color-stacktrace": "^1.0.3",
     "colors": "^1.4.0",
     "compression": "^1.7.3",
