@@ -2,12 +2,10 @@ const R = require('ramda')
 const BPromise = require('bluebird')
 const bpApi = require('bp-api')
 
-const pg = require('../../../db/pg.js')
+const { beatportTracksTransform } = require('multi_store_player_chrome_extension/src/js/transforms/beatport')
 const { BadRequest } = require('../../shared/httpErrors')
-const { insertUserPlaylistFollow } = require('../../shared/db/user')
 const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
-const { setTrackHeard } = require('../../logic.js')
-const { log, error } = require('./logger')
+const { log } = require('./logger')
 
 const {
   insertArtist,
@@ -31,7 +29,8 @@ const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
 let beatportSessions = {}
 let beatportStoreDbId = null
 // TODO: add export?
-const storeName = 'Beatport'
+const storeName = (module.exports.storeName = 'Beatport')
+module.exports.storeUrl = 'https://www.beatport.com'
 
 module.exports.hasValidSession = username => Object.keys(beatportSessions).includes(username)
 
@@ -68,9 +67,10 @@ const insertDownloadedTracksToUser = (module.exports.insertDownloadedTracksToUse
     const source = { operation: 'insertDownloadedTracksToUser' }
     const insertedNewTracks = await insertNewTracksToDb(tx, tracks, source)
     const addedTracks = await insertStoreTracksToUser(tx, username, tracks, source)
-    for (const trackId of [...addedTracks, ...insertedNewTracks]) {
-      await setTrackHeard(trackId, username, true) // TODO: destructure trackId from one of the arrays (currently returns an object)
-    }
+    // TODO: this should be done in the generic logic
+    // for (const trackId of [...addedTracks, ...insertedNewTracks]) {
+    //   await setTrackHeard(trackId, username, true) // TODO: destructure trackId from one of the arrays (currently returns an object)
+    // }
     log(`Inserted ${insertedNewTracks.length} new tracks to ${username} from downloaded tracks`)
     const insertedPurchasedTracks = await insertPurchasedTracksByIds(
       tx,
@@ -154,16 +154,6 @@ const ensureTracksExist = async (tx, newStoreTracks, bpStoreId, source) =>
       )
   )
 
-module.exports.addPlaylistFollow = async (userId, playlistUrl) => {
-  const title = await bpApiStatic.getTitleAsync(playlistUrl)
-
-  if (!title) {
-    throw new BadRequest('Unable to fetch details from url')
-  }
-
-  return await insertUserPlaylistFollow(userId, storeName, playlistUrl, title)
-}
-
 const getArtistName = (module.exports.getArtistName = async url => {
   const title = await bpApiStatic.getTitleAsync(url)
   return title.replace(' music download - Beatport', '')
@@ -173,6 +163,8 @@ const getLabelName = (module.exports.getLabelName = async url => {
   const title = await bpApiStatic.getTitleAsync(url)
   return title.replace(' artists & music download - Beatport', '')
 })
+
+module.exports.getPlaylistId = id => id
 
 const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
   return await bpApiStatic.getTitleAsync(url)
@@ -200,6 +192,42 @@ module.exports.getFollowDetails = async url => {
   }
 
   return undefined
+}
+
+module.exports.getArtistTracks = async ({ artistStoreId }) => {
+  const artistTracks = await bpApiStatic.getArtistTracksAsync(artistStoreId, 1)
+  const transformed = beatportTracksTransform(artistTracks.tracks)
+  if (transformed.length === 0) {
+    const error = `No tracks found for artist ${artistStoreId}`
+    console.error(error)
+    throw new Error(error)
+  }
+
+  return { tracks: transformed, errors: [] }
+}
+
+module.exports.getLabelTracks = async ({ labelStoreId }) => {
+  const labelTracks = await bpApiStatic.getLabelTracksAsync(labelStoreId, 1)
+  const transformed = beatportTracksTransform(labelTracks.tracks)
+  if (transformed.length === 0) {
+    const error = `No tracks found for label ${labelStoreId}`
+    console.error(error)
+    throw new Error(error)
+  }
+
+  return { tracks: transformed, errors: [] }
+}
+
+module.exports.getPlaylistTracks = async ({ playlistStoreId: url }) => {
+  const playlist = await bpApiStatic.getTracksOnPageAsync(url)
+  const transformed = beatportTracksTransform(playlist.tracks.tracks)
+  if (transformed.length === 0) {
+    const error = `No tracks found for playlist at ${url}`
+    console.error(error)
+    throw new Error(error)
+  }
+
+  return { tracks: transformed, errors: [] }
 }
 
 module.exports.test = {

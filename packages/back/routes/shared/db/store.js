@@ -94,7 +94,21 @@ ON CONFLICT ON CONSTRAINT store__label_store__label_store_id_store_id_key
 `
   )
 
-  return labelId
+  const [{ storeLabelId }] = await tx.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- ensureArtistExists SELECT store__label_id AS "storeLabelId" FROM store__label
+SELECT
+  store__label_id AS "storeLabelId"
+FROM
+  store__label
+  NATURAL JOIN store
+WHERE
+    store_url = ${storeUrl}
+AND label_id = ${labelId}
+  `
+  )
+
+  return { labelId, storeLabelId }
 }
 
 module.exports.ensureReleaseExists = async (tx, storeUrl, release, source) => {
@@ -243,7 +257,21 @@ ON CONFLICT ON CONSTRAINT store__artist_store__artist_store_id_store_id_key DO N
 `
   )
 
-  return { id: artistId, role: artist.role }
+  const [{ storeArtistId }] = await tx.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- ensureArtistExists SELECT store__artist_id AS "storeArtistId" FROM store__artist
+SELECT
+  store__artist_id AS "storeArtistId"
+FROM
+  store__artist
+  NATURAL JOIN store
+WHERE
+    store_url = ${storeUrl}
+AND artist_id = ${artistId}
+  `
+  )
+
+  return { id: artistId, storeArtistId, role: artist.role }
 }
 
 module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists, track, source) => {

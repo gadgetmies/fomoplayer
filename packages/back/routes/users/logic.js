@@ -1,22 +1,22 @@
 const { using, each } = require('bluebird')
 const R = require('ramda')
 const pg = require('../../db/pg.js')
+const { insertUserPlaylistFollow } = require('../shared/db/user')
+const { updateArtistTracks, updatePlaylistTracks, updateLabelTracks } = require('../shared/tracks')
+const {
+  getStoreModuleForArtistByUrl,
+  getStoreModuleForLabelByUrl,
+  getStoreModuleForPlaylistByUrl
+} = require('../shared/stores')
+const { addStoreTrackToUsers } = require('./shared')
 const { NotFound, Forbidden, BadRequest } = require('../shared/httpErrors')
 
-const {
-  addStoreTrack,
-  ensureArtistExists,
-  ensureReleaseExists,
-  ensureLabelExists,
-  queryStoreRegexes
-} = require('../shared/db/store')
+const { ensureArtistExists, ensureLabelExists, queryStoreRegexes } = require('../shared/db/store')
 
 const {
   addArtistOnLabelToIgnore,
   addArtistWatch,
   addLabelWatch,
-  addPurchasedTrackToUser,
-  addTrackToUser,
   deletePlaylistFollowFromUser,
   queryUserArtistFollows,
   queryUserLabelFollows,
@@ -72,45 +72,6 @@ module.exports.addArtistsOnLabelsToIgnore = (username, { artistIds, labelIds }) 
     )
   )
 
-const addStoreTrackToUsers = (module.exports.addStoreTrackToUsers = async (
-  storeUrl,
-  userIds,
-  track,
-  source,
-  type = 'tracks'
-) => {
-  return using(pg.getTransaction(), async tx => {
-    let labelId
-    let releaseId
-
-    if (track.label) {
-      labelId = await ensureLabelExists(tx, storeUrl, track.label, source)
-    }
-    if (track.release) {
-      releaseId = await ensureReleaseExists(tx, storeUrl, track.release, source)
-    }
-
-    let artists = []
-    for (const artist of track.artists) {
-      const res = await ensureArtistExists(tx, storeUrl, artist, source)
-      artists.push(res)
-    }
-
-    const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, source)
-
-    for (const userId of userIds) {
-      await addTrackToUser(tx, userId, trackId, source)
-
-      if (type === 'purchased') {
-        await addPurchasedTrackToUser(tx, userId, track)
-      }
-    }
-    // TODO: Update materialized views
-
-    return trackId
-  })
-})
-
 module.exports.removeArtistWatchesFromUser = deleteArtistWatchesFromUser
 module.exports.removeArtistWatchFromUser = deleteArtistWatchFromUser
 module.exports.removeLabelWatchesFromUser = deleteLabelWatchesFromUser
@@ -118,17 +79,17 @@ module.exports.removeLabelWatchFromUser = deleteLabelWatchFromUser
 
 const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (storeUrl, userId, artist, source) => {
   return using(pg.getTransaction(), async tx => {
-    const { id: artistId } = await ensureArtistExists(tx, storeUrl, artist, source)
+    const { id: artistId, storeArtistId } = await ensureArtistExists(tx, storeUrl, artist, source)
     const followId = await addArtistWatch(tx, userId, artistId, source)
-    return { artistId, followId }
+    return { artistId, followId, storeArtistId }
   })
 })
 
 const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUrl, userId, label, source) => {
   return using(pg.getTransaction(), async tx => {
-    const labelId = await ensureLabelExists(tx, storeUrl, label, source)
+    const { storeLabelId, labelId } = await ensureLabelExists(tx, storeUrl, label, source)
     const followId = await addLabelWatch(tx, userId, labelId, source)
-    return { labelId, followId }
+    return { labelId, followId, storeLabelId }
   })
 })
 
@@ -137,32 +98,36 @@ module.exports.removePlaylistFollowFromUser = async (userId, playlistId) =>
 
 module.exports.addArtistFollows = async (storeUrl, artists, userId, source) => {
   // TODO: try first to find from db
-  const storesRegexes = await queryStoreRegexes()
-
   let addedArtists = []
   for (const { name, url } of artists) {
-    let artistDetails = { url: (storeUrl !== undefined ? storeUrl : '') + url }
-    const matchingStore = storesRegexes.find(({ url, regex: { artist: artistRegex } }) => {
-      const urlMatch = artistDetails.url.match(artistRegex)
-      if (urlMatch !== null) {
-        artistDetails.id = urlMatch[1]
-      }
-      return storeUrl === url || artistDetails.id !== undefined
-    })
-
-    if (matchingStore === null) {
-      throw new BadRequest(`Invalid artist URL ${url}`)
-    }
+    const { module: storeModule, idFromUrl } = await getStoreModuleForArtistByUrl(url)
+    let artistDetails = { url: (storeUrl !== undefined ? storeUrl : '') + url, id: idFromUrl }
 
     if (name === undefined) {
-      console.log(`Fetching artist name from ${url}`)
-      artistDetails.name = await storeModules[matchingStore.name].logic.getArtistName(url)
+      artistDetails.name = await storeModule.logic.getArtistName(url)
     }
 
-    const { artistId, followId } = await addStoreArtistToUser(matchingStore.url, userId, artistDetails, source)
+    const { artistId, followId, storeArtistId } = await addStoreArtistToUser(
+      storeModule.logic.storeUrl,
+      userId,
+      artistDetails,
+      source
+    )
     addedArtists.push({
       artist: `${apiURL}/artists/${artistId}`,
       follow: `${apiURL}/users/${userId}/follows/artists/${followId}`
+    })
+
+    process.nextTick(async () => {
+      try {
+        await updateArtistTracks(
+          storeModule.logic.storeUrl,
+          { storeArtistId, artistStoreId: artistDetails.id, url },
+          source
+        )
+      } catch (e) {
+        console.error('Failed to update artist tracks', e)
+      }
     })
   }
 
@@ -171,32 +136,37 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId, source) => {
 
 module.exports.addLabelFollows = async (storeUrl, labels, userId, source) => {
   // TODO: try first to find from db
-  const storeRegexes = await queryStoreRegexes()
-
   let addedLabels = []
-  for (const label of labels) {
-    let labelDetails = { url: (storeUrl !== undefined ? storeUrl : '') + label.url }
-    const matchingStore = storeRegexes.find(({ url, regex: { label: labelRegex } }) => {
-      const urlMatch = labelDetails.url.match(labelRegex)
-      if (urlMatch !== null) {
-        labelDetails.id = urlMatch[1]
-      }
-      return storeUrl === url || labelDetails.id !== undefined
-    })
+  for (const { name, url } of labels) {
+    const { module: storeModule, idFromUrl } = await getStoreModuleForLabelByUrl(url)
+    let labelDetails = { url: (storeUrl !== undefined ? storeUrl : '') + url, id: idFromUrl }
 
-    if (matchingStore === null) {
-      throw new BadRequest(`Invalid label URL ${label.url}`)
+    if (name === undefined) {
+      labelDetails.name = await storeModule.logic.getLabelName(url)
     }
 
-    if (label.name === undefined) {
-      console.log(`Fetching label name from ${label.url}`)
-      labelDetails.name = await storeModules[matchingStore.name].logic.getLabelName(label.url)
-    }
+    const { labelId, followId, storeLabelId } = await addStoreLabelToUser(
+      storeModule.logic.storeUrl,
+      userId,
+      labelDetails,
+      source
+    )
 
-    const { labelId, followId } = await addStoreLabelToUser(matchingStore.url, userId, labelDetails, source)
     addedLabels.push({
       label: `${apiURL}/labels/${labelId}`,
       follow: `${apiURL}/users/${userId}/follows/labels/${followId}`
+    })
+
+    process.nextTick(async () => {
+      try {
+        await updateLabelTracks(
+          storeModule.logic.storeUrl,
+          { storeLabelId, labelStoreId: labelDetails.id, url },
+          source
+        )
+      } catch (e) {
+        console.error('Failed to update label tracks', e)
+      }
     })
   }
 
@@ -205,38 +175,36 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, source) => {
 
 module.exports.addPlaylistFollows = async (playlists, userId, source) => {
   // TODO: try first to find from db
-  const storeRegexes = await queryStoreRegexes()
-
   let addedPlaylists = []
-  for (const { url: playlistUrl } of playlists) {
-    let matchingStore
-    let matchingRegex
-    for (const store of storeRegexes) {
-      matchingRegex = store.regex.playlist.find(({ regex }) => {
-        return playlistUrl.match(regex) !== null
-      })
+  for (const { url } of playlists) {
+    const { module: storeModule, typeId } = await getStoreModuleForPlaylistByUrl(url)
 
-      if (matchingRegex !== undefined) {
-        matchingStore = store
-        break
-      }
-    }
+    const playlistStoreId = await storeModule.logic.getPlaylistId(url)
+    const name = await storeModule.logic.getPlaylistName(typeId, url)
 
-    if (matchingStore === undefined) {
-      throw new BadRequest('Invalid playlist URL')
-    }
-
-    const { name: storeName } = matchingStore
-    const storeModule = storeModules[storeName]
-    const { playlistId, followId } = await storeModule.logic.addPlaylistFollow(
+    const { playlistId, followId } = await insertUserPlaylistFollow(
       userId,
-      playlistUrl,
-      matchingRegex.typeId,
-      source
+      storeModule.logic.storeName,
+      playlistStoreId,
+      name,
+      typeId
     )
+
     addedPlaylists.push({
       playlist: `${apiURL}/playlists/${playlistId}`,
       follow: `${apiURL}/users/${userId}/follows/playlists/${followId}`
+    })
+
+    process.nextTick(async () => {
+      try {
+        await updatePlaylistTracks(
+          storeModule.logic.storeUrl,
+          { playlistId, playlistStoreId, url, type: typeId },
+          source
+        )
+      } catch (e) {
+        console.error('Failed to update playlist tracks', e)
+      }
     })
   }
 

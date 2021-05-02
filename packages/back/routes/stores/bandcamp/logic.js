@@ -1,20 +1,22 @@
 const R = require('ramda')
 const BPromise = require('bluebird')
+const { bandcampReleasesTransform } = require('multi_store_player_chrome_extension/src/js/transforms/bandcamp')
 const { queryPreviewDetails } = require('../../shared/db/preview.js')
-const { insertUserPlaylistFollow } = require('../../shared/db/user.js')
 const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
 const {
   getReleaseAsync,
   getTagAsync,
   getArtistAsync,
   getLabelAsync,
-  getPageDetailsAsync
+  getPageDetailsAsync,
+  getTagReleasesAsync
 } = require('./bandcamp-api.js')
 
-const { queryAlbumUrl, queryTrackStoreId } = require('./db.js')
+const { queryAlbumUrl } = require('./db.js')
 
 let storeDbId = null
-const storeName = 'Bandcamp'
+const storeName = (module.exports.storeName = 'Bandcamp')
+module.exports.storeUrl = 'https://bandcamp.com'
 
 const getStoreDbId = () => {
   if (storeDbId) {
@@ -27,7 +29,7 @@ const getStoreDbId = () => {
   }
 }
 
-module.exports.getPreviewDetails = async (previewId) => {
+module.exports.getPreviewDetails = async previewId => {
   const storeId = await getStoreDbId()
   const details = await queryPreviewDetails(previewId)
   const storeTrackId = details.store_track_id
@@ -45,28 +47,6 @@ const getTagFromUrl = function(playlistUrl) {
   return match[1]
 }
 
-module.exports.addPlaylistFollow = async (userId, playlistUrl, playlistType) => {
-  let id
-  let name
-  if (playlistType === 'tag') {
-    // TODO: fetch regex from db
-    const tag = getTagFromUrl(playlistUrl)
-    if (!tag) {
-      throw new BadRequest('Invalid Bandcamp playlist URL')
-    }
-
-    const res = await getTagAsync(tag)
-    id = res.id
-    name = res.name
-
-    if (!id || !name) {
-      throw new BadRequest('Fetching playlist details failed')
-    }
-  }
-
-  return await insertUserPlaylistFollow(userId, 'Bandcamp', id, name, playlistType)
-}
-
 module.exports.getArtistName = async url => {
   const { name } = await getArtistAsync(url)
   console.log(name)
@@ -78,6 +58,8 @@ module.exports.getLabelName = async url => {
   console.log(name)
   return name
 }
+
+module.exports.getPlaylistId = getTagFromUrl
 
 const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
   if (type === 'tag') {
@@ -104,4 +86,53 @@ module.exports.getFollowDetails = async url => {
   }
 
   return undefined
+}
+
+const getTracksFromReleases = async releaseUrls => {
+  const errors = []
+
+  let releaseDetails = []
+  for (const releaseUrl of releaseUrls) {
+    console.log(`Processing release: ${releaseUrl}`)
+    try {
+      const releaseInfo = await getReleaseAsync(releaseUrl)
+      releaseDetails.push(releaseInfo)
+    } catch (e) {
+      const error = [`Failed to fetch release details from ${releaseUrl}`, e]
+      console.error(...error)
+      errors.push(error)
+    }
+  }
+
+  const transformed = bandcampReleasesTransform(releaseDetails)
+  console.log(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
+  if (transformed.length === 0) {
+    const error = `No tracks found for releases ${releaseUrls.join(', ')}`
+    console.error(error)
+    errors.push([error])
+    return errors
+  }
+
+  return { errors, tracks: transformed }
+}
+
+module.exports.getArtistTracks = async ({ url }) => {
+  const { releaseUrls } = await getArtistAsync(url)
+  return await getTracksFromReleases(releaseUrls)
+}
+
+module.exports.getLabelTracks = async ({ url }) => {
+  const { releaseUrls } = await getLabelAsync(url)
+  return await getTracksFromReleases(releaseUrls)
+}
+
+module.exports.getPlaylistTracks = async ({ playlistStoreId, type }) => {
+  if (type === 'tag') {
+    const releases = await getTagReleasesAsync(playlistStoreId)
+    const releaseUrls = R.uniq(R.flatten(releases.map(R.prop('items'))).map(R.prop('tralbum_url'))).filter(R.identity)
+    console.log(`Found ${releaseUrls.length} releases for tag ${playlistStoreId}`)
+    return await getTracksFromReleases(releaseUrls)
+  }
+
+  throw new Error('Unsupported playlist type')
 }

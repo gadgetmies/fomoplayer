@@ -292,7 +292,7 @@ UNION ALL
 `
   )
 
-module.exports.ensureStoreLabelExists = (tx, bpStoreId, labelName, storeLabelId, labelStoreDetails, source) =>
+module.exports.ensureStoreLabelExists = (tx, bpStoreId, labelName, labelStoreId, labelStoreDetails, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- ensureStoreLabelExists
@@ -301,7 +301,7 @@ INSERT INTO store__label
 SELECT
   label_id
 , ${bpStoreId}
-, ${storeLabelId}
+, ${labelStoreId}
 , ${labelStoreDetails} :: JSON
 , ${source}
 FROM label
@@ -345,7 +345,7 @@ WHERE
   )`
   )
 
-module.exports.insertStoreArtist = (tx, bpStoreId, artistName, storeArtistId, source) =>
+module.exports.insertStoreArtist = (tx, bpStoreId, artistName, artistStoreId, source) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- insertStoreArtist
@@ -354,7 +354,7 @@ INSERT INTO store__artist
 SELECT
   artist_id
 , ${bpStoreId}
-, ${storeArtistId}
+, ${artistStoreId}
 , ${source}
 FROM artist
 WHERE
