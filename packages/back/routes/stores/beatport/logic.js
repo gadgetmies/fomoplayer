@@ -218,7 +218,7 @@ module.exports.getLabelTracks = async ({ labelStoreId }) => {
   return { tracks: transformed, errors: [] }
 }
 
-module.exports.getPlaylistTracks = async ({ playlistStoreId: url }) => {
+module.exports.getPlaylistTracks = async function* ({ playlistStoreId: url }) {
   const playlist = await bpApiStatic.getTracksOnPageAsync(url)
   const transformed = beatportTracksTransform(playlist.tracks.tracks)
   if (transformed.length === 0) {
@@ -227,7 +227,7 @@ module.exports.getPlaylistTracks = async ({ playlistStoreId: url }) => {
     throw new Error(error)
   }
 
-  return { tracks: transformed, errors: [] }
+  yield { tracks: transformed, errors: [] }
 }
 
 module.exports.test = {

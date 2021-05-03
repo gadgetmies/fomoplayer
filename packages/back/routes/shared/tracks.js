@@ -107,23 +107,27 @@ module.exports.updateLabelTracks = async (storeUrl, details, source) => {
 }
 
 module.exports.updatePlaylistTracks = async (storeUrl, details, source) => {
+  const err = []
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingPlaylist(details.playlistId)
 
-  const { tracks, errors } = await storeModule.logic.getPlaylistTracks(details)
-  for (const track of tracks) {
-    try {
-      await addStoreTrackToUsers(storeUrl, users, track, source)
-    } catch (e) {
-      const error = [`Failed to add playlist tracks to users`, e]
-      errors.push(error)
-      console.error(...error)
+  const generator = await storeModule.logic.getPlaylistTracks(details)
+  for await (const { tracks, errors } of generator) {
+    err.concat(errors)
+    for (const track of tracks) {
+      try {
+        await addStoreTrackToUsers(storeUrl, users, track, source)
+      } catch (e) {
+        const error = [`Failed to add playlist tracks to users`, e]
+        errors.push(error)
+        console.error(...error)
+      }
     }
   }
 
-  if (errors.length === 0) {
+  if (err.length === 0) {
     await setPlaylistUpdated(details.playlistId)
   }
 
-  return errors
+  return err
 }

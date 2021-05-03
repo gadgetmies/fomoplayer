@@ -71,7 +71,7 @@ module.exports.getFollowDetails = async url => {
   return undefined
 }
 
-module.exports.getPlaylistTracks = async ({ playlistStoreId }) => {
+module.exports.getPlaylistTracks = async function* ({ playlistStoreId }) {
   const res = await spotifyApi.getPlaylistTracks(playlistStoreId)
   const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
   if (transformed.length === 0) {
@@ -80,7 +80,7 @@ module.exports.getPlaylistTracks = async ({ playlistStoreId }) => {
     throw new Error(error)
   }
 
-  return { tracks: transformed, errors: [] }
+  yield { tracks: transformed, errors: [] }
 }
 
 module.exports.getArtistTracks = async ({ artistStoreId }) => {

@@ -126,13 +126,19 @@ module.exports.getLabelTracks = async ({ url }) => {
   return await getTracksFromReleases(releaseUrls)
 }
 
-module.exports.getPlaylistTracks = async ({ playlistStoreId, type }) => {
+module.exports.getPlaylistTracks = async function*({ playlistStoreId, type }) {
   if (type === 'tag') {
     const releases = await getTagReleasesAsync(playlistStoreId)
     const releaseUrls = R.uniq(R.flatten(releases.map(R.prop('items'))).map(R.prop('tralbum_url'))).filter(R.identity)
     console.log(`Found ${releaseUrls.length} releases for tag ${playlistStoreId}`)
-    return await getTracksFromReleases(releaseUrls)
+    for (const releaseUrl of releaseUrls) {
+      try {
+        yield await getTracksFromReleases([releaseUrl])
+      } catch (e) {
+        yield { tracks: [], errors: [e] }
+      }
+    }
+  } else {
+    throw new Error(`Unsupported playlist type: '${type}' (supported: 'tag') ${type === 'tag'}`)
   }
-
-  throw new Error('Unsupported playlist type')
 }
