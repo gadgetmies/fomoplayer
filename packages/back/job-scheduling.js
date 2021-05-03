@@ -70,7 +70,7 @@ RETURNING job_run_id`
     sql`UPDATE job_run
 SET job_run_ended   = NOW(),
   job_run_success = ${success},
-  job_run_result  = ${res}
+  job_run_result  = ${JSON.stringify(res)}
 WHERE job_run_id = ${job_run_id}`
   )
 
