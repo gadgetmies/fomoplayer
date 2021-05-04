@@ -1,6 +1,7 @@
 const pg = require('../../../db/pg.js')
 const R = require('ramda')
 const sql = require('sql-template-strings')
+const logger = require('../../../logger')(__filename)
 
 module.exports.queryStoreId = storeName =>
   pg
@@ -59,7 +60,7 @@ WHERE
     .then(getLabelIdFromResult)
 
   if (!labelId) {
-    console.log(`Label ${label.name} not found, inserting`)
+    logger.info(`Label ${label.name} not found, inserting`)
     labelId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
@@ -204,7 +205,7 @@ AND (store__artist_store_id = ${artist.id} OR store__artist_url = ${artist.url})
     .then(getArtistIdFromResult)
 
   if (!artistId) {
-    console.log(`Artist ${artist.name} not found with id, trying with name`)
+    logger.info(`Artist ${artist.name} not found with id, trying with name`)
     artistId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
@@ -224,7 +225,7 @@ AND store_url <> ${storeUrl}
   }
 
   if (!artistId) {
-    console.log(`Artist ${artist.name} not found, inserting`)
+    logger.info(`Artist ${artist.name} not found, inserting`)
     artistId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
@@ -294,7 +295,7 @@ WHERE
     .then(getTrackIdFromResult)
 
   if (!trackId) {
-    console.log('Track not found with id, searching with name')
+    logger.info('Track not found with id, searching with name')
     trackId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
@@ -319,7 +320,7 @@ AND ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedA
   }
 
   if (!trackId) {
-    console.log('Track not found, inserting')
+    logger.info('Track not found, inserting')
     trackId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
@@ -333,7 +334,7 @@ RETURNING track_id
       )
       .then(getTrackIdFromResult)
 
-    console.log(`Inserted new track with id: ${trackId}`)
+    logger.info(`Inserted new track with id: ${trackId}`)
   } else {
     await tx.queryAsync(
       // language=PostgreSQL

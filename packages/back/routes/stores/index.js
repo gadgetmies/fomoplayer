@@ -1,4 +1,5 @@
 const router = require('express').Router()
+const logger = require('../../logger')(__filename)
 
 const { lstatSync, readdirSync } = require('fs')
 const { join } = require('path')
@@ -15,7 +16,7 @@ const moduleEntries = getDirectories(__dirname).map(storeDir => {
 })
 
 moduleEntries.forEach(([name, module]) => {
-  console.log(`Initiating routes for ${name}`)
+  logger.info(`Initiating routes for ${name}`)
   router.use(`/${name}`, module.router)
 })
 

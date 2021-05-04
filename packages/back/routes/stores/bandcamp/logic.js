@@ -13,6 +13,7 @@ const {
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl } = require('./db.js')
+const logger = require('../../../logger')(__filename)
 
 let storeDbId = null
 const storeName = (module.exports.storeName = 'Bandcamp')
@@ -49,13 +50,13 @@ const getTagFromUrl = function(playlistUrl) {
 
 module.exports.getArtistName = async url => {
   const { name } = await getArtistAsync(url)
-  console.log(name)
+  logger.info(name)
   return name
 }
 
 module.exports.getLabelName = async url => {
   const { name } = await getLabelAsync(url)
-  console.log(name)
+  logger.info(name)
   return name
 }
 
@@ -93,22 +94,22 @@ const getTracksFromReleases = async releaseUrls => {
 
   let releaseDetails = []
   for (const releaseUrl of releaseUrls) {
-    console.log(`Processing release: ${releaseUrl}`)
+    logger.info(`Processing release: ${releaseUrl}`)
     try {
       const releaseInfo = await getReleaseAsync(releaseUrl)
       releaseDetails.push(releaseInfo)
     } catch (e) {
       const error = [`Failed to fetch release details from ${releaseUrl}`, e]
-      console.error(...error)
+      logger.error(...error)
       errors.push(error)
     }
   }
 
   const transformed = bandcampReleasesTransform(releaseDetails)
-  console.log(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
+  logger.info(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
   if (transformed.length === 0) {
     const error = `No tracks found for releases ${releaseUrls.join(', ')}`
-    console.error(error)
+    logger.error(error)
     errors.push([error])
     return errors
   }
@@ -130,7 +131,7 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId, type }) {
   if (type === 'tag') {
     const releases = await getTagReleasesAsync(playlistStoreId)
     const releaseUrls = R.uniq(R.flatten(releases.map(R.prop('items'))).map(R.prop('tralbum_url'))).filter(R.identity)
-    console.log(`Found ${releaseUrls.length} releases for tag ${playlistStoreId}`)
+    logger.info(`Found ${releaseUrls.length} releases for tag ${playlistStoreId}`)
     for (const releaseUrl of releaseUrls) {
       try {
         yield await getTracksFromReleases([releaseUrl])

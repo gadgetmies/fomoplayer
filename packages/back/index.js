@@ -17,6 +17,7 @@ const compression = require('compression')
 const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
 const { HttpError } = require('./routes/shared/httpErrors')
+const logger = require('./logger')(__filename)
 
 const app = express()
 app.use(compression())
@@ -61,7 +62,7 @@ app.use(
         ensureAuthenticated(req, res, next)
       }
     } catch (e) {
-      console.error(e)
+      logger.error(e)
       next(e)
     }
   },
@@ -71,7 +72,7 @@ app.use(
 app.use(express.static('public'))
 
 const handleErrors = (err, req, res, next) => {
-  console.error(err)
+  logger.error(err)
   if (err instanceof HttpError) {
     return res.status(err.getCode()).json({
       status: 'error',
@@ -88,6 +89,6 @@ const handleErrors = (err, req, res, next) => {
 app.use(handleErrors)
 
 app.listen(config.port)
-console.log(`Listening on port: ${config.port}`)
+logger.info(`Listening on port: ${config.port}`)
 
 require('./job-scheduling.js').init()

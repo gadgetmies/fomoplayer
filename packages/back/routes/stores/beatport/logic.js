@@ -5,7 +5,7 @@ const bpApi = require('bp-api')
 const { beatportTracksTransform } = require('multi_store_player_chrome_extension/src/js/transforms/beatport')
 const { BadRequest } = require('../../shared/httpErrors')
 const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
-const { log } = require('./logger')
+const logger = require('../../../logger')(__filename)
 
 const {
   insertArtist,
@@ -71,14 +71,14 @@ const insertDownloadedTracksToUser = (module.exports.insertDownloadedTracksToUse
     // for (const trackId of [...addedTracks, ...insertedNewTracks]) {
     //   await setTrackHeard(trackId, username, true) // TODO: destructure trackId from one of the arrays (currently returns an object)
     // }
-    log(`Inserted ${insertedNewTracks.length} new tracks to ${username} from downloaded tracks`)
+    logger.info(`Inserted ${insertedNewTracks.length} new tracks to ${username} from downloaded tracks`)
     const insertedPurchasedTracks = await insertPurchasedTracksByIds(
       tx,
       beatportStoreDbId,
       username,
       R.pluck('id', tracks)
     )
-    log(`Inserted ${insertedPurchasedTracks.length} downloaded tracks to ${username}`)
+    logger.info(`Inserted ${insertedPurchasedTracks.length} downloaded tracks to ${username}`)
   })
 })
 
@@ -199,7 +199,7 @@ module.exports.getArtistTracks = async ({ artistStoreId }) => {
   const transformed = beatportTracksTransform(artistTracks.tracks)
   if (transformed.length === 0) {
     const error = `No tracks found for artist ${artistStoreId}`
-    console.error(error)
+    logger.error(error)
     throw new Error(error)
   }
 
@@ -211,7 +211,7 @@ module.exports.getLabelTracks = async ({ labelStoreId }) => {
   const transformed = beatportTracksTransform(labelTracks.tracks)
   if (transformed.length === 0) {
     const error = `No tracks found for label ${labelStoreId}`
-    console.error(error)
+    logger.error(error)
     throw new Error(error)
   }
 
@@ -223,7 +223,7 @@ module.exports.getPlaylistTracks = async function* ({ playlistStoreId: url }) {
   const transformed = beatportTracksTransform(playlist.tracks.tracks)
   if (transformed.length === 0) {
     const error = `No tracks found for playlist at ${url}`
-    console.error(error)
+    logger.error(error)
     throw new Error(error)
   }
 

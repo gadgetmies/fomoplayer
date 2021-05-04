@@ -1,7 +1,7 @@
 const BPromise = require('bluebird')
 const R = require('ramda')
 const saferEval = require('safer-eval')
-const { error } = require('./logger')
+const { error } = require('../../../logger')(__filename)
 const { decode } = require('html-entities')
 const jsdom = require('jsdom')
 const { JSDOM } = jsdom

@@ -39,6 +39,7 @@ const {
 } = require('./db')
 
 const { modules: storeModules } = require('../stores/index.js')
+const logger = require('../../logger')(__filename)
 const { apiURL } = require('../../config')
 
 module.exports.getUserTracks = queryUserTracks
@@ -126,7 +127,7 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId, source) => {
           source
         )
       } catch (e) {
-        console.error('Failed to update artist tracks', e)
+        logger.error('Failed to update artist tracks', e)
       }
     })
   }
@@ -165,7 +166,7 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, source) => {
           source
         )
       } catch (e) {
-        console.error('Failed to update label tracks', e)
+        logger.error('Failed to update label tracks', e)
       }
     })
   }
@@ -203,7 +204,7 @@ module.exports.addPlaylistFollows = async (playlists, userId, source) => {
           source
         )
       } catch (e) {
-        console.error('Failed to update playlist tracks', e)
+        logger.error('Failed to update playlist tracks', e)
       }
     })
   }
@@ -212,7 +213,7 @@ module.exports.addPlaylistFollows = async (playlists, userId, source) => {
 }
 
 module.exports.addStoreTracksToUser = async (storeUrl, type, tracks, userId, source) => {
-  console.log('Start processing received tracks')
+  logger.info('Start processing received tracks')
 
   let addedTracks = []
   for (const track of tracks) {

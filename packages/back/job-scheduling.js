@@ -5,6 +5,7 @@ const fetchBeatportWatches = require('./jobs/watches/fetch-beatport-watches')
 const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
 const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')
 const { updateDateReleasedScore, updateDateAddedScore } = require('./jobs/scores')
+const logger = require('./logger')(__filename)
 
 const init = async () => {
   await pg.queryAsync(
@@ -25,7 +26,7 @@ WHERE job_run_ended IS NULL
 let scheduled = {}
 
 const runJob = async jobName => {
-  console.log(`Running job ${jobName}`)
+  logger.info(`Running job ${jobName}`)
 
   const [{ running }] = await pg.queryRowsAsync(
     // language=PostgreSQL
@@ -38,7 +39,7 @@ const runJob = async jobName => {
   )
 
   if (running) {
-    console.log(`Previous run of job ${jobName} still in progress`)
+    logger.info(`Previous run of job ${jobName} still in progress`)
     return
   }
 
@@ -60,7 +61,7 @@ RETURNING job_run_id`
   } catch (e) {
     success = false
     result = { error: e.toString() }
-    console.error(`Job ${jobName} run failed (job_run_id: ${job_run_id}). Check job_run_result for details`)
+    logger.error(`Job ${jobName} run failed (job_run_id: ${job_run_id}). Check job_run_result for details`)
   }
 
   const res = typeof result === 'object' ? result : { result }
@@ -74,12 +75,12 @@ SET job_run_ended   = NOW(),
 WHERE job_run_id = ${job_run_id}`
   )
 
-  console.log(`Job ${jobName} run complete`)
+  logger.info(`Job ${jobName} run complete`)
 }
 
 const jobs = {
   updateJobs: async () => {
-    console.log('Updating job schedules')
+    logger.info('Updating job schedules')
     await pg.queryAsync(
       // language=PostgreSQL
       sql`DELETE
@@ -94,7 +95,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
 
     for (const scheduledName of Object.keys(scheduled)) {
       if (!jobSchedules.find(({ name }) => name === scheduledName)) {
-        console.log(`Removing schedule of job '${scheduledName}'`)
+        logger.info(`Removing schedule of job '${scheduledName}'`)
         scheduled[scheduledName].task.destroy()
         delete scheduled[scheduledName]
       }
@@ -105,15 +106,15 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
         if (scheduled[name].schedule === schedule) {
           continue
         } else {
-          console.log(`Updating schedule of job '${name}' to ${schedule}`)
+          logger.info(`Updating schedule of job '${name}' to ${schedule}`)
           scheduled[name].task.destroy()
         }
       } else {
-        console.log(`Scheduling new job '${name}' with schedule '${schedule}'`)
+        logger.info(`Scheduling new job '${name}' with schedule '${schedule}'`)
       }
 
       if (schedule === null) {
-        console.log(`Canceling job '${name}'`)
+        logger.info(`Canceling job '${name}'`)
         continue
       }
 

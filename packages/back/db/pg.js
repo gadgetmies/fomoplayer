@@ -1,4 +1,5 @@
 'use strict'
+const logger = require('../logger')(__filename)
 
 const env = {
   dbUrl: process.env.DATABASE_URL,
@@ -8,5 +9,5 @@ const env = {
   } : false
 }
 
-console.log('Initiating server with env: ', env)
+logger.info('Initiating server with env: ', env)
 module.exports = require('pg-using-bluebird')(env)

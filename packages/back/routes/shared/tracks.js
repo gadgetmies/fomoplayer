@@ -3,6 +3,7 @@ const sql = require('sql-template-strings')
 const { addStoreTrackToUsers } = require('../users/shared')
 const { setArtistUpdated, setPlaylistUpdated, setLabelUpdated } = require('./db/watch')
 const { modules: storeModules } = require('../stores/index.js')
+const logger = require('../../logger')(__filename)
 
 const getUsersFollowingArtist = async storeArtistId => {
   const [{ users }] = await pg.queryRowsAsync(
@@ -71,7 +72,7 @@ module.exports.updateArtistTracks = async (storeUrl, details, source) => {
     } catch (e) {
       const error = [`Failed to add artist tracks to users`, e]
       errors.push(error)
-      console.error(...error)
+      logger.error(...error)
     }
   }
 
@@ -83,19 +84,19 @@ module.exports.updateArtistTracks = async (storeUrl, details, source) => {
 }
 
 module.exports.updateLabelTracks = async (storeUrl, details, source) => {
-  console.log(`Updating label tracks: ${details.url}`)
+  logger.info(`Updating label tracks: ${details.url}`)
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingLabel(details.storeLabelId)
 
   const { tracks, errors } = await storeModule.logic.getLabelTracks(details)
-  console.log(`Found ${tracks.length} tracks for label: ${details.url}`)
+  logger.info(`Found ${tracks.length} tracks for label: ${details.url}`)
   for (const track of tracks) {
     try {
       await addStoreTrackToUsers(storeUrl, users, track, source)
     } catch (e) {
       const error = [`Failed to add label tracks to users`, e]
       errors.push(error)
-      console.error(...error)
+      logger.error(...error)
     }
   }
 
@@ -120,7 +121,7 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, source) => {
       } catch (e) {
         const error = [`Failed to add playlist tracks to users`, e]
         errors.push(error)
-        console.error(...error)
+        logger.error(...error)
       }
     }
   }

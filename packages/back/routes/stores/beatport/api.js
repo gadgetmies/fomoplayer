@@ -1,6 +1,6 @@
 const router = require('express').Router()
 const bpApi = require('bp-api')
-const { log, error } = require('./logger')
+const logger = require('../../../logger')(__filename)
 
 const {
   getSessionForRequest,
@@ -83,7 +83,7 @@ router.get('/downloads', ({ user }, res, next) =>
 
 router.post('/login', ({ body: { username, password, sessionCookieValue, csrfToken, cookie }, user }, res, next) => {
   if (getSession(user.username)) {
-    log(`Using session for user ${user.username}`)
+    logger.info(`Using session for user ${user.username}`)
     return res.send('ok')
   } else {
     ;(username && password
@@ -91,7 +91,7 @@ router.post('/login', ({ body: { username, password, sessionCookieValue, csrfTok
       : bpApi.initWithSessionAsync(sessionCookieValue, csrfToken)
     )
       .then(session => {
-        log(`Storing session for user ${user.username}`)
+        logger.info(`Storing session for user ${user.username}`)
         setSession(user.username, session)
       })
       .tap(() => res.send('ok'))
@@ -104,7 +104,7 @@ router.post('/refresh', async ({ user: { username } }, res, next) => {
     const uuid = await startRefreshUserTracks(username)
     return res.send({ uuid })
   } catch (e) {
-    error(`Refresh tracks for user ${username} failed`, e)
+    logger.error(`Refresh tracks for user ${username} failed`, e)
     return next(e)
   }
 })
@@ -113,7 +113,7 @@ router.get('/refresh/:uuid', async ({ user: { username }, params: { uuid } }, re
   try {
     res.send(await getRefreshStatus(username, uuid))
   } catch (e) {
-    error(e)
+    logger.error(e)
     next(e)
   }
 })

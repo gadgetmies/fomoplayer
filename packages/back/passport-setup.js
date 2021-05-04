@@ -5,6 +5,7 @@ const passport = require('passport')
 const account = require('./db/account.js')
 const LocalStrategy = require('passport-local').Strategy
 const OpenIDStrategy = require('passport-openidconnect').Strategy
+const logger = require('./logger')(__filename)
 
 module.exports = function passportSetup() {
   const checkCredentials = (username, password, done) =>
@@ -32,7 +33,7 @@ module.exports = function passportSetup() {
           const user = await account.findOrCreateByIdentifier(googleOpenIDIssuer, profile.id)
           done(null, user)
         } catch (e) {
-          console.error('error', e)
+          logger.error('error', e)
           done(null)
         }
       }
