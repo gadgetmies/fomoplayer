@@ -1,4 +1,3 @@
-const pg = require('../../../db/pg.js')
 const R = require('ramda')
 const sql = require('sql-template-strings')
 

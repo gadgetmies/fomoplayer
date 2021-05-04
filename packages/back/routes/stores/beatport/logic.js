@@ -3,7 +3,6 @@ const BPromise = require('bluebird')
 const bpApi = require('bp-api')
 
 const { beatportTracksTransform } = require('multi_store_player_chrome_extension/src/js/transforms/beatport')
-const { BadRequest } = require('../../shared/httpErrors')
 const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
 const logger = require('../../../logger')(__filename)
 

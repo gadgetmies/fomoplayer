@@ -38,7 +38,6 @@ const {
   queryCartOwner
 } = require('./db')
 
-const { modules: storeModules } = require('../stores/index.js')
 const logger = require('../../logger')(__filename)
 const { apiURL } = require('../../config')
 

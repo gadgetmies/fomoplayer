@@ -22,7 +22,6 @@ const {
 } = require('./logic')
 
 const router = require('express-promise-router')()
-const { apiURL } = require('../../config')
 
 const {} = require('./logic')
 
