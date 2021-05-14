@@ -554,14 +554,14 @@ WHERE
 `
   )
 
-module.exports.addTrackToUser = async (tx, userId, trackId, source) => {
+module.exports.addTrackToUser = async (tx, userId, trackId, sourceId) => {
   await tx.queryAsync(
     // language=PostgreSQL
     sql`--addTrackToUser 
 INSERT INTO user__track
-  (track_id, meta_account_user_id, user__track_source)
+  (track_id, meta_account_user_id, source_id)
 VALUES
-  (${trackId}, ${userId}, ${source})
+  (${trackId}, ${userId}, ${sourceId})
 ON CONFLICT ON CONSTRAINT user__track_track_id_meta_account_user_id_key DO NOTHING
 `
   )

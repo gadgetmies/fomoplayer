@@ -1,3 +1,4 @@
+const { insertSource } = require('../../jobs/watches/shared/db')
 const {
   addArtistsOnLabelsToIgnore,
   addStoreTracksToUser,
@@ -48,11 +49,13 @@ const tracksHandler = type => async (
   { body: tracks, headers: { 'x-multi-store-player-store': storeUrl }, user: { id: userId } },
   res
 ) => {
-  const addedTracks = await addStoreTracksToUser(storeUrl, type, tracks, userId, {
+  const sourceId = await insertSource({
     operation: 'tracksHandler',
     type,
     storeUrl
   })
+
+  const addedTracks = await addStoreTracksToUser(storeUrl, type, tracks, userId, sourceId)
   res.status(201).send(addedTracks)
 }
 
@@ -61,13 +64,15 @@ router.post('/purchased', tracksHandler('purchased'))
 
 router.post('/follows/artists', async ({ user: { id: userId }, body, headers }, res) => {
   const storeUrl = headers['x-multi-store-player-store']
-  const addedArtists = await addArtistFollows(storeUrl, body, userId, { operation: '/follows/artists', storeUrl })
+  const sourceId = await insertSource({ operation: '/follows/artists', storeUrl })
+  const addedArtists = await addArtistFollows(storeUrl, body, userId, sourceId)
   res.status(201).send(addedArtists)
 })
 
 router.post('/follows/labels', async ({ user: { id: userId }, body, headers }, res) => {
   const storeUrl = headers['x-multi-store-player-store']
-  const addedLabels = await addLabelFollows(storeUrl, body, userId, { operation: '/follows/labels', storeUrl })
+  const sourceId = await insertSource({ operation: '/follows/labels', storeUrl })
+  const addedLabels = await addLabelFollows(storeUrl, body, userId, sourceId)
   res.status(201).send(addedLabels)
 })
 
@@ -102,7 +107,8 @@ router.delete('/follows/playlists/:id', async ({ params: { id }, user: { id: aut
 })
 
 router.post('/follows/playlists', async ({ user: { id: userId }, body }, res) => {
-  const addedPlaylists = await addPlaylistFollows(body, userId, { operation: '/follows/playlists' })
+  const sourceId = await insertSource({ operation: '/follows/playlists' })
+  const addedPlaylists = await addPlaylistFollows(body, userId, sourceId)
   res.send(addedPlaylists)
 })
 

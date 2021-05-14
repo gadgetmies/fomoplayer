@@ -151,7 +151,7 @@ class Track extends Component {
           )}
         </td>
         <td style={{ flex: 3, overflow: 'hidden' }}>
-          {this.props.title} {this.props.mix ? `(${this.props.mix})` : ''}
+          {this.props.title} {this.props.version ? `(${this.props.version})` : ''}
         </td>
         <td style={{ flex: 2, overflow: 'hidden' }}>
           {R.intersperse(
