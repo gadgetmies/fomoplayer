@@ -1,9 +1,9 @@
 const { updatePlaylistTracks, updateLabelTracks, updateArtistTracks } = require('../../../routes/shared/tracks')
-const { getArtistFollowDetails, getLabelFollowDetails, getPlaylistFollowDetails } = require('./db')
+const { getArtistFollowDetails, getLabelFollowDetails, getPlaylistFollowDetails, insertSource } = require('./db')
 const logger = require('../../../logger')(__filename)
 
 module.exports.playlistFetchJob = storeUrl => async jobDetails => {
-  const source = { operation: `${storeUrl}, fetchPlaylists`, jobDetails }
+  const sourceId = await insertSource({ operation: `${storeUrl}, fetchPlaylists`, jobDetails })
   const errors = []
   const playlistFollowDetails = await getPlaylistFollowDetails(storeUrl)
 
@@ -12,7 +12,7 @@ module.exports.playlistFetchJob = storeUrl => async jobDetails => {
     try {
       logger.info(`Fetching tracks for playlist ${count}/${playlistFollowDetails.length}: ${details.playlistStoreId}`)
       count++
-      await updatePlaylistTracks(storeUrl, details, source)
+      await updatePlaylistTracks(storeUrl, details, sourceId)
     } catch (e) {
       const error = [`Failed to fetch playlist details for playlistId: ${details.playlistId}`, e, jobDetails]
       logger.error(...error)
@@ -24,7 +24,7 @@ module.exports.playlistFetchJob = storeUrl => async jobDetails => {
 }
 
 module.exports.artistFetchJob = storeUrl => async jobDetails => {
-  const source = { operation: `${storeUrl}, fetchArtists`, jobDetails }
+  const sourceId = await insertSource({ operation: `${storeUrl}, fetchArtists`, jobDetails })
   const errors = []
   const artistFollowDetails = await getArtistFollowDetails(storeUrl)
 
@@ -34,7 +34,7 @@ module.exports.artistFetchJob = storeUrl => async jobDetails => {
       logger.info(`Fetching tracks for artists ${count}/${artistFollowDetails.length}: ${details.storeArtistId}`)
       count++
 
-      errors.concat(await updateArtistTracks(storeUrl, details, source))
+      errors.concat(await updateArtistTracks(storeUrl, details, sourceId))
     } catch (e) {
       const error = [`Failed to fetch artist details for ${details.url}`, e]
       logger.error(...error)
@@ -46,7 +46,7 @@ module.exports.artistFetchJob = storeUrl => async jobDetails => {
 }
 
 module.exports.labelFetchJob = storeUrl => async jobDetails => {
-  const source = { operation: `${storeUrl}, fetchLabels`, jobDetails }
+  const sourceId = await insertSource({ operation: `${storeUrl}, fetchLabels`, jobDetails })
   const errors = []
   const labelFollowDetails = await getLabelFollowDetails(storeUrl)
 
@@ -56,7 +56,7 @@ module.exports.labelFetchJob = storeUrl => async jobDetails => {
       logger.info(`Fetching tracks for artists ${count}/${labelFollowDetails.length}: ${details.labelStoreId}`)
       count++
 
-      await updateLabelTracks(storeUrl, details, source)
+      await updateLabelTracks(storeUrl, details, sourceId)
     } catch (e) {
       const error = [`Failed to fetch label details for ${details.url}`, e]
       logger.error(...error)

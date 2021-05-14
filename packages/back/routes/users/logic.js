@@ -77,18 +77,18 @@ module.exports.removeArtistWatchFromUser = deleteArtistWatchFromUser
 module.exports.removeLabelWatchesFromUser = deleteLabelWatchesFromUser
 module.exports.removeLabelWatchFromUser = deleteLabelWatchFromUser
 
-const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (storeUrl, userId, artist, source) => {
+const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (storeUrl, userId, artist, sourceId) => {
   return using(pg.getTransaction(), async tx => {
-    const { id: artistId, storeArtistId } = await ensureArtistExists(tx, storeUrl, artist, source)
-    const followId = await addArtistWatch(tx, userId, artistId, source)
+    const { id: artistId, storeArtistId } = await ensureArtistExists(tx, storeUrl, artist, sourceId)
+    const followId = await addArtistWatch(tx, userId, artistId, sourceId)
     return { artistId, followId, storeArtistId }
   })
 })
 
-const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUrl, userId, label, source) => {
+const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUrl, userId, label, sourceId) => {
   return using(pg.getTransaction(), async tx => {
-    const { storeLabelId, labelId } = await ensureLabelExists(tx, storeUrl, label, source)
-    const followId = await addLabelWatch(tx, userId, labelId, source)
+    const { storeLabelId, labelId } = await ensureLabelExists(tx, storeUrl, label, sourceId)
+    const followId = await addLabelWatch(tx, userId, labelId, sourceId)
     return { labelId, followId, storeLabelId }
   })
 })
@@ -96,7 +96,7 @@ const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUr
 module.exports.removePlaylistFollowFromUser = async (userId, playlistId) =>
   deletePlaylistFollowFromUser(userId, playlistId)
 
-module.exports.addArtistFollows = async (storeUrl, artists, userId, source) => {
+module.exports.addArtistFollows = async (storeUrl, artists, userId, sourceId) => {
   // TODO: try first to find from db
   let addedArtists = []
   for (const { name, url } of artists) {
@@ -111,7 +111,7 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId, source) => {
       storeModule.logic.storeUrl,
       userId,
       artistDetails,
-      source
+      sourceId
     )
     addedArtists.push({
       artist: `${apiURL}/artists/${artistId}`,
@@ -123,7 +123,7 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId, source) => {
         await updateArtistTracks(
           storeModule.logic.storeUrl,
           { storeArtistId, artistStoreId: artistDetails.id, url },
-          source
+          sourceId
         )
       } catch (e) {
         logger.error('Failed to update artist tracks', e)
@@ -134,7 +134,7 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId, source) => {
   return addedArtists
 }
 
-module.exports.addLabelFollows = async (storeUrl, labels, userId, source) => {
+module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {
   // TODO: try first to find from db
   let addedLabels = []
   for (const { name, url } of labels) {
@@ -149,7 +149,7 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, source) => {
       storeModule.logic.storeUrl,
       userId,
       labelDetails,
-      source
+      sourceId
     )
 
     addedLabels.push({
@@ -162,7 +162,7 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, source) => {
         await updateLabelTracks(
           storeModule.logic.storeUrl,
           { storeLabelId, labelStoreId: labelDetails.id, url },
-          source
+          sourceId
         )
       } catch (e) {
         logger.error('Failed to update label tracks', e)
@@ -173,7 +173,7 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, source) => {
   return addedLabels
 }
 
-module.exports.addPlaylistFollows = async (playlists, userId, source) => {
+module.exports.addPlaylistFollows = async (playlists, userId, sourceId) => {
   // TODO: try first to find from db
   let addedPlaylists = []
   for (const { url } of playlists) {
@@ -200,7 +200,7 @@ module.exports.addPlaylistFollows = async (playlists, userId, source) => {
         await updatePlaylistTracks(
           storeModule.logic.storeUrl,
           { playlistId, playlistStoreId, url, type: typeId },
-          source
+          sourceId
         )
       } catch (e) {
         logger.error('Failed to update playlist tracks', e)
@@ -211,12 +211,12 @@ module.exports.addPlaylistFollows = async (playlists, userId, source) => {
   return addedPlaylists
 }
 
-module.exports.addStoreTracksToUser = async (storeUrl, type, tracks, userId, source) => {
+module.exports.addStoreTracksToUser = async (storeUrl, type, tracks, userId, sourceId) => {
   logger.info('Start processing received tracks')
 
   let addedTracks = []
   for (const track of tracks) {
-    const trackId = await addStoreTrackToUsers(storeUrl, [userId], track, type, source)
+    const trackId = await addStoreTrackToUsers(storeUrl, [userId], track, type, sourceId)
     addedTracks.push(`${apiURL}/tracks/${trackId}`)
   }
 

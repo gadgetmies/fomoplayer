@@ -4,6 +4,7 @@ const cron = require('node-cron')
 const fetchBeatportWatches = require('./jobs/watches/fetch-beatport-watches')
 const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
 const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')
+const { insertSource } = require('./jobs/watches/shared/db')
 const { updateDateReleasedScore, updateDateAddedScore } = require('./jobs/scores')
 const logger = require('./logger')(__filename)
 

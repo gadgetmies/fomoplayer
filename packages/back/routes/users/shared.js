@@ -5,29 +5,29 @@ const { addStoreTrack, ensureArtistExists, ensureReleaseExists, ensureLabelExist
 
 const { addPurchasedTrackToUser, addTrackToUser } = require('./db')
 
-module.exports.addStoreTrackToUsers = async (storeUrl, userIds, track, source, type = 'tracks') => {
+module.exports.addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = 'tracks') => {
   return using(pg.getTransaction(), async tx => {
     let labelId
     let releaseId
 
     if (track.label) {
-      labelId = (await ensureLabelExists(tx, storeUrl, track.label, source)).labelId
+      labelId = (await ensureLabelExists(tx, storeUrl, track.label, sourceId)).labelId
     }
 
     if (track.release) {
-      releaseId = await ensureReleaseExists(tx, storeUrl, track.release, source)
+      releaseId = await ensureReleaseExists(tx, storeUrl, track.release, sourceId)
     }
 
     let artists = []
     for (const artist of track.artists) {
-      const res = await ensureArtistExists(tx, storeUrl, artist, source)
+      const res = await ensureArtistExists(tx, storeUrl, artist, sourceId)
       artists.push(res)
     }
 
-    const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, source)
+    const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, sourceId)
 
     for (const userId of userIds) {
-      await addTrackToUser(tx, userId, trackId, source)
+      await addTrackToUser(tx, userId, trackId, sourceId)
 
       if (type === 'purchased') {
         await addPurchasedTrackToUser(tx, userId, track)

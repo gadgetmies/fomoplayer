@@ -61,14 +61,14 @@ const getStoreModule = function(storeUrl) {
   return module
 }
 
-module.exports.updateArtistTracks = async (storeUrl, details, source) => {
+module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingArtist(details.storeArtistId)
 
   const { tracks, errors } = await storeModule.logic.getArtistTracks(details)
   for (const track of tracks) {
     try {
-      await addStoreTrackToUsers(storeUrl, users, track, source)
+      await addStoreTrackToUsers(storeUrl, users, track, sourceId)
     } catch (e) {
       const error = [`Failed to add artist tracks to users`, e]
       errors.push(error)
@@ -83,7 +83,7 @@ module.exports.updateArtistTracks = async (storeUrl, details, source) => {
   return errors
 }
 
-module.exports.updateLabelTracks = async (storeUrl, details, source) => {
+module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   logger.info(`Updating label tracks: ${details.url}`)
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingLabel(details.storeLabelId)
@@ -92,7 +92,7 @@ module.exports.updateLabelTracks = async (storeUrl, details, source) => {
   logger.info(`Found ${tracks.length} tracks for label: ${details.url}`)
   for (const track of tracks) {
     try {
-      await addStoreTrackToUsers(storeUrl, users, track, source)
+      await addStoreTrackToUsers(storeUrl, users, track, sourceId)
     } catch (e) {
       const error = [`Failed to add label tracks to users`, e]
       errors.push(error)
@@ -107,7 +107,7 @@ module.exports.updateLabelTracks = async (storeUrl, details, source) => {
   return errors
 }
 
-module.exports.updatePlaylistTracks = async (storeUrl, details, source) => {
+module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
   const err = []
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingPlaylist(details.playlistId)
@@ -117,7 +117,7 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, source) => {
     err.concat(errors)
     for (const track of tracks) {
       try {
-        await addStoreTrackToUsers(storeUrl, users, track, source)
+        await addStoreTrackToUsers(storeUrl, users, track, sourceId)
       } catch (e) {
         const error = [`Failed to add playlist tracks to users`, e]
         errors.push(error)

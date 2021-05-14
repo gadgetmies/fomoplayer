@@ -67,3 +67,17 @@ ORDER BY
 LIMIT 20
 `
   )
+
+module.exports.insertSource = async details => {
+  const [{ source_id }] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- insertSource
+INSERT INTO source
+  (source_details)
+VALUES
+  (${details})
+RETURNING source_id
+`
+  )
+  return source_id
+}

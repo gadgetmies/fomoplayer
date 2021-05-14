@@ -1,6 +1,7 @@
 const R = require('ramda')
 const BPromise = require('bluebird')
 const bpApi = require('bp-api')
+const { insertSource } = require('../../../jobs/watches/shared/db')
 
 const { beatportTracksTransform } = require('multi_store_player_chrome_extension/src/js/transforms/beatport')
 const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
@@ -63,9 +64,9 @@ const getBeatportStoreDbId = () => {
 const insertDownloadedTracksToUser = (module.exports.insertDownloadedTracksToUser = (username, tracks) => {
   return BPromise.using(pg.getTransaction(), async tx => {
     const beatportStoreDbId = await getBeatportStoreDbId()
-    const source = { operation: 'insertDownloadedTracksToUser' }
-    const insertedNewTracks = await insertNewTracksToDb(tx, tracks, source)
-    const addedTracks = await insertStoreTracksToUser(tx, username, tracks, source)
+    const sourceId = insertSource({ operation: 'insertDownloadedTracksToUser' })
+    const insertedNewTracks = await insertNewTracksToDb(tx, tracks, sourceId)
+    const addedTracks = await insertStoreTracksToUser(tx, username, tracks, sourceId)
     // TODO: this should be done in the generic logic
     // for (const trackId of [...addedTracks, ...insertedNewTracks]) {
     //   await setTrackHeard(trackId, username, true) // TODO: destructure trackId from one of the arrays (currently returns an object)
@@ -81,14 +82,14 @@ const insertDownloadedTracksToUser = (module.exports.insertDownloadedTracksToUse
   })
 })
 
-const insertNewTracksToDb = (tx, tracks, source) =>
+const insertNewTracksToDb = (tx, tracks, sourceId) =>
   getBeatportStoreDbId().then(bpStoreId =>
     findNewTracks(tx, bpStoreId, tracks)
       .then(R.innerJoin(R.eqProps('id'), tracks))
       .then(async newTracks => {
-        await ensureArtistsExist(tx, newTracks, bpStoreId, source)
-        await ensureLabelsExist(tx, newTracks, bpStoreId, source)
-        return await ensureTracksExist(tx, newTracks, bpStoreId, source)
+        await ensureArtistsExist(tx, newTracks, bpStoreId, sourceId)
+        await ensureLabelsExist(tx, newTracks, bpStoreId, sourceId)
+        return await ensureTracksExist(tx, newTracks, bpStoreId, sourceId)
       })
   )
 
@@ -96,7 +97,7 @@ const extractArtistsAndRemixers = R.pipe(R.chain(R.props(['artists', 'remixers']
 
 // TODO: add exclude: {label: [], genre: [] } to store__artist (?)
 // TODO: --> create new artist if excludes match the current track
-const ensureArtistsExist = async (tx, newTracks, bpStoreId, source) =>
+const ensureArtistsExist = async (tx, newTracks, bpStoreId, sourceId) =>
   BPromise.resolve(newTracks)
     .then(extractArtistsAndRemixers)
     .then(storeArtists =>
@@ -104,14 +105,14 @@ const ensureArtistsExist = async (tx, newTracks, bpStoreId, source) =>
         .then(R.innerJoin(R.eqProps('id'), storeArtists))
         .then(newStoreArtists =>
           BPromise.each(newStoreArtists, newStoreArtist =>
-            insertArtist(tx, newStoreArtist.name, source).tap(() =>
-              insertStoreArtist(tx, bpStoreId, newStoreArtist.name, newStoreArtist.id, source)
+            insertArtist(tx, newStoreArtist.name, sourceId).tap(() =>
+              insertStoreArtist(tx, bpStoreId, newStoreArtist.name, newStoreArtist.id, sourceId)
             )
           )
         )
     )
 
-const ensureLabelsExist = async (tx, newStoreTracks, bpStoreId, source) =>
+const ensureLabelsExist = async (tx, newStoreTracks, bpStoreId, sourceId) =>
   BPromise.resolve(newStoreTracks)
     .map(R.prop('label'))
     .then(R.uniqBy(R.prop('id')))
@@ -120,35 +121,35 @@ const ensureLabelsExist = async (tx, newStoreTracks, bpStoreId, source) =>
         .then(R.innerJoin(R.eqProps('id'), storeLabels))
         .then(newStoreLabels =>
           BPromise.each(newStoreLabels, newStoreLabel =>
-            ensureLabelExists(tx, newStoreLabel.name, source).tap(() =>
+            ensureLabelExists(tx, newStoreLabel.name, sourceId).tap(() =>
               ensureStoreLabelExists(
                 tx,
                 bpStoreId,
                 newStoreLabel.name,
                 newStoreLabel.id,
                 JSON.stringify(newStoreLabel),
-                source
+                sourceId
               )
             )
           )
         )
     )
 
-const ensureTracksExist = async (tx, newStoreTracks, bpStoreId, source) =>
+const ensureTracksExist = async (tx, newStoreTracks, bpStoreId, sourceId) =>
   BPromise.mapSeries(newStoreTracks, newStoreTrack =>
-    insertNewTrackReturningTrackId(tx, newStoreTrack, source)
+    insertNewTrackReturningTrackId(tx, newStoreTrack, sourceId)
       .then(([{ track_id }]) => track_id)
       .tap(track_id => insertTrackToLabel(tx, track_id, newStoreTrack.label.id))
       .tap(track_id =>
-        insertStoreTrack(tx, bpStoreId, track_id, newStoreTrack.id, newStoreTrack, source)
-          .tap(([{ store__track_id }]) => insertTrackPreview(tx, store__track_id, newStoreTrack.preview, source))
+        insertStoreTrack(tx, bpStoreId, track_id, newStoreTrack.id, newStoreTrack, sourceId)
+          .tap(([{ store__track_id }]) => insertTrackPreview(tx, store__track_id, newStoreTrack.preview, sourceId))
           .tap(([{ store__track_id }]) => {
             const [
               {
                 offset: { start, end }
               }
             ] = newStoreTrack.preview
-            return insertTrackWaveform(tx, store__track_id, newStoreTrack.waveform, start, end, source)
+            return insertTrackWaveform(tx, store__track_id, newStoreTrack.waveform, start, end, sourceId)
           })
       )
   )
@@ -217,7 +218,7 @@ module.exports.getLabelTracks = async ({ labelStoreId }) => {
   return { tracks: transformed, errors: [] }
 }
 
-module.exports.getPlaylistTracks = async function* ({ playlistStoreId: url }) {
+module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
   const playlist = await bpApiStatic.getTracksOnPageAsync(url)
   const transformed = beatportTracksTransform(playlist.tracks.tracks)
   if (transformed.length === 0) {
