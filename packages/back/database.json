@@ -6,6 +6,8 @@
   },
   "prod": {
     "driver": "pg",
-    "ssl": true
+    "ssl": {
+      "rejectUnauthorized": false
+    }
   }
 }
