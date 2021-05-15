@@ -9,3 +9,6 @@ DROP TABLE track__cart;
 
 DELETE
 FROM cart;
+
+ALTER TABLE cart
+  DROP COLUMN cart_is_default;
