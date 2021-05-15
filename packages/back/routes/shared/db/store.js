@@ -66,7 +66,7 @@ WHERE
         // language=PostgreSQL
         sql`-- ensureLabelExists INSERT INTO label
 INSERT INTO label
-  (label_name, source_id)
+  (label_name, label_source)
 VALUES
   (${label.name}, ${sourceId})
 RETURNING label_id
@@ -79,7 +79,7 @@ RETURNING label_id
     // language=PostgreSQL
     sql`-- ensureLabelExists INSERT INTO store__label
 INSERT INTO store__label
-  (store__label_store_id, store__label_url, store_id, label_id, source_id)
+  (store__label_store_id, store__label_url, store_id, label_id, store__label_source)
 SELECT
   ${label.id}
 , ${label.url}
@@ -152,7 +152,7 @@ WHERE
         // language=PostgreSQL
         sql`-- ensureReleaseExists INSERT INTO release
 INSERT INTO release
-  (release_name, source_id)
+  (release_name, release_source)
 VALUES
   (${release.title}, ${sourceId})
 RETURNING release_id
@@ -165,7 +165,7 @@ RETURNING release_id
     // language=PostgreSQL
     sql`-- ensureReleaseExists INSERT INTO store__release
 INSERT INTO store__release
-  (store__release_store_id, store__release_url, store_id, release_id, source_id)
+  (store__release_store_id, store__release_url, store_id, release_id, store__release_source)
 SELECT
   ${release.id}
 , ${release.url}
@@ -231,7 +231,7 @@ AND store_url <> ${storeUrl}
         // language=PostgreSQL
         sql`-- ensureArtistExists INSERT INTO artist
 INSERT INTO artist
-  (artist_name, source_id)
+  (artist_name, artist_source)
 VALUES
   (${artist.name}, ${sourceId})
 RETURNING artist_id
@@ -244,7 +244,7 @@ RETURNING artist_id
     // language=PostgreSQL
     sql`-- ensureArtistExists INSERT INTO store__artist
 INSERT INTO store__artist
-  (store__artist_store_id, store__artist_url, store_id, artist_id, source_id)
+  (store__artist_store_id, store__artist_url, store_id, artist_id, store__artist_source)
 SELECT
   ${artist.id}
 , ${artist.url}
@@ -326,7 +326,7 @@ AND ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedA
         // language=PostgreSQL
         sql`-- addStoreTrack INSERT INTO track
 INSERT INTO track
-  (track_title, track_version, track_duration_ms, source_id)
+  (track_title, track_version, track_duration_ms, track_source)
 VALUES
   (${track.title}, ${track.version}, ${track.duration_ms}, ${sourceId})
 RETURNING track_id
@@ -385,7 +385,7 @@ INSERT INTO store__track
    store__track_released,
    store__track_published,
    store__track_store_details,
-   source_id)
+   store__track_source)
 VALUES
   (${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track}, ${sourceId})
 ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_track_id_key
@@ -423,7 +423,7 @@ INSERT INTO store__track_preview
    store__track_preview_format,
    store__track_preview_start_ms,
    store__track_preview_end_ms,
-   source_id)
+   store__track_preview_source)
 VALUES
   (${storeTrackId}, ${preview.url}, ${preview.format}, ${preview.start_ms}, ${preview.end_ms}, ${sourceId})
 ON CONFLICT ON CONSTRAINT store__track_preview_store__track_id_preview_url_key
@@ -452,7 +452,7 @@ AND store__track_id = ${storeTrackId}
         // language=PostgreSQL
         sql`-- addStoreTrack INSERT INTO store__track_preview_waveform
 INSERT INTO store__track_preview_waveform
-  (store__track_preview_id, store__track_preview_waveform_url, source_id)
+  (store__track_preview_id, store__track_preview_waveform_url, store__track_preview_waveform_source)
 VALUES
   (${previewId}, ${track.waveform.url}, ${sourceId})
 ON CONFLICT ON CONSTRAINT store__track_preview_waveform_store__track_preview_id_url_key DO NOTHING
@@ -493,7 +493,7 @@ ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING
       // language=PostgreSQL
       sql`-- addStoreTrack INSERT INTO track__key
 INSERT INTO track__key
-  (track_id, key_id, source_id)
+  (track_id, key_id, track__key_source)
 SELECT
   ${trackId}
 , key_id

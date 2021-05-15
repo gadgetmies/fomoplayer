@@ -6,7 +6,7 @@ module.exports.insertArtist = (tx, artistName, sourceId) =>
     // language=PostgreSQL
     sql`-- insertArtist
 INSERT INTO artist
-  (artist_name, source_id)
+  (artist_name, artist_source)
 VALUES
   (${artistName}, ${sourceId})
 ON CONFLICT DO NOTHING`
@@ -17,7 +17,7 @@ module.exports.insertStoreTracksToUser = (tx, userId, tracks, sourceId) =>
     // language=PostgreSQL
     sql`-- insertStoreTracksToUser
 INSERT INTO user__track
-  (track_id, meta_account_user_id, source_id)
+  (track_id, meta_account_user_id, user__track_source)
 SELECT
   track_id
 , ${userId}
@@ -58,7 +58,8 @@ INSERT INTO store__track_preview
    store__track_preview_url,
    store__track_preview_format,
    store__track_preview_start_ms,
-   store__track_preview_end_ms, source_id)
+   store__track_preview_end_ms,
+   store__track_preview_source)
 SELECT
   ${store__track_id}
 , value ->> 'url'
@@ -82,7 +83,8 @@ INSERT INTO store__track_preview_waveform
   (store__track_preview_id,
    store__track_preview_waveform_url,
    store__track_preview_waveform_start_ms,
-   store__track_preview_waveform_end_ms, source_id)
+   store__track_preview_waveform_end_ms,
+   store__track_preview_waveform_source)
 SELECT
   store__track_preview_id
 , ${waveforms.large.url}
@@ -105,7 +107,8 @@ INSERT INTO store__track
    store__track_store_id,
    store__track_store_details,
    store__track_published,
-   store__track_released, source_id)
+   store__track_released,
+   store__track_source)
 VALUES
   (${trackId}, ${bpStoreId}, ${trackStoreId}, ${JSON.stringify(trackStoreDetails)} :: JSONB, ${
       trackStoreDetails.date.published
@@ -241,7 +244,7 @@ WITH
         )
 )
 , inserted_track AS (
-  INSERT INTO track (track_title, track_version, track_duration_ms, source_id)
+  INSERT INTO track (track_title, track_version, track_duration_ms, track_source)
     SELECT
       ${newStoreTrack.name}
     , ${newStoreTrack.mix}
@@ -311,9 +314,10 @@ module.exports.ensureLabelExists = (tx, labelName, sourceId) =>
     // language=PostgreSQL
     sql`-- ensureLabelExists
 INSERT INTO label
-  (label_name, source_id)
+  (label_name, label_source)
 SELECT
-  ${labelName}, ${sourceId}
+  ${labelName}
+, ${sourceId}
 WHERE
   NOT exists(
       SELECT
@@ -346,7 +350,7 @@ module.exports.insertStoreArtist = (tx, bpStoreId, artistName, artistStoreId, so
     // language=PostgreSQL
     sql`-- insertStoreArtist
 INSERT INTO store__artist
-  (artist_id, store_id, store__artist_store_id, source_id)
+  (artist_id, store_id, store__artist_store_id, store__artist_source)
 SELECT
   artist_id
 , ${bpStoreId}
