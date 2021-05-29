@@ -247,7 +247,7 @@ class Track extends Component {
           {/*<Share stores={this.props.stores} artists={this.props.artists} title={this.props.title} />*/}
           {beaportTrack ? null : (
             <>
-              <ExternalLink showIcon={false} href={`https://www.beatport.com/search?q=${searchString}`}>
+              <ExternalLink showIcon={false} href={`https://www.beatport.com/search/tracks?q=${searchString}`}>
                 <StoreIcon code="beatport" />
               </ExternalLink>{' '}
             </>
