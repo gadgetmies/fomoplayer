@@ -1,5 +1,5 @@
 const { BadRequest } = require('../../shared/httpErrors')
-const spotifyApi = require('../../shared/spotify.js')
+const { spotifyApi } = require('../../shared/spotify.js')
 const {
   spotifyTracksTransform,
   spotifyAlbumTracksTransform
