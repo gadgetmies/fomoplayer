@@ -1,13 +1,19 @@
 const winston = require('winston')
+const { combine, printf } = winston.format
 
 const logger = winston.createLogger({
   transports: [
     new winston.transports.Console({
-      format: winston.format.printf(options => {
-        // you can pass any custom variable in options by calling
-        // logger.log({level: 'debug', message: 'hi', moduleName: 'my_module' })
-        return `[${options.moduleName}] ${options.level}: ${options.message}$`
-      })
+      format: combine(
+        printf(
+          ({ timestamp, moduleName, level, message, ...meta }) =>
+            `${level} [${moduleName.replace(require.main.path, '')}]: ${message}, meta: ${JSON.stringify(
+              meta,
+              null,
+              2
+            )}`
+        )
+      )
     })
   ]
 })
