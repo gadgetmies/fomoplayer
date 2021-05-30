@@ -58,10 +58,10 @@ class Player extends Component {
             this.playNextUnheard()
             break
           case 'd':
-            that.preview.current.scan(10)
+            this.seek(this.getSeekDistance())
             break
           case 'a':
-            that.preview.current.scan(-10)
+            this.seek(-this.getSeekDistance())
             break
           default:
         }
@@ -118,6 +118,46 @@ class Player extends Component {
 
   playNextTrack() {
     this.jumpTracks(1)
+  }
+
+  seek(offset) {
+    this.preview.current.scan(offset)
+  }
+
+  getSeekDistance() {
+    const preview = this.state.currentTrack.previews.find(R.propEq('url', this.preview.current.state.previewUrl))
+
+    return (preview ? preview.length_ms : this.state.currentTrack.duration) / 5 / 1000
+  }
+
+  handleNextClick() {
+    if (this.state.nextDoubleClickStarted) {
+      this.setState({ nextDoubleClickStarted: false })
+      this.playNextTrack()
+    } else {
+      this.setState()
+      const that = this
+      this.setState({ nextDoubleClickStarted: true })
+      setTimeout(() => {
+        that.setState({ nextDoubleClickStarted: false })
+      }, 200)
+      this.seek(this.getSeekDistance())
+    }
+  }
+
+  handlePreviousClick() {
+    if (this.state.previousDoubleClickStarted) {
+      this.setState({ previousDoubleClickStarted: false })
+      this.playPreviousTrack()
+    } else {
+      this.setState()
+      const that = this
+      this.setState({ previousDoubleClickStarted: true })
+      setTimeout(() => {
+        that.setState({ previousDoubleClickStarted: false })
+      }, 200)
+      this.seek(-this.getSeekDistance())
+    }
   }
 
   playNextUnheard() {
@@ -190,8 +230,8 @@ class Player extends Component {
           onPause={() => this.setPlaying(false)}
           onSeekBackward={() => console.log('seek backward')}
           onSeekForward={() => console.log('seek forward')}
-          onPreviousTrack={() => this.playPreviousTrack()}
-          onNextTrack={() => this.playNextTrack()}
+          onPreviousTrack={() => this.handlePreviousClick()}
+          onNextTrack={() => this.handleNextClick()}
         />
         <Preview
           key={'preview'}
