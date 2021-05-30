@@ -53,7 +53,7 @@ module.exports.labelFetchJob = storeUrl => async jobDetails => {
   let count = 1
   for (const details of labelFollowDetails) {
     try {
-      logger.info(`Fetching tracks for artists ${count}/${labelFollowDetails.length}: ${details.labelStoreId}`)
+      logger.info(`Fetching tracks for labels ${count}/${labelFollowDetails.length}: ${details.labelStoreId}`)
       count++
 
       await updateLabelTracks(storeUrl, details, sourceId)

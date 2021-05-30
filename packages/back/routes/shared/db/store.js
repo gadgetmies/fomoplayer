@@ -45,7 +45,6 @@ const getFieldFromResult = field => R.path([0, field])
 
 module.exports.ensureLabelExists = async (tx, storeUrl, label, sourceId) => {
   const getLabelIdFromResult = getFieldFromResult('label_id')
-
   let labelId = await tx
     .queryRowsAsync(
       // language=PostgreSQL

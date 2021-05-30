@@ -64,13 +64,12 @@ const getStoreModule = function(storeUrl) {
 module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingArtist(details.storeArtistId)
-
   const { tracks, errors } = await storeModule.logic.getArtistTracks(details)
   for (const track of tracks) {
     try {
       await addStoreTrackToUsers(storeUrl, users, track, sourceId)
     } catch (e) {
-      const error = [`Failed to add artist tracks to users`, e]
+      const error = [`Failed to add artist tracks to users`, { error: e.toString(), track, details }]
       errors.push(error)
       logger.error(...error)
     }
@@ -86,6 +85,7 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
 module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   logger.info(`Updating label tracks: ${details.url}`)
   const storeModule = getStoreModule(storeUrl)
+  console.log('updateLabelTracks', details)
   const users = await getUsersFollowingLabel(details.storeLabelId)
 
   const { tracks, errors } = await storeModule.logic.getLabelTracks(details)
@@ -94,7 +94,7 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
     try {
       await addStoreTrackToUsers(storeUrl, users, track, sourceId)
     } catch (e) {
-      const error = [`Failed to add label tracks to users`, e]
+      const error = [`Failed to add label tracks to users`, { error: e.toString(), track, details }]
       errors.push(error)
       logger.error(...error)
     }
@@ -119,7 +119,7 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
       try {
         await addStoreTrackToUsers(storeUrl, users, track, sourceId)
       } catch (e) {
-        const error = [`Failed to add playlist tracks to users`, e]
+        const error = [`Failed to add playlist tracks to users`, { error: e.toString(), track, details }]
         errors.push(error)
         logger.error(...error)
       }
