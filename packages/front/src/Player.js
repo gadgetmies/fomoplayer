@@ -127,7 +127,7 @@ class Player extends Component {
   getSeekDistance() {
     const preview = this.state.currentTrack.previews.find(R.propEq('url', this.preview.current.state.previewUrl))
 
-    return (preview ? preview.length_ms : this.state.currentTrack.duration) / 5 / 1000
+    return ((preview ? preview.length_ms : this.state.currentTrack.duration) / 5 / 1000) | 7
   }
 
   handleNextClick() {
