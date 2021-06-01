@@ -24,8 +24,6 @@ const {
 
 const router = require('express-promise-router')()
 
-const {} = require('./logic')
-
 router.get('/tracks', ({ user: { username } }, res) => getUserTracks(username).tap(userTracks => res.json(userTracks)))
 
 router.get('/tracks/playlist.pls', ({ user: { username } }, res) => getTracksM3u(username).tap(m3u => res.send(m3u)))
