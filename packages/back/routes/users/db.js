@@ -3,6 +3,7 @@ const R = require('ramda')
 const { using } = require('bluebird')
 const pg = require('../../db/pg.js')
 const { apiURL } = require('../../config')
+const logger = require('../../logger')(__filename)
 
 module.exports.addPurchasedTrackToUser = async (userId, storeTrack) => {
   await pg.queryRowsAsync(
@@ -529,8 +530,9 @@ ON CONFLICT ON CONSTRAINT user__artist__label_ignore_unique DO NOTHING
 `
   )
 
-module.exports.setTrackHeard = (trackId, username, heard) =>
-  pg.queryRowsAsync(
+module.exports.setTrackHeard = (trackId, username, heard) => {
+  logger.info('setTrackHeard', { trackId, username, heard })
+  return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- setTrackHeard
 UPDATE user__track
@@ -541,6 +543,7 @@ WHERE
 AND meta_account_user_id = (SELECT meta_account_user_id FROM meta_account WHERE meta_account_username = ${username})
 `
   )
+}
 
 module.exports.setAllHeard = (username, heard) =>
   pg.queryAsync(

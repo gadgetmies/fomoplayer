@@ -1,3 +1,4 @@
+const logger = require('../../logger')(__filename)
 const { insertSource } = require('../../jobs/watches/shared/db')
 const {
   addArtistsOnLabelsToIgnore,
@@ -29,6 +30,7 @@ router.get('/tracks', ({ user: { username } }, res) => getUserTracks(username).t
 router.get('/tracks/playlist.pls', ({ user: { username } }, res) => getTracksM3u(username).tap(m3u => res.send(m3u)))
 
 router.post('/tracks/:id', ({ user: { username }, params: { id }, body: { heard } }, res) => {
+  logger.info('POST /tracks/:id', { id, heard, username })
   setTrackHeard(id, username, heard).tap(() => res.send())
 })
 
