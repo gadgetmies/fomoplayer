@@ -196,14 +196,15 @@ module.exports.getFollowDetails = async url => {
 
 module.exports.getArtistTracks = async ({ artistStoreId }) => {
   const artistTracks = await bpApiStatic.getArtistTracksAsync(artistStoreId, 1)
-  const transformed = beatportTracksTransform(artistTracks.tracks)
-  if (transformed.length !== artistTracks.tracks.length) {
-    logger.error('Artist track transform failed', { transformed, tracks: artistTracks.tracks })
-  }
-  if (transformed.length === 0) {
+  if (artistTracks.tracks.length === 0) {
     const error = `No tracks found for artist ${artistStoreId}`
     logger.error(error)
     throw new Error(error)
+  }
+
+  const transformed = beatportTracksTransform(artistTracks.tracks)
+  if (transformed.length !== artistTracks.tracks.length) {
+    logger.error('Artist track transform failed', { transformed, tracks: artistTracks.tracks })
   }
 
   return { tracks: transformed, errors: [] }
@@ -211,14 +212,15 @@ module.exports.getArtistTracks = async ({ artistStoreId }) => {
 
 module.exports.getLabelTracks = async ({ labelStoreId }) => {
   const labelTracks = await bpApiStatic.getLabelTracksAsync(labelStoreId, 1)
-  const transformed = beatportTracksTransform(labelTracks.tracks)
-  if (transformed.length !== labelTracks.tracks.length) {
-    logger.error('Label track transform failed', { transformed, tracks: labelTracks.tracks })
-  }
-  if (transformed.length === 0) {
+  if (labelTracks.tracks.length === 0) {
     const error = `No tracks found for label ${labelStoreId}`
     logger.error(error, { labelStoreId })
     throw new Error(error)
+  }
+
+  const transformed = beatportTracksTransform(labelTracks.tracks)
+  if (transformed.length !== labelTracks.tracks.length) {
+    logger.error('Label track transform failed', { transformed, tracks: labelTracks.tracks })
   }
 
   return { tracks: transformed, errors: [] }
@@ -226,14 +228,16 @@ module.exports.getLabelTracks = async ({ labelStoreId }) => {
 
 module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
   const playlist = await bpApiStatic.getTracksOnPageAsync(url)
-  const transformed = beatportTracksTransform(playlist.tracks.tracks)
-  if (transformed.length !== playlist.tracks.tracks.length) {
-    logger.error('Playlist track transform failed', { transformed, tracks: playlist.tracks.tracks })
-  }
-  if (transformed.length === 0) {
+
+  if (playlist.tracks.tracks === 0) {
     const error = `No tracks found for playlist at ${url}`
     logger.error(error)
     throw new Error(error)
+  }
+
+  const transformed = beatportTracksTransform(playlist.tracks.tracks)
+  if (transformed.length !== playlist.tracks.tracks.length) {
+    logger.error('Playlist track transform failed', { transformed, tracks: playlist.tracks.tracks })
   }
 
   yield { tracks: transformed, errors: [] }
