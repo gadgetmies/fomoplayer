@@ -4,6 +4,7 @@ const { combine, printf } = winston.format
 const logger = winston.createLogger({
   transports: [
     new winston.transports.Console({
+      level: process.env.LOG_LEVEL || 'info',
       format: combine(
         printf(
           ({ timestamp, moduleName, level, message, ...meta }) =>
