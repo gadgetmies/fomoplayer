@@ -213,11 +213,8 @@ SELECT
   artist_id
 FROM
   artist
-  NATURAL JOIN store__artist
-  NATURAL JOIN store
 WHERE
     LOWER(artist_name) = LOWER(${artist.name})
-AND store_url <> ${storeUrl}
 `
       )
       .then(getArtistIdFromResult)
@@ -253,7 +250,12 @@ SELECT
 FROM store
 WHERE
   store_url = ${storeUrl}
-ON CONFLICT ON CONSTRAINT store__artist_store__artist_store_id_store_id_key DO NOTHING
+ON CONFLICT ON CONSTRAINT store__artist_store__artist_store_id_store_id_key DO UPDATE
+  SET
+    store__artist_url      = ${artist.url}
+  , store__artist_store_id = ${artist.id}
+  , store__artist_source   = ${sourceId}
+
 `
   )
 
