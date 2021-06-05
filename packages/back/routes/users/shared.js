@@ -7,7 +7,7 @@ const { addStoreTrack, ensureArtistExists, ensureReleaseExists, ensureLabelExist
 const { addPurchasedTrackToUser, addTrackToUser } = require('./db')
 
 module.exports.addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = 'tracks') => {
-  logger.info('addStoreTrackToUsers', { storeUrl, userIds, track, sourceId, type })
+  logger.debug('addStoreTrackToUsers', { storeUrl, userIds, track, sourceId, type })
   return using(pg.getTransaction(), async tx => {
     let labelId
     let releaseId
