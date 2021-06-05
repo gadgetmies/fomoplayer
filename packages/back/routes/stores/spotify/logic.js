@@ -6,6 +6,7 @@ const {
 } = require('multi_store_player_chrome_extension/src/js/transforms/spotify')
 const R = require('ramda')
 const { queryFollowRegexes } = require('../../shared/db/store')
+const logger = require('../../../logger')(__filename)
 
 const storeName = (module.exports.storeName = 'Spotify')
 module.exports.storeUrl = 'https://www.spotify.com'
@@ -75,7 +76,7 @@ module.exports.getPlaylistTracks = async function* ({ playlistStoreId }) {
   const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
   if (transformed.length === 0) {
     const error = `No tracks found for playlist at ${playlistStoreId}`
-    console.error(error)
+    logger.error(error)
     throw new Error(error)
   }
 
@@ -89,7 +90,7 @@ module.exports.getArtistTracks = async ({ artistStoreId }) => {
   const transformed = R.flatten(spotifyAlbumTracksTransform(albums))
   if (transformed.length === 0) {
     const error = `No tracks found for artist ${artistStoreId}`
-    console.error(error)
+    logger.error(error)
     throw new Error(error)
   }
 

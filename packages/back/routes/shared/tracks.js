@@ -62,6 +62,7 @@ const getStoreModule = function(storeUrl) {
 }
 
 module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
+  logger.info('updateArtistTracks', { storeUrl, details, sourceId })
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingArtist(details.storeArtistId)
   const { tracks, errors } = await storeModule.logic.getArtistTracks(details)

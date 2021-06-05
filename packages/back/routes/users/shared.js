@@ -1,11 +1,13 @@
 const { using } = require('bluebird')
 const pg = require('../../db/pg.js')
+const logger = require('../../logger')(__filename)
 
 const { addStoreTrack, ensureArtistExists, ensureReleaseExists, ensureLabelExists } = require('../shared/db/store')
 
 const { addPurchasedTrackToUser, addTrackToUser } = require('./db')
 
 module.exports.addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = 'tracks') => {
+  logger.info('addStoreTrackToUsers', { storeUrl, userIds, track, sourceId, type })
   return using(pg.getTransaction(), async tx => {
     let labelId
     let releaseId
