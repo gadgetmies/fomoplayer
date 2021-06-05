@@ -392,18 +392,6 @@ class Tracks extends Component {
           <div style={{ height: '100%', flex: 1, padding: 4 }} className="input-layout">
             <SpinnerButton
               size={'small'}
-              loading={this.state.markingHeard}
-              onClick={async () => {
-                this.setState({ markingHeard: true })
-                await this.props.onMarkAllHeardClicked()
-                this.setState({ markingHeard: false })
-              }}
-              style={{ height: '100%', width: 150 }}
-              label={'Mark all heard'}
-              loadingLabel={'Marking all heard'}
-            />
-            <SpinnerButton
-              size={'small'}
               loading={this.state.updatingTracks}
               onClick={async () => {
                 this.setState({ updatingTracks: true })
@@ -462,7 +450,7 @@ class Tracks extends Component {
               <FontAwesome name="search" style={{ opacity: 0.7, margin: 4 }} />
             </label>
           </div>
-          <div style={{ textAlign: 'right', padding: 4 }}>
+          <div class="input-layout" style={{ textAlign: 'right', padding: 4 }}>
             <div
               className="pill"
               style={{ margin: 2, padding: 4, backgroundColor: '#222', color: 'white', opacity: 0.7 }}
@@ -475,6 +463,18 @@ class Tracks extends Component {
             >
               Total: {this.props.totalTracks}
             </div>
+            <SpinnerButton
+              size={'small'}
+              loading={this.state.markingHeard}
+              onClick={async () => {
+                this.setState({ markingHeard: true })
+                await this.props.onMarkAllHeardClicked()
+                this.setState({ markingHeard: false })
+              }}
+              style={{ height: '100%', width: 150 }}
+              label={'Mark all heard'}
+              loadingLabel={'Marking all heard'}
+            />
           </div>
         </div>
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
