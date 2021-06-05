@@ -94,7 +94,7 @@ ON CONFLICT ON CONSTRAINT store__label_store__label_store_id_store_id_key
 `
   )
 
-  const [{ storeLabelId }] = await tx.queryRowsAsync(
+  const res = await tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- ensureArtistExists SELECT store__label_id AS "storeLabelId" FROM store__label
 SELECT
@@ -107,6 +107,10 @@ WHERE
 AND label_id = ${labelId}
   `
   )
+
+  logger.debug('res', { res })
+
+  const [{ storeLabelId }] = res
 
   return { labelId, storeLabelId }
 }
