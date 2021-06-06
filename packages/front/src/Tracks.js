@@ -466,7 +466,7 @@ class Tracks extends Component {
             </tr>
           </thead>
           <tbody style={{ overflow: 'scroll', display: 'block' }} onScroll={this.handleScroll}>
-            <tr style={{ width: '100%', background: 'none', position: 'absolute' }}>
+            <tr style={{ width: '100%', background: 'none', position: 'absolute', zIndex: 1 }}>
               <td
                 style={{
                   width: '100%',
@@ -500,7 +500,7 @@ class Tracks extends Component {
               </tr>
             ) : null}
             <tr style={{ height: 120 }} />
-            <tr style={{ width: '100%', background: 'none', position: 'absolute', bottom: 0 }}>
+            <tr style={{ width: '100%', background: 'none', position: 'absolute', bottom: 0, zIndex: 1 }}>
               <td
                 style={{
                   width: '100%',
