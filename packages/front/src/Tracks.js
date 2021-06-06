@@ -564,7 +564,7 @@ class Tracks extends Component {
                 </td>
               </tr>
             ) : null}
-            <tr style={{ height: 120 }}/>
+            <tr style={{ height: 120 }} />
             <tr style={{ width: '100%', background: 'none', position: 'absolute', bottom: 0 }}>
               <td
                 style={{
