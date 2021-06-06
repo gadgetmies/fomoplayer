@@ -79,7 +79,8 @@ class Track extends Component {
       cartButtonDisabled: false,
       ignoreArtistsByLabelsDisabled: false,
       heardHover: false,
-      heard: props.heard
+      heard: props.heard,
+      processingCart: false
     }
   }
 
@@ -181,12 +182,27 @@ class Track extends Component {
         <td className={'ignore-cart-cell tracks-cell'}>
           <div class={'cart-cell track-table-cell'}>
             <PillButton
+              disabled={this.state.processingCart}
               className={'table-cell-button'}
               onClick={async () => {
                 if (this.props.inCart) {
-                  this.props.onRemoveFromCart(this.props.id)
+                  this.setState({ processingCart: true })
+                  try {
+                    await this.props.onRemoveFromCart(this.props.id)
+                  } catch (e) {
+                    console.error('Error while removing from cart', e)
+                  } finally {
+                    this.setState({ processingCart: false })
+                  }
                 } else {
-                  this.props.onAddToCart(this.props.id)
+                  this.setState({ processingCart: true })
+                  try {
+                    await this.props.onAddToCart(this.props.id)
+                  } catch (e) {
+                    console.error('Error while adding to cart', e)
+                  } finally {
+                    this.setState({ processingCart: false })
+                  }
                 }
               }}
             >
@@ -366,7 +382,6 @@ class Tracks extends Component {
                 : false
             }
             key={id}
-            // onClick={() => this.setState({ selectedTrack: id })}
             onDoubleClick={() => {
               this.props.onPreviewRequested(id)
             }}
@@ -474,7 +489,11 @@ class Tracks extends Component {
                 value={this.state.search}
               />
               {this.state.search ? (
-                <FontAwesome onClick={() => this.setSearch('')} className={'search-input-icon clear-search'} name="times-circle" />
+                <FontAwesome
+                  onClick={() => this.setSearch('')}
+                  className={'search-input-icon clear-search'}
+                  name="times-circle"
+                />
               ) : (
                 <FontAwesome className={'search-input-icon search-icon'} name="search" />
               )}
