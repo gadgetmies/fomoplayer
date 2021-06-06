@@ -1,3 +1,4 @@
+import './Tracks.css'
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import FontAwesome from 'react-fontawesome'
@@ -112,22 +113,27 @@ class Track extends Component {
     const bandcampTrack = this.getStoreTrackByStoreCode('bandcamp')
     const searchString = `${this.props.artists.map(R.prop('name')).join('+')}+${this.props.title}`
 
+    const title = `${this.props.title} ${this.props.version ? `(${this.props.version})` : ''}`
+
+    const artistsAndRemixers = this.props.artists.concat(this.props.remixers)
+    const artists = artistsAndRemixers.map(R.prop('name')).join(', ')
+
     return (
       <tr
         ref={'row'}
         style={{ display: 'flex', width: '100%' }}
         // onClick={() => this.props.onClick()}
-        // onTouchTap={() =>{
-        //   this.props.onTouchTap()
-        // }}
+        onTouchTap={() => {
+          this.props.onTouchTap()
+        }}
         onDoubleClick={() => {
           this.props.onDoubleClick()
         }}
         className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''}`}
       >
-        <td style={{ flex: 0.5, overflow: 'hidden' }}>
+        <td className={'new-cell tracks-cell'}>
           <button
-            className="button table-cell-button"
+            className="button table-cell-button track-play-button"
             onClick={this.props.onDoubleClick.bind(this)}
             onMouseEnter={() => this.setHeardHover(true)}
             onMouseLeave={() => this.setHeardHover(false)}
@@ -138,137 +144,132 @@ class Track extends Component {
               <FontAwesome name="circle" />
             )}
           </button>
+          {!!this.props.heard ? null : <div className={'track-new-indicator'} />}
         </td>
-        <td style={{ flex: 3, overflow: 'hidden' }}>
-          {R.intersperse(
-            ', ',
-            this.props.artists.map(artist => (
-              <span key={artist.id}>
-                {artist.name}
-                {/*<PillButton> + Follow </PillButton>*/}
-              </span>
-            ))
-          )}
+        <td className={'track-details tracks-cell'}>
+          <div className={'track-details-left track-details-content'}>
+            <div className={'artist-cell track-table-cell'} title={artists}>
+              {artists}
+            </div>
+            <div className={'title-cell track-table-cell'} title={title}>
+              {title}
+            </div>
+            <div
+              className={`label-cell track-table-cell ${this.props.label ? '' : 'empty-cell'}`}
+              title={this.props.label}
+            >
+              {this.props.label}
+            </div>
+            <div className={`released-cell track-table-cell ${this.props.released ? '' : 'empty-cell'}`}>
+              {this.props.released}
+            </div>
+          </div>
+          <div className={'track-details-right track-details-content'}>
+            <div className={'key-cell track-table-cell'}>
+              {this.props.keys.length === 0 ? (
+                '-'
+              ) : (
+                <ul className="comma-list">
+                  {this.props.keys.filter(R.propEq('system', 'open-key')).map(({ key }) => (
+                    <li key={key}>{key}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         </td>
-        <td style={{ flex: 3, overflow: 'hidden' }}>
-          {this.props.title} {this.props.version ? `(${this.props.version})` : ''}
-        </td>
-        <td style={{ flex: 2, overflow: 'hidden' }}>
-          {R.intersperse(
-            ', ',
-            this.props.remixers.map(artist => (
-              <span key={artist.id}>
-                {artist.name}
-                {/*<PillButton> + Follow </PillButton>*/}
-              </span>
-            ))
-          )}
-        </td>
-        <td style={{ flex: 2, overflow: 'hidden', height: '100%' }}>
-          {this.props.label}
-          {/*<PillButton>*/}
-          {/*+ Follow*/}
-          {/*</PillButton>*/}
-        </td>
-        <td style={{ flex: 1 }}>{this.props.released}</td>
-        <td style={{ flex: 1 }}>
-          <ul className="comma-list">
-            {this.props.keys.filter(R.propEq('system', 'open-key')).map(({ key }) => (
-              <li key={key}>{key}</li>
-            ))}
-          </ul>
-        </td>
-        {/* <td style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
-        {
-          this.props.stores.map(store =>
-            <PillButton
-              key={store.id}
-              disabled={this.state.cartButtonDisabled}
-              className="table-cell-button"
-              onClick={() => {
-                this.setState({ cartButtonDisabled: true })
-                if (this.isInCart(store)) {
-                  this.props.onRemoveFromCart(store.code, store.trackId)
-                } else {
-                  this.props.onAddToCart(store.code, store.trackId)
-                }
-              }}>
-              {this.isInCart(store) ? '-' : '+'} {store.name}
-            </PillButton>
-          )}
-      </td> */}
-        <td style={{ flex: 1.2 }} className="unfollow-row">
-          {/*<PillButton className={'table-cell-button'}>*/}
-          {/*by genre*/}
-          {/*</PillButton>*/}
-          {this.props.label ? (
+        <td className={'ignore-cart-cell tracks-cell'}>
+          <div class={'cart-cell track-table-cell'}>
             <PillButton
               className={'table-cell-button'}
-              disabled={this.state.ignoreArtistsByLabelsDisabled}
-              onClick={() => {
-                this.setState({ ignoreArtistsByLabelsDisabled: true })
-                this.props.onIgnoreArtistsByLabels()
+              onClick={async () => {
+                if (this.props.inCart) {
+                  this.props.onRemoveFromCart(this.props.id)
+                } else {
+                  this.props.onAddToCart(this.props.id)
+                }
               }}
             >
-              artist on label
+              <FontAwesome name={this.props.inCart ? 'minus' : 'plus'} />
+              <span className={'cart-button-label'}>{this.props.inCart ? 'Remove from cart' : 'Add to cart'}</span>
             </PillButton>
-          ) : null}
-        </td>
-        <td style={{ flex: 1, textAlign: 'center' }}>
-          <PillButton
-            className={'table-cell-button'}
-            onClick={async () => {
-              if (this.props.inCart) {
-                this.props.onRemoveFromCart(this.props.id)
-              } else {
-                this.props.onAddToCart(this.props.id)
-              }
-            }}
-          >
-            <FontAwesome name={this.props.inCart ? 'minus' : 'plus'} />
-          </PillButton>
-        </td>
-        <td style={{ flex: 1, textAlign: 'center' }}>
-          {R.intersperse(
-            ' ',
-            this.props.stores.map(store => (
-              <ExternalLink
-                showIcon={false}
-                href={store.url || store.release.url}
-                title={`Open in ${store.name}`}
-                className={'link'}
+          </div>
+          <div className="ignore-cell track-table-cell">
+            {this.props.label ? (
+              <PillButton
+                className={'table-cell-button ignore-artists-button'}
+                disabled={this.state.ignoreArtistsByLabelsDisabled}
+                onClick={() => {
+                  this.setState({ ignoreArtistsByLabelsDisabled: true })
+                  this.props.onIgnoreArtistsByLabels()
+                }}
               >
-                <StoreIcon code={store.code} />
-              </ExternalLink>
-            ))
-          )}
+                <FontAwesome className={'ignore-button-icon'} name={'ban'} />
+                <span className={'ignore-button-label'} />
+              </PillButton>
+            ) : null}
+          </div>
         </td>
-        <td className="search-column">
-          {/*<Share stores={this.props.stores} artists={this.props.artists} title={this.props.title} />*/}
-          {beaportTrack ? null : (
-            <>
-              <ExternalLink showIcon={false} href={`https://www.beatport.com/search/tracks?q=${searchString}`}>
-                <StoreIcon code="beatport" />
-              </ExternalLink>{' '}
-            </>
-          )}
-          {bandcampTrack ? null : (
-            <>
-              <ExternalLink showIcon={false} href={`https://bandcamp.com/search?q=${searchString}`}>
-                <StoreIcon code="bandcamp" />
-              </ExternalLink>{' '}
-            </>
-          )}
-          {spotifyTrack ? null : (
-            <>
-              <ExternalLink showIcon={false} href={`https://open.spotify.com/search/${searchString}`}>
-                <StoreIcon code="spotify" />
-              </ExternalLink>{' '}
-            </>
-          )}
-          <ExternalLink showIcon={false} href={`https://www.youtube.com/results?search_query=${searchString}`}>
-            <FontAwesome name="youtube" />
-          </ExternalLink>
+        <td className={'open-search-cell tracks-cell'}>
+          <div className={'open-cell track-table-cell'}>
+            {R.intersperse(
+              ' ',
+              this.props.stores.map(store => (
+                <ExternalLink
+                  showIcon={false}
+                  href={store.url || store.release.url}
+                  title={`Open in ${store.name}`}
+                  className={'link link-icon'}
+                >
+                  <StoreIcon code={store.code} />
+                </ExternalLink>
+              ))
+            )}
+          </div>
+          <div className="search-cell track-table-cell">
+            {/*search-column*/}
+            {/*<Share stores={this.props.stores} artists={this.props.artists} title={this.props.title} />*/}
+            {beaportTrack ? null : (
+              <>
+                <ExternalLink
+                  className="link link-icon"
+                  showIcon={false}
+                  href={`https://www.beatport.com/search/tracks?q=${searchString}`}
+                >
+                  <StoreIcon code="beatport" />
+                </ExternalLink>{' '}
+              </>
+            )}
+            {bandcampTrack ? null : (
+              <>
+                <ExternalLink
+                  className="link link-icon"
+                  showIcon={false}
+                  href={`https://bandcamp.com/search?q=${searchString}`}
+                >
+                  <StoreIcon code="bandcamp" />
+                </ExternalLink>{' '}
+              </>
+            )}
+            {spotifyTrack ? null : (
+              <>
+                <ExternalLink
+                  className="link link-icon"
+                  showIcon={false}
+                  href={`https://open.spotify.com/search/${searchString}`}
+                >
+                  <StoreIcon code="spotify" />
+                </ExternalLink>{' '}
+              </>
+            )}
+            <ExternalLink
+              className="link link-icon"
+              showIcon={false}
+              href={`https://www.youtube.com/results?search_query=${searchString}`}
+            >
+              <FontAwesome name="youtube" />
+            </ExternalLink>
+          </div>
         </td>
       </tr>
     )
@@ -285,6 +286,7 @@ class Tracks extends Component {
       currentBelowScreen: false,
       currentAboveScreen: false,
       search: '',
+      searchOpen: false,
       searchDebounce: undefined
     }
     this.handleScroll = this.handleScroll.bind(this)
@@ -333,6 +335,10 @@ class Tracks extends Component {
     this.setState({ searchDebounce: timeout })
   }
 
+  toggleSearch() {
+    this.setState({ searchOpen: !this.state.searchOpen })
+  }
+
   renderTracks(tracks, carts) {
     return tracks.length === 0 ? (
       <tr style={{ display: 'block' }}>
@@ -354,15 +360,19 @@ class Tracks extends Component {
             selected={this.state.selectedTrack === id}
             playing={this.props.currentTrack === id}
             heard={heard}
-            inCart={this.props.carts.find(R.prop('is_default')) ? this.props.carts.find(R.prop('is_default')).tracks.find(R.propEq('id', id)) : false}
+            inCart={
+              this.props.carts.find(R.prop('is_default'))
+                ? this.props.carts.find(R.prop('is_default')).tracks.find(R.propEq('id', id))
+                : false
+            }
             key={id}
             // onClick={() => this.setState({ selectedTrack: id })}
             onDoubleClick={() => {
               this.props.onPreviewRequested(id)
             }}
-            // onTouchTap={() => {
-            //   this.props.onPreviewRequested(id)
-            // }}
+            onTouchTap={() => {
+              this.props.onPreviewRequested(id)
+            }}
             onAddToCart={this.props.onAddToCart}
             onRemoveFromCart={this.props.onRemoveFromCart}
             onIgnoreArtistsByLabels={() =>
@@ -388,24 +398,9 @@ class Tracks extends Component {
     )
     return (
       <>
-        <div style={{ display: 'flex', alignItems: 'center', color: 'white' }}>
-          <div style={{ height: '100%', flex: 1, padding: 4 }} className="input-layout">
-            <SpinnerButton
-              size={'small'}
-              loading={this.state.updatingTracks}
-              onClick={async () => {
-                this.setState({ updatingTracks: true })
-                try {
-                  await this.props.onUpdateTracksClicked()
-                } finally {
-                  this.setState({ updatingTracks: false })
-                }
-              }}
-              style={{ height: '100%', width: 150 }}
-              label={'Update list'}
-              loadingLabel={'Updating list'}
-            />
-            <div className="state-select-button--container noselect">
+        <div className={'top-bar'}>
+          <div style={{ flex: 1, whiteSpace: 'nowrap', display: 'flex' }} className="input-layout">
+            <div className="state-select-button--container noselect" style={{ display: 'inline-block', flex: 0 }}>
               <input
                 type="radio"
                 id="tracklist-state-new"
@@ -440,70 +435,79 @@ class Tracks extends Component {
                 Cart
               </label>
             </div>
-            <label style={{ margin: 4 }}>
+            <SpinnerButton
+              style={{ display: 'inline-block', flex: 0 }}
+              size={'small'}
+              loading={this.state.updatingTracks}
+              onClick={async () => {
+                this.setState({ updatingTracks: true })
+                try {
+                  await this.props.onUpdateTracksClicked()
+                } finally {
+                  this.setState({ updatingTracks: false })
+                }
+              }}
+              label={'Refresh list'}
+              loadingLabel={'Refreshing'}
+            />
+            <label
+              htmlFor="search"
+              className={'reveal-search-button'}
+              style={{ flex: 1, textAlign: 'right', margin: 8, opacity: 0.7 }}
+              onClick={this.toggleSearch.bind(this)}
+            >
+              <FontAwesome name="search" style={{ margin: 2 }} />
+              {!this.state.searchOpen ? (
+                <FontAwesome name="caret-down" style={{ margin: 2 }} />
+              ) : (
+                <FontAwesome name="caret-up" style={{ margin: 2 }} />
+              )}
+            </label>
+          </div>
+          <div className={`input-layout ${!this.state.searchOpen ? 'search-bar-hidden' : ''}`} style={{ flex: 1 }}>
+            <label className={'search-bar'}>
               <input
+                id="search"
                 className="search"
                 placeholder="Search"
                 onChange={e => this.setSearch(e.target.value)}
                 value={this.state.search}
               />
-              <FontAwesome name="search" style={{ opacity: 0.7, margin: 4 }} />
+              <FontAwesome className={'search-icon'} name="search" />
             </label>
-          </div>
-          <div class="input-layout" style={{ textAlign: 'right', padding: 4 }}>
-            <div
-              className="pill"
-              style={{ margin: 2, padding: 4, backgroundColor: '#222', color: 'white', opacity: 0.7 }}
-            >
-              New: {this.props.newTracks}
-            </div>
-            <div
-              className="pill"
-              style={{ margin: 2, padding: 4, backgroundColor: '#222', color: 'white', opacity: 0.7 }}
-            >
-              Total: {this.props.totalTracks}
-            </div>
-            <SpinnerButton
-              size={'small'}
-              loading={this.state.markingHeard}
-              onClick={async () => {
-                this.setState({ markingHeard: true })
-                await this.props.onMarkAllHeardClicked()
-                this.setState({ markingHeard: false })
-              }}
-              style={{ height: '100%', width: 150 }}
-              label={'Mark all heard'}
-              loadingLabel={'Marking all heard'}
-            />
           </div>
         </div>
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
-          <thead style={{ width: '100%', display: 'block' }} className={'noselect'}>
-            <tr style={{ width: '100%', display: 'flex' }}>
-              <th style={{ flex: 0.5, overflow: 'hidden' }} className={'table-button-cell-header'}>
-                New
+          <thead className={'noselect tracks-table-header'}>
+            <tr style={{ display: 'block' }}>
+              <th className={'new-cell tracks-cell'}>
+                <div className={'new-cell-content track-table-cell'}>New</div>
               </th>
-              <th style={{ flex: 3, overflow: 'hidden' }}>Artist</th>
-              <th style={{ flex: 3, overflow: 'hidden' }}>Title</th>
-              <th style={{ flex: 2, overflow: 'hidden' }}>Remixer</th>
-              <th style={{ flex: 2, overflow: 'hidden' }}>Label</th>
-              <th style={{ flex: 1, overflow: 'hidden' }}>Released</th>
-              <th style={{ flex: 1, overflow: 'hidden' }}>Key</th>
-              {/* <th style={{ flex: 1, overflow: 'hidden' }} className={'table-button-cell-header'}>Cart</th> */}
-              <th style={{ flex: 1.2, overflow: 'hidden' }} className={'table-button-cell-header'}>
-                Ignore
-                {/*Artists*/}
+              <th className={'track-details tracks-cell'}>
+                <div className={'track-details-left track-details-content'}>
+                  <div className={'artist-cell track-table-cell'}>Artist</div>
+                  <div className={'title-cell track-table-cell'}>Title</div>
+                  <div className={'label-cell track-table-cell'}>Label</div>
+                  <div className={'released-cell track-table-cell'}>Released</div>
+                </div>
+                <div className={'track-details-right track-details-content'}>
+                  <div className={'key-cell track-table-cell'}>Key</div>
+                </div>
               </th>
-              <th style={{ flex: 1, textAlign: 'center' }}>Cart</th>
-              <th style={{ flex: 1, textAlign: 'center' }}>Stores</th>
-              <th className="search-column table-button-cell-header">Search</th>
+              <th className={'ignore-cart-cell tracks-cell'}>
+                <div className={'cart-cell track-table-cell'}>Cart</div>
+                <div className={'ignore-cell track-table-cell'}>
+                  Ignore
+                  {/*Artists*/}
+                </div>
+              </th>
+              <th className={'open-search-cell tracks-cell'}>
+                <div className={'open-cell track-table-cell'}>Open</div>
+                <div className={'search-cell track-table-cell'}>Search</div>
+              </th>
             </tr>
           </thead>
-          {/* Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table */}
-          <tbody
-            style={{ height: 'calc(100% - 166px)', overflow: 'scroll', display: 'block' }}
-            onScroll={this.handleScroll}
-          >
+          <tbody style={{ overflow: 'scroll', display: 'block' }} onScroll={this.handleScroll}>
             <tr style={{ width: '100%', background: 'none', position: 'absolute' }}>
               <td
                 style={{

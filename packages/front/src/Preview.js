@@ -7,6 +7,7 @@ import './Preview.css'
 import Progress from './Progress.jsx'
 import WaveformGenerator from 'waveform-generator-web'
 import { requestWithCredentials } from './request-json-with-credentials'
+import Collection from './Collection'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -103,7 +104,7 @@ class Preview extends Component {
 
   render() {
     const shortcuts = (
-      <div style={{ float: 'right', color: 'white', margin: 10 }} className="popup-container">
+      <div style={{ float: 'right', color: 'white' }} className="popup-container">
         <FontAwesome name="keyboard-o" className="popup-anchor" style={{ right: 0, top: 0, margin: 10 }} />
         <div className="popup-content" style={{ right: 0, top: 0, margin: '0 5 5 5', paddingRight: 50 }}>
           <h2 style={{ marginTop: 0 }}>Shortcuts</h2>
@@ -193,104 +194,119 @@ class Preview extends Component {
       </div>
     )
 
-    if (!this.props.currentTrack) {
-      return <div className="preview">{shortcuts}</div>
-    }
-
-    const mp3Preview = this.getPreview(this.props.currentTrack)
-    const waveform = this.getWaveform(this.props.currentTrack) || this.state.waveform
-    const totalDuration = this.state.totalDuration || this.props.currentTrack.duration
-    const startOffset = mp3Preview.start_ms || 0
-    const endPosition = mp3Preview.end_ms || this.state.totalDuration
+    const currentTrack = this.props.currentTrack
+    let mp3Preview
+    let waveform
+    let totalDuration = 0
+    let startOffset = 0
+    let endPosition = 0
     const toPositionPercent = currentPosition => ((currentPosition + startOffset) / totalDuration) * 100
+
+    if (currentTrack) {
+      mp3Preview = this.getPreview(currentTrack)
+      waveform = this.getWaveform(currentTrack) || this.state.waveform
+      totalDuration = this.state.totalDuration || currentTrack.duration
+      startOffset = mp3Preview.start_ms || 0
+      endPosition = mp3Preview.end_ms || this.state.totalDuration
+    }
 
     return (
       <div className="preview noselect">
         {shortcuts}
         <TrackTitle
           className="preview-title"
-          artists={(this.props.currentTrack || { artists: [] }).artists}
-          title={this.trackTitle(this.props.currentTrack)}
+          artists={(currentTrack || { artists: [] }).artists}
+          title={this.trackTitle(currentTrack)}
         />
-        <div className="player-wrapper">
-          <button className="button button__light button-playback" onClick={() => this.props.onPrevious()}>
-            <FontAwesome name="step-backward" />
-          </button>
-          <button className="button button__light button-playback" onClick={() => this.props.onNext()}>
-            <FontAwesome name="step-forward" />
-          </button>
-
-          <button className="button button__light button-playback" onClick={() => this.togglePlaying()}>
-            <FontAwesome name={this.state.playing ? 'pause' : 'play'} />
-          </button>
-          <div
-            className="fluid waveform_container"
-            style={{ flex: 10 }}
-            onMouseDown={e => {
-              if (e.button !== 0) return
-              const trackPositionPercent = (e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth
-              if (totalDuration * trackPositionPercent > endPosition) return
-              const previewPositionInSeconds = (totalDuration * trackPositionPercent - startOffset) / 1000
-              this.getPlayer().currentTime = previewPositionInSeconds
-            }}
-          >
-            {waveform ? (
-              <img
-                alt="waveform"
-                src={waveform}
-                className="waveform waveform-background"
-                onDragStart={e => e.preventDefault()}
+        <div className="player-collection-wrapper">
+          <div className="preview-wrapper">
+            <div
+              className="waveform_container"
+              style={{ flex: 5 }}
+              onMouseDown={e => {
+                if (e.button !== 0) return
+                const trackPositionPercent = (e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth
+                if (totalDuration * trackPositionPercent > endPosition) return
+                const previewPositionInSeconds = (totalDuration * trackPositionPercent - startOffset) / 1000
+                this.getPlayer().currentTime = previewPositionInSeconds
+              }}
+            >
+              {waveform ? (
+                <img
+                  alt="waveform"
+                  src={waveform}
+                  className="waveform waveform-background"
+                  onDragStart={e => e.preventDefault()}
+                />
+              ) : (
+                <div className="waveform waveform-background" />
+              )}
+              <div
+                className="waveform waveform-position"
+                style={{
+                  WebkitClipPath: `polygon(${toPositionPercent(0)}% 0, ${toPositionPercent(
+                    this.state.position
+                  )}% 0, ${toPositionPercent(this.state.position)}% 100%, ${toPositionPercent(0)}% 100%)`,
+                  WebkitMaskImage: waveform ? `url(${waveform})` : 'none'
+                }}
               />
-            ) : (
-              <div className="waveform waveform-background" />
-            )}
-            <div
-              className="waveform waveform-position"
-              style={{
-                WebkitClipPath: `polygon(${toPositionPercent(0)}% 0, ${toPositionPercent(
-                  this.state.position
-                )}% 0, ${toPositionPercent(this.state.position)}% 100%, ${toPositionPercent(0)}% 100%)`,
-                WebkitMaskImage: waveform ? `url(${waveform})` : 'none'
+              <div
+                className={'waveform_clip-edge-overlay'}
+                style={{
+                  width: `${toPositionPercent(0)}%`,
+                  left: 0
+                }}
+              />
+              <div
+                className={'waveform_clip-edge-overlay'}
+                style={{
+                  width: `${100 - (100 * endPosition) / totalDuration}%`,
+                  right: 0
+                }}
+              />
+            </div>
+            <Progress
+              className="volume-slider"
+              percent={this.state.volume}
+              barColor="#b40089"
+              bgColor="transparent"
+              style={{ margin: 'auto 0', flex: 1, padding: '0.5em' }}
+              onClick={e => {
+                this.setVolume((e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth)
               }}
             />
-            <div
-              className={'waveform_clip-edge-overlay'}
-              style={{
-                width: `${toPositionPercent(0)}%`,
-                left: 0
+            <audio
+              ref="player0"
+              autoPlay={true}
+              onEnded={() => {
+                this.setPlaying(false)
+                this.props.onNext()
               }}
-            />
-            <div
-              className={'waveform_clip-edge-overlay'}
-              style={{
-                width: `${100 - (100 * endPosition) / totalDuration}%`,
-                right: 0
+              onPlaying={() => this.setPlaying(true)}
+              onPause={() => this.setPlaying(false)}
+              onTimeUpdate={({ currentTarget: { currentTime } }) => {
+                this.setState({ position: currentTime * 1000 })
               }}
+              controlsList="nodownload"
+              src={this.state.previewUrl}
             />
           </div>
-          <Progress
-            percent={this.state.volume}
-            barColor="#b40089"
-            bgColor="transparent"
-            style={{ margin: 'auto 0', flex: 1, padding: '0.5em' }}
-            onClick={e => {
-              this.setVolume((e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth)
-            }}
-          />
-          <audio
-            ref="player0"
-            autoPlay={true}
-            onEnded={() => {
-              this.setPlaying(false)
-              this.props.onNext()
-            }}
-            onPlaying={() => this.setPlaying(true)}
-            onPause={() => this.setPlaying(false)}
-            onTimeUpdate={({ currentTarget: { currentTime } }) => {
-              this.setState({ position: currentTime * 1000 })
-            }}
-            controlsList="nodownload"
-            src={this.state.previewUrl}
+          <div className="button-wrapper">
+            <button className="button button__light button-playback" onClick={() => this.props.onPrevious()}>
+              <FontAwesome name="step-backward" />
+            </button>
+            <button className="button button__light button-playback" onClick={() => this.props.onNext()}>
+              <FontAwesome name="step-forward" />
+            </button>
+            <button className="button button__light button-playback" onClick={() => this.togglePlaying()}>
+              <FontAwesome name={this.state.playing ? 'pause' : 'play'} />
+            </button>
+          </div>
+
+          <Collection
+            onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
+            newTracks={this.props.newTracks}
+            totalTracks={this.props.totalTracks}
           />
         </div>
       </div>

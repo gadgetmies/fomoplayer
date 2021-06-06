@@ -1,18 +1,22 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
 
-export const artistNamesToString = R.pipe(
-  R.pluck('name'),
-  R.join(', ')
-)
+export const artistNamesToString = R.pipe(R.pluck('name'), R.join(', '))
 
 class TrackTitle extends Component {
   render() {
+    const renderContent = this.props.artists && this.props.title
     return (
       <div className={this.props.className}>
-        {artistNamesToString(this.props.artists || [])}
-        {` - `}
-        {this.props.title}
+        {renderContent ? (
+          <>
+            {artistNamesToString(this.props.artists || [])}
+            {' - '}
+            {this.props.title}
+          </>
+        ) : (
+          <div>&nbsp;</div>
+        )}
       </div>
     )
   }

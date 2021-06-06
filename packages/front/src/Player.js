@@ -1,5 +1,6 @@
 import Preview from './Preview.js'
 import Tracks from './Tracks.js'
+import Collection from './Collection.js'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
@@ -239,6 +240,9 @@ class Player extends Component {
           currentTrack={currentTrack}
           onPrevious={() => this.playPreviousTrack()}
           onNext={() => this.playNextTrack()}
+          newTracks={this.props.newTracks - this.state.listenedTracks}
+          totalTracks={this.props.totalTracks}
+          onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
           ref={this.preview}
         />
         <Tracks
@@ -246,10 +250,7 @@ class Player extends Component {
           carts={this.props.carts}
           tracks={tracks}
           listState={this.state.listState}
-          newTracks={this.props.newTracks - this.state.listenedTracks}
-          totalTracks={this.props.totalTracks}
           currentTrack={(currentTrack || {}).id}
-          onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onAddToCart={this.props.onAddToCart}
           onRemoveFromCart={this.props.onRemoveFromCart}

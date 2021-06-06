@@ -1,10 +1,9 @@
 .waveform_container {
   position: relative;
-  height: 31px;
 }
 
 .waveform {
-  height: 31px;
+  height: 100%;
   position: absolute;
 }
 
@@ -22,7 +21,31 @@
 
 .waveform-position {
   background: linear-gradient(to right, #b40089 0%, #ff008b 100%);
-  -webkit-mask-size: 100% 31px;
-  mask-size: 100% 31px;
   width: 100%;
+}
+
+@media (min-width: 800px) {
+  .waveform-position {
+    mask-size: 100% 40px;
+    -webkit-mask-size: 100% 40px;
+  }
+
+  .waveform_container {
+    height: 40px;
+  }
+}
+
+@media (max-width: 799px) {
+  .waveform-position {
+    mask-size: 100% 60px;
+    -webkit-mask-size: 100% 60px;
+  }
+
+  .volume-slider {
+    display: none;
+  }
+
+  .waveform_container {
+    height: 60px;
+  }
 }

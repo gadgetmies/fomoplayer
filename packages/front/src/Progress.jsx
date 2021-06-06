@@ -10,7 +10,6 @@ export default function({ percent, height, barColor, bgColor, ...props }) {
         padding: 1,
         background: bgColor,
         borderRadius: '0.25em',
-        display: 'block',
         ...props.style
       }}
     >

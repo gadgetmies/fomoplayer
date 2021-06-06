@@ -1,0 +1,233 @@
+.tracks-cell {
+  display: inline-block;
+  padding: 0;
+  box-sizing: border-box;
+  vertical-align: top;
+}
+
+.track-table-cell {
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.track-new-indicator {
+  width: 100%;
+  border-radius: 2px;
+  background-color: white;
+  height: 100%;
+  -webkit-box-shadow: inset 0 1px 1px rgb(255, 255, 255), 0 0 8px rgb(255, 255, 255);
+  box-shadow: 0 0 8px 0 white;
+}
+
+@media (min-width: 800px) {
+  .tracks-table-header {
+    display: block;
+  }
+
+  .new-cell {
+    float: left;
+    width: 3rem;
+    text-align: center;
+  }
+
+  .track-play-button {
+    height: 100%;
+  }
+
+  .new-cell-content {
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+  .track-new-indicator {
+    display: none;
+  }
+
+  .track-table-cell {
+    display: block;
+    float: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .track-details {
+    width: calc(70% - 3rem);
+  }
+
+  .track-details-left {
+    width: 90%;
+  }
+
+  .track-details-right {
+    width: 10%;
+  }
+
+  .track-details-content {
+    display: block;
+    float: left;
+  }
+
+  .artist-cell {
+    width: 26%;
+  }
+
+  .title-cell {
+    width: 36%;
+  }
+
+  .label-cell {
+    width: 22%;
+  }
+
+  .released-cell {
+    width: 16%;
+  }
+
+  .key-cell {
+    width: 100%;
+    text-align: center;
+  }
+
+  .ignore-cart-cell {
+    width: 16%;
+  }
+
+  .ignore-cell {
+    width: 60%;
+    text-align: center;
+  }
+
+  .ignore-button-icon {
+    display: none;
+  }
+
+  .ignore-button-label::before {
+    content: 'artists on label';
+  }
+
+  .cart-cell {
+    width: 40%;
+    text-align: center;
+  }
+
+  .cart-button-label {
+    display: none;
+  }
+
+  .open-search-cell {
+    width: 14%;
+  }
+
+  .open-cell {
+    width: 40%;
+    text-align: center;
+  }
+
+  .search-cell {
+    width: 60%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 799px) {
+  .tracks-table-header {
+    display: none;
+  }
+
+  .new-cell {
+    width: 4px;
+    margin: 6px;
+  }
+
+  .track-play-button {
+    display: none;
+  }
+
+  .track-table-cell {
+    display: block;
+    overflow: hidden;
+  }
+
+  .table-cell-button {
+    width: 100%;
+  }
+
+  .track-details {
+    width: 56%;
+    display: flex;
+  }
+
+  .track-details-left {
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .track-details-right {
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .track-details-content {
+    line-height: 1.5em;
+  }
+
+  .artist-cell {
+    font-weight: 700;
+  }
+
+  .label-cell {
+    opacity: 0.8;
+  }
+
+  .released-cell {
+    font-size: 80%;
+    opacity: 0.8;
+  }
+
+  .key-cell::before {
+    content: 'Key:\A';
+    white-space: pre;
+  }
+
+  .ignore-button-label::before {
+    content: 'Ignore artists on label';
+  }
+
+  .ignore-cart-cell {
+    width: 18%;
+  }
+
+  .cart-cell-content {
+    width: 100%;
+    text-align: center;
+  }
+
+  .ignore-button-label,
+  .cart-button-label {
+    display: inline-block;
+    width: 100%;
+  }
+
+  .open-search-cell {
+    width: 26%;
+  }
+
+  .open-cell,
+  .search-cell {
+    width: 100%;
+    white-space: pre;
+    text-align: center;
+  }
+
+  .open-cell::before {
+    content: 'Open:\A';
+  }
+
+  .search-cell::before {
+    content: 'Search:\A';
+  }
+}
