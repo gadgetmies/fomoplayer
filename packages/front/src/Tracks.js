@@ -240,8 +240,6 @@ class Track extends Component {
             )}
           </div>
           <div className="search-cell track-table-cell">
-            {/*search-column*/}
-            {/*<Share stores={this.props.stores} artists={this.props.artists} title={this.props.title} />*/}
             {beaportTrack ? null : (
               <>
                 <ExternalLink
@@ -521,7 +519,6 @@ class Tracks extends Component {
                 <div className={'cart-cell track-table-cell'}>Cart</div>
                 <div className={'ignore-cell track-table-cell'}>
                   Ignore
-                  {/*Artists*/}
                 </div>
               </th>
               <th className={'open-search-cell tracks-cell'}>
