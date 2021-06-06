@@ -4,10 +4,10 @@ import FontAwesome from 'react-fontawesome'
 
 class ExternalLink extends Component {
   static defaultProps = { showIcon: true }
-  onClick() {}
   render() {
     return (
       <a
+        onClick={(e) => e.stopPropagation()}
         {...this.props}
         className={`${this.props.className || ''} 'external-link' link`}
         target="_blank"

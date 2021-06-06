@@ -181,7 +181,8 @@ class Track extends Component {
             <PillButton
               disabled={this.state.processingCart}
               className={'table-cell-button'}
-              onClick={async () => {
+              onClick={async e => {
+                e.stopPropagation()
                 if (this.props.inCart) {
                   this.setState({ processingCart: true })
                   try {
@@ -212,7 +213,8 @@ class Track extends Component {
               <PillButton
                 className={'table-cell-button ignore-artists-button'}
                 disabled={this.state.ignoreArtistsByLabelsDisabled}
-                onClick={() => {
+                onClick={e => {
+                  e.stopPropagation()
                   this.setState({ ignoreArtistsByLabelsDisabled: true })
                   this.props.onIgnoreArtistsByLabels()
                 }}
