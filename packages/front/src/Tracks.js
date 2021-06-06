@@ -544,8 +544,8 @@ class Tracks extends Component {
             </tr>
             {this.renderTracks(this.props.tracks, this.props.carts)}
             {this.props.listState === 'new' ? (
-              <tr style={{ display: 'block' }}>
-                <td style={{ display: 'block' }}>
+              <tr style={{ display: 'flex' }}>
+                <td style={{ flex: 1 }}>
                   <SpinnerButton
                     size={'large'}
                     loading={this.state.updatingTracks}
