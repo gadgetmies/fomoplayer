@@ -502,7 +502,7 @@ class Tracks extends Component {
         </div>
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
           <thead className={'noselect tracks-table-header'}>
-            <tr style={{ display: 'block' }}>
+            <tr style={{ display: 'block' }} className={'noselect'}>
               <th className={'new-cell tracks-cell'}>
                 <div className={'new-cell-content track-table-cell'}>New</div>
               </th>
