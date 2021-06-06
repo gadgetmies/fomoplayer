@@ -1,7 +1,6 @@
 @import url('slideout.css');
 
 html {
-  height: -webkit-fill-available;
   height: 100vh;
   overflow: hidden;
 }
@@ -9,7 +8,6 @@ html {
 body {
   width: 100%;
   min-height: 100vh;
-  min-height: -webkit-fill-available;
   font-family: 'Lato', sans-serif;
   background-color: #333;
 }
@@ -570,11 +568,15 @@ input[type='radio']:checked + .state-select-button--button {
   align-items: center;
 }
 
-.search-icon {
+.search-input-icon {
   position: absolute;
   right: 0;
   opacity: 0.5;
   margin-right: 8px;
+}
+
+.clear-search {
+  cursor: pointer;
 }
 
 .search:focus,

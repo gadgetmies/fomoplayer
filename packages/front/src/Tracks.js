@@ -473,7 +473,11 @@ class Tracks extends Component {
                 onChange={e => this.setSearch(e.target.value)}
                 value={this.state.search}
               />
-              <FontAwesome className={'search-icon'} name="search" />
+              {this.state.search ? (
+                <FontAwesome onClick={() => this.setSearch('')} className={'search-input-icon clear-search'} name="times-circle" />
+              ) : (
+                <FontAwesome className={'search-input-icon search-icon'} name="search" />
+              )}
             </label>
           </div>
         </div>
