@@ -553,7 +553,6 @@ input[type='radio']:checked + .state-select-button--button {
   border-radius: 0.25rem;
   padding: 0.375rem 0.75rem;
   line-height: 1;
-  font-size: 0.7rem;
   color: #ffffffb3;
   transition: box-shadow 0.25s ease-in-out, width 0.25s ease-in-out;
   width: 100%;
@@ -593,6 +592,10 @@ input[type='radio']:checked + .state-select-button--button {
 @media (max-width: 799px) {
   .input-layout {
     width: 100%;
+  }
+
+  .search {
+    font-size: 16px;
   }
 
   .search-icon {
@@ -658,6 +661,7 @@ input[type='radio']:checked + .state-select-button--button {
   }
 
   .search {
+    font-size: 0.7rem;
     max-width: 20rem;
     padding-right: 2rem;
     float: right;
