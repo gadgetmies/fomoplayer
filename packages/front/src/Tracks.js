@@ -123,10 +123,7 @@ class Track extends Component {
       <tr
         ref={'row'}
         style={{ display: 'flex', width: '100%' }}
-        // onClick={() => this.props.onClick()}
-        onTouchTap={() => {
-          this.props.onTouchTap()
-        }}
+        onClick={() => this.props.onClick()}
         onDoubleClick={() => {
           this.props.onDoubleClick()
         }}
@@ -382,6 +379,9 @@ class Tracks extends Component {
                 : false
             }
             key={id}
+            onClick={() => {
+              this.props.onPreviewRequested(id)
+            }}
             onDoubleClick={() => {
               this.props.onPreviewRequested(id)
             }}
