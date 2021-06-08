@@ -530,6 +530,20 @@ ON CONFLICT ON CONSTRAINT user__artist__label_ignore_unique DO NOTHING
 `
   )
 
+module.exports.artistOnLabelInIgnore = async (tx, userId, artists, labelId) => {
+  const [{ isIgnored }] = await tx.queryRowsAsync(sql`--artistOnLabelInIgnore
+SELECT EXISTS(
+               SELECT user__artist__label_ignore_id
+               from user__artist__label_ignore
+               where meta_account_user_id = ${userId}
+                 and label_id = ${labelId}
+                 and artist_id = ANY (${artists.map(R.prop('id'))}::int[])
+    ) AS "isIgnored"
+`)
+
+  return isIgnored
+}
+
 module.exports.setTrackHeard = (trackId, username, heard) => {
   logger.info('setTrackHeard', { trackId, username, heard })
   return pg.queryRowsAsync(

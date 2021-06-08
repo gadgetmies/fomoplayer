@@ -15,6 +15,7 @@ const { ensureArtistExists, ensureLabelExists, queryStoreRegexes } = require('..
 
 const {
   addArtistOnLabelToIgnore,
+  artistOnLabelInIgnore,
   addArtistWatch,
   addLabelWatch,
   deletePlaylistFollowFromUser,
@@ -65,6 +66,7 @@ module.exports.setTrackHeard = setTrackHeard
 module.exports.setAllHeard = setAllHeard
 
 module.exports.addArtistOnLabelToIgnore = addArtistOnLabelToIgnore
+module.exports.artistOnLabelInIgnore = artistOnLabelInIgnore
 module.exports.addArtistsOnLabelsToIgnore = (username, { artistIds, labelIds }) =>
   using(pg.getTransaction(), tx =>
     each(R.xprod(artistIds, labelIds), ([artistId, labelId]) =>
