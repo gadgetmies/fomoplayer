@@ -176,10 +176,16 @@
   }
 
   .artist-cell {
+    font-size: 130%;
     font-weight: 700;
   }
 
+  .title-cell {
+    font-size: 130%;
+  }
+
   .label-cell {
+    font-size: 130%;
     opacity: 0.8;
   }
 
