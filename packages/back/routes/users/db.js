@@ -1,6 +1,5 @@
 const sql = require('sql-template-strings')
 const R = require('ramda')
-const { using } = require('bluebird')
 const pg = require('../../db/pg.js')
 const { apiURL } = require('../../config')
 const logger = require('../../logger')(__filename)
