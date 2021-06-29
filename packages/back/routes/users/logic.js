@@ -15,6 +15,8 @@ const { ensureArtistExists, ensureLabelExists, queryStoreRegexes } = require('..
 
 const {
   addArtistOnLabelToIgnore,
+  addArtistsToIgnore,
+  addLabelsToIgnore,
   artistOnLabelInIgnore,
   addArtistWatch,
   addLabelWatch,
@@ -68,11 +70,29 @@ module.exports.setAllHeard = setAllHeard
 module.exports.addArtistOnLabelToIgnore = addArtistOnLabelToIgnore
 module.exports.artistOnLabelInIgnore = artistOnLabelInIgnore
 module.exports.addArtistsOnLabelsToIgnore = (username, { artistIds, labelIds }) =>
-  using(pg.getTransaction(), tx =>
-    each(R.xprod(artistIds, labelIds), ([artistId, labelId]) =>
-      addArtistOnLabelToIgnore(tx, artistId, labelId, username).tap(() => removeIgnoredTracksFromUser(tx, username))
+  using(pg.getTransaction(), async tx => {
+    await each(R.xprod(artistIds, labelIds), ([artistId, labelId]) =>
+      addArtistOnLabelToIgnore(tx, artistId, labelId, username)
     )
-  )
+    await removeIgnoredTracksFromUser(tx, username)
+  })
+
+module.exports.addArtistsToIgnore = async (username, artistIds) => {
+  try {
+    using(pg.getTransaction(), async tx => {
+      await addArtistsToIgnore(tx, artistIds, username)
+      await removeIgnoredTracksFromUser(tx, username)
+    })
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+module.exports.addLabelsToIgnore = async (username, labelIds) =>
+  using(pg.getTransaction(), async tx => {
+    await addLabelsToIgnore(tx, labelIds, username)
+    await removeIgnoredTracksFromUser(tx, username)
+  })
 
 module.exports.removeArtistWatchesFromUser = deleteArtistWatchesFromUser
 module.exports.removeArtistWatchFromUser = deleteArtistWatchFromUser

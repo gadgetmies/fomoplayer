@@ -103,10 +103,6 @@
     display: none;
   }
 
-  .ignore-button-label::before {
-    content: 'artists on label';
-  }
-
   .cart-cell {
     width: 40%;
     text-align: center;
@@ -200,7 +196,7 @@
   }
 
   .ignore-button-label::before {
-    content: 'Ignore artists on label';
+    content: 'Ignore...';
   }
 
   .ignore-cart-cell {

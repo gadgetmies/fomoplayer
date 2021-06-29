@@ -7,6 +7,15 @@ module.exports.removeIgnoredTracksFromUser = (tx, username) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- removeIgnoredTracksFromUser
+WITH
+  user_details AS (
+    SELECT
+      meta_account_user_id
+    FROM meta_account
+    WHERE
+      meta_account_username = ${username}
+  )
+
 DELETE
 FROM user__track
 WHERE
@@ -14,15 +23,28 @@ WHERE
     SELECT
       track_id
     FROM
-      user__artist__label_ignore
+      user_details
+      NATURAL JOIN user__artist__label_ignore
       NATURAL JOIN meta_account
       NATURAL JOIN artist
       NATURAL JOIN label
       NATURAL JOIN track__label
       NATURAL JOIN track__artist
       NATURAL JOIN track
-    WHERE
-      meta_account_username = ${username}
+    UNION ALL
+    SELECT
+      track_id
+    FROM
+      user_details
+      NATURAL JOIN user__artist_ignore
+      NATURAL JOIN track__artist
+    UNION ALL
+    SELECT
+      track_id
+    FROM
+      user_details
+      NATURAL JOIN user__label_ignore
+      NATURAL JOIN track__label
   )
 `
   )

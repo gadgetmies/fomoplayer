@@ -2,6 +2,8 @@ const logger = require('../../logger')(__filename)
 const { insertSource } = require('../../jobs/watches/shared/db')
 const {
   addArtistsOnLabelsToIgnore,
+  addArtistsToIgnore,
+  addLabelsToIgnore,
   addStoreTracksToUser,
   getTracksM3u,
   getUserArtistFollows,
@@ -41,9 +43,20 @@ router.patch('/tracks/', ({ user: { username }, body: { heard }, res }) => {
 // TODO: add genre to database?
 router.post('/ignores/genres', ({ user: { username }, body: { artistId, storeId, genre } }, res) => {})
 
-router.post('/ignores/labels', ({ user: { username }, body }, res) =>
-  addArtistsOnLabelsToIgnore(username, body).tap(() => res.send())
-)
+router.post('/ignores/artists-on-labels', async ({ user: { username }, body }, res) => {
+  await addArtistsOnLabelsToIgnore(username, body)
+  res.status(204).send()
+})
+
+router.post('/ignores/labels', async ({ user: { username }, body }, res) => {
+  await addLabelsToIgnore(username, body)
+  res.status(204).send()
+})
+
+router.post('/ignores/artists', async ({ user: { username }, body }, res) => {
+  await addArtistsToIgnore(username, body)
+  res.status(204).send()
+})
 
 const tracksHandler = type => async (
   { body: tracks, headers: { 'x-multi-store-player-store': storeUrl }, user: { id: userId } },

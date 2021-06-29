@@ -1,11 +1,11 @@
 import Preview from './Preview.js'
 import Tracks from './Tracks.js'
-import Collection from './Collection.js'
-import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
+import { requestWithCredentials } from './request-json-with-credentials.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import MediaSession from '@mebtte/react-media-session'
 import { artistNamesToString } from './TrackTitle'
+import IgnorePopup from './IgnorePopup'
 
 class Player extends Component {
   constructor(props) {
@@ -171,11 +171,27 @@ class Player extends Component {
   }
 
   // TODO: change to POST {ignore: true} /me/labels/?
-  async ignoreArtistsByLabels(artistsAndLabels) {
+  async ignoreArtistsByLabels(artistId, labelIds) {
+    await requestWithCredentials({
+      path: `/me/ignores/artists-on-labels`,
+      method: 'POST',
+      body: { artistIds: [artistId], labelIds }
+    })
+  }
+
+  async ignoreArtist(artistId) {
+    await requestWithCredentials({
+      path: `/me/ignores/artists`,
+      method: 'POST',
+      body: [artistId]
+    })
+  }
+
+  async ignoreLabel(labelId) {
     await requestWithCredentials({
       path: `/me/ignores/labels`,
       method: 'POST',
-      body: artistsAndLabels
+      body: [labelId]
     })
   }
 
@@ -219,11 +235,38 @@ class Player extends Component {
     return tracks
   }
 
+  setIgnorePopupOpen(open) {
+    this.setState({ ignorePopupOpen: open })
+  }
+
+  closeIgnorePopup() {
+    this.setIgnorePopupOpen(false)
+  }
+
+  closeIgnorePopupAndRefreshList() {
+    this.closeIgnorePopup()
+    this.props.onUpdateTracksClicked()
+  }
+
+  openIgnorePopup(track) {
+    this.setState({ ignorePopupTrack: track })
+    this.setIgnorePopupOpen(true)
+  }
+
   render() {
     const tracks = this.getTracks()
     const currentTrack = this.state.currentTrack
     return (
-      <div className='page-container'>
+      <div className="page-container">
+        <IgnorePopup
+          open={this.state.ignorePopupOpen}
+          track={this.state.ignorePopupTrack}
+          onCloseClicked={this.closeIgnorePopup.bind(this)}
+          onIgnoreArtistOnLabels={this.ignoreArtistsByLabels.bind(this)}
+          onIgnoreArtist={this.ignoreArtist.bind(this)}
+          onIgnoreLabel={this.ignoreLabel.bind(this)}
+          onCloseAndRefreshClicked={this.closeIgnorePopupAndRefreshList.bind(this)}
+        />
         <MediaSession
           title={currentTrack ? currentTrack.title : ''}
           artist={currentTrack ? artistNamesToString(currentTrack.artists) : ''}
@@ -260,6 +303,7 @@ class Player extends Component {
             this.setCurrentTrack(requestedTrack)
             this.setPlaying(true)
           }}
+          onIgnoreClicked={this.openIgnorePopup.bind(this)}
           onShowNewClicked={this.setListState.bind(this, 'new')}
           onShowHeardClicked={this.setListState.bind(this, 'heard')}
           onShowCartClicked={this.setListState.bind(this, 'cart')}

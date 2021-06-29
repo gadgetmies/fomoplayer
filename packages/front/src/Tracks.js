@@ -147,15 +147,13 @@ class Track extends Component {
           <div className="ignore-cell track-table-cell">
             {this.props.label ? (
               <PillButton
-                className={'table-cell-button ignore-artists-button'}
-                disabled={this.state.ignoreArtistsByLabelsDisabled}
+                className={'table-cell-button'}
                 onClick={e => {
                   e.stopPropagation()
-                  this.setState({ ignoreArtistsByLabelsDisabled: true })
-                  this.props.onIgnoreArtistsByLabels()
+                  this.props.onIgnoreClicked()
                 }}
               >
-                <FontAwesome className={'ignore-button-icon'} name={'ban'} />
+                <FontAwesome name={'ban'} />
                 <span className={'ignore-button-label'} />
               </PillButton>
             ) : null}
@@ -294,7 +292,8 @@ class Tracks extends Component {
         <td>No tracks available</td>
       </tr>
     ) : (
-      tracks.map(({ id, title, mix, artists, remixers, labels, released, keys, heard, stores }) => {
+      tracks.map(track => {
+        const { id, title, mix, artists, remixers, labels, released, keys, heard, stores } = track
         return (
           <Track
             id={id}
@@ -326,6 +325,9 @@ class Tracks extends Component {
             }}
             onAddToCart={this.props.onAddToCart}
             onRemoveFromCart={this.props.onRemoveFromCart}
+            onIgnoreClicked={() => {
+              this.props.onIgnoreClicked(track)
+            }}
             onIgnoreArtistsByLabels={() =>
               this.props.onIgnoreArtistsByLabels({
                 artistIds: artists.map(R.prop('id')),
@@ -348,7 +350,7 @@ class Tracks extends Component {
       </button>
     )
     return (
-      <>
+      <div>
         <div className={'top-bar'}>
           <div style={{ flex: 1, whiteSpace: 'nowrap', display: 'flex' }} className="input-layout">
             <div className="state-select-button--container noselect" style={{ display: 'inline-block', flex: 0 }}>
@@ -455,9 +457,7 @@ class Tracks extends Component {
               </th>
               <th className={'ignore-cart-cell tracks-cell'}>
                 <div className={'cart-cell track-table-cell'}>Cart</div>
-                <div className={'ignore-cell track-table-cell'}>
-                  Ignore
-                </div>
+                <div className={'ignore-cell track-table-cell'}>Ignore</div>
               </th>
               <th className={'open-search-cell tracks-cell'}>
                 <div className={'open-cell track-table-cell'}>Open</div>
@@ -513,7 +513,7 @@ class Tracks extends Component {
             </tr>
           </tbody>
         </table>
-      </>
+      </div>
     )
   }
 }
