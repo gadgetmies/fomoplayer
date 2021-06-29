@@ -223,7 +223,7 @@ class Player extends Component {
     const tracks = this.getTracks()
     const currentTrack = this.state.currentTrack
     return (
-      <>
+      <div className='page-container'>
         <MediaSession
           title={currentTrack ? currentTrack.title : ''}
           artist={currentTrack ? artistNamesToString(currentTrack.artists) : ''}
@@ -265,7 +265,7 @@ class Player extends Component {
           onShowCartClicked={this.setListState.bind(this, 'cart')}
           onSearchResults={this.setSearchResults.bind(this)}
         />
-      </>
+      </div>
     )
   }
 }

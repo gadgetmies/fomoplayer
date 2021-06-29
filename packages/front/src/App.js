@@ -135,17 +135,13 @@ class App extends Component {
               />
               <SlideoutPanel ref="slideout" onOpen={this.updateLogins.bind(this)}>
                 <button
-                  style={{ position: 'absolute', left: 0, margin: 10, color: 'white' }}
+                  style={{ position: 'absolute', left: 0, margin: 10, color: 'white', zIndex: 1 }}
                   onClick={() => {
                     this.refs['slideout'].toggle()
                   }}
                 >
                   <FontAwesome name="bars" />
                 </button>
-                <Route
-                  path="/settings"
-                  render={() => <Settings carts={this.state.carts} onUpdateCarts={this.updateCarts.bind(this)} />}
-                />
                 <Route
                   path="/"
                   render={() => (
@@ -158,6 +154,16 @@ class App extends Component {
                       totalTracks={this.state.tracksData.meta.totalTracks}
                       onAddToCart={this.addToCart.bind(this)}
                       onRemoveFromCart={this.removeFromCart.bind(this)}
+                    />
+                  )}
+                />
+                <Route
+                  exact
+                  path="/settings"
+                  render={() => (
+                    <Settings
+                      carts={this.state.carts}
+                      onUpdateCarts={this.updateCarts.bind(this)}
                     />
                   )}
                 />

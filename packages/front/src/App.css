@@ -9,7 +9,6 @@ body {
   width: 100%;
   min-height: 100vh;
   font-family: 'Lato', sans-serif;
-  background-color: #333;
 }
 
 .app {
@@ -495,8 +494,17 @@ input[type='radio']:checked + .state-select-button--button {
 }
 
 .page-container {
-  padding-left: 3em;
   height: 100%;
+  width: 100%;
+  position: absolute;
+  background-color: #333;
+}
+
+.settings-container {
+  padding-left: 3em;
+}
+
+.scroll-container {
   overflow-y: auto;
 }
 

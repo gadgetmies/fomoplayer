@@ -64,8 +64,8 @@ class Settings extends Component {
 
   render() {
     return (
-      <>
-        <div className="page-container">
+      <div className="page-container scroll-container settings-container">
+        <div>
           <h2>Settings</h2>
           {/*
           <h3>Carts ({this.props.carts.length})</h3>
@@ -286,7 +286,7 @@ class Settings extends Component {
             ))}
           </ul>
         </div>
-      </>
+      </div>
     )
   }
 }
