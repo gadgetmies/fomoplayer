@@ -120,7 +120,7 @@ class Preview extends Component {
                 <td>Next</td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colSpan="2">
                   <span className="keyboard-shortcut">
                     <FontAwesome name="forward" />
                   </span>
@@ -137,7 +137,7 @@ class Preview extends Component {
                 <td>Previous</td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colSpan="2">
                   <span className="keyboard-shortcut">
                     <FontAwesome name="backward" />
                   </span>
@@ -145,7 +145,7 @@ class Preview extends Component {
                 <td>Seek backward</td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colSpan="2">
                   <span className="keyboard-shortcut">
                     <FontAwesome name="play" />
                   </span>
@@ -153,37 +153,37 @@ class Preview extends Component {
                 <td>Toggle playback</td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colSpan="2">
                   <span className="keyboard-shortcut">Q</span>
                 </td>
                 <td>Previous</td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colSpan="2">
                   <span className="keyboard-shortcut">W</span>
                 </td>
                 <td>Toggle playback</td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colSpan="2">
                   <span className="keyboard-shortcut">E</span>
                 </td>
                 <td>Next</td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colSpan="2">
                   <span className="keyboard-shortcut">R</span>
                 </td>
                 <td>Next new</td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colSpan="2">
                   <span className="keyboard-shortcut">A</span>
                 </td>
                 <td>Scan forward</td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colSpan="2">
                   <span className="keyboard-shortcut">D</span>
                 </td>
                 <td>Scan backward</td>

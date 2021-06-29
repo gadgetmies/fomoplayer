@@ -7,7 +7,7 @@ class Collection extends React.Component {
 
   render() {
     return (
-      <div class="collection-details" style={{ padding: 4 }}>
+      <div className="collection-details" style={{ padding: 4 }}>
         <div className="collection-details-item">Total: {this.props.totalTracks}</div>
         <div className="collection-details-item">New: {this.props.newTracks}</div>
       </div>
