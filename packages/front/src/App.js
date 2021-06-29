@@ -108,7 +108,7 @@ class App extends Component {
       method: 'PATCH',
       body: { heard: true }
     })
-    this.updateTracks()
+    await this.updateTracks()
   }
 
   async updateLogins() {}
@@ -146,7 +146,6 @@ class App extends Component {
                   path="/"
                   render={() => (
                     <Player
-                      onMarkAllHeardClicked={this.markAllHeard.bind(this)}
                       onUpdateTracksClicked={this.updateTracks.bind(this)}
                       carts={this.state.carts}
                       tracks={this.state.tracksData.tracks}
@@ -164,6 +163,9 @@ class App extends Component {
                     <Settings
                       carts={this.state.carts}
                       onUpdateCarts={this.updateCarts.bind(this)}
+                      onMarkAllHeardClicked={this.markAllHeard.bind(this)}
+                      newTracks={this.state.tracksData.meta.newTracks}
+                      totalTracks={this.state.tracksData.meta.totalTracks}
                     />
                   )}
                 />

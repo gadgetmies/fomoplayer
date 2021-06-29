@@ -304,7 +304,6 @@ class Preview extends Component {
           </div>
 
           <Collection
-            onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
             newTracks={this.props.newTracks}
             totalTracks={this.props.totalTracks}
           />

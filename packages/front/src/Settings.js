@@ -3,8 +3,13 @@ import React, { Component } from 'react'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
 import SpinnerButton from './SpinnerButton'
 import Spinner from './Spinner'
+import Collection from './Collection'
 
 class Settings extends Component {
+  unlockMarkAllHeard() {
+    this.setState({ markAllHeardUnlocked: true })
+  }
+
   constructor(props) {
     super(props)
     this.state = {
@@ -20,7 +25,9 @@ class Settings extends Component {
       removingCart: false,
       followDetailsDebounce: undefined,
       followDetails: undefined,
-      followDetailsUpdateAborted: false
+      followDetailsUpdateAborted: false,
+      markAllHeardUnlocked: false,
+      markingHeard: false
     }
   }
 
@@ -285,6 +292,41 @@ class Settings extends Component {
               </li>
             ))}
           </ul>
+          <h3>Collection</h3>
+          <p>
+            New tracks: {this.props.newTracks}
+            <br />
+            Total: {this.props.totalTracks}
+            <br />
+          </p>
+          <h4>Mark all tracks heard</h4>
+          <p>
+            Danger zone! This action cannot be undone!
+            <br />
+          </p>
+          <p className="input-layout">
+            <button
+              type="submit"
+              disabled={this.state.markAllHeardUnlocked}
+              className={`button button-push_button-small button-push_button-primary`}
+              style={this.props.style}
+              onClick={this.unlockMarkAllHeard.bind(this)}
+            >
+              Enable button
+            </button>
+
+            <SpinnerButton
+              disabled={!this.state.markAllHeardUnlocked}
+              loading={this.state.markingHeard}
+              onClick={async () => {
+                this.setState({ markingHeard: true })
+                await this.props.onMarkAllHeardClicked()
+                this.setState({ markingHeard: false })
+              }}
+              label={'Mark all heard'}
+              loadingLabel={'Marking all heard'}
+            />
+          </p>
         </div>
       </div>
     )
