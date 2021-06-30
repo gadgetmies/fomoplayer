@@ -266,13 +266,14 @@ class Tracks extends Component {
 
   async setSearch(search) {
     this.setState({ search })
-    if (search === '') {
-      this.props.onSearchResults(undefined)
-      return
-    }
 
     if (this.state.searchDebounce) {
       clearTimeout(this.state.searchDebounce)
+    }
+
+    if (search === '') {
+      this.props.onSearchResults([])
+      return
     }
 
     const timeout = setTimeout(async () => {
