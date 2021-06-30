@@ -287,9 +287,16 @@ class Tracks extends Component {
   }
 
   renderTracks(tracks, carts) {
+    const emptyListLabels = {
+      search: 'No results',
+      cart: 'Cart empty',
+      new: 'No tracks available',
+      heard: 'No tracks played'
+    }
+
     return tracks.length === 0 ? (
       <tr style={{ display: 'block' }}>
-        <td>No tracks available</td>
+        <td>{emptyListLabels[this.props.listState]}</td>
       </tr>
     ) : (
       tracks.map(track => {
@@ -351,78 +358,78 @@ class Tracks extends Component {
     )
     return (
       <div>
-        <div className={'top-bar'}>
-          <div style={{ flex: 1, whiteSpace: 'nowrap', display: 'flex' }} className="input-layout">
-            <div className="state-select-button--container noselect" style={{ display: 'inline-block', flex: 0 }}>
-              <input
-                type="radio"
-                id="tracklist-state-new"
-                name="tracklist-state"
-                className="state-select-button--button"
-                defaultChecked={this.props.listState === 'new'}
-                onChange={this.props.onShowNewClicked}
-              />
-              <label className="state-select-button--button" htmlFor="tracklist-state-new">
-                New tracks
-              </label>
-              <input
-                type="radio"
-                id="tracklist-state-heard"
-                name="tracklist-state"
-                className="state-select-button--button"
-                defaultChecked={this.props.listState === 'heard'}
-                onChange={this.props.onShowHeardClicked}
-              />
-              <label className="state-select-button--button" htmlFor="tracklist-state-heard">
-                Recently played
-              </label>
-              <input
-                type="radio"
-                id="tracklist-state-cart"
-                name="tracklist-state"
-                className="state-select-button--button"
-                defaultChecked={this.props.listState === 'cart'}
-                onChange={this.props.onShowCartClicked}
-              />
-              <label className="state-select-button--button" htmlFor="tracklist-state-cart">
-                Cart
-              </label>
-            </div>
-            <SpinnerButton
-              style={{ display: 'inline-block', flex: 0 }}
-              size={'small'}
-              loading={this.state.updatingTracks}
-              onClick={async () => {
-                this.setState({ updatingTracks: true })
-                try {
-                  await this.props.onUpdateTracksClicked()
-                } finally {
-                  this.setState({ updatingTracks: false })
-                }
-              }}
-              label={'Refresh list'}
-              loadingLabel={'Refreshing'}
+        <div className={'top-bar input-layout'}>
+          <div
+            className="state-select-button state-select-button--container noselect"
+            style={{ display: 'inline-block', flex: 0 }}
+          >
+            <input
+              type="radio"
+              id="tracklist-state-new"
+              name="tracklist-state"
+              className="state-select-button--button"
+              defaultChecked={this.props.listState === 'new'}
+              onChange={this.props.onShowNewClicked}
             />
-            <label
-              htmlFor="search"
-              className={'reveal-search-button'}
-              style={{ flex: 1, textAlign: 'right', margin: 8, opacity: 0.7 }}
-              onClick={this.toggleSearch.bind(this)}
-            >
-              <FontAwesome name="search" style={{ margin: 2 }} />
-              {!this.state.searchOpen ? (
-                <FontAwesome name="caret-down" style={{ margin: 2 }} />
-              ) : (
-                <FontAwesome name="caret-up" style={{ margin: 2 }} />
-              )}
+            <label className="state-select-button--button" htmlFor="tracklist-state-new">
+              New tracks
+            </label>
+            <input
+              type="radio"
+              id="tracklist-state-heard"
+              name="tracklist-state"
+              className="state-select-button--button"
+              defaultChecked={this.props.listState === 'heard'}
+              onChange={this.props.onShowHeardClicked}
+            />
+            <label className="state-select-button--button" htmlFor="tracklist-state-heard">
+              Recently played
+            </label>
+            <input
+              type="radio"
+              id="tracklist-state-cart"
+              name="tracklist-state"
+              className="state-select-button--button"
+              defaultChecked={this.props.listState === 'cart'}
+              onChange={this.props.onShowCartClicked}
+            />
+            <label className="state-select-button--button" htmlFor="tracklist-state-cart">
+              Cart
+            </label>
+            <input
+              type="radio"
+              id="tracklist-state-search"
+              name="tracklist-state"
+              className="state-select-button--button"
+              defaultChecked={this.props.listState === 'search'}
+              onChange={this.props.onShowSearchClicked}
+            />
+            <label className="state-select-button--button" htmlFor="tracklist-state-search">
+              Search
             </label>
           </div>
-          <div className={`input-layout ${!this.state.searchOpen ? 'search-bar-hidden' : ''}`} style={{ flex: 1 }}>
-            <label className={'search-bar'}>
+          <SpinnerButton
+            style={{ display: 'inline-block', flex: 0 }}
+            className="refresh-tracks"
+            size={'small'}
+            loading={this.state.updatingTracks}
+            onClick={async () => {
+              this.setState({ updatingTracks: true })
+              try {
+                await this.props.onUpdateTracksClicked()
+              } finally {
+                this.setState({ updatingTracks: false })
+              }
+            }}
+            label={'Refresh list'}
+            loadingLabel={'Refreshing'}
+          />
+          {this.props.listState !== 'search' ? null : (
+            <label className={`search-bar`}>
               <input
+                autoFocus
                 id="search"
                 className="search"
-                placeholder="Search"
                 onChange={e => this.setSearch(e.target.value)}
                 value={this.state.search}
               />
@@ -433,10 +440,10 @@ class Tracks extends Component {
                   name="times-circle"
                 />
               ) : (
-                <FontAwesome className={'search-input-icon search-icon'} name="search" />
+                <FontAwesome className={'search-input-icon'} name="search" />
               )}
             </label>
-          </div>
+          )}
         </div>
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
           <thead className={'noselect tracks-table-header'}>

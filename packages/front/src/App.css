@@ -450,6 +450,10 @@ audio {
   height: 2em;
 }
 
+.state-select-button {
+  order: 1;
+}
+
 .state-select-button--container {
   border-radius: 0.25rem;
   padding: 2px;
@@ -591,10 +595,9 @@ input[type='radio']:checked + .state-select-button--button {
   align-items: center;
   color: white;
   padding: 2px;
-}
-
-.search-bar {
-  box-sizing: border-box;
+  white-space: nowrap;
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .search {
@@ -610,6 +613,7 @@ input[type='radio']:checked + .state-select-button--button {
 }
 
 .search-bar {
+  box-sizing: border-box;
   position: relative;
   flex: 1;
   padding: 2px;
@@ -639,6 +643,10 @@ input[type='radio']:checked + .state-select-button--button {
   /*width: 10rem;*/
 }
 
+.refresh-tracks {
+  margin-left: auto;
+}
+
 @media (max-width: 799px) {
   .full-screen-popup {
     margin: 2em;
@@ -652,12 +660,22 @@ input[type='radio']:checked + .state-select-button--button {
     font-size: 16px;
   }
 
-  .search-icon {
-    display: none;
+  .search-bar {
+    margin: 0;
+    order: 3;
+    min-width: 100%;
   }
 
   .search-bar-hidden {
     display: none;
+  }
+
+  .reveal-search-button {
+    order: 2;
+  }
+
+  .refresh-tracks {
+    order: 3;
   }
 
   .preview {
@@ -720,9 +738,17 @@ input[type='radio']:checked + .state-select-button--button {
 
   .search {
     font-size: 0.7rem;
-    max-width: 20rem;
     padding-right: 2rem;
     float: right;
+  }
+
+  .search-bar {
+    max-width: 20rem;
+    order: 2;
+  }
+
+  .refresh-tracks {
+    order: 3;
   }
 
   .preview-wrapper {

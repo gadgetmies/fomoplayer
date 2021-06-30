@@ -15,7 +15,8 @@ class Player extends Component {
       currentTrack: null,
       heardTracks: [],
       listenedTracks: 0,
-      listState: 'new'
+      listState: 'new',
+      searchResults: []
     }
 
     this.preview = React.createRef()
@@ -204,10 +205,6 @@ class Player extends Component {
   }
 
   getTracks() {
-    if (this.state.searchResults) {
-      return this.state.searchResults
-    }
-
     const heardTracks = this.state.heardTracks
     let tracks
 
@@ -230,6 +227,8 @@ class Player extends Component {
       tracks = this.state.heardTracks.concat(tracks)
     } else if (this.state.listState === 'cart') {
       tracks = this.props.carts.find(R.prop('is_default')).tracks
+    } else if (this.state.listState === 'search') {
+      tracks = this.state.searchResults
     }
 
     return tracks
@@ -307,6 +306,7 @@ class Player extends Component {
           onShowNewClicked={this.setListState.bind(this, 'new')}
           onShowHeardClicked={this.setListState.bind(this, 'heard')}
           onShowCartClicked={this.setListState.bind(this, 'cart')}
+          onShowSearchClicked={this.setListState.bind(this, 'search')}
           onSearchResults={this.setSearchResults.bind(this)}
         />
       </div>
