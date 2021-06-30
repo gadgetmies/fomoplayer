@@ -53,7 +53,6 @@ class Track extends Component {
     const title = `${this.props.title} ${this.props.version ? `(${this.props.version})` : ''}`
 
     const artistsAndRemixers = this.props.artists.concat(this.props.remixers)
-    const artists = artistsAndRemixers.map(R.prop('name')).join(', ')
 
     return (
       <tr
@@ -82,17 +81,25 @@ class Track extends Component {
         </td>
         <td className={'track-details tracks-cell'}>
           <div className={'track-details-left track-details-content'}>
-            <div className={'artist-cell track-table-cell'} title={artists}>
-              {artists}
+            <div className={'artist-cell track-table-cell'} title={artistsAndRemixers.map(R.prop('name'))}>
+              {R.intersperse(
+                ', ',
+                artistsAndRemixers.map(artist => (
+                  <span className={artist.following ? 'following' : ''}>{artist.name}</span>
+                ))
+              )}
             </div>
             <div className={'title-cell track-table-cell'} title={title}>
               {title}
             </div>
             <div
-              className={`label-cell track-table-cell ${this.props.label ? '' : 'empty-cell'}`}
-              title={this.props.label}
+              className={`label-cell track-table-cell ${this.props.labels ? '' : 'empty-cell'}`}
+              title={this.props.labels.map(R.prop('name'))}
             >
-              {this.props.label}
+              {R.intersperse(
+                ', ',
+                this.props.labels.map(label => <span className={label.following ? 'following' : ''}>{label.name}</span>)
+              )}
             </div>
             <div className={`released-cell track-table-cell ${this.props.released ? '' : 'empty-cell'}`}>
               {this.props.released}
@@ -145,18 +152,16 @@ class Track extends Component {
             </PillButton>
           </div>
           <div className="ignore-cell track-table-cell">
-            {this.props.label ? (
-              <PillButton
-                className={'table-cell-button'}
-                onClick={e => {
-                  e.stopPropagation()
-                  this.props.onIgnoreClicked()
-                }}
-              >
-                <FontAwesome name={'ban'} />
-                <span className={'ignore-button-label'} />
-              </PillButton>
-            ) : null}
+            <PillButton
+              className={'table-cell-button'}
+              onClick={e => {
+                e.stopPropagation()
+                this.props.onIgnoreClicked()
+              }}
+            >
+              <FontAwesome name={'ban'} />
+              <span className={'ignore-button-label'} />
+            </PillButton>
           </div>
         </td>
         <td className={'open-search-cell tracks-cell'}>
@@ -309,7 +314,7 @@ class Tracks extends Component {
             artists={artists}
             mix={mix}
             remixers={remixers}
-            label={R.pluck('name', labels).join(', ')}
+            labels={labels}
             released={released}
             keys={keys}
             stores={stores}

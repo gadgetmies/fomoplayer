@@ -19,6 +19,10 @@
   box-shadow: 0 0 8px 0 white;
 }
 
+.following {
+  font-weight: 600;
+}
+
 @media (min-width: 800px) {
   .tracks-table-header {
     display: block;
@@ -182,7 +186,6 @@
 
   .label-cell {
     font-size: 130%;
-    opacity: 0.8;
   }
 
   .released-cell {

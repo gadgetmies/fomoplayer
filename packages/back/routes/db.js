@@ -27,10 +27,15 @@ OFFSET ${skip} LIMIT 1;
     )
     .then(R.head)
 
-module.exports.searchForTracks = query =>
+module.exports.searchForTracks = (query, username) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- searchForTracks
+WITH logged_user AS (
+  SELECT meta_account_user_id 
+  FROM meta_account
+  WHERE meta_account_username = ${username}
+)
 SELECT
   track_id AS id
 , *
@@ -58,5 +63,5 @@ FROM
                            string_agg(coalesce(label_name, ''), ' '))) @@
               websearch_to_tsquery('simple', unaccent(${query}))
           ORDER BY MAX(store__track_published) DESC) AS tracks)
-    , ${apiURL})`
+    , (SELECT meta_account_user_id FROM logged_user))`
   )

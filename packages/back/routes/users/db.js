@@ -1,7 +1,6 @@
 const sql = require('sql-template-strings')
 const R = require('ramda')
 const pg = require('../../db/pg.js')
-const { apiURL } = require('../../config')
 const logger = require('../../logger')(__filename)
 
 module.exports.addPurchasedTrackToUser = async (userId, storeTrack) => {
@@ -478,7 +477,7 @@ WITH
   , score_details
   FROM
     limited_tracks lt
-    JOIN track_details((SELECT ARRAY_AGG(track_id) FROM limited_tracks), ${apiURL}) td USING (track_id)
+    JOIN track_details((SELECT ARRAY_AGG(track_id) FROM limited_tracks), (SELECT meta_account_user_id FROM logged_user)) td USING (track_id)
 )
 , new_tracks_with_details AS (
   SELECT
@@ -653,7 +652,7 @@ WHERE
 
   const cartDetails = []
   for (const { id } of carts) {
-    const [details] = await queryCartDetails(id)
+    const [details] = await queryCartDetails(id, userId)
     cartDetails.push(details)
   }
 
@@ -684,13 +683,13 @@ WHERE
   )
 }
 
-const queryCartDetails = (module.exports.queryCartDetails = async cartId =>
+const queryCartDetails = (module.exports.queryCartDetails = async (cartId, userId) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryCartDetails
 WITH
   cart_tracks AS (SELECT array_agg(track_id) AS tracks FROM track__cart WHERE cart_id = ${cartId})
-, td AS (SELECT (track_details((SELECT tracks FROM cart_tracks), ${apiURL})).*)
+, td AS (SELECT (track_details((SELECT tracks FROM cart_tracks), ${userId})).*)
 , renamed AS (SELECT track_id AS id, * FROM td)
 , tracks AS (SELECT json_agg(renamed.*) AS tracks FROM renamed)
 SELECT
