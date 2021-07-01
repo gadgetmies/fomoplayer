@@ -135,7 +135,7 @@ class App extends Component {
               />
               <SlideoutPanel ref="slideout" onOpen={this.updateLogins.bind(this)}>
                 <button
-                  style={{ position: 'absolute', left: 0, margin: 10, color: 'white', zIndex: 1 }}
+                  style={{ position: 'absolute', left: 0, margin: 10, color: 'white', zIndex: 11 }}
                   onClick={() => {
                     this.refs['slideout'].toggle()
                   }}

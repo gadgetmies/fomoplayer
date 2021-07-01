@@ -536,6 +536,7 @@ input[type='radio']:checked + .state-select-button--button {
   width: 100%;
   position: absolute;
   background-color: #333;
+  z-index: 10;
 }
 
 .settings-container {
