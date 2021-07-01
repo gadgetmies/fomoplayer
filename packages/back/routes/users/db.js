@@ -357,6 +357,18 @@ WITH
     NATURAL LEFT JOIN user_label_scores
   GROUP BY 1
 )
+, label_follow_scores AS (
+  SELECT 
+    track_id,
+    CASE WHEN bool_or(meta_account_user_id IS NOT NULL) THEN 1 ELSE 0 END AS label_follow_score
+  FROM new_tracks
+  NATURAL LEFT JOIN track__label
+  NATURAL LEFT JOIN store__label
+  NATURAL LEFT JOIN store__label_watch
+  NATURAL LEFT JOIN store__label_watch__user
+  NATURAL LEFT JOIN logged_user
+  GROUP BY 1
+)
 , artist_scores AS (
   SELECT
     track_id
@@ -365,6 +377,26 @@ WITH
     new_tracks
     NATURAL JOIN track__artist
     NATURAL LEFT JOIN user_artist_scores
+  GROUP BY 1
+)
+, artist_follow_scores AS (
+  WITH follows AS (
+    SELECT DISTINCT ON (track_id, artist_id)
+      track_id
+    , CASE WHEN bool_or(store__artist_watch_id IS NOT NULL) THEN 1 ELSE 0 END AS score
+    FROM
+      new_tracks
+      NATURAL JOIN track__artist
+      NATURAL JOIN store__artist
+      NATURAL LEFT JOIN store__artist_watch
+      NATURAL LEFT JOIN store__artist_watch__user
+      NATURAL LEFT JOIN logged_user
+    GROUP BY 1, artist_id
+  )
+  SELECT
+    track_id,
+    SUM(score) AS artist_follow_score
+  FROM follows
   GROUP BY 1
 )
 , user_score_weights AS (
@@ -381,13 +413,17 @@ WITH
   , user__track_heard
   , label_score * COALESCE(label_multiplier, 0) +
     artist_score * COALESCE(artist_multiplier, 0) +
+    artist_follow_score * COALESCE(artist_follow_multiplier, 0) + 
+    label_follow_score * COALESCE(label_follow_multiplier, 0)+ 
     COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
     COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) AS score,
     json_build_object(
       'label', json_build_object('score', label_score, 'multiplier', label_multiplier),
       'artist', json_build_object('score', artist_score, 'multiplier', artist_multiplier),
       'added', json_build_object('score', added_score.score, 'multiplier', date_added_multiplier),
-      'released', json_build_object('score', released_score.score, 'multiplier', date_released_multiplier)
+      'released', json_build_object('score', released_score.score, 'multiplier', date_released_multiplier),
+      'artist_follow', artist_follow_score,
+      'label_follow', label_follow_score
     ) AS score_details
   FROM
     (SELECT
@@ -395,6 +431,8 @@ WITH
      , user__track_heard
      , label_score
      , artist_score
+     , label_follow_score
+     , artist_follow_score
      , track_added
      , (SELECT
           user_track_score_weight_multiplier
@@ -412,6 +450,18 @@ WITH
           user_track_score_weight_multiplier
         FROM user_score_weights
         WHERE
+          user_track_score_weight_code = 'artist_follow'
+       ) AS artist_follow_multiplier
+     , (SELECT
+          user_track_score_weight_multiplier
+        FROM user_score_weights
+        WHERE
+          user_track_score_weight_code = 'label_follow'
+       ) AS label_follow_multiplier
+     , (SELECT
+          user_track_score_weight_multiplier
+        FROM user_score_weights
+        WHERE
           user_track_score_weight_code = 'date_added'
        ) AS date_added_multiplier
      , (SELECT
@@ -424,6 +474,8 @@ WITH
        new_tracks
        NATURAL JOIN label_scores
        NATURAL JOIN artist_scores
+       NATURAL JOIN label_follow_scores
+       NATURAL JOIN artist_follow_scores
     ) AS tracks
     LEFT JOIN track_date_added_score AS added_score USING (track_id)
     LEFT JOIN track_date_released_score AS released_score USING (track_id)

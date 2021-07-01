@@ -1,0 +1,2 @@
+ALTER TABLE user_track_score_weight
+  DROP CONSTRAINT user_track_score_weight_meta_account_user_id_user_track_sco_key;

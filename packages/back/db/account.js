@@ -73,6 +73,8 @@ INSERT INTO user_track_score_weight
 VALUES
   (1, 'label', ${id}),
   (5, 'artist', ${id}),
+  (1, 'label_follow', ${id}),
+  (5, 'artist_follow', ${id}),
   (-0.1, 'date_published', ${id}),
   (-0.1, 'date_added', ${id})
 `
