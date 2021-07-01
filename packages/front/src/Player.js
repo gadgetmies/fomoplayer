@@ -196,6 +196,14 @@ class Player extends Component {
     })
   }
 
+  async ignoreRelease(releaseId) {
+    await requestWithCredentials({
+      path: `/me/ignores/releases`,
+      method: 'POST',
+      body: [releaseId]
+    })
+  }
+
   setListState(listState) {
     this.setState({ listState })
   }
@@ -264,6 +272,7 @@ class Player extends Component {
           onIgnoreArtistOnLabels={this.ignoreArtistsByLabels.bind(this)}
           onIgnoreArtist={this.ignoreArtist.bind(this)}
           onIgnoreLabel={this.ignoreLabel.bind(this)}
+          onIgnoreRelease={this.ignoreRelease.bind(this)}
           onCloseAndRefreshClicked={this.closeIgnorePopupAndRefreshList.bind(this)}
         />
         <MediaSession

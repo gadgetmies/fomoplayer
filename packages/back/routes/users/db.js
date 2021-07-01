@@ -473,6 +473,7 @@ WITH
   , previews
   , stores
   , released
+  , releases
   , score
   , score_details
   FROM
@@ -578,6 +579,23 @@ SELECT EXISTS(
 `)
 
   return isIgnored
+}
+
+module.exports.removeReleasesFromUser = (username, releases) => {
+  logger.info('removeReleasesFromUser', {username, releases})
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- removeReleasesFromUser
+DELETE
+FROM user__track
+WHERE
+    track_id IN (
+    SELECT track_id
+    FROM release__track
+    WHERE release_id = ANY (${releases})
+  )
+`
+  )
 }
 
 module.exports.setTrackHeard = (trackId, username, heard) => {

@@ -16,9 +16,11 @@ class IgnorePopup extends Component {
       ignoreByArtistOnLabelInfoVisible: false,
       ignoringLabel: null,
       ignoringArtist: null,
+      ignoringRelease: null,
       ignoringArtistOnLabels: null,
       ignoredLabels: new Set(),
       ignoredArtists: new Set(),
+      ignoredReleases: new Set(),
       ignoredArtistsOnLabels: new Set()
     }
   }
@@ -28,7 +30,13 @@ class IgnorePopup extends Component {
   }
 
   render() {
-    return this.props.track === undefined ? null : (
+    if (this.props.track === undefined) {
+      return null
+    }
+
+    const releases = this.props.track.releases
+
+    return (
       <FullScreenPopup title="Ignore" {...this.props}>
         {this.props.track.labels.length === 0 ? null : (
           <>
@@ -65,6 +73,31 @@ class IgnorePopup extends Component {
                   </SpinnerButton>
                 )
               })}
+            </div>
+          </>
+        )}
+        {releases.length === 0 ? null : (
+          <>
+            <h2>Release</h2>
+            <div className="input-layout">
+              {this.props.track.releases.map(release => (
+                <SpinnerButton
+                  loading={this.state.ignoringRelease === release.id}
+                  disabled={this.state.ignoringRelease || this.state.ignoredReleases.has(release.id)}
+                  key={`artist-${release.id}`}
+                  className={'button button-push_button-large button-push_button-primary'}
+                  onClick={async () => {
+                    this.setState({ ignoringRelease: release.id })
+                    await this.props.onIgnoreRelease(release.id)
+                    this.setState({
+                      ignoredReleases: this.state.ignoredReleases.add(release.id),
+                      ignoringRelease: null
+                    })
+                  }}
+                >
+                  <FontAwesome name="ban" /> {release.name}
+                </SpinnerButton>
+              ))}
             </div>
           </>
         )}

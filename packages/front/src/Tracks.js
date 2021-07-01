@@ -306,7 +306,7 @@ class Tracks extends Component {
       </tr>
     ) : (
       tracks.map(track => {
-        const { id, title, mix, artists, remixers, labels, released, keys, heard, stores } = track
+        const { id, title, mix, artists, remixers, labels, releases, released, keys, heard, stores } = track
         return (
           <Track
             id={id}
@@ -316,6 +316,7 @@ class Tracks extends Component {
             remixers={remixers}
             labels={labels}
             released={released}
+            releases={releases}
             keys={keys}
             stores={stores}
             selected={this.state.selectedTrack === id}

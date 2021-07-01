@@ -38,11 +38,14 @@ const {
   queryDefaultCartId,
   insertTracksToCart,
   deleteTracksFromCart,
-  queryCartOwner
+  queryCartOwner,
+  removeReleasesFromUser
 } = require('./db')
 
 const logger = require('../../logger')(__filename)
 const { apiURL } = require('../../config')
+
+module.exports.removeReleasesFromUser = removeReleasesFromUser
 
 module.exports.getUserTracks = queryUserTracks
 module.exports.getUserArtistFollows = queryUserArtistFollows

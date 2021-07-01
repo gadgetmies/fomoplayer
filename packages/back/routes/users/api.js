@@ -22,7 +22,8 @@ const {
   getUserCarts,
   removeCart,
   updateDefaultCart,
-  getDefaultCartDetails
+  getDefaultCartDetails,
+  removeReleasesFromUser
 } = require('./logic')
 
 const router = require('express-promise-router')()
@@ -55,6 +56,11 @@ router.post('/ignores/labels', async ({ user: { username }, body }, res) => {
 
 router.post('/ignores/artists', async ({ user: { username }, body }, res) => {
   await addArtistsToIgnore(username, body)
+  res.status(204).send()
+})
+
+router.post('/ignores/releases', async ({ user: { username }, body }, res) => {
+  await removeReleasesFromUser(username, body)
   res.status(204).send()
 })
 
