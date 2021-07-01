@@ -62,6 +62,6 @@ FROM
                            string_agg(artist_name, ' ') || ' ' ||
                            string_agg(coalesce(label_name, ''), ' '))) @@
               websearch_to_tsquery('simple', unaccent(${query}))
-          ORDER BY MAX(store__track_published) DESC) AS tracks)
+          ORDER BY MAX(LEAST(store__track_published, store__track_released)) DESC) AS tracks)
     , (SELECT meta_account_user_id FROM logged_user))`
   )
