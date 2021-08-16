@@ -95,7 +95,6 @@ module.exports.addLabelsToIgnore = async (username, labelIds) =>
     await removeIgnoredTracksFromUser(tx, username)
   })
 
-
 module.exports.addReleasesToIgnore = async (username, releaseIds) => {
   using(pg.getTransaction(), async tx => {
     await addReleasesToIgnore(tx, releaseIds, username)

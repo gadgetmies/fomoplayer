@@ -653,7 +653,7 @@ SELECT EXISTS(
 }
 
 module.exports.removeReleasesFromUser = (username, releases) => {
-  logger.info('removeReleasesFromUser', {username, releases})
+  logger.info('removeReleasesFromUser', { username, releases })
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- removeReleasesFromUser
