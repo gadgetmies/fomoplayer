@@ -619,6 +619,25 @@ ON CONFLICT ON CONSTRAINT user__label_ignore_label_id_meta_account_user_id_key D
   }
 }
 
+module.exports.addReleasesToIgnore = async (tx, releaseIds, username) => {
+  for (const releaseId of releaseIds) {
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`--addLabelToIgnore
+INSERT INTO user__release_ignore
+  (meta_account_user_id, release_id)
+SELECT
+  meta_account_user_id
+, ${releaseId}
+FROM meta_account
+WHERE
+  meta_account_username = ${username}
+ON CONFLICT ON CONSTRAINT user__release_ignore_release_id_meta_account_user_id_key DO NOTHING
+`
+    )
+  }
+}
+
 module.exports.artistOnLabelInIgnore = async (tx, userId, artists, labelId) => {
   const [{ isIgnored }] = await tx.queryRowsAsync(sql`--artistOnLabelInIgnore
 SELECT EXISTS(

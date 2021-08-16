@@ -85,7 +85,7 @@ class IgnorePopup extends Component {
                   loading={this.state.ignoringRelease === release.id}
                   disabled={this.state.ignoringRelease || this.state.ignoredReleases.has(release.id)}
                   key={`artist-${release.id}`}
-                  className={'button button-push_button-large button-push_button-primary'}
+                  className={`button button-push_button-large button-push_button-primary ${this.state.ignoredReleases.has(release.id) ? 'ignored' : ''}`}
                   onClick={async () => {
                     this.setState({ ignoringRelease: release.id })
                     await this.props.onIgnoreRelease(release.id)

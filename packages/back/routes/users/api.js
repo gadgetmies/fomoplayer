@@ -4,6 +4,7 @@ const {
   addArtistsOnLabelsToIgnore,
   addArtistsToIgnore,
   addLabelsToIgnore,
+  addReleasesToIgnore,
   addStoreTracksToUser,
   getTracksM3u,
   getUserArtistFollows,
@@ -60,7 +61,7 @@ router.post('/ignores/artists', async ({ user: { username }, body }, res) => {
 })
 
 router.post('/ignores/releases', async ({ user: { username }, body }, res) => {
-  await removeReleasesFromUser(username, body)
+  await addReleasesToIgnore(username, body)
   res.status(204).send()
 })
 

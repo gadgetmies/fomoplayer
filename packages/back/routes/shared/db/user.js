@@ -45,6 +45,13 @@ WHERE
       user_details
       NATURAL JOIN user__label_ignore
       NATURAL JOIN track__label
+    UNION ALL
+    SELECT
+      track_id
+    FROM
+      user_details
+      NATURAL JOIN user__release_ignore
+      NATURAL JOIN release__track
   )
 `
   )

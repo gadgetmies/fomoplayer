@@ -20,6 +20,10 @@ p {
   margin-top: 80px;
 }
 
+.ignored {
+  text-decoration: line-through;
+}
+
 .track {
   /*height: 40px;*/
   width: 100%;

@@ -18,6 +18,7 @@ const {
   addArtistsToIgnore,
   addLabelsToIgnore,
   artistOnLabelInIgnore,
+  addReleasesToIgnore,
   addArtistWatch,
   addLabelWatch,
   deletePlaylistFollowFromUser,
@@ -38,14 +39,11 @@ const {
   queryDefaultCartId,
   insertTracksToCart,
   deleteTracksFromCart,
-  queryCartOwner,
-  removeReleasesFromUser
+  queryCartOwner
 } = require('./db')
 
 const logger = require('../../logger')(__filename)
 const { apiURL } = require('../../config')
-
-module.exports.removeReleasesFromUser = removeReleasesFromUser
 
 module.exports.getUserTracks = queryUserTracks
 module.exports.getUserArtistFollows = queryUserArtistFollows
@@ -96,6 +94,14 @@ module.exports.addLabelsToIgnore = async (username, labelIds) =>
     await addLabelsToIgnore(tx, labelIds, username)
     await removeIgnoredTracksFromUser(tx, username)
   })
+
+
+module.exports.addReleasesToIgnore = async (username, releaseIds) => {
+  using(pg.getTransaction(), async tx => {
+    await addReleasesToIgnore(tx, releaseIds, username)
+    await removeIgnoredTracksFromUser(tx, username)
+  })
+}
 
 module.exports.removeArtistWatchesFromUser = deleteArtistWatchesFromUser
 module.exports.removeArtistWatchFromUser = deleteArtistWatchFromUser
