@@ -144,7 +144,7 @@ module.exports.addArtistFollowsWithIds = async (artistIds, userId) => {
 
 module.exports.addArtistFollows = async (storeUrl, artists, userId, sourceId) => {
   // TODO: try first to find from db
-  let addedArtists = []
+  let addedFollows = []
   for (const { name, url } of artists) {
     const { module: storeModule, idFromUrl } = await getStoreModuleForArtistByUrl(url)
     let artistDetails = { url: (storeUrl !== undefined ? storeUrl : '') + url, id: idFromUrl }
@@ -159,7 +159,7 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId, sourceId) =>
       artistDetails,
       sourceId
     )
-    addedArtists.push({
+    addedFollows.push({
       artist: `${apiURL}/artists/${artistId}`,
       follow: `${apiURL}/users/${userId}/follows/artists/${followId}`
     })
@@ -177,7 +177,8 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId, sourceId) =>
     })
   }
 
-  return addedArtists
+  return addedFollows
+}
 
 module.exports.addLabelFollowsWithIds = async (labelIds, userId) => {
   const addedFollows = []
@@ -196,7 +197,7 @@ module.exports.addLabelFollowsWithIds = async (labelIds, userId) => {
 
 module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {
   // TODO: try first to find from db
-  let addedLabels = []
+  let addedFollows = []
   for (const { name, url } of labels) {
     const { module: storeModule, idFromUrl } = await getStoreModuleForLabelByUrl(url)
     let labelDetails = { url: (storeUrl !== undefined ? storeUrl : '') + url, id: idFromUrl }
@@ -212,7 +213,7 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {
       sourceId
     )
 
-    addedLabels.push({
+    addedFollows.push({
       label: `${apiURL}/labels/${labelId}`,
       follow: `${apiURL}/users/${userId}/follows/labels/${followId}`
     })
@@ -230,7 +231,7 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {
     })
   }
 
-  return addedLabels
+  return addedFollows
 }
 
 module.exports.addPlaylistFollows = async (playlists, userId, sourceId) => {
