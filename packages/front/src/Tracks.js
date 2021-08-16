@@ -119,7 +119,7 @@ class Track extends Component {
             </div>
           </div>
         </td>
-        <td className={'ignore-cart-cell tracks-cell'}>
+        <td className={'follow-ignore-cart-cell tracks-cell'}>
           <div class={'cart-cell track-table-cell'}>
             <PillButton
               disabled={this.state.processingCart}
@@ -149,6 +149,18 @@ class Track extends Component {
             >
               <FontAwesome name={this.props.inCart ? 'minus' : 'plus'} />
               <span className={'cart-button-label'}>{this.props.inCart ? 'Remove from cart' : 'Add to cart'}</span>
+            </PillButton>
+          </div>
+          <div className="follow-cell track-table-cell">
+            <PillButton
+              className={'table-cell-button'}
+              onClick={e => {
+                e.stopPropagation()
+                this.props.onFollowClicked()
+              }}
+            >
+              <FontAwesome name={'heart'} />
+              <span className={'follow-button-label'} />
             </PillButton>
           </div>
           <div className="ignore-cell track-table-cell">
@@ -339,6 +351,9 @@ class Tracks extends Component {
             }}
             onAddToCart={this.props.onAddToCart}
             onRemoveFromCart={this.props.onRemoveFromCart}
+            onFollowClicked={() => {
+              this.props.onFollowClicked(track)
+            }}
             onIgnoreClicked={() => {
               this.props.onIgnoreClicked(track)
             }}
@@ -469,8 +484,9 @@ class Tracks extends Component {
                   <div className={'key-cell track-table-cell'}>Key</div>
                 </div>
               </th>
-              <th className={'ignore-cart-cell tracks-cell'}>
+              <th className={'follow-ignore-cart-cell tracks-cell'}>
                 <div className={'cart-cell track-table-cell'}>Cart</div>
+                <div className={'follow-cell track-table-cell'}>Follow</div>
                 <div className={'ignore-cell track-table-cell'}>Ignore</div>
               </th>
               <th className={'open-search-cell tracks-cell'}>

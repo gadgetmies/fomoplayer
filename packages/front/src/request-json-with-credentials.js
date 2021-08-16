@@ -5,14 +5,15 @@ const requestJSONwithCredentials = (...args) =>
     return await res.json()
   })
 
-const requestWithCredentials = async ({ url, path, method = 'GET', body }) => {
+const requestWithCredentials = async ({ url, path, method = 'GET', body, headers }) => {
   const res = await fetch(url ? url : `${config.apiURL}${path}`, {
     method,
     body: body ? JSON.stringify(body) : undefined,
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...headers
     }
   })
 

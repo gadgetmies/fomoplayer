@@ -42,7 +42,7 @@ morgan('tiny')
 app.use(cors({ credentials: true, origin: config.allowedOrigins }))
 app.options('*', cors()) // include before other routes
 
-app.use(bodyParser.json({ limit: '50mb', extended: true }))
+app.use(bodyParser.json({ limit: '50mb', extended: true, type: ['application/json', 'application/*+json'] }))
 
 const ensureAuthenticated = (req, res, next) => {
   return req.isAuthenticated() ? next() : res.status(401).end()

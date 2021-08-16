@@ -6,6 +6,8 @@ const {
   addLabelsToIgnore,
   addReleasesToIgnore,
   addStoreTracksToUser,
+  addArtistFollowsWithIds,
+  addLabelFollowsWithIds,
   getTracksM3u,
   getUserArtistFollows,
   getUserLabelFollows,
@@ -26,6 +28,7 @@ const {
   getDefaultCartDetails,
   removeReleasesFromUser
 } = require('./logic')
+const typeIs = require('type-is')
 
 const router = require('express-promise-router')()
 
@@ -82,17 +85,38 @@ const tracksHandler = type => async (
 router.post('/tracks', tracksHandler('new'))
 router.post('/purchased', tracksHandler('purchased'))
 
-router.post('/follows/artists', async ({ user: { id: userId }, body, headers }, res) => {
-  const storeUrl = headers['x-multi-store-player-store']
-  const sourceId = await insertSource({ operation: '/follows/artists', storeUrl })
-  const addedArtists = await addArtistFollows(storeUrl, body, userId, sourceId)
+router.post('/follows/artists', async (req, res) => {
+  const {
+    user: { id: userId },
+    body,
+    headers: { 'x-multi-store-player-store': storeUrl }
+  } = req
+  let addedArtists = []
+
+  if (typeIs(req, 'application/vnd.multi-store-player.artist-ids+json')) {
+    addedLabels = await addArtistFollowsWithIds(body, userId)
+  } else {
+    const sourceId = await insertSource({ operation: '/follows/artists', storeUrl })
+    const addedArtists = await addArtistFollows(storeUrl, body, userId, sourceId)
+  }
   res.status(201).send(addedArtists)
 })
 
-router.post('/follows/labels', async ({ user: { id: userId }, body, headers }, res) => {
-  const storeUrl = headers['x-multi-store-player-store']
-  const sourceId = await insertSource({ operation: '/follows/labels', storeUrl })
-  const addedLabels = await addLabelFollows(storeUrl, body, userId, sourceId)
+router.post('/follows/labels', async (req, res) => {
+  const {
+    user: { id: userId },
+    body,
+    headers: { 'x-multi-store-player-store': storeUrl }
+  } = req
+  let addedLabels = []
+
+  if (typeIs(req, 'application/vnd.multi-store-player.label-ids+json')) {
+    addedLabels = await addLabelFollowsWithIds(body, userId)
+  } else {
+    const sourceId = await insertSource({ operation: '/follows/labels', storeUrl })
+    addedLabels = await addLabelFollows(storeUrl, body, userId, sourceId)
+  }
+
   res.status(201).send(addedLabels)
 })
 

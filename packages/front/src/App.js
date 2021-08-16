@@ -38,6 +38,7 @@ class App extends Component {
     try {
       await this.updateTracks()
       await this.updateCarts()
+      await this.updateFollows()
       this.setState({ loggedIn: true })
     } catch (e) {
       console.error(e)
@@ -89,6 +90,16 @@ class App extends Component {
     const clonedCarts = this.state.carts.slice()
     clonedCarts[index] = cartDetails
     this.setState({ carts: clonedCarts })
+  }
+
+  async updateFollows() {
+    const artists = await requestJSONwithCredentials({
+      path: `/me/follows/artists`
+    })
+    const labels = await requestJSONwithCredentials({
+      path: `/me/follows/labels`
+    })
+    this.setState({ follows: { artists, labels } })
   }
 
   async updateTracks() {
@@ -148,6 +159,7 @@ class App extends Component {
                     <Player
                       onUpdateTracksClicked={this.updateTracks.bind(this)}
                       carts={this.state.carts}
+                      follows={this.state.follows}
                       tracks={this.state.tracksData.tracks}
                       newTracks={this.state.tracksData.meta.newTracks}
                       totalTracks={this.state.tracksData.meta.totalTracks}

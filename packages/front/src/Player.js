@@ -5,6 +5,7 @@ import React, { Component } from 'react'
 import * as R from 'ramda'
 import MediaSession from '@mebtte/react-media-session'
 import { artistNamesToString } from './TrackTitle'
+import FollowPopup from './FollowPopup'
 import IgnorePopup from './IgnorePopup'
 
 class Player extends Component {
@@ -171,6 +172,28 @@ class Player extends Component {
     this.preview.current.setPlaying(playing)
   }
 
+  async followArtist(artistId, follow) {
+    await requestWithCredentials({
+      path: `/me/follows/artists/${follow ? '' : artistId}`,
+      method: follow ? 'POST' : 'DELETE',
+      body: follow ? [artistId] : undefined,
+      headers: {
+        'Content-Type': 'application/vnd.multi-store-player.artist-ids+json;ver=1'
+      }
+    })
+  }
+
+  async followLabel(labelId, follow) {
+    await requestWithCredentials({
+      path: `/me/follows/labels/${follow ? '' : labelId}`,
+      method: follow ? 'POST' : 'DELETE',
+      body: follow ? [labelId] : undefined,
+      headers: {
+        'Content-Type': 'application/vnd.multi-store-player.label-ids+json;ver=1'
+      }
+    })
+  }
+
   // TODO: change to POST {ignore: true} /me/labels/?
   async ignoreArtistsByLabels(artistId, labelIds) {
     await requestWithCredentials({
@@ -242,17 +265,17 @@ class Player extends Component {
     return tracks
   }
 
+  setFollowPopupOpen(open) {
+    this.setState({ followPopupOpen: open })
+  }
+
+  openFollowPopup(track) {
+    this.setState({ followPopupTrack: track })
+    this.setFollowPopupOpen(true)
+  }
+
   setIgnorePopupOpen(open) {
     this.setState({ ignorePopupOpen: open })
-  }
-
-  closeIgnorePopup() {
-    this.setIgnorePopupOpen(false)
-  }
-
-  closeIgnorePopupAndRefreshList() {
-    this.closeIgnorePopup()
-    this.props.onUpdateTracksClicked()
   }
 
   openIgnorePopup(track) {
@@ -260,20 +283,39 @@ class Player extends Component {
     this.setIgnorePopupOpen(true)
   }
 
+  closePopups() {
+    this.setFollowPopupOpen(false)
+    this.setIgnorePopupOpen(false)
+  }
+
+  closePopupsAndRefreshList() {
+    this.closePopups()
+    this.props.onUpdateTracksClicked()
+  }
+
   render() {
     const tracks = this.getTracks()
     const currentTrack = this.state.currentTrack
     return (
       <div className="page-container">
+        <FollowPopup
+          open={this.state.followPopupOpen}
+          track={this.state.followPopupTrack}
+          follows={this.props.follows}
+          onCloseClicked={this.closePopups.bind(this)}
+          onFollowArtist={this.followArtist.bind(this)}
+          onFollowLabel={this.followLabel.bind(this)}
+          onCloseAndRefreshClicked={this.closePopupsAndRefreshList.bind(this)}
+        />
         <IgnorePopup
           open={this.state.ignorePopupOpen}
           track={this.state.ignorePopupTrack}
-          onCloseClicked={this.closeIgnorePopup.bind(this)}
+          onCloseClicked={this.closePopups.bind(this)}
           onIgnoreArtistOnLabels={this.ignoreArtistsByLabels.bind(this)}
           onIgnoreArtist={this.ignoreArtist.bind(this)}
           onIgnoreLabel={this.ignoreLabel.bind(this)}
           onIgnoreRelease={this.ignoreRelease.bind(this)}
-          onCloseAndRefreshClicked={this.closeIgnorePopupAndRefreshList.bind(this)}
+          onCloseAndRefreshClicked={this.closePopupsAndRefreshList.bind(this)}
         />
         <MediaSession
           title={currentTrack ? currentTrack.title : ''}
@@ -311,6 +353,7 @@ class Player extends Component {
             this.setCurrentTrack(requestedTrack)
             this.setPlaying(true)
           }}
+          onFollowClicked={this.openFollowPopup.bind(this)}
           onIgnoreClicked={this.openIgnorePopup.bind(this)}
           onShowNewClicked={this.setListState.bind(this, 'new')}
           onShowHeardClicked={this.setListState.bind(this, 'heard')}

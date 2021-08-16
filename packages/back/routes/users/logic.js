@@ -127,6 +127,21 @@ const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUr
 module.exports.removePlaylistFollowFromUser = async (userId, playlistId) =>
   deletePlaylistFollowFromUser(userId, playlistId)
 
+module.exports.addArtistFollowsWithIds = async (artistIds, userId) => {
+  const addedFollows = []
+  for (const artistId of artistIds) {
+    await using(pg.getTransaction(), async tx => {
+      const followId = addArtistWatch(tx, userId, artistId)
+      addedFollows.push({
+        artist: `${apiURL}/artists/${artistId}`,
+        follow: `${apiURL}/users/${userId}/follows/artists/${followId}`
+      })
+    })
+  }
+
+  return addedFollows
+}
+
 module.exports.addArtistFollows = async (storeUrl, artists, userId, sourceId) => {
   // TODO: try first to find from db
   let addedArtists = []
@@ -163,6 +178,20 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId, sourceId) =>
   }
 
   return addedArtists
+
+module.exports.addLabelFollowsWithIds = async (labelIds, userId) => {
+  const addedFollows = []
+  for (const labelId of labelIds) {
+    await using(pg.getTransaction(), async tx => {
+      const followId = addLabelWatch(tx, userId, labelId)
+      addedFollows.push({
+        label: `${apiURL}/labels/${labelId}`,
+        follow: `${apiURL}/users/${userId}/follows/labels/${followId}`
+      })
+    })
+  }
+
+  return addedFollows
 }
 
 module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {

@@ -94,13 +94,18 @@
     text-align: center;
   }
 
-  .ignore-cart-cell {
-    width: 16%;
+  .follow-cell {
+    width: 33%;
+    text-align: center;
   }
 
   .ignore-cell {
-    width: 60%;
+    width: 33%;
     text-align: center;
+  }
+
+  .follow-ignore-cart-cell {
+    width: 16%;
   }
 
   .ignore-button-icon {
@@ -108,7 +113,7 @@
   }
 
   .cart-cell {
-    width: 40%;
+    width: 33%;
     text-align: center;
   }
 
@@ -198,6 +203,10 @@
     white-space: pre;
   }
 
+  .follow-button-label::before {
+    content: 'Follow...';
+  }
+
   .ignore-button-label::before {
     content: 'Ignore...';
   }
@@ -211,6 +220,7 @@
     text-align: center;
   }
 
+  .follow-button-label,
   .ignore-button-label,
   .cart-button-label {
     display: inline-block;
