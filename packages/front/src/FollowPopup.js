@@ -3,6 +3,7 @@ import FontAwesome from 'react-fontawesome'
 import React, { Component } from 'react'
 import SpinnerButton from './SpinnerButton'
 import { prop } from 'ramda'
+import { Link } from 'react-router-dom'
 
 class FollowPopup extends Component {
   constructor(props) {
@@ -78,6 +79,19 @@ class FollowPopup extends Component {
           NOTE: The followed state of the artists and labels is not updated from the server and thus some of the artists
           and labels might already be followed. Also note that you need to refresh the track list in the player manually
           after following.
+        </p>
+        <p>
+          <Link
+            className="no-style-link"
+            to="/settings"
+            onClick={() => {
+              this.props.onCloseClicked()
+            }}
+          >
+            <button className={'button button-push_button-large button-push_button-primary'}>
+              Edit the follows in settings
+            </button>
+          </Link>
         </p>
         <SpinnerButton
           loading={this.state.refreshingList}
