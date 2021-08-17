@@ -202,7 +202,7 @@ class Player extends Component {
   async ignoreArtistsByLabels(artistId, labelIds, ignore) {
     await requestWithCredentials({
       path: `/me/ignores/artists-on-labels`,
-      method: ignore ? 'POST': 'DELETE',
+      method: ignore ? 'POST' : 'DELETE',
       body: { artistIds: [artistId], labelIds }
     })
   }

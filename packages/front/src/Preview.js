@@ -333,10 +333,7 @@ class Preview extends Component {
             )}
           </div>
 
-          <Collection
-            newTracks={this.props.newTracks}
-            totalTracks={this.props.totalTracks}
-          />
+          <Collection newTracks={this.props.newTracks} totalTracks={this.props.totalTracks} />
         </div>
       </div>
     )
