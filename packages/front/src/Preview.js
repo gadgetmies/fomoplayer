@@ -8,6 +8,7 @@ import Progress from './Progress.jsx'
 import WaveformGenerator from 'waveform-generator-web'
 import { requestWithCredentials } from './request-json-with-credentials'
 import Collection from './Collection'
+import Spinner from './Spinner'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -188,6 +189,12 @@ class Preview extends Component {
                 </td>
                 <td>Scan backward</td>
               </tr>
+              <tr>
+                <td colSpan="2">
+                  <span className="keyboard-shortcut">P</span>
+                </td>
+                <td>Add / remove current track to / from cart</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -301,6 +308,29 @@ class Preview extends Component {
             <button className="button button__light button-playback" onClick={() => this.togglePlaying()}>
               <FontAwesome name={this.state.playing ? 'pause' : 'play'} />
             </button>
+            {this.props.togglingCurrentInCart ? (
+              <div
+                style={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '0 9px 0 4px'
+                }}
+              >
+                <Spinner size="large" color="#5A5A5A" />
+              </div>
+            ) : (
+              <button
+                className="button button__light button-playback"
+                disabled={this.props.inCart === null || this.props.togglingCurrentInCart}
+                onClick={async () => {
+                  await this.props.onToggleCurrentInCart()
+                }}
+              >
+                <FontAwesome name={this.props.inCart ? 'minus' : 'plus'} />
+              </button>
+            )}
           </div>
 
           <Collection

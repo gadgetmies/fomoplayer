@@ -17,7 +17,8 @@ class Player extends Component {
       heardTracks: [],
       listenedTracks: 0,
       listState: 'new',
-      searchResults: []
+      searchResults: [],
+      togglingCurrentInCart: false
     }
 
     this.preview = React.createRef()
@@ -65,6 +66,9 @@ class Player extends Component {
             break
           case 'a':
             this.seek(-this.getSeekDistance())
+            break
+          case 'p':
+            this.toggleCurrentInCart()
             break
           default:
         }
@@ -293,9 +297,26 @@ class Player extends Component {
     this.closePopups()
   }
 
+  getCurrentTrack() {
+    return this.state.currentTrack
+  }
+
+  async toggleCurrentInCart() {
+    this.setState({ togglingCurrentInCart: true })
+    await (this.isCurrentInCart() ? this.props.onRemoveFromCart : this.props.onAddToCart)(this.state.currentTrack.id)
+    this.setState({ togglingCurrentInCart: false })
+  }
+
+  isCurrentInCart() {
+    const currentTrack = this.getCurrentTrack()
+    return currentTrack && this.props.carts.find(R.prop('is_default'))
+      ? this.props.carts.find(R.prop('is_default')).tracks.find(R.propEq('id', currentTrack.id))
+      : null
+  }
+
   render() {
     const tracks = this.getTracks()
-    const currentTrack = this.state.currentTrack
+    const currentTrack = this.getCurrentTrack()
     return (
       <div className="page-container">
         <FollowPopup
@@ -329,6 +350,7 @@ class Player extends Component {
         />
         <Preview
           key={'preview'}
+          togglingCurrentInCart={this.state.togglingCurrentInCart}
           showHint={tracks.length === 0}
           currentTrack={currentTrack}
           onPrevious={() => this.playPreviousTrack()}
@@ -336,6 +358,8 @@ class Player extends Component {
           newTracks={this.props.newTracks - this.state.listenedTracks}
           totalTracks={this.props.totalTracks}
           onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
+          onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
+          inCart={this.isCurrentInCart()}
           ref={this.preview}
         />
         <Tracks

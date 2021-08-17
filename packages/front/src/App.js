@@ -26,6 +26,7 @@ class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
+      addingToCart: false,
       slideout: null,
       carts: {},
       loggedIn: false,
@@ -65,6 +66,7 @@ class App extends Component {
   }
 
   async addToCart(id) {
+    this.setState({ addingToCart: true })
     const cartDetails = await requestJSONwithCredentials({
       path: '/me/carts/default/tracks',
       method: 'PATCH',
@@ -72,6 +74,7 @@ class App extends Component {
     })
 
     this.updateCart(cartDetails)
+    this.setState({ addingToCart: false })
   }
 
   async removeFromCart(id) {
@@ -156,6 +159,7 @@ class App extends Component {
                   path="/"
                   render={() => (
                     <Player
+                      addingToCart={this.state.addingToCart}
                       onUpdateTracksClicked={this.updateTracks.bind(this)}
                       carts={this.state.carts}
                       follows={this.state.follows}

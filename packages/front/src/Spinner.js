@@ -3,16 +3,20 @@ import './SpinnerButton.css'
 
 class Spinner extends Component {
   static defaultProps = {
-    size: 'small'
+    size: 'small',
+    color: '#fff'
   }
 
   render() {
-    return <div className={`loading-indicator loading-indicator__${this.props.size}`}>
-      <div/>
-      <div/>
-      <div/>
-      <div/>
-    </div>
+    const style = { borderColor: `${this.props.color} transparent transparent transparent` }
+    return (
+      <div className={`loading-indicator loading-indicator__${this.props.size}`}>
+        <div style={style} />
+        <div style={style} />
+        <div style={style} />
+        <div style={style} />
+      </div>
+    )
   }
 }
 export default Spinner
