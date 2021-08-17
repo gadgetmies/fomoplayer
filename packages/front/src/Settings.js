@@ -17,10 +17,16 @@ class Settings extends Component {
       artistFollows: [],
       labelFollows: [],
       playlistFollows: [],
+      artistOnLabelIgnores: [],
+      artistIgnores: [],
+      labelIgnores: [],
       cartName: '',
       updatingFollows: false,
       updatingFollowDetails: false,
       updatingCarts: false,
+      updatingArtistOnLabelIgnores: false,
+      updatingArtistIgnores: false,
+      updatingLabelIgnores: false,
       addingCart: false,
       removingCart: false,
       followDetailsDebounce: undefined,
@@ -33,7 +39,7 @@ class Settings extends Component {
 
   async componentDidMount() {
     try {
-      await this.updateFollows()
+      await Promise.all([this.updateFollows(), this.updateIgnores()])
     } catch (e) {
       console.error(e)
     }
@@ -67,6 +73,31 @@ class Settings extends Component {
       path: `/me/follows/playlists`
     })
     this.setState({ playlistFollows })
+  }
+
+  async updateIgnores() {
+    await Promise.all([this.updateArtistIgnores(), this.updateLabelIgnores(), this.updateArtistOnLabelIgnores()])
+  }
+
+  async updateArtistIgnores() {
+    const artistIgnores = await requestJSONwithCredentials({
+      path: `/me/ignores/artists`
+    })
+    this.setState({ artistIgnores })
+  }
+
+  async updateLabelIgnores() {
+    const labelIgnores = await requestJSONwithCredentials({
+      path: `/me/ignores/labels`
+    })
+    this.setState({ labelIgnores })
+  }
+
+  async updateArtistOnLabelIgnores() {
+    const artistOnLabelIgnores = await requestJSONwithCredentials({
+      path: `/me/ignores/artists-on-labels`
+    })
+    this.setState({ artistOnLabelIgnores })
   }
 
   render() {
@@ -289,6 +320,77 @@ class Settings extends Component {
                     {label.name} <FontAwesome name="close" />
                   </span>
                 </button>
+              </li>
+            ))}
+          </ul>
+          <h3>Ignores</h3>
+          <h4>Artists ({this.state.artistIgnores.length})</h4>
+          <ul className="no-style-list follow-list">
+            {this.state.artistIgnores.map(artist => (
+              <li key={artist.id}>
+                <span disabled={this.state.updatingArtistIgnores} className="button pill pill-button">
+                  <span className="pill-button-contents">
+                    {artist.name}{' '}
+                    <button
+                      onClick={async () => {
+                        this.setState({ updatingArtistIgnores: true })
+                        await requestWithCredentials({ path: `/me/ignores/artists/${artist.id}`, method: 'DELETE' })
+                        await this.updateArtistIgnores()
+                        this.setState({ updatingArtistIgnores: false })
+                      }}
+                    >
+                      <FontAwesome name="close" />
+                    </button>
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <h4>Labels ({this.state.labelIgnores.length})</h4>
+          <ul className="no-style-list follow-list">
+            {this.state.labelIgnores.map(label => (
+              <li key={label.id}>
+                <span disabled={this.state.updatingLabelIgnores} className="button pill pill-button">
+                  <span className="pill-button-contents">
+                    {label.name}{' '}
+                    <button
+                      onClick={async () => {
+                        this.setState({ updatingLabelIgnores: true })
+                        await requestWithCredentials({ path: `/me/ignores/labels/${label.id}`, method: 'DELETE' })
+                        await this.updateLabelIgnores()
+                        this.setState({ updatingLabelIgnores: false })
+                      }}
+                    >
+                      <FontAwesome name="close" />
+                    </button>
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <h4>Artists on labels ({this.state.artistOnLabelIgnores.length})</h4>
+          <ul className="no-style-list follow-list">
+            {this.state.artistOnLabelIgnores.map(({ artist, label }) => (
+              <li key={`${artist.id}-${label.id}`}>
+                <span disabled={this.state.updatingArtistOnLabelIgnores} className="button pill pill-button">
+                  <span className="pill-button-contents">
+                    {artist.name} on ${label.name}
+                    <button
+                      onClick={async () => {
+                        this.setState({ updatingArtistOnLabelIgnores: true })
+                        await requestWithCredentials({
+                          path: `/me/ignores/artists-on-labels/`,
+                          method: 'PATCH',
+                          body: { op: 'delete', artistId: artist.id, labelId: label.id }
+                        })
+                        await this.updateArtistOnLabelIgnores()
+                        this.setState({ updatingArtistOnLabelIgnores: false })
+                      }}
+                    >
+                      <FontAwesome name="close" />
+                    </button>
+                  </span>
+                </span>
               </li>
             ))}
           </ul>

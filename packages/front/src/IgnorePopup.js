@@ -2,6 +2,7 @@ import FullScreenPopup from './FullScreenPopup'
 import FontAwesome from 'react-fontawesome'
 import React, { Component } from 'react'
 import SpinnerButton from './SpinnerButton'
+import { Link } from 'react-router-dom'
 
 const joinStringList = list =>
   list.reduce((acc, { name }, i, array) => {
@@ -67,7 +68,7 @@ class IgnorePopup extends Component {
                     }`}
                     onClick={async () => {
                       this.setState({ ignoringArtistOnLabel: idString })
-                      await this.props.onIgnoreArtistOnLabels(artist.id, labelIds)
+                      await this.props.onIgnoreArtistOnLabels(artist.id, labelIds, true)
                       this.setState({
                         ignoredArtistsOnLabels: this.state.ignoredArtistsOnLabels.add(idString)
                       })
@@ -94,7 +95,7 @@ class IgnorePopup extends Component {
                   }`}
                   onClick={async () => {
                     this.setState({ ignoringRelease: release.id })
-                    await this.props.onIgnoreRelease(release.id)
+                    await this.props.onIgnoreRelease(release.id, true)
                     this.setState({
                       ignoredReleases: this.state.ignoredReleases.add(release.id),
                       ignoringRelease: null
@@ -119,7 +120,7 @@ class IgnorePopup extends Component {
               }`}
               onClick={async () => {
                 this.setState({ ignoringArtist: artist.id })
-                await this.props.onIgnoreArtist(artist.id)
+                await this.props.onIgnoreArtist(artist.id, true)
                 this.setState({ ignoredArtists: this.state.ignoredArtists.add(artist.id), ignoringArtist: null })
               }}
             >
@@ -141,7 +142,7 @@ class IgnorePopup extends Component {
                   }`}
                   onClick={async () => {
                     this.setState({ ignoringLabel: label.id })
-                    await this.props.onIgnoreLabel(label.id)
+                    await this.props.onIgnoreLabel(label.id, true)
                     this.setState({ ignoredLabels: this.state.ignoredLabels.add(label.id), ignoringLabel: null })
                   }}
                 >
@@ -155,6 +156,19 @@ class IgnorePopup extends Component {
           NOTE: The ignored state of the artists and labels is not updated from the server and thus some of the artists
           and labels might already be ignored. Also note that you need to refresh the track list in the player manually
           after ignoring.
+        </p>
+        <p>
+          <Link
+            className="no-style-link"
+            to="/settings"
+            onClick={() => {
+              this.props.onCloseClicked()
+            }}
+          >
+            <button className={'button button-push_button-large button-push_button-primary'}>
+              Edit the ignores in settings
+            </button>
+          </Link>
         </p>
         <SpinnerButton
           loading={this.state.refreshingList}

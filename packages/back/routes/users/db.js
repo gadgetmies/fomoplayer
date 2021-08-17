@@ -300,6 +300,95 @@ ORDER BY
   )
 }
 
+module.exports.queryUserArtistOnLabelIgnores = async userId => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryArtistOnLabelIgnores
+SELECT
+  json_build_object('id', artist_id, 'name', artist_name)
+    AS artist
+, json_build_object('id', label_id, 'name', label_name)
+    AS label
+FROM
+  user__artist__label_ignore
+  NATURAL JOIN artist
+  NATURAL JOIN label
+WHERE
+  meta_account_user_id = ${userId}
+`
+  )
+}
+
+module.exports.queryUserLabelIgnores = async userId => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryLabelIgnores
+SELECT
+  label_id   AS id
+, label_name AS name
+FROM
+  user__label_ignore
+  NATURAL JOIN label
+WHERE
+  meta_account_user_id = ${userId}
+`
+  )
+}
+
+module.exports.queryUserArtistIgnores = async userId => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryArtistIgnores
+SELECT
+  artist_id   AS id
+, artist_name AS name
+FROM
+  user__artist_ignore
+  NATURAL JOIN artist
+WHERE
+  meta_account_user_id = ${userId}
+`
+  )
+}
+
+module.exports.deleteArtistOnLabelIgnoreFromUser = async (userId, { artistId, labelId }) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- deleteArtistOnLabelIgnoreFromUser
+DELETE
+FROM user__artist__label_ignore
+WHERE
+    meta_account_user_id = ${userId}
+AND artist_id = ${artistId}
+AND label_id = ${labelId}
+`
+  )
+}
+module.exports.deleteLabelIgnoreFromUser = async (userId, labelId) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- deleteLabelIgnoreFromUser
+DELETE
+FROM user__label_ignore
+WHERE
+    meta_account_user_id = ${userId}
+AND label_id = ${labelId}
+`
+  )
+}
+module.exports.deleteArtistIgnoreFromUser = async (userId, artistId) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`--deleteArtistIgnoreFromUser
+DELETE
+FROM user__artist_ignore
+WHERE
+    meta_account_user_id = ${userId}
+AND artist_id = ${artistId}
+`
+  )
+}
+
 module.exports.queryUserTracks = username =>
   pg
     .queryRowsAsync(

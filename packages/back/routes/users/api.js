@@ -12,6 +12,12 @@ const {
   getUserArtistFollows,
   getUserLabelFollows,
   getUserPlaylistFollows,
+  getUserArtistIgnores,
+  getUserArtistOnLabelIgnores,
+  getUserLabelIgnores,
+  removeArtistOnLabelIgnoreFromUser,
+  removeLabelIgnoreFromUser,
+  removeArtistIgnoreFromUser,
   getUserTracks,
   removeArtistWatchFromUser,
   removeLabelWatchFromUser,
@@ -48,9 +54,24 @@ router.patch('/tracks/', ({ user: { username }, body: { heard }, res }) => {
 // TODO: add genre to database?
 router.post('/ignores/genres', ({ user: { username }, body: { artistId, storeId, genre } }, res) => {})
 
+router.get('/ignores/artists-on-labels', async ({ user: { id: authUserId } }, res) => {
+  const artistOnLabelIgnores = await getUserArtistOnLabelIgnores(authUserId)
+  res.send(artistOnLabelIgnores)
+})
+
 router.post('/ignores/artists-on-labels', async ({ user: { username }, body }, res) => {
   await addArtistsOnLabelsToIgnore(username, body)
   res.status(204).send()
+})
+
+router.patch('/ignores/artists-on-labels', async ({ user: { id: authUserId }, body }, res) => {
+  await removeArtistOnLabelIgnoreFromUser(authUserId, body)
+  res.status(204).send()
+})
+
+router.get('/ignores/labels', async ({ user: { id: authUserId } }, res) => {
+  const labelIgnores = await getUserLabelIgnores(authUserId)
+  res.send(labelIgnores)
 })
 
 router.post('/ignores/labels', async ({ user: { username }, body }, res) => {
@@ -58,8 +79,23 @@ router.post('/ignores/labels', async ({ user: { username }, body }, res) => {
   res.status(204).send()
 })
 
+router.delete('/ignores/labels/:id', async ({ user: { id: authUserId }, params: { id } }, res) => {
+  await removeLabelIgnoreFromUser(authUserId, id)
+  res.status(204).send()
+})
+
+router.get('/ignores/artists', async ({ user: { id: authUserId } }, res) => {
+  const artistIgnores = await getUserArtistIgnores(authUserId)
+  res.send(artistIgnores)
+})
+
 router.post('/ignores/artists', async ({ user: { username }, body }, res) => {
   await addArtistsToIgnore(username, body)
+  res.status(204).send()
+})
+
+router.delete('/ignores/artists/:id', async ({ user: { id: authUserId }, params: { id } }, res) => {
+  await removeArtistIgnoreFromUser(authUserId, id)
   res.status(204).send()
 })
 

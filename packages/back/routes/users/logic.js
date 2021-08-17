@@ -25,11 +25,17 @@ const {
   queryUserArtistFollows,
   queryUserLabelFollows,
   queryUserPlaylistFollows,
+  queryUserArtistOnLabelIgnores,
+  queryUserLabelIgnores,
+  queryUserArtistIgnores,
   queryUserTracks,
   deleteArtistWatchesFromUser,
   deleteArtistWatchFromUser,
   deleteLabelWatchesFromUser,
   deleteLabelWatchFromUser,
+  deleteArtistOnLabelIgnoreFromUser,
+  deleteLabelIgnoreFromUser,
+  deleteArtistIgnoreFromUser,
   setAllHeard,
   setTrackHeard,
   queryUserCarts,
@@ -49,6 +55,14 @@ module.exports.getUserTracks = queryUserTracks
 module.exports.getUserArtistFollows = queryUserArtistFollows
 module.exports.getUserLabelFollows = queryUserLabelFollows
 module.exports.getUserPlaylistFollows = queryUserPlaylistFollows
+
+module.exports.getUserArtistOnLabelIgnores = queryUserArtistOnLabelIgnores
+module.exports.getUserLabelIgnores = queryUserLabelIgnores
+module.exports.getUserArtistIgnores = queryUserArtistIgnores
+
+module.exports.removeArtistOnLabelIgnoreFromUser = deleteArtistOnLabelIgnoreFromUser
+module.exports.removeLabelIgnoreFromUser = deleteLabelIgnoreFromUser
+module.exports.removeArtistIgnoreFromUser = deleteArtistIgnoreFromUser
 
 const { removeIgnoredTracksFromUser } = require('../shared/db/user.js')
 
