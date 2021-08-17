@@ -50,8 +50,7 @@ class App extends Component {
 
   async onLoginDone() {
     this.setState({ loggedIn: true })
-    await this.updateCarts()
-    await this.updateTracks()
+    await Promise.all([this.updateCarts(), this.updateTracks()])
   }
 
   onLogoutDone() {
