@@ -21,7 +21,8 @@ class IgnorePopup extends Component {
       ignoredLabels: new Set(),
       ignoredArtists: new Set(),
       ignoredReleases: new Set(),
-      ignoredArtistsOnLabels: new Set()
+      ignoredArtistsOnLabels: new Set(),
+      refreshingList: false
     }
   }
 
@@ -155,14 +156,20 @@ class IgnorePopup extends Component {
           and labels might already be ignored. Also note that you need to refresh the track list in the player manually
           after ignoring.
         </p>
-        <button
+        <SpinnerButton
+          loading={this.state.refreshingList}
+          disabled={this.state.refreshingList}
           type="submit"
           className="button button-push_button-large button-push_button-primary"
-          onClick={this.props.onCloseAndRefreshClicked}
+          onClick={async () => {
+            this.setState({ refreshingList: true })
+            await this.props.onRefreshAndCloseClicked()
+            this.setState({ refreshingList: false })
+          }}
           style={{ margin: 'auto', display: 'block' }}
         >
-          Close popup and refresh list
-        </button>
+          Refresh list and close popup
+        </SpinnerButton>
       </FullScreenPopup>
     )
   }

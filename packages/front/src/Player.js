@@ -288,9 +288,9 @@ class Player extends Component {
     this.setIgnorePopupOpen(false)
   }
 
-  closePopupsAndRefreshList() {
+  async refreshListAndClosePopups() {
+    await this.props.onUpdateTracksClicked()
     this.closePopups()
-    this.props.onUpdateTracksClicked()
   }
 
   render() {
@@ -305,7 +305,7 @@ class Player extends Component {
           onCloseClicked={this.closePopups.bind(this)}
           onFollowArtist={this.followArtist.bind(this)}
           onFollowLabel={this.followLabel.bind(this)}
-          onCloseAndRefreshClicked={this.closePopupsAndRefreshList.bind(this)}
+          onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
         />
         <IgnorePopup
           open={this.state.ignorePopupOpen}
@@ -315,7 +315,7 @@ class Player extends Component {
           onIgnoreArtist={this.ignoreArtist.bind(this)}
           onIgnoreLabel={this.ignoreLabel.bind(this)}
           onIgnoreRelease={this.ignoreRelease.bind(this)}
-          onCloseAndRefreshClicked={this.closePopupsAndRefreshList.bind(this)}
+          onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
         />
         <MediaSession
           title={currentTrack ? currentTrack.title : ''}
