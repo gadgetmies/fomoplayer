@@ -55,12 +55,15 @@ class IgnorePopup extends Component {
               {this.props.track.artists.map(artist => {
                 const labelIds = this.props.track.labels.map(({ id }) => id)
                 const idString = `${artist.id}-${labelIds.join(',')}`
+                const isIgnored = this.state.ignoredArtistsOnLabels.has(idString)
                 return (
                   <SpinnerButton
                     loading={this.state.ignoringArtistOnLabels === idString}
-                    disabled={this.state.ignoringArtistOnLabels || this.state.ignoredArtistsOnLabels.has(idString)}
+                    disabled={this.state.ignoringArtistOnLabels || isIgnored}
                     key={`artist-${artist.id}`}
-                    className={'button button-push_button-large button-push_button-primary'}
+                    className={`button button-push_button-large button-push_button-primary ${
+                      isIgnored ? 'ignored' : ''
+                    }`}
                     onClick={async () => {
                       this.setState({ ignoringArtistOnLabel: idString })
                       await this.props.onIgnoreArtistOnLabels(artist.id, labelIds)
@@ -85,7 +88,9 @@ class IgnorePopup extends Component {
                   loading={this.state.ignoringRelease === release.id}
                   disabled={this.state.ignoringRelease || this.state.ignoredReleases.has(release.id)}
                   key={`artist-${release.id}`}
-                  className={`button button-push_button-large button-push_button-primary ${this.state.ignoredReleases.has(release.id) ? 'ignored' : ''}`}
+                  className={`button button-push_button-large button-push_button-primary ${
+                    this.state.ignoredReleases.has(release.id) ? 'ignored' : ''
+                  }`}
                   onClick={async () => {
                     this.setState({ ignoringRelease: release.id })
                     await this.props.onIgnoreRelease(release.id)
@@ -108,7 +113,9 @@ class IgnorePopup extends Component {
               loading={this.state.ignoringArtist === artist.id}
               disabled={this.state.ignoringArtist || this.state.ignoredArtists.has(artist.id)}
               key={`artist-${artist.id}`}
-              className={'button button-push_button-large button-push_button-primary'}
+              className={`button button-push_button-large button-push_button-primary ${
+                this.state.ignoredArtists.has(artist.id) ? 'ignored' : ''
+              }`}
               onClick={async () => {
                 this.setState({ ignoringArtist: artist.id })
                 await this.props.onIgnoreArtist(artist.id)
@@ -128,7 +135,9 @@ class IgnorePopup extends Component {
                   loading={this.state.ignoringLabel === label.id}
                   disabled={this.state.ignoringLabel || this.state.ignoredLabels.has(label.id)}
                   key={`label-${label.id}`}
-                  className={'button button-push_button-large button-push_button-primary'}
+                  className={`button button-push_button-large button-push_button-primary ${
+                    this.state.ignoredLabels.has(label.id) ? 'ignored' : ''
+                  }`}
                   onClick={async () => {
                     this.setState({ ignoringLabel: label.id })
                     await this.props.onIgnoreLabel(label.id)
