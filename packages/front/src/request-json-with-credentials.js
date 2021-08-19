@@ -11,8 +11,8 @@ const requestWithCredentials = async ({ url, path, method = 'GET', body, headers
     body: body ? JSON.stringify(body) : undefined,
     credentials: 'include',
     headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
+      accept: 'application/json',
+      'content-type': 'application/json',
       ...headers
     }
   })

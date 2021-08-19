@@ -69,24 +69,27 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
   }
 })
 
-module.exports.getFollowDetails = async url => {
+module.exports.getFollowDetails = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
-  const store = storeName.toLowerCase()
+  const stores = [storeName.toLowerCase()]
   for (const { regex, type } of regexes) {
-    if (url.match(regex)) {
+    if (urlString.match(regex)) {
+      let details
       if (['artist', 'label'].includes(type)) {
-        const { name, type: pageType } = await getPageDetailsAsync(url)
-        return { label: name, type: pageType, store }
+        const { name, type: pageType } = await getPageDetailsAsync(urlString)
+        details = { label: name, type: pageType, stores }
       } else if (type === 'tag') {
-        const label = await getPlaylistName(type, url)
-        return { label: `Tag: ${label}`, type: 'playlist', store }
+        const label = await getPlaylistName(type, urlString)
+        details = { label: `Tag: ${label}`, type: 'playlist', stores }
       } else {
         throw new Error('URL did not match any regex')
       }
+
+      return [details]
     }
   }
 
-  return undefined
+  return []
 }
 
 const getTracksFromReleases = async releaseUrls => {

@@ -65,3 +65,56 @@ FROM
           ORDER BY MAX(LEAST(store__track_published, store__track_released)) DESC) AS tracks)
     , (SELECT meta_account_user_id FROM logged_user))`
   )
+
+module.exports.searchForArtistsAndLabels = (query) =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- searchForTracks
+WITH
+  query AS (SELECT websearch_to_tsquery('simple', unaccent(${query})) AS query)
+SELECT
+  id
+, label
+, type
+, stores
+FROM
+  (SELECT
+     artist_id             AS id
+   , artist_name           AS label
+   , 'artist'              AS type
+   , ARRAY_AGG(LOWER(store_name)) AS stores
+   FROM
+     artist
+     NATURAL JOIN store__artist
+     NATURAL JOIN store
+   GROUP BY
+     artist_id, artist_name
+   HAVING
+       to_tsvector(
+           'simple'
+         , unaccent(
+               artist_name)) @@ (
+         SELECT
+           query
+         FROM query)) AS artists
+UNION ALL
+(SELECT
+   label_id   AS id
+ , label_name AS label
+ , 'label'    AS type
+ , ARRAY_AGG(LOWER(store_name))
+ FROM
+   label
+   NATURAL JOIN store__label
+   NATURAL JOIN store
+ GROUP BY
+   label_id, label_name
+ HAVING
+     to_tsvector(
+         'simple'
+       , unaccent(
+             label_name)) @@ (
+       SELECT
+         query
+       FROM query))`
+  )

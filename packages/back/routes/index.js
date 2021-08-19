@@ -21,8 +21,8 @@ router.get('/tracks/', async ({ query: { q }, user: { username } }, res) => {
 
 router.use('/stores', require('./stores/index.js').router)
 
-router.get('/followDetails', async ({ query: { url } }, res) => {
-  res.send(await getFollowDetails(url))
+router.get('/followDetails', async ({ query: { q } }, res) => {
+  res.send(await getFollowDetails(q))
 })
 
 const usersRouter = require('./users/index.js')

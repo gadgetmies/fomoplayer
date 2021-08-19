@@ -182,7 +182,7 @@ class Player extends Component {
       method: follow ? 'POST' : 'DELETE',
       body: follow ? [artistId] : undefined,
       headers: {
-        'Content-Type': 'application/vnd.multi-store-player.artist-ids+json;ver=1'
+        'content-type': 'application/vnd.multi-store-player.artist-ids+json;ver=1'
       }
     })
   }
@@ -193,7 +193,7 @@ class Player extends Component {
       method: follow ? 'POST' : 'DELETE',
       body: follow ? [labelId] : undefined,
       headers: {
-        'Content-Type': 'application/vnd.multi-store-player.label-ids+json;ver=1'
+        'content-type': 'application/vnd.multi-store-player.label-ids+json;ver=1'
       }
     })
   }

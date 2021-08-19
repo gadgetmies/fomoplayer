@@ -170,28 +170,28 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
   return await bpApiStatic.getTitleAsync(url)
 })
 
-module.exports.getFollowDetails = async url => {
+module.exports.getFollowDetails = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
-  const store = storeName.toLowerCase()
+  const stores = [storeName.toLowerCase()]
   let label
 
   for (const { regex, type } of regexes) {
-    if (url.match(regex)) {
+    if (urlString.match(regex)) {
       if (type === 'artist') {
-        label = await getArtistName(url)
+        label = await getArtistName(urlString)
       } else if (type === 'label') {
-        label = await getLabelName(url)
+        label = await getLabelName(urlString)
       } else if (type === 'playlist') {
-        label = await getPlaylistName(type, url)
+        label = await getPlaylistName(type, urlString)
       } else {
         throw new Error('URL did not match any regex')
       }
 
-      return { label, type, store }
+      return [{ label, type, stores }]
     }
   }
 
-  return undefined
+  return []
 }
 
 module.exports.getArtistTracks = async ({ artistStoreId }) => {

@@ -3,7 +3,6 @@ import React, { Component } from 'react'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
 import SpinnerButton from './SpinnerButton'
 import Spinner from './Spinner'
-import Collection from './Collection'
 
 class Settings extends Component {
   unlockMarkAllHeard() {
@@ -13,7 +12,7 @@ class Settings extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      followUrl: '',
+      followQuery: '',
       artistFollows: [],
       labelFollows: [],
       playlistFollows: [],
@@ -167,15 +166,15 @@ class Settings extends Component {
           */}
           <h3>Following</h3>
           <label>
-            Add URL to follow:
+            Add by name or URL to follow:
             <div className="input-layout">
               <input
                 className="text-input text-input-small"
                 disabled={this.state.updatingFollows}
-                value={this.state.followUrl}
+                value={this.state.followQuery}
                 onChange={e => {
                   // TODO: replace aborted and debounce with flatmapLatest
-                  this.setState({ followUrl: e.target.value, followDetails: undefined, updatingFollowDetails: false })
+                  this.setState({ followQuery: e.target.value, followDetails: undefined, updatingFollowDetails: false })
                   if (this.state.followDetailsDebounce) {
                     clearTimeout(this.state.followDetailsDebounce)
                     this.setState({
@@ -191,7 +190,7 @@ class Settings extends Component {
                   const timeout = setTimeout(async () => {
                     try {
                       const results = await (
-                        await requestWithCredentials({ path: `/followDetails?url=${this.state.followUrl}` })
+                        await requestWithCredentials({ path: `/followDetails?q=${this.state.followQuery}` })
                       ).json()
                       if (this.state.followDetailsUpdateAborted) return
                       this.setState({ followDetails: results, updatingFollowDetails: false })
@@ -211,33 +210,45 @@ class Settings extends Component {
             <br />
             {this.state.updatingFollowDetails ? (
               <Spinner size="large" />
-            ) : this.state.followDetails === undefined ? null : (
+            ) : this.state.followDetails === undefined ? null : this.state.followDetails.length === 0 ? (
+              'No results found'
+            ) : (
               <div>
-                <SpinnerButton
-                  className="button button-push_button-small button-push_button-primary"
-                  disabled={this.state.updatingFollows || this.state.followDetails === undefined}
-                  loading={this.state.updatingFollows}
-                  onClick={async () => {
-                    this.setState({ updatingFollows: true })
-                    await requestJSONwithCredentials({
-                      path: `/me/follows/${this.state.followDetails.type}s`,
-                      method: 'POST',
-                      body: [{ url: this.state.followUrl }]
-                    })
-                    this.setState({ followUrl: '', followDetails: undefined })
-                    await this.updateFollows()
-                    this.setState({ updatingFollows: false })
-                  }}
-                >
-                  <FontAwesome name="plus" /> Add {this.state.followDetails.type.replace(/^\w/, c => c.toUpperCase())}:{' '}
-                  <span class="pill" style={{ backgroundColor: 'white', color: 'black' }}>
-                    <span
-                      aria-hidden="true"
-                      className={`store-icon store-icon-${this.state.followDetails.store}`}
-                    ></span>{' '}
-                    {this.state.followDetails.label}
-                  </span>
-                </SpinnerButton>
+                {this.state.followDetails.map(details => (
+                  <SpinnerButton
+                    className="button button-push_button-small button-push_button-primary"
+                    disabled={this.state.updatingFollows}
+                    loading={this.state.updatingFollows}
+                    onClick={async () => {
+                      this.setState({ updatingFollows: true })
+                      const props = details.id
+                        ? {
+                            headers: { 'content-type': `application/vnd.multi-store-player.${details.type}-ids+json` },
+                            body: [details.id]
+                          }
+                        : {
+                            body: [{ url: this.state.followQuery }]
+                          }
+
+                      await requestJSONwithCredentials({
+                        path: `/me/follows/${details.type}s`,
+                        method: 'POST',
+                        ...props
+                      })
+                      this.setState({ followQuery: '', followDetails: undefined })
+                      await this.updateFollows()
+                      this.setState({ updatingFollows: false })
+                    }}
+                  >
+                    <FontAwesome name="plus" /> Add {details.type.replace(/^\w/, c => c.toUpperCase())}:{' '}
+                    <span class="pill" style={{ backgroundColor: 'white', color: 'black' }}>
+                      {details.stores.map(store => (
+                        <span aria-hidden="true" className={`store-icon store-icon-${store}`}></span>
+                      ))}{' '}
+                      {details.label}
+                    </span>
+                  </SpinnerButton>
+                ))}
               </div>
             )}
           </label>

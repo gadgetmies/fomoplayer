@@ -1,5 +1,5 @@
 const { apiURL } = require('../config.js')
-const { queryLongestPreviewForTrack, searchForTracks } = require('./db.js')
+const { queryLongestPreviewForTrack, searchForTracks, searchForArtistsAndLabels } = require('./db.js')
 const { queryPreviewDetails } = require('./shared/db/preview')
 const { modules: storeModules } = require('./stores/index.js')
 
@@ -9,13 +9,23 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
 }
 
 module.exports.searchForTracks = searchForTracks
-module.exports.getFollowDetails = async url => {
+module.exports.getFollowDetails = async query => {
   for (const storeModule of Object.values(storeModules)) {
-    const details = await storeModule.logic.getFollowDetails(url)
-    if (details !== undefined) {
+    let details
+
+    try {
+      new URL(query)
+      details = await storeModule.logic.getFollowDetails(query)
+    } catch (e) {
+      details = await searchForArtistsAndLabels(query)
+    }
+
+    if (details.length > 0) {
       return details
     }
   }
+
+  return []
 }
 
 module.exports.getPreview = async (id, format, offset) => {
