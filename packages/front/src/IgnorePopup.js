@@ -68,10 +68,17 @@ class IgnorePopup extends Component {
                     }`}
                     onClick={async () => {
                       this.setState({ ignoringArtistOnLabel: idString })
-                      await this.props.onIgnoreArtistOnLabels(artist.id, labelIds, true)
-                      this.setState({
-                        ignoredArtistsOnLabels: this.state.ignoredArtistsOnLabels.add(idString)
-                      })
+
+                      try {
+                        await this.props.onIgnoreArtistOnLabels(artist.id, labelIds, true)
+                        this.setState({
+                          ignoredArtistsOnLabels: this.state.ignoredArtistsOnLabels.add(idString)
+                        })
+                      } catch (e) {
+                        console.error(e)
+                      }
+
+                      this.setState({ ignoringArtistOnLabel: null })
                     }}
                   >
                     <FontAwesome name="ban" /> {artist.name} on {joinStringList(this.props.track.labels)}
@@ -95,11 +102,17 @@ class IgnorePopup extends Component {
                   }`}
                   onClick={async () => {
                     this.setState({ ignoringRelease: release.id })
-                    await this.props.onIgnoreRelease(release.id, true)
-                    this.setState({
-                      ignoredReleases: this.state.ignoredReleases.add(release.id),
-                      ignoringRelease: null
-                    })
+
+                    try {
+                      await this.props.onIgnoreRelease(release.id, true)
+                      this.setState({
+                        ignoredReleases: this.state.ignoredReleases.add(release.id)
+                      })
+                    } catch (e) {
+                      console.error(e)
+                    }
+
+                    this.setState({ ignoringRelease: null })
                   }}
                 >
                   <FontAwesome name="ban" /> {release.name}
@@ -120,8 +133,15 @@ class IgnorePopup extends Component {
               }`}
               onClick={async () => {
                 this.setState({ ignoringArtist: artist.id })
-                await this.props.onIgnoreArtist(artist.id, true)
-                this.setState({ ignoredArtists: this.state.ignoredArtists.add(artist.id), ignoringArtist: null })
+
+                try {
+                  await this.props.onIgnoreArtist(artist.id, true)
+                  this.setState({ ignoredArtists: this.state.ignoredArtists.add(artist.id) })
+                } catch (e) {
+                  console.error(e)
+                }
+
+                this.setState({ ignoringArtist: null })
               }}
             >
               <FontAwesome name="ban" /> {artist.name}
@@ -142,8 +162,15 @@ class IgnorePopup extends Component {
                   }`}
                   onClick={async () => {
                     this.setState({ ignoringLabel: label.id })
-                    await this.props.onIgnoreLabel(label.id, true)
-                    this.setState({ ignoredLabels: this.state.ignoredLabels.add(label.id), ignoringLabel: null })
+
+                    try {
+                      await this.props.onIgnoreLabel(label.id, true)
+                      this.setState({ ignoredLabels: this.state.ignoredLabels.add(label.id) })
+                    } catch (e) {
+                      console.log(e)
+                    }
+
+                    this.setState({ ignoringLabel: null })
                   }}
                 >
                   <FontAwesome name="ban" /> {label.name}

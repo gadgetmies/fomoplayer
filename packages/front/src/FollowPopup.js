@@ -37,10 +37,16 @@ class FollowPopup extends Component {
               className={'button button-push_button-large button-push_button-primary'}
               onClick={async () => {
                 const followedArtists = this.state.followedArtists
-                const following = followedArtists.has(artist.id)
-                this.setState({ subscribingToArtist: artist.id })
-                await this.props.onFollowArtist(artist.id, !following)
-                followedArtists[following ? 'delete' : 'add'](artist.id)
+
+                try {
+                  const following = followedArtists.has(artist.id)
+                  this.setState({ subscribingToArtist: artist.id })
+                  await this.props.onFollowArtist(artist.id, !following)
+                  followedArtists[following ? 'delete' : 'add'](artist.id)
+                } catch (e) {
+                  console.error(e)
+                }
+
                 this.setState({ followedArtists, subscribingToArtist: null })
               }}
             >
@@ -61,10 +67,16 @@ class FollowPopup extends Component {
                   className={'button button-push_button-large button-push_button-primary'}
                   onClick={async () => {
                     const followedLabels = this.state.followedLabels
-                    const following = followedLabels.has(label.id)
-                    this.setState({ subscribingToLabel: label.id })
-                    await this.props.onFollowLabel(label.id, !following)
-                    followedLabels[following ? 'delete' : 'add'](label.id)
+
+                    try {
+                      const following = followedLabels.has(label.id)
+                      this.setState({ subscribingToLabel: label.id })
+                      await this.props.onFollowLabel(label.id, !following)
+                      followedLabels[following ? 'delete' : 'add'](label.id)
+                    } catch (e) {
+                      console.error(e)
+                    }
+
                     this.setState({ followedLabels, subscribingToLabel: null })
                   }}
                 >
