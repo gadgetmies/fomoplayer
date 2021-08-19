@@ -47,8 +47,9 @@ router.post('/tracks/:id', ({ user: { username }, params: { id }, body: { heard 
   setTrackHeard(id, username, heard).tap(() => res.send())
 })
 
-router.patch('/tracks/', ({ user: { username }, body: { heard }, res }) => {
-  setAllHeard(username, heard).tap(() => res.send())
+router.patch('/tracks/', async ({ user: { id: authUserId }, body: { heard }, query: { interval } }, res) => {
+  await setAllHeard(authUserId, heard, interval)
+  res.send()
 })
 
 // TODO: add genre to database?

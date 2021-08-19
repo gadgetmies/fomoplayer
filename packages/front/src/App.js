@@ -115,9 +115,9 @@ class App extends Component {
     this.setState({ tracksData: { tracks, meta: { newTracks, totalTracks } } })
   }
 
-  async markAllHeard() {
+  async markHeard(interval) {
     await requestWithCredentials({
-      path: `/me/tracks`,
+      path: `/me/tracks?interval=${interval}`,
       method: 'PATCH',
       body: { heard: true }
     })
@@ -178,7 +178,7 @@ class App extends Component {
                     <Settings
                       carts={this.state.carts}
                       onUpdateCarts={this.updateCarts.bind(this)}
-                      onMarkAllHeardClicked={this.markAllHeard.bind(this)}
+                      onMarkHeardClicked={this.markHeard.bind(this)}
                       newTracks={this.state.tracksData.meta.newTracks}
                       totalTracks={this.state.tracksData.meta.totalTracks}
                     />

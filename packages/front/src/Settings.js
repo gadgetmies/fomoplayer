@@ -9,6 +9,20 @@ class Settings extends Component {
     this.setState({ markAllHeardUnlocked: true })
   }
 
+  markHeardButton = (label, interval) => (
+    <SpinnerButton
+      disabled={!this.state.markAllHeardUnlocked}
+      loading={this.state.markingHeard === interval}
+      onClick={async () => {
+        this.setState({ markingHeard: interval })
+        await this.props.onMarkHeardClicked(interval)
+        this.setState({ markingHeard: null })
+      }}
+      label={label}
+      loadingLabel={'Marking heard'}
+    />
+  )
+
   constructor(props) {
     super(props)
     this.state = {
@@ -32,8 +46,10 @@ class Settings extends Component {
       followDetails: undefined,
       followDetailsUpdateAborted: false,
       markAllHeardUnlocked: false,
-      markingHeard: false
+      markingHeard: null
     }
+
+    this.markHeardButton.bind(this)
   }
 
   async componentDidMount() {
@@ -412,12 +428,12 @@ class Settings extends Component {
             Total: {this.props.totalTracks}
             <br />
           </p>
-          <h4>Mark all tracks heard</h4>
+          <h4>Mark tracks heard</h4>
           <p>
             Danger zone! This action cannot be undone!
             <br />
           </p>
-          <p className="input-layout">
+          <p>
             <button
               type="submit"
               disabled={this.state.markAllHeardUnlocked}
@@ -425,21 +441,17 @@ class Settings extends Component {
               style={this.props.style}
               onClick={this.unlockMarkAllHeard.bind(this)}
             >
-              Enable button
+              Enable buttons
             </button>
-
-            <SpinnerButton
-              disabled={!this.state.markAllHeardUnlocked}
-              loading={this.state.markingHeard}
-              onClick={async () => {
-                this.setState({ markingHeard: true })
-                await this.props.onMarkAllHeardClicked()
-                this.setState({ markingHeard: false })
-              }}
-              label={'Mark all heard'}
-              loadingLabel={'Marking all heard'}
-            />
           </p>
+          <p className="input-layout">
+            {this.markHeardButton('Older than a month', '1 months')}
+            {this.markHeardButton('Older than two months', '2 months')}
+            {this.markHeardButton('Older than half a year', '6 months')}
+            {this.markHeardButton('Older than one year', '1 years')}
+            {this.markHeardButton('Older than two years', '2 years')}
+          </p>
+          <p className="input-layout">{this.markHeardButton('All tracks', '0')}</p>
         </div>
       </div>
     )
