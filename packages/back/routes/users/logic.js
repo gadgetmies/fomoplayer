@@ -64,7 +64,7 @@ module.exports.removeArtistOnLabelIgnoreFromUser = deleteArtistOnLabelIgnoreFrom
 module.exports.removeLabelIgnoreFromUser = deleteLabelIgnoreFromUser
 module.exports.removeArtistIgnoreFromUser = deleteArtistIgnoreFromUser
 
-const { removeIgnoredTracksFromUser } = require('../shared/db/user.js')
+const { removeIgnoredTracksFromUsers } = require('../shared/db/user.js')
 
 module.exports.queryUserTracks = queryUserTracks
 module.exports.getTracksM3u = username =>
@@ -84,35 +84,35 @@ module.exports.setAllHeard = setAllHeard
 
 module.exports.addArtistOnLabelToIgnore = addArtistOnLabelToIgnore
 module.exports.artistOnLabelInIgnore = artistOnLabelInIgnore
-module.exports.addArtistsOnLabelsToIgnore = (username, { artistIds, labelIds }) =>
+module.exports.addArtistsOnLabelsToIgnore = (userId, { artistIds, labelIds }) =>
   using(pg.getTransaction(), async tx => {
     await each(R.xprod(artistIds, labelIds), ([artistId, labelId]) =>
-      addArtistOnLabelToIgnore(tx, artistId, labelId, username)
+      addArtistOnLabelToIgnore(tx, artistId, labelId, userId)
     )
-    await removeIgnoredTracksFromUser(tx, username)
+    await removeIgnoredTracksFromUsers(tx, [userId])
   })
 
-module.exports.addArtistsToIgnore = async (username, artistIds) => {
+module.exports.addArtistsToIgnore = async (userId, artistIds) => {
   try {
     using(pg.getTransaction(), async tx => {
-      await addArtistsToIgnore(tx, artistIds, username)
-      await removeIgnoredTracksFromUser(tx, username)
+      await addArtistsToIgnore(tx, artistIds, userId)
+      await removeIgnoredTracksFromUsers(tx, [userId])
     })
   } catch (e) {
     console.log(e)
   }
 }
 
-module.exports.addLabelsToIgnore = async (username, labelIds) =>
+module.exports.addLabelsToIgnore = async (userId, labelIds) =>
   using(pg.getTransaction(), async tx => {
-    await addLabelsToIgnore(tx, labelIds, username)
-    await removeIgnoredTracksFromUser(tx, username)
+    await addLabelsToIgnore(tx, labelIds, userId)
+    await removeIgnoredTracksFromUsers(tx, [userId])
   })
 
-module.exports.addReleasesToIgnore = async (username, releaseIds) => {
+module.exports.addReleasesToIgnore = async (userId, releaseIds) => {
   using(pg.getTransaction(), async tx => {
-    await addReleasesToIgnore(tx, releaseIds, username)
-    await removeIgnoredTracksFromUser(tx, username)
+    await addReleasesToIgnore(tx, releaseIds, userId)
+    await removeIgnoredTracksFromUsers(tx, [userId])
   })
 }
 

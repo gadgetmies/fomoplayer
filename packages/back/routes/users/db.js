@@ -653,74 +653,58 @@ FROM
     )
     .then(R.head)
 
-module.exports.addArtistOnLabelToIgnore = (tx, artistId, labelId, username) =>
+module.exports.addArtistOnLabelToIgnore = (tx, artistId, labelId, userId) =>
   tx.queryAsync(
     // language=PostgreSQL
     sql`-- addArtistOnLabelToIgnore
 INSERT INTO user__artist__label_ignore
-  (meta_account_user_id, artist_id, label_id)
-SELECT
-  meta_account_user_id
-, ${artistId}
-, ${labelId}
-FROM meta_account
-WHERE
-  meta_account_username = ${username}
+    (meta_account_user_id, artist_id, label_id)
+VALUES ( ${userId}
+       , ${artistId}
+       , ${labelId})
 ON CONFLICT ON CONSTRAINT user__artist__label_ignore_unique DO NOTHING
 `
   )
 
-module.exports.addArtistsToIgnore = async (tx, artistIds, username) => {
+module.exports.addArtistsToIgnore = async (tx, artistIds, userId) => {
   for (const artistId of artistIds) {
     tx.queryAsync(
       // language=PostgreSQL
       sql`--addToIgnore
-      INSERT INTO user__artist_ignore
-        (meta_account_user_id, artist_id)
-      SELECT
-        meta_account_user_id
-      , ${artistId}
-      FROM meta_account
-      WHERE
-        meta_account_username = ${username}
-      ON CONFLICT ON CONSTRAINT user__artist_ignore_artist_id_meta_account_user_id_key DO NOTHING
-      `
+INSERT INTO user__artist_ignore
+    (meta_account_user_id, artist_id)
+VALUES ( ${userId}
+       , ${artistId})
+ON CONFLICT ON CONSTRAINT user__artist_ignore_artist_id_meta_account_user_id_key DO NOTHING
+`
     )
   }
 }
 
-module.exports.addLabelsToIgnore = async (tx, labelIds, username) => {
+module.exports.addLabelsToIgnore = async (tx, labelIds, userId) => {
   for (const labelId of labelIds) {
     await tx.queryAsync(
       // language=PostgreSQL
       sql`--addLabelToIgnore
 INSERT INTO user__label_ignore
-  (meta_account_user_id, label_id)
-SELECT
-  meta_account_user_id
-, ${labelId}
-FROM meta_account
-WHERE
-  meta_account_username = ${username}
+    (meta_account_user_id, label_id)
+VALUES ( ${userId}
+       , ${labelId})
 ON CONFLICT ON CONSTRAINT user__label_ignore_label_id_meta_account_user_id_key DO NOTHING
 `
     )
   }
 }
 
-module.exports.addReleasesToIgnore = async (tx, releaseIds, username) => {
+module.exports.addReleasesToIgnore = async (tx, releaseIds, userId) => {
   for (const releaseId of releaseIds) {
     await tx.queryAsync(
       // language=PostgreSQL
       sql`--addLabelToIgnore
 INSERT INTO user__release_ignore
-  (meta_account_user_id, release_id)
-SELECT
-  meta_account_user_id
-, ${releaseId}
-FROM meta_account
-WHERE
-  meta_account_username = ${username}
+    (meta_account_user_id, release_id)
+VALUES ( ${userId}
+       , ${releaseId})
 ON CONFLICT ON CONSTRAINT user__release_ignore_release_id_meta_account_user_id_key DO NOTHING
 `
     )

@@ -59,8 +59,8 @@ router.get('/ignores/artists-on-labels', async ({ user: { id: authUserId } }, re
   res.send(artistOnLabelIgnores)
 })
 
-router.post('/ignores/artists-on-labels', async ({ user: { username }, body }, res) => {
-  await addArtistsOnLabelsToIgnore(username, body)
+router.post('/ignores/artists-on-labels', async ({ user: { id: authUserId }, body }, res) => {
+  await addArtistsOnLabelsToIgnore(authUserId, body)
   res.status(204).send()
 })
 
@@ -74,8 +74,8 @@ router.get('/ignores/labels', async ({ user: { id: authUserId } }, res) => {
   res.send(labelIgnores)
 })
 
-router.post('/ignores/labels', async ({ user: { username }, body }, res) => {
-  await addLabelsToIgnore(username, body)
+router.post('/ignores/labels', async ({ user: { id: authUserId }, body }, res) => {
+  await addLabelsToIgnore(authUserId, body)
   res.status(204).send()
 })
 
@@ -89,8 +89,8 @@ router.get('/ignores/artists', async ({ user: { id: authUserId } }, res) => {
   res.send(artistIgnores)
 })
 
-router.post('/ignores/artists', async ({ user: { username }, body }, res) => {
-  await addArtistsToIgnore(username, body)
+router.post('/ignores/artists', async ({ user: { id: authUserId }, body }, res) => {
+  await addArtistsToIgnore(authUserId, body)
   res.status(204).send()
 })
 
@@ -99,8 +99,8 @@ router.delete('/ignores/artists/:id', async ({ user: { id: authUserId }, params:
   res.status(204).send()
 })
 
-router.post('/ignores/releases', async ({ user: { username }, body }, res) => {
-  await addReleasesToIgnore(username, body)
+router.post('/ignores/releases', async ({ user: { id: authUserId }, body }, res) => {
+  await addReleasesToIgnore(authUserId, body)
   res.status(204).send()
 })
 

@@ -1,5 +1,6 @@
 const { using } = require('bluebird')
 const pg = require('../../db/pg.js')
+const { removeIgnoredTracksFromUsers } = require('../shared/db/user')
 const logger = require('../../logger')(__filename)
 
 const { addStoreTrack, ensureArtistExists, ensureReleaseExists, ensureLabelExists } = require('../shared/db/store')
@@ -44,6 +45,8 @@ module.exports.addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId,
       }
     }
     // TODO: Update materialized views
+
+    await removeIgnoredTracksFromUsers(tx, userIds)
 
     return trackId
   })

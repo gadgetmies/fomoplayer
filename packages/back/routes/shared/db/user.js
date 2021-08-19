@@ -3,17 +3,13 @@ const sql = require('sql-template-strings')
 
 const pg = require('../../../db/pg.js')
 
-module.exports.removeIgnoredTracksFromUser = (tx, username) =>
+module.exports.removeIgnoredTracksFromUsers = (tx, userIds) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
-    sql`-- removeIgnoredTracksFromUser
+    sql`-- removeIgnoredTracksFromUsers
 WITH
   user_details AS (
-    SELECT
-      meta_account_user_id
-    FROM meta_account
-    WHERE
-      meta_account_username = ${username}
+    SELECT unnest(${userIds}::INTEGER[]) AS meta_account_user_id
   )
 
 DELETE
