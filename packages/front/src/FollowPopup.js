@@ -29,7 +29,7 @@ class FollowPopup extends Component {
       <FullScreenPopup title="Follow / unfollow" {...this.props}>
         <h2>Artists</h2>
         <div className="input-layout">
-          {this.props.track.artists.map(artist => (
+          {this.props.track.remixers.concat(this.props.track.artists).map(artist => (
             <SpinnerButton
               loading={this.state.subscribingToArtist === artist.id}
               disabled={this.state.subscribingToArtist}

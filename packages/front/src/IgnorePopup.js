@@ -37,7 +37,7 @@ class IgnorePopup extends Component {
     }
 
     const releases = this.props.track.releases
-
+    const artists = this.props.track.artists.concat(this.props.track.remixers)
     return (
       <FullScreenPopup title="Ignore" {...this.props}>
         {this.props.track.labels.length === 0 ? null : (
@@ -54,7 +54,7 @@ class IgnorePopup extends Component {
               view.
             </p>
             <div className="input-layout">
-              {this.props.track.artists.map(artist => {
+              {artists.map(artist => {
                 const labelIds = this.props.track.labels.map(({ id }) => id)
                 const idString = `${artist.id}-${labelIds.join(',')}`
                 const isIgnored = this.state.ignoredArtistsOnLabels.has(idString)
