@@ -50,7 +50,7 @@ class FollowPopup extends Component {
                 this.setState({ followedArtists, subscribingToArtist: null })
               }}
             >
-              <FontAwesomeIcon icon={`${this.state.followedArtists.has(artist.id) ? 'times-circle' : 'heart'}`} />{' '}
+              <FontAwesomeIcon icon={`${this.state.followedArtists.has(artist.id) ? 'heart-broken' : 'heart'}`} />{' '}
               {artist.name}
             </SpinnerButton>
           ))}
@@ -80,7 +80,7 @@ class FollowPopup extends Component {
                     this.setState({ followedLabels, subscribingToLabel: null })
                   }}
                 >
-                  <FontAwesomeIcon icon={`${this.state.followedLabels.has(label.id) ? 'times-circle' : 'heart'}`} />{' '}
+                  <FontAwesomeIcon icon={`${this.state.followedLabels.has(label.id) ? 'heart-broken' : 'heart'}`} />{' '}
                   {label.name}
                 </SpinnerButton>
               ))}
