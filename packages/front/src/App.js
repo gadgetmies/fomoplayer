@@ -8,6 +8,7 @@ import Player from './Player.js'
 import './App.css'
 import SlideoutPanel from './SlideoutPanel.js'
 import Settings from './Settings.js'
+import Spinner from './Spinner.js'
 
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
 import config from './config.js'
@@ -130,7 +131,10 @@ class App extends Component {
       <Root>
         <Router>
           {this.state.loading ? (
-            'Loading...'
+            <div style={{ margin: 4 }}>
+              🚀 Launching app
+              <Spinner />
+            </div>
           ) : this.state.loggedIn ? (
             <>
               <Menu
