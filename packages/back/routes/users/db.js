@@ -839,9 +839,8 @@ const queryCartDetails = (module.exports.queryCartDetails = async (cartId, userI
     sql`--queryCartDetails
 WITH
   cart_tracks AS (SELECT array_agg(track_id) AS tracks FROM track__cart WHERE cart_id = ${cartId})
-, td AS (SELECT (track_details((SELECT tracks FROM cart_tracks), ${userId})).*)
-, renamed AS (SELECT track_id AS id, * FROM td)
-, tracks AS (SELECT json_agg(renamed.*) AS tracks FROM renamed)
+, td AS (SELECT *, track_id AS id FROM track_details((SELECT tracks FROM cart_tracks), ${userId}))
+, tracks AS (SELECT json_agg(td) AS tracks FROM td)
 SELECT
   cart_id                           AS id
 , cart_name                         AS name
