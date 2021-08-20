@@ -38,7 +38,9 @@ const typeIs = require('type-is')
 
 const router = require('express-promise-router')()
 
-router.get('/tracks', ({ user: { username } }, res) => getUserTracks(username).tap(userTracks => res.json(userTracks)))
+router.get('/tracks', async ({ user: { username }, query: { sort = '-score' } }, res) => {
+  getUserTracks(username, sort).tap(userTracks => res.json(userTracks))
+})
 
 router.get('/tracks/playlist.pls', ({ user: { username } }, res) => getTracksM3u(username).tap(m3u => res.send(m3u)))
 
