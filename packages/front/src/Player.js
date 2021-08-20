@@ -239,18 +239,22 @@ class Player extends Component {
     this.setState({ searchResults })
   }
 
+  mergeWithHeard(tracks) {
+    this.state.heardTracks.forEach(heardTrack => {
+      const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
+      if (index !== -1) {
+        tracks[index] = heardTrack
+      }
+    })
+  }
+
   getTracks() {
     const heardTracks = this.state.heardTracks
     let tracks
 
     if (this.state.listState === 'new') {
       tracks = this.props.tracks.new.slice()
-      heardTracks.forEach(heardTrack => {
-        const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
-        if (index !== -1) {
-          tracks[index] = heardTrack
-        }
-      })
+      this.mergeWithHeard(tracks)
     } else if (this.state.listState === 'heard') {
       tracks = this.props.tracks.heard.slice()
       heardTracks.forEach(heardTrack => {
@@ -260,6 +264,9 @@ class Player extends Component {
         }
       })
       tracks = this.state.heardTracks.concat(tracks)
+    } else if (this.state.listState === 'recentlyAdded') {
+      tracks = this.props.tracks.recentlyAdded.slice()
+      this.mergeWithHeard(tracks)
     } else if (this.state.listState === 'cart') {
       tracks = this.props.carts.find(R.prop('is_default')).tracks
     } else if (this.state.listState === 'search') {
@@ -381,6 +388,7 @@ class Player extends Component {
           onIgnoreClicked={this.openIgnorePopup.bind(this)}
           onShowNewClicked={this.setListState.bind(this, 'new')}
           onShowHeardClicked={this.setListState.bind(this, 'heard')}
+          onShowRecentlyAddedClicked={this.setListState.bind(this, 'recentlyAdded')}
           onShowCartClicked={this.setListState.bind(this, 'cart')}
           onShowSearchClicked={this.setListState.bind(this, 'search')}
           onSearchResults={this.setSearchResults.bind(this)}

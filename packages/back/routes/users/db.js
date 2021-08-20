@@ -554,26 +554,31 @@ module.exports.queryUserTracks = (username, sort) => {
       )
          , heard_tracks AS (
           SELECT track_id
-               , user__track_heard
-               , NULL :: NUMERIC AS score
           FROM user__track
                    NATURAL JOIN logged_user
           WHERE user__track_heard IS NOT NULL
           ORDER BY user__track_heard DESC
           LIMIT 50
       )
+        , recently_added AS (
+          SELECT track_id
+               , track_added
+          FROM logged_user
+                   NATURAL JOIN user__track
+                   NATURAL JOIN track
+          ORDER BY track_added DESC
+          LIMIT 200
+      )
          , limited_tracks AS (
-          SELECT track_id
-               , user__track_heard
-               , score
-               , score_details
-          FROM new_tracks_with_scores
-          UNION ALL
-          SELECT track_id
-               , user__track_heard
-               , score
-               , NULL :: JSON AS score_details
-          FROM heard_tracks
+          SELECT DISTINCT track_id
+          FROM
+          (
+            SELECT track_id FROM new_tracks_with_scores
+            UNION ALL
+            SELECT track_id FROM heard_tracks
+            UNION ALL
+            SELECT track_id FROM recently_added
+          ) t
       )
          , tracks_with_details AS (
           SELECT track_id AS id
@@ -590,8 +595,6 @@ module.exports.queryUserTracks = (username, sort) => {
                , stores
                , released
                , releases
-               , score
-               , score_details
           FROM limited_tracks lt
                    JOIN track_details((SELECT ARRAY_AGG(track_id) FROM limited_tracks),
                                       (SELECT meta_account_user_id FROM logged_user)) td USING (track_id)
@@ -599,18 +602,31 @@ module.exports.queryUserTracks = (username, sort) => {
          , new_tracks_with_details AS (
           SELECT JSON_AGG(t) AS new_tracks
           FROM ( -- TODO: Why is the order by needed also here (also in new_tracks_with_scores)
-                   SELECT * FROM tracks_with_details WHERE heard IS NULL ORDER BY score DESC NULLS LAST, added DESC
+                   SELECT * FROM tracks_with_details 
+                   JOIN new_tracks_with_scores ON (id = track_id)
+                   ORDER BY score DESC NULLS LAST, added DESC
                ) t
       )
          , heard_tracks_with_details AS (
           SELECT JSON_AGG(t) AS heard_tracks
           FROM (
-                   SELECT * FROM tracks_with_details WHERE heard IS NOT NULL ORDER BY heard DESC
+                   SELECT * FROM tracks_with_details
+                   JOIN heard_tracks ON (id = track_id)
+                   ORDER BY heard DESC
+               ) t
+      )
+         , recently_added_tracks_with_details AS (
+          SELECT JSON_AGG(t) AS recently_added
+          FROM (
+                   SELECT * FROM tracks_with_details
+                   JOIN recently_added ON (id = track_id)
+                   ORDER BY added DESC
                ) t
       )
       SELECT JSON_BUILD_OBJECT(
               'new', CASE WHEN new_tracks IS NULL THEN '[]'::JSON ELSE new_tracks END,
-              'heard', CASE WHEN heard_tracks IS NULL THEN '[]'::JSON ELSE heard_tracks END
+              'heard', CASE WHEN heard_tracks IS NULL THEN '[]'::JSON ELSE heard_tracks END,
+              'recentlyAdded', CASE WHEN recently_added IS NULL THEN '[]'::JSON ELSE recently_added END
           ) AS tracks
            , JSON_BUILD_OBJECT(
               'total', total,
@@ -618,6 +634,7 @@ module.exports.queryUserTracks = (username, sort) => {
           ) AS meta
       FROM new_tracks_with_details
          , heard_tracks_with_details
+         , recently_added_tracks_with_details
          , user_tracks_meta`)
       )
       .then(R.head)
