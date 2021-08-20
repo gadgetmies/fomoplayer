@@ -1,7 +1,7 @@
 import './Tracks.css'
 import React, { Component } from 'react'
 import * as R from 'ramda'
-import FontAwesome from 'react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import PillButton from './PillButton.js'
 import ExternalLink from './ExternalLink'
 import SpinnerButton from './SpinnerButton'
@@ -72,9 +72,9 @@ class Track extends Component {
             onMouseLeave={() => this.setHeardHover(false)}
           >
             {this.state.heardHover ? (
-              <FontAwesome name="play" />
+              <FontAwesomeIcon icon="play" />
             ) : !!this.props.heard ? null : (
-              <FontAwesome name="circle" />
+              <FontAwesomeIcon icon="circle" />
             )}
           </button>
           {!!this.props.heard ? null : <div className={'track-new-indicator'} />}
@@ -147,7 +147,7 @@ class Track extends Component {
                 }
               }}
             >
-              <FontAwesome name={this.props.inCart ? 'minus' : 'plus'} />
+              <FontAwesomeIcon icon={this.props.inCart ? 'minus' : 'plus'} />
               <span className={'cart-button-label'}>{this.props.inCart ? 'Remove from cart' : 'Add to cart'}</span>
             </PillButton>
           </div>
@@ -159,7 +159,7 @@ class Track extends Component {
                 this.props.onFollowClicked()
               }}
             >
-              <FontAwesome name={'heart'} />
+              <FontAwesomeIcon icon={'heart'} />
               <span className={'follow-button-label'} />
             </PillButton>
           </div>
@@ -171,7 +171,7 @@ class Track extends Component {
                 this.props.onIgnoreClicked()
               }}
             >
-              <FontAwesome name={'ban'} />
+              <FontAwesomeIcon icon={'ban'} />
               <span className={'ignore-button-label'} />
             </PillButton>
           </div>
@@ -231,7 +231,7 @@ class Track extends Component {
               showIcon={false}
               href={`https://www.youtube.com/results?search_query=${searchString}`}
             >
-              <FontAwesome name="youtube" />
+              <FontAwesomeIcon icon={['fab', 'youtube']} />
             </ExternalLink>
           </div>
         </td>
@@ -467,13 +467,13 @@ class Tracks extends Component {
                 value={this.state.search}
               />
               {this.state.search ? (
-                <FontAwesome
+                <FontAwesomeIcon
                   onClick={() => this.setSearch('')}
                   className={'search-input-icon clear-search'}
-                  name="times-circle"
+                  icon="times-circle"
                 />
               ) : (
-                <FontAwesome className={'search-input-icon'} name="search" />
+                <FontAwesomeIcon className={'search-input-icon'} icon="search" />
               )}
             </label>
           )}

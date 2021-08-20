@@ -1,5 +1,5 @@
 import FullScreenPopup from './FullScreenPopup'
-import FontAwesome from 'react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { Component } from 'react'
 import SpinnerButton from './SpinnerButton'
 import { prop } from 'ramda'
@@ -50,7 +50,7 @@ class FollowPopup extends Component {
                 this.setState({ followedArtists, subscribingToArtist: null })
               }}
             >
-              <FontAwesome name={`${this.state.followedArtists.has(artist.id) ? 'times-circle' : 'heart'}`} />{' '}
+              <FontAwesomeIcon icon={`${this.state.followedArtists.has(artist.id) ? 'times-circle' : 'heart'}`} />{' '}
               {artist.name}
             </SpinnerButton>
           ))}
@@ -80,7 +80,7 @@ class FollowPopup extends Component {
                     this.setState({ followedLabels, subscribingToLabel: null })
                   }}
                 >
-                  <FontAwesome name={`${this.state.followedLabels.has(label.id) ? 'times-circle' : 'heart'}`} />{' '}
+                  <FontAwesomeIcon icon={`${this.state.followedLabels.has(label.id) ? 'times-circle' : 'heart'}`} />{' '}
                   {label.name}
                 </SpinnerButton>
               ))}

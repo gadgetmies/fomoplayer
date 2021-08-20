@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
-import FontAwesome from 'react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 class ExternalLink extends Component {
   static defaultProps = { showIcon: true }
@@ -15,7 +15,7 @@ class ExternalLink extends Component {
       >
         {this.props.children}
         &nbsp;
-        {this.props.showIcon ? <FontAwesome name="external-link" /> : null}
+        {this.props.showIcon ? <FontAwesomeIcon icon="external-link" /> : null}
       </a>
     )
   }

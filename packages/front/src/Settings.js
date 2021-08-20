@@ -1,4 +1,4 @@
-import FontAwesome from 'react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { Component } from 'react'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
 import SpinnerButton from './SpinnerButton'
@@ -171,7 +171,7 @@ class Settings extends Component {
                           this.setState({ updatingCarts: false })
                         }}
                       >
-                        <FontAwesome name="close" />
+                        <FontAwesomeIcon icon="times-circle" />
                       </button>
                     </span>
                   </span>
@@ -256,7 +256,7 @@ class Settings extends Component {
                       this.setState({ updatingFollows: false })
                     }}
                   >
-                    <FontAwesome name="plus" /> Add {details.type.replace(/^\w/, c => c.toUpperCase())}:{' '}
+                    <FontAwesomeIcon icon="plus" /> Add {details.type.replace(/^\w/, c => c.toUpperCase())}:{' '}
                     <span class="pill" style={{ backgroundColor: 'white', color: 'black' }}>
                       {details.stores.map(store => (
                         <span aria-hidden="true" className={`store-icon store-icon-${store}`}></span>
@@ -291,7 +291,7 @@ class Settings extends Component {
                         this.setState({ updatingPlaylistFollows: false })
                       }}
                     >
-                      <FontAwesome name="close" />
+                      <FontAwesomeIcon icon="close" />
                     </button>
                   </span>
                 </span>
@@ -318,7 +318,7 @@ class Settings extends Component {
                         <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`}></span>{' '}
                       </>
                     ))}
-                    {artist.name} <FontAwesome name="close" />
+                    {artist.name} <FontAwesomeIcon icon="close" />
                   </span>
                 </button>
               </li>
@@ -344,7 +344,7 @@ class Settings extends Component {
                         <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`}></span>{' '}
                       </>
                     ))}
-                    {label.name} <FontAwesome name="close" />
+                    {label.name} <FontAwesomeIcon icon="close" />
                   </span>
                 </button>
               </li>
@@ -366,7 +366,7 @@ class Settings extends Component {
                         this.setState({ updatingArtistIgnores: false })
                       }}
                     >
-                      <FontAwesome name="close" />
+                      <FontAwesomeIcon icon="close" />
                     </button>
                   </span>
                 </span>
@@ -388,7 +388,7 @@ class Settings extends Component {
                         this.setState({ updatingLabelIgnores: false })
                       }}
                     >
-                      <FontAwesome name="close" />
+                      <FontAwesomeIcon icon="close" />
                     </button>
                   </span>
                 </span>
@@ -414,7 +414,7 @@ class Settings extends Component {
                         this.setState({ updatingArtistOnLabelIgnores: false })
                       }}
                     >
-                      <FontAwesome name="close" />
+                      <FontAwesomeIcon icon="close" />
                     </button>
                   </span>
                 </span>

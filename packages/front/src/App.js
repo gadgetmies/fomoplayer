@@ -14,7 +14,55 @@ import { requestJSONwithCredentials, requestWithCredentials } from './request-js
 import config from './config.js'
 
 import 'typeface-lato'
-import FontAwesome from 'react-fontawesome'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faGithub, faChrome, faYoutube } from '@fortawesome/free-brands-svg-icons'
+import {
+  faHeart,
+  faHeartBroken,
+  faPlus,
+  faMinus,
+  faTimesCircle,
+  faCopy,
+  faBars,
+  faExternalLinkAlt,
+  faBan,
+  faExclamationCircle,
+  faForward,
+  faBackward,
+  faPlay,
+  faStepForward,
+  faStepBackward,
+  faPause,
+  faKeyboard,
+  faCircle,
+  faInfoCircle
+} from '@fortawesome/free-solid-svg-icons'
+
+library.add(
+  faHeart,
+  faHeartBroken,
+  faPlus,
+  faMinus,
+  faTimesCircle,
+  faCopy,
+  faBars,
+  faExternalLinkAlt,
+  faBan,
+  faExclamationCircle,
+  faForward,
+  faBackward,
+  faPlay,
+  faStepForward,
+  faStepBackward,
+  faPause,
+  faKeyboard,
+  faGithub,
+  faChrome,
+  faYoutube,
+  faCircle,
+  faInfoCircle
+)
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 // import injectTapEventPlugin from 'react-tap-event-plugin';
 // injectTapEventPlugin();
@@ -155,7 +203,7 @@ class App extends Component {
                     this.refs['slideout'].toggle()
                   }}
                 >
-                  <FontAwesome name="bars" />
+                  <FontAwesomeIcon icon="bars" />
                 </button>
                 <Route
                   path="/"

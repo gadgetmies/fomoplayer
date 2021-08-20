@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import TrackTitle from './TrackTitle.js'
-import FontAwesome from 'react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as L from 'partial.lenses'
 import './Preview.css'
 import Progress from './Progress.jsx'
@@ -106,7 +106,7 @@ class Preview extends Component {
   render() {
     const shortcuts = (
       <div style={{ float: 'right', color: 'white' }} className="popup-container">
-        <FontAwesome name="keyboard-o" className="popup-anchor" style={{ right: 0, top: 0, margin: 10 }} />
+        <FontAwesomeIcon icon="keyboard" className="popup-anchor" style={{ right: 0, top: 0, margin: 10 }} />
         <div className="popup-content" style={{ right: 0, top: 0, margin: '0 5 5 5', paddingRight: 50 }}>
           <h2 style={{ marginTop: 0 }}>Shortcuts</h2>
           <table>
@@ -114,7 +114,7 @@ class Preview extends Component {
               <tr>
                 <td>
                   <span className="keyboard-shortcut">
-                    <FontAwesome name="forward" />
+                    <FontAwesomeIcon icon="forward" />
                   </span>
                 </td>
                 <td>x2</td>
@@ -123,7 +123,7 @@ class Preview extends Component {
               <tr>
                 <td colSpan="2">
                   <span className="keyboard-shortcut">
-                    <FontAwesome name="forward" />
+                    <FontAwesomeIcon icon="forward" />
                   </span>
                 </td>
                 <td>Seek forward</td>
@@ -131,7 +131,7 @@ class Preview extends Component {
               <tr>
                 <td>
                   <span className="keyboard-shortcut">
-                    <FontAwesome name="backward" />
+                    <FontAwesomeIcon icon="backward" />
                   </span>
                 </td>
                 <td>x2</td>
@@ -140,7 +140,7 @@ class Preview extends Component {
               <tr>
                 <td colSpan="2">
                   <span className="keyboard-shortcut">
-                    <FontAwesome name="backward" />
+                    <FontAwesomeIcon icon="backward" />
                   </span>
                 </td>
                 <td>Seek backward</td>
@@ -148,7 +148,7 @@ class Preview extends Component {
               <tr>
                 <td colSpan="2">
                   <span className="keyboard-shortcut">
-                    <FontAwesome name="play" />
+                    <FontAwesomeIcon icon="play" />
                   </span>
                 </td>
                 <td>Toggle playback</td>
@@ -300,13 +300,13 @@ class Preview extends Component {
           </div>
           <div className="button-wrapper">
             <button className="button button__light button-playback" onClick={() => this.props.onPrevious()}>
-              <FontAwesome name="step-backward" />
+              <FontAwesomeIcon icon="step-backward" />
             </button>
             <button className="button button__light button-playback" onClick={() => this.props.onNext()}>
-              <FontAwesome name="step-forward" />
+              <FontAwesomeIcon icon="step-forward" />
             </button>
             <button className="button button__light button-playback" onClick={() => this.togglePlaying()}>
-              <FontAwesome name={this.state.playing ? 'pause' : 'play'} />
+              <FontAwesomeIcon icon={this.state.playing ? 'pause' : 'play'} />
             </button>
             {this.props.togglingCurrentInCart ? (
               <div
@@ -328,7 +328,7 @@ class Preview extends Component {
                   await this.props.onToggleCurrentInCart()
                 }}
               >
-                <FontAwesome name={this.props.inCart ? 'minus' : 'plus'} />
+                <FontAwesomeIcon icon={this.props.inCart ? 'minus' : 'plus'} />
               </button>
             )}
           </div>

@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
-import FontAwesome from 'react-fontawesome'
-import { Link } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import MenuNavButton from './MenuNavButton'
 import { requestWithCredentials } from './request-json-with-credentials.js'
 import './Menu.css'
@@ -47,7 +46,7 @@ export default class Menu extends Component {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FontAwesome name="github" />
+              <FontAwesomeIcon icon={['fab', 'github']} />
               &nbsp; Instructions
             </a>
             <a
@@ -56,7 +55,7 @@ export default class Menu extends Component {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FontAwesome name="chrome" />
+              <FontAwesomeIcon icon={['fab', 'chrome']} />
               &nbsp; Chrome Extension
             </a>
             <a
@@ -65,7 +64,7 @@ export default class Menu extends Component {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FontAwesome name="exclamation-circle" />
+              <FontAwesomeIcon icon="exclamation-circle" />
               &nbsp; Report an issue
             </a>
           </p>

@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { requestWithCredentials } from './request-json-with-credentials.js'
-import FontAwesome from 'react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import PillButton from './PillButton.js'
 import SpinneButton from './SpinnerButton.js'
 
@@ -93,7 +93,7 @@ export default class CookieLogin extends Component {
             >
               {!this.state.copied ? (
                 <>
-                  Copy script <FontAwesome name="copy" />
+                  Copy script <FontAwesomeIcon icon="copy" />
                 </>
               ) : (
                 'Copied!'

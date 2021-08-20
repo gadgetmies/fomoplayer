@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import FontAwesome from 'react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 class FullScreenPopup extends Component {
   constructor(props) {
@@ -21,7 +21,7 @@ class FullScreenPopup extends Component {
           <h1 className="full-screen-popup-title">{this.props.title}</h1>
           <div className="full-screen-popup-close">
             <button onClick={this.props.onCloseClicked}>
-              <FontAwesome name="times-circle" />
+              <FontAwesomeIcon icon="times-circle" />
             </button>
           </div>
           {this.props.children}

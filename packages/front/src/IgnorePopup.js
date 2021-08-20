@@ -1,5 +1,5 @@
 import FullScreenPopup from './FullScreenPopup'
-import FontAwesome from 'react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { Component } from 'react'
 import SpinnerButton from './SpinnerButton'
 import { Link } from 'react-router-dom'
@@ -45,7 +45,7 @@ class IgnorePopup extends Component {
             <h2>
               Artist on labels{' '}
               <button onClick={this.toggleIgnoreByArtistOnLabelInfo.bind(this)}>
-                <FontAwesome name="info-circle" />
+                <FontAwesomeIcon icon="info-circle" />
               </button>
             </h2>
             <p style={{ display: this.state.ignoreByArtistOnLabelInfoVisible ? 'block' : 'none' }}>
@@ -81,7 +81,7 @@ class IgnorePopup extends Component {
                       this.setState({ ignoringArtistOnLabel: null })
                     }}
                   >
-                    <FontAwesome name="ban" /> {artist.name} on {joinStringList(this.props.track.labels)}
+                    <FontAwesomeIcon icon="ban" /> {artist.name} on {joinStringList(this.props.track.labels)}
                   </SpinnerButton>
                 )
               })}
@@ -115,7 +115,7 @@ class IgnorePopup extends Component {
                     this.setState({ ignoringRelease: null })
                   }}
                 >
-                  <FontAwesome name="ban" /> {release.name}
+                  <FontAwesomeIcon icon="ban" /> {release.name}
                 </SpinnerButton>
               ))}
             </div>
@@ -144,7 +144,7 @@ class IgnorePopup extends Component {
                 this.setState({ ignoringArtist: null })
               }}
             >
-              <FontAwesome name="ban" /> {artist.name}
+              <FontAwesomeIcon icon="ban" /> {artist.name}
             </SpinnerButton>
           ))}
         </div>
@@ -173,7 +173,7 @@ class IgnorePopup extends Component {
                     this.setState({ ignoringLabel: null })
                   }}
                 >
-                  <FontAwesome name="ban" /> {label.name}
+                  <FontAwesomeIcon icon="ban" /> {label.name}
                 </SpinnerButton>
               ))}
             </div>
