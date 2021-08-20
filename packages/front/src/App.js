@@ -37,9 +37,7 @@ class App extends Component {
 
   async componentDidMount() {
     try {
-      await this.updateTracks()
-      await this.updateCarts()
-      await this.updateFollows()
+      await Promise.all([this.updateTracks(), this.updateCarts(), this.updateFollows()])
       this.setState({ loggedIn: true })
     } catch (e) {
       console.error(e)
