@@ -84,17 +84,13 @@ class Player extends Component {
       method: 'POST',
       body: { heard: true }
     })
-    this.markAsPlayed(track.id)
+    this.markAsPlayed(track)
   }
 
-  markAsPlayed(trackId) {
-    if (this.state.listState !== 'new') {
-      return
-    }
-
+  markAsPlayed(track) {
     let updatedHeardTracks = this.state.heardTracks
-    const updatedTrack = R.assoc('heard', true, this.props.tracks.new.find(R.propEq('id', trackId)))
-    const playedTrackIndex = this.state.heardTracks.findIndex(R.propEq('id', trackId))
+    const updatedTrack = R.assoc('heard', true, track)
+    const playedTrackIndex = this.state.heardTracks.findIndex(R.propEq('id', track.id))
     if (playedTrackIndex !== -1) {
       updatedHeardTracks.splice(playedTrackIndex, 1)
     } else {
@@ -239,7 +235,7 @@ class Player extends Component {
     this.setState({ searchResults })
   }
 
-  mergeWithHeard(tracks) {
+  mergeHeardStatus(tracks) {
     this.state.heardTracks.forEach(heardTrack => {
       const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
       if (index !== -1) {
@@ -249,29 +245,22 @@ class Player extends Component {
   }
 
   getTracks() {
-    const heardTracks = this.state.heardTracks
     let tracks
 
     if (this.state.listState === 'new') {
       tracks = this.props.tracks.new.slice()
-      this.mergeWithHeard(tracks)
     } else if (this.state.listState === 'heard') {
       tracks = this.props.tracks.heard.slice()
-      heardTracks.forEach(heardTrack => {
-        const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
-        if (index !== -1) {
-          tracks.splice(index, 1)
-        }
-      })
+      this.mergeHeardStatus(tracks)
       tracks = this.state.heardTracks.concat(tracks)
     } else if (this.state.listState === 'recentlyAdded') {
       tracks = this.props.tracks.recentlyAdded.slice()
-      this.mergeWithHeard(tracks)
     } else if (this.state.listState === 'cart') {
       tracks = this.props.carts.find(R.prop('is_default')).tracks
     } else if (this.state.listState === 'search') {
       tracks = this.state.searchResults
     }
+    this.mergeHeardStatus(tracks)
 
     return tracks
   }
