@@ -12,6 +12,103 @@ import Spinner from './Spinner'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
+const shortcuts = (
+  <div style={{ float: 'right', color: 'white' }} className="popup-container">
+    <FontAwesomeIcon icon="keyboard" className="popup-anchor" style={{ right: 0, top: 0, margin: 10 }} />
+    <div className="popup-content" style={{ right: 0, top: 0, margin: '0 5 5 5', paddingRight: 50 }}>
+      <h2 style={{ marginTop: 0 }}>Shortcuts</h2>
+      <table>
+        <tbody>
+          <tr>
+            <td>
+              <span className="keyboard-shortcut">
+                <FontAwesomeIcon icon="forward" />
+              </span>
+            </td>
+            <td>x2</td>
+            <td>Next</td>
+          </tr>
+          <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">
+                <FontAwesomeIcon icon="forward" />
+              </span>
+            </td>
+            <td>Seek forward</td>
+          </tr>
+          <tr>
+            <td>
+              <span className="keyboard-shortcut">
+                <FontAwesomeIcon icon="backward" />
+              </span>
+            </td>
+            <td>x2</td>
+            <td>Previous</td>
+          </tr>
+          <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">
+                <FontAwesomeIcon icon="backward" />
+              </span>
+            </td>
+            <td>Seek backward</td>
+          </tr>
+          <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">
+                <FontAwesomeIcon icon="play" />
+              </span>
+            </td>
+            <td>Toggle playback</td>
+          </tr>
+          <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">Q</span>
+            </td>
+            <td>Previous</td>
+          </tr>
+          <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">W</span>
+            </td>
+            <td>Toggle playback</td>
+          </tr>
+          <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">E</span>
+            </td>
+            <td>Next</td>
+          </tr>
+          <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">R</span>
+            </td>
+            <td>Next new</td>
+          </tr>
+          <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">A</span>
+            </td>
+            <td>Scan forward</td>
+          </tr>
+          <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">D</span>
+            </td>
+            <td>Scan backward</td>
+          </tr>
+          <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">P</span>
+            </td>
+            <td>Add / remove current track to / from cart</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+)
+
 class Preview extends Component {
   constructor(props) {
     super(props)
@@ -104,103 +201,6 @@ class Preview extends Component {
   }
 
   render() {
-    const shortcuts = (
-      <div style={{ float: 'right', color: 'white' }} className="popup-container">
-        <FontAwesomeIcon icon="keyboard" className="popup-anchor" style={{ right: 0, top: 0, margin: 10 }} />
-        <div className="popup-content" style={{ right: 0, top: 0, margin: '0 5 5 5', paddingRight: 50 }}>
-          <h2 style={{ marginTop: 0 }}>Shortcuts</h2>
-          <table>
-            <tbody>
-              <tr>
-                <td>
-                  <span className="keyboard-shortcut">
-                    <FontAwesomeIcon icon="forward" />
-                  </span>
-                </td>
-                <td>x2</td>
-                <td>Next</td>
-              </tr>
-              <tr>
-                <td colSpan="2">
-                  <span className="keyboard-shortcut">
-                    <FontAwesomeIcon icon="forward" />
-                  </span>
-                </td>
-                <td>Seek forward</td>
-              </tr>
-              <tr>
-                <td>
-                  <span className="keyboard-shortcut">
-                    <FontAwesomeIcon icon="backward" />
-                  </span>
-                </td>
-                <td>x2</td>
-                <td>Previous</td>
-              </tr>
-              <tr>
-                <td colSpan="2">
-                  <span className="keyboard-shortcut">
-                    <FontAwesomeIcon icon="backward" />
-                  </span>
-                </td>
-                <td>Seek backward</td>
-              </tr>
-              <tr>
-                <td colSpan="2">
-                  <span className="keyboard-shortcut">
-                    <FontAwesomeIcon icon="play" />
-                  </span>
-                </td>
-                <td>Toggle playback</td>
-              </tr>
-              <tr>
-                <td colSpan="2">
-                  <span className="keyboard-shortcut">Q</span>
-                </td>
-                <td>Previous</td>
-              </tr>
-              <tr>
-                <td colSpan="2">
-                  <span className="keyboard-shortcut">W</span>
-                </td>
-                <td>Toggle playback</td>
-              </tr>
-              <tr>
-                <td colSpan="2">
-                  <span className="keyboard-shortcut">E</span>
-                </td>
-                <td>Next</td>
-              </tr>
-              <tr>
-                <td colSpan="2">
-                  <span className="keyboard-shortcut">R</span>
-                </td>
-                <td>Next new</td>
-              </tr>
-              <tr>
-                <td colSpan="2">
-                  <span className="keyboard-shortcut">A</span>
-                </td>
-                <td>Scan forward</td>
-              </tr>
-              <tr>
-                <td colSpan="2">
-                  <span className="keyboard-shortcut">D</span>
-                </td>
-                <td>Scan backward</td>
-              </tr>
-              <tr>
-                <td colSpan="2">
-                  <span className="keyboard-shortcut">P</span>
-                </td>
-                <td>Add / remove current track to / from cart</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    )
-
     const currentTrack = this.props.currentTrack
     let mp3Preview
     let waveform
