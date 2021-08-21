@@ -52,7 +52,7 @@ class Track extends Component {
 
     const title = `${this.props.title} ${this.props.version ? `(${this.props.version})` : ''}`
 
-    const artistsAndRemixers = this.props.artists.concat(this.props.remixers)
+    const artistsAndRemixers = R.uniq(this.props.artists.concat(this.props.remixers))
 
     return (
       <tr
@@ -85,7 +85,9 @@ class Track extends Component {
               {R.intersperse(
                 ', ',
                 artistsAndRemixers.map(artist => (
-                  <span className={artist.following ? 'following' : ''}>{artist.name}</span>
+                  <span className={artist.following ? 'following' : ''} key={artist.name}>
+                    {artist.name}
+                  </span>
                 ))
               )}
             </div>
@@ -98,7 +100,11 @@ class Track extends Component {
             >
               {R.intersperse(
                 ', ',
-                this.props.labels.map(label => <span className={label.following ? 'following' : ''}>{label.name}</span>)
+                this.props.labels.map(label => (
+                  <span className={label.following ? 'following' : ''} key={label.name}>
+                    {label.name}
+                  </span>
+                ))
               )}
             </div>
             <div className={`released-cell track-table-cell ${this.props.released ? '' : 'empty-cell'}`}>
@@ -186,6 +192,7 @@ class Track extends Component {
                   href={store.url || store.release.url}
                   title={`Open in ${store.name}`}
                   className={'link link-icon'}
+                  key={store.name}
                 >
                   <StoreIcon code={store.code} />
                 </ExternalLink>
