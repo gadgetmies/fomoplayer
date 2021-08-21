@@ -474,7 +474,8 @@ audio {
   opacity: 0.7;
 }
 
-.state-select-button--container input[type='radio'] {
+.state-select-button--container input[type='radio'],
+.state-select-icon--container input[type='radio'] {
   display: none;
 }
 
@@ -482,6 +483,41 @@ input[type='radio']:checked + .state-select-button--button {
   background-color: #b40089;
   border-radius: 0.25rem;
   opacity: 1;
+}
+
+.preview-icons-container {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 2px;
+  margin: 2px;
+  background: #0005;
+  border-radius: 2px;
+  font-size: 75%;
+}
+
+.preview-icons-container > * {
+  margin-left: 4px;
+}
+
+.preview-icons-container > *:first-child {
+  margin-left: 0;
+}
+
+.state-select-icon--icon {
+  cursor: pointer;
+}
+
+input[type='radio']:checked + .state-select-icon--icon {
+  opacity: 1;
+}
+
+input[type='radio']:hover + .state-select-icon--icon {
+  opacity: 1;
+}
+
+input[type='radio'] + .state-select-icon--icon {
+  opacity: 0.5;
 }
 
 .state-select-button--container *:last-child {

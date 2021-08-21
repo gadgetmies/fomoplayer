@@ -9,6 +9,7 @@ import WaveformGenerator from 'waveform-generator-web'
 import { requestWithCredentials } from './request-json-with-credentials'
 import Collection from './Collection'
 import Spinner from './Spinner'
+import StoreIcon from './StoreIcon'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -113,7 +114,7 @@ class Preview extends Component {
   constructor(props) {
     super(props)
 
-    this.state = { playing: false, position: 0, waveform: undefined, totalDuration: undefined }
+    this.state = { playing: false, position: 0, mp3Preview: undefined, waveform: undefined, totalDuration: undefined }
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
     }
@@ -133,27 +134,36 @@ class Preview extends Component {
     return this.refs['player0']
   }
 
-  updateTrack(track, previewUrl) {
-    this.setState({ previewUrl })
+  async updateTrack(track, preview) {
+    this.setState({ position: 0, waveform: undefined, totalDuration: undefined, mp3Preview: preview })
+    let url = preview.url
+    if (url === null) {
+      this.setState({ previewUrl: '' })
+      url = await this.fetchPreviewUrl(preview)
+    }
+
+    this.setState({ previewUrl: url })
     const waveform = this.getWaveform(track)
-    if (!waveform && this.audioContext) {
-      this.updateWaveform(previewUrl).catch(e => {
-        console.error(e)
-      })
+    if ((!waveform || preview.start_ms === null) && this.audioContext && preview.store !== 'bandcamp') {
+      await this.updateWaveform(preview.url)
+    } else {
+      this.setState({ waveform })
     }
   }
 
-  componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
+  async fetchPreviewUrl(preview) {
+    const res = await requestWithCredentials({ path: `/stores/${preview.store}/previews/${preview.id}` })
+    const { url } = await res.json()
+    return url
+  }
+
+  async componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
     if (this.props.currentTrack !== nextTrack) {
-      const preview = this.getPreview(nextTrack)
-      this.setState({ position: 0, waveform: undefined, totalDuration: undefined })
-      if (preview.url === null) {
-        this.setState({ previewUrl: '' })
-        requestWithCredentials({ path: `/stores/${preview.store}/previews/${preview.id}` })
-          .then(res => res.json())
-          .then(({ url }) => this.updateTrack(nextTrack, url))
-      } else {
-        this.updateTrack(nextTrack, preview.url)
+      try {
+        const preview = this.getFirstMp3Preview(nextTrack)
+        await this.updateTrack(nextTrack, preview)
+      } catch (e) {
+        console.error(e)
       }
     }
 
@@ -165,7 +175,7 @@ class Preview extends Component {
     }
   }
 
-  getPreview(track) {
+  getFirstMp3Preview(track) {
     return L.get(['previews', L.satisfying(safePropEq('format', 'mp3'))], track)
   }
 
@@ -174,17 +184,21 @@ class Preview extends Component {
   }
 
   async updateWaveform(previewUrl) {
-    const blob = await fetch(previewUrl).then(r => r.blob())
-    const fileArrayBuffer = await blob.arrayBuffer()
-    const waveformGenerator = new WaveformGenerator(fileArrayBuffer)
-    const pngWaveformURL = await waveformGenerator.getWaveform({
-      waveformWidth: 1024,
-      waveformHeight: 170,
-      waveformColor: '#cbcbcb'
-    })
+    try {
+      const blob = await fetch(previewUrl).then(r => r.blob())
+      const fileArrayBuffer = await blob.arrayBuffer()
+      const waveformGenerator = new WaveformGenerator(fileArrayBuffer)
+      const pngWaveformURL = await waveformGenerator.getWaveform({
+        waveformWidth: 1024,
+        waveformHeight: 170,
+        waveformColor: '#cbcbcb'
+      })
 
-    const audioBuffer = await this.audioContext.decodeAudioData(fileArrayBuffer)
-    this.setState({ waveform: pngWaveformURL, totalDuration: audioBuffer.duration * 1000 })
+      const audioBuffer = await this.audioContext.decodeAudioData(fileArrayBuffer)
+      this.setState({ waveform: pngWaveformURL, totalDuration: audioBuffer.duration * 1000 })
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   trackTitle(track) {
@@ -202,16 +216,14 @@ class Preview extends Component {
 
   render() {
     const currentTrack = this.props.currentTrack
-    let mp3Preview
-    let waveform
+    let mp3Preview = this.state.mp3Preview
+    let waveform = this.state.waveform
     let totalDuration = 0
     let startOffset = 0
     let endPosition = 0
     const toPositionPercent = currentPosition => ((currentPosition + startOffset) / totalDuration) * 100
 
-    if (currentTrack) {
-      mp3Preview = this.getPreview(currentTrack)
-      waveform = this.getWaveform(currentTrack) || this.state.waveform
+    if (currentTrack && mp3Preview) {
       totalDuration = this.state.totalDuration || currentTrack.duration
       startOffset = mp3Preview.start_ms || 0
       endPosition = mp3Preview.end_ms || this.state.totalDuration
@@ -229,7 +241,7 @@ class Preview extends Component {
           <div className="preview-wrapper">
             <div
               className="waveform_container"
-              style={{ flex: 5 }}
+              style={{ flex: 5, position: 'relative' }}
               onMouseDown={e => {
                 if (e.button !== 0) return
                 const trackPositionPercent = (e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth
@@ -271,6 +283,22 @@ class Preview extends Component {
                   right: 0
                 }}
               />
+              <div className="preview-icons-container state-select-icon--container">
+                {currentTrack?.previews?.map(({ id, store }) => (
+                  <span key={id} onMouseDown={e => e.stopPropagation()}>
+                    <input
+                      type="radio"
+                      id={`preview-${id}`}
+                      name="preview"
+                      checked={this.state.mp3Preview?.id === id}
+                      onChange={this.onPreviewStoreClicked.bind(this, id)}
+                    />
+                    <label className="state-select-icon--icon" htmlFor={`preview-${id}`}>
+                      <StoreIcon code={store} />
+                    </label>
+                  </span>
+                ))}
+              </div>
             </div>
             <Progress
               className="volume-slider"
@@ -337,6 +365,13 @@ class Preview extends Component {
         </div>
       </div>
     )
+  }
+
+  async onPreviewStoreClicked(id) {
+
+      const preview = this.props.currentTrack.previews.find(R.propEq('id', id))
+      await this.updateTrack(this.props.currentTrack, preview)
+    this.setState({ mp3Preview: preview, position: 0 })
   }
 }
 
