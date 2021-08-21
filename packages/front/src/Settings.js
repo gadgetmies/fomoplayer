@@ -11,7 +11,7 @@ class Settings extends Component {
 
   markHeardButton = (label, interval) => (
     <SpinnerButton
-      disabled={!this.state.markAllHeardUnlocked}
+      disabled={!this.state.markAllHeardUnlocked || this.state.markingHeard !== null}
       loading={this.state.markingHeard === interval}
       onClick={async () => {
         this.setState({ markingHeard: interval })
