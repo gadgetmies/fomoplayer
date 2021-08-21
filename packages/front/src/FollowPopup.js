@@ -9,8 +9,6 @@ class FollowPopup extends Component {
   constructor(props) {
     super(props)
 
-    console.log({ props })
-
     this.state = {
       subscribingToLabel: null,
       subscribingToArtist: null,

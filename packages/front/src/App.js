@@ -174,7 +174,6 @@ class App extends Component {
   async updateLogins() {}
 
   render() {
-    console.log(this.state)
     return (
       <Root>
         <Router>
