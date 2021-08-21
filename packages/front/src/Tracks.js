@@ -311,6 +311,7 @@ class Tracks extends Component {
       new: 'No tracks available',
       heard: 'No tracks played'
     }
+    const defaultCart = this.props.carts.find(R.prop('is_default'))
 
     return tracks.length === 0 ? (
       <tr style={{ display: 'block' }}>
@@ -334,11 +335,7 @@ class Tracks extends Component {
             selected={this.state.selectedTrack === id}
             playing={this.props.currentTrack === id}
             heard={heard}
-            inCart={
-              this.props.carts.find(R.prop('is_default'))
-                ? this.props.carts.find(R.prop('is_default')).tracks.find(R.propEq('id', id))
-                : false
-            }
+            inCart={defaultCart ? defaultCart.tracks.find(R.propEq('id', id)) : false}
             key={id}
             onClick={() => {
               this.props.onPreviewRequested(id)
