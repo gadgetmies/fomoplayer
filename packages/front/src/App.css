@@ -493,7 +493,6 @@ input[type='radio']:checked + .state-select-button--button {
   margin: 2px;
   background: #0005;
   border-radius: 2px;
-  font-size: 75%;
 }
 
 .preview-icons-container > * {
@@ -767,6 +766,10 @@ input[type='radio'] + .state-select-icon--icon {
     font-size: 120%;
     margin: 2px;
   }
+
+  .preview-icons-container {
+    font-size: 100%;
+  }
 }
 
 @media (min-width: 800px) {
@@ -816,6 +819,10 @@ input[type='radio'] + .state-select-icon--icon {
   .collection-details {
     order: 3;
     display: flex;
+  }
+
+  .preview-icons-container {
+    font-size: 75%;
   }
 
   /*Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table*/
