@@ -120,7 +120,7 @@ class Track extends Component {
           </div>
         </td>
         <td className={'follow-ignore-cart-cell tracks-cell'}>
-          <div class={'cart-cell track-table-cell'}>
+          <div className={'cart-cell track-table-cell'}>
             <PillButton
               disabled={this.state.processingCart}
               className={'table-cell-button'}
