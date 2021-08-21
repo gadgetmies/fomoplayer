@@ -285,22 +285,24 @@ class Preview extends Component {
                   right: 0
                 }}
               />
-              <div className="preview-icons-container state-select-icon--container">
-                {currentTrack?.previews?.map(({ id, store }) => (
-                  <span key={id} onMouseDown={e => e.stopPropagation()}>
-                    <input
-                      type="radio"
-                      id={`preview-${id}`}
-                      name="preview"
-                      checked={this.state.mp3Preview?.id === id}
-                      onChange={this.onPreviewStoreClicked.bind(this, id)}
-                    />
-                    <label className="state-select-icon--icon" htmlFor={`preview-${id}`}>
-                      <StoreIcon code={store} />
-                    </label>
-                  </span>
-                ))}
-              </div>
+              {currentTrack ? (
+                <div className="preview-icons-container state-select-icon--container">
+                  {currentTrack?.previews?.map(({ id, store }) => (
+                    <span key={id} onMouseDown={e => e.stopPropagation()}>
+                      <input
+                        type="radio"
+                        id={`preview-${id}`}
+                        name="preview"
+                        checked={this.state.mp3Preview?.id === id}
+                        onChange={this.onPreviewStoreClicked.bind(this, id)}
+                      />
+                      <label className="state-select-icon--icon" htmlFor={`preview-${id}`}>
+                        <StoreIcon code={store} />
+                      </label>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               {this.state.loading ? (
                 <div onMouseDown={e => e.stopPropagation()} className="loading-overlay">
                   <Spinner size="large" />
