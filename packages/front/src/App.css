@@ -330,7 +330,7 @@ audio {
   border-radius: 10px;
   padding: 20px;
   background-color: #ccc;
-  boxShadow: rgba(0, 0, 0, 0.27) 2px 2px 40px 0px;
+  box-shadow: rgba(0, 0, 0, 0.27) 2px 2px 40px 0px;
   color: black;
   position: relative;
 }
