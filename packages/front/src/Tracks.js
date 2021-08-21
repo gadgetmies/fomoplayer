@@ -319,7 +319,7 @@ class Tracks extends Component {
       </tr>
     ) : (
       tracks.map(track => {
-        const { id, title, mix, artists, remixers, labels, releases, released, keys, heard, stores } = track
+        const { id, title, mix, artists, remixers, labels, releases, released, keys, heard, stores, version } = track
         return (
           <Track
             id={id}
@@ -334,6 +334,7 @@ class Tracks extends Component {
             stores={stores}
             selected={this.state.selectedTrack === id}
             playing={this.props.currentTrack === id}
+            version={version}
             heard={heard}
             inCart={defaultCart ? defaultCart.tracks.find(R.propEq('id', id)) : false}
             key={id}
