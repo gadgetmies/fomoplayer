@@ -14,7 +14,7 @@ class Player extends Component {
 
     this.state = {
       currentTrack: null,
-      heardTracks: [],
+      heardTracks: this.props.tracks.heard,
       listenedTracks: 0,
       listState: 'new',
       searchResults: [],
@@ -84,10 +84,14 @@ class Player extends Component {
       method: 'POST',
       body: { heard: true }
     })
-    this.markAsPlayed(track)
+    this.markHeard(track)
   }
 
-  markAsPlayed(track) {
+  markHeard(track) {
+    if (this.state.listState === 'heard') {
+      return
+    }
+
     let updatedHeardTracks = this.state.heardTracks
     const updatedTrack = R.assoc('heard', true, track)
     const playedTrackIndex = this.state.heardTracks.findIndex(R.propEq('id', track.id))
@@ -250,9 +254,7 @@ class Player extends Component {
     if (this.state.listState === 'new') {
       tracks = this.props.tracks.new.slice()
     } else if (this.state.listState === 'heard') {
-      tracks = this.props.tracks.heard.slice()
-      this.mergeHeardStatus(tracks)
-      tracks = this.state.heardTracks.concat(tracks)
+      tracks = this.state.heardTracks
     } else if (this.state.listState === 'recentlyAdded') {
       tracks = this.props.tracks.recentlyAdded.slice()
     } else if (this.state.listState === 'cart') {
