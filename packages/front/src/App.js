@@ -178,7 +178,7 @@ class App extends Component {
       <Root>
         <Router>
           {this.state.loading ? (
-            <div style={{ margin: 4 }}>
+            <div style={{ margin: 4 }} className="loading-overlay">
               🚀 Launching app
               <Spinner />
             </div>
