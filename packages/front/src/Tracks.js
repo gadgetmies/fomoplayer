@@ -387,7 +387,6 @@ class Tracks extends Component {
               type="radio"
               id="tracklist-state-new"
               name="tracklist-state"
-              className="state-select-button--button"
               defaultChecked={this.props.listState === 'new'}
               onChange={this.props.onShowNewClicked}
             />
@@ -398,7 +397,6 @@ class Tracks extends Component {
               type="radio"
               id="tracklist-state-heard"
               name="tracklist-state"
-              className="state-select-button--button"
               defaultChecked={this.props.listState === 'heard'}
               onChange={this.props.onShowHeardClicked}
             />
@@ -409,7 +407,6 @@ class Tracks extends Component {
               type="radio"
               id="tracklist-state-recentlyAdded"
               name="tracklist-state"
-              className="state-select-button--button"
               defaultChecked={this.props.listState === 'recentlyAdded'}
               onChange={this.props.onShowRecentlyAddedClicked}
             />
@@ -420,7 +417,6 @@ class Tracks extends Component {
               type="radio"
               id="tracklist-state-cart"
               name="tracklist-state"
-              className="state-select-button--button"
               defaultChecked={this.props.listState === 'cart'}
               onChange={this.props.onShowCartClicked}
             />
@@ -431,7 +427,6 @@ class Tracks extends Component {
               type="radio"
               id="tracklist-state-search"
               name="tracklist-state"
-              className="state-select-button--button"
               defaultChecked={this.props.listState === 'search'}
               onChange={this.props.onShowSearchClicked}
             />
