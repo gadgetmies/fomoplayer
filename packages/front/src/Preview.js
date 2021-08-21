@@ -159,12 +159,14 @@ class Preview extends Component {
 
   async componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
     if (this.props.currentTrack !== nextTrack) {
+      this.setState({ loading: true })
       try {
         const preview = this.getFirstMp3Preview(nextTrack)
         await this.updateTrack(nextTrack, preview)
       } catch (e) {
         console.error(e)
       }
+      this.setState({ loading: false })
     }
 
     if (this.state.playing !== playing) {
@@ -299,6 +301,11 @@ class Preview extends Component {
                   </span>
                 ))}
               </div>
+              {this.state.loading ? (
+                <div onMouseDown={e => e.stopPropagation()} className="loading-overlay">
+                  <Spinner size="large" />
+                </div>
+              ) : null}
             </div>
             <Progress
               className="volume-slider"
@@ -368,10 +375,16 @@ class Preview extends Component {
   }
 
   async onPreviewStoreClicked(id) {
-
+    this.setState({ loading: true })
+    try {
       const preview = this.props.currentTrack.previews.find(R.propEq('id', id))
+
       await this.updateTrack(this.props.currentTrack, preview)
-    this.setState({ mp3Preview: preview, position: 0 })
+      this.setState({ mp3Preview: preview, position: 0, loading: false })
+    } catch (e) {
+      console.error(e)
+      this.setState({ loading: false })
+    }
   }
 }
 
