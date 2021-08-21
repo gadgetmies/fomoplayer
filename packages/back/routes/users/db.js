@@ -495,8 +495,8 @@ module.exports.queryUserTracks = (username, sort) => {
                 'artist', JSON_BUILD_OBJECT('score', artist_score, 'multiplier', artist_multiplier),
                 'added', JSON_BUILD_OBJECT('score', added_score.score, 'multiplier', date_added_multiplier),
                 'released', JSON_BUILD_OBJECT('score', released_score.score, 'multiplier', date_released_multiplier),
-                'artist_follow', artist_follow_score,
-                'label_follow', label_follow_score
+                'artist_follow', JSON_BUILD_OBJECT('score', artist_follow_score, 'multiplier', artist_follow_multiplier),
+                'label_follow', JSON_BUILD_OBJECT('score', label_follow_score, 'multiplier', label_follow_multiplier)
             )                                                                            AS score_details
         FROM (SELECT track_id
                    , user__track_heard
