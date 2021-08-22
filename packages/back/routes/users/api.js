@@ -130,13 +130,13 @@ router.post('/follows/artists', async (req, res) => {
     body,
     headers: { 'x-multi-store-player-store': storeUrl }
   } = req
-  let addedArtists = []
+  let addedArtists
 
   if (typeIs(req, 'application/vnd.multi-store-player.artist-ids+json')) {
-    addedLabels = await addArtistFollowsWithIds(body, userId)
+    addedArtists = await addArtistFollowsWithIds(body, userId)
   } else {
     const sourceId = await insertSource({ operation: '/follows/artists', storeUrl })
-    const addedArtists = await addArtistFollows(storeUrl, body, userId, sourceId)
+    addedArtists = await addArtistFollows(storeUrl, body, userId, sourceId)
   }
   res.status(201).send(addedArtists)
 })
