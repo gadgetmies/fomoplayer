@@ -9,9 +9,9 @@ const {
   getStoreModuleForPlaylistByUrl
 } = require('../shared/stores')
 const { addStoreTrackToUsers } = require('./shared')
-const { NotFound, Forbidden, BadRequest } = require('../shared/httpErrors')
+const { NotFound, Forbidden } = require('../shared/httpErrors')
 
-const { ensureArtistExists, ensureLabelExists, queryStoreRegexes } = require('../shared/db/store')
+const { ensureArtistExists, ensureLabelExists } = require('../shared/db/store')
 
 const {
   addArtistOnLabelToIgnore,
