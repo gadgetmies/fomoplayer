@@ -239,6 +239,17 @@ button::-moz-focus-inner {
   background-color: #b5b5b5;
 }
 
+.button-push_button-menu {
+  color: white;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+  background-color: #b40089;
+}
+
+.button-push_button-menu-active {
+  background-color: #7a7a7a;
+}
+
 .button-push_button-glow {
   box-shadow: 0 0 10px 0 #990075;
 }

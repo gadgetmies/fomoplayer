@@ -23,7 +23,7 @@ export default class Menu extends Component {
       <div id="menu" className={'menu-container'}>
         <div className={'menu-stores'}>
           <h2>Multi Store Player</h2>
-          <MenuNavButton to={'/'} onClick={() => this.props.onNavButtonClicked()}>
+          <MenuNavButton to={'/'} exact={true} onClick={() => this.props.onNavButtonClicked()}>
             Tracks
           </MenuNavButton>
           <h3>User</h3>
@@ -32,7 +32,7 @@ export default class Menu extends Component {
               Settings
             </MenuNavButton>
             <button
-              className={`button menu-item button-push_button-large button-push_button-primary`}
+              className={`button menu-item button-push_button-large button-push_button-menu`}
               onClick={this.logout}
             >
               Logout
@@ -42,7 +42,7 @@ export default class Menu extends Component {
           <p>
             <a
               href={'https://github.com/gadgetmies/multi_store_player'}
-              className={`button menu-item button-push_button-large button-push_button-primary link`}
+              className={`button menu-item button-push_button-large button-push_button-menu link`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -51,7 +51,7 @@ export default class Menu extends Component {
             </a>
             <a
               href={'https://github.com/gadgetmies/multi_store_player#chrome-extension'}
-              className={`button menu-item button-push_button-large button-push_button-primary link`}
+              className={`button menu-item button-push_button-large button-push_button-menu link`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -60,7 +60,7 @@ export default class Menu extends Component {
             </a>
             <a
               href={'https://github.com/gadgetmies/multi_store_player/issues'}
-              className={`button menu-item button-push_button-large button-push_button-primary link`}
+              className={`button menu-item button-push_button-large button-push_button-menu link`}
               target="_blank"
               rel="noopener noreferrer"
             >

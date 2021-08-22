@@ -1,8 +1,11 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 export default props => (
-  <Link className="no-style-link" to={props.to}>
-    <button className={`button menu-item button-push_button-large button-push_button-primary`} {...props} />
-  </Link>
+  <NavLink
+    className="no-style-link button menu-item button-push_button-large button-push_button-menu"
+    activeClassName="button-push_button-menu-active"
+    to={props.to}
+    {...props}
+  ></NavLink>
 )
