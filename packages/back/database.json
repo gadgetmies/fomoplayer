@@ -9,6 +9,9 @@
     "host": "localhost",
     "database": "multi-store-player-test"
   },
+  "ci": {
+    "driver": "pg"
+  },
   "prod": {
     "driver": "pg",
     "ssl": {
