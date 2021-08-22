@@ -23,7 +23,6 @@ ON CONFLICT
   user__store__track_purchased_time = ${storeTrack.purchased}
 `
   )
-}
 
 module.exports.addArtistWatch = async (tx, userId, artistId) => {
   await tx.queryAsync(
@@ -390,7 +389,7 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = (username, sort) => {
+module.exports.queryUserTracks = (userId, sort = '-score') => {
   const sortParameters = sort
     .split(',')
     .map(s => s.trim())
@@ -401,9 +400,7 @@ module.exports.queryUserTracks = (username, sort) => {
       // language=PostgreSQL
       sql`-- queryUserTracks
     WITH logged_user AS (
-        SELECT meta_account_user_id
-        FROM meta_account
-        WHERE meta_account_username = ${username}
+        SELECT ${userId} :: INT AS meta_account_user_id
     )
        , user_purchased_tracks AS (
         SELECT track_id

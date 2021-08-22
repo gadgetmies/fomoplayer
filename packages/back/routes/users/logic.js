@@ -67,8 +67,8 @@ module.exports.removeArtistIgnoreFromUser = deleteArtistIgnoreFromUser
 const { removeIgnoredTracksFromUsers } = require('../shared/db/user.js')
 
 module.exports.queryUserTracks = queryUserTracks
-module.exports.getTracksM3u = username =>
-  queryUserTracks(username).then(userTracks => {
+module.exports.getTracksM3u = userId =>
+  queryUserTracks(userId).then(userTracks => {
     return (
       '[playlist]\n\n' +
       userTracks

@@ -31,18 +31,19 @@ const {
   getUserCarts,
   removeCart,
   updateDefaultCart,
-  getDefaultCartDetails,
-  removeReleasesFromUser
+  getDefaultCartDetails
 } = require('./logic')
 const typeIs = require('type-is')
 
 const router = require('express-promise-router')()
 
-router.get('/tracks', async ({ user: { username }, query: { sort = '-score' } }, res) => {
-  getUserTracks(username, sort).tap(userTracks => res.json(userTracks))
+router.get('/tracks', async ({ user: { id: authUserId }, query: { sort = '-score' } }, res) => {
+  getUserTracks(authUserId, sort).tap(userTracks => res.json(userTracks))
 })
 
-router.get('/tracks/playlist.pls', ({ user: { username } }, res) => getTracksM3u(username).tap(m3u => res.send(m3u)))
+router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
+  getTracksM3u(userId).tap(m3u => res.send(m3u))
+)
 
 router.post('/tracks/:id', ({ user: { username }, params: { id }, body: { heard } }, res) => {
   logger.info('POST /tracks/:id', { id, heard, username })
@@ -55,7 +56,7 @@ router.patch('/tracks/', async ({ user: { id: authUserId }, body: { heard }, que
 })
 
 // TODO: add genre to database?
-router.post('/ignores/genres', ({ user: { username }, body: { artistId, storeId, genre } }, res) => {})
+// router.post('/ignores/genres', ({ user: { username }, body: { artistId, storeId, genre } }, res) => {})
 
 router.get('/ignores/artists-on-labels', async ({ user: { id: authUserId } }, res) => {
   const artistOnLabelIgnores = await getUserArtistOnLabelIgnores(authUserId)
