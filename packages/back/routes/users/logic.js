@@ -290,7 +290,7 @@ module.exports.addStoreTracksToUser = async (storeUrl, type, tracks, userId, sou
 
   let addedTracks = []
   for (const track of tracks) {
-    const trackId = await addStoreTrackToUsers(storeUrl, [userId], track, type, sourceId)
+    const trackId = await addStoreTrackToUsers(storeUrl, [userId], track, sourceId, type)
     addedTracks.push(`${apiURL}/tracks/${trackId}`)
   }
 
