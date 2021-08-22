@@ -6,7 +6,8 @@
   "scripts": {
     "start": "supervisor index.js",
     "start:prod": "node index.js",
-    "db-migrate:prod": "db-migrate -e prod up"
+    "db-migrate:prod": "db-migrate -e prod up",
+    "test": "NODE_ENV=test node -r dotenv/config ./test/run-tests.js ./test/tests dotenv_config_path=.env.test"
   },
   "engines": {
     "node": "12.x"

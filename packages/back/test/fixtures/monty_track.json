@@ -1,0 +1,113 @@
+{
+  "active": false,
+  "artists": [
+    {
+      "id": 17892,
+      "name": "Monty",
+      "slug": "monty"
+    }
+  ],
+  "audio_format": "mp3",
+  "bpm": 130,
+  "component": "Artist - Tracks",
+  "component_type": null,
+  "date": {
+    "published": "2021-08-27",
+    "released": "2021-08-27"
+  },
+  "duration": {
+    "milliseconds": 344000,
+    "minutes": "5:44"
+  },
+  "exclusive": false,
+  "formats": {},
+  "genres": [
+    {
+      "id": 5,
+      "name": "House",
+      "slug": "house"
+    }
+  ],
+  "guest_pick": false,
+  "hype": true,
+  "id": 15553519,
+  "images": {
+    "dynamic": {
+      "id": 29089546,
+      "url": "https://geo-media.beatport.com/image_size/{w}x{h}/a0270329-ba03-435b-bbab-d192267dd3e1.jpg"
+    },
+    "large": {
+      "height": 1400,
+      "id": 29089546,
+      "url": "https://geo-media.beatport.com/image_size/1400x1400/a0270329-ba03-435b-bbab-d192267dd3e1.jpg",
+      "width": 1400
+    },
+    "medium": {
+      "height": 1400,
+      "id": 29089546,
+      "url": "https://geo-media.beatport.com/image_size/1400x1400/a0270329-ba03-435b-bbab-d192267dd3e1.jpg",
+      "width": 1400
+    },
+    "small": {
+      "height": 1400,
+      "id": 29089546,
+      "url": "https://geo-media.beatport.com/image_size/1400x1400/a0270329-ba03-435b-bbab-d192267dd3e1.jpg",
+      "width": 1400
+    }
+  },
+  "is_available_for_streaming": true,
+  "key": "A maj",
+  "label": {
+    "id": 84790,
+    "name": "Jackie Knows Karate Records",
+    "slug": "jackie-knows-karate-records"
+  },
+  "mix": "Original Mix",
+  "name": "Operator",
+  "preorder": true,
+  "preview": {
+    "mp3": {
+      "offset": {
+        "end": 257600,
+        "start": 137600
+      },
+      "url": "https://geo-samples.beatport.com/track/dc83a446-a692-4077-9623-4b12bcff7180.LOFI.mp3"
+    },
+    "mp4": {
+      "offset": null,
+      "url": null
+    }
+  },
+  "price": {
+    "code": "EUR",
+    "display": "€1.29",
+    "symbol": "€",
+    "value": 1.29
+  },
+  "purchase": 1,
+  "purchase_type": null,
+  "release": {
+    "id": 3462187,
+    "name": "Operator",
+    "slug": "operator"
+  },
+  "remixers": [],
+  "sale_type": "purchase",
+  "slug": "operator",
+  "sponsored": false,
+  "sub_genres": [],
+  "title": "",
+  "type": "track",
+  "waveform": {
+    "dynamic": {
+      "id": 29089717,
+      "url": "https://geo-media.beatport.com/image_size/{w}x{h}/dc83a446-a692-4077-9623-4b12bcff7180.png"
+    },
+    "large": {
+      "height": 250,
+      "id": 29089717,
+      "url": "https://geo-media.beatport.com/image_size/1500x250/dc83a446-a692-4077-9623-4b12bcff7180.png",
+      "width": 1500
+    }
+  }
+}

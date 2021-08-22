@@ -1,0 +1,54 @@
+[
+  {
+    "label": {
+      "score": 0,
+      "multiplier": 1
+    },
+    "artist": {
+      "score": 2,
+      "multiplier": 5
+    },
+    "added": {
+      "score": null,
+      "multiplier": -0.1
+    },
+    "released": {
+      "score": null,
+      "multiplier": -0.1
+    },
+    "artist_follow": {
+      "score": 0,
+      "multiplier": 1
+    },
+    "label_follow": {
+      "score": 0,
+      "multiplier": 1
+    }
+  },
+  {
+    "label": {
+      "score": 1,
+      "multiplier": 1
+    },
+    "artist": {
+      "score": 0,
+      "multiplier": 5
+    },
+    "added": {
+      "score": null,
+      "multiplier": -0.1
+    },
+    "released": {
+      "score": null,
+      "multiplier": -0.1
+    },
+    "artist_follow": {
+      "score": 0,
+      "multiplier": 1
+    },
+    "label_follow": {
+      "score": 0,
+      "multiplier": 1
+    }
+  }
+]

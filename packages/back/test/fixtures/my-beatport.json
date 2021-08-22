@@ -1,0 +1,250 @@
+{
+  "count": 6,
+  "next": null,
+  "page": "1/1",
+  "per_page": 100,
+  "previous": null,
+  "results": [
+    {
+      "artists": [
+        {
+          "id": 17892,
+          "image": {
+            "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/9f86f92d-5d89-44d6-bcf3-51c5ae31299d.jpg",
+            "id": 26843084,
+            "uri": "https://geo-media.beatport.com/image_size/590x404/9f86f92d-5d89-44d6-bcf3-51c5ae31299d.jpg"
+          },
+          "name": "Monty",
+          "slug": "monty",
+          "url": "https://api.beatport.com/v4/catalog/artists/17892/"
+        },
+        {
+          "id": 40132,
+          "image": {
+            "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/dcaee377-86ae-464b-ac6d-046908295749.jpg",
+            "id": 9536948,
+            "uri": "https://geo-media.beatport.com/image_size/590x404/dcaee377-86ae-464b-ac6d-046908295749.jpg"
+          },
+          "name": "T-Man",
+          "slug": "t-man",
+          "url": "https://api.beatport.com/v4/catalog/artists/40132/"
+        }
+      ],
+      "audio_format": {
+        "id": 1,
+        "name": "mp3"
+      },
+      "bpm": 93,
+      "enabled": true,
+      "genre": {
+        "id": 95,
+        "name": "140 / Deep Dubstep / Grime",
+        "slug": "140-deep-dubstep-grime",
+        "url": "https://api.beatport.com/v4/catalog/genres/95/"
+      },
+      "id": 14885197,
+      "image": {
+        "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/8b48f393-e99b-41ba-a166-43dbb0be0682.png",
+        "id": 27786655,
+        "uri": "https://geo-media.beatport.com/image_size/1500x250/8b48f393-e99b-41ba-a166-43dbb0be0682.png"
+      },
+      "initial_download": false,
+      "is_available_for_streaming": true,
+      "is_hype": false,
+      "key": {
+        "camelot_letter": "A",
+        "camelot_number": 9,
+        "chord_type": {
+          "id": 1,
+          "name": "Minor",
+          "url": "https://api.beatport.com/v4/catalog/chord-types/1/"
+        },
+        "id": 9,
+        "is_flat": false,
+        "is_sharp": false,
+        "letter": "E",
+        "name": "E Minor",
+        "url": "https://api.beatport.com/v4/catalog/keys/9/"
+      },
+      "length_ms": 301714,
+      "mix_name": "Original Mix",
+      "name": "Apollo",
+      "new_release_date": "2021-03-12",
+      "order_item_download_id": 444270108,
+      "pre_order_date": "2021-02-26",
+      "price": {
+        "code": "EUR",
+        "display": "€1.29",
+        "symbol": "€",
+        "value": 1.29
+      },
+      "publish_date": "2021-03-12",
+      "purchase_date": "2021-07-12T12:41:25-06:00",
+      "received_status": false,
+      "release": {
+        "id": 3281483,
+        "image": {
+          "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/246c269b-4846-4f79-80ed-3a9421f087bc.jpg",
+          "id": 27786439,
+          "uri": "https://geo-media.beatport.com/image_size/1400x1400/246c269b-4846-4f79-80ed-3a9421f087bc.jpg"
+        },
+        "label": {
+          "id": 24198,
+          "image": {
+            "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/f84b01ac-8aae-45b4-949f-2962159da6a1.jpg",
+            "id": 4866184,
+            "uri": "https://geo-media.beatport.com/image_size/500x500/f84b01ac-8aae-45b4-949f-2962159da6a1.jpg"
+          },
+          "name": "Artikal Music UK",
+          "slug": "artikal-music-uk"
+        },
+        "name": "Apollo",
+        "slug": "apollo"
+      },
+      "remixers": [],
+      "sample_end_ms": 240713,
+      "sample_start_ms": 120713,
+      "sample_url": "https://geo-samples.beatport.com/track/8b48f393-e99b-41ba-a166-43dbb0be0682.LOFI.mp3",
+      "slug": "apollo",
+      "sub_genre": null,
+      "upgrade_fees": {
+        "aiff": {
+          "code": "EUR",
+          "display": "€0.70",
+          "symbol": "€",
+          "value": 0.7
+        }
+      },
+      "url": "https://api.beatport.com/v4/catalog/tracks/14885197/"
+    },
+    {
+      "artists": [
+        {
+          "id": 154880,
+          "image": {
+            "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/0dc61986-bccf-49d4-8fad-6b147ea8f327.jpg",
+            "id": 5539565,
+            "uri": "https://geo-media.beatport.com/image_size/590x404/0dc61986-bccf-49d4-8fad-6b147ea8f327.jpg"
+          },
+          "name": "Footsie",
+          "slug": "footsie",
+          "url": "https://api.beatport.com/v4/catalog/artists/154880/"
+        },
+        {
+          "id": 721654,
+          "image": {
+            "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/0dc61986-bccf-49d4-8fad-6b147ea8f327.jpg",
+            "id": 5539565,
+            "uri": "https://geo-media.beatport.com/image_size/590x404/0dc61986-bccf-49d4-8fad-6b147ea8f327.jpg"
+          },
+          "name": "PENGSHUi",
+          "slug": "pengshui",
+          "url": "https://api.beatport.com/v4/catalog/artists/721654/"
+        }
+      ],
+      "audio_format": {
+        "id": 1,
+        "name": "mp3"
+      },
+      "bpm": 70,
+      "enabled": true,
+      "genre": {
+        "id": 95,
+        "name": "140 / Deep Dubstep / Grime",
+        "slug": "140-deep-dubstep-grime",
+        "url": "https://api.beatport.com/v4/catalog/genres/95/"
+      },
+      "id": 14706086,
+      "image": {
+        "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/beb08c4e-5f11-43c8-97d4-ac973ba93db7.png",
+        "id": 27422586,
+        "uri": "https://geo-media.beatport.com/image_size/1500x250/beb08c4e-5f11-43c8-97d4-ac973ba93db7.png"
+      },
+      "initial_download": false,
+      "is_available_for_streaming": true,
+      "is_hype": false,
+      "key": {
+        "camelot_letter": "A",
+        "camelot_number": 7,
+        "chord_type": {
+          "id": 1,
+          "name": "Minor",
+          "url": "https://api.beatport.com/v4/catalog/chord-types/1/"
+        },
+        "id": 7,
+        "is_flat": false,
+        "is_sharp": false,
+        "letter": "D",
+        "name": "D Minor",
+        "url": "https://api.beatport.com/v4/catalog/keys/7/"
+      },
+      "length_ms": 198574,
+      "mix_name": "Monty Remix",
+      "name": "Wiseman",
+      "new_release_date": "2020-12-18",
+      "order_item_download_id": 444270107,
+      "pre_order_date": null,
+      "price": {
+        "code": "EUR",
+        "display": "€1.29",
+        "symbol": "€",
+        "value": 1.29
+      },
+      "publish_date": "2020-12-18",
+      "purchase_date": "2021-07-12T12:41:25-06:00",
+      "received_status": false,
+      "release": {
+        "id": 3234821,
+        "image": {
+          "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/839a94ca-4436-42ee-aca9-1e574cef5952.jpg",
+          "id": 27422478,
+          "uri": "https://geo-media.beatport.com/image_size/500x500/839a94ca-4436-42ee-aca9-1e574cef5952.jpg"
+        },
+        "label": {
+          "id": 75746,
+          "image": {
+            "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/cda9862c-cf92-4d13-ac65-7e9277181f51.jpg",
+            "id": 5539566,
+            "uri": "https://geo-media.beatport.com/image_size/500x500/cda9862c-cf92-4d13-ac65-7e9277181f51.jpg"
+          },
+          "name": "MVKA",
+          "slug": "mvka"
+        },
+        "name": "Remixes Vol i",
+        "slug": "remixes-vol-i"
+      },
+      "remixers": [
+        {
+          "id": 17892,
+          "image": {
+            "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/9f86f92d-5d89-44d6-bcf3-51c5ae31299d.jpg",
+            "id": 26843084,
+            "uri": "https://geo-media.beatport.com/image_size/590x404/9f86f92d-5d89-44d6-bcf3-51c5ae31299d.jpg"
+          },
+          "name": "Monty",
+          "slug": "monty",
+          "url": "https://api.beatport.com/v4/catalog/artists/17892/"
+        }
+      ],
+      "sample_end_ms": 198646,
+      "sample_start_ms": 79458,
+      "sample_url": "https://geo-samples.beatport.com/track/beb08c4e-5f11-43c8-97d4-ac973ba93db7.LOFI.mp3",
+      "slug": "wiseman",
+      "sub_genre": {
+        "id": 241,
+        "name": "Grime",
+        "slug": "grime",
+        "url": "https://api.beatport.com/v4/catalog/sub-genres/241/"
+      },
+      "upgrade_fees": {
+        "aiff": {
+          "code": "EUR",
+          "display": "€0.70",
+          "symbol": "€",
+          "value": 0.7
+        }
+      },
+      "url": "https://api.beatport.com/v4/catalog/tracks/14706086/"
+    }
+  ]
+}

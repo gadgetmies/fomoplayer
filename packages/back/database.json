@@ -4,6 +4,11 @@
     "host": "localhost",
     "database": "multi-store-player"
   },
+  "test": {
+    "driver": "pg",
+    "host": "localhost",
+    "database": "multi-store-player-test"
+  },
   "prod": {
     "driver": "pg",
     "ssl": {
