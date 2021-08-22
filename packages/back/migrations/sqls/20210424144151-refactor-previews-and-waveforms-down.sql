@@ -1,3 +1,4 @@
+DROP FUNCTION track_details;
 -- This should match with 20210405184440-extract-function-for-track-details-query-up.sql
 CREATE FUNCTION track_details(track_ids INTEGER[], api_url TEXT)
   RETURNS TABLE

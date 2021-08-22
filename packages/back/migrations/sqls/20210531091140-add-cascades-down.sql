@@ -44,8 +44,8 @@ ALTER TABLE store__label_watch
   ADD CONSTRAINT store__label_watch_store__label_id_fkey FOREIGN KEY (store__label_id) REFERENCES store__label (store__label_id);
 
 ALTER TABLE store__label_watch__user
-  DROP CONSTRAINT store__label_watch__user_store__label_watch_id_fkey;
-ALTER TABLE store__label_watch
+  DROP CONSTRAINT IF EXISTS store__label_watch__user_store__label_watch_id_fkey;
+ALTER TABLE store__label_watch__user
   ADD CONSTRAINT store__label_watch__user_store__label_watch_id_fkey FOREIGN KEY (store__label_watch_id) REFERENCES store__label_watch (store__label_watch_id);
 
 ALTER TABLE user__playlist_watch
