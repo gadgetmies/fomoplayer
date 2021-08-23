@@ -1,9 +1,9 @@
-const { test: testDbConfig } = require(`../../database.json`)
-console.log('Initializing database connection with config: ', testDbConfig)
+const dbConfig = require('../../database.json')
+console.log('Initializing db-migrate with config: ', dbConfig)
 
 module.exports = {
   initDb: async () => {
-    const dbMigrate = require('db-migrate').getInstance(true, { testDbConfig, cwd: `${__dirname}/../../` })
+    const dbMigrate = require('db-migrate').getInstance(true, { config: dbConfig, cwd: `${__dirname}/../../` })
     dbMigrate.silence(true)
     console.log('Resetting database')
     await dbMigrate.reset()
@@ -11,5 +11,8 @@ module.exports = {
     await dbMigrate.up()
     console.log('Database initialization done')
   },
-  pg: require('pg-using-bluebird')(testDbConfig)
+  pg: require('pg-using-bluebird')({
+    dbUrl: process.env.DATABASE_URL,
+    statementTimeout: process.env.STATEMENT_TIMEOUT
+  })
 }

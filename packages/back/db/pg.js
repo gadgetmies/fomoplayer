@@ -8,5 +8,5 @@ const env = {
   } : false
 }
 
-logger.info('Initiating server with env: ', env)
+logger.info('Initiating database connection with env: ', env)
 module.exports = require('pg-using-bluebird')(env)

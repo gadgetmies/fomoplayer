@@ -7,7 +7,8 @@
     "start": "supervisor index.js",
     "start:prod": "node index.js",
     "db-migrate:prod": "db-migrate -e prod up",
-    "test": "NODE_ENV=test node -r dotenv/config ./test/run-tests.js ./test/tests dotenv_config_path=.env.test"
+    "test": "NODE_ENV=test node -r dotenv/config ./test/run-tests.js ./test/tests dotenv_config_path=.env.test",
+    "ci:test": "NODE_ENV=ci node -r dotenv/config ./test/run-tests.js ./test/tests dotenv_config_path=.env.ci"
   },
   "engines": {
     "node": "12.x"

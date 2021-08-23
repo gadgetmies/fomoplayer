@@ -1,4 +1,7 @@
 {
+  "defaultEnv": {
+    "ENV": "NODE_ENV"
+  },
   "dev": {
     "driver": "pg",
     "host": "localhost",
@@ -10,7 +13,7 @@
     "database": "multi-store-player-test"
   },
   "ci": {
-    "driver": "pg"
+    "ENV": "DATABASE_URL"
   },
   "prod": {
     "driver": "pg",

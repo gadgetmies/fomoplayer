@@ -5,9 +5,9 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   # Label of the container job
@@ -45,7 +45,7 @@ jobs:
 
       - name: Preinstall system dependencies
         run: |
-          apk add --no-cache git
+          apk add --no-cache git postgresql-client
 
       # Performs a clean installation of all dependencies in the `package.json` file
       # For more information, see https://docs.npmjs.com/cli/ci.html
@@ -58,10 +58,15 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'yarn'
 
+      - name: Setup database
+        run: psql -h postgres -U postgres -c 'CREATE DATABASE "multi-store-player-test";'
+        env:
+          PGPASSWORD: postgres
+
       - name: Run tests
         # Runs a script that creates a PostgreSQL table, populates
         # the table with data, and then retrieves the data.
         run: yarn run ci:test
         # Environment variables used by the `client.js` script to create a new PostgreSQL table.
         env:
-          DATABASE_URL: postgres://postgres:postgres@postgres/multi-store-player
+          DATABASE_URL: postgres://postgres:postgres@postgres/multi-store-player-test
