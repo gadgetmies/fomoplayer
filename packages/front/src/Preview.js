@@ -182,7 +182,7 @@ class Preview extends Component {
   }
 
   getWaveform(track) {
-    return L.get(['previews', L.elems, 'waveform', L.satisfying(R.identity)], track)
+    return L.get(['previews', L.elems, 'waveforms', 0], track)
   }
 
   async updateWaveform(previewUrl) {
