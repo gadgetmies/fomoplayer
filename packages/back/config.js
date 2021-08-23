@@ -1,4 +1,4 @@
-let nodeEnv = process.env.NODE_ENV || 'development'
+const nodeEnv = process.env.NODE_ENV || 'development'
 require('dotenv').config({path: `.env.${nodeEnv}`})
 
 const resolveServiceURL = require('../shared/resolveServiceURL.js')
