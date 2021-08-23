@@ -158,6 +158,13 @@ class Preview extends Component {
   }
 
   async componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
+    if (this.state.playing !== playing) {
+      const player = this.getPlayer()
+      if (player) {
+        player[playing ? 'play' : 'pause']()
+      }
+    }
+
     if (this.props.currentTrack !== nextTrack) {
       this.setState({ loading: true })
       try {
@@ -167,13 +174,6 @@ class Preview extends Component {
         console.error(e)
       }
       this.setState({ loading: false })
-    }
-
-    if (this.state.playing !== playing) {
-      const player = this.getPlayer()
-      if (player) {
-        player[playing ? 'play' : 'pause']()
-      }
     }
   }
 
