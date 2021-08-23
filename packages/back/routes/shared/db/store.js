@@ -431,11 +431,7 @@ INSERT INTO store__track_preview
    store__track_preview_source)
 VALUES
   (${storeTrackId}, ${preview.url}, ${preview.format}, ${preview.start_ms}, ${preview.end_ms}, ${sourceId})
-ON CONFLICT ON CONSTRAINT store__track_preview_store__track_id_preview_url_key
-  DO UPDATE
-  SET
-    store__track_preview_end_ms   = COALESCE(excluded.store__track_preview_end_ms, ${preview.end_ms})
-  , store__track_preview_start_ms = COALESCE(excluded.store__track_preview_start_ms, ${preview.start_ms})
+ON CONFLICT DO NOTHING
 `
     )
     const previewId = await tx

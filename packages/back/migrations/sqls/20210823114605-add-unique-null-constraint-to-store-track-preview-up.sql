@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX store__track_preview_store__track_id_expr_idx ON store__track_preview (store__track_id, (store__track_preview.store__track_preview_url IS NULL)) WHERE store__track_preview.store__track_preview_url IS NULL;
