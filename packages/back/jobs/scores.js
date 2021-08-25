@@ -8,6 +8,8 @@ module.exports.updateDateAddedScore = async () => {
     REFRESH MATERIALIZED VIEW track_date_added_score
     `
   )
+
+  return { success: true }
 }
 
 module.exports.updateDateReleasedScore = async () => {
@@ -17,4 +19,6 @@ module.exports.updateDateReleasedScore = async () => {
     REFRESH MATERIALIZED VIEW track_date_released_score
     `
   )
+
+  return { success: true }
 }
