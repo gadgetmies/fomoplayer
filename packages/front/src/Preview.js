@@ -143,7 +143,7 @@ class Preview extends Component {
     }
 
     this.setState({ previewUrl: url })
-    const waveform = this.getWaveform(track)
+    const waveform = preview.waveforms[0] || this.getWaveform(track)
     if ((!waveform || preview.start_ms === null) && this.audioContext && preview.store !== 'bandcamp') {
       await this.updateWaveform(preview.url)
     } else {
