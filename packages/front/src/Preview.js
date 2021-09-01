@@ -114,7 +114,14 @@ class Preview extends Component {
   constructor(props) {
     super(props)
 
-    this.state = { playing: false, position: 0, mp3Preview: undefined, waveform: undefined, totalDuration: undefined }
+    this.state = {
+      playing: false,
+      position: 0,
+      mp3Preview: undefined,
+      waveform: undefined,
+      totalDuration: undefined,
+      previewUrl: undefined
+    }
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
     }
@@ -135,10 +142,16 @@ class Preview extends Component {
   }
 
   async updateTrack(track, preview) {
-    this.setState({ position: 0, waveform: undefined, totalDuration: undefined, mp3Preview: preview })
+    this.setState({
+      position: 0,
+      waveform: undefined,
+      totalDuration: undefined,
+      mp3Preview: preview,
+      previewUrl: undefined
+    })
+
     let url = preview.url
     if (url === null) {
-      this.setState({ previewUrl: '' })
       url = await this.fetchPreviewUrl(preview)
     }
 
