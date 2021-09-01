@@ -34,7 +34,6 @@ class Player extends Component {
   componentDidMount() {
     const that = this
     document.addEventListener('keydown', event => {
-      console.log(event.target instanceof HTMLInputElement)
       if (event instanceof KeyboardEvent) {
         if (
           event.target.form ||
