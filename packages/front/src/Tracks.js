@@ -6,7 +6,9 @@ import PillButton from './PillButton.js'
 import ExternalLink from './ExternalLink'
 import SpinnerButton from './SpinnerButton'
 import StoreIcon from './StoreIcon'
+import Pullable from 'react-pullable'
 import { requestWithCredentials } from './request-json-with-credentials'
+import { isMobile } from 'react-device-detect'
 
 class Track extends Component {
   constructor(props) {
@@ -325,53 +327,64 @@ class Tracks extends Component {
         <td>{emptyListLabels[this.props.listState]}</td>
       </tr>
     ) : (
-      tracks.map(track => {
-        const { id, title, mix, artists, remixers, labels, releases, released, keys, heard, stores, version } = track
-        return (
-          <Track
-            id={id}
-            title={title}
-            artists={artists}
-            mix={mix}
-            remixers={remixers}
-            labels={labels}
-            released={released}
-            releases={releases}
-            keys={keys}
-            stores={stores}
-            selected={this.state.selectedTrack === id}
-            playing={this.props.currentTrack === id}
-            version={version}
-            heard={heard}
-            inCart={defaultCart ? defaultCart.tracks.find(R.propEq('id', id)) : false}
-            key={id}
-            onClick={() => {
-              this.props.onPreviewRequested(id)
-            }}
-            onDoubleClick={() => {
-              this.props.onPreviewRequested(id)
-            }}
-            onTouchTap={() => {
-              this.props.onPreviewRequested(id)
-            }}
-            onAddToCart={this.props.onAddToCart}
-            onRemoveFromCart={this.props.onRemoveFromCart}
-            onFollowClicked={() => {
-              this.props.onFollowClicked(track)
-            }}
-            onIgnoreClicked={() => {
-              this.props.onIgnoreClicked(track)
-            }}
-            onIgnoreArtistsByLabels={() =>
-              this.props.onIgnoreArtistsByLabels({
-                artistIds: artists.map(R.prop('id')),
-                labelIds: labels.map(R.prop('id'))
-              })
-            }
-          />
-        )
-      })
+      <Pullable onRefresh={this.refreshTracks.bind(this)} spinnerColor="#ffffff">
+        {tracks.map(track => {
+          const { id, title, mix, artists, remixers, labels, releases, released, keys, heard, stores, version } = track
+          return (
+            <Track
+              id={id}
+              title={title}
+              artists={artists}
+              mix={mix}
+              remixers={remixers}
+              labels={labels}
+              released={released}
+              releases={releases}
+              keys={keys}
+              stores={stores}
+              selected={this.state.selectedTrack === id}
+              playing={this.props.currentTrack === id}
+              version={version}
+              heard={heard}
+              inCart={defaultCart ? defaultCart.tracks.find(R.propEq('id', id)) : false}
+              key={id}
+              onClick={() => {
+                this.props.onPreviewRequested(id)
+              }}
+              onDoubleClick={() => {
+                this.props.onPreviewRequested(id)
+              }}
+              onTouchTap={() => {
+                this.props.onPreviewRequested(id)
+              }}
+              onAddToCart={this.props.onAddToCart}
+              onRemoveFromCart={this.props.onRemoveFromCart}
+              onFollowClicked={() => {
+                this.props.onFollowClicked(track)
+              }}
+              onIgnoreClicked={() => {
+                this.props.onIgnoreClicked(track)
+              }}
+              onIgnoreArtistsByLabels={() =>
+                this.props.onIgnoreArtistsByLabels({
+                  artistIds: artists.map(R.prop('id')),
+                  labelIds: labels.map(R.prop('id'))
+                })
+              }
+            />
+          )
+        })}
+      </Pullable>
     )
+  }
+
+  async refreshTracks() {
+    this.setState({ updatingTracks: true })
+    try {
+      await this.props.onUpdateTracksClicked()
+    } finally {
+      this.setState({ updatingTracks: false })
+    }
   }
 
   render() {
@@ -441,22 +454,17 @@ class Tracks extends Component {
               Search
             </label>
           </div>
-          <SpinnerButton
-            style={{ display: 'inline-block', flex: 0 }}
-            className="refresh-tracks"
-            size={'small'}
-            loading={this.state.updatingTracks}
-            onClick={async () => {
-              this.setState({ updatingTracks: true })
-              try {
-                await this.props.onUpdateTracksClicked()
-              } finally {
-                this.setState({ updatingTracks: false })
-              }
-            }}
-            label={'Refresh list'}
-            loadingLabel={'Refreshing'}
-          />
+          {isMobile ? null : (
+            <SpinnerButton
+              style={{ display: 'inline-block', flex: 0 }}
+              className="refresh-tracks"
+              size={'small'}
+              loading={this.state.updatingTracks}
+              onClick={this.refreshTracks.bind(this)}
+              label={'Refresh list'}
+              loadingLabel={'Refreshing'}
+            />
+          )}
           {this.props.listState !== 'search' ? null : (
             <label className={`search-bar`}>
               <input
@@ -525,14 +533,7 @@ class Tracks extends Component {
                   <SpinnerButton
                     size={'large'}
                     loading={this.state.updatingTracks}
-                    onClick={async () => {
-                      this.setState({ updatingTracks: true })
-                      try {
-                        await this.props.onUpdateTracksClicked()
-                      } finally {
-                        this.setState({ updatingTracks: false })
-                      }
-                    }}
+                    onClick={this.refreshTracks.bind(this)}
                     style={{ margin: 'auto', height: '100%', display: 'block' }}
                     label={'Load more'}
                     loadingLabel={'Loading'}
