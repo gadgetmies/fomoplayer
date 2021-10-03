@@ -3,6 +3,7 @@ import React, { Component } from 'react'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
 import SpinnerButton from './SpinnerButton'
 import Spinner from './Spinner'
+import ToggleButton from './ToggleButton'
 
 class Settings extends Component {
   unlockMarkAllHeard() {
@@ -113,6 +114,12 @@ class Settings extends Component {
       path: `/me/ignores/artists-on-labels`
     })
     this.setState({ artistOnLabelIgnores })
+  }
+
+  async setCartSharing(cartId, setPublic) {
+    this.setState({ settingCartPublic: cartId })
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    this.setState({ settingCartPublic: null })
   }
 
   render() {
@@ -272,18 +279,12 @@ class Settings extends Component {
           <ul className="no-style-list follow-list">
             {this.state.playlistFollows.map(playlist => (
               <li>
-                <span
-                  disabled={this.state.updatingPlaylistFollows}
-                  key={playlist.id}
-                  className="button pill pill-button"
-                >
+                <span key={playlist.id} className="button pill pill-button">
                   <span className="pill-button-contents">
-                    <span
-                      aria-hidden="true"
-                      className={`store-icon store-icon-${playlist.storeName.toLowerCase()}`}
-                    ></span>{' '}
+                    <span aria-hidden="true" className={`store-icon store-icon-${playlist.storeName.toLowerCase()}`} />{' '}
                     {playlist.title}{' '}
                     <button
+                      disabled={this.state.updatingPlaylistFollows}
                       onClick={async () => {
                         this.setState({ updatingPlaylistFollows: true })
                         await requestWithCredentials({ path: `/me/follows/playlists/${playlist.id}`, method: 'DELETE' })
@@ -291,7 +292,7 @@ class Settings extends Component {
                         this.setState({ updatingPlaylistFollows: false })
                       }}
                     >
-                      <FontAwesomeIcon icon="close" />
+                      <FontAwesomeIcon icon="times-circle" />
                     </button>
                   </span>
                 </span>
@@ -302,25 +303,27 @@ class Settings extends Component {
           <ul className="no-style-list follow-list">
             {this.state.artistFollows.map(artist => (
               <li>
-                <button
-                  disabled={this.state.updatingArtistFollows}
-                  className="button pill pill-button"
-                  onClick={async () => {
-                    this.setState({ updatingArtistFollows: true })
-                    await requestWithCredentials({ path: `/me/follows/artists/${artist.id}`, method: 'DELETE' })
-                    await this.updateArtistFollows()
-                    this.setState({ updatingArtistFollows: false })
-                  }}
-                >
+                <span className="button pill pill-button">
                   <span className="pill-button-contents">
                     {artist.stores.map(({ name: storeName }) => (
                       <>
-                        <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`}></span>{' '}
+                        <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
                       </>
                     ))}
-                    {artist.name} <FontAwesomeIcon icon="close" />
+                    {artist.name}{' '}
+                    <button
+                      disabled={this.state.updatingArtistFollows}
+                      onClick={async () => {
+                        this.setState({ updatingArtistFollows: true })
+                        await requestWithCredentials({ path: `/me/follows/artists/${artist.id}`, method: 'DELETE' })
+                        await this.updateArtistFollows()
+                        this.setState({ updatingArtistFollows: false })
+                      }}
+                    >
+                      <FontAwesomeIcon icon="times-circle" />
+                    </button>
                   </span>
-                </button>
+                </span>
               </li>
             ))}
           </ul>
@@ -328,25 +331,27 @@ class Settings extends Component {
           <ul className="no-style-list follow-list">
             {this.state.labelFollows.map(label => (
               <li>
-                <button
-                  disabled={this.state.updatingLabelFollows}
-                  className="button pill pill-button"
-                  onClick={async () => {
-                    this.setState({ updatingLabelFollows: true })
-                    await requestWithCredentials({ path: `/me/follows/labels/${label.id}`, method: 'DELETE' })
-                    await this.updateLabelFollows()
-                    this.setState({ updatingLabelFollows: false })
-                  }}
-                >
+                <span className="button pill pill-button">
                   <span className="pill-button-contents">
                     {label.stores.map(({ name: storeName }) => (
                       <>
                         <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`}></span>{' '}
                       </>
                     ))}
-                    {label.name} <FontAwesomeIcon icon="close" />
+                    {label.name}{' '}
+                    <button
+                      disabled={this.state.updatingLabelFollows}
+                      onClick={async () => {
+                        this.setState({ updatingLabelFollows: true })
+                        await requestWithCredentials({ path: `/me/follows/labels/${label.id}`, method: 'DELETE' })
+                        await this.updateLabelFollows()
+                        this.setState({ updatingLabelFollows: false })
+                      }}
+                    >
+                      <FontAwesomeIcon icon="times-circle" />
+                    </button>
                   </span>
-                </button>
+                </span>
               </li>
             ))}
           </ul>
@@ -355,10 +360,11 @@ class Settings extends Component {
           <ul className="no-style-list follow-list">
             {this.state.artistIgnores.map(artist => (
               <li key={artist.id}>
-                <span disabled={this.state.updatingArtistIgnores} className="button pill pill-button">
+                <span className="button pill pill-button">
                   <span className="pill-button-contents">
                     {artist.name}{' '}
                     <button
+                      disabled={this.state.updatingArtistIgnores}
                       onClick={async () => {
                         this.setState({ updatingArtistIgnores: true })
                         await requestWithCredentials({ path: `/me/ignores/artists/${artist.id}`, method: 'DELETE' })
@@ -366,7 +372,7 @@ class Settings extends Component {
                         this.setState({ updatingArtistIgnores: false })
                       }}
                     >
-                      <FontAwesomeIcon icon="close" />
+                      <FontAwesomeIcon icon="times-circle" />
                     </button>
                   </span>
                 </span>
@@ -377,10 +383,11 @@ class Settings extends Component {
           <ul className="no-style-list follow-list">
             {this.state.labelIgnores.map(label => (
               <li key={label.id}>
-                <span disabled={this.state.updatingLabelIgnores} className="button pill pill-button">
+                <span className="button pill pill-button">
                   <span className="pill-button-contents">
                     {label.name}{' '}
                     <button
+                      disabled={this.state.updatingLabelIgnores}
                       onClick={async () => {
                         this.setState({ updatingLabelIgnores: true })
                         await requestWithCredentials({ path: `/me/ignores/labels/${label.id}`, method: 'DELETE' })
@@ -388,7 +395,7 @@ class Settings extends Component {
                         this.setState({ updatingLabelIgnores: false })
                       }}
                     >
-                      <FontAwesomeIcon icon="close" />
+                      <FontAwesomeIcon icon="times-circle" />
                     </button>
                   </span>
                 </span>
@@ -399,10 +406,11 @@ class Settings extends Component {
           <ul className="no-style-list follow-list">
             {this.state.artistOnLabelIgnores.map(({ artist, label }) => (
               <li key={`${artist.id}-${label.id}`}>
-                <span disabled={this.state.updatingArtistOnLabelIgnores} className="button pill pill-button">
+                <span className="button pill pill-button">
                   <span className="pill-button-contents">
                     {artist.name} on ${label.name}
                     <button
+                      disabled={this.state.updatingArtistOnLabelIgnores}
                       onClick={async () => {
                         this.setState({ updatingArtistOnLabelIgnores: true })
                         await requestWithCredentials({
@@ -414,7 +422,7 @@ class Settings extends Component {
                         this.setState({ updatingArtistOnLabelIgnores: false })
                       }}
                     >
-                      <FontAwesomeIcon icon="close" />
+                      <FontAwesomeIcon icon="times-circle" />
                     </button>
                   </span>
                 </span>
