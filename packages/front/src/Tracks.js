@@ -9,6 +9,7 @@ import StoreIcon from './StoreIcon'
 import Pullable from 'react-pullable'
 import { requestWithCredentials } from './request-json-with-credentials'
 import { isMobile } from 'react-device-detect'
+import './Select.css'
 
 class Track extends Component {
   constructor(props) {
@@ -320,7 +321,7 @@ class Tracks extends Component {
       new: 'No tracks available',
       heard: 'No tracks played'
     }
-    const defaultCart = this.props.carts.find(R.prop('is_default'))
+    const defaultCart = carts.find(R.prop('is_default'))
 
     return tracks.length === 0 ? (
       <tr style={{ display: 'block' }}>
@@ -399,60 +400,62 @@ class Tracks extends Component {
     return (
       <div>
         <div className={'top-bar input-layout'}>
-          <div
-            className="state-select-button state-select-button--container noselect"
-            style={{ display: 'inline-block', flex: 0 }}
-          >
-            <input
-              type="radio"
-              id="tracklist-state-new"
-              name="tracklist-state"
-              defaultChecked={this.props.listState === 'new'}
-              onChange={this.props.onShowNewClicked}
-            />
-            <label className="state-select-button--button" htmlFor="tracklist-state-new">
-              New tracks
-            </label>
-            <input
-              type="radio"
-              id="tracklist-state-heard"
-              name="tracklist-state"
-              defaultChecked={this.props.listState === 'heard'}
-              onChange={this.props.onShowHeardClicked}
-            />
-            <label className="state-select-button--button" htmlFor="tracklist-state-heard">
-              Recently played
-            </label>
-            <input
-              type="radio"
-              id="tracklist-state-recentlyAdded"
-              name="tracklist-state"
-              defaultChecked={this.props.listState === 'recentlyAdded'}
-              onChange={this.props.onShowRecentlyAddedClicked}
-            />
-            <label className="state-select-button--button" htmlFor="tracklist-state-recentlyAdded">
-              Recently added
-            </label>
-            <input
-              type="radio"
-              id="tracklist-state-cart"
-              name="tracklist-state"
-              defaultChecked={this.props.listState === 'cart'}
-              onChange={this.props.onShowCartClicked}
-            />
-            <label className="state-select-button--button" htmlFor="tracklist-state-cart">
-              Cart
-            </label>
-            <input
-              type="radio"
-              id="tracklist-state-search"
-              name="tracklist-state"
-              defaultChecked={this.props.listState === 'search'}
-              onChange={this.props.onShowSearchClicked}
-            />
-            <label className="state-select-button--button" htmlFor="tracklist-state-search">
-              Search
-            </label>
+          <div className="top-bar-group">
+            <div
+              className="state-select-button state-select-button--container noselect"
+              style={{ display: 'inline-block', flex: 0 }}
+            >
+              <input
+                type="radio"
+                id="tracklist-state-new"
+                name="tracklist-state"
+                defaultChecked={this.props.listState === 'new'}
+                onChange={this.props.onShowNewClicked}
+              />
+              <label className="state-select-button--button" htmlFor="tracklist-state-new">
+                New tracks
+              </label>
+              <input
+                type="radio"
+                id="tracklist-state-heard"
+                name="tracklist-state"
+                defaultChecked={this.props.listState === 'heard'}
+                onChange={this.props.onShowHeardClicked}
+              />
+              <label className="state-select-button--button" htmlFor="tracklist-state-heard">
+                Recently played
+              </label>
+              <input
+                type="radio"
+                id="tracklist-state-recentlyAdded"
+                name="tracklist-state"
+                defaultChecked={this.props.listState === 'recentlyAdded'}
+                onChange={this.props.onShowRecentlyAddedClicked}
+              />
+              <label className="state-select-button--button" htmlFor="tracklist-state-recentlyAdded">
+                Recently added
+              </label>
+              <input
+                type="radio"
+                id="tracklist-state-cart"
+                name="tracklist-state"
+                defaultChecked={this.props.listState === 'cart'}
+                onChange={this.props.onShowCartClicked}
+              />
+              <label className="state-select-button--button" htmlFor="tracklist-state-cart">
+                Carts
+              </label>
+              <input
+                type="radio"
+                id="tracklist-state-search"
+                name="tracklist-state"
+                defaultChecked={this.props.listState === 'search'}
+                onChange={this.props.onShowSearchClicked}
+              />
+              <label className="state-select-button--button" htmlFor="tracklist-state-search">
+                Search
+              </label>
+            </div>
           </div>
           {isMobile ? null : (
             <SpinnerButton
@@ -466,24 +469,40 @@ class Tracks extends Component {
             />
           )}
           {this.props.listState !== 'search' ? null : (
-            <label className={`search-bar`}>
-              <input
-                autoFocus
-                id="search"
-                className="search"
-                onChange={e => this.setSearch(e.target.value)}
-                value={this.state.search}
-              />
-              {this.state.search ? (
-                <FontAwesomeIcon
-                  onClick={() => this.setSearch('')}
-                  className={'search-input-icon clear-search'}
-                  icon="times-circle"
+            <div className="top-bar-group">
+              <label className="search-bar">
+                <input
+                  autoFocus
+                  id="search"
+                  className="search"
+                  onChange={e => this.setSearch(e.target.value)}
+                  value={this.state.search}
                 />
-              ) : (
-                <FontAwesomeIcon className={'search-input-icon'} icon="search" />
-              )}
-            </label>
+                {this.state.search ? (
+                  <FontAwesomeIcon
+                    onClick={() => this.setSearch('')}
+                    className={'search-input-icon clear-search'}
+                    icon="times-circle"
+                  />
+                ) : (
+                  <FontAwesomeIcon className={'search-input-icon'} icon="search" />
+                )}
+              </label>
+            </div>
+          )}
+          {this.props.listState !== 'cart' ? null : (
+            <div className="top-bar-group">
+              <div className="state-select-button state-select-button--container cart-bar">
+                <label className="state-select-button--button" htmlFor="cart-select">
+                  Cart:
+                </label>
+                <select className="select" id="cart-select" onChange={e => this.props.onSelectCart(parseInt(e.target.value))}>
+                  {this.props.carts.map(cart => (
+                    <option value={cart.id} key={cart.id}>{cart.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           )}
         </div>
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>

@@ -14,11 +14,12 @@ class Player extends Component {
 
     this.state = {
       currentTrack: null,
-      heardTracks: this.props.tracks.heard,
+      heardTracks: props.tracks.heard,
       listenedTracks: 0,
       listState: 'new',
       searchResults: [],
-      togglingCurrentInCart: false
+      togglingCurrentInCart: false,
+      selectedCartId: props.carts.find(R.prop('is_default')).id
     }
 
     this.preview = React.createRef()
@@ -238,6 +239,10 @@ class Player extends Component {
     this.setState({ searchResults })
   }
 
+  selectCart(selectedCartId) {
+    this.setState({ selectedCartId: selectedCartId })
+  }
+
   mergeHeardStatus(tracks) {
     this.state.heardTracks.forEach(heardTrack => {
       const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
@@ -257,7 +262,7 @@ class Player extends Component {
     } else if (this.state.listState === 'recentlyAdded') {
       tracks = this.props.tracks.recentlyAdded.slice()
     } else if (this.state.listState === 'cart') {
-      tracks = this.props.carts.find(R.prop('is_default')).tracks
+      tracks = this.props.carts.find(R.propEq('id', this.state.selectedCartId)).tracks
     } else if (this.state.listState === 'search') {
       tracks = this.state.searchResults
     }
@@ -382,6 +387,7 @@ class Player extends Component {
           onShowCartClicked={this.setListState.bind(this, 'cart')}
           onShowSearchClicked={this.setListState.bind(this, 'search')}
           onSearchResults={this.setSearchResults.bind(this)}
+          onSelectCart={this.selectCart.bind(this)}
         />
       </div>
     )
