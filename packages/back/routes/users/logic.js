@@ -42,6 +42,7 @@ const {
   insertCart,
   queryCartDetails,
   deleteCart,
+  updateCart,
   queryDefaultCartId,
   insertTracksToCart,
   deleteTracksFromCart,
@@ -311,6 +312,11 @@ module.exports.createCart = insertCart
 module.exports.removeCart = async (userId, cartId) => {
   await verifyCartOwnership(userId, cartId)
   await deleteCart(cartId)
+}
+
+module.exports.updateCart = async (userId, cartId, properties) => {
+  await verifyCartOwnership(userId, cartId)
+  await updateCart(cartId, properties)
 }
 
 const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId, trackIds) => {

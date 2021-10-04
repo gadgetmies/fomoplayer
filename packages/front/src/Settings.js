@@ -4,6 +4,8 @@ import { requestJSONwithCredentials, requestWithCredentials } from './request-js
 import SpinnerButton from './SpinnerButton'
 import Spinner from './Spinner'
 import ToggleButton from './ToggleButton'
+import config from './config.js'
+import * as R from 'ramda'
 
 class Settings extends Component {
   unlockMarkAllHeard() {
@@ -47,7 +49,9 @@ class Settings extends Component {
       followDetails: undefined,
       followDetailsUpdateAborted: false,
       markAllHeardUnlocked: false,
-      markingHeard: null
+      markingHeard: null,
+      settingCartPublic: null,
+      publicCarts: new Set(props.carts.filter(R.prop('is_public')).map(R.prop('id')))
     }
 
     this.markHeardButton.bind(this)
@@ -117,9 +121,17 @@ class Settings extends Component {
   }
 
   async setCartSharing(cartId, setPublic) {
-    this.setState({ settingCartPublic: cartId })
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    this.setState({ settingCartPublic: null })
+    this.setState({ settingCartPublic: cartId, updatingCarts: true })
+    await requestWithCredentials({
+      path: `/me/carts/${cartId}`,
+      method: 'POST',
+      body: {
+        is_public: setPublic
+      }
+    })
+    const updatedPublicCarts = new Set(this.state.publicCarts)
+    setPublic ? updatedPublicCarts.add(cartId) : updatedPublicCarts.delete(cartId)
+    this.setState({ settingCartPublic: null, updatingCarts: false, publicCarts: updatedPublicCarts })
   }
 
   render() {
@@ -127,10 +139,9 @@ class Settings extends Component {
       <div className="page-container scroll-container settings-container">
         <div>
           <h2>Settings</h2>
-          {/*
           <h3>Carts ({this.props.carts.length})</h3>
           <label>
-            Add cart:
+            Create cart:
             <div className="input-layout">
               <input
                 className="text-input text-input-small"
@@ -162,31 +173,64 @@ class Settings extends Component {
               />
             </div>
           </label>
-          <div>
-            <ul className="no-style-list follow-list">
-              {this.props.carts.map(cart => (
-                <li>
-                  <span disabled={this.state.updatingCarts} key={cart.id} className="button pill pill-button">
-                    <span className="pill-button-contents">
-                      {cart.name}{' '}
-                      <button
-                        disabled={this.state.addingCart || this.state.updatingCarts}
+          <p>
+            {this.props.carts.map(cart => {
+              const buttonId = `sharing-${cart.id}`
+              const publicLink = new URL(`/cart/${cart.uuid}`, window.location).toString()
+              return (
+                <>
+                  <h4>{cart.name}</h4>
+                  <p>
+                    <div style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
+                      <label htmlFor={buttonId} className="noselect">
+                        Sharing enabled:
+                      </label>
+                      <ToggleButton
+                        id={buttonId}
+                        checked={cart.is_public}
+                        disabled={this.state.settingCartPublic !== null || this.state.updatingCarts}
+                        onChange={state => this.setCartSharing(cart.id, state)}
+                      />
+                      {this.state.settingCartPublic === cart.id ? <Spinner size="small" /> : null}
+                    </div>
+                    <br />
+                    {this.state.publicCarts.has(cart.id) ? (
+                      <div style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
+                        <span>URL:</span>
+                        <a href={publicLink} className="link" target="_blank">
+                          {publicLink}
+                        </a>
+                        <button
+                          type="submit"
+                          className={`button button-push_button-small button-push_button-primary`}
+                          onClick={() => navigator.clipboard.writeText(publicLink)}
+                        >
+                          <FontAwesomeIcon icon="clipboard" /> Copy
+                        </button>
+                      </div>
+                    ) : null}
+                  </p>
+                  {cart.is_default ? null : (
+                    <p>
+                      <SpinnerButton
+                        loading={this.state.deletingCart}
+                        className={`button button-push_button-small button-push_button-primary`}
+                        disabled={this.state.addingCart || this.state.updatingCarts || this.state.deletingCart}
                         onClick={async () => {
-                          this.setState({ updatingCarts: true })
+                          this.setState({ deletingCart: cart.id, updatingCarts: true })
                           await requestWithCredentials({ path: `/me/carts/${cart.id}`, method: 'DELETE' })
                           await this.props.onUpdateCarts()
-                          this.setState({ updatingCarts: false })
+                          this.setState({ deletingCart: null, updatingCarts: false })
                         }}
                       >
-                        <FontAwesomeIcon icon="times-circle" />
-                      </button>
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          */}
+                        Delete cart "{cart.name}"
+                      </SpinnerButton>
+                    </p>
+                  )}
+                </>
+              )
+            })}
+          </p>
           <h3>Following</h3>
           <label>
             Add by name or URL to follow:

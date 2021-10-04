@@ -30,6 +30,7 @@ const {
   createCart,
   getUserCarts,
   removeCart,
+  updateCart,
   updateDefaultCart,
   getDefaultCartDetails
 } = require('./logic')
@@ -207,6 +208,11 @@ router.post('/carts', async ({ user: { id: userId }, body: { name } }, res) => {
 
 router.delete('/carts/:id', async ({ user: { id: userId }, params: { id } }, res) => {
   await removeCart(userId, id)
+  res.status(204).send()
+})
+
+router.post('/carts/:id', async ({ user: { id: userId }, params: { id }, body }, res) => {
+  await updateCart(userId, id, body)
   res.status(204).send()
 })
 

@@ -794,6 +794,7 @@ SELECT
 FROM cart
 WHERE
   meta_account_user_id = ${userId}
+ORDER BY cart_is_default NULLS LAST, cart_name
 `
   )
 
@@ -811,9 +812,9 @@ module.exports.insertCart = async (userId, name) =>
     // language=PostgreSQL
     sql`--insertCart
 INSERT INTO cart
-  (cart_name, meta_account_user_id, cart_is_default)
+  (cart_name, meta_account_user_id)
 VALUES
-  (${name}, ${userId}, TRUE)
+  (${name}, ${userId})
 RETURNING cart_id AS id, cart_name AS name`
   )
 
@@ -839,10 +840,12 @@ WITH
 , td AS (SELECT *, track_id AS id FROM track_details((SELECT tracks FROM cart_tracks), ${userId}))
 , tracks AS (SELECT json_agg(td) AS tracks FROM td)
 SELECT
-  cart_id                           AS id
-, cart_name                         AS name
-, COALESCE(cart_is_default, FALSE)  AS is_default,
-  CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks  
+  cart_id         AS id
+, cart_name       AS name
+, cart_is_default AS is_default
+, cart_is_public  AS is_public
+, cart_uuid       AS uuid
+, CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks  
 FROM
   cart,
   tracks
@@ -860,6 +863,18 @@ module.exports.deleteCart = async cartId =>
     sql`-- deleteCart
 DELETE
 FROM cart
+WHERE
+  cart_id = ${cartId}
+`
+  )
+
+module.exports.updateCart = async (cartId, { name, is_public }) =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`---updateCart
+UPDATE cart
+SET cart_name      = COALESCE(${name} :: TEXT, cart_name),
+  cart_is_public = COALESCE(${is_public}, cart_is_public)
 WHERE
   cart_id = ${cartId}
 `
