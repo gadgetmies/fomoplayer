@@ -1,7 +1,6 @@
 const sql = require('sql-template-strings')
 const R = require('ramda')
 const pg = require('../db/pg.js')
-const { apiURL } = require('../config')
 
 module.exports.queryLongestPreviewForTrack = (id, format, skip) =>
   pg
