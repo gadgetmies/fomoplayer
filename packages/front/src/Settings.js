@@ -4,6 +4,7 @@ import { requestJSONwithCredentials, requestWithCredentials } from './request-js
 import SpinnerButton from './SpinnerButton'
 import Spinner from './Spinner'
 import ToggleButton from './ToggleButton'
+import CopyToClipboardButton from './CopyToClipboardButton'
 import config from './config.js'
 import * as R from 'ramda'
 
@@ -200,13 +201,7 @@ class Settings extends Component {
                         <a href={publicLink} className="link" target="_blank">
                           {publicLink}
                         </a>
-                        <button
-                          type="submit"
-                          className={`button button-push_button-small button-push_button-primary`}
-                          onClick={() => navigator.clipboard.writeText(publicLink)}
-                        >
-                          <FontAwesomeIcon icon="clipboard" /> Copy
-                        </button>
+                        <CopyToClipboardButton content={publicLink}/>
                       </div>
                     ) : null}
                   </p>

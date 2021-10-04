@@ -6,6 +6,7 @@ import PillButton from './PillButton.js'
 import ExternalLink from './ExternalLink'
 import SpinnerButton from './SpinnerButton'
 import StoreIcon from './StoreIcon'
+import CopyToClipboardButton from './CopyToClipboardButton'
 import Pullable from 'react-pullable'
 import { requestWithCredentials } from './request-json-with-credentials'
 import { isMobile } from 'react-device-detect'
@@ -204,7 +205,11 @@ class Track extends Component {
                   <StoreIcon code={store.code} />
                 </ExternalLink>
               ))
-            )}
+            )}{' '}
+            <CopyToClipboardButton
+              content={`Listen to "${artistsAndRemixers.map(R.prop('name')).join(', ')} - ${title}" on
+${this.props.stores.map(store => `${store.name}: ${store.url || store.release.url}`).join('\n')}`}
+            />
           </div>
           <div className="search-cell track-table-cell">
             {beaportTrack ? null : (
