@@ -67,21 +67,23 @@ class Track extends Component {
         }}
         className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''}`}
       >
-        <td className={'new-cell tracks-cell'}>
-          <button
-            className="button table-cell-button track-play-button"
-            onClick={this.props.onDoubleClick.bind(this)}
-            onMouseEnter={() => this.setHeardHover(true)}
-            onMouseLeave={() => this.setHeardHover(false)}
-          >
-            {this.state.heardHover ? (
-              <FontAwesomeIcon icon="play" />
-            ) : !!this.props.heard ? null : (
-              <FontAwesomeIcon icon="circle" />
-            )}
-          </button>
-          {!!this.props.heard ? null : <div className={'track-new-indicator'} />}
-        </td>
+        {this.props.mode === 'app' ? (
+          <td className={'new-cell tracks-cell'}>
+            <button
+              className="button table-cell-button track-play-button"
+              onClick={this.props.onDoubleClick.bind(this)}
+              onMouseEnter={() => this.setHeardHover(true)}
+              onMouseLeave={() => this.setHeardHover(false)}
+            >
+              {this.state.heardHover ? (
+                <FontAwesomeIcon icon="play" />
+              ) : !!this.props.heard ? null : (
+                <FontAwesomeIcon icon="circle" />
+              )}
+            </button>
+            {!!this.props.heard ? null : <div className={'track-new-indicator'} />}
+          </td>
+        ) : null}
         <td className={'track-details tracks-cell'}>
           <div className={'track-details-left track-details-content'}>
             <div className={'artist-cell track-table-cell'} title={artistsAndRemixers.map(R.prop('name'))}>
@@ -128,63 +130,65 @@ class Track extends Component {
             </div>
           </div>
         </td>
-        <td className={'follow-ignore-cart-cell tracks-cell'}>
-          <div className={'cart-cell track-table-cell'}>
-            <PillButton
-              disabled={this.state.processingCart}
-              className={'table-cell-button'}
-              onClick={async e => {
-                e.stopPropagation()
-                if (this.props.inCart) {
-                  this.setState({ processingCart: true })
-                  try {
-                    await this.props.onRemoveFromCart(this.props.id)
-                  } catch (e) {
-                    console.error('Error while removing from cart', e)
-                  } finally {
-                    this.setState({ processingCart: false })
+        {this.props.mode === 'app' ? (
+          <td className={'follow-ignore-cart-cell tracks-cell'}>
+            <div className={'cart-cell track-table-cell'}>
+              <PillButton
+                disabled={this.state.processingCart}
+                className={'table-cell-button'}
+                onClick={async e => {
+                  e.stopPropagation()
+                  if (this.props.inCart) {
+                    this.setState({ processingCart: true })
+                    try {
+                      await this.props.onRemoveFromCart(this.props.id)
+                    } catch (e) {
+                      console.error('Error while removing from cart', e)
+                    } finally {
+                      this.setState({ processingCart: false })
+                    }
+                  } else {
+                    this.setState({ processingCart: true })
+                    try {
+                      await this.props.onAddToCart(this.props.id)
+                    } catch (e) {
+                      console.error('Error while adding to cart', e)
+                    } finally {
+                      this.setState({ processingCart: false })
+                    }
                   }
-                } else {
-                  this.setState({ processingCart: true })
-                  try {
-                    await this.props.onAddToCart(this.props.id)
-                  } catch (e) {
-                    console.error('Error while adding to cart', e)
-                  } finally {
-                    this.setState({ processingCart: false })
-                  }
-                }
-              }}
-            >
-              <FontAwesomeIcon icon={this.props.inCart ? 'minus' : 'plus'} />
-              <span className={'cart-button-label'}>{this.props.inCart ? 'Remove from cart' : 'Add to cart'}</span>
-            </PillButton>
-          </div>
-          <div className="follow-cell track-table-cell">
-            <PillButton
-              className={'table-cell-button'}
-              onClick={e => {
-                e.stopPropagation()
-                this.props.onFollowClicked()
-              }}
-            >
-              <FontAwesomeIcon icon={'heart'} />
-              <span className={'follow-button-label'} />
-            </PillButton>
-          </div>
-          <div className="ignore-cell track-table-cell">
-            <PillButton
-              className={'table-cell-button'}
-              onClick={e => {
-                e.stopPropagation()
-                this.props.onIgnoreClicked()
-              }}
-            >
-              <FontAwesomeIcon icon={'ban'} />
-              <span className={'ignore-button-label'} />
-            </PillButton>
-          </div>
-        </td>
+                }}
+              >
+                <FontAwesomeIcon icon={this.props.inCart ? 'minus' : 'plus'} />
+                <span className={'cart-button-label'}>{this.props.inCart ? 'Remove from cart' : 'Add to cart'}</span>
+              </PillButton>
+            </div>
+            <div className="follow-cell track-table-cell">
+              <PillButton
+                className={'table-cell-button'}
+                onClick={e => {
+                  e.stopPropagation()
+                  this.props.onFollowClicked()
+                }}
+              >
+                <FontAwesomeIcon icon={'heart'} />
+                <span className={'follow-button-label'} />
+              </PillButton>
+            </div>
+            <div className="ignore-cell track-table-cell">
+              <PillButton
+                className={'table-cell-button'}
+                onClick={e => {
+                  e.stopPropagation()
+                  this.props.onIgnoreClicked()
+                }}
+              >
+                <FontAwesomeIcon icon={'ban'} />
+                <span className={'ignore-button-label'} />
+              </PillButton>
+            </div>
+          </td>
+        ) : null}
         <td className={'open-search-cell tracks-cell'}>
           <div className={'open-cell track-table-cell'}>
             {R.intersperse(
@@ -255,6 +259,7 @@ class Tracks extends Component {
     super(props)
     this.state = {
       selectedTrack: (props.tracks[0] || {}).id,
+      selectedCart: null,
       currentTrack: -1,
       markingHeard: false,
       currentBelowScreen: false,
@@ -333,6 +338,7 @@ class Tracks extends Component {
           const { id, title, mix, artists, remixers, labels, releases, released, keys, heard, stores, version } = track
           return (
             <Track
+              mode={this.props.mode}
               id={id}
               title={title}
               artists={artists}
@@ -400,64 +406,66 @@ class Tracks extends Component {
     return (
       <div>
         <div className={'top-bar input-layout'}>
-          <div className="top-bar-group">
-            <div
-              className="state-select-button state-select-button--container noselect"
-              style={{ display: 'inline-block', flex: 0 }}
-            >
-              <input
-                type="radio"
-                id="tracklist-state-new"
-                name="tracklist-state"
-                defaultChecked={this.props.listState === 'new'}
-                onChange={this.props.onShowNewClicked}
-              />
-              <label className="state-select-button--button" htmlFor="tracklist-state-new">
-                New tracks
-              </label>
-              <input
-                type="radio"
-                id="tracklist-state-heard"
-                name="tracklist-state"
-                defaultChecked={this.props.listState === 'heard'}
-                onChange={this.props.onShowHeardClicked}
-              />
-              <label className="state-select-button--button" htmlFor="tracklist-state-heard">
-                Recently played
-              </label>
-              <input
-                type="radio"
-                id="tracklist-state-recentlyAdded"
-                name="tracklist-state"
-                defaultChecked={this.props.listState === 'recentlyAdded'}
-                onChange={this.props.onShowRecentlyAddedClicked}
-              />
-              <label className="state-select-button--button" htmlFor="tracklist-state-recentlyAdded">
-                Recently added
-              </label>
-              <input
-                type="radio"
-                id="tracklist-state-cart"
-                name="tracklist-state"
-                defaultChecked={this.props.listState === 'cart'}
-                onChange={this.props.onShowCartClicked}
-              />
-              <label className="state-select-button--button" htmlFor="tracklist-state-cart">
-                Carts
-              </label>
-              <input
-                type="radio"
-                id="tracklist-state-search"
-                name="tracklist-state"
-                defaultChecked={this.props.listState === 'search'}
-                onChange={this.props.onShowSearchClicked}
-              />
-              <label className="state-select-button--button" htmlFor="tracklist-state-search">
-                Search
-              </label>
+          {this.props.mode === 'app' ? (
+            <div className="top-bar-group">
+              <div
+                className="state-select-button state-select-button--container noselect"
+                style={{ display: 'inline-block', flex: 0 }}
+              >
+                <input
+                  type="radio"
+                  id="tracklist-state-new"
+                  name="tracklist-state"
+                  defaultChecked={this.props.listState === 'new'}
+                  onChange={this.props.onShowNewClicked}
+                />
+                <label className="state-select-button--button" htmlFor="tracklist-state-new">
+                  New tracks
+                </label>
+                <input
+                  type="radio"
+                  id="tracklist-state-heard"
+                  name="tracklist-state"
+                  defaultChecked={this.props.listState === 'heard'}
+                  onChange={this.props.onShowHeardClicked}
+                />
+                <label className="state-select-button--button" htmlFor="tracklist-state-heard">
+                  Recently played
+                </label>
+                <input
+                  type="radio"
+                  id="tracklist-state-recentlyAdded"
+                  name="tracklist-state"
+                  defaultChecked={this.props.listState === 'recentlyAdded'}
+                  onChange={this.props.onShowRecentlyAddedClicked}
+                />
+                <label className="state-select-button--button" htmlFor="tracklist-state-recentlyAdded">
+                  Recently added
+                </label>
+                <input
+                  type="radio"
+                  id="tracklist-state-cart"
+                  name="tracklist-state"
+                  defaultChecked={this.props.listState === 'cart'}
+                  onChange={this.props.onShowCartClicked}
+                />
+                <label className="state-select-button--button" htmlFor="tracklist-state-cart">
+                  Carts
+                </label>
+                <input
+                  type="radio"
+                  id="tracklist-state-search"
+                  name="tracklist-state"
+                  defaultChecked={this.props.listState === 'search'}
+                  onChange={this.props.onShowSearchClicked}
+                />
+                <label className="state-select-button--button" htmlFor="tracklist-state-search">
+                  Search
+                </label>
+              </div>
             </div>
-          </div>
-          {isMobile ? null : (
+          ) : null}
+          {!isMobile && !this.props.mode === 'app' ? (
             <SpinnerButton
               style={{ display: 'inline-block', flex: 0 }}
               className="refresh-tracks"
@@ -467,7 +475,7 @@ class Tracks extends Component {
               label={'Refresh list'}
               loadingLabel={'Refreshing'}
             />
-          )}
+          ) : null}
           {this.props.listState !== 'search' ? null : (
             <div className="top-bar-group">
               <label className="search-bar">
@@ -496,11 +504,23 @@ class Tracks extends Component {
                 <label className="state-select-button--button" htmlFor="cart-select">
                   Cart:
                 </label>
-                <select className="select" id="cart-select" onChange={e => this.props.onSelectCart(parseInt(e.target.value))}>
-                  {this.props.carts.map(cart => (
-                    <option value={cart.id} key={cart.id}>{cart.name}</option>
-                  ))}
-                </select>
+                {this.props.mode === 'app' ? (
+                  <select
+                    className="select"
+                    id="cart-select"
+                    onChange={e => this.props.onSelectCart(parseInt(e.target.value))}
+                  >
+                    {this.props.carts.map(cart => (
+                      <option value={cart.id} key={cart.id}>
+                        {cart.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="state-select-button--button state-select-button--button__active">
+                    {this.props.carts[0].name}
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -508,9 +528,11 @@ class Tracks extends Component {
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
           <thead className={'noselect tracks-table-header'}>
             <tr style={{ display: 'block' }} className={'noselect'}>
-              <th className={'new-cell tracks-cell'}>
-                <div className={'new-cell-content track-table-cell'}>New</div>
-              </th>
+              {this.props.mode === 'app' ? (
+                <th className={'new-cell tracks-cell'}>
+                  <div className={'new-cell-content track-table-cell'}>New</div>
+                </th>
+              ) : null}
               <th className={'track-details tracks-cell'}>
                 <div className={'track-details-left track-details-content'}>
                   <div className={'artist-cell track-table-cell'}>Artist</div>
@@ -522,11 +544,13 @@ class Tracks extends Component {
                   <div className={'key-cell track-table-cell'}>Key</div>
                 </div>
               </th>
-              <th className={'follow-ignore-cart-cell tracks-cell'}>
-                <div className={'cart-cell track-table-cell'}>Cart</div>
-                <div className={'follow-cell track-table-cell'}>Follow</div>
-                <div className={'ignore-cell track-table-cell'}>Ignore</div>
-              </th>
+              {this.props.mode === 'app' ? (
+                <th className={'follow-ignore-cart-cell tracks-cell'}>
+                  <div className={'cart-cell track-table-cell'}>Cart</div>
+                  <div className={'follow-cell track-table-cell'}>Follow</div>
+                  <div className={'ignore-cell track-table-cell'}>Ignore</div>
+                </th>
+              ) : null}
               <th className={'open-search-cell tracks-cell'}>
                 <div className={'open-cell track-table-cell'}>Open</div>
                 <div className={'search-cell track-table-cell'}>Search</div>

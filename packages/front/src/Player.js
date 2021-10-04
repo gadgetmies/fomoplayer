@@ -14,9 +14,9 @@ class Player extends Component {
 
     this.state = {
       currentTrack: null,
-      heardTracks: props.tracks.heard,
+      heardTracks: props.tracks ? props.tracks.heard : [],
       listenedTracks: 0,
-      listState: 'new',
+      listState: props.tracks ? 'new' : 'cart',
       searchResults: [],
       togglingCurrentInCart: false,
       selectedCartId: props.carts.find(R.prop('is_default')).id
@@ -79,11 +79,14 @@ class Player extends Component {
   async setCurrentTrack(track) {
     localStorage.setItem('currentTrack', JSON.stringify(track))
     this.setState({ currentTrack: track })
-    await requestWithCredentials({
-      path: `/me/tracks/${track.id}`,
-      method: 'POST',
-      body: { heard: true }
-    })
+
+    if (this.props.mode === 'app') {
+      await requestWithCredentials({
+        path: `/me/tracks/${track.id}`,
+        method: 'POST',
+        body: { heard: true }
+      })
+    }
     this.markHeard(track)
   }
 
@@ -321,15 +324,17 @@ class Player extends Component {
     const currentTrack = this.getCurrentTrack()
     return (
       <div className="page-container">
-        <FollowPopup
-          open={this.state.followPopupOpen}
-          track={this.state.followPopupTrack}
-          follows={this.props.follows}
-          onCloseClicked={this.closePopups.bind(this)}
-          onFollowArtist={this.followArtist.bind(this)}
-          onFollowLabel={this.followLabel.bind(this)}
-          onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
-        />
+        {this.props.follows ? (
+          <FollowPopup
+            open={this.state.followPopupOpen}
+            track={this.state.followPopupTrack}
+            follows={this.props.follows}
+            onCloseClicked={this.closePopups.bind(this)}
+            onFollowArtist={this.followArtist.bind(this)}
+            onFollowLabel={this.followLabel.bind(this)}
+            onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
+          />
+        ) : null}
         <IgnorePopup
           open={this.state.ignorePopupOpen}
           track={this.state.ignorePopupTrack}
@@ -352,13 +357,14 @@ class Player extends Component {
         />
         <Preview
           key={'preview'}
+          mode={this.props.mode}
           togglingCurrentInCart={this.state.togglingCurrentInCart}
           showHint={tracks.length === 0}
           currentTrack={currentTrack}
           onPrevious={() => this.playPreviousTrack()}
           onNext={() => this.playNextTrack()}
-          newTracks={this.props.newTracks - this.state.listenedTracks}
-          totalTracks={this.props.totalTracks}
+          newTracks={this.props.meta ? this.props.meta.newTracks - this.state.listenedTracks : null}
+          totalTracks={this.props.meta ? this.props.meta.totalTracks : null}
           onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
           onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
           inCart={this.isCurrentInCart()}
@@ -366,6 +372,7 @@ class Player extends Component {
         />
         <Tracks
           key={'tracks'}
+          mode={this.props.mode}
           carts={this.props.carts}
           tracks={tracks}
           listState={this.state.listState}

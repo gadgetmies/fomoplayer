@@ -13,7 +13,7 @@ import StoreIcon from './StoreIcon'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
-const shortcuts = (
+const getShortcuts = mode => (
   <div style={{ float: 'right', color: 'white' }} className="popup-container">
     <FontAwesomeIcon icon="keyboard" className="popup-anchor" style={{ right: 0, top: 0, margin: 10 }} />
     <div className="popup-content" style={{ right: 0, top: 0, margin: '0 5 5 5', paddingRight: 50 }}>
@@ -98,12 +98,14 @@ const shortcuts = (
             </td>
             <td>Scan backward</td>
           </tr>
-          <tr>
-            <td colSpan="2">
-              <span className="keyboard-shortcut">P</span>
-            </td>
-            <td>Add / remove current track to / from cart</td>
-          </tr>
+          {mode === 'app' ? (
+            <tr>
+              <td colSpan="2">
+                <span className="keyboard-shortcut">P</span>
+              </td>
+              <td>Add / remove current track to / from cart</td>
+            </tr>
+          ) : null}
         </tbody>
       </table>
     </div>
@@ -127,6 +129,7 @@ class Preview extends Component {
     }
 
     this.setVolume = this.setVolume.bind(this)
+    this.shortcuts = getShortcuts(props.mode)
   }
 
   setPlaying(playing) {
@@ -246,7 +249,7 @@ class Preview extends Component {
 
     return (
       <div className="preview noselect">
-        {shortcuts}
+        {this.shortcuts}
         <TrackTitle
           className="preview-title"
           artists={(currentTrack || { artists: [] }).artists}
@@ -358,7 +361,7 @@ class Preview extends Component {
             <button className="button button__light button-playback" onClick={() => this.togglePlaying()}>
               <FontAwesomeIcon icon={this.state.playing ? 'pause' : 'play'} />
             </button>
-            {this.props.togglingCurrentInCart ? (
+            {this.props.mode !== 'app' ? null : this.props.togglingCurrentInCart ? (
               <div
                 style={{
                   height: '100%',
@@ -383,7 +386,9 @@ class Preview extends Component {
             )}
           </div>
 
-          <Collection newTracks={this.props.newTracks} totalTracks={this.props.totalTracks} />
+          {this.props.newTracks !== null && this.props.totalTracks !== null ? (
+            <Collection newTracks={this.props.newTracks} totalTracks={this.props.totalTracks} />
+          ) : null}
         </div>
       </div>
     )

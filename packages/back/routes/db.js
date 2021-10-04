@@ -117,3 +117,15 @@ UNION ALL
          query
        FROM query))`
   )
+
+module.exports.queryCartDetailsByUuid = async uuid => {
+  const [details] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- searchForTracks
+SELECT cart_id AS "id", cart_is_public AS "isPublic"
+FROM cart
+WHERE cart_uuid = ${uuid}`
+  )
+
+  return details
+}

@@ -87,12 +87,21 @@ class App extends Component {
   }
 
   async componentDidMount() {
-    try {
-      await Promise.all([this.updateTracks(), this.updateCarts(), this.updateFollows()])
-      this.setState({ loggedIn: true })
-    } catch (e) {
-      console.error(e)
-      this.setState({ loggedIn: false })
+    let cartString = '/cart/'
+    if (window.location.pathname.startsWith(cartString)) {
+      const list = await requestJSONwithCredentials({
+        path: `/carts/${window.location.pathname.substring(cartString.length)}`
+      })
+
+      this.setState({ list })
+    } else {
+      try {
+        await Promise.all([this.updateTracks(), this.updateCarts(), this.updateFollows()])
+        this.setState({ loggedIn: true })
+      } catch (e) {
+        console.error(e)
+        this.setState({ loggedIn: false })
+      }
     }
 
     this.setState({ loading: false })
@@ -210,6 +219,7 @@ class App extends Component {
                   path="/"
                   render={() => (
                     <Player
+                      mode='app'
                       addingToCart={this.state.addingToCart}
                       onUpdateTracksClicked={this.updateTracks.bind(this)}
                       carts={this.state.carts}
@@ -237,6 +247,11 @@ class App extends Component {
                 />
               </SlideoutPanel>
             </>
+          ) : this.state.list ? (
+            <Player
+              mode='list'
+              carts={[this.state.list]}
+            />
           ) : (
             <div className="align-center-container full-screen-popup-container">
               <div className="full-screen-popup">

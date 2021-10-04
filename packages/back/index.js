@@ -52,6 +52,8 @@ app.use('/api/auth', auth)
 
 const authenticateJwt = passport.authenticate('jwt', { session: false })
 
+app.use('/api', require('./routes/public.js'))
+
 app.use(
   '/api',
   (req, res, next) => {
