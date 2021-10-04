@@ -799,7 +799,7 @@ WHERE
 
   const cartDetails = []
   for (const { id } of carts) {
-    const [details] = await queryCartDetails(id, userId)
+    const details = await queryCartDetails(id, userId)
     cartDetails.push(details)
   }
 
@@ -830,8 +830,8 @@ WHERE
   )
 }
 
-const queryCartDetails = (module.exports.queryCartDetails = async (cartId, userId) =>
-  pg.queryRowsAsync(
+const queryCartDetails = (module.exports.queryCartDetails = async (cartId, userId) => {
+  const [details] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryCartDetails
 WITH
@@ -849,7 +849,10 @@ FROM
 WHERE
   cart_id = ${cartId}
 `
-  ))
+  )
+
+  return details
+})
 
 module.exports.deleteCart = async cartId =>
   pg.queryRowsAsync(
