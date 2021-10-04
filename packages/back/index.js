@@ -13,6 +13,7 @@ const pgSession = require('connect-pg-simple')(session)
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const compression = require('compression')
+const path = require('path')
 
 const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
@@ -72,6 +73,7 @@ app.use(
 )
 
 app.use(express.static('public'))
+app.get('/*', (req, res) => res.sendFile(path.join(__dirname + '/public/index.html')))
 
 const handleErrors = (err, req, res, next) => {
   logger.error(err)
