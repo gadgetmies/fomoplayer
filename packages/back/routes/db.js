@@ -66,7 +66,7 @@ FROM
     , (SELECT meta_account_user_id FROM logged_user))`
   )
 
-module.exports.searchForArtistsAndLabels = (query) =>
+module.exports.searchForArtistsAndLabels = query =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- searchForTracks
