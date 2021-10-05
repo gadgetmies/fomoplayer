@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
-
 import Login from './UserLogin.js'
 import Menu from './Menu.js'
 import Player from './Player.js'
