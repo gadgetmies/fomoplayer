@@ -57,6 +57,7 @@ class Track extends Component {
     const title = `${this.props.title} ${this.props.version ? `(${this.props.version})` : ''}`
 
     const artistsAndRemixers = R.uniq(this.props.artists.concat(this.props.remixers))
+    const cartLink = new URL(`/cart/${this.props.cartUuid}`, window.location).toString()
 
     return (
       <tr
@@ -206,10 +207,14 @@ class Track extends Component {
                 </ExternalLink>
               ))
             )}{' '}
-            <CopyToClipboardButton
-              content={`Listen to "${artistsAndRemixers.map(R.prop('name')).join(', ')} - ${title}" on
+            {this.props.listState === 'cart' ? (
+              <CopyToClipboardButton content={`${cartLink}#${this.props.index + 1}`} />
+            ) : (
+              <CopyToClipboardButton
+                content={`Listen to "${artistsAndRemixers.map(R.prop('name')).join(', ')} - ${title}" on
 ${this.props.stores.map(store => `${store.name}: ${store.url || store.release.url}`).join('\n')}`}
-            />
+              />
+            )}
           </div>
           <div className="search-cell track-table-cell">
             {beaportTrack ? null : (
@@ -339,12 +344,15 @@ class Tracks extends Component {
       </tr>
     ) : (
       <Pullable onRefresh={this.refreshTracks.bind(this)} spinnerColor="#ffffff">
-        {tracks.map(track => {
+        {tracks.map((track, index) => {
           const { id, title, mix, artists, remixers, labels, releases, released, keys, heard, stores, version } = track
           return (
             <Track
               mode={this.props.mode}
+              listState={this.props.listState}
+              cartUuid={this.props.selectedCart?.uuid}
               id={id}
+              index={index}
               title={title}
               artists={artists}
               mix={mix}

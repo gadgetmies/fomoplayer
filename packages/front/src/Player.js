@@ -74,6 +74,10 @@ class Player extends Component {
         }
       }
     })
+    if (this.props.carts.length !== 0 && !Number.isNaN(this.props.initialPosition)) {
+      const currentTrack = this.props.carts[0].tracks[this.props.initialPosition - 1]
+      this.setCurrentTrack(currentTrack)
+    }
   }
 
   async setCurrentTrack(track) {
@@ -374,6 +378,7 @@ class Player extends Component {
           key={'tracks'}
           mode={this.props.mode}
           carts={this.props.carts}
+          selectedCart={this.props.carts.find(R.propEq('id', this.state.selectedCartId))}
           tracks={tracks}
           listState={this.state.listState}
           currentTrack={(currentTrack || {}).id}
