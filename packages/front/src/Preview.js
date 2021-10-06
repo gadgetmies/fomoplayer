@@ -15,7 +15,7 @@ const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value
 
 const getShortcuts = mode => (
   <div style={{ float: 'right', color: 'white' }} className="popup-container">
-    <FontAwesomeIcon icon="keyboard" className="popup-anchor" style={{ right: 0, top: 0, margin: 10 }} />
+    <FontAwesomeIcon icon="keyboard" className="popup-anchor" style={{ right: 0, top: 0, margin: 10, position: 'absolute', zIndex: 2 }} />
     <div className="popup-content" style={{ right: 0, top: 0, margin: '0 5 5 5', paddingRight: 50 }}>
       <h2 style={{ marginTop: 0 }}>Shortcuts</h2>
       <table>

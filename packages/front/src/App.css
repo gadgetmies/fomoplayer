@@ -550,11 +550,6 @@ input[type='radio'] + .state-select-icon--icon {
   /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }
 
-.popup-anchor {
-  z-index: 2;
-  position: absolute;
-}
-
 .popup-content {
   position: absolute;
   display: none;
