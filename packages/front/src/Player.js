@@ -23,13 +23,6 @@ class Player extends Component {
     }
 
     this.preview = React.createRef()
-
-    // if (this.props.tracks.length !== 0) {
-    //   const storedTrack = JSON.parse(localStorage.getItem('currentTrack') || '{}')
-    //   const currentTrack = storedTrack.track_id && this.props.tracks.find(R.propEq('track_id', storedTrack.track_id)) ||
-    //     this.props.tracks[0]
-    //   this.setCurrentTrack(currentTrack)
-    // }
   }
 
   componentDidMount() {
@@ -81,7 +74,6 @@ class Player extends Component {
   }
 
   async setCurrentTrack(track) {
-    localStorage.setItem('currentTrack', JSON.stringify(track))
     this.setState({ currentTrack: track })
 
     if (this.props.mode === 'app') {
