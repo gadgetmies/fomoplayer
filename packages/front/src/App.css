@@ -505,7 +505,8 @@ audio {
   display: none;
 }
 
-input[type='radio']:checked + .state-select-button--button, .state-select-button--button__active {
+input[type='radio']:checked + .state-select-button--button,
+.state-select-button--button__active {
   background-color: #b40089;
   border-radius: 0.25rem;
   opacity: 1;
