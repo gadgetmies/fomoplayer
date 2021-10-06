@@ -19,7 +19,7 @@ class Player extends Component {
       listState: props.tracks ? 'new' : 'cart',
       searchResults: [],
       togglingCurrentInCart: false,
-      selectedCartId: props.carts.find(R.prop('is_default')).id
+      selectedCartId: props.carts[0].id
     }
 
     this.preview = React.createRef()
@@ -370,7 +370,7 @@ class Player extends Component {
           key={'tracks'}
           mode={this.props.mode}
           carts={this.props.carts}
-          selectedCart={this.props.carts.find(R.propEq('id', this.state.selectedCartId))}
+          selectedCart={this.props.carts[0]}
           tracks={tracks}
           listState={this.state.listState}
           currentTrack={(currentTrack || {}).id}

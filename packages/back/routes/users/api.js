@@ -30,9 +30,9 @@ const {
   createCart,
   getUserCarts,
   removeCart,
-  updateCart,
-  updateDefaultCart,
-  getDefaultCartDetails
+  updateCartDetails,
+  getCartDetails,
+  updateCartContents
 } = require('./logic')
 const typeIs = require('type-is')
 
@@ -212,13 +212,13 @@ router.delete('/carts/:id', async ({ user: { id: userId }, params: { id } }, res
 })
 
 router.post('/carts/:id', async ({ user: { id: userId }, params: { id }, body }, res) => {
-  await updateCart(userId, id, body)
+  await updateCartDetails(userId, id, body)
   res.status(204).send()
 })
 
-router.patch('/carts/default/tracks', async ({ user: { id: userId }, body: operations }, res) => {
-  await updateDefaultCart(userId, operations)
-  res.send(await getDefaultCartDetails(userId))
+router.patch('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: cartId }, body: operations }, res) => {
+  await updateCartContents(userId, cartId, operations)
+  res.send(await getCartDetails(userId, cartId))
 })
 
 module.exports = router

@@ -281,28 +281,6 @@ button::-moz-focus-inner {
   font-size: 0.7rem;
 }
 
-.table-cell-button {
-  flex: 1;
-  padding: 0;
-  vertical-align: middle;
-}
-
-.table-button-cell-header {
-  text-align: center;
-}
-
-.table-cell-button {
-  opacity: 0.5;
-}
-
-.table-cell-button:disabled {
-  opacity: 0.25;
-}
-
-.table-cell-button:hover:not(:disabled) {
-  opacity: 1;
-}
-
 audio {
   height: 31px;
 }
@@ -436,6 +414,43 @@ audio {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.table-cell-button {
+  flex: 1;
+  vertical-align: middle;
+  margin: 0;
+}
+
+.table-button-cell-header {
+  text-align: center;
+}
+
+.table-cell-button {
+  opacity: 0.5;
+}
+
+.table-cell-button:disabled {
+  opacity: 0.25;
+}
+
+.table-cell-button:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.table-cell-button-row > .table-cell-button:not(:first-child), .table-cell-button-row__last {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: 1px solid #808080;
+}
+
+.table-cell-button-row > .table-cell-button:not(:last-child), .table-cell-button-row__first {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.table-cell-button-row > .table-cell-button {
+  margin: 0;
 }
 
 .no-style-link {

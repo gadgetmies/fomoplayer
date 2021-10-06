@@ -314,7 +314,7 @@ module.exports.removeCart = async (userId, cartId) => {
   await deleteCart(cartId)
 }
 
-module.exports.updateCart = async (userId, cartId, properties) => {
+module.exports.updateCartDetails = async (userId, cartId, properties) => {
   await verifyCartOwnership(userId, cartId)
   await updateCart(cartId, properties)
 }
@@ -324,27 +324,17 @@ const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId,
   await insertTracksToCart(cartId, trackIds)
 })
 
-const addTracksToDefaultCart = (module.exports.addTracksToDefaultCart = async (userId, trackIds) => {
-  const id = await queryDefaultCartId(userId)
-  await addTracksToCart(userId, id, trackIds)
-})
-
 const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userId, cartId, trackIds) => {
   await verifyCartOwnership(userId, cartId)
   await deleteTracksFromCart(cartId, trackIds)
 })
 
-const removeTracksFromDefaultCart = (module.exports.removeTracksFromDefaultCart = async (userId, trackIds) => {
-  const id = await queryDefaultCartId(userId)
-  await removeTracksFromCart(userId, id, trackIds)
-})
-
-module.exports.updateDefaultCart = async (userId, operations) => {
+module.exports.updateCartContents = async (userId, cartId, operations) => {
   const tracksToBeRemoved = operations.filter(R.propEq('op', 'remove')).map(R.prop('trackId'))
   const tracksToBeAdded = operations.filter(R.propEq('op', 'add')).map(R.prop('trackId'))
 
-  await removeTracksFromDefaultCart(userId, tracksToBeRemoved)
-  await addTracksToDefaultCart(userId, tracksToBeAdded)
+  await removeTracksFromCart(userId, cartId, tracksToBeRemoved)
+  await addTracksToCart(userId, cartId, tracksToBeAdded)
 }
 
 const getCartDetails = (module.exports.getCartDetails = async (userId, cartId) => {

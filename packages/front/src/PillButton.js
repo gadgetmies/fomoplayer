@@ -5,7 +5,7 @@ class PillButton extends Component {
   render() {
     return (
       <button
-        className={`${this.props.className || ''} button pill pill-button`}
+        className={`button pill pill-button ${this.props.className || ''}`}
         onClick={e => this.props.onClick(e)}
         disabled={this.props.disabled}
         style={this.props.style}

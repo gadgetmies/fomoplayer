@@ -36,7 +36,8 @@ import {
   faCircle,
   faInfoCircle,
   faClipboard,
-  faClipboardCheck
+  faClipboardCheck,
+  faCaretDown
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -63,7 +64,8 @@ library.add(
   faCircle,
   faInfoCircle,
   faClipboard,
-  faClipboardCheck
+  faClipboardCheck,
+  faCaretDown
 )
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
@@ -127,23 +129,23 @@ class App extends Component {
     this.setState({ carts })
   }
 
-  async addToCart(id) {
+  async addToCart(cartId, trackId) {
     this.setState({ addingToCart: true })
     const cartDetails = await requestJSONwithCredentials({
-      path: '/me/carts/default/tracks',
+      path: `/me/carts/${cartId}/tracks`,
       method: 'PATCH',
-      body: [{ op: 'add', trackId: id }]
+      body: [{ op: 'add', trackId }]
     })
 
     this.updateCart(cartDetails)
     this.setState({ addingToCart: false })
   }
 
-  async removeFromCart(id) {
+  async removeFromCart(cartId, trackId) {
     const cartDetails = await requestJSONwithCredentials({
-      path: `/me/carts/default/tracks`,
+      path: `/me/carts/${cartId}/tracks`,
       method: 'PATCH',
-      body: [{ op: 'remove', trackId: id }]
+      body: [{ op: 'remove', trackId }]
     })
 
     this.updateCart(cartDetails)
