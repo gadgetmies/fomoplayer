@@ -569,6 +569,10 @@ input[type='radio'] + .state-select-icon--icon {
   display: block;
 }
 
+.popup-content:hover {
+  display: block;
+}
+
 .keyboard-shortcut {
   text-align: center;
   width: 1.5em;
