@@ -50,7 +50,11 @@ class Tracks extends Component {
     parent.scrollBy(0, currentRect.y - parentRect.y)
   }
 
-  async setSearch(search) {
+  async triggerSearch() {
+    return this.setSearch(this.state.search, true)
+  }
+
+  async setSearch(search, skipDebounce = false) {
     this.setState({ search })
 
     if (this.state.searchDebounce) {
@@ -62,10 +66,14 @@ class Tracks extends Component {
       return
     }
 
-    const timeout = setTimeout(async () => {
-      const results = await (await requestWithCredentials({ path: `/tracks?q=${search}` })).json()
-      this.props.onSearchResults(results)
-    }, 500)
+    const timeout = setTimeout(
+      async () => {
+        this.setState({ searchDebounce: undefined })
+        const results = await (await requestWithCredentials({ path: `/tracks?q=${search}` })).json()
+        this.props.onSearchResults(results)
+      },
+      skipDebounce ? 0 : 500
+    )
     this.setState({ searchDebounce: timeout })
   }
 
@@ -75,7 +83,7 @@ class Tracks extends Component {
 
   renderTracks(tracks, carts) {
     const emptyListLabels = {
-      search: 'No results',
+      search: this.props.searchDebounce !== undefined ? 'Searching...' : 'No results',
       cart: 'Cart empty',
       new: 'No tracks available',
       heard: 'No tracks played'
@@ -242,6 +250,11 @@ class Tracks extends Component {
                   id="search"
                   className="search"
                   onChange={e => this.setSearch(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.code === 'Enter') {
+                      return this.triggerSearch()
+                    }
+                  }}
                   value={this.state.search}
                 />
                 {this.state.search ? (
