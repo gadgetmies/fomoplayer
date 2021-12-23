@@ -3,7 +3,6 @@ import React, { Component } from 'react'
 import * as R from 'ramda'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import SpinnerButton from './SpinnerButton'
-import Pullable from 'react-pullable'
 import { requestWithCredentials } from './request-json-with-credentials'
 import { isMobile } from 'react-device-detect'
 import './Select.css'
@@ -88,61 +87,59 @@ class Tracks extends Component {
         <td>{emptyListLabels[this.props.listState]}</td>
       </tr>
     ) : (
-      <Pullable onRefresh={this.refreshTracks.bind(this)} spinnerColor="#ffffff">
-        {tracks.map((track, index) => {
-          const { id, title, mix, artists, remixers, labels, releases, released, keys, heard, stores, version } = track
-          return (
-            <Track
-              mode={this.props.mode}
-              listState={this.props.listState}
-              cartUuid={this.props.selectedCart?.uuid}
-              carts={this.props.carts}
-              defaultCartId={this.props.carts.find(R.prop('is_default'))?.id}
-              id={id}
-              index={index}
-              title={title}
-              artists={artists}
-              mix={mix}
-              remixers={remixers}
-              labels={labels}
-              released={released}
-              releases={releases}
-              keys={keys}
-              stores={stores}
-              selected={this.state.selectedTrack === id}
-              playing={this.props.currentTrack === id}
-              version={version}
-              heard={heard}
-              inDefaultCart={defaultCart ? defaultCart.tracks.find(R.propEq('id', id)) !== undefined : false}
-              inCarts={this.props.carts.filter(cart => cart.tracks.find(R.propEq('id', id)))}
-              key={id}
-              onClick={() => {
-                this.props.onPreviewRequested(id)
-              }}
-              onDoubleClick={() => {
-                this.props.onPreviewRequested(id)
-              }}
-              onTouchTap={() => {
-                this.props.onPreviewRequested(id)
-              }}
-              onAddToCart={this.props.onAddToCart}
-              onRemoveFromCart={this.props.onRemoveFromCart}
-              onFollowClicked={() => {
-                this.props.onFollowClicked(track)
-              }}
-              onIgnoreClicked={() => {
-                this.props.onIgnoreClicked(track)
-              }}
-              onIgnoreArtistsByLabels={() =>
-                this.props.onIgnoreArtistsByLabels({
-                  artistIds: artists.map(R.prop('id')),
-                  labelIds: labels.map(R.prop('id'))
-                })
-              }
-            />
-          )
-        })}
-      </Pullable>
+      tracks.map((track, index) => {
+        const { id, title, mix, artists, remixers, labels, releases, released, keys, heard, stores, version } = track
+        return (
+          <Track
+            mode={this.props.mode}
+            listState={this.props.listState}
+            cartUuid={this.props.selectedCart?.uuid}
+            carts={this.props.carts}
+            defaultCartId={this.props.carts.find(R.prop('is_default'))?.id}
+            id={id}
+            index={index}
+            title={title}
+            artists={artists}
+            mix={mix}
+            remixers={remixers}
+            labels={labels}
+            released={released}
+            releases={releases}
+            keys={keys}
+            stores={stores}
+            selected={this.state.selectedTrack === id}
+            playing={this.props.currentTrack === id}
+            version={version}
+            heard={heard}
+            inDefaultCart={defaultCart ? defaultCart.tracks.find(R.propEq('id', id)) !== undefined : false}
+            inCarts={this.props.carts.filter(cart => cart.tracks.find(R.propEq('id', id)))}
+            key={id}
+            onClick={() => {
+              this.props.onPreviewRequested(id)
+            }}
+            onDoubleClick={() => {
+              this.props.onPreviewRequested(id)
+            }}
+            onTouchTap={() => {
+              this.props.onPreviewRequested(id)
+            }}
+            onAddToCart={this.props.onAddToCart}
+            onRemoveFromCart={this.props.onRemoveFromCart}
+            onFollowClicked={() => {
+              this.props.onFollowClicked(track)
+            }}
+            onIgnoreClicked={() => {
+              this.props.onIgnoreClicked(track)
+            }}
+            onIgnoreArtistsByLabels={() =>
+              this.props.onIgnoreArtistsByLabels({
+                artistIds: artists.map(R.prop('id')),
+                labelIds: labels.map(R.prop('id'))
+              })
+            }
+          />
+        )
+      })
     )
   }
 
