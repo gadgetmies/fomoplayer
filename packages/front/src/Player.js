@@ -387,7 +387,6 @@ class Player extends Component {
           }}
           onFollowClicked={this.openFollowPopup.bind(this)}
           onIgnoreClicked={this.openIgnorePopup.bind(this)}
-          onUpdateNotifications={this.props.onUpdateNotifications.bind(this)}
           onShowNewClicked={this.setListState.bind(this, 'new')}
           onShowHeardClicked={this.setListState.bind(this, 'heard')}
           onShowRecentlyAddedClicked={this.setListState.bind(this, 'recentlyAdded')}
@@ -395,6 +394,8 @@ class Player extends Component {
           onShowSearchClicked={this.setListState.bind(this, 'search')}
           onSearchResults={this.setSearchResults.bind(this)}
           onSelectCart={this.selectCart.bind(this)}
+          onRequestNotification={this.props.onRequestNotification}
+          onRemoveNotification={this.props.onRemoveNotification}
         />
       </div>
     )

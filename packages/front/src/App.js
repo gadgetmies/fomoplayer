@@ -175,6 +175,25 @@ class App extends Component {
     this.setState({ follows: { artists, labels } })
   }
 
+  async requestNotification(search) {
+    await requestWithCredentials({
+      path: `/me/notifications`,
+      method: 'POST',
+      body: { search }
+    })
+
+    await this.updateNotifications()
+  }
+
+  async removeNotification(notificationId) {
+    await requestWithCredentials({
+      path: `/me/notifications/${notificationId}`,
+      method: 'DELETE'
+    })
+
+    await this.updateNotifications()
+  }
+
   async updateNotifications() {
     this.setState({ notifications: await requestJSONwithCredentials({ path: '/me/notifications' }) })
   }
@@ -242,7 +261,8 @@ class App extends Component {
                       onUpdateTracksClicked={this.updateTracks.bind(this)}
                       carts={this.state.carts}
                       notifications={this.state.notifications}
-                      onUpdateNotifications={this.updateNotifications.bind(this)}
+                      onRequestNotification={this.requestNotification.bind(this)}
+                      onRemoveNotification={this.removeNotification.bind(this)}
                       follows={this.state.follows}
                       tracks={this.state.tracksData.tracks}
                       newTracks={this.state.tracksData.meta.newTracks}
@@ -260,7 +280,8 @@ class App extends Component {
                       carts={this.state.carts}
                       onUpdateCarts={this.updateCarts.bind(this)}
                       notifications={this.state.notifications}
-                      onUpdateNotifications={this.updateNotifications.bind(this)}
+                      onRequestNotification={this.requestNotification.bind(this)}
+                      onRemoveNotification={this.removeNotification.bind(this)}
                       onMarkHeardClicked={this.markHeard.bind(this)}
                       newTracks={this.state.tracksData.meta.newTracks}
                       totalTracks={this.state.tracksData.meta.totalTracks}

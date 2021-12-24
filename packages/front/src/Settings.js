@@ -7,6 +7,7 @@ import ToggleButton from './ToggleButton'
 import CopyToClipboardButton from './CopyToClipboardButton'
 import config from './config.js'
 import * as R from 'ramda'
+import PillButton from './PillButton'
 
 class Settings extends Component {
   unlockMarkAllHeard() {
@@ -37,6 +38,8 @@ class Settings extends Component {
       artistOnLabelIgnores: [],
       artistIgnores: [],
       labelIgnores: [],
+      notifications: this.props.notifications,
+      notificationSearch: '',
       cartName: '',
       updatingFollows: false,
       updatingFollowDetails: false,
@@ -44,6 +47,7 @@ class Settings extends Component {
       updatingArtistOnLabelIgnores: false,
       updatingArtistIgnores: false,
       updatingLabelIgnores: false,
+      updatingNotifications: false,
       addingCart: false,
       removingCart: false,
       followDetailsDebounce: undefined,
@@ -201,7 +205,7 @@ class Settings extends Component {
                         <a href={publicLink} className="link" target="_blank">
                           {publicLink}
                         </a>
-                        <CopyToClipboardButton content={publicLink}/>
+                        <CopyToClipboardButton content={publicLink} />
                       </div>
                     ) : null}
                   </p>
@@ -391,6 +395,47 @@ class Settings extends Component {
                     </button>
                   </span>
                 </span>
+              </li>
+            ))}
+          </ul>
+          <h3>Search notifications ({this.props.notifications.length})</h3>
+          <label>
+            Get notifications for search:
+            <div className="input-layout">
+              <input
+                className="text-input text-input-small"
+                disabled={this.state.updatingNotifications}
+                value={this.state.notificationSearch}
+                onChange={e => {
+                  this.setState({ notificationSearch: e.target.value })
+                }}
+              />
+              <SpinnerButton
+                className="button button-push_button-small button-push_button-primary"
+                disabled={this.state.updatingNotifications}
+                loading={this.state.updatingNotifications}
+                onClick={async () => {
+                  await this.props.onRequestNotification(this.state.notificationSearch)
+                  this.setState({ notificationSearch: '' })
+                }}
+              >
+                <FontAwesomeIcon icon="bell" /> Subscribe
+              </SpinnerButton>
+            </div>
+          </label>
+          <ul className="no-style-list follow-list">
+            {this.props.notifications.map(notification => (
+              <li key={notification.id}>
+                <PillButton
+                  disabled={this.state.updatingNotifications}
+                  onClick={async () => {
+                    this.setState({ updatingNotifications: true })
+                    await this.props.onRemoveNotification(notification.id)
+                    this.setState({ updatingNotifications: false })
+                  }}
+                >
+                  {notification.text} <FontAwesomeIcon icon="bell-slash" />
+                </PillButton>
               </li>
             ))}
           </ul>

@@ -83,25 +83,6 @@ class Tracks extends Component {
     this.setState({ searchOpen: !this.state.searchOpen })
   }
 
-  async requestNotification(search) {
-    await requestWithCredentials({
-      path: `/me/notifications`,
-      method: 'POST',
-      body: { search }
-    })
-
-    await this.props.onUpdateNotifications()
-  }
-
-  async removeNotification(notificationId) {
-    await requestWithCredentials({
-      path: `/me/notifications/${notificationId}`,
-      method: 'DELETE'
-    })
-
-    await this.props.onUpdateNotifications()
-  }
-
   renderTracks(tracks, carts) {
     const emptyListLabels = {
       search: this.props.searchDebounce !== undefined ? 'Searching...' : 'No results',
@@ -188,8 +169,8 @@ class Tracks extends Component {
     this.setState({ modifyingNotification: true })
     try {
       await (notificationSubscription !== undefined
-        ? this.removeNotification(notificationSubscription.id)
-        : this.requestNotification(search))
+        ? this.props.onRemoveNotification(notificationSubscription.id)
+        : this.props.onRequestNotification(search))
     } finally {
       this.setState({ modifyingNotification: false })
     }
