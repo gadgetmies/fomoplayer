@@ -37,7 +37,8 @@ import {
   faInfoCircle,
   faClipboard,
   faClipboardCheck,
-  faCaretDown
+  faCaretDown,
+  faSearch
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -65,7 +66,8 @@ library.add(
   faInfoCircle,
   faClipboard,
   faClipboardCheck,
-  faCaretDown
+  faCaretDown,
+  faSearch
 )
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
