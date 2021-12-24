@@ -1,0 +1,2 @@
+DROP TABLE user_search_notification__track;
+DROP TABLE user_search_notification;

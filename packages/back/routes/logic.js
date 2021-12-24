@@ -1,5 +1,6 @@
 const { apiURL } = require('../config.js')
-const { queryLongestPreviewForTrack, searchForTracks, searchForArtistsAndLabels } = require('./db.js')
+const { queryLongestPreviewForTrack, searchForArtistsAndLabels } = require('./db.js')
+const { searchForTracks } = require('./shared/db/search.js')
 const { queryPreviewDetails } = require('./shared/db/preview')
 const { modules: storeModules } = require('./stores/index.js')
 const { queryCartDetails } = require('./users/db')

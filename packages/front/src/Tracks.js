@@ -20,7 +20,9 @@ class Tracks extends Component {
       currentAboveScreen: false,
       search: '',
       searchOpen: false,
-      searchDebounce: undefined
+      searchDebounce: undefined,
+      createdNotifications: new Set(),
+      modifyingNotification: false
     }
     this.handleScroll = this.handleScroll.bind(this)
   }
@@ -79,6 +81,25 @@ class Tracks extends Component {
 
   toggleSearch() {
     this.setState({ searchOpen: !this.state.searchOpen })
+  }
+
+  async requestNotification(search) {
+    await requestWithCredentials({
+      path: `/me/notifications`,
+      method: 'POST',
+      body: { search }
+    })
+
+    await this.props.onUpdateNotifications()
+  }
+
+  async removeNotification(notificationId) {
+    await requestWithCredentials({
+      path: `/me/notifications/${notificationId}`,
+      method: 'DELETE'
+    })
+
+    await this.props.onUpdateNotifications()
   }
 
   renderTracks(tracks, carts) {
@@ -160,6 +181,20 @@ class Tracks extends Component {
     }
   }
 
+  async handleNotificationClick(e) {
+    const notificationSubscription = this.getNotificationSubscription()
+    const search = this.state.search
+    e.stopPropagation()
+    this.setState({ modifyingNotification: true })
+    try {
+      await (notificationSubscription !== undefined
+        ? this.removeNotification(notificationSubscription.id)
+        : this.requestNotification(search))
+    } finally {
+      this.setState({ modifyingNotification: false })
+    }
+  }
+
   render() {
     const scrollToCurrentButton = (
       <button
@@ -169,6 +204,11 @@ class Tracks extends Component {
         Scroll to current
       </button>
     )
+
+    const subscribedForNotification = this.getNotificationSubscription() !== undefined
+    const notificationSubscriptionDisabled = this.state.search === '' || this.state.modifyingNotification
+    const notificationSubscriptionLoading = this.state.modifyingNotification
+
     return (
       <div>
         <div className={'top-bar input-layout'}>
@@ -243,31 +283,45 @@ class Tracks extends Component {
             />
           ) : null}
           {this.props.listState !== 'search' ? null : (
-            <div className="top-bar-group">
-              <label className="search-bar">
-                <input
-                  autoFocus
-                  id="search"
-                  className="search"
-                  onChange={e => this.setSearch(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.code === 'Enter') {
-                      return this.triggerSearch()
-                    }
-                  }}
-                  value={this.state.search}
-                />
-                {this.state.search ? (
-                  <FontAwesomeIcon
-                    onClick={() => this.setSearch('')}
-                    className={'search-input-icon clear-search'}
-                    icon="times-circle"
-                  />
-                ) : (
-                  <FontAwesomeIcon className={'search-input-icon'} icon="search" />
-                )}
-              </label>
-            </div>
+            <>
+              <div className="top-bar-group">
+                <div class={'input-layout'}>
+                  <label className="search-bar">
+                    <input
+                      autoFocus
+                      id="search"
+                      className="search"
+                      onChange={e => this.setSearch(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.code === 'Enter') {
+                          return this.triggerSearch()
+                        }
+                      }}
+                      value={this.state.search}
+                    />
+                    {this.state.search ? (
+                      <FontAwesomeIcon
+                        onClick={() => this.setSearch('')}
+                        className={'search-input-icon clear-search'}
+                        icon="times-circle"
+                      />
+                    ) : (
+                      <FontAwesomeIcon className={'search-input-icon'} icon="search" />
+                    )}
+                  </label>
+                  <SpinnerButton
+                    style={{ order: 4, width: '7rem' }}
+                    className={'button button-push_button-small button-push_button-primary'}
+                    onClick={this.handleNotificationClick.bind(this)}
+                    disabled={notificationSubscriptionDisabled}
+                    loading={notificationSubscriptionLoading}
+                  >
+                    <FontAwesomeIcon icon={subscribedForNotification ? 'bell-slash' : 'bell'} />{' '}
+                    {subscribedForNotification ? 'Unsubscribe' : 'Subscribe'}
+                  </SpinnerButton>
+                </div>
+              </div>
+            </>
           )}
           {this.props.listState !== 'cart' ? null : (
             <div className="top-bar-group">
@@ -371,6 +425,10 @@ class Tracks extends Component {
         </table>
       </div>
     )
+  }
+
+  getNotificationSubscription() {
+    return this.props.notifications.find(R.propEq('text', this.state.search))
   }
 }
 

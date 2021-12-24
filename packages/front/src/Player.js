@@ -19,7 +19,8 @@ class Player extends Component {
       listState: props.tracks ? 'new' : 'cart',
       searchResults: [],
       togglingCurrentInCart: false,
-      selectedCartId: props.carts[0].id
+      selectedCartId: props.carts[0].id,
+      requestNotificationSearch: ''
     }
 
     this.preview = React.createRef()
@@ -370,6 +371,7 @@ class Player extends Component {
           key={'tracks'}
           mode={this.props.mode}
           carts={this.props.carts}
+          notifications={this.props.notifications}
           selectedCart={this.props.carts[0]}
           tracks={tracks}
           listState={this.state.listState}
@@ -385,6 +387,7 @@ class Player extends Component {
           }}
           onFollowClicked={this.openFollowPopup.bind(this)}
           onIgnoreClicked={this.openIgnorePopup.bind(this)}
+          onUpdateNotifications={this.props.onUpdateNotifications.bind(this)}
           onShowNewClicked={this.setListState.bind(this, 'new')}
           onShowHeardClicked={this.setListState.bind(this, 'heard')}
           onShowRecentlyAddedClicked={this.setListState.bind(this, 'recentlyAdded')}

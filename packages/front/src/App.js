@@ -38,6 +38,8 @@ import {
   faClipboard,
   faClipboardCheck,
   faCaretDown,
+  faBell,
+  faBellSlash,
   faSearch
 } from '@fortawesome/free-solid-svg-icons'
 
@@ -67,6 +69,8 @@ library.add(
   faClipboard,
   faClipboardCheck,
   faCaretDown,
+  faBell,
+  faBellSlash,
   faSearch
 )
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -85,6 +89,7 @@ class App extends Component {
       addingToCart: false,
       slideout: null,
       carts: {},
+      notifications: [],
       loggedIn: false,
       loading: true,
       tracksData: defaultTracksData,
@@ -104,7 +109,7 @@ class App extends Component {
       this.setState({ list, initialPosition: position })
     } else {
       try {
-        await Promise.all([this.updateTracks(), this.updateCarts(), this.updateFollows()])
+        await Promise.all([this.updateTracks(), this.updateCarts(), this.updateFollows(), this.updateNotifications()])
         this.setState({ loggedIn: true })
       } catch (e) {
         console.error(e)
@@ -117,7 +122,7 @@ class App extends Component {
 
   async onLoginDone() {
     this.setState({ loggedIn: true })
-    await Promise.all([this.updateCarts(), this.updateTracks()])
+    await Promise.all([this.updateCarts(), this.updateTracks(), this.updateNotifications()])
   }
 
   onLogoutDone() {
@@ -168,6 +173,10 @@ class App extends Component {
       path: `/me/follows/labels`
     })
     this.setState({ follows: { artists, labels } })
+  }
+
+  async updateNotifications() {
+    this.setState({ notifications: await requestJSONwithCredentials({ path: '/me/notifications' }) })
   }
 
   async updateTracks() {
@@ -232,6 +241,8 @@ class App extends Component {
                       addingToCart={this.state.addingToCart}
                       onUpdateTracksClicked={this.updateTracks.bind(this)}
                       carts={this.state.carts}
+                      notifications={this.state.notifications}
+                      onUpdateNotifications={this.updateNotifications.bind(this)}
                       follows={this.state.follows}
                       tracks={this.state.tracksData.tracks}
                       newTracks={this.state.tracksData.meta.newTracks}
@@ -248,6 +259,8 @@ class App extends Component {
                     <Settings
                       carts={this.state.carts}
                       onUpdateCarts={this.updateCarts.bind(this)}
+                      notifications={this.state.notifications}
+                      onUpdateNotifications={this.updateNotifications.bind(this)}
                       onMarkHeardClicked={this.markHeard.bind(this)}
                       newTracks={this.state.tracksData.meta.newTracks}
                       totalTracks={this.state.tracksData.meta.totalTracks}
@@ -257,7 +270,12 @@ class App extends Component {
               </SlideoutPanel>
             </>
           ) : this.state.list ? (
-            <Player mode="list" carts={[this.state.list]} initialPosition={this.state.initialPosition} />
+            <Player
+              mode="list"
+              carts={[this.state.list]}
+              initialPosition={this.state.initialPosition}
+              notifications={this.state.notifications}
+            />
           ) : (
             <div className="align-center-container full-screen-popup-container">
               <div className="full-screen-popup">

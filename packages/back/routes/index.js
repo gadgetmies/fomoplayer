@@ -15,8 +15,8 @@ router.get('/tracks/:id', ({ user: { username }, params: { id } }, res) => {
   res.send(JSON.stringify({}))
 })
 
-router.get('/tracks/', async ({ query: { q }, user: { username } }, res) => {
-  res.send(await searchForTracks(q, username))
+router.get('/tracks/', async ({ query: { q }, user: { id: userId } }, res) => {
+  res.send(await searchForTracks(q, userId))
 })
 
 router.use('/stores', require('./stores/index.js').router)

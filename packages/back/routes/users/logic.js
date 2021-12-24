@@ -1,6 +1,7 @@
 const { using, each } = require('bluebird')
 const R = require('ramda')
 const pg = require('../../db/pg.js')
+const { searchForTracks } = require('../shared/db/search')
 const { insertUserPlaylistFollow } = require('../shared/db/user')
 const { updateArtistTracks, updatePlaylistTracks, updateLabelTracks } = require('../shared/tracks')
 const {
@@ -46,7 +47,11 @@ const {
   queryDefaultCartId,
   insertTracksToCart,
   deleteTracksFromCart,
-  queryCartOwner
+  queryCartOwner,
+  queryNotificationOwner,
+  insertNotification,
+  deleteNotification,
+  queryNotifications
 } = require('./db')
 
 const logger = require('../../logger')(__filename)
@@ -307,6 +312,15 @@ const verifyCartOwnership = async (userId, cartId) => {
   }
 }
 
+const verifyNotificationOwnership = async (userId, notificationId) => {
+  const rows = await queryNotificationOwner(notificationId)
+  if (rows.length === 0) {
+    throw new NotFound('Notification with id not found!')
+  } else if (rows[0].ownerUserId !== userId) {
+    throw new Forbidden('Notification owner does not match the session user!')
+  }
+}
+
 module.exports.getUserCarts = queryUserCarts
 module.exports.createCart = insertCart
 module.exports.removeCart = async (userId, cartId) => {
@@ -345,4 +359,20 @@ const getCartDetails = (module.exports.getCartDetails = async (userId, cartId) =
 module.exports.getDefaultCartDetails = async userId => {
   const id = await queryDefaultCartId(userId)
   return getCartDetails(userId, id)
+}
+
+module.exports.getNotifications = async userId => {
+  return await queryNotifications(userId)
+}
+
+module.exports.createNotification = async (userId, searchString) => {
+  const trackIds = await searchForTracks(searchString, userId).map(R.prop('track_id'))
+  using(pg.getTransaction(), async tx => {
+    await insertNotification(tx, userId, searchString, trackIds)
+  })
+}
+
+module.exports.removeNotification = async (userId, notificationId) => {
+  await verifyNotificationOwnership(userId, notificationId)
+  await deleteNotification(notificationId)
 }

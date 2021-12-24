@@ -831,6 +831,19 @@ WHERE
   )
 }
 
+module.exports.queryNotificationOwner = async notificationId => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryNotificationOwner
+SELECT
+  meta_account_user_id AS "ownerUserId"
+FROM user_search_notification
+WHERE
+  user_search_notification_id = ${notificationId}
+`
+  )
+}
+
 const queryCartDetails = (module.exports.queryCartDetails = async (cartId, userId) => {
   const [details] = await pg.queryRowsAsync(
     // language=PostgreSQL
@@ -917,5 +930,47 @@ FROM track__cart
 WHERE
     track_id = ANY (${trackIds})
 AND cart_id = ${cartId}
+`
+  )
+
+module.exports.queryNotifications = async userId =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--insertNotification
+SELECT user_search_notification_id AS id, user_search_notification_string AS text
+FROM user_search_notification
+WHERE meta_account_user_id = ${userId}
+`
+  )
+
+module.exports.insertNotification = async (tx, userId, searchString, trackIds) => {
+  const [{ notificationId }] = await tx.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--insertNotification user_search_notification
+    INSERT INTO user_search_notification (meta_account_user_id, user_search_notification_string)
+    VALUES (${userId}, ${searchString})
+    RETURNING user_search_notification_id AS "notificationId"
+    `
+  )
+
+  console.log(trackIds)
+
+  if (trackIds.length > 0) {
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`--insertNotification
+    INSERT INTO user_search_notification__track (user_search_notification_id, track_id)
+    SELECT ${notificationId}, track_id
+    FROM unnest(${trackIds} :: INTEGER[]) AS track_id
+    `
+    )
+  }
+}
+
+module.exports.deleteNotification = async notificationId =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--deleteNotification
+DELETE FROM user_search_notification WHERE user_search_notification_id = ${notificationId}
 `
   )
