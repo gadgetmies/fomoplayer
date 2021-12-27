@@ -161,15 +161,20 @@ module.exports.addArtistFollowsWithIds = async (artistIds, userId) => {
   return addedFollows
 }
 
+function getFullUrl(storeUrl, url) {
+  return (storeUrl !== undefined ? storeUrl : '') + url
+}
+
 module.exports.addArtistFollows = async (storeUrl, artists, userId, sourceId) => {
   // TODO: try first to find from db
   let addedFollows = []
   for (const { name, url } of artists) {
-    const { module: storeModule, idFromUrl } = await getStoreModuleForArtistByUrl(url)
-    let artistDetails = { url: (storeUrl !== undefined ? storeUrl : '') + url, id: idFromUrl }
+    const fullUrl = getFullUrl(storeUrl, url)
+    const { module: storeModule, idFromUrl } = await getStoreModuleForArtistByUrl(fullUrl)
+    let artistDetails = { url: fullUrl, id: idFromUrl, name }
 
     if (name === undefined) {
-      artistDetails.name = await storeModule.logic.getArtistName(url)
+      artistDetails.name = await storeModule.logic.getArtistName(fullUrl)
     }
 
     const { artistId, followId, storeArtistId } = await addStoreArtistToUser(
@@ -218,11 +223,12 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {
   // TODO: try first to find from db
   let addedFollows = []
   for (const { name, url } of labels) {
-    const { module: storeModule, idFromUrl } = await getStoreModuleForLabelByUrl(url)
-    let labelDetails = { url: (storeUrl !== undefined ? storeUrl : '') + url, id: idFromUrl }
+    const fullUrl = getFullUrl(storeUrl, url)
+    const { module: storeModule, idFromUrl } = await getStoreModuleForLabelByUrl(fullUrl)
+    let labelDetails = { url: fullUrl, id: idFromUrl, name }
 
     if (name === undefined) {
-      labelDetails.name = await storeModule.logic.getLabelName(url)
+      labelDetails.name = await storeModule.logic.getLabelName(fullUrl)
     }
 
     const { labelId, followId, storeLabelId } = await addStoreLabelToUser(
