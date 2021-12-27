@@ -93,7 +93,7 @@ function sendError(errorText) {
 async function sendMyLibrary() {
   try {
     chrome.runtime.sendMessage({type: 'operationStatus', text: 'Fetching library', progress: 20})
-    const myBeatportResponse = await fetch('https://www.beatport.com/api/v4/my/downloads?page=1&per_page=5000')
+    const myBeatportResponse = await fetch('https://www.beatport.com/api/v4/my/downloads?page=1&per_page=500')
     const myLibrary = await myBeatportResponse.json()
     chrome.runtime.sendMessage({type: 'purchased', store: 'beatport', data: myLibrary.results})
   } catch (e) {
