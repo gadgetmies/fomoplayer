@@ -127,7 +127,7 @@ ${cartOpenGraphDetails}`
 app.get('/*', (req, res) => res.sendFile(path.join(indexPath)))
 
 const handleErrors = (err, req, res, next) => {
-  logger.error(err)
+  logger.error(err instanceof String ? err : err.toString())
   if (err instanceof HttpError) {
     return res.status(err.getCode()).json({
       status: 'error',
