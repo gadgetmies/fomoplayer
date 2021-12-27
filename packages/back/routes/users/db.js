@@ -710,8 +710,8 @@ SELECT EXISTS(
   return isIgnored
 }
 
-module.exports.removeReleasesFromUser = (username, releases) => {
-  logger.info('removeReleasesFromUser', { username, releases })
+module.exports.removeReleasesFromUser = (userId, releases) => {
+  logger.info('removeReleasesFromUser', { userId, releases })
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- removeReleasesFromUser
@@ -727,8 +727,8 @@ WHERE
   )
 }
 
-module.exports.setTrackHeard = (trackId, username, heard) => {
-  logger.info('setTrackHeard', { trackId, username, heard })
+module.exports.setTrackHeard = (trackId, userId, heard) => {
+  logger.info('setTrackHeard', { trackId, userId, heard })
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- setTrackHeard
@@ -737,7 +737,7 @@ SET
   user__track_heard = ${heard ? 'now()' : null}
 WHERE
     track_id = ${trackId}
-AND meta_account_user_id = (SELECT meta_account_user_id FROM meta_account WHERE meta_account_username = ${username})
+AND meta_account_user_id = (SELECT meta_account_user_id FROM meta_account WHERE meta_account_user_id = ${userId})
 `
   )
 }

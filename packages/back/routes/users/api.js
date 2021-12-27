@@ -49,9 +49,9 @@ router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
   getTracksM3u(userId).tap(m3u => res.send(m3u))
 )
 
-router.post('/tracks/:id', ({ user: { username }, params: { id }, body: { heard } }, res) => {
-  logger.info('POST /tracks/:id', { id, heard, username })
-  setTrackHeard(id, username, heard).tap(() => res.send())
+router.post('/tracks/:id', ({ user: { id: userId }, params: { id }, body: { heard } }, res) => {
+  logger.info('POST /tracks/:id', { id, heard, userId })
+  setTrackHeard(id, userId, heard).tap(() => res.send())
 })
 
 router.patch('/tracks/', async ({ user: { id: authUserId }, body: { heard }, query: { interval } }, res) => {
@@ -60,7 +60,7 @@ router.patch('/tracks/', async ({ user: { id: authUserId }, body: { heard }, que
 })
 
 // TODO: add genre to database?
-// router.post('/ignores/genres', ({ user: { username }, body: { artistId, storeId, genre } }, res) => {})
+// router.post('/ignores/genres', ({ user: { id: userId }, body: { artistId, storeId, genre } }, res) => {})
 
 router.get('/ignores/artists-on-labels', async ({ user: { id: authUserId } }, res) => {
   const artistOnLabelIgnores = await getUserArtistOnLabelIgnores(authUserId)

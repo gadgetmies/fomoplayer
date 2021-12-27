@@ -10,7 +10,7 @@ router.get('/tracks/:id/preview.:format', async ({ params: { id, format, offset 
   res.redirect(await getPreview(id, format, offset))
 })
 
-router.get('/tracks/:id', ({ user: { username }, params: { id } }, res) => {
+router.get('/tracks/:id', ({ user: { id: userId }, params: { id } }, res) => {
   // TODO
   res.send(JSON.stringify({}))
 })

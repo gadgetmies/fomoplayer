@@ -8,11 +8,14 @@ const OpenIDStrategy = require('passport-openidconnect').Strategy
 const logger = require('./logger')(__filename)
 
 module.exports = function passportSetup() {
-  const checkCredentials = (username, password, done) =>
-    account
-      .authenticate(username, password)
-      .then(success => (success ? { username } : false))
-      .asCallback(done)
+  const checkCredentials = async (username, password, done) => {
+    const result = await account.authenticate(username, password)
+    if (result) {
+      return done(null, result)
+    } else {
+      return done(null, false, { message: 'Incorrect username or password' })
+    }
+  }
 
   passport.use(new LocalStrategy(checkCredentials))
 
@@ -74,6 +77,18 @@ module.exports = function passportSetup() {
     )
   )
 
-  passport.serializeUser((userToSerialize, done) => done(null, userToSerialize.username))
-  passport.deserializeUser((username, done) => account.findByUsername(username).nodeify(done))
+  passport.serializeUser(async (userToSerialize, done) => {
+    try {
+      return done(null, userToSerialize.id)
+    } catch (e) {
+      done(e)
+    }
+  })
+  passport.deserializeUser(async (id, done) => {
+    try {
+      done(null, await account.findByUserId(id))
+    } catch (e) {
+      done(e)
+    }
+  })
 }
