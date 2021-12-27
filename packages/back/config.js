@@ -1,19 +1,15 @@
 const nodeEnv = process.env.NODE_ENV || 'development'
-require('dotenv').config({path: `.env.${nodeEnv}`})
+require('dotenv').config({ path: `.env.${nodeEnv}` })
 
 const resolveServiceURL = require('../shared/resolveServiceURL.js')
 const sharedConfig = require('multi-store-player-shared-config')(nodeEnv).config
 
 const port = sharedConfig.API_PORT
-const interfaceName = sharedConfig.INTERFACE
-const frontendURL = resolveServiceURL(sharedConfig.FRONTEND_URL, interfaceName, sharedConfig.FRONTEND_PORT)
-const apiURL = resolveServiceURL(sharedConfig.API_URL, interfaceName, port, '/api')
+const frontendURL = resolveServiceURL(sharedConfig.FRONTEND_URL, sharedConfig.IP, sharedConfig.FRONTEND_PORT)
+const apiURL = resolveServiceURL(sharedConfig.API_URL, sharedConfig.IP, port, '/api')
 
 module.exports = {
-  allowedOrigins: [
-    frontendURL,
-    'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn'
-  ],
+  allowedOrigins: [frontendURL, 'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn'],
   port,
   apiURL,
   frontendURL,
