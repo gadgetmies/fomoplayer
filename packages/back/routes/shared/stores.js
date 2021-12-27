@@ -15,7 +15,7 @@ module.exports.getStoreModuleForArtistByUrl = async artistUrl => {
     return idFromUrl !== undefined
   })
 
-  if (matchingStore === null) {
+  if (matchingStore === undefined) {
     throw new BadRequest(`Invalid artist URL ${artistUrl}`)
   }
 
@@ -35,7 +35,7 @@ module.exports.getStoreModuleForLabelByUrl = async labelUrl => {
     return idFromUrl !== undefined
   })
 
-  if (matchingStore === null) {
+  if (matchingStore === undefined) {
     throw new BadRequest(`Invalid label URL ${labelUrl}`)
   }
 
