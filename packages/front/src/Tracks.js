@@ -96,13 +96,13 @@ class Tracks extends Component {
     const defaultCart = carts.find(R.prop('is_default'))
 
     return this.state.searchInProgress ? (
-      <tr style={{ display: 'block' }}>
+      <tr style={{ display: 'block' }} key={'search-in-progress'}>
         <td>
           Searching <Spinner />
         </td>
       </tr>
     ) : tracks.length === 0 ? (
-      <tr style={{ display: 'block' }}>
+      <tr style={{ display: 'block' }} key={'no-results'}>
         <td>{emptyListLabels[this.props.listState]}</td>
       </tr>
     ) : (
