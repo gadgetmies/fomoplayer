@@ -79,7 +79,6 @@ app.use(express.static('public'))
 
 const indexPath = path.resolve(__dirname, 'public/index.html')
 app.get('/cart/:uuid', ({ params: { uuid } }, res, next) => {
-  console.log({ uuid, indexPath })
   fs.readFile(indexPath, async (err, index) => {
     try {
       if (err || !uuid) {
