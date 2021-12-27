@@ -49,7 +49,7 @@ const {
   deleteTracksFromCart,
   queryCartOwner,
   queryNotificationOwner,
-  insertNotification,
+  upsertNotification,
   deleteNotification,
   queryNotifications
 } = require('./db')
@@ -368,7 +368,7 @@ module.exports.getNotifications = async userId => {
 module.exports.createNotification = async (userId, searchString) => {
   const trackIds = await searchForTracks(searchString, userId).map(R.prop('track_id'))
   using(pg.getTransaction(), async tx => {
-    await insertNotification(tx, userId, searchString, trackIds)
+    await upsertNotification(tx, userId, searchString, trackIds)
   })
 }
 

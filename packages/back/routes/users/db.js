@@ -943,7 +943,7 @@ WHERE meta_account_user_id = ${userId}
 `
   )
 
-module.exports.insertNotification = async (tx, userId, searchString, trackIds) => {
+module.exports.upsertNotification = async (tx, userId, searchString, trackIds) => {
   const [{ notificationId }] = await tx.queryRowsAsync(
     // language=PostgreSQL
     sql`--insertNotification user_search_notification
@@ -953,19 +953,32 @@ module.exports.insertNotification = async (tx, userId, searchString, trackIds) =
     `
   )
 
-  console.log(trackIds)
-
   if (trackIds.length > 0) {
-    await tx.queryAsync(
-      // language=PostgreSQL
-      sql`--insertNotification
+    await updateNotificationTracks(tx, notificationId, trackIds)
+  }
+
+  return notificationId
+}
+
+const updateNotificationTracks = (module.exports.updateNotificationTracks = async (tx, notificationId, trackIds) => {
+  await tx.queryAsync(
+    // language=PostgreSQL
+    sql`--updateNotificationTracks delete
+DELETE
+FROM user_search_notification__track
+WHERE user_search_notification_id = ${notificationId}
+`
+  )
+
+  await tx.queryAsync(
+    // language=PostgreSQL
+    sql`--updateNotificationTracks insert
     INSERT INTO user_search_notification__track (user_search_notification_id, track_id)
     SELECT ${notificationId}, track_id
     FROM unnest(${trackIds} :: INTEGER[]) AS track_id
     `
-    )
-  }
-}
+  )
+})
 
 module.exports.deleteNotification = async notificationId =>
   pg.queryRowsAsync(
