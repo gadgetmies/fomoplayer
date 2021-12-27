@@ -7,6 +7,7 @@ import { requestWithCredentials } from './request-json-with-credentials'
 import { isMobile } from 'react-device-detect'
 import './Select.css'
 import Track from './Track'
+import Spinner from './Spinner'
 
 class Tracks extends Component {
   constructor(props) {
@@ -21,6 +22,7 @@ class Tracks extends Component {
       search: '',
       searchOpen: false,
       searchDebounce: undefined,
+      searchInProgress: false,
       createdNotifications: new Set(),
       modifyingNotification: false
     }
@@ -70,8 +72,9 @@ class Tracks extends Component {
 
     const timeout = setTimeout(
       async () => {
-        this.setState({ searchDebounce: undefined })
+        this.setState({ searchDebounce: undefined, searchInProgress: true })
         const results = await (await requestWithCredentials({ path: `/tracks?q=${search}` })).json()
+        this.setState({ searchInProgress: false })
         this.props.onSearchResults(results)
       },
       skipDebounce ? 0 : 500
@@ -92,7 +95,13 @@ class Tracks extends Component {
     }
     const defaultCart = carts.find(R.prop('is_default'))
 
-    return tracks.length === 0 ? (
+    return this.state.searchInProgress ? (
+      <tr style={{ display: 'block' }}>
+        <td>
+          Searching <Spinner />
+        </td>
+      </tr>
+    ) : tracks.length === 0 ? (
       <tr style={{ display: 'block' }}>
         <td>{emptyListLabels[this.props.listState]}</td>
       </tr>
