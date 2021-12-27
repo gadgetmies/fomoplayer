@@ -187,7 +187,7 @@ export default class BeatportPanel extends React.Component {
           </button>
         ) : (
           <>
-            <p>
+            <p key={'beatport-current'}>
               <button
                 id="beatport-current"
                 disabled={this.props.running || !this.state.hasPlayables}
@@ -202,9 +202,9 @@ export default class BeatportPanel extends React.Component {
               </button>
             </p>
             <h3>Sync (requires login)</h3>
-            <p>
+            <p key={'beatport-new-tracks'}>
               <button
-                id="beatport-new"
+                id="beatport-new-tracks"
                 disabled={this.props.running || !this.state.loggedIn}
                 onClick={() => {
                   this.sendTracks(myBeatportUrlFn, 'tracks', 20)
@@ -213,9 +213,9 @@ export default class BeatportPanel extends React.Component {
                 My Beatport tracks
               </button>
             </p>
-            <p>
+            <p key={'beatport-new-artists-and-labels'}>
               <button
-                id="beatport-new"
+                id="beatport-new-artists-and-labels"
                 disabled={this.props.running || !this.state.loggedIn}
                 onClick={() => {
                   this.sendArtistsAndLabels()
@@ -224,7 +224,7 @@ export default class BeatportPanel extends React.Component {
                 My Beatport artists and labels
               </button>
             </p>
-            <p>
+            <p key={'beatport-downloaded'}>
               <button
                 id="beatport-downloaded"
                 disabled={this.props.running || !this.state.loggedIn}

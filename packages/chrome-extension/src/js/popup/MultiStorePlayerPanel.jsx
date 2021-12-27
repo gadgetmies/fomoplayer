@@ -10,7 +10,7 @@ export default class MultiStorePlayerPanel extends React.Component {
     return (
       <div>
         <h2>Player</h2>
-        <p>
+        <p key={'player-logout'}>
           <button
             id="player-logout"
             disabled={this.props.running}
@@ -19,7 +19,7 @@ export default class MultiStorePlayerPanel extends React.Component {
             Logout
           </button>
         </p>
-        <p>
+        <p key={'player-open'}>
           {!this.props.isCurrent ? (
             <button id="player-open" onClick={() => chrome.tabs.create({ active: true, url: this.props.appUrl })}>
               Open Player
