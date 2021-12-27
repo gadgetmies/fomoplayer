@@ -86,7 +86,6 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
 module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   logger.info(`Updating label tracks: ${details.url}`)
   const storeModule = getStoreModule(storeUrl)
-  console.log('updateLabelTracks', details)
   const users = await getUsersFollowingLabel(details.storeLabelId)
 
   const { tracks, errors } = await storeModule.logic.getLabelTracks(details)
