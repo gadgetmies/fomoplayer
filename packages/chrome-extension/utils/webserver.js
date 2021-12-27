@@ -23,14 +23,32 @@ delete webPackConfig.chromeExtensionBoilerplate
 
 const compiler = webpack(webPackConfig)
 
-const server = new WebpackDevServer(compiler, {
-  hot: true,
-  contentBase: path.join(__dirname, '../build'),
-  sockPort: port,
-  headers: {
-    'Access-Control-Allow-Origin': '*'
+const server = new WebpackDevServer(
+  {
+    https: false,
+    hot: false,
+    client: false,
+    host: 'localhost',
+    port: port,
+    static: {
+      directory: path.join(__dirname, '../build')
+    },
+    devMiddleware: {
+      publicPath: `http://localhost:${port}/`,
+      writeToDisk: true
+    },
+    headers: {
+      'Access-Control-Allow-Origin': '*'
+    },
+    allowedHosts: 'all'
   },
-  disableHostCheck: true
-})
+  compiler
+)
 
-server.listen(port)
+if (process.env.NODE_ENV === 'development' && module.hot) {
+  module.hot.accept()
+}
+
+;(async () => {
+  await server.start()
+})()

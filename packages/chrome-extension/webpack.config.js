@@ -3,13 +3,15 @@ const path = require('path')
 const CleanWebpackPlugin = require('clean-webpack-plugin').CleanWebpackPlugin
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const WriteFilePlugin = require('write-file-webpack-plugin')
 
 const config = require('./utils/config.js')
 
 const nodeEnv = process.env.NODE_ENV || 'development'
 const sharedConfig = require('multi-store-player-shared-config')(nodeEnv).config
-const sharedConfigKeys = Object.keys(sharedConfig)
+
+const alias = {
+  'react-dom': '@hot-loader/react-dom'
+}
 
 const fileExtensions = ['jpg', 'jpeg', 'png', 'gif', 'eot', 'otf', 'svg', 'ttf', 'woff', 'woff2']
 
@@ -28,11 +30,14 @@ let options = {
     rules: [
       {
         test: /\.(sa|sc|c)ss$/,
-        use: ['style-loader', 'css-loader']
+        use: [{ loader: 'style-loader' }, { loader: 'css-loader' }]
       },
       {
         test: new RegExp('.(' + fileExtensions.join('|') + ')$'),
-        loader: 'file-loader?name=[name].[ext]'
+        loader: 'file-loader',
+        options: {
+          name: '[name].[ext]'
+        }
       },
       {
         test: /\.html$/,
@@ -41,12 +46,20 @@ let options = {
       },
       {
         test: /\.(js|jsx)$/,
-        loader: 'babel-loader',
+        use: [
+          {
+            loader: 'source-map-loader'
+          },
+          {
+            loader: 'babel-loader'
+          }
+        ],
         exclude: /node_modules/
       }
     ]
   },
   resolve: {
+    alias: alias,
     extensions: fileExtensions.map(extension => '.' + extension).concat(['.jsx', '.js', '.css'])
   },
   plugins: [
@@ -54,48 +67,52 @@ let options = {
     new CleanWebpackPlugin(),
     new DefinePlugin(config),
     // expose and write the allowed env vars on the compiled bundle
-    new EnvironmentPlugin(['NODE_ENV', ...sharedConfigKeys]),
-    new CopyWebpackPlugin([
-      {
-        from: 'src/manifest.json',
-        transform: function(content, path) {
-          // generates the manifest file using the package.json informations
-          return Buffer.from(
-            JSON.stringify({
-              description: process.env.npm_package_description,
-              version: process.env.npm_package_version,
-              key: config.EXTENSION_KEY,
-              oauth2: {
-                client_id: config.GOOGLE_CLIENT_ID,
-                scopes: [""]
-              },
-              ...JSON.parse(content.toString())
-            })
-          )
+    new EnvironmentPlugin({ ...sharedConfig, IP: sharedConfig.IP || '' }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'src/manifest.json',
+          force: true,
+          transform: function(content, path) {
+            // generates the manifest file using the package.json informations
+            return Buffer.from(
+              JSON.stringify({
+                description: process.env.npm_package_description,
+                version: process.env.npm_package_version,
+                key: config.EXTENSION_KEY,
+                oauth2: {
+                  client_id: config.GOOGLE_CLIENT_ID,
+                  scopes: ['']
+                },
+                ...JSON.parse(content.toString())
+              })
+            )
+          }
         }
-      }
-    ]),
+      ]
+    }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'src', 'popup.html'),
       filename: 'popup.html',
-      chunks: ['popup']
+      chunks: ['popup'],
+      cache: false
     }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'src', 'options.html'),
       filename: 'options.html',
-      chunks: ['options']
-    }),
+      chunks: ['options'],
+      cache: false
+    })
     // new HtmlWebpackPlugin({
     //   template: path.join(__dirname, "src", "background.html"),
     //   filename: "background.html",
     //   chunks: ["background"]
-    // }),
-    new WriteFilePlugin()
+    // })
   ]
 }
 
 if (nodeEnv === 'development') {
-  options.devtool = 'cheap-module-eval-source-map'
+  options.devtool = 'cheap-module-source-map'
 }
 
 module.exports = options
