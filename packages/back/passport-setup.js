@@ -50,11 +50,16 @@ module.exports = function passportSetup() {
 
   const verify = async (jwt_payload, done) => {
     if (jwt_payload && jwt_payload.sub && allowedIssuers.includes(jwt_payload.iss)) {
-      const acc = await account.findOrCreateByIdentifier(jwt_payload.iss, jwt_payload.sub)
-      if (acc) {
-        return done(null, acc)
-      } else {
-        return done(null, false)
+      try {
+        const acc = await account.findOrCreateByIdentifier(jwt_payload.iss, jwt_payload.sub)
+        if (acc) {
+          return done(null, acc)
+        } else {
+          return done(null, false)
+        }
+      } catch (e) {
+        logger.error(e)
+        return done(e)
       }
     }
 
