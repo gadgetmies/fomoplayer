@@ -105,7 +105,7 @@ module.exports.addArtistsToIgnore = async (userId, artistIds) => {
       await removeIgnoredTracksFromUsers(tx, [userId])
     })
   } catch (e) {
-    console.log(e)
+    logger.error(e)
   }
 }
 
