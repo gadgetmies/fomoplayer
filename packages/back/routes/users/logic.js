@@ -51,7 +51,8 @@ const {
   queryNotificationOwner,
   upsertNotification,
   deleteNotification,
-  queryNotifications
+  queryNotifications,
+  addPurchasedTracksToUser
 } = require('./db')
 
 const logger = require('../../logger')(__filename)
@@ -297,6 +298,10 @@ module.exports.addPlaylistFollows = async (playlists, userId, sourceId) => {
   return addedPlaylists
 }
 
+module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {
+  await addPurchasedTracksToUser(userId, trackIds)
+}
+
 module.exports.addStoreTracksToUser = async (storeUrl, type, tracks, userId, sourceId) => {
   logger.info('Start processing received tracks')
 
@@ -355,6 +360,17 @@ module.exports.updateCartContents = async (userId, cartId, operations) => {
 
   await removeTracksFromCart(userId, cartId, tracksToBeRemoved)
   await addTracksToCart(userId, cartId, tracksToBeAdded)
+}
+
+module.exports.updateAllCartContents = async (userId, operations) => {
+  const tracksToBeRemoved = operations.filter(R.propEq('op', 'remove')).map(R.prop('trackId'))
+  const tracksToBeAdded = operations.filter(R.propEq('op', 'add')).map(R.prop('trackId'))
+
+  const carts = await queryUserCarts(userId)
+  for (const { id } of carts) {
+    await removeTracksFromCart(userId, id, tracksToBeRemoved)
+    await addTracksToCart(userId, id, tracksToBeAdded)
+  }
 }
 
 const getCartDetails = (module.exports.getCartDetails = async (userId, cartId) => {

@@ -1,10 +1,12 @@
 const logger = require('../../logger')(__filename)
+const R = require('ramda')
 const { insertSource } = require('../../jobs/watches/shared/db')
 const {
   addArtistsOnLabelsToIgnore,
   addArtistsToIgnore,
   addLabelsToIgnore,
   addReleasesToIgnore,
+  addPurchasedTracksToUser,
   addStoreTracksToUser,
   addArtistFollowsWithIds,
   addLabelFollowsWithIds,
@@ -33,6 +35,7 @@ const {
   updateCartDetails,
   getCartDetails,
   updateCartContents,
+  updateAllCartContents,
   createNotification,
   removeNotification,
   getNotifications
@@ -42,7 +45,8 @@ const typeIs = require('type-is')
 const router = require('express-promise-router')()
 
 router.get('/tracks', async ({ user: { id: authUserId }, query: { sort = '-score' } }, res) => {
-  getUserTracks(authUserId, sort).tap(userTracks => res.json(userTracks))
+  const userTracks = await getUserTracks(authUserId, sort)
+  res.json(userTracks)
 })
 
 router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
@@ -116,13 +120,18 @@ const tracksHandler = type => async (
   { body: tracks, headers: { 'x-multi-store-player-store': storeUrl }, user: { id: userId } },
   res
 ) => {
-  const sourceId = await insertSource({
-    operation: 'tracksHandler',
-    type,
-    storeUrl
-  })
+  let addedTracks = []
+  if (!storeUrl) {
+    await addPurchasedTracksToUser(userId, tracks.map(R.prop('trackId')))
+  } else {
+    const sourceId = await insertSource({
+      operation: 'tracksHandler',
+      type,
+      storeUrl
+    })
 
-  const addedTracks = await addStoreTracksToUser(storeUrl, type, tracks, userId, sourceId)
+    addedTracks = await addStoreTracksToUser(storeUrl, type, tracks, userId, sourceId)
+  }
   res.status(201).send(addedTracks)
 }
 
@@ -222,6 +231,11 @@ router.post('/carts/:id', async ({ user: { id: userId }, params: { id }, body },
 router.patch('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: cartId }, body: operations }, res) => {
   await updateCartContents(userId, cartId, operations)
   res.send(await getCartDetails(userId, cartId))
+})
+
+router.patch('/carts', async ({ user: { id: userId }, body: operations }, res) => {
+  await updateAllCartContents(userId, operations)
+  res.status(204).send()
 })
 
 router.get('/notifications', async ({ user: { id: userId } }, res) => {

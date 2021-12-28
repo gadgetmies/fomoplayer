@@ -93,7 +93,8 @@ class App extends Component {
       loggedIn: false,
       loading: true,
       tracksData: defaultTracksData,
-      initialPosition: NaN
+      initialPosition: NaN,
+      processingCart: false
     }
   }
 
@@ -156,6 +157,22 @@ class App extends Component {
     })
 
     this.updateCart(cartDetails)
+  }
+
+  async onMarkPurchased(trackId) {
+    this.setState({ processingCart: true })
+    await requestJSONwithCredentials({
+      path: `/me/purchased/`,
+      method: 'POST',
+      body: [{ trackId }]
+    })
+    await requestWithCredentials({
+      path: `/me/carts/`,
+      method: 'PATCH',
+      body: [{ op: 'remove', trackId }]
+    })
+    await Promise.all([this.updateCarts(), this.updateTracks()])
+    this.setState({ processingCart: false })
   }
 
   updateCart(cartDetails) {
@@ -269,6 +286,8 @@ class App extends Component {
                       totalTracks={this.state.tracksData.meta.totalTracks}
                       onAddToCart={this.addToCart.bind(this)}
                       onRemoveFromCart={this.removeFromCart.bind(this)}
+                      onMarkPurchased={this.onMarkPurchased.bind(this)}
+                      processingCart={this.state.processingCart}
                     />
                   )}
                 />

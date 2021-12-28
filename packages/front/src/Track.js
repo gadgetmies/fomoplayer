@@ -62,6 +62,15 @@ class Track extends Component {
     }
   }
 
+  async handlMarkPurchasedButtonClick() {
+    this.setState({ processingCart: true })
+    try {
+      await this.props.onMarkPurchased(this.props.id)
+    } finally {
+      this.setState({ processingCart: false })
+    }
+  }
+
   render() {
     const spotifyTrack = this.getStoreTrackByStoreCode('spotify')
     const beaportTrack = this.getStoreTrackByStoreCode('beatport')
@@ -73,9 +82,10 @@ class Track extends Component {
     const artistsAndRemixers = R.uniq(this.props.artists.concat(this.props.remixers))
     const cartLink = new URL(`/cart/${this.props.cartUuid}`, window.location).toString()
     const handleCartButtonClick = this.handleCartButtonClick.bind(this)
+    const handleMarkPurchasedButtonClick = this.handlMarkPurchasedButtonClick.bind(this)
     const defaultCartId = this.props.defaultCartId
     const inDefaultCart = this.props.inDefaultCart
-    const processingCart = this.state.processingCart
+    const processingCart = this.props.processingCart || this.state.processingCart
 
     return (
       <tr
@@ -180,6 +190,18 @@ class Track extends Component {
                   className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''}`}
                   style={{ width: 100, left: '50%', zIndex: 100, marginLeft: -50 }}
                 >
+                  <button
+                    disabled={processingCart}
+                    style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
+                    className="button button-push_button-small button-push_button-primary"
+                    onClick={e => {
+                      e.stopPropagation()
+                      return handleMarkPurchasedButtonClick()
+                    }}
+                  >
+                    Mark purchased and remove from carts
+                  </button>
+                  <hr />
                   <div style={{ maxHeight: 150, overflowY: 'scroll' }}>
                     {this.props.carts.map(({ id, name }) => {
                       const isInCart = this.props.inCarts.find(R.propEq('id', id))

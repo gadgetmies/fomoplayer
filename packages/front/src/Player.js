@@ -376,9 +376,11 @@ class Player extends Component {
           tracks={tracks}
           listState={this.state.listState}
           currentTrack={(currentTrack || {}).id}
+          processingCart={this.props.processingCart}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onAddToCart={this.props.onAddToCart}
           onRemoveFromCart={this.props.onRemoveFromCart}
+          onMarkPurchased={this.props.onMarkPurchased}
           onIgnoreArtistsByLabels={this.ignoreArtistsByLabels}
           onPreviewRequested={id => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())

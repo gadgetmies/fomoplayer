@@ -4,6 +4,18 @@ const pg = require('../../db/pg.js')
 const logger = require('../../logger')(__filename)
 const { using } = require('bluebird')
 
+module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- addPurchasedTrackToUser
+INSERT INTO public.user__store__track_purchased (meta_account_user_id, store__track_id)
+SELECT ${userId}, store__track_id
+FROM store__track
+WHERE track_id = ANY(${trackIds})
+`
+  )
+}
+
 module.exports.addPurchasedStoreTrackToUser = async (tx, userId, storeTrack) =>
   await tx.queryAsync(
     // language=PostgreSQL
