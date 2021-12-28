@@ -321,6 +321,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 chrome.storage.local.get(['enabledStores', 'appUrl'], ({ appUrl, enabledStores }) => {
   chrome.storage.local.set({
     enabledStores: enabledStores ? enabledStores : { beatport: true, bandcamp: true },
-    appUrl: appUrl ? appUrl : 'https://multi-store-player.herokuapp.com'
+    appUrl: appUrl ? appUrl : 'https://fomo-player.herokuapp.com'
   })
 })
