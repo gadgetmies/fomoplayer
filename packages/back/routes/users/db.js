@@ -4,7 +4,7 @@ const pg = require('../../db/pg.js')
 const logger = require('../../logger')(__filename)
 const { using } = require('bluebird')
 
-module.exports.addPurchasedTrackToUser = async (tx, userId, storeTrack) =>
+module.exports.addPurchasedStoreTrackToUser = async (tx, userId, storeTrack) =>
   await tx.queryAsync(
     // language=PostgreSQL
     sql`-- addPurchasedTrackToUser

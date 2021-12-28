@@ -5,7 +5,7 @@ const logger = require('../../logger')(__filename)
 
 const { addStoreTrack, ensureArtistExists, ensureReleaseExists, ensureLabelExists } = require('../shared/db/store')
 
-const { addPurchasedTrackToUser, addTrackToUser: addTrackToUserDb, artistOnLabelInIgnore } = require('./db')
+const { addPurchasedStoreTrackToUser, addTrackToUser: addTrackToUserDb, artistOnLabelInIgnore } = require('./db')
 
 const addTrackToUser = (module.exports.addTrackToUser = async (tx, userId, artists, trackId, labelId, sourceId) => {
   if (await artistOnLabelInIgnore(tx, userId, artists, labelId)) {
@@ -41,7 +41,7 @@ module.exports.addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId,
       await addTrackToUser(tx, userId, artists, trackId, labelId, sourceId)
 
       if (type === 'purchased') {
-        await addPurchasedTrackToUser(tx, userId, track)
+        await addPurchasedStoreTrackToUser(tx, userId, track)
       }
     }
     // TODO: Update materialized views
