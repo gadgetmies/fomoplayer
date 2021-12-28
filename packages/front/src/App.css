@@ -438,21 +438,6 @@ audio {
   opacity: 1;
 }
 
-.table-cell-button-row > .table-cell-button:not(:first-child), .table-cell-button-row__last {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  border-left: 1px solid #808080;
-}
-
-.table-cell-button-row > .table-cell-button:not(:last-child), .table-cell-button-row__first {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.table-cell-button-row > .table-cell-button {
-  margin: 0;
-}
-
 .no-style-link {
   text-decoration: none;
 }
@@ -893,5 +878,21 @@ input[type='radio'] + .state-select-icon--icon {
   /*Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table*/
   .tracks-table tbody {
     height: calc(100vh - 38px);
+  }
+
+
+  .table-cell-button-row > .table-cell-button:not(:first-child), .table-cell-button-row__last {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: 1px solid #808080;
+  }
+
+  .table-cell-button-row > .table-cell-button:not(:last-child), .table-cell-button-row__first {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .table-cell-button-row > .table-cell-button {
+    margin: 0;
   }
 }
