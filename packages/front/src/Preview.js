@@ -26,6 +26,14 @@ const getShortcuts = mode => (
       <table>
         <tbody>
           <tr>
+            <td colSpan="2">
+              <span className="keyboard-shortcut">
+                <FontAwesomeIcon icon="forward" />
+              </span>
+            </td>
+            <td>Seek forward</td>
+          </tr>
+          <tr>
             <td>
               <span className="keyboard-shortcut">
                 <FontAwesomeIcon icon="forward" />
@@ -37,10 +45,10 @@ const getShortcuts = mode => (
           <tr>
             <td colSpan="2">
               <span className="keyboard-shortcut">
-                <FontAwesomeIcon icon="forward" />
+                <FontAwesomeIcon icon="backward" />
               </span>
             </td>
-            <td>Seek forward</td>
+            <td>Seek backward</td>
           </tr>
           <tr>
             <td>
@@ -50,14 +58,6 @@ const getShortcuts = mode => (
             </td>
             <td>x2</td>
             <td>Previous</td>
-          </tr>
-          <tr>
-            <td colSpan="2">
-              <span className="keyboard-shortcut">
-                <FontAwesomeIcon icon="backward" />
-              </span>
-            </td>
-            <td>Seek backward</td>
           </tr>
           <tr>
             <td colSpan="2">
