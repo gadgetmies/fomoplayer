@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
-import TrackTitle from './TrackTitle.js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as L from 'partial.lenses'
 import './Preview.css'
@@ -10,7 +9,7 @@ import { requestWithCredentials } from './request-json-with-credentials'
 import Collection from './Collection'
 import Spinner from './Spinner'
 import StoreIcon from './StoreIcon'
-import { trackTitle } from './trackFunctions'
+import { trackArtistsAndTitle, trackTitle } from './trackFunctions'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -265,11 +264,9 @@ class Preview extends Component {
     return (
       <div className="preview noselect">
         {this.shortcuts}
-        <TrackTitle
-          className="preview-title"
-          artists={(currentTrack || { artists: [] }).artists}
-          title={trackTitle(currentTrack)}
-        />
+        <div className="preview-title">
+          {this.props.currentTrack ? trackArtistsAndTitle(this.props.currentTrack) : <div>&nbsp;</div>}
+        </div>
         <div className="player-collection-wrapper">
           <div className="preview-wrapper">
             <div
