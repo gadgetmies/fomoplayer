@@ -7,6 +7,7 @@ import MediaSession from '@mebtte/react-media-session'
 import { artistNamesToString } from './TrackTitle'
 import FollowPopup from './FollowPopup'
 import IgnorePopup from './IgnorePopup'
+import { trackTitle } from './trackFunctions'
 
 class Player extends Component {
   constructor(props) {
@@ -78,6 +79,7 @@ class Player extends Component {
 
   async setCurrentTrack(track) {
     this.setState({ currentTrack: track })
+    document.title = `${trackTitle(track)} - Fomo Player`
 
     if (this.props.mode === 'app') {
       await requestWithCredentials({

@@ -10,6 +10,7 @@ import { requestWithCredentials } from './request-json-with-credentials'
 import Collection from './Collection'
 import Spinner from './Spinner'
 import StoreIcon from './StoreIcon'
+import { trackTitle } from './trackFunctions'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -237,10 +238,6 @@ class Preview extends Component {
     }
   }
 
-  trackTitle(track) {
-    return track ? `${track.title} ${track.version ? `(${track.version})` : ''}` : ''
-  }
-
   setVolume(volume) {
     this.setState({ volume: volume * 100 })
     this.getPlayer().volume = volume
@@ -271,7 +268,7 @@ class Preview extends Component {
         <TrackTitle
           className="preview-title"
           artists={(currentTrack || { artists: [] }).artists}
-          title={this.trackTitle(currentTrack)}
+          title={trackTitle(currentTrack)}
         />
         <div className="player-collection-wrapper">
           <div className="preview-wrapper">
