@@ -12,7 +12,7 @@ export default class Error extends React.Component {
   createIssue() {
     const issueUrl = newGithubIssueUrl({
       user: 'gadgetmies',
-      repo: 'fomo-player',
+      repo: 'fomoplayer',
       body: `Please tell us, what you were trying to do:
 
 ---
