@@ -180,22 +180,38 @@ class Track extends Component {
                   className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''}`}
                   style={{ width: 100, left: '50%', zIndex: 100, marginLeft: -50 }}
                 >
-                  {this.props.carts.map(({ id, name }) => {
-                    const isInCart = this.props.inCarts.find(R.propEq('id', id))
-                    return (
-                      <button
-                        disabled={processingCart}
-                        style={{ display: 'block', width: '100%', marginBottom: 4 }}
-                        className="button button-push_button-small button-push_button-primary"
-                        onClick={e => {
-                          e.stopPropagation()
-                          return handleCartButtonClick(id, isInCart)
-                        }}
-                      >
-                        <FontAwesomeIcon icon={isInCart ? 'minus' : 'plus'} /> {name}
-                      </button>
-                    )
-                  })}
+                  <div style={{ maxHeight: 150, overflowY: 'scroll' }}>
+                    {this.props.carts.map(({ id, name }) => {
+                      const isInCart = this.props.inCarts.find(R.propEq('id', id))
+                      return (
+                        <button
+                          disabled={processingCart}
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            marginBottom: 4,
+                            position: 'relative',
+                            paddingLeft: '20px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            textAlign: 'left'
+                          }}
+                          className="button button-push_button-small button-push_button-primary"
+                          onClick={e => {
+                            e.stopPropagation()
+                            return handleCartButtonClick(id, isInCart)
+                          }}
+                        >
+                          <FontAwesomeIcon
+                            icon={isInCart ? 'minus' : 'plus'}
+                            style={{ position: 'absolute', left: 0, marginLeft: 6 }}
+                          />{' '}
+                          {name}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               </span>
             </div>
