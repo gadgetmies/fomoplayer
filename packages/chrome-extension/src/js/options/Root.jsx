@@ -44,7 +44,7 @@ export default class Root extends React.Component {
   render() {
     return (
       <div>
-        <h1>Multi Store Player Extension</h1>
+        <h1>Fomo Player Extension</h1>
         <p>
           <label>
             App URL:

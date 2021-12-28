@@ -22,7 +22,7 @@ export default class Menu extends Component {
     return (
       <div id="menu" className={'menu-container'}>
         <div className={'menu-stores'}>
-          <h2>Multi Store Player</h2>
+          <h2>Fomo Player</h2>
           <MenuNavButton to={'/'} exact={true} onClick={() => this.props.onNavButtonClicked()}>
             Tracks
           </MenuNavButton>
