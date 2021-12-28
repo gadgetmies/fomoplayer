@@ -387,7 +387,6 @@ class Player extends Component {
           onPreviewRequested={id => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
             this.setCurrentTrack(requestedTrack)
-            this.setPlaying(true)
           }}
           onFollowClicked={this.openFollowPopup.bind(this)}
           onIgnoreClicked={this.openIgnorePopup.bind(this)}
