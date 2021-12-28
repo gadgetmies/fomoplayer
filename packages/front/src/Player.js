@@ -307,7 +307,10 @@ class Player extends Component {
 
   async toggleCurrentInCart() {
     this.setState({ togglingCurrentInCart: true })
-    await (this.isCurrentInCart() ? this.props.onRemoveFromCart : this.props.onAddToCart)(this.state.currentTrack.id)
+    await (this.isCurrentInCart() ? this.props.onRemoveFromCart : this.props.onAddToCart)(
+      this.getDefaultCart().id,
+      this.state.currentTrack.id
+    )
     this.setState({ togglingCurrentInCart: false })
   }
 
