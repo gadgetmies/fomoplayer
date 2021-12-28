@@ -100,7 +100,7 @@ class Track extends Component {
         {this.props.mode === 'app' ? (
           <td className={'new-cell tracks-cell'}>
             <button
-              className="button table-cell-button track-play-button"
+              className="button track-play-button"
               onClick={this.props.onDoubleClick.bind(this)}
               onMouseEnter={() => this.setHeardHover(true)}
               onMouseLeave={() => this.setHeardHover(false)}
