@@ -4,10 +4,9 @@ import { requestWithCredentials } from './request-json-with-credentials.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import MediaSession from '@mebtte/react-media-session'
-import { artistNamesToString } from './TrackTitle'
 import FollowPopup from './FollowPopup'
 import IgnorePopup from './IgnorePopup'
-import { trackTitle } from './trackFunctions'
+import { trackTitle, artistNamesToString, trackArtistsAndTitle } from './trackFunctions'
 
 class Player extends Component {
   constructor(props) {
@@ -79,7 +78,7 @@ class Player extends Component {
 
   async setCurrentTrack(track) {
     this.setState({ currentTrack: track })
-    document.title = `${trackTitle(track)} - Fomo Player`
+    document.title = `${trackArtistsAndTitle(track)} - Fomo Player`
 
     if (this.props.mode === 'app') {
       await requestWithCredentials({
@@ -363,7 +362,7 @@ class Player extends Component {
           onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
         />
         <MediaSession
-          title={currentTrack ? currentTrack.title : ''}
+          title={currentTrack ? trackTitle(currentTrack) : ''}
           artist={currentTrack ? artistNamesToString(currentTrack.artists) : ''}
           onSeekBackward={() => console.log('seek backward')}
           onSeekForward={() => console.log('seek forward')}
