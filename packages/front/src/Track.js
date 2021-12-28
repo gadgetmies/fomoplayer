@@ -224,6 +224,7 @@ class Track extends Component {
                             e.stopPropagation()
                             return handleCartButtonClick(id, isInCart)
                           }}
+                          key={`cart-${id}`}
                         >
                           <FontAwesomeIcon
                             icon={isInCart ? 'minus' : 'plus'}
