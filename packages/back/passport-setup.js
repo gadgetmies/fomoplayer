@@ -32,6 +32,10 @@ module.exports = function passportSetup() {
         callbackURL: `${config.apiURL}/auth/login/google/return`
       },
       async (accessToken, refreshToken, profile, done) => {
+        if (profile.id === undefined) {
+          throw new Error('OIDC profile id not returned!')
+        }
+
         try {
           const user = await account.findOrCreateByIdentifier(googleOpenIDIssuer, profile.id)
           done(null, user)
