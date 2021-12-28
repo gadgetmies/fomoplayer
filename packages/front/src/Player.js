@@ -349,8 +349,6 @@ class Player extends Component {
         <MediaSession
           title={currentTrack ? currentTrack.title : ''}
           artist={currentTrack ? artistNamesToString(currentTrack.artists) : ''}
-          onPlay={() => this.setPlaying(true)}
-          onPause={() => this.setPlaying(false)}
           onSeekBackward={() => console.log('seek backward')}
           onSeekForward={() => console.log('seek forward')}
           onPreviousTrack={() => this.handlePreviousClick()}
