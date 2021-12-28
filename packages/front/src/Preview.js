@@ -280,7 +280,8 @@ class Preview extends Component {
               style={{ flex: 5, position: 'relative' }}
               onMouseDown={e => {
                 if (e.button !== 0) return
-                const trackPositionPercent = (e.clientX - e.currentTarget.offsetLeft) / e.currentTarget.clientWidth
+                const boundingRect = e.currentTarget.getBoundingClientRect()
+                const trackPositionPercent = (e.clientX - boundingRect.left) / e.currentTarget.clientWidth
                 if (totalDuration * trackPositionPercent > endPosition) return
                 const previewPositionInSeconds = (totalDuration * trackPositionPercent - startOffset) / 1000
                 this.getPlayer().currentTime = previewPositionInSeconds
