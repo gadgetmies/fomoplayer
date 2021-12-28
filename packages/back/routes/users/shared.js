@@ -7,13 +7,13 @@ const { addStoreTrack, ensureArtistExists, ensureReleaseExists, ensureLabelExist
 
 const { addPurchasedTrackToUser, addTrackToUser: addTrackToUserDb, artistOnLabelInIgnore } = require('./db')
 
-const addTrackToUser = module.exports.addTrackToUser = async (tx, userId, artists, trackId, labelId, sourceId) => {
+const addTrackToUser = (module.exports.addTrackToUser = async (tx, userId, artists, trackId, labelId, sourceId) => {
   if (await artistOnLabelInIgnore(tx, userId, artists, labelId)) {
     logger.info('One of the artists ignored on label by user, skipping', { userId, artists, labelId })
   } else {
     await addTrackToUserDb(tx, userId, trackId, sourceId)
   }
-}
+})
 
 module.exports.addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = 'tracks') => {
   logger.debug('addStoreTrackToUsers', { storeUrl, userIds, track, sourceId, type })

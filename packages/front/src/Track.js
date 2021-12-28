@@ -163,9 +163,7 @@ class Track extends Component {
                   }}
                 >
                   <FontAwesomeIcon icon={inDefaultCart ? 'minus' : 'plus'} />{' '}
-                  <span className={'cart-button-label'}>
-                    {inDefaultCart ? 'Remove from cart' : 'Add to cart'}
-                  </span>
+                  <span className={'cart-button-label'}>{inDefaultCart ? 'Remove from cart' : 'Add to cart'}</span>
                 </PillButton>
                 <span className={'popup-anchor'}>
                   <PillButton
