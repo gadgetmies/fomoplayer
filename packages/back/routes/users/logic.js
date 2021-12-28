@@ -375,7 +375,7 @@ module.exports.updateAllCartContents = async (userId, operations) => {
 
 const getCartDetails = (module.exports.getCartDetails = async (userId, cartId) => {
   await verifyCartOwnership(userId, cartId)
-  return await queryCartDetails(cartId)
+  return await queryCartDetails(cartId, userId)
 })
 
 module.exports.getDefaultCartDetails = async userId => {
