@@ -179,8 +179,8 @@ class Track extends Component {
                   </PillButton>
                 </span>
                 <div
-                  className={'popup-content'}
-                  style={{ width: 100, left: '50%', zIndex: 100, marginLeft: -50, marginTop: '1px' }}
+                  className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''}`}
+                  style={{ width: 100, left: '50%', zIndex: 100, marginLeft: -50 }}
                 >
                   {this.props.carts.map(({ id, name }) => {
                     const isInCart = this.props.inCarts.find(R.propEq('id', id))

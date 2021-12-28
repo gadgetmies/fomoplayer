@@ -561,6 +561,10 @@ input[type='radio'] + .state-select-icon--icon {
   box-shadow: 0px 0px 5px black;
 }
 
+.popup-content__above {
+  bottom: 100%;
+}
+
 .popup-anchor:hover + .popup-content {
   display: block;
 }
