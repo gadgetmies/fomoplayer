@@ -311,9 +311,13 @@ class Player extends Component {
 
   isCurrentInCart() {
     const currentTrack = this.getCurrentTrack()
-    return currentTrack && this.props.carts.find(R.prop('is_default'))
-      ? this.props.carts.find(R.prop('is_default')).tracks.find(R.propEq('id', currentTrack.id))
+    return currentTrack && this.getDefaultCart()
+      ? this.getDefaultCart().tracks.find(R.propEq('id', currentTrack.id))
       : null
+  }
+
+  getDefaultCart() {
+    return this.props.carts.find(R.prop('is_default'))
   }
 
   render() {
