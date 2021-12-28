@@ -117,18 +117,18 @@ class Player extends Component {
     return R.findIndex(R.propEq('id', track.id), this.getTracks())
   }
 
-  jumpTracks(numberOfTracksToJump) {
+  async jumpTracks(numberOfTracksToJump) {
     const currentTrackIndex = this.getCurrentTrackIndex()
     const indexToJumpTo = R.clamp(0, this.getTracks().length - 1, currentTrackIndex + numberOfTracksToJump)
-    this.setCurrentTrack(this.getTracks()[indexToJumpTo])
+    await this.setCurrentTrack(this.getTracks()[indexToJumpTo])
   }
 
-  playPreviousTrack() {
-    this.jumpTracks(-1)
+  async playPreviousTrack() {
+    await this.jumpTracks(-1)
   }
 
-  playNextTrack() {
-    this.jumpTracks(1)
+  async playNextTrack() {
+    await this.jumpTracks(1)
   }
 
   seek(offset) {
@@ -141,10 +141,10 @@ class Player extends Component {
     return ((preview ? preview.length_ms : this.state.currentTrack.duration) / 5 / 1000) | 7
   }
 
-  handleNextClick() {
+  async handleNextClick() {
     if (this.state.nextDoubleClickStarted) {
       this.setState({ nextDoubleClickStarted: false })
-      this.playNextTrack()
+      await this.playNextTrack()
     } else {
       const that = this
       this.setState({ nextDoubleClickStarted: true })
@@ -155,10 +155,10 @@ class Player extends Component {
     }
   }
 
-  handlePreviousClick() {
+  async handlePreviousClick() {
     if (this.state.previousDoubleClickStarted) {
       this.setState({ previousDoubleClickStarted: false })
-      this.playPreviousTrack()
+      await this.playPreviousTrack()
     } else {
       this.setState()
       const that = this
@@ -170,9 +170,9 @@ class Player extends Component {
     }
   }
 
-  playNextUnheard() {
+  async playNextUnheard() {
     const firstUnplayed = this.getTracks().findIndex(R.propSatisfies(R.isNil, 'heard'))
-    this.jumpTracks(firstUnplayed - this.getCurrentTrackIndex())
+    await this.jumpTracks(firstUnplayed - this.getCurrentTrackIndex())
   }
 
   setPlaying(playing) {
