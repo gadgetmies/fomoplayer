@@ -32,8 +32,7 @@ const accountAPI = {
 FROM meta_account
          NATURAL JOIN meta_account__authentication_method_details
          NATURAL JOIN authentication_method
-WHERE authentication_method_code = 'email'
-  AND meta_account_user_id = ${id}`
+WHERE meta_account_user_id = ${id}`
     )
     if (!details) {
       throw new Error(`User not found with id: ${id}`)
