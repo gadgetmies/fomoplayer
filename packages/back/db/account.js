@@ -55,6 +55,10 @@ WHERE authentication_method_code = 'oidc'
     return details
   },
   findOrCreateByIdentifier: async (issuer, subject) => {
+    console.log(issuer, subject)
+    if (!issuer || !subject) {
+      throw new Error('OICD issuer or subject not set!')
+    }
     const issuerWithoutProtocol = issuer.replace('https://', '')
     const existingUser = await accountAPI.findByIdentifier(issuerWithoutProtocol, subject)
     if (existingUser) {
