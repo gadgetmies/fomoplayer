@@ -67,6 +67,15 @@ const getShortcuts = mode => (
             <td>Toggle playback</td>
           </tr>
           <tr>
+            <td>
+              <span className="keyboard-shortcut">
+                <FontAwesomeIcon icon="play" />
+              </span>
+            </td>
+            <td>x2</td>
+            <td>Add current to default cart</td>
+          </tr>
+          <tr>
             <td colSpan="2">
               <span className="keyboard-shortcut">Q</span>
             </td>
