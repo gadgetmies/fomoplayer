@@ -134,6 +134,7 @@ class Preview extends Component {
 
   setPlaying(playing) {
     this.setState({ playing })
+    this.props.onPlayPauseToggle(playing)
   }
 
   togglePlaying() {

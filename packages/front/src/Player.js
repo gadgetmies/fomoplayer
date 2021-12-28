@@ -20,7 +20,9 @@ class Player extends Component {
       searchResults: [],
       togglingCurrentInCart: false,
       selectedCartId: props.carts[0].id,
-      requestNotificationSearch: ''
+      requestNotificationSearch: '',
+      nextDoubleClickStarted: false,
+      playPauseDoubleClickStarted: false
     }
 
     this.preview = React.createRef()
@@ -142,7 +144,6 @@ class Player extends Component {
       this.setState({ nextDoubleClickStarted: false })
       this.playNextTrack()
     } else {
-      this.setState()
       const that = this
       this.setState({ nextDoubleClickStarted: true })
       setTimeout(() => {
@@ -320,6 +321,19 @@ class Player extends Component {
     return this.props.carts.find(R.prop('is_default'))
   }
 
+  async handlePlayPauseToggle(playing) {
+    if (playing && this.state.playPauseDoubleClickStarted) {
+      this.setState({ playPauseDoubleClickStarted: false })
+      await this.props.onAddToCart(this.getDefaultCart().id, this.state.currentTrack.id)
+    } else if (!playing) {
+      const that = this
+      this.setState({ playPauseDoubleClickStarted: true })
+      setTimeout(() => {
+        that.setState({ playPauseDoubleClickStarted: false })
+      }, 200)
+    }
+  }
+
   render() {
     const tracks = this.getTracks()
     const currentTrack = this.getCurrentTrack()
@@ -366,6 +380,7 @@ class Player extends Component {
           totalTracks={this.props.meta ? this.props.meta.totalTracks : null}
           onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
           onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
+          onPlayPauseToggle={this.handlePlayPauseToggle.bind(this)}
           inCart={this.isCurrentInCart()}
           ref={this.preview}
         />
