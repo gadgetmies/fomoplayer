@@ -41,7 +41,7 @@ export default class Menu extends Component {
           <h3>Links</h3>
           <p>
             <a
-              href={'https://github.com/gadgetmies/multi_store_player'}
+              href={'https://github.com/gadgetmies/fomo-player'}
               className={`button menu-item button-push_button-large button-push_button-menu link`}
               target="_blank"
               rel="noopener noreferrer"
@@ -50,7 +50,7 @@ export default class Menu extends Component {
               &nbsp; Instructions
             </a>
             <a
-              href={'https://github.com/gadgetmies/multi_store_player#chrome-extension'}
+              href={'https://github.com/gadgetmies/fomo-player#chrome-extension'}
               className={`button menu-item button-push_button-large button-push_button-menu link`}
               target="_blank"
               rel="noopener noreferrer"
@@ -59,7 +59,7 @@ export default class Menu extends Component {
               &nbsp; Chrome Extension
             </a>
             <a
-              href={'https://github.com/gadgetmies/multi_store_player/issues'}
+              href={'https://github.com/gadgetmies/fomo-player/issues'}
               className={`button menu-item button-push_button-large button-push_button-menu link`}
               target="_blank"
               rel="noopener noreferrer"
