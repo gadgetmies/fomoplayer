@@ -144,92 +144,6 @@ class Settings extends Component {
       <div className="page-container scroll-container settings-container">
         <div>
           <h2>Settings</h2>
-          <h3>Carts ({this.props.carts.length})</h3>
-          <label>
-            Create cart:
-            <div className="input-layout">
-              <input
-                className="text-input text-input-small"
-                disabled={this.state.updatingCarts}
-                value={this.state.cartName}
-                onChange={e => this.setState({ cartName: e.target.value })}
-              />
-              <SpinnerButton
-                className="button button-push_button-small button-push_button-primary"
-                loading={this.state.addingCart}
-                disabled={this.state.cartName === '' || this.state.addingCart || this.state.updatingCarts}
-                label="Add"
-                loadingLabel="Adding"
-                onClick={async () => {
-                  this.setState({ updatingCarts: true, addingCart: true })
-                  try {
-                    await requestJSONwithCredentials({
-                      path: `/me/carts`,
-                      method: 'POST',
-                      body: { name: this.state.cartName }
-                    })
-                    this.setState({ cartName: '' })
-                    await this.props.onUpdateCarts()
-                  } catch (e) {
-                    console.error(e)
-                  }
-                  this.setState({ updatingCarts: false, addingCart: false })
-                }}
-              />
-            </div>
-          </label>
-          <p>
-            {this.props.carts.map(cart => {
-              const buttonId = `sharing-${cart.id}`
-              const publicLink = new URL(`/cart/${cart.uuid}`, window.location).toString()
-              return (
-                <>
-                  <h4>{cart.name}</h4>
-                  <p>
-                    <div style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
-                      <label htmlFor={buttonId} className="noselect">
-                        Sharing enabled:
-                      </label>
-                      <ToggleButton
-                        id={buttonId}
-                        checked={cart.is_public}
-                        disabled={this.state.settingCartPublic !== null || this.state.updatingCarts}
-                        onChange={state => this.setCartSharing(cart.id, state)}
-                      />
-                      {this.state.settingCartPublic === cart.id ? <Spinner size="small" /> : null}
-                    </div>
-                    <br />
-                    {this.state.publicCarts.has(cart.id) ? (
-                      <div style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
-                        <span>URL:</span>
-                        <a href={publicLink} className="link" target="_blank">
-                          {publicLink}
-                        </a>
-                        <CopyToClipboardButton content={publicLink} />
-                      </div>
-                    ) : null}
-                  </p>
-                  {cart.is_default ? null : (
-                    <p>
-                      <SpinnerButton
-                        loading={this.state.deletingCart}
-                        className={`button button-push_button-small button-push_button-primary`}
-                        disabled={this.state.addingCart || this.state.updatingCarts || this.state.deletingCart}
-                        onClick={async () => {
-                          this.setState({ deletingCart: cart.id, updatingCarts: true })
-                          await requestWithCredentials({ path: `/me/carts/${cart.id}`, method: 'DELETE' })
-                          await this.props.onUpdateCarts()
-                          this.setState({ deletingCart: null, updatingCarts: false })
-                        }}
-                      >
-                        Delete cart "{cart.name}"
-                      </SpinnerButton>
-                    </p>
-                  )}
-                </>
-              )
-            })}
-          </p>
           <h3>Following</h3>
           <label>
             Add by name or URL to follow:
@@ -398,6 +312,92 @@ class Settings extends Component {
               </li>
             ))}
           </ul>
+          <h3>Carts ({this.props.carts.length})</h3>
+          <label>
+            Create cart:
+            <div className="input-layout">
+              <input
+                className="text-input text-input-small"
+                disabled={this.state.updatingCarts}
+                value={this.state.cartName}
+                onChange={e => this.setState({ cartName: e.target.value })}
+              />
+              <SpinnerButton
+                className="button button-push_button-small button-push_button-primary"
+                loading={this.state.addingCart}
+                disabled={this.state.cartName === '' || this.state.addingCart || this.state.updatingCarts}
+                label="Add"
+                loadingLabel="Adding"
+                onClick={async () => {
+                  this.setState({ updatingCarts: true, addingCart: true })
+                  try {
+                    await requestJSONwithCredentials({
+                      path: `/me/carts`,
+                      method: 'POST',
+                      body: { name: this.state.cartName }
+                    })
+                    this.setState({ cartName: '' })
+                    await this.props.onUpdateCarts()
+                  } catch (e) {
+                    console.error(e)
+                  }
+                  this.setState({ updatingCarts: false, addingCart: false })
+                }}
+              />
+            </div>
+          </label>
+          <p>
+            {this.props.carts.map(cart => {
+              const buttonId = `sharing-${cart.id}`
+              const publicLink = new URL(`/cart/${cart.uuid}`, window.location).toString()
+              return (
+                <>
+                  <h4>{cart.name}</h4>
+                  <p>
+                    <div style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
+                      <label htmlFor={buttonId} className="noselect">
+                        Sharing enabled:
+                      </label>
+                      <ToggleButton
+                        id={buttonId}
+                        checked={cart.is_public}
+                        disabled={this.state.settingCartPublic !== null || this.state.updatingCarts}
+                        onChange={state => this.setCartSharing(cart.id, state)}
+                      />
+                      {this.state.settingCartPublic === cart.id ? <Spinner size="small" /> : null}
+                    </div>
+                    <br />
+                    {this.state.publicCarts.has(cart.id) ? (
+                      <div style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
+                        <span>URL:</span>
+                        <a href={publicLink} className="link" target="_blank">
+                          {publicLink}
+                        </a>
+                        <CopyToClipboardButton content={publicLink} />
+                      </div>
+                    ) : null}
+                  </p>
+                  {cart.is_default ? null : (
+                    <p>
+                      <SpinnerButton
+                        loading={this.state.deletingCart}
+                        className={`button button-push_button-small button-push_button-primary`}
+                        disabled={this.state.addingCart || this.state.updatingCarts || this.state.deletingCart}
+                        onClick={async () => {
+                          this.setState({ deletingCart: cart.id, updatingCarts: true })
+                          await requestWithCredentials({ path: `/me/carts/${cart.id}`, method: 'DELETE' })
+                          await this.props.onUpdateCarts()
+                          this.setState({ deletingCart: null, updatingCarts: false })
+                        }}
+                      >
+                        Delete cart "{cart.name}"
+                      </SpinnerButton>
+                    </p>
+                  )}
+                </>
+              )
+            })}
+          </p>
           <h3>Search notifications ({this.props.notifications.length})</h3>
           <label>
             Get notifications for search:
