@@ -87,7 +87,7 @@ RETURNING meta_account_user_id AS id
       return newUser
     }
   },
-  initializeNewUser: async function(userId) {
+  initializeNewUser: async userId => {
     await pgrm.queryRowsAsync(
       // language=PostgreSQL
       sql`-- insert default weights 
