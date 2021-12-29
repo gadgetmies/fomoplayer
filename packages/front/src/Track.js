@@ -162,6 +162,30 @@ class Track extends Component {
         </td>
         {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'} style={{ overflow: 'visible' }}>
+            <div className="follow-cell track-table-cell">
+              <PillButton
+                className={'table-cell-button'}
+                onClick={e => {
+                  e.stopPropagation()
+                  this.props.onFollowClicked()
+                }}
+              >
+                <FontAwesomeIcon icon={'heart'} />
+                <span className={'follow-button-label'} />
+              </PillButton>
+            </div>
+            <div className="ignore-cell track-table-cell">
+              <PillButton
+                className={'table-cell-button'}
+                onClick={e => {
+                  e.stopPropagation()
+                  this.props.onIgnoreClicked()
+                }}
+              >
+                <FontAwesomeIcon icon={'ban'} />
+                <span className={'ignore-button-label'} />
+              </PillButton>
+            </div>
             <div className={'cart-cell track-table-cell'} style={{ overflow: 'visible' }}>
               <span className={'table-cell-button-row'} style={{ position: 'relative' }}>
                 <PillButton
@@ -237,30 +261,6 @@ class Track extends Component {
                   </button>
                 </div>
               </span>
-            </div>
-            <div className="follow-cell track-table-cell">
-              <PillButton
-                className={'table-cell-button'}
-                onClick={e => {
-                  e.stopPropagation()
-                  this.props.onFollowClicked()
-                }}
-              >
-                <FontAwesomeIcon icon={'heart'} />
-                <span className={'follow-button-label'} />
-              </PillButton>
-            </div>
-            <div className="ignore-cell track-table-cell">
-              <PillButton
-                className={'table-cell-button'}
-                onClick={e => {
-                  e.stopPropagation()
-                  this.props.onIgnoreClicked()
-                }}
-              >
-                <FontAwesomeIcon icon={'ban'} />
-                <span className={'ignore-button-label'} />
-              </PillButton>
             </div>
           </td>
         ) : null}
