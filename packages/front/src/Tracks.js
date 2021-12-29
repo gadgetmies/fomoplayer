@@ -380,9 +380,9 @@ class Tracks extends Component {
               </th>
               {this.props.mode === 'app' ? (
                 <th className={'follow-ignore-cart-cell tracks-cell'}>
-                  <div className={'cart-cell track-table-cell'}>Cart</div>
                   <div className={'follow-cell track-table-cell'}>Follow</div>
                   <div className={'ignore-cell track-table-cell'}>Ignore</div>
+                  <div className={'cart-cell track-table-cell'}>Cart</div>
                 </th>
               ) : null}
               <th className={'open-search-cell tracks-cell'}>
