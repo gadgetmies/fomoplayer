@@ -16,6 +16,10 @@ p {
   font-size: 85%;
 }
 
+a, a:visited, a:hover, a:active {
+  color: white
+}
+
 .app {
   margin-top: 80px;
 }

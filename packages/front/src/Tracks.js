@@ -8,6 +8,7 @@ import { isMobile } from 'react-device-detect'
 import './Select.css'
 import Track from './Track'
 import Spinner from './Spinner'
+import { Link } from 'react-router-dom'
 
 class Tracks extends Component {
   constructor(props) {
@@ -90,7 +91,15 @@ class Tracks extends Component {
     const emptyListLabels = {
       search: this.props.searchDebounce !== undefined ? 'Searching...' : 'No results',
       cart: 'Cart empty',
-      new: 'No tracks available',
+      new: (
+        <>
+          No tracks available. Perhaps you need to{' '}
+          <Link to={'/settings'}>
+            <strong>follow more artists and labels</strong>
+          </Link>
+          ?
+        </>
+      ),
       heard: 'No tracks played'
     }
     const defaultCart = carts.find(R.prop('is_default'))
