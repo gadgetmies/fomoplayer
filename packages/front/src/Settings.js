@@ -300,36 +300,6 @@ class Settings extends Component {
                   </div>
                 )}
               </label>
-              <h4>Playlists ({this.state.playlistFollows.length})</h4>
-              <ul className="no-style-list follow-list">
-                {this.state.playlistFollows.map(playlist => (
-                  <li>
-                    <span key={playlist.id} className="button pill pill-button">
-                      <span className="pill-button-contents">
-                        <span
-                          aria-hidden="true"
-                          className={`store-icon store-icon-${playlist.storeName.toLowerCase()}`}
-                        />{' '}
-                        {playlist.title}{' '}
-                        <button
-                          disabled={this.state.updatingPlaylistFollows}
-                          onClick={async () => {
-                            this.setState({ updatingPlaylistFollows: true })
-                            await requestWithCredentials({
-                              path: `/me/follows/playlists/${playlist.id}`,
-                              method: 'DELETE'
-                            })
-                            await this.updatePlaylistFollows()
-                            this.setState({ updatingPlaylistFollows: false })
-                          }}
-                        >
-                          <FontAwesomeIcon icon="times-circle" />
-                        </button>
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
               <h4>Artists ({this.state.artistFollows.length})</h4>
               <ul className="no-style-list follow-list">
                 {this.state.artistFollows.map(artist => (
@@ -380,6 +350,36 @@ class Settings extends Component {
                             await requestWithCredentials({ path: `/me/follows/labels/${label.id}`, method: 'DELETE' })
                             await this.updateLabelFollows()
                             this.setState({ updatingLabelFollows: false })
+                          }}
+                        >
+                          <FontAwesomeIcon icon="times-circle" />
+                        </button>
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <h4>Playlists ({this.state.playlistFollows.length})</h4>
+              <ul className="no-style-list follow-list">
+                {this.state.playlistFollows.map(playlist => (
+                  <li>
+                    <span key={playlist.id} className="button pill pill-button">
+                      <span className="pill-button-contents">
+                        <span
+                          aria-hidden="true"
+                          className={`store-icon store-icon-${playlist.storeName.toLowerCase()}`}
+                        />{' '}
+                        {playlist.title}{' '}
+                        <button
+                          disabled={this.state.updatingPlaylistFollows}
+                          onClick={async () => {
+                            this.setState({ updatingPlaylistFollows: true })
+                            await requestWithCredentials({
+                              path: `/me/follows/playlists/${playlist.id}`,
+                              method: 'DELETE'
+                            })
+                            await this.updatePlaylistFollows()
+                            this.setState({ updatingPlaylistFollows: false })
                           }}
                         >
                           <FontAwesomeIcon icon="times-circle" />
