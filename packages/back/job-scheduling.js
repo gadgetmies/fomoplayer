@@ -4,6 +4,8 @@ const cron = require('node-cron')
 const fetchBeatportWatches = require('./jobs/watches/fetch-beatport-watches')
 const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
 const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')
+const { sendNextEmailBatch } = require('./services/mailer')
+const { updateNotifications } = require('./jobs/notifications')
 const { insertSource } = require('./jobs/watches/shared/db')
 const { updateDateReleasedScore, updateDateAddedScore } = require('./jobs/scores')
 const logger = require('./logger')(__filename)
@@ -131,7 +133,9 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
   updateDateReleasedScore,
   fetchBeatportWatches,
   fetchSpotifyWatches,
-  fetchBandcampWatches
+  fetchBandcampWatches,
+  sendNextEmailBatch,
+  updateNotifications
 }
 
 module.exports = {
