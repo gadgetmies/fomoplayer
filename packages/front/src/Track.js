@@ -190,18 +190,6 @@ class Track extends Component {
                   className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''}`}
                   style={{ width: 100, zIndex: 100 }}
                 >
-                  <button
-                    disabled={processingCart}
-                    style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
-                    className="button button-push_button-small button-push_button-primary"
-                    onClick={e => {
-                      e.stopPropagation()
-                      return handleMarkPurchasedButtonClick()
-                    }}
-                  >
-                    Mark purchased and remove from carts
-                  </button>
-                  <hr className={'popup-divider'} />
                   <div style={{ maxHeight: 150, overflowY: 'scroll' }}>
                     {this.props.carts.map(({ id, name }) => {
                       const isInCart = this.props.inCarts.find(R.propEq('id', id))
@@ -235,6 +223,18 @@ class Track extends Component {
                       )
                     })}
                   </div>
+                  <hr className={'popup-divider'} />
+                  <button
+                    disabled={processingCart}
+                    style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
+                    className="button button-push_button-small button-push_button-primary"
+                    onClick={e => {
+                      e.stopPropagation()
+                      return handleMarkPurchasedButtonClick()
+                    }}
+                  >
+                    Mark purchased and remove from carts
+                  </button>
                 </div>
               </span>
             </div>
