@@ -394,7 +394,7 @@ class Settings extends Component {
           {this.state.page === 'carts' ? (
             <>
               <label>
-                Create cart:
+                <h4>Create cart:</h4>
                 <div className="input-layout">
                   <input
                     className="text-input text-input-small"
@@ -483,7 +483,7 @@ class Settings extends Component {
           {this.state.page === 'notifications' ? (
             <>
               <label>
-                Get notifications for search:
+                <h4>Get notifications for search:</h4>
                 <div className="input-layout">
                   <input
                     className="text-input text-input-small"
