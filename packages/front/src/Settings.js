@@ -208,7 +208,7 @@ class Settings extends Component {
           {this.state.page === 'following' ? (
             <>
               <label>
-                Add by name or URL to follow:
+                <h4>Search by name or URL to follow:</h4>
                 <div className="input-layout">
                   <input
                     className="text-input text-input-small"
@@ -259,7 +259,7 @@ class Settings extends Component {
                 ) : this.state.followDetails === undefined ? null : this.state.followDetails.length === 0 ? (
                   'No results found'
                 ) : (
-                  <div>
+                  <div className={'input-layout'}>
                     {this.state.followDetails.map(details => (
                       <SpinnerButton
                         className="button button-push_button-small button-push_button-primary"
@@ -288,7 +288,7 @@ class Settings extends Component {
                           this.setState({ updatingFollows: false })
                         }}
                       >
-                        <FontAwesomeIcon icon="plus" /> Add {details.type.replace(/^\w/, c => c.toUpperCase())}:{' '}
+                        <FontAwesomeIcon icon="plus" /> Follow {details.type}:{' '}
                         <span class="pill" style={{ backgroundColor: 'white', color: 'black' }}>
                           {details.stores.map(store => (
                             <span aria-hidden="true" className={`store-icon store-icon-${store}`}></span>
