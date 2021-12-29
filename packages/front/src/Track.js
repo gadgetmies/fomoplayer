@@ -188,7 +188,7 @@ class Track extends Component {
                 </span>
                 <div
                   className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''}`}
-                  style={{ width: 100, left: '50%', zIndex: 100, marginLeft: -50 }}
+                  style={{ width: 100, zIndex: 100 }}
                 >
                   <button
                     disabled={processingCart}
@@ -201,7 +201,7 @@ class Track extends Component {
                   >
                     Mark purchased and remove from carts
                   </button>
-                  <hr />
+                  <hr className={'popup-divider'} />
                   <div style={{ maxHeight: 150, overflowY: 'scroll' }}>
                     {this.props.carts.map(({ id, name }) => {
                       const isInCart = this.props.inCarts.find(R.propEq('id', id))
