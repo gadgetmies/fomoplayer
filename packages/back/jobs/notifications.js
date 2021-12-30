@@ -29,7 +29,6 @@ Check out the new tracks at https://fomoplayer.com/
 <a href="https://fomoplayer.com/">Check out the new tracks!</a>`
         )
       }
-      //Check out the new tracks at https://fomoplayer.com/q=${text}
 
       await tx.queryAsync(
         // language=PostgreSQL
