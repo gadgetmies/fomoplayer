@@ -8,36 +8,47 @@ const { scheduleEmail } = require('../services/mailer')
 
 module.exports.updateNotifications = async () => {
   const notificationSearches = getNotificationDetails()
+  const errors = []
 
   for (const { notificationId, text, userId, email, trackIds } of notificationSearches) {
-    const searchResults = searchForTracks(text, userId)
-    const currentTrackIds = searchResults.map(R.prop('track_id'))
-    const intersection = R.intersection(trackIds, currentTrackIds)
+    try {
+      const searchResults = searchForTracks(text, userId)
+      const currentTrackIds = searchResults.map(R.prop('track_id'))
+      const intersection = R.intersection(trackIds, currentTrackIds)
 
-    using(pg.getTransaction(), async tx => {
-      if (intersection.length !== 0) {
-        await updateNotificationTracks(tx, notificationId, trackIds)
-        await scheduleEmail(
-          process.env.NOTIFICATION_EMAIL_SENDER,
-          email,
-          `New results for your search '${text}'!`,
-          `New results for your search '${text}'!
+      await using(pg.getTransaction(), async tx => {
+        if (intersection.length !== 0) {
+          await updateNotificationTracks(tx, notificationId, trackIds)
+          await scheduleEmail(
+            process.env.NOTIFICATION_EMAIL_SENDER,
+            email,
+            `New results for your search '${text}'!`,
+            `New results for your search '${text}'!
 
 Check out the new tracks at https://fomoplayer.com/          
 `,
-          `<h1>New results for your search '${text}'!</h1>
+            `<h1>New results for your search '${text}'!</h1>
 <a href="https://fomoplayer.com/">Check out the new tracks!</a>`
-        )
-      }
+          )
+        }
 
-      await tx.queryAsync(
-        // language=PostgreSQL
-        sql`--update notification update time
+        await tx.queryAsync(
+          // language=PostgreSQL
+          sql`--update notification update time
 UPDATE user_search_notification
 SET user_search_notification_last_update = NOW()
-`
-      )
-    })
+          `
+        )
+      })
+    } catch (e) {
+      errors.push(e.toString())
+    }
+  }
+
+  if (errors.length === 0) {
+    return { success: true }
+  } else {
+    return { success: false, result: errors }
   }
 }
 
