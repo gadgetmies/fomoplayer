@@ -467,33 +467,29 @@ audio {
   height: 2em;
 }
 
-.state-select-button {
-  order: 1;
-}
-
-.state-select-button--container {
+.select-button--container {
   border-radius: 0.25rem;
   padding: 2px;
   background-color: #222;
   display: inline-block;
 }
 
-.state-select-button--button {
-  padding: 0.375rem 0.75rem;
+.select-button--button {
   line-height: 1;
   font-size: 0.7rem;
   display: inline-block;
   cursor: pointer;
   opacity: 0.7;
+  text-align: center;
 }
 
-.state-select-button--container input[type='radio'],
-.state-select-icon--container input[type='radio'] {
+.select-button--container input[type='radio'],
+.select-icon--container input[type='radio'] {
   display: none;
 }
 
-input[type='radio']:checked + .state-select-button--button,
-.state-select-button--button__active {
+input[type='radio']:checked + .select-button--button,
+.select-button--button__active {
   background-color: #b40089;
   border-radius: 0.25rem;
   opacity: 1;
@@ -527,19 +523,19 @@ input[type='radio']:checked + .state-select-button--button,
   justify-content: center;
 }
 
-.state-select-icon--icon {
+.select-icon--icon {
   cursor: pointer;
 }
 
-input[type='radio']:checked + .state-select-icon--icon {
+input[type='radio']:checked + .select-icon--icon {
   opacity: 1;
 }
 
-input[type='radio']:hover + .state-select-icon--icon {
+input[type='radio']:hover + .select-icon--icon {
   opacity: 1;
 }
 
-input[type='radio'] + .state-select-icon--icon {
+input[type='radio'] + .select-icon--icon {
   opacity: 0.5;
 }
 
@@ -604,7 +600,8 @@ input[type='radio'] + .state-select-icon--icon {
 }
 
 .settings-container {
-  padding-left: 3em;
+  padding-left: 2.5em;
+  margin: 0.5em;
 }
 
 .scroll-container {
@@ -856,6 +853,15 @@ input[type='radio'] + .state-select-icon--icon {
   .text-input-small {
     font-size: 16px;
   }
+
+  .state-select-button--container {
+    display: flex;
+  }
+
+  .select-button--button {
+    flex: 1;
+    padding: 0.375rem;
+  }
 }
 
 @media (min-width: 800px) {
@@ -945,5 +951,13 @@ input[type='radio'] + .state-select-icon--icon {
 
   .text-input-small {
     font-size: 0.7rem;
+  }
+
+  .state-select-button--container {
+    display: inline-block;
+  }
+
+  .select-button--button {
+    padding: 0.375rem 0.75rem;
   }
 }

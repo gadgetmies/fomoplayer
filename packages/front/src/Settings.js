@@ -150,14 +150,11 @@ class Settings extends Component {
 
   render() {
     return (
-      <div className="page-container scroll-container settings-container">
-        <div>
+      <div className="page-container scroll-container">
+        <div className="settings-container">
           <h2>Settings</h2>
           <p>
-            <div
-              className="state-select-button state-select-button--container noselect"
-              style={{ display: 'inline-block', flex: 0 }}
-            >
+            <div className="select-button select-button--container state-select-button--container noselect">
               <input
                 type="radio"
                 id="settings-state-following"
@@ -165,7 +162,7 @@ class Settings extends Component {
                 defaultChecked={true}
                 onChange={() => this.onShowPage('following')}
               />
-              <label className="state-select-button--button" htmlFor="settings-state-following">
+              <label className="select-button--button" htmlFor="settings-state-following">
                 Following
               </label>
               <input
@@ -174,7 +171,7 @@ class Settings extends Component {
                 name="settings-state"
                 onChange={() => this.onShowPage('carts')}
               />
-              <label className="state-select-button--button" htmlFor="settings-state-carts">
+              <label className="select-button--button" htmlFor="settings-state-carts">
                 Carts
               </label>
               <input
@@ -184,7 +181,7 @@ class Settings extends Component {
                 defaultChecked={this.state.page === 'notifications'}
                 onChange={() => this.onShowPage('notifications')}
               />
-              <label className="state-select-button--button" htmlFor="settings-state-notifications">
+              <label className="select-button--button" htmlFor="settings-state-notifications">
                 Notifications
               </label>
               <input
@@ -194,7 +191,7 @@ class Settings extends Component {
                 defaultChecked={this.state.page === 'ignores'}
                 onChange={() => this.onShowPage('ignores')}
               />
-              <label className="state-select-button--button" htmlFor="settings-state-ignores">
+              <label className="select-button--button" htmlFor="settings-state-ignores">
                 Ignores
               </label>
               <input
@@ -204,7 +201,7 @@ class Settings extends Component {
                 defaultChecked={this.state.page === 'collection'}
                 onChange={() => this.onShowPage('collection')}
               />
-              <label className="state-select-button--button" htmlFor="settings-state-collection">
+              <label className="select-button--button" htmlFor="settings-state-collection">
                 Collection
               </label>
             </div>
