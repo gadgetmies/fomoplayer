@@ -94,8 +94,19 @@ class App extends Component {
       loading: true,
       tracksData: defaultTracksData,
       initialPosition: NaN,
-      processingCart: false
+      processingCart: false,
+      userSettings: {}
     }
+  }
+
+  async updateStatesFromServer() {
+    await Promise.all([
+      this.updateCarts(),
+      this.updateTracks(),
+      this.updateFollows(),
+      this.updateNotifications(),
+      this.updateSettings()
+    ])
   }
 
   async componentDidMount() {
@@ -110,7 +121,7 @@ class App extends Component {
       this.setState({ list, initialPosition: position })
     } else {
       try {
-        await Promise.all([this.updateTracks(), this.updateCarts(), this.updateFollows(), this.updateNotifications()])
+        await this.updateStatesFromServer()
         this.setState({ loggedIn: true })
       } catch (e) {
         console.error(e)
@@ -123,7 +134,7 @@ class App extends Component {
 
   async onLoginDone() {
     this.setState({ loggedIn: true })
-    await Promise.all([this.updateCarts(), this.updateTracks(), this.updateNotifications()])
+    await this.updateStatesFromServer()
   }
 
   onLogoutDone() {
@@ -235,6 +246,22 @@ class App extends Component {
     await this.updateTracks()
   }
 
+  async updateEmail(email) {
+    await requestWithCredentials({
+      path: `/me/settings`,
+      method: 'POST',
+      body: { email }
+    })
+    await this.updateSettings()
+  }
+
+  async updateSettings() {
+    const userSettings = await requestJSONwithCredentials({
+      path: `/me/settings`
+    })
+    this.setState({ userSettings })
+  }
+
   async updateLogins() {}
 
   render() {
@@ -302,8 +329,10 @@ class App extends Component {
                       onRequestNotification={this.requestNotification.bind(this)}
                       onRemoveNotification={this.removeNotification.bind(this)}
                       onMarkHeardClicked={this.markHeard.bind(this)}
+                      onUpdateEmail={this.updateEmail.bind(this)}
                       newTracks={this.state.tracksData.meta.newTracks}
                       totalTracks={this.state.tracksData.meta.totalTracks}
+                      userSettings={this.state.userSettings}
                     />
                   )}
                 />

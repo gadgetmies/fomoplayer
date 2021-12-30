@@ -1,0 +1,1 @@
+DROP TABLE meta_account_email;

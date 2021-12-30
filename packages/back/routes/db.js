@@ -1,6 +1,7 @@
 const sql = require('sql-template-strings')
 const R = require('ramda')
 const pg = require('../db/pg.js')
+const { using } = require('bluebird')
 
 module.exports.queryLongestPreviewForTrack = (id, format, skip) =>
   pg
@@ -89,4 +90,26 @@ WHERE cart_uuid = ${uuid}`
   )
 
   return details
+}
+
+module.exports.verifyEmail = async verificationCode => {
+  await using(pg.getTransaction(), async tx => {
+    const { rowCount } = await tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- verifyEmail
+      UPDATE meta_account_email
+      SET meta_account_email_verified = TRUE
+      WHERE meta_account_email_verification_code = ${verificationCode}
+      `
+    )
+
+    if (rowCount !== 1) {
+      if (rowCount === 0) {
+        throw new Error(`Invalid verification code`)
+      } else {
+        logger.error(`Email verification would update multiple rows!`, { rowCount })
+        throw new Error('Email verification failed')
+      }
+    }
+  })
 }

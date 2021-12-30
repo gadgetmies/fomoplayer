@@ -4,7 +4,7 @@ const { searchForTracks } = require('./shared/db/search.js')
 const { queryPreviewDetails } = require('./shared/db/preview')
 const { modules: storeModules } = require('./stores/index.js')
 const { queryCartDetails } = require('./users/db')
-const { queryCartDetailsByUuid } = require('./db')
+const { queryCartDetailsByUuid, verifyEmail } = require('./db')
 
 module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
   const { storeCode, storeTrackId } = await queryLongestPreviewForTrack(id, format, skip)
@@ -47,3 +47,5 @@ module.exports.getCartDetails = async uuid => {
   }
   return await queryCartDetails(id, null)
 }
+
+module.exports.verifyEmail = verifyEmail

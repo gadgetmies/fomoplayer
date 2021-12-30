@@ -49,9 +49,11 @@ const getNotificationDetails = async () =>
 SELECT meta_account_user_id                  AS "userId",
        user_search_notification_id           AS "notificationId",
        user_search_notification_string       AS text,
+       meta_account_email_address            AS email,
        ARRAY_AGG(track_id ORDER BY track_id) AS "trackIds"
 FROM user_search_notification
          NATURAL JOIN user_search_notification__track
+         NATURAL JOIN meta_account_email
 WHERE user_search_notification_last_update IS NULL
    OR user_search_notification_last_update + INTERVAL '6 hours' < NOW()
 ORDER BY user_search_notification_last_update DESC NULLS FIRST

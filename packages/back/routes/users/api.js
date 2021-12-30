@@ -38,7 +38,9 @@ const {
   updateAllCartContents,
   createNotification,
   removeNotification,
-  getNotifications
+  getNotifications,
+  getUserSettings,
+  setEmail
 } = require('./logic')
 const typeIs = require('type-is')
 
@@ -249,6 +251,18 @@ router.post('/notifications', async ({ user: { id: userId }, body: { search } },
 
 router.delete('/notifications/:id', async ({ user: { id: userId }, params: { id } }, res) => {
   await removeNotification(userId, id)
+  res.status(204).send()
+})
+
+router.get('/settings', async ({ user: { id: userId } }, res) => {
+  const settings = await getUserSettings(userId)
+  res.send(settings)
+})
+
+router.post('/settings', async ({ user: { id: userId }, body: { email } }, res) => {
+  if (email !== undefined) {
+    await setEmail(userId, email)
+  }
   res.status(204).send()
 })
 

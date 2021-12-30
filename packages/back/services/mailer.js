@@ -2,11 +2,18 @@ const pg = require('../db/pg.js')
 const sql = require('sql-template-strings')
 const { MessageClient } = require('cloudmailin')
 const logger = require('../logger')(__filename)
+const config = require('../config')
 
-const client = new MessageClient({
+let options = {
   username: process.env.CLOUDMAILIN_USERNAME,
   apiKey: process.env.CLOUDMAILIN_API_KEY
-})
+}
+
+if (process.env.NODE_ENV !== 'production') {
+  options.baseURL = `${config.apiURL}/mock/email`
+}
+
+const client = new MessageClient(options)
 
 module.exports.scheduleEmail = async (sender, recipient, subject, plain, html) => {
   await pg.queryAsync(
@@ -19,7 +26,7 @@ VALUES (${sender}, ${recipient}, ${subject}, ${plain}, ${html})
 }
 
 module.exports.sendNextEmailBatch = async () => {
-  const emailsToSend = pg.queryRowsAsync(
+  const emailsToSend = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- sendNextBatch
 SELECT email_queue_id        AS id,
@@ -34,6 +41,8 @@ ORDER BY email_queue_requested
 LIMIT ${process.env.EMAIL_SEND_BATCH}
   `
   )
+
+  const errors = []
 
   for (const { id, sender, recipient, subject, plain, html } of emailsToSend) {
     try {
@@ -63,6 +72,13 @@ SET email_queue_last_error   = ${e.toString()},
 WHERE email_queue_id = ${id}
         `
       )
+      errors.push(e.toString())
     }
+  }
+
+  if (errors.length === 0) {
+    return { success: true }
+  } else {
+    return { success: false, result: errors }
   }
 }
