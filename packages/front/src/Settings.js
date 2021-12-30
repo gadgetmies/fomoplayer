@@ -41,6 +41,10 @@ class Settings extends Component {
       notifications: this.props.notifications,
       notificationSearch: '',
       cartName: '',
+      email: props.userSettings.email || '',
+      updatingEmail: false,
+      emailVerificationRequested: false,
+      emailVerificationFailed: false,
       updatingFollows: false,
       updatingFollowDetails: false,
       updatingCarts: false,
@@ -483,6 +487,57 @@ class Settings extends Component {
           {this.state.page === 'notifications' ? (
             <>
               <label>
+                <h4>Email address:</h4>
+                <div className="input-layout">
+                  <input
+                    type={'email'}
+                    className="text-input text-input-small"
+                    value={this.state.email}
+                    onChange={e => this.setState({ email: e.target.value, emailVerificationRequested: false })}
+                  />
+                  <SpinnerButton
+                    className="button button-push_button-small button-push_button-primary"
+                    disabled={
+                      this.state.updatingEmail ||
+                      (this.props.userSettings.email === this.state.email && this.props.userSettings.emailVerified) ||
+                      this.state.email === ''
+                    }
+                    loading={this.state.updatingEmail}
+                    onClick={async () => {
+                      this.setState({
+                        updatingEmail: true,
+                        emailVerificationRequested: true,
+                        emailVerificationFailed: false
+                      })
+                      try {
+                        await this.props.onUpdateEmail(this.state.email)
+                      } catch (e) {
+                        this.setState({ emailVerificationFailed: true })
+                      } finally {
+                        this.setState({ updatingEmail: false })
+                      }
+                    }}
+                  >
+                    {this.state.emailVerificationFailed ||
+                    (!this.props.userSettings.emailVerified &&
+                      this.props.userSettings.email !== null &&
+                      this.props.userSettings.email === this.state.email)
+                      ? 'Resend verification'
+                      : 'Update'}
+                  </SpinnerButton>
+                </div>
+                {this.state.emailVerificationFailed ? (
+                  <p>Request failed, please try again.</p>
+                ) : !this.state.updatingEmail &&
+                  (this.state.emailVerificationRequested ||
+                    (!this.props.userSettings.emailVerified &&
+                      this.props.userSettings.email !== null &&
+                      this.props.userSettings.email === this.state.email)) ? (
+                  <p>
+                    {this.state.emailVerificationRequested ? 'Verification email sent.' : ''} Please verify your email
+                    address to receive notifications.
+                  </p>
+                ) : null}
                 <h4>Get notifications for search:</h4>
                 <div className="input-layout">
                   <input

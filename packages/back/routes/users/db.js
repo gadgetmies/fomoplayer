@@ -999,3 +999,44 @@ module.exports.deleteNotification = async notificationId =>
 DELETE FROM user_search_notification WHERE user_search_notification_id = ${notificationId}
 `
   )
+
+module.exports.queryUserSettings = async userId => {
+  const [settings] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`SELECT COALESCE(s.email, d.email) AS email, COALESCE(s.emailVerified, d.emailVerified) AS "emailVerified"
+FROM (SELECT meta_account_email_address AS email, meta_account_email_verified AS emailVerified, 1 AS query_id
+      FROM meta_account_email
+      WHERE meta_account_user_id = ${userId}) s
+         RIGHT JOIN (SELECT NULL AS email, FALSE AS emailVerified, 1 AS query_id) d ON s.query_id = d.query_id
+    `
+  )
+
+  return settings
+}
+
+module.exports.upsertEmail = async (userId, email) =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- updateEmail
+INSERT INTO meta_account_email (meta_account_email_address, meta_account_user_id,
+                                meta_account_email_verification_code)
+VALUES (${email}, ${userId}, uuid_generate_v4())
+ON CONFLICT ON CONSTRAINT meta_account_email_meta_account_user_id_key
+    DO UPDATE SET meta_account_email_address           = EXCLUDED.meta_account_email_address,
+                  meta_account_email_verified          = FALSE,
+                  meta_account_email_verification_code = uuid_generate_v4()
+    `
+  )
+
+module.exports.getEmailVerificationCode = async userId => {
+  const [{ verificationCode }] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- getEmailVerificationCode
+    SELECT meta_account_email_verification_code AS "verificationCode"
+    FROM meta_account_email
+    WHERE meta_account_user_id = ${userId}
+    `
+  )
+
+  return verificationCode
+}

@@ -58,6 +58,10 @@ const authenticateJwt = passport.authenticate('jwt', { session: false })
 
 app.use('/api', require('./routes/public.js'))
 
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/mock/', require('./routes/mock/index.js'))
+}
+
 app.use(
   '/api',
   (req, res, next) => {
