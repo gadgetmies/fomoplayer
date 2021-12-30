@@ -260,7 +260,6 @@ button::-moz-focus-inner {
 
 .text-input {
   padding: 0.375rem 0.75rem;
-  font-size: 1rem;
   line-height: 1.5;
   color: #495057;
   background-color: #fff;
@@ -282,7 +281,6 @@ button::-moz-focus-inner {
   border-radius: 0.25rem;
   padding: 0.375rem 0.75rem;
   line-height: 1;
-  font-size: 0.7rem;
 }
 
 audio {
@@ -749,10 +747,6 @@ input[type='radio'] + .state-select-icon--icon {
     width: 100%;
   }
 
-  .search {
-    font-size: 16px;
-  }
-
   .search-bar {
     margin: 0;
     order: 3;
@@ -854,6 +848,14 @@ input[type='radio'] + .state-select-icon--icon {
   .popup-content {
     margin-left: calc((6rem - (100px + 6px * 2)) / 2);
   }
+
+  .text-input-large {
+    font-size: 20px;
+  }
+
+  .text-input-small {
+    font-size: 16px;
+  }
 }
 
 @media (min-width: 800px) {
@@ -874,7 +876,6 @@ input[type='radio'] + .state-select-icon--icon {
   }
 
   .search {
-    font-size: 0.7rem;
     padding-right: 2rem;
     float: right;
   }
@@ -936,5 +937,13 @@ input[type='radio'] + .state-select-icon--icon {
   .popup-content {
     left: 50%;
     margin-left: -50px;
+  }
+
+  .text-input-large {
+    font-size: 1rem;
+  }
+
+  .text-input-small {
+    font-size: 0.7rem;
   }
 }
