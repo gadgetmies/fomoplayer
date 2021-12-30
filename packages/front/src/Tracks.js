@@ -223,10 +223,7 @@ class Tracks extends Component {
         <div className={'top-bar input-layout'}>
           {this.props.mode === 'app' ? (
             <div className="top-bar-group">
-              <div
-                className="state-select-button state-select-button--container noselect"
-                style={{ display: 'inline-block', flex: 0 }}
-              >
+              <div className="select-button select-button--container state-select-button--container noselect">
                 <input
                   type="radio"
                   id="tracklist-state-new"
@@ -234,7 +231,7 @@ class Tracks extends Component {
                   defaultChecked={this.props.listState === 'new'}
                   onChange={this.props.onShowNewClicked}
                 />
-                <label className="state-select-button--button" htmlFor="tracklist-state-new">
+                <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-new">
                   New tracks
                 </label>
                 <input
@@ -244,7 +241,7 @@ class Tracks extends Component {
                   defaultChecked={this.props.listState === 'heard'}
                   onChange={this.props.onShowHeardClicked}
                 />
-                <label className="state-select-button--button" htmlFor="tracklist-state-heard">
+                <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-heard">
                   Recently played
                 </label>
                 <input
@@ -254,7 +251,10 @@ class Tracks extends Component {
                   defaultChecked={this.props.listState === 'recentlyAdded'}
                   onChange={this.props.onShowRecentlyAddedClicked}
                 />
-                <label className="state-select-button--button" htmlFor="tracklist-state-recentlyAdded">
+                <label
+                  className="select-button--button state-select-button--button"
+                  htmlFor="tracklist-state-recentlyAdded"
+                >
                   Recently added
                 </label>
                 <input
@@ -264,7 +264,7 @@ class Tracks extends Component {
                   defaultChecked={this.props.listState === 'cart'}
                   onChange={this.props.onShowCartClicked}
                 />
-                <label className="state-select-button--button" htmlFor="tracklist-state-cart">
+                <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-cart">
                   Carts
                 </label>
                 <input
@@ -274,7 +274,7 @@ class Tracks extends Component {
                   defaultChecked={this.props.listState === 'search'}
                   onChange={this.props.onShowSearchClicked}
                 />
-                <label className="state-select-button--button" htmlFor="tracklist-state-search">
+                <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-search">
                   Search
                 </label>
               </div>
@@ -334,8 +334,8 @@ class Tracks extends Component {
           )}
           {this.props.listState !== 'cart' ? null : (
             <div className="top-bar-group">
-              <div className="state-select-button state-select-button--container cart-bar">
-                <label className="state-select-button--button" htmlFor="cart-select">
+              <div className="select-button select-button--container cart-bar">
+                <label className="select-button--button select-button--button" htmlFor="cart-select">
                   Cart:
                 </label>
                 {this.props.mode === 'app' ? (
@@ -351,7 +351,7 @@ class Tracks extends Component {
                     ))}
                   </select>
                 ) : (
-                  <span className="state-select-button--button state-select-button--button__active">
+                  <span className="select-button--button select-button--button select-button--button__active">
                     {this.props.carts[0].name}
                   </span>
                 )}

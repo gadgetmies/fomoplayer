@@ -315,7 +315,7 @@ class Preview extends Component {
                 }}
               />
               {currentTrack ? (
-                <div className="preview-icons-container state-select-icon--container">
+                <div className="preview-icons-container select-icon--container">
                   {currentTrack?.previews?.map(({ id, store }) => (
                     <span key={id} onMouseDown={e => e.stopPropagation()}>
                       <input
@@ -325,7 +325,7 @@ class Preview extends Component {
                         checked={this.state.mp3Preview?.id === id}
                         onChange={this.onPreviewStoreClicked.bind(this, id)}
                       />
-                      <label className="state-select-icon--icon" htmlFor={`preview-${id}`}>
+                      <label className="select-icon--icon" htmlFor={`preview-${id}`}>
                         <StoreIcon code={store} />
                       </label>
                     </span>
