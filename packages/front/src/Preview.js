@@ -137,16 +137,12 @@ class Preview extends Component {
       totalDuration: undefined,
       previewUrl: undefined
     }
-
-    this.setVolume = this.setVolume.bind(this)
-    this.shortcuts = getShortcuts(props.mode)
-  }
-
-  getAudioContext() {
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
     }
-    return this.audioContext
+
+    this.setVolume = this.setVolume.bind(this)
+    this.shortcuts = getShortcuts(props.mode)
   }
 
   setPlaying(playing) {
@@ -178,7 +174,7 @@ class Preview extends Component {
 
     this.setState({ previewUrl: url })
     const waveform = preview.waveforms[0] || this.getWaveform(track)
-    if ((!waveform || preview.start_ms === null) && this.getAudioContext() && preview.store !== 'bandcamp') {
+    if ((!waveform || preview.start_ms === null) && this.audioContext && preview.store !== 'bandcamp') {
       await this.updateWaveform(preview.url)
     } else {
       this.setState({ waveform })
@@ -230,7 +226,7 @@ class Preview extends Component {
         waveformColor: '#cbcbcb'
       })
 
-      const audioBuffer = await this.getAudioContext().decodeAudioData(fileArrayBuffer)
+      const audioBuffer = await this.audioContext.decodeAudioData(fileArrayBuffer)
       this.setState({ waveform: pngWaveformURL, totalDuration: audioBuffer.duration * 1000 })
     } catch (e) {
       console.error(e)
