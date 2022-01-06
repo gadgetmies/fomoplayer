@@ -9,7 +9,7 @@ import { requestWithCredentials } from './request-json-with-credentials'
 import Collection from './Collection'
 import Spinner from './Spinner'
 import StoreIcon from './StoreIcon'
-import { trackArtistsAndTitle, trackTitle } from './trackFunctions'
+import { trackArtistsAndTitle } from './trackFunctions'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
