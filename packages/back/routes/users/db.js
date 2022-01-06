@@ -559,7 +559,7 @@ module.exports.queryUserTracks = (userId, sort = '-score') => {
       .queryRowsAsync(
         // language=PostgreSQL
         query.append(sql` NULLS LAST
-          LIMIT 200
+          LIMIT 100
       )
          , heard_tracks AS (
           SELECT track_id
@@ -576,7 +576,7 @@ module.exports.queryUserTracks = (userId, sort = '-score') => {
                    NATURAL JOIN user__track
                    NATURAL JOIN track
           ORDER BY track_added DESC
-          LIMIT 200
+          LIMIT 100
       )
          , limited_tracks AS (
           SELECT DISTINCT track_id
