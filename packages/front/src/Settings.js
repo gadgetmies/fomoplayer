@@ -365,7 +365,7 @@ class Settings extends Component {
                                   }}
                                 >
                                   <FontAwesomeIcon icon="plus" /> Follow {type}:{' '}
-                                  <span class="pill" style={{ backgroundColor: 'white', color: 'black' }}>
+                                  <span className="pill" style={{ backgroundColor: 'white', color: 'black' }}>
                                     <span aria-hidden="true" className={`store-icon store-icon-${storeName}`}></span>{' '}
                                     {name}
                                   </span>{' '}

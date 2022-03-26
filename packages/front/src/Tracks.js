@@ -294,7 +294,7 @@ class Tracks extends Component {
           {this.props.listState !== 'search' ? null : (
             <>
               <div className="top-bar-group">
-                <div class={'input-layout'}>
+                <div className={'input-layout'}>
                   <label className="search-bar">
                     <input
                       autoFocus
