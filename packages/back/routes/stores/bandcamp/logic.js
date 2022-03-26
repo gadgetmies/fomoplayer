@@ -9,7 +9,8 @@ const {
   getArtistAsync,
   getLabelAsync,
   getPageDetailsAsync,
-  getTagReleasesAsync
+  getTagReleasesAsync,
+  getSearchResultsAsync
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl } = require('./db.js')
@@ -73,14 +74,16 @@ module.exports.getFollowDetails = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
   const stores = [storeName.toLowerCase()]
   for (const { regex, type } of regexes) {
-    if (urlString.match(regex)) {
+    const match = urlString.match(regex)
+    if (match) {
+      const id = match[1]
       let details
       if (['artist', 'label'].includes(type)) {
         const { name, type: pageType } = await getPageDetailsAsync(urlString)
-        details = { label: name, type: pageType, stores }
+        details = { id, name, type: pageType, stores, url: urlString }
       } else if (type === 'tag') {
         const label = await getPlaylistName(type, urlString)
-        details = { label: `Tag: ${label}`, type: 'playlist', stores }
+        details = { id, name: `Tag: ${label}`, type: 'playlist', stores, url: urlString }
       } else {
         throw new Error('URL did not match any regex')
       }
@@ -145,4 +148,8 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId, type }) {
   } else {
     throw new Error(`Unsupported playlist type: '${type}' (supported: 'tag') ${type === 'tag'}`)
   }
+}
+
+module.exports.search = async query => {
+  return (await getSearchResultsAsync(query)).map(item => ({ ...item, store: { name: storeName.toLowerCase() } }))
 }

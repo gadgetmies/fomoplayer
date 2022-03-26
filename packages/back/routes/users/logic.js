@@ -21,8 +21,8 @@ const {
   addLabelsToIgnore,
   artistOnLabelInIgnore,
   addReleasesToIgnore,
-  addArtistWatch,
-  addLabelWatch,
+  addStoreArtistWatch,
+  addStoreLabelWatch,
   deletePlaylistFollowFromUser,
   queryUserArtistFollows,
   queryUserLabelFollows,
@@ -56,7 +56,9 @@ const {
   addPurchasedTracksToUser,
   queryUserSettings,
   upsertEmail,
-  getEmailVerificationCode
+  getEmailVerificationCode,
+  queryStoreArtistIds,
+  queryStoreLabelIds
 } = require('./db')
 
 const logger = require('../../logger')(__filename)
@@ -135,7 +137,7 @@ module.exports.removeLabelWatchFromUser = deleteLabelWatchFromUser
 const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (storeUrl, userId, artist, sourceId) => {
   return using(pg.getTransaction(), async tx => {
     const { id: artistId, storeArtistId } = await ensureArtistExists(tx, storeUrl, artist, sourceId)
-    const followId = await addArtistWatch(tx, userId, artistId, sourceId)
+    const followId = await addStoreArtistWatch(tx, userId, storeArtistId, sourceId)
     return { artistId, followId, storeArtistId }
   })
 })
@@ -143,7 +145,7 @@ const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (store
 const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUrl, userId, label, sourceId) => {
   return using(pg.getTransaction(), async tx => {
     const { storeLabelId, labelId } = await ensureLabelExists(tx, storeUrl, label, sourceId)
-    const followId = await addLabelWatch(tx, userId, labelId, sourceId)
+    const followId = await addStoreLabelWatch(tx, userId, storeLabelId, sourceId)
     return { labelId, followId, storeLabelId }
   })
 })
@@ -155,11 +157,14 @@ module.exports.addArtistFollowsWithIds = async (artistIds, userId) => {
   const addedFollows = []
   for (const artistId of artistIds) {
     await using(pg.getTransaction(), async tx => {
-      const followId = addArtistWatch(tx, userId, artistId)
-      addedFollows.push({
-        artist: `${apiURL}/artists/${artistId}`,
-        follow: `${apiURL}/users/${userId}/follows/artists/${followId}`
-      })
+      const storeArtistIds = await queryStoreArtistIds(tx, artistId)
+      for (const storeArtistId of storeArtistIds) {
+        const followId = addStoreArtistWatch(tx, userId, storeArtistId)
+        addedFollows.push({
+          artist: `${apiURL}/artists/${artistId}`,
+          follow: `${apiURL}/users/${userId}/follows/artists/${followId}`
+        })
+      }
     })
   }
 
@@ -175,8 +180,8 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId, sourceId) =>
   let addedFollows = []
   for (const { name, url } of artists) {
     const fullUrl = getFullUrl(storeUrl, url)
-    const { module: storeModule, idFromUrl } = await getStoreModuleForArtistByUrl(fullUrl)
-    let artistDetails = { url: fullUrl, id: idFromUrl, name }
+    const { module: storeModule, id } = await getStoreModuleForArtistByUrl(fullUrl)
+    let artistDetails = { url: fullUrl, id, name }
 
     if (name === undefined) {
       artistDetails.name = await storeModule.logic.getArtistName(fullUrl)
@@ -213,11 +218,14 @@ module.exports.addLabelFollowsWithIds = async (labelIds, userId) => {
   const addedFollows = []
   for (const labelId of labelIds) {
     await using(pg.getTransaction(), async tx => {
-      const followId = addLabelWatch(tx, userId, labelId)
-      addedFollows.push({
-        label: `${apiURL}/labels/${labelId}`,
-        follow: `${apiURL}/users/${userId}/follows/labels/${followId}`
-      })
+      const storeLabelIds = await queryStoreLabelIds(tx, labelId)
+      for (const storeLabelId of storeLabelIds) {
+        const followId = addStoreLabelWatch(tx, userId, storeLabelId)
+        addedFollows.push({
+          label: `${apiURL}/labels/${labelId}`,
+          follow: `${apiURL}/users/${userId}/follows/labels/${followId}`
+        })
+      }
     })
   }
 
@@ -229,8 +237,8 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {
   let addedFollows = []
   for (const { name, url } of labels) {
     const fullUrl = getFullUrl(storeUrl, url)
-    const { module: storeModule, idFromUrl } = await getStoreModuleForLabelByUrl(fullUrl)
-    let labelDetails = { url: fullUrl, id: idFromUrl, name }
+    const { module: storeModule, id } = await getStoreModuleForLabelByUrl(fullUrl)
+    let labelDetails = { url: fullUrl, id, name }
 
     if (name === undefined) {
       labelDetails.name = await storeModule.logic.getLabelName(fullUrl)

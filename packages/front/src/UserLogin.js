@@ -93,7 +93,7 @@ export default class Login extends Component {
                 autoComplete={`username-${this.props.loginName}`}
                 disabled={this.state.loggingIn}
                 onInput={e => this.setState({ username: e.target.value })}
-                className={`text-input login-input text-input-${this.props.size}`}
+                className={`text-input login-input text-input-${this.props.size} text-input-light`}
               />
             </label>
             <label className="login-label">
@@ -104,7 +104,7 @@ export default class Login extends Component {
                 autoComplete={`password-${this.props.loginName}`}
                 disabled={this.state.loggingIn}
                 onInput={e => this.setState({ password: e.target.value })}
-                className={`text-input login-input text-input-${this.props.size}`}
+                className={`text-input login-input text-input-${this.props.size} text-input-light`}
               />
             </label>
             <button

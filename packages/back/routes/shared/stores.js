@@ -5,41 +5,35 @@ const { modules: storeModules } = require('../stores/index.js')
 module.exports.getStoreModuleForArtistByUrl = async artistUrl => {
   const storesRegexes = await queryStoreRegexes()
 
-  let idFromUrl = undefined
   const matchingStore = storesRegexes.find(({ regex: { artist: artistRegex } }) => {
     const urlMatch = artistUrl.match(artistRegex)
-    if (urlMatch !== null) {
-      // TODO: remove this heresy!
-      idFromUrl = urlMatch[1]
-    }
-    return idFromUrl !== undefined
+    return urlMatch !== null
   })
 
   if (matchingStore === undefined) {
     throw new BadRequest(`Invalid artist URL ${artistUrl}`)
   }
 
-  return { module: storeModules[matchingStore.name], idFromUrl }
+  const module = storeModules[matchingStore.name]
+  const [{ id }] = await module.logic.getFollowDetails(artistUrl)
+  return { module, id }
 }
 
 module.exports.getStoreModuleForLabelByUrl = async labelUrl => {
   const storesRegexes = await queryStoreRegexes()
 
-  let idFromUrl = undefined
   const matchingStore = storesRegexes.find(({ regex: { label: labelRegex } }) => {
     const urlMatch = labelUrl.match(labelRegex)
-    if (urlMatch !== null) {
-      // TODO: remove this heresy!
-      idFromUrl = urlMatch[1]
-    }
-    return idFromUrl !== undefined
+    return urlMatch !== null
   })
 
   if (matchingStore === undefined) {
     throw new BadRequest(`Invalid label URL ${labelUrl}`)
   }
 
-  return { module: storeModules[matchingStore.name], idFromUrl }
+  const module = storeModules[matchingStore.name]
+  const [{ id }] = await module.logic.getFollowDetails(labelUrl)
+  return { module, id }
 }
 
 module.exports.getStoreModuleForPlaylistByUrl = async playlistUrl => {

@@ -23,7 +23,7 @@ const getPlaylistDetails = async playlistId => {
 
 const getArtistName = (module.exports.getArtistName = async url => {
   // TODO: get regex from db
-  const artistId = url.match('^https://open.spotify.com/artist/([0-9A-Za-z]+)')[1]
+  const artistId = url.match('^https://(api|open).spotify.com/(v1/)?artists?/([0-9A-Za-z]+)')[3]
   const {
     body: { name }
   } = await spotifyApi.getArtist(artistId)
@@ -53,18 +53,21 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
 module.exports.getFollowDetails = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
   const stores = [storeName.toLowerCase()]
-  let label
+  let name
   for (const { regex, type } of regexes) {
-    if (urlString.match(regex)) {
+    const match = urlString.match(regex)
+
+    if (match) {
+      const id = match[4]
       if (type === 'artist') {
-        label = await getArtistName(urlString)
+        name = await getArtistName(urlString)
       } else if (type === 'playlist') {
-        label = await getPlaylistName(type, urlString)
+        name = await getPlaylistName(type, urlString)
       } else {
         throw new Error('URL did not match any regex')
       }
 
-      return [{ label, type, stores }]
+      return [{ id, name, type, stores, url: urlString }]
     }
   }
 
@@ -95,4 +98,15 @@ module.exports.getArtistTracks = async ({ artistStoreId }) => {
   }
 
   return { tracks: transformed, errors: [] }
+}
+
+module.exports.search = async query => {
+  const items = (await spotifyApi.searchArtists(query)).body.artists.items
+  return items.map(({ external_urls: { spotify }, id, name, type }) => ({
+    url: spotify,
+    id,
+    name,
+    store: { name: storeName.toLowerCase() },
+    type
+  }))
 }

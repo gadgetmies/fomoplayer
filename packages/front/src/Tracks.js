@@ -299,7 +299,7 @@ class Tracks extends Component {
                     <input
                       autoFocus
                       id="search"
-                      className="search text-input-small"
+                      className="search text-input text-input-small text-input-dark"
                       onChange={e => this.setSearch(e.target.value)}
                       onKeyDown={e => {
                         if (e.code === 'Enter') {

@@ -105,7 +105,7 @@ export default class CookieLogin extends Component {
             name="cookie"
             disabled={this.state.loggingIn}
             onChange={e => this.setState({ cookie: e.target.value })}
-            className={`text-input login-input text-input-${this.props.size}`}
+            className={`text-input login-input text-input-${this.props.size} text-input-light`}
             value={this.state.cookie}
             onKeyPress={e => {
               if (e.key === 'Enter') {

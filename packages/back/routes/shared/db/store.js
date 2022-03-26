@@ -103,8 +103,7 @@ FROM
   store__label
   NATURAL JOIN store
 WHERE
-    store_url = ${storeUrl}
-AND label_id = ${labelId}
+    store__label_url = ${label.url}
   `
   )
 
@@ -272,8 +271,7 @@ FROM
   store__artist
   NATURAL JOIN store
 WHERE
-    store_url = ${storeUrl}
-AND artist_id = ${artistId}
+    store__artist_url = ${artist.url}
   `
   )
 

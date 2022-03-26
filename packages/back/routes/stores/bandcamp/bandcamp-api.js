@@ -115,11 +115,35 @@ const getPageDetails = (url, callback) => {
   })
 }
 
+const mapSearchResults = ({ auto: { results } }) =>
+  results.map(({ is_label, url, id, name }) => ({ type: is_label ? 'label' : 'artist', url, id, name }))
+
+const getSearchResults = (query, callback) => {
+  return request({
+    method: 'POST',
+    uri: 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_fuzzy',
+    body: {
+      search_text: query,
+      search_filter: 'b',
+      match_test: false
+    },
+    json: true
+  })
+    .then(res => {
+      callback(null, mapSearchResults(res))
+    })
+    .catch(e => {
+      error(`Searching for ${query} failed`, e)
+      callback(e)
+    })
+}
+
 module.exports = BPromise.promisifyAll({
   getRelease,
   getArtist: getPageInfo,
   getLabel: getPageInfo,
   getTag,
   getTagReleases,
-  getPageDetails
+  getPageDetails,
+  getSearchResults
 })

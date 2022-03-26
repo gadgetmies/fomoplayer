@@ -61,12 +61,16 @@ const getStoreModule = function(storeUrl) {
   return module
 }
 
+const aYear = 1000 * 60 * 60 * 24 * 30 * 12
 module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
   logger.info('updateArtistTracks', { storeUrl, details, sourceId })
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingArtist(details.storeArtistId)
   const { tracks, errors } = await storeModule.logic.getArtistTracks(details)
-  for (const track of tracks) {
+  logger.info(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
+  const recentTracks = tracks.filter(({ published }) => Date.now() - new Date(published) < aYear)
+  logger.info(`Adding ${recentTracks.length} recent tracks`)
+  for (const track of recentTracks) {
     try {
       await addStoreTrackToUsers(storeUrl, users, track, sourceId)
     } catch (e) {
@@ -90,7 +94,9 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
 
   const { tracks, errors } = await storeModule.logic.getLabelTracks(details)
   logger.info(`Found ${tracks.length} tracks for label: ${details.url}`)
-  for (const track of tracks) {
+  const recentTracks = tracks.filter(({ published }) => Date.now() - new Date(published) < aYear)
+  logger.info(`Adding ${recentTracks.length} recent tracks`)
+  for (const track of recentTracks) {
     try {
       await addStoreTrackToUsers(storeUrl, users, track, sourceId)
     } catch (e) {

@@ -79,7 +79,7 @@ export default class SessionLogin extends Component {
               name={key}
               disabled={this.state.loggingIn}
               onInput={e => this.setState({ [key]: e.target.value })}
-              className={`text-input login-input text-input-${this.props.size}`}
+              className={`text-input login-input text-input-${this.props.size} text-input-light`}
             />
           </label>
         ))}

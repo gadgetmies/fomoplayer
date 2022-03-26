@@ -5,9 +5,14 @@ import SpinnerButton from './SpinnerButton'
 import Spinner from './Spinner'
 import ToggleButton from './ToggleButton'
 import CopyToClipboardButton from './CopyToClipboardButton'
-import config from './config.js'
 import * as R from 'ramda'
 import PillButton from './PillButton'
+
+const storeNames = {
+  bandcamp: 'Bandcamp',
+  beatport: 'Beatport',
+  spotify: 'Spotify'
+}
 
 class Settings extends Component {
   unlockMarkAllHeard() {
@@ -45,8 +50,8 @@ class Settings extends Component {
       updatingEmail: false,
       emailVerificationRequested: false,
       emailVerificationFailed: false,
-      updatingFollows: false,
-      updatingFollowDetails: false,
+      updatingFollowWithUrl: null,
+      updatingFollowDetails: null,
       updatingCarts: false,
       updatingArtistOnLabelIgnores: false,
       updatingArtistIgnores: false,
@@ -211,118 +216,208 @@ class Settings extends Component {
               <label>
                 <h4>Search by name or URL to follow:</h4>
                 <div className="input-layout">
-                  <input
-                    className="text-input text-input-small"
-                    disabled={this.state.updatingFollows}
-                    value={this.state.followQuery}
-                    onChange={e => {
-                      // TODO: replace aborted and debounce with flatmapLatest
-                      this.setState({
-                        followQuery: e.target.value,
-                        followDetails: undefined,
-                        updatingFollowDetails: false
-                      })
-                      if (this.state.followDetailsDebounce) {
-                        clearTimeout(this.state.followDetailsDebounce)
+                  <label className="search-bar">
+                    <input
+                      className="text-input text-input-large text-input-dark search"
+                      disabled={this.state.updatingFollowWithUrl !== null}
+                      value={this.state.followQuery}
+                      onChange={e => {
+                        // TODO: replace aborted and debounce with flatmapLatest
                         this.setState({
-                          followDetailsDebounce: undefined,
-                          followDetailsUpdateAborted: this.state.followDetailsDebounce !== undefined
+                          followQuery: e.target.value,
+                          followDetails: undefined,
+                          updatingFollowDetails: null
                         })
-                      }
-
-                      if (e.target.value === '') {
-                        return
-                      }
-                      this.setState({ updatingFollowDetails: true, followDetailsUpdateAborted: false })
-                      const timeout = setTimeout(async () => {
-                        try {
-                          const results = await (
-                            await requestWithCredentials({ path: `/followDetails?q=${this.state.followQuery}` })
-                          ).json()
-                          if (this.state.followDetailsUpdateAborted) return
-                          this.setState({ followDetails: results, updatingFollowDetails: false })
-                        } catch (e) {
-                          console.error('Error updating follow details', e)
+                        if (this.state.followDetailsDebounce) {
                           clearTimeout(this.state.followDetailsDebounce)
                           this.setState({
-                            updatingFollowDetails: false,
-                            followDetailsDebounce: undefined
+                            followDetailsDebounce: undefined,
+                            followDetailsUpdateAborted: this.state.followDetailsDebounce !== undefined
                           })
                         }
-                      }, 500)
-                      this.setState({ followDetailsDebounce: timeout })
-                    }}
-                  />
+
+                        if (e.target.value === '') {
+                          return
+                        }
+                        this.setState({
+                          updatingFollowDetails: Object.fromEntries(
+                            Object.keys(storeNames).map(store => [store, true])
+                          ),
+                          followDetailsUpdateAborted: false
+                        })
+                        const timeout = setTimeout(async () => {
+                          if (this.state.followQuery.match('^https://')) {
+                            try {
+                              const results = await (
+                                await requestWithCredentials({ path: `/followDetails?q=${this.state.followQuery}` })
+                              ).json()
+                              if (this.state.followDetailsUpdateAborted) return
+                              this.setState({ followDetails: results, updatingFollowDetails: null })
+                            } catch (e) {
+                              console.error('Error updating follow details', e)
+                              clearTimeout(this.state.followDetailsDebounce)
+                              this.setState({
+                                updatingFollowDetails: null,
+                                followDetailsDebounce: undefined
+                              })
+                            }
+                          } else {
+                            const promises = Object.keys(storeNames).map(store =>
+                              requestWithCredentials({ path: `/stores/${store}/search/?q=${this.state.followQuery}` })
+                                .then(async res => (await res.json()).map(result => ({ stores: [store], ...result })))
+                                .then(json => {
+                                  if (this.state.followDetailsUpdateAborted) return
+                                  this.setState({
+                                    followDetails:
+                                      this.state.followDetails === undefined
+                                        ? json
+                                        : R.sortBy(
+                                            R.compose(R.toLower, R.prop('name')),
+                                            this.state.followDetails.concat(json)
+                                          ),
+                                    updatingFollowDetails: { ...this.state.updatingFollowDetails, [store]: false }
+                                  })
+                                })
+                            )
+                            Promise.all(promises).catch(e => {
+                              console.error('Error updating follow details', e)
+                              clearTimeout(this.state.followDetailsDebounce)
+                              this.setState({
+                                updatingFollowDetails: null,
+                                followDetailsDebounce: undefined
+                              })
+                            })
+                          }
+                        }, 500)
+                        this.setState({ followDetailsDebounce: timeout })
+                      }}
+                    />
+                    {this.state.followQuery ? (
+                      <FontAwesomeIcon
+                        onClick={() =>
+                          this.setState({
+                            followQuery: '',
+                            updatingFollowDetails: null,
+                            followDetails: undefined,
+                            updatingFollowWithUrl: null
+                          })
+                        }
+                        className={'search-input-icon clear-search'}
+                        icon="times-circle"
+                      />
+                    ) : (
+                      <FontAwesomeIcon className={'search-input-icon'} icon="search" />
+                    )}
+                  </label>
                 </div>
                 <br />
-                {this.state.updatingFollowDetails ? (
-                  <Spinner size="large" />
-                ) : this.state.followDetails === undefined ? null : this.state.followDetails.length === 0 ? (
-                  'No results found'
-                ) : (
-                  <div className={'input-layout'}>
-                    {this.state.followDetails.map(details => (
-                      <SpinnerButton
-                        className="button button-push_button-small button-push_button-primary"
-                        disabled={this.state.updatingFollows}
-                        loading={this.state.updatingFollows}
-                        onClick={async () => {
-                          this.setState({ updatingFollows: true })
-                          const props = details.id
-                            ? {
-                                headers: {
-                                  'content-type': `application/vnd.multi-store-player.${details.type}-ids+json`
-                                },
-                                body: [details.id]
-                              }
-                            : {
-                                body: [{ url: this.state.followQuery }]
-                              }
+                {this.state.updatingFollowDetails !== null &&
+                Object.values(this.state.updatingFollowDetails).some(val => val) ? (
+                  <>
+                    Searching <Spinner size="large" />
+                  </>
+                ) : this.state.followDetails === undefined ? null : (
+                  <>
+                    {this.state.followDetails.length === 0 ? (
+                      'No results found'
+                    ) : (
+                      <div>
+                        {R.sortBy(R.prop(0), Object.entries(R.groupBy(R.prop('type'), this.state.followDetails))).map(
+                          ([type, items]) => (
+                            <>
+                              <h5>
+                                {type[0].toLocaleUpperCase()}
+                                {type.substring(1)}s
+                              </h5>
+                              {items.map(({ name, store: { name: storeName }, type, url }) => (
+                                <SpinnerButton
+                                  className="button button-push_button-large button-push_button-primary"
+                                  style={{ margin: 4 }}
+                                  disabled={
+                                    this.state.updatingFollowWithUrl !== null ||
+                                    (type === 'artist'
+                                      ? this.state.artistFollows
+                                      : type === 'label'
+                                      ? this.state.labelFollows
+                                      : this.state.playlistFollows
+                                    ).find(R.propEq('url', url))
+                                  }
+                                  loading={this.state.updatingFollowWithUrl === url}
+                                  onClick={async () => {
+                                    try {
+                                      this.setState({ updatingFollowWithUrl: url })
+                                      const props = {
+                                        body: [{ url }]
+                                      }
 
-                          await requestJSONwithCredentials({
-                            path: `/me/follows/${details.type}s`,
-                            method: 'POST',
-                            ...props
-                          })
-                          this.setState({ followQuery: '', followDetails: undefined })
-                          await this.updateFollows()
-                          this.setState({ updatingFollows: false })
-                        }}
-                      >
-                        <FontAwesomeIcon icon="plus" /> Follow {details.type}:{' '}
-                        <span class="pill" style={{ backgroundColor: 'white', color: 'black' }}>
-                          {details.stores.map(store => (
-                            <span aria-hidden="true" className={`store-icon store-icon-${store}`}></span>
-                          ))}{' '}
-                          {details.label}
-                        </span>
-                      </SpinnerButton>
-                    ))}
-                  </div>
+                                      await requestJSONwithCredentials({
+                                        path: `/me/follows/${type}s`,
+                                        method: 'POST',
+                                        ...props
+                                      })
+
+                                      await this.updateFollows()
+                                    } catch (e) {
+                                      console.error(e)
+                                    } finally {
+                                      this.setState({ updatingFollowWithUrl: null })
+                                    }
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon="plus" /> Follow {type}:{' '}
+                                  <span class="pill" style={{ backgroundColor: 'white', color: 'black' }}>
+                                    <span aria-hidden="true" className={`store-icon store-icon-${storeName}`}></span>{' '}
+                                    {name}
+                                  </span>{' '}
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    onClick={e => e.stopPropagation()}
+                                    title={'Check details from store'}
+                                  >
+                                    <FontAwesomeIcon icon="external-link-alt" />
+                                  </a>
+                                </SpinnerButton>
+                              ))}
+                            </>
+                          )
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </label>
               <h4>Artists ({this.state.artistFollows.length})</h4>
               <ul className="no-style-list follow-list">
-                {this.state.artistFollows.map(artist => (
+                {this.state.artistFollows.map(({ name, storeArtistId, store: { name: storeName }, url }) => (
                   <li>
                     <span className="button pill pill-button">
                       <span className="pill-button-contents">
-                        {artist.stores.map(({ name: storeName }) => (
-                          <>
-                            <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
-                          </>
-                        ))}
-                        {artist.name}{' '}
+                        <>
+                          <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
+                        </>
+                        {name}{' '}
                         <button
                           disabled={this.state.updatingArtistFollows}
                           onClick={async () => {
                             this.setState({ updatingArtistFollows: true })
-                            await requestWithCredentials({ path: `/me/follows/artists/${artist.id}`, method: 'DELETE' })
+                            await requestWithCredentials({
+                              path: `/me/follows/artists/${storeArtistId}`,
+                              method: 'DELETE'
+                            })
                             await this.updateArtistFollows()
                             this.setState({ updatingArtistFollows: false })
                           }}
                         >
-                          <FontAwesomeIcon icon="times-circle" />
+                          <FontAwesomeIcon icon="times-circle" />{' '}
+                          <a
+                            href={url}
+                            target="_blank"
+                            onClick={e => e.stopPropagation()}
+                            title={'Check details from store'}
+                          >
+                            <FontAwesomeIcon icon="external-link-alt" />
+                          </a>
                         </button>
                       </span>
                     </span>
@@ -331,24 +426,25 @@ class Settings extends Component {
               </ul>
               <h4>Labels ({this.state.labelFollows.length})</h4>
               <ul className="no-style-list follow-list">
-                {this.state.labelFollows.map(label => (
+                {this.state.labelFollows.map(({ name, storeLabelId, store: { name: storeName } }) => (
                   <li>
                     <span className="button pill pill-button">
                       <span className="pill-button-contents">
-                        {label.stores.map(({ name: storeName }) => (
-                          <>
-                            <span
-                              aria-hidden="true"
-                              className={`store-icon store-icon-${storeName.toLowerCase()}`}
-                            ></span>{' '}
-                          </>
-                        ))}
-                        {label.name}{' '}
+                        <>
+                          <span
+                            aria-hidden="true"
+                            className={`store-icon store-icon-${storeName.toLowerCase()}`}
+                          ></span>{' '}
+                        </>
+                        {name}{' '}
                         <button
                           disabled={this.state.updatingLabelFollows}
                           onClick={async () => {
                             this.setState({ updatingLabelFollows: true })
-                            await requestWithCredentials({ path: `/me/follows/labels/${label.id}`, method: 'DELETE' })
+                            await requestWithCredentials({
+                              path: `/me/follows/labels/${storeLabelId}`,
+                              method: 'DELETE'
+                            })
                             await this.updateLabelFollows()
                             this.setState({ updatingLabelFollows: false })
                           }}
@@ -398,13 +494,13 @@ class Settings extends Component {
                 <h4>Create cart:</h4>
                 <div className="input-layout">
                   <input
-                    className="text-input text-input-small"
+                    className="text-input text-input-large text-input-dark"
                     disabled={this.state.updatingCarts}
                     value={this.state.cartName}
                     onChange={e => this.setState({ cartName: e.target.value })}
                   />
                   <SpinnerButton
-                    className="button button-push_button-small button-push_button-primary"
+                    className="button button-push_button-large button-push_button-primary"
                     loading={this.state.addingCart}
                     disabled={this.state.cartName === '' || this.state.addingCart || this.state.updatingCarts}
                     label="Add"
@@ -488,12 +584,12 @@ class Settings extends Component {
                 <div className="input-layout">
                   <input
                     type={'email'}
-                    className="text-input text-input-small"
+                    className="text-input text-input-large text-input-dark"
                     value={this.state.email}
                     onChange={e => this.setState({ email: e.target.value, emailVerificationRequested: false })}
                   />
                   <SpinnerButton
-                    className="button button-push_button-small button-push_button-primary"
+                    className="button button-push_button-large button-push_button-primary"
                     disabled={
                       this.state.updatingEmail ||
                       (this.props.userSettings.email === this.state.email && this.props.userSettings.emailVerified) ||
@@ -538,7 +634,7 @@ class Settings extends Component {
                 <h4>Get notifications for search:</h4>
                 <div className="input-layout">
                   <input
-                    className="text-input text-input-small"
+                    className="text-input text-input-large text-input-dark"
                     disabled={this.state.updatingNotifications}
                     value={this.state.notificationSearch}
                     onChange={e => {
@@ -546,7 +642,7 @@ class Settings extends Component {
                     }}
                   />
                   <SpinnerButton
-                    className="button button-push_button-small button-push_button-primary"
+                    className="button button-push_button-large button-push_button-primary"
                     disabled={this.state.updatingNotifications}
                     loading={this.state.updatingNotifications}
                     onClick={async () => {
@@ -581,16 +677,19 @@ class Settings extends Component {
             <>
               <h4>Artists ({this.state.artistIgnores.length})</h4>
               <ul className="no-style-list follow-list">
-                {this.state.artistIgnores.map(artist => (
-                  <li key={artist.id}>
+                {this.state.artistIgnores.map(({ name, id }) => (
+                  <li key={id}>
                     <span className="button pill pill-button">
                       <span className="pill-button-contents">
-                        {artist.name}{' '}
+                        {name}{' '}
                         <button
                           disabled={this.state.updatingArtistIgnores}
                           onClick={async () => {
                             this.setState({ updatingArtistIgnores: true })
-                            await requestWithCredentials({ path: `/me/ignores/artists/${artist.id}`, method: 'DELETE' })
+                            await requestWithCredentials({
+                              path: `/me/ignores/artists/${id}`,
+                              method: 'DELETE'
+                            })
                             await this.updateArtistIgnores()
                             this.setState({ updatingArtistIgnores: false })
                           }}
@@ -604,16 +703,19 @@ class Settings extends Component {
               </ul>
               <h4>Labels ({this.state.labelIgnores.length})</h4>
               <ul className="no-style-list follow-list">
-                {this.state.labelIgnores.map(label => (
-                  <li key={label.id}>
+                {this.state.labelIgnores.map(({ name, id }) => (
+                  <li key={id}>
                     <span className="button pill pill-button">
                       <span className="pill-button-contents">
-                        {label.name}{' '}
+                        {name}{' '}
                         <button
                           disabled={this.state.updatingLabelIgnores}
                           onClick={async () => {
                             this.setState({ updatingLabelIgnores: true })
-                            await requestWithCredentials({ path: `/me/ignores/labels/${label.id}`, method: 'DELETE' })
+                            await requestWithCredentials({
+                              path: `/me/ignores/labels/${id}`,
+                              method: 'DELETE'
+                            })
                             await this.updateLabelIgnores()
                             this.setState({ updatingLabelIgnores: false })
                           }}

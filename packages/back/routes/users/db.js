@@ -36,19 +36,25 @@ ON CONFLICT
 `
   )
 
-module.exports.addArtistWatch = async (tx, userId, artistId) => {
+module.exports.queryStoreArtistIds = async (tx, artistId) => {
+  return (
+    await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`-- queryStoreArtistIds
+SELECT store__artist_id AS "id"
+FROM store__artist
+WHERE artist_id = ${artistId}
+`
+    )
+  ).map(({ id }) => id)
+}
+
+module.exports.addStoreArtistWatch = async (tx, userId, storeArtistId) => {
   await tx.queryAsync(
     // language=PostgreSQL
     sql`-- addArtistWatch INSERT INTO store__artist_watch
-INSERT INTO store__artist_watch
-  (store__artist_id)
-SELECT
-  store__artist_id
-FROM
-  store__artist
-  NATURAL JOIN artist
-WHERE
-  artist_id = ${artistId}
+INSERT INTO store__artist_watch (store__artist_id)
+VALUES (${storeArtistId})
 ON CONFLICT DO NOTHING
   `
   )
@@ -57,50 +63,46 @@ ON CONFLICT DO NOTHING
     // language=PostgreSQL
     sql`-- addArtistWatch INSERT INTO store__artist_watch__user
 INSERT INTO store__artist_watch__user
-  (store__artist_watch_id, meta_account_user_id)
-SELECT
-  store__artist_watch_id
-, ${userId}
-FROM
-  store__artist_watch
-  NATURAL JOIN store__artist
-  NATURAL JOIN artist
-WHERE
-  artist_id = ${artistId}
+    (store__artist_watch_id, meta_account_user_id)
+SELECT store__artist_watch_id
+     , ${userId}
+FROM store__artist_watch
+WHERE store__artist_id = ${storeArtistId}
 ON CONFLICT DO NOTHING
   `
   )
 
+  const res = await tx.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- addArtistWatch SELECT store__artist_watch_id
+SELECT store__artist_watch_id AS "followId"
+FROM store__artist_watch
+         NATURAL JOIN store__artist_watch__user
+WHERE meta_account_user_id = ${userId}
+  AND store__artist_id = ${storeArtistId}`
+  )
+
+  return res[0].followId
+}
+
+module.exports.queryStoreLabelIds = async (tx, labelId) => {
   return (
     await tx.queryRowsAsync(
       // language=PostgreSQL
-      sql`-- addArtistWatch SELECT store__artist_watch_id
-SELECT
-  store__artist_watch_id AS "followId"
-FROM
-  store__artist_watch
-  NATURAL JOIN store__artist_watch__user
-  NATURAL JOIN store__artist
-WHERE
-    meta_account_user_id = ${userId}
-AND artist_id = ${artistId}`
+      sql`-- queryStoreLabelIds
+SELECT store__label_id AS id FROM store__label WHERE label_id = ${labelId} 
+`
     )
-  )[0].followId
+  ).map(({ id }) => id)
 }
 
-module.exports.addLabelWatch = async (tx, userId, labelId) => {
+module.exports.addStoreLabelWatch = async (tx, userId, storeLabelId) => {
   await tx.queryAsync(
     // language=PostgreSQL
     sql`-- addLabelWatch INSERT INTO store__label_watch
 INSERT INTO store__label_watch
-  (store__label_id)
-SELECT
-  store__label_id
-FROM
-  store__label
-  NATURAL JOIN label
-WHERE
-  label_id = ${labelId}
+    (store__label_id)
+VALUES (${storeLabelId})
 ON CONFLICT DO NOTHING
 `
   )
@@ -109,15 +111,11 @@ ON CONFLICT DO NOTHING
     // language=PostgreSQL
     sql`-- addLabelWatch INSERT INTO store__label_watch__user
 INSERT INTO store__label_watch__user
-  (store__label_watch_id, meta_account_user_id)
-SELECT
-  store__label_watch_id
-, ${userId}
-FROM
-  store__label_watch
-  NATURAL JOIN store__label
-WHERE
-  label_id = ${labelId}
+    (store__label_watch_id, meta_account_user_id)
+SELECT store__label_watch_id
+     , ${userId}
+FROM store__label_watch
+WHERE store__label_id = ${storeLabelId}
 ON CONFLICT DO NOTHING
 `
   )
@@ -126,15 +124,11 @@ ON CONFLICT DO NOTHING
     await tx.queryRowsAsync(
       // language=PostgreSQL
       sql`-- addLabelWatch SELECT store__label_watch_id
-SELECT
-  store__label_watch_id AS "followId"
-FROM
-  store__label_watch
-  NATURAL JOIN store__label_watch__user
-  NATURAL JOIN store__label
-WHERE
-    meta_account_user_id = ${userId}
-AND label_id = ${labelId}`
+SELECT store__label_watch_id AS "followId"
+FROM store__label_watch
+         NATURAL JOIN store__label_watch__user
+WHERE meta_account_user_id = ${userId}
+  AND store__label_id = ${storeLabelId}`
     )
   )[0].followId
 }
@@ -160,7 +154,8 @@ AND store__artist_watch_id IN
   )
 }
 
-module.exports.deleteArtistWatchFromUser = async (userId, artistId) => {
+// TODO: does this leave empty rows in store__artist_watch? Is that an issue?
+module.exports.deleteArtistWatchFromUser = async (userId, storeArtistId) => {
   // language=PostgreSQL
   await pg.queryAsync(
     sql`-- deleteArtistWatchFromUser
@@ -173,10 +168,8 @@ AND store__artist_watch_id IN
        store__artist_watch_id
      FROM
        store__artist_watch
-       NATURAL JOIN store__artist
-       NATURAL JOIN store
      WHERE
-       artist_id = ${artistId})
+       store__artist_id = ${storeArtistId})
 `
   )
 }
@@ -202,7 +195,7 @@ AND store__label_watch_id IN
   )
 }
 
-module.exports.deleteLabelWatchFromUser = async (userId, labelId) => {
+module.exports.deleteLabelWatchFromUser = async (userId, storeLabelId) => {
   // language=PostgreSQL
   await pg.queryAsync(
     sql`-- deleteLabelWatchFromUser
@@ -218,7 +211,7 @@ AND store__label_watch_id IN
        NATURAL JOIN store__label
        NATURAL JOIN store
      WHERE
-       label_id = ${labelId})
+       store__label_id = ${storeLabelId})
 `
   )
 }
@@ -227,32 +220,28 @@ module.exports.queryUserArtistFollows = async userId => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserArtistFollows
-WITH
-  distinct_store_artists AS (
-    SELECT DISTINCT
-      artist_name
-    , artist_id
-    , store_name
-    , store_id
-    FROM
-      artist
-      NATURAL JOIN store__artist
-      NATURAL JOIN store__artist_watch
-      NATURAL JOIN store__artist_watch__user
-      NATURAL JOIN store
-    WHERE
-        meta_account_user_id = ${userId}
-    AND (store_name <> 'Bandcamp' OR store__artist_url IS NOT NULL)
-  )
-SELECT
-  artist_name                                                      AS name
-, artist_id                                                        AS id
-, array_agg(json_build_object('name', store_name, 'id', store_id)) AS stores
+WITH distinct_store_artists AS (
+    SELECT DISTINCT artist_id
+                  , artist_name
+                  , store__artist_id
+                  , store__artist_url
+                  , store_name
+                  , store_id
+    FROM artist
+             NATURAL JOIN store__artist
+             NATURAL JOIN store__artist_watch
+             NATURAL JOIN store__artist_watch__user
+             NATURAL JOIN store
+    WHERE meta_account_user_id = ${userId}
+      AND (store_name <> 'Bandcamp' OR store__artist_url IS NOT NULL)
+)
+SELECT artist_name                                           AS name
+     , artist_id                                             AS id
+     , store__artist_id                                      AS "storeArtistId"
+     , store__artist_url                                     AS url
+     , json_build_object('name', store_name, 'id', store_id) AS store
 FROM distinct_store_artists
-GROUP BY
-  1, 2
-ORDER BY
-  1
+ORDER BY 1
 `
   )
 }
@@ -261,31 +250,27 @@ module.exports.queryUserLabelFollows = async userId => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserLabelFollows
-WITH
-  distinct_store_labels AS (
-    SELECT DISTINCT
-      label_name
-    , label_id
-    , store_name
-    , store_id
-    FROM
-      label
-      NATURAL JOIN store__label
-      NATURAL JOIN store__label_watch
-      NATURAL JOIN store__label_watch__user
-      NATURAL JOIN store
-    WHERE
-      meta_account_user_id = ${userId}
-  )
-SELECT
-  label_name                                                       AS name
-, label_id                                                         AS id
-, array_agg(json_build_object('name', store_name, 'id', store_id)) AS stores
+WITH distinct_store_labels AS (
+    SELECT DISTINCT label_name
+                  , label_id
+                  , store__label_id
+                  , store__label_url
+                  , store_name
+                  , store_id
+    FROM label
+             NATURAL JOIN store__label
+             NATURAL JOIN store__label_watch
+             NATURAL JOIN store__label_watch__user
+             NATURAL JOIN store
+    WHERE meta_account_user_id = ${userId}
+)
+SELECT label_name                                            AS name
+     , label_id                                              AS id
+     , store__label_id                                       AS "storeLabelId"
+     , store__label_url                                      AS url
+     , json_build_object('name', store_name, 'id', store_id) AS store
 FROM distinct_store_labels
-GROUP BY
-  1, 2
-ORDER BY
-  1
+ORDER BY 1
 `
   )
 }
@@ -336,8 +321,8 @@ module.exports.queryUserLabelIgnores = async userId => {
     // language=PostgreSQL
     sql`-- queryLabelIgnores
 SELECT
-  label_id   AS id
-, label_name AS name
+  label_id        AS id
+, label_name      AS name
 FROM
   user__label_ignore
   NATURAL JOIN label

@@ -29,22 +29,24 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
 
 module.exports.getFollowDetails = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
-  const stores = [storeName.toLowerCase()]
-  let label
+  const store = { name: storeName.toLowerCase() }
+  let name
 
   for (const { regex, type } of regexes) {
-    if (urlString.match(regex)) {
+    const match = urlString.match(regex)
+    if (match) {
+      const id = match[1]
       if (type === 'artist') {
-        label = await getArtistName(urlString)
+        name = await getArtistName(urlString)
       } else if (type === 'label') {
-        label = await getLabelName(urlString)
+        name = await getLabelName(urlString)
       } else if (type === 'playlist') {
-        label = await getPlaylistName(type, urlString)
+        name = await getPlaylistName(type, urlString)
       } else {
         throw new Error('URL did not match any regex')
       }
 
-      return [{ label, type, stores }]
+      return [{ id, name, type, store, url: urlString }]
     }
   }
 
@@ -98,4 +100,11 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
   }
 
   yield { tracks: transformed, errors: [] }
+}
+
+module.exports.search = async query => {
+  const promises = [bpApiStatic.searchForArtistsAsync(query), bpApiStatic.searchForLabelsAsync(query)]
+  return (await Promise.all(promises))
+    .reduce((acc, curr) => acc.concat(curr), [])
+    .map(item => ({ ...item, store: { name: storeName.toLowerCase() } }))
 }
