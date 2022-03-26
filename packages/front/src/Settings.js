@@ -387,7 +387,7 @@ class Settings extends Component {
                   </>
                 )}
               </label>
-              <h4>Artists ({this.state.artistFollows.length})</h4>
+              <h4>Followed artists ({this.state.artistFollows.length})</h4>
               <ul className="no-style-list follow-list">
                 {this.state.artistFollows.map(({ name, storeArtistId, store: { name: storeName }, url }) => (
                   <li>
@@ -424,7 +424,7 @@ class Settings extends Component {
                   </li>
                 ))}
               </ul>
-              <h4>Labels ({this.state.labelFollows.length})</h4>
+              <h4>Followed labels ({this.state.labelFollows.length})</h4>
               <ul className="no-style-list follow-list">
                 {this.state.labelFollows.map(({ name, storeLabelId, store: { name: storeName } }) => (
                   <li>
@@ -456,7 +456,7 @@ class Settings extends Component {
                   </li>
                 ))}
               </ul>
-              <h4>Playlists ({this.state.playlistFollows.length})</h4>
+              <h4>Followed playlists ({this.state.playlistFollows.length})</h4>
               <ul className="no-style-list follow-list">
                 {this.state.playlistFollows.map(playlist => (
                   <li>
