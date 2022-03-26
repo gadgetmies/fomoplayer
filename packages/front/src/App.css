@@ -289,6 +289,10 @@ button::-moz-focus-inner {
   box-shadow: 0 0 2px 2px #990075;
 }
 
+input {
+  color-scheme: dark;
+}
+
 .text-input-small {
   border-radius: 0.25rem;
   padding: 0.375rem 0.75rem;
