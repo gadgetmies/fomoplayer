@@ -147,7 +147,7 @@ class Tracks extends Component {
               heard={heard}
               inDefaultCart={defaultCart ? defaultCart.tracks.find(R.propEq('id', id)) !== undefined : false}
               inCarts={this.props.carts.filter(cart => cart.tracks.find(R.propEq('id', id)))}
-              popupAbove={tracks.length - index < 10}
+              popupAbove={tracks.length > 10 && tracks.length - index < 10}
               processingCart={this.props.processingCart}
               key={id}
               onClick={() => {
