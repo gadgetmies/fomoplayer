@@ -412,7 +412,7 @@ class Tracks extends Component {
                     loading={this.state.updatingTracks}
                     onClick={this.refreshTracks.bind(this)}
                     style={{ margin: 'auto', height: '100%', display: 'block' }}
-                    label={'Load more'}
+                    label={'Refresh'}
                     loadingLabel={'Loading'}
                   />
                 </td>
