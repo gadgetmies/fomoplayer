@@ -241,7 +241,7 @@ SELECT artist_name                                           AS name
      , store__artist_url                                     AS url
      , json_build_object('name', store_name, 'id', store_id) AS store
 FROM distinct_store_artists
-ORDER BY 1
+ORDER BY 1, store_name
 `
   )
 }
@@ -270,7 +270,7 @@ SELECT label_name                                            AS name
      , store__label_url                                      AS url
      , json_build_object('name', store_name, 'id', store_id) AS store
 FROM distinct_store_labels
-ORDER BY 1
+ORDER BY 1, store_name
 `
   )
 }
