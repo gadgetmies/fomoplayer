@@ -43,6 +43,21 @@ GROUP BY
 
 const getFieldFromResult = field => R.path([0, field])
 
+async function getStoreLabelIdForUrl(tx, url) {
+  return await tx.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- ensureArtistExists SELECT store__label_id AS "storeLabelId" FROM store__label
+SELECT
+  store__label_id AS "storeLabelId"
+FROM
+  store__label
+  NATURAL JOIN store
+WHERE
+    store__label_url = ${url}
+  `
+  )
+}
+
 module.exports.ensureLabelExists = async (tx, storeUrl, label, sourceId) => {
   const getLabelIdFromResult = getFieldFromResult('label_id')
   let labelId = await tx
@@ -74,40 +89,28 @@ RETURNING label_id
       .then(getLabelIdFromResult)
   }
 
-  await tx.queryRowsAsync(
-    // language=PostgreSQL
-    sql`-- ensureLabelExists INSERT INTO store__label
-INSERT INTO store__label
-  (store__label_store_id, store__label_url, store_id, label_id, store__label_source)
-SELECT
-  ${label.id}
-, ${label.url}
-, store_id
-, ${labelId}
-, ${sourceId}
-FROM store
-WHERE
-  store_url = ${storeUrl}
-ON CONFLICT ON CONSTRAINT store__label_store__label_store_id_store_id_key
-  DO UPDATE SET
-  store__label_url = COALESCE(store__label.store__label_url, excluded.store__label_url)
-`
-  )
+  const storeLabelIds = await getStoreLabelIdForUrl(tx, label.url)
 
-  const res = await tx.queryRowsAsync(
-    // language=PostgreSQL
-    sql`-- ensureArtistExists SELECT store__label_id AS "storeLabelId" FROM store__label
-SELECT
-  store__label_id AS "storeLabelId"
-FROM
-  store__label
-  NATURAL JOIN store
-WHERE
-    store__label_url = ${label.url}
-  `
-  )
+  if (storeLabelIds.length === 0) {
+    await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`-- ensureLabelExists INSERT INTO store__label
+      INSERT INTO store__label
+      (store__label_store_id, store__label_url, store_id, label_id, store__label_source)
+      SELECT ${label.id}
+           , ${label.url}
+           , store_id
+           , ${labelId}
+           , ${sourceId}
+      FROM store
+      WHERE store_url = ${storeUrl}
+      ON CONFLICT ON CONSTRAINT store__label_store__label_store_id_store_id_key
+          DO UPDATE SET store__label_url = COALESCE(store__label.store__label_url, excluded.store__label_url)
+      `
+    )
+  }
 
-  const [{ storeLabelId }] = res
+  const [{ storeLabelId }] = await getStoreLabelIdForUrl(tx, label.url)
 
   return { labelId, storeLabelId }
 }
