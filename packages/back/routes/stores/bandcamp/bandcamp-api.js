@@ -1,10 +1,12 @@
 const BPromise = require('bluebird')
 const R = require('ramda')
-const saferEval = require('safer-eval')
 const { error } = require('../../../logger')(__filename)
 const { decode } = require('html-entities')
 const jsdom = require('jsdom')
 const { JSDOM } = jsdom
+const { VM } = require('vm2')
+
+const vm = new VM()
 
 const scrapeJSON = R.curry((pattern, string) => {
   const match = string.match(new RegExp(pattern), 's')
@@ -12,7 +14,7 @@ const scrapeJSON = R.curry((pattern, string) => {
     throw new Error('No match for pattern')
   }
 
-  return saferEval(match[1])
+  return vm.run(match[1])
 })
 
 const extractJSON = R.curry((selector, attribute = undefined, html) => {

@@ -2353,6 +2353,11 @@ acorn-walk@^7.0.0, acorn-walk@^7.1.1:
   resolved "https://registry.yarnpkg.com/acorn-walk/-/acorn-walk-7.2.0.tgz#0de889a601203909b0fbe07b8938dc21d2e967bc"
   integrity sha512-OPdCF6GsMIP+Az+aWfAAOEt2/+iVDKE7oy6lJ098aoe59oAmK76qV6Gw60SbZ8jHuG2wH058GF4pLFbYamYrVA==
 
+acorn-walk@^8.2.0:
+  version "8.2.0"
+  resolved "https://registry.yarnpkg.com/acorn-walk/-/acorn-walk-8.2.0.tgz#741210f2e2426454508853a2f44d0ab83b7f69c1"
+  integrity sha512-k+iyHEuPgSw6SbuDpGQM+06HQUa04DZ3o+F6CSzXMvvI5KMvnaEqXe+YVe555R9nn6GPt404fos4wcgpw12SDA==
+
 acorn@^7.0.0, acorn@^7.1.1:
   version "7.4.1"
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-7.4.1.tgz#feaed255973d2e77555b83dbc08851a6c63520fa"
@@ -3086,9 +3091,9 @@ boom@0.4.x:
   dependencies:
     hoek "0.9.x"
 
-bp-api@elysion/bp-api#v3.1.6:
+bp-api@gadgetmies/bp-api#v3.1.7:
   version "3.1.6"
-  resolved "https://codeload.github.com/elysion/bp-api/tar.gz/43329222b582013c009106430d41de5ca7fbbdbc"
+  resolved "https://codeload.github.com/gadgetmies/bp-api/tar.gz/b9eafaf0add17868972c49197d9a61eae2633bf7"
   dependencies:
     html-entities "^2.3.2"
     ramda "^0.25.0"
@@ -3446,11 +3451,6 @@ clone-deep@^4.0.1:
     is-plain-object "^2.0.4"
     kind-of "^6.0.2"
     shallow-clone "^3.0.0"
-
-clones@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/clones/-/clones-1.2.0.tgz#b34c872045446a9f264ccceb7731bca05c529b71"
-  integrity sha512-FXDYw4TjR8wgPZYui2LeTqWh1BLpfQ8lB6upMtlpDF6WlOOxghmTTxWyngdKTgozqBgKnHbTVwTE+hOHqAykuQ==
 
 cloudmailin@^0.0.3:
   version "0.0.3"
@@ -10416,13 +10416,6 @@ safe-stable-stringify@^2.3.1:
   resolved "https://registry.yarnpkg.com/safer-buffer/-/safer-buffer-2.1.2.tgz#44fa161b0187b9549dd84bb91802f9bd8385cd6a"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
 
-safer-eval@^1.3.6:
-  version "1.3.6"
-  resolved "https://registry.yarnpkg.com/safer-eval/-/safer-eval-1.3.6.tgz#ee51e3348c39fdc4117a47dfb4b69df56a2e40cf"
-  integrity sha512-DN9tBsZgtUOHODzSfO1nGCLhZtxc7Qq/d8/2SNxQZ9muYXZspSh1fO7HOsrf4lcelBNviAJLCxB/ggmG+jV1aw==
-  dependencies:
-    clones "^1.2.0"
-
 sanitize.css@*:
   version "13.0.0"
   resolved "https://registry.yarnpkg.com/sanitize.css/-/sanitize.css-13.0.0.tgz#2675553974b27964c75562ade3bd85d79879f173"
@@ -11841,6 +11834,14 @@ vizion@~2.0.2:
     lodash.foreach "^4.5.0"
     lodash.get "^4.4.2"
     lodash.last "^3.0.0"
+
+vm2@^3.9.9:
+  version "3.9.9"
+  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.9.tgz#c0507bc5fbb99388fad837d228badaaeb499ddc5"
+  integrity sha512-xwTm7NLh/uOjARRBs8/95H0e8fT3Ukw5D/JJWhxMbhKzNh1Nu981jQKvkep9iKYNxzlVrdzD0mlBGkDKZWprlw==
+  dependencies:
+    acorn "^8.7.0"
+    acorn-walk "^8.2.0"
 
 w3c-hr-time@^1.0.2:
   version "1.0.2"
