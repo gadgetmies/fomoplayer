@@ -107,8 +107,6 @@ WHERE
   `
   )
 
-  logger.debug('res', { res })
-
   const [{ storeLabelId }] = res
 
   return { labelId, storeLabelId }
@@ -188,94 +186,85 @@ ON CONFLICT ON CONSTRAINT store__release_store_id_store__release_store_id_key
 }
 
 module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
-  const getArtistIdFromResult = getFieldFromResult('artist_id')
+  try {
+    const getArtistIdFromResult = getFieldFromResult('artist_id')
 
-  let artistId = await tx
-    .queryRowsAsync(
-      // language=PostgreSQL
-      sql`-- ensureArtistExists SELECT artist_id
-SELECT
-  artist_id
-FROM
-  store__artist
-  NATURAL JOIN store
-WHERE
-    store_url = ${storeUrl}
-AND (store__artist_store_id = ${artist.id} OR store__artist_url = ${artist.url}) -- TODO: add name matching for bandcamp support?
-`
-    )
-    .then(getArtistIdFromResult)
-
-  if (!artistId) {
-    logger.info(`Artist ${artist.name} not found with id, trying with name`)
-    artistId = await tx
+    let artistId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
         sql`-- ensureArtistExists SELECT artist_id
-SELECT
-  artist_id
-FROM
-  artist
-WHERE
-    LOWER(artist_name) = LOWER(${artist.name})
-`
+        SELECT artist_id
+        FROM store__artist
+                 NATURAL JOIN store
+        WHERE store_url = ${storeUrl}
+          AND (store__artist_store_id = ${artist.id} OR store__artist_url = ${artist.url}) -- TODO: add name matching for bandcamp support?
+        `
       )
       .then(getArtistIdFromResult)
+
+    if (!artistId) {
+      logger.info(`Artist ${artist.name} not found with id, trying with name`)
+      artistId = await tx
+        .queryRowsAsync(
+          // language=PostgreSQL
+          sql`-- ensureArtistExists SELECT artist_id
+          SELECT artist_id
+          FROM artist
+          WHERE LOWER(artist_name) = LOWER(${artist.name})
+          `
+        )
+        .then(getArtistIdFromResult)
+    }
+
+    if (!artistId) {
+      logger.info(`Artist ${artist.name} not found, inserting`)
+      artistId = await tx
+        .queryRowsAsync(
+          // language=PostgreSQL
+          sql`-- ensureArtistExists INSERT INTO artist
+          INSERT INTO artist
+              (artist_name, artist_source)
+          VALUES (${artist.name}, ${sourceId})
+          RETURNING artist_id
+          `
+        )
+        .then(getArtistIdFromResult)
+    }
+
+    await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`-- ensureArtistExists INSERT INTO store__artist
+      INSERT INTO store__artist
+      (store__artist_store_id, store__artist_url, store_id, artist_id, store__artist_source)
+      SELECT ${artist.id}
+           , ${artist.url}
+           , store_id
+           , ${artistId}
+           , ${sourceId}
+      FROM store
+      WHERE store_url = ${storeUrl}
+      ON CONFLICT ON CONSTRAINT store__artist_store__artist_store_id_store_id_key DO UPDATE
+          SET store__artist_url      = ${artist.url}
+            , store__artist_store_id = ${artist.id}
+            , store__artist_source   = ${sourceId}
+
+      `
+    )
+
+    const [{ storeArtistId }] = await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`-- ensureArtistExists SELECT store__artist_id AS "storeArtistId" FROM store__artist
+      SELECT store__artist_id AS "storeArtistId"
+      FROM store__artist
+               NATURAL JOIN store
+      WHERE store__artist_url = ${artist.url}
+      `
+    )
+
+    return { id: artistId, storeArtistId, role: artist.role }
+  } catch (e) {
+    logger.error('error adding track', e)
   }
-
-  if (!artistId) {
-    logger.info(`Artist ${artist.name} not found, inserting`)
-    artistId = await tx
-      .queryRowsAsync(
-        // language=PostgreSQL
-        sql`-- ensureArtistExists INSERT INTO artist
-INSERT INTO artist
-  (artist_name, artist_source)
-VALUES
-  (${artist.name}, ${sourceId})
-RETURNING artist_id
-`
-      )
-      .then(getArtistIdFromResult)
-  }
-
-  await tx.queryRowsAsync(
-    // language=PostgreSQL
-    sql`-- ensureArtistExists INSERT INTO store__artist
-INSERT INTO store__artist
-  (store__artist_store_id, store__artist_url, store_id, artist_id, store__artist_source)
-SELECT
-  ${artist.id}
-, ${artist.url}
-, store_id
-, ${artistId}
-, ${sourceId}
-FROM store
-WHERE
-  store_url = ${storeUrl}
-ON CONFLICT ON CONSTRAINT store__artist_store__artist_store_id_store_id_key DO UPDATE
-  SET
-    store__artist_url      = ${artist.url}
-  , store__artist_store_id = ${artist.id}
-  , store__artist_source   = ${sourceId}
-
-`
-  )
-
-  const [{ storeArtistId }] = await tx.queryRowsAsync(
-    // language=PostgreSQL
-    sql`-- ensureArtistExists SELECT store__artist_id AS "storeArtistId" FROM store__artist
-SELECT
-  store__artist_id AS "storeArtistId"
-FROM
-  store__artist
-  NATURAL JOIN store
-WHERE
-    store__artist_url = ${artist.url}
-  `
-  )
-
-  return { id: artistId, storeArtistId, role: artist.role }
 }
 
 module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists, track, sourceId) => {

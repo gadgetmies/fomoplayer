@@ -1,6 +1,6 @@
 const { insertSource } = require('../../jobs/watches/shared/db')
 const { storeUrl: beatportUrl } = require('../../routes/stores/beatport/logic.js')
-const { addStoreTracksToUser } = require('../../routes/users/logic.js')
+const { addStoreTracksToUsers } = require('../../routes/shared/tracks.js')
 const {
   beatportTracksTransform,
   beatportLibraryTransform
@@ -14,7 +14,7 @@ const addTracks = (module.exports.addTracks = async (tracks, type = 'new') => {
     type: 'new',
     storeUrl: beatportUrl
   })
-  await addStoreTracksToUser(beatportUrl, type, tracks, userId, sourceId)
+  await addStoreTracksToUsers(beatportUrl, tracks, [userId], type, sourceId)
 })
 
 module.exports.addNewBeatportTracksToDb = async (tracks) => {

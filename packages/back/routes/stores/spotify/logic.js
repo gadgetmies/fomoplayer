@@ -86,7 +86,7 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
   yield { tracks: transformed, errors: [] }
 }
 
-module.exports.getArtistTracks = async ({ artistStoreId }) => {
+module.exports.getArtistTracks = async function*({ artistStoreId }) {
   const albumIds = (await spotifyApi.getArtistAlbums(artistStoreId)).body.items.map(R.prop('id'))
   // TODO: Store albums as releases
   const albums = (await spotifyApi.getAlbums(albumIds)).body.albums
@@ -97,7 +97,7 @@ module.exports.getArtistTracks = async ({ artistStoreId }) => {
     throw new Error(error)
   }
 
-  return { tracks: transformed, errors: [] }
+  yield { tracks: transformed, errors: [] }
 }
 
 module.exports.search = async query => {

@@ -123,14 +123,33 @@ const getTracksFromReleases = async releaseUrls => {
   return { errors, tracks: transformed }
 }
 
-module.exports.getArtistTracks = async ({ url }) => {
+module.exports.getArtistTracks = async function*({ url }) {
   const { releaseUrls } = await getArtistAsync(url)
-  return await getTracksFromReleases(releaseUrls)
+  logger.info(`Found ${releaseUrls.length} releases for artist ${url}`)
+  logger.info('Processing releases', releaseUrls)
+  // TODO: figure out how to get rid of the duplication
+  for (const releaseUrl of releaseUrls) {
+    try {
+      yield await getTracksFromReleases([releaseUrl])
+    } catch (e) {
+      logger.error(e)
+      yield { tracks: [], errors: [e] }
+    }
+  }
 }
 
-module.exports.getLabelTracks = async ({ url }) => {
+module.exports.getLabelTracks = async function*({ url }) {
   const { releaseUrls } = await getLabelAsync(url)
-  return await getTracksFromReleases(releaseUrls)
+  logger.info(`Found ${releaseUrls.length} releases for label ${url}`)
+  logger.info('Processing releases', releaseUrls)
+  for (const releaseUrl of releaseUrls) {
+    try {
+      yield await getTracksFromReleases([releaseUrl])
+    } catch (e) {
+      logger.error(e)
+      yield { tracks: [], errors: [e] }
+    }
+  }
 }
 
 module.exports.getPlaylistTracks = async function*({ playlistStoreId, type }) {

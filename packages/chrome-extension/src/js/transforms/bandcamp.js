@@ -22,8 +22,9 @@ module.exports.bandcampReleasesTransform = L.collect([
       artists: L.partsOf(
         L.pick({
           name: R.always(release.artist),
-          id: R.always(release.artist), // TODO: is there any other way of differentiating the artists?
-          role: R.always('author')
+          id: R.always(release.url.substring(8, release.url.indexOf('.bandcamp.com'))),
+          role: R.always('author'),
+          url: R.always(release.url.substring(0, release.url.indexOf('/', 8)))
         })
       ),
       released: R.always(release.current.release_date),

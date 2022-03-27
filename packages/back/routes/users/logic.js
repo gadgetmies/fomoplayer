@@ -10,7 +10,6 @@ const {
   getStoreModuleForLabelByUrl,
   getStoreModuleForPlaylistByUrl
 } = require('../shared/stores')
-const { addStoreTrackToUsers } = require('./shared')
 const { NotFound, Forbidden } = require('../shared/httpErrors')
 
 const { ensureArtistExists, ensureLabelExists } = require('../shared/db/store')
@@ -312,18 +311,6 @@ module.exports.addPlaylistFollows = async (playlists, userId, sourceId) => {
 
 module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {
   await addPurchasedTracksToUser(userId, trackIds)
-}
-
-module.exports.addStoreTracksToUser = async (storeUrl, type, tracks, userId, sourceId) => {
-  logger.info('Start processing received tracks')
-
-  let addedTracks = []
-  for (const track of tracks) {
-    const trackId = await addStoreTrackToUsers(storeUrl, [userId], track, sourceId, type)
-    addedTracks.push(`${apiURL}/tracks/${trackId}`)
-  }
-
-  return addedTracks
 }
 
 const verifyCartOwnership = async (userId, cartId) => {

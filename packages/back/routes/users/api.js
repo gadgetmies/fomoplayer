@@ -7,7 +7,6 @@ const {
   addLabelsToIgnore,
   addReleasesToIgnore,
   addPurchasedTracksToUser,
-  addStoreTracksToUser,
   addArtistFollowsWithIds,
   addLabelFollowsWithIds,
   getTracksM3u,
@@ -43,6 +42,8 @@ const {
   setEmail
 } = require('./logic')
 const typeIs = require('type-is')
+
+const { addStoreTracksToUsers } = require('../shared/tracks.js')
 
 const router = require('express-promise-router')()
 
@@ -132,7 +133,7 @@ const tracksHandler = type => async (
       storeUrl
     })
 
-    addedTracks = await addStoreTracksToUser(storeUrl, type, tracks, userId, sourceId)
+    addedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], type, sourceId)
   }
   res.status(201).send(addedTracks)
 }

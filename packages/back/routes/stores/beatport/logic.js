@@ -53,7 +53,7 @@ module.exports.getFollowDetails = async urlString => {
   return []
 }
 
-module.exports.getArtistTracks = async ({ artistStoreId }) => {
+module.exports.getArtistTracks = async function*({ artistStoreId }) {
   const artistTracks = await bpApiStatic.getArtistTracksAsync(artistStoreId, 1)
   if (artistTracks.tracks.length === 0) {
     const error = `No tracks found for artist ${artistStoreId}`
@@ -66,10 +66,10 @@ module.exports.getArtistTracks = async ({ artistStoreId }) => {
     logger.error('Artist track transform failed', { transformed, tracks: artistTracks.tracks })
   }
 
-  return { tracks: transformed, errors: [] }
+  yield { tracks: transformed, errors: [] }
 }
 
-module.exports.getLabelTracks = async ({ labelStoreId }) => {
+module.exports.getLabelTracks = async function*({ labelStoreId }) {
   const labelTracks = await bpApiStatic.getLabelTracksAsync(labelStoreId, 1)
   if (labelTracks.tracks.length === 0) {
     const error = `No tracks found for label ${labelStoreId}`
@@ -82,7 +82,7 @@ module.exports.getLabelTracks = async ({ labelStoreId }) => {
     logger.error('Label track transform failed', { transformed, tracks: labelTracks.tracks })
   }
 
-  return { tracks: transformed, errors: [] }
+  yield { tracks: transformed, errors: [] }
 }
 
 module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {

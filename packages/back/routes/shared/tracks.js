@@ -1,9 +1,19 @@
 const pg = require('../../db/pg.js')
 const sql = require('sql-template-strings')
-const { addStoreTrackToUsers } = require('../users/shared')
 const { setArtistUpdated, setPlaylistUpdated, setLabelUpdated } = require('./db/watch')
 const { modules: storeModules } = require('../stores/index.js')
+const { using } = require('bluebird')
+const { removeIgnoredTracksFromUsers } = require('../shared/db/user')
 const logger = require('../../logger')(__filename)
+
+const { addStoreTrack, ensureArtistExists, ensureReleaseExists, ensureLabelExists } = require('../shared/db/store')
+
+const {
+  addPurchasedStoreTrackToUser,
+  addTrackToUser: addTrackToUserDb,
+  artistOnLabelInIgnore
+} = require('../users/db.js')
+const { apiURL } = require('../../config.js')
 
 const getUsersFollowingArtist = async storeArtistId => {
   const [{ users }] = await pg.queryRowsAsync(
@@ -61,56 +71,129 @@ const getStoreModule = function(storeUrl) {
   return module
 }
 
+const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
+  storeUrl,
+  tracks,
+  userIds,
+  type,
+  sourceId
+) => {
+  logger.info('Start processing received tracks', userIds)
+
+  let addedTracks = []
+  for (const track of tracks) {
+    const trackId = await addStoreTrackToUsers(storeUrl, userIds, track, sourceId, type)
+    addedTracks.push(`${apiURL}/tracks/${trackId}`)
+  }
+
+  await using(pg.getTransaction(), async tx => {
+    await removeIgnoredTracksFromUsers(tx, userIds)
+  })
+
+  return addedTracks
+})
+
+const addTrackToUser = (module.exports.addTrackToUser = async (tx, userId, artists, trackId, labelId, sourceId) => {
+  if (await artistOnLabelInIgnore(tx, userId, artists, labelId)) {
+    logger.info('One of the artists ignored on label by user, skipping', { userId, artists, labelId })
+  } else {
+    await addTrackToUserDb(tx, userId, trackId, sourceId)
+  }
+})
+
 const aYear = 1000 * 60 * 60 * 24 * 30 * 12
+const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = 'tracks') => {
+  return using(pg.getTransaction(), async tx => {
+    let labelId
+    let releaseId
+
+    if (track.label) {
+      labelId = (await ensureLabelExists(tx, storeUrl, track.label, sourceId)).labelId
+    }
+
+    if (track.release) {
+      releaseId = await ensureReleaseExists(tx, storeUrl, track.release, sourceId)
+    }
+
+    let artists = []
+    for (const artist of track.artists) {
+      const res = await ensureArtistExists(tx, storeUrl, artist, sourceId)
+      artists.push(res)
+    }
+
+    const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, sourceId)
+
+    if (Date.now() - new Date(track.published) > aYear) {
+      logger.info(`Skipping track published on ${track.published}`)
+    } else {
+      for (const userId of userIds) {
+        await addTrackToUser(tx, userId, artists, trackId, labelId, sourceId)
+
+        if (type === 'purchased') {
+          await addPurchasedStoreTrackToUser(tx, userId, track)
+        }
+      }
+    }
+    // TODO: Update materialized views
+
+    return trackId
+  })
+}
+
 module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
   logger.info('updateArtistTracks', { storeUrl, details, sourceId })
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingArtist(details.storeArtistId)
-  const { tracks, errors } = await storeModule.logic.getArtistTracks(details)
-  logger.info(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
-  const recentTracks = tracks.filter(({ published }) => Date.now() - new Date(published) < aYear)
-  logger.info(`Adding ${recentTracks.length} recent tracks`)
-  for (const track of recentTracks) {
+  const generator = await storeModule.logic.getArtistTracks(details)
+  let combinedErrors = []
+
+  logger.info(`Processing tracks for artist: ${details.url}`)
+  for await (const { tracks, errors } of generator) {
+    logger.info(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
     try {
-      await addStoreTrackToUsers(storeUrl, users, track, sourceId)
+      combinedErrors.concat(errors)
+      logger.info(`Processing ${tracks.length} tracks`)
+      await addStoreTracksToUsers(storeUrl, tracks, users, 'tracks', sourceId)
     } catch (e) {
-      const error = [`Failed to add artist tracks to users`, { error: e.toString(), track, details }]
-      errors.push(error)
+      const error = [`Failed to add artist tracks to users`, { error: e.toString(), tracks, details }]
+      combinedErrors.push(error)
       logger.error(...error)
     }
   }
 
-  if (errors.length === 0) {
+  if (combinedErrors.length === 0) {
     await setArtistUpdated(details.storeArtistId)
   }
 
-  return errors
+  return combinedErrors
 }
 
 module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   logger.info(`Updating label tracks: ${details.url}`)
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingLabel(details.storeLabelId)
+  const generator = storeModule.logic.getLabelTracks(details)
 
-  const { tracks, errors } = await storeModule.logic.getLabelTracks(details)
-  logger.info(`Found ${tracks.length} tracks for label: ${details.url}`)
-  const recentTracks = tracks.filter(({ published }) => Date.now() - new Date(published) < aYear)
-  logger.info(`Adding ${recentTracks.length} recent tracks`)
-  for (const track of recentTracks) {
+  logger.info(`Processing tracks for label: ${details.url}`)
+  let combinedErrors = []
+  for await (const { tracks, errors } of generator) {
     try {
-      await addStoreTrackToUsers(storeUrl, users, track, sourceId)
+      combinedErrors.concat(errors)
+      logger.info(`Processing ${tracks.length} tracks`)
+      await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
     } catch (e) {
-      const error = [`Failed to add label tracks to users`, { error: e.toString(), track, details }]
-      errors.push(error)
+      console.error(e)
+      const error = [`Failed to add label tracks to users`, { error: e.toString(), tracks, details }]
+      combinedErrors.push(error)
       logger.error(...error)
     }
   }
 
-  if (errors.length === 0) {
+  if (combinedErrors.length === 0) {
     await setLabelUpdated(details.storeLabelId)
   }
 
-  return errors
+  return combinedErrors
 }
 
 module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
@@ -121,14 +204,12 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
   const generator = await storeModule.logic.getPlaylistTracks(details)
   for await (const { tracks, errors } of generator) {
     err.concat(errors)
-    for (const track of tracks) {
-      try {
-        await addStoreTrackToUsers(storeUrl, users, track, sourceId)
-      } catch (e) {
-        const error = [`Failed to add playlist tracks to users`, { error: e.toString(), track, details }]
-        errors.push(error)
-        logger.error(...error)
-      }
+    try {
+      await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
+    } catch (e) {
+      const error = [`Failed to add playlist tracks to users`, { error: e.toString(), tracks, details }]
+      errors.push(error)
+      logger.error(...error)
     }
   }
 
