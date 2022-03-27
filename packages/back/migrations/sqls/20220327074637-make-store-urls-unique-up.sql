@@ -5,8 +5,10 @@ ALTER TABLE store__label
 
 ALTER TABLE store__artist
     ADD UNIQUE (store__artist_url);
-ALTER TABLE store__artist
-    ALTER COLUMN store__artist_url SET NOT NULL;
+
+-- TODO: (some?) Bandcamp artist urls are null
+-- ALTER TABLE store__artist
+--    ALTER COLUMN store__artist_url SET NOT NULL;
 
 ALTER TABLE store__release
     ADD UNIQUE (store__release_url);
