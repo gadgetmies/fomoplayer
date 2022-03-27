@@ -158,7 +158,7 @@ class Settings extends Component {
       <div className="page-container scroll-container">
         <div className="settings-container">
           <h2>Settings</h2>
-          <p>
+          <div>
             <div className="select-button select-button--container state-select-button--container noselect">
               <input
                 type="radio"
@@ -210,7 +210,7 @@ class Settings extends Component {
                 Collection
               </label>
             </div>
-          </p>
+          </div>
           {this.state.page === 'following' ? (
             <>
               <label>
@@ -329,8 +329,9 @@ class Settings extends Component {
                                 {type[0].toLocaleUpperCase()}
                                 {type.substring(1)}s
                               </h5>
-                              {items.map(({ name, store: { name: storeName }, type, url }) => (
+                              {items.map(({ id, name, store: { name: storeName }, type, url }) => (
                                 <SpinnerButton
+                                  key={id}
                                   className="button button-push_button-large button-push_button-primary"
                                   style={{ margin: 4 }}
                                   disabled={
@@ -390,7 +391,7 @@ class Settings extends Component {
               <h4>Followed artists ({this.state.artistFollows.length})</h4>
               <ul className="no-style-list follow-list">
                 {this.state.artistFollows.map(({ name, storeArtistId, store: { name: storeName }, url }) => (
-                  <li>
+                  <li key={storeArtistId}>
                     <span className="button pill pill-button">
                       <span className="pill-button-contents">
                         <>
@@ -426,8 +427,8 @@ class Settings extends Component {
               </ul>
               <h4>Followed labels ({this.state.labelFollows.length})</h4>
               <ul className="no-style-list follow-list">
-                {this.state.labelFollows.map(({ name, storeLabelId, store: { name: storeName } }) => (
-                  <li>
+                {this.state.labelFollows.map(({ name, url, storeLabelId, store: { name: storeName } }) => (
+                  <li key={storeLabelId}>
                     <span className="button pill pill-button">
                       <span className="pill-button-contents">
                         <>
@@ -449,7 +450,15 @@ class Settings extends Component {
                             this.setState({ updatingLabelFollows: false })
                           }}
                         >
-                          <FontAwesomeIcon icon="times-circle" />
+                          <FontAwesomeIcon icon="times-circle" />{' '}
+                          <a
+                            href={url}
+                            target="_blank"
+                            onClick={e => e.stopPropagation()}
+                            title={'Check details from store'}
+                          >
+                            <FontAwesomeIcon icon="external-link-alt" />
+                          </a>
                         </button>
                       </span>
                     </span>
@@ -458,21 +467,18 @@ class Settings extends Component {
               </ul>
               <h4>Followed playlists ({this.state.playlistFollows.length})</h4>
               <ul className="no-style-list follow-list">
-                {this.state.playlistFollows.map(playlist => (
-                  <li>
-                    <span key={playlist.id} className="button pill pill-button">
+                {this.state.playlistFollows.map(({ id, storeName, title }) => (
+                  <li key={id}>
+                    <span key={id} className="button pill pill-button">
                       <span className="pill-button-contents">
-                        <span
-                          aria-hidden="true"
-                          className={`store-icon store-icon-${playlist.storeName.toLowerCase()}`}
-                        />{' '}
-                        {playlist.title}{' '}
+                        <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
+                        {title}{' '}
                         <button
                           disabled={this.state.updatingPlaylistFollows}
                           onClick={async () => {
                             this.setState({ updatingPlaylistFollows: true })
                             await requestWithCredentials({
-                              path: `/me/follows/playlists/${playlist.id}`,
+                              path: `/me/follows/playlists/${id}`,
                               method: 'DELETE'
                             })
                             await this.updatePlaylistFollows()
@@ -523,28 +529,28 @@ class Settings extends Component {
                   />
                 </div>
               </label>
-              <p>
-                {this.props.carts.map(cart => {
-                  const buttonId = `sharing-${cart.id}`
-                  const publicLink = new URL(`/cart/${cart.uuid}`, window.location).toString()
+              <div>
+                {this.props.carts.map(({ id, is_default, is_public, name, uuid }) => {
+                  const buttonId = `sharing-${id}`
+                  const publicLink = new URL(`/cart/${uuid}`, window.location).toString()
                   return (
-                    <>
-                      <h4>{cart.name}</h4>
-                      <p>
+                    <div key={id}>
+                      <h4>{name}</h4>
+                      <div>
                         <div style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
                           <label htmlFor={buttonId} className="noselect">
                             Sharing enabled:
                           </label>
                           <ToggleButton
                             id={buttonId}
-                            checked={cart.is_public}
+                            checked={is_public}
                             disabled={this.state.settingCartPublic !== null || this.state.updatingCarts}
-                            onChange={state => this.setCartSharing(cart.id, state)}
+                            onChange={state => this.setCartSharing(id, state)}
                           />
-                          {this.state.settingCartPublic === cart.id ? <Spinner size="small" /> : null}
+                          {this.state.settingCartPublic === id ? <Spinner size="small" /> : null}
                         </div>
                         <br />
-                        {this.state.publicCarts.has(cart.id) ? (
+                        {this.state.publicCarts.has(id) ? (
                           <div style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
                             <span>URL:</span>
                             <a href={publicLink} className="link" target="_blank">
@@ -553,28 +559,28 @@ class Settings extends Component {
                             <CopyToClipboardButton content={publicLink} />
                           </div>
                         ) : null}
-                      </p>
-                      {cart.is_default ? null : (
+                      </div>
+                      {is_default ? null : (
                         <p>
                           <SpinnerButton
                             loading={this.state.deletingCart}
                             className={`button button-push_button-small button-push_button-primary`}
                             disabled={this.state.addingCart || this.state.updatingCarts || this.state.deletingCart}
                             onClick={async () => {
-                              this.setState({ deletingCart: cart.id, updatingCarts: true })
-                              await requestWithCredentials({ path: `/me/carts/${cart.id}`, method: 'DELETE' })
+                              this.setState({ deletingCart: id, updatingCarts: true })
+                              await requestWithCredentials({ path: `/me/carts/${id}`, method: 'DELETE' })
                               await this.props.onUpdateCarts()
                               this.setState({ deletingCart: null, updatingCarts: false })
                             }}
                           >
-                            Delete cart "{cart.name}"
+                            Delete cart "{name}"
                           </SpinnerButton>
                         </p>
                       )}
-                    </>
+                    </div>
                   )
                 })}
-              </p>
+              </div>
             </>
           ) : null}
           {this.state.page === 'notifications' ? (
@@ -656,17 +662,17 @@ class Settings extends Component {
               </label>
               <h4>Search notification subscriptions</h4>
               <ul className="no-style-list follow-list">
-                {this.props.notifications.map(notification => (
-                  <li key={notification.id}>
+                {this.props.notifications.map(({ id, text }) => (
+                  <li key={id}>
                     <PillButton
                       disabled={this.state.updatingNotifications}
                       onClick={async () => {
                         this.setState({ updatingNotifications: true })
-                        await this.props.onRemoveNotification(notification.id)
+                        await this.props.onRemoveNotification(id)
                         this.setState({ updatingNotifications: false })
                       }}
                     >
-                      {notification.text} <FontAwesomeIcon icon="bell-slash" />
+                      {text} <FontAwesomeIcon icon="bell-slash" />
                     </PillButton>
                   </li>
                 ))}
