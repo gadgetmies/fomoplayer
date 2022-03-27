@@ -17,10 +17,10 @@ const addTracks = (module.exports.addTracks = async (tracks, type = 'new') => {
   await addStoreTracksToUsers(beatportUrl, tracks, [userId], type, sourceId)
 })
 
-module.exports.addNewBeatportTracksToDb = async (tracks) => {
+module.exports.addNewBeatportTracksToDb = async tracks => {
   await addTracks(beatportTracksTransform(tracks))
 }
 
-module.exports.addPurchasedBeatportTracksToDb = async (tracks) => {
+module.exports.addPurchasedBeatportTracksToDb = async tracks => {
   await addTracks(beatportLibraryTransform(tracks), 'purchased')
 }
