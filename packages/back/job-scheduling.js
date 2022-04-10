@@ -6,7 +6,6 @@ const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
 const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')
 const { sendNextEmailBatch } = require('./services/mailer')
 const { updateNotifications } = require('./jobs/notifications')
-const { insertSource } = require('./jobs/watches/shared/db')
 const { updateDateReleasedScore, updateDateAddedScore } = require('./jobs/scores')
 const logger = require('./logger')(__filename)
 
