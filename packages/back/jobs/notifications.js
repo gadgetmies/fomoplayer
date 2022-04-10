@@ -6,6 +6,8 @@ const { searchForTracks } = require('../routes/shared/db/search')
 const { using } = require('bluebird')
 const { scheduleEmail } = require('../services/mailer')
 
+const logger = require('../logger')(__filename)
+
 module.exports.updateNotifications = async () => {
   const notificationSearches = await getNotificationDetails()
   const errors = []
@@ -16,8 +18,11 @@ module.exports.updateNotifications = async () => {
       const currentTrackIds = searchResults.map(R.prop('track_id'))
       const intersection = R.intersection(trackIds, currentTrackIds)
 
+      logger.info(`Notification intersection`, intersection)
+
       await using(pg.getTransaction(), async tx => {
         if (intersection.length !== 0) {
+          logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
           await updateNotificationTracks(tx, notificationId, trackIds)
           await scheduleEmail(
             process.env.NOTIFICATION_EMAIL_SENDER,
