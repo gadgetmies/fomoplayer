@@ -7,7 +7,7 @@ const { using } = require('bluebird')
 const { scheduleEmail } = require('../services/mailer')
 
 module.exports.updateNotifications = async () => {
-  const notificationSearches = getNotificationDetails()
+  const notificationSearches = await getNotificationDetails()
   const errors = []
 
   for (const { notificationId, text, userId, email, trackIds } of notificationSearches) {
@@ -66,6 +66,7 @@ FROM user_search_notification
          NATURAL JOIN meta_account_email
 WHERE user_search_notification_last_update IS NULL
    OR user_search_notification_last_update + INTERVAL '6 hours' < NOW()
+GROUP BY 1, 2, 3, 4
 ORDER BY user_search_notification_last_update DESC NULLS FIRST
 LIMIT 20
 `
