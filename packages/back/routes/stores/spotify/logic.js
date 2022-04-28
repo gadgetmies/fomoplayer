@@ -52,7 +52,7 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
 
 module.exports.getFollowDetails = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
-  const stores = [storeName.toLowerCase()]
+  const store = {name: storeName.toLowerCase()}
   let name
   for (const { regex, type } of regexes) {
     const match = urlString.match(regex)
@@ -67,7 +67,7 @@ module.exports.getFollowDetails = async urlString => {
         throw new Error('URL did not match any regex')
       }
 
-      return [{ id, name, type, stores, url: urlString }]
+      return [{ id, name, type, store, url: urlString }]
     }
   }
 
