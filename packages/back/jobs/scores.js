@@ -22,3 +22,14 @@ module.exports.updateDateReleasedScore = async () => {
 
   return { success: true }
 }
+
+module.exports.updateDatePublishedScore = async () => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`--updateDateReleasedScore
+    REFRESH MATERIALIZED VIEW track_date_published_score
+    `
+  )
+
+  return { success: true }
+}

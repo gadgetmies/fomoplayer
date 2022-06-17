@@ -48,6 +48,8 @@ const {
   insertTracksToCart,
   deleteTracksFromCart,
   queryCartOwner,
+  queryUserScoreWeights,
+  updateUserScoreWeights,
   queryNotificationOwner,
   upsertNotification,
   deleteNotification,
@@ -330,6 +332,9 @@ const verifyNotificationOwnership = async (userId, notificationId) => {
     throw new Forbidden('Notification owner does not match the session user!')
   }
 }
+
+module.exports.getUserScoreWeights = queryUserScoreWeights
+module.exports.setUserScoreWeights = updateUserScoreWeights
 
 module.exports.getUserCarts = queryUserCarts
 module.exports.createCart = insertCart

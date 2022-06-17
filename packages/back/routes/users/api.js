@@ -35,6 +35,8 @@ const {
   getCartDetails,
   updateCartContents,
   updateAllCartContents,
+  getUserScoreWeights,
+  setUserScoreWeights,
   createNotification,
   removeNotification,
   getNotifications,
@@ -47,10 +49,24 @@ const { addStoreTracksToUsers } = require('../shared/tracks.js')
 
 const router = require('express-promise-router')()
 
-router.get('/tracks', async ({ user: { id: authUserId }, query: { sort = '-score' } }, res) => {
-  const userTracks = await getUserTracks(authUserId, sort)
-  res.json(userTracks)
-})
+router.get(
+  '/tracks',
+  async (
+    {
+      user: { id: authUserId },
+      query: {
+        sort = '-score',
+        limit_new: limitNew = 100,
+        limit_recent: limitRecent = 100,
+        limit_heard: limitHeard = 50
+      }
+    },
+    res
+  ) => {
+    const userTracks = await getUserTracks(authUserId, sort, { new: limitNew, recent: limitRecent, heard: limitHeard })
+    res.json(userTracks)
+  }
+)
 
 router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
   getTracksM3u(userId).tap(m3u => res.send(m3u))
@@ -238,6 +254,15 @@ router.patch('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: c
 
 router.patch('/carts', async ({ user: { id: userId }, body: operations }, res) => {
   await updateAllCartContents(userId, operations)
+  res.status(204).send()
+})
+
+router.get('/score-weights', async ({ user: { id: userId } }, res) => {
+  res.send(await getUserScoreWeights(userId))
+})
+
+router.post('/score-weights', async ({ user: { id: userId }, body: weights }, res) => {
+  await setUserScoreWeights(userId, weights)
   res.status(204).send()
 })
 

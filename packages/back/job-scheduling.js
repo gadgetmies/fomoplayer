@@ -6,7 +6,7 @@ const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
 const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')
 const { sendNextEmailBatch } = require('./services/mailer')
 const { updateNotifications } = require('./jobs/notifications')
-const { updateDateReleasedScore, updateDateAddedScore } = require('./jobs/scores')
+const { updateDateReleasedScore, updateDatePublishedScore, updateDateAddedScore } = require('./jobs/scores')
 const logger = require('./logger')(__filename)
 
 const init = async () => {
@@ -130,6 +130,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
   },
   updateDateAddedScore,
   updateDateReleasedScore,
+  updateDatePublishedScore,
   fetchBeatportWatches,
   fetchSpotifyWatches,
   fetchBandcampWatches,

@@ -386,7 +386,7 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = (userId, sort = '-score') => {
+module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, recent: 100, heard: 50 }) => {
   const sortParameters = sort
     .split(',')
     .map(s => s.trim())
@@ -483,14 +483,16 @@ module.exports.queryUserTracks = (userId, sort = '-score') => {
                artist_follow_score * COALESCE(artist_follow_multiplier, 0) +
                label_follow_score * COALESCE(label_follow_multiplier, 0) +
                COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
-               COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) AS score
+               COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) +
+               COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) AS score
              , JSON_BUILD_OBJECT(
-                'label', JSON_BUILD_OBJECT('score', label_score, 'multiplier', label_multiplier),
-                'artist', JSON_BUILD_OBJECT('score', artist_score, 'multiplier', artist_multiplier),
-                'added', JSON_BUILD_OBJECT('score', added_score.score, 'multiplier', date_added_multiplier),
-                'released', JSON_BUILD_OBJECT('score', released_score.score, 'multiplier', date_released_multiplier),
-                'artist_follow', JSON_BUILD_OBJECT('score', artist_follow_score, 'multiplier', artist_follow_multiplier),
-                'label_follow', JSON_BUILD_OBJECT('score', label_follow_score, 'multiplier', label_follow_multiplier)
+                'label', JSON_BUILD_OBJECT('score', label_score, 'weight', label_multiplier),
+                'artist', JSON_BUILD_OBJECT('score', artist_score, 'weight', artist_multiplier),
+                'date_added', JSON_BUILD_OBJECT('score', round(added_score.score, 1), 'weight', date_added_multiplier),
+                'date_released', JSON_BUILD_OBJECT('score', round(released_score.score, 1), 'weight', date_released_multiplier),
+                'date_published', JSON_BUILD_OBJECT('score', round(published_score.score, 1), 'weight', date_published_multiplier),
+                'artist_follow', JSON_BUILD_OBJECT('score', artist_follow_score, 'weight', artist_follow_multiplier),
+                'label_follow', JSON_BUILD_OBJECT('score', label_follow_score, 'weight', label_follow_multiplier)
             )                                                                            AS score_details
         FROM (SELECT track_id
                    , user__track_heard
@@ -521,8 +523,12 @@ module.exports.queryUserTracks = (userId, sort = '-score') => {
             ) AS date_added_multiplier
                    , (SELECT user_track_score_weight_multiplier
                       FROM user_score_weights
-                      WHERE user_track_score_weight_code = 'date_published'
+                      WHERE user_track_score_weight_code = 'date_released'
             ) AS date_released_multiplier
+                   , (SELECT user_track_score_weight_multiplier
+                      FROM user_score_weights
+                      WHERE user_track_score_weight_code = 'date_published'
+            ) AS date_published_multiplier
               FROM new_tracks
                        NATURAL JOIN label_scores
                        NATURAL JOIN artist_scores
@@ -531,6 +537,7 @@ module.exports.queryUserTracks = (userId, sort = '-score') => {
              ) AS tracks
                  LEFT JOIN track_date_added_score AS added_score USING (track_id)
                  LEFT JOIN track_date_released_score AS released_score USING (track_id)
+                 LEFT JOIN track_date_published_score AS published_score USING (track_id)
         ORDER BY `
 
     sortParameters.forEach(([column, order]) =>
@@ -544,7 +551,7 @@ module.exports.queryUserTracks = (userId, sort = '-score') => {
       .queryRowsAsync(
         // language=PostgreSQL
         query.append(sql` NULLS LAST
-          LIMIT 100
+          LIMIT ${limits.new}
       )
          , heard_tracks AS (
           SELECT track_id
@@ -552,7 +559,7 @@ module.exports.queryUserTracks = (userId, sort = '-score') => {
                    NATURAL JOIN logged_user
           WHERE user__track_heard IS NOT NULL
           ORDER BY user__track_heard DESC
-          LIMIT 50
+          LIMIT ${limits.heard}
       )
         , recently_added AS (
           SELECT track_id
@@ -561,7 +568,7 @@ module.exports.queryUserTracks = (userId, sort = '-score') => {
                    NATURAL JOIN user__track
                    NATURAL JOIN track
           ORDER BY track_added DESC
-          LIMIT 100
+          LIMIT ${limits.recent}
       )
          , limited_tracks AS (
           SELECT DISTINCT track_id
@@ -579,7 +586,7 @@ module.exports.queryUserTracks = (userId, sort = '-score') => {
                , title
                , heard
                , duration
-               , added
+               , added :: DATE AS added
                , artists
                , version
                , labels
@@ -588,6 +595,7 @@ module.exports.queryUserTracks = (userId, sort = '-score') => {
                , previews
                , stores
                , released
+               , published
                , releases
           FROM limited_tracks lt
                    JOIN track_details((SELECT ARRAY_AGG(track_id) FROM limited_tracks),
@@ -779,6 +787,31 @@ FROM user__playlist_watch
 WHERE
     meta_account_user_id = ${userId}
 AND playlist_id = ${playlistId}`
+  )
+}
+
+module.exports.queryUserScoreWeights = async userId => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryUserScoreWeights
+SELECT user_track_score_weight_code       AS property,
+       user_track_score_weight_multiplier AS weight
+FROM user_track_score_weight
+WHERE meta_account_user_id = ${userId}
+ORDER BY user_track_score_weight_code
+`
+  )
+}
+
+module.exports.updateUserScoreWeights = async (userId, weights) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`--updateUserScoreWeights
+UPDATE user_track_score_weight SET
+user_track_score_weight_multiplier = w.weight
+FROM json_to_recordset(${JSON.stringify(weights)}) AS w(property TEXT, weight FLOAT)
+WHERE user_track_score_weight_code = w.property
+`
   )
 }
 

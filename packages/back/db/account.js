@@ -97,6 +97,7 @@ RETURNING meta_account_user_id AS id
              (1, 'label_follow', ${userId}),
              (5, 'artist_follow', ${userId}),
              (-0.1, 'date_published', ${userId}),
+             (-0.1, 'date_released', ${userId}),
              (-0.1, 'date_added', ${userId})
       `
     )

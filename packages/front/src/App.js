@@ -89,6 +89,7 @@ class App extends Component {
       addingToCart: false,
       slideout: null,
       carts: {},
+      scoreWeights: {},
       notifications: [],
       loggedIn: false,
       loading: true,
@@ -102,6 +103,7 @@ class App extends Component {
   async updateStatesFromServer() {
     await Promise.all([
       this.updateCarts(),
+      this.updateScoreWeights(),
       this.updateTracks(),
       this.updateFollows(),
       this.updateNotifications(),
@@ -146,6 +148,13 @@ class App extends Component {
       path: `/me/carts`
     })
     this.setState({ carts })
+  }
+
+  async updateScoreWeights() {
+    const scoreWeights = await requestJSONwithCredentials({
+      path: '/me/score-weights'
+    })
+    this.setState({ scoreWeights })
   }
 
   async addToCart(cartId, trackId) {
@@ -333,6 +342,8 @@ class App extends Component {
                       newTracks={this.state.tracksData.meta.newTracks}
                       totalTracks={this.state.tracksData.meta.totalTracks}
                       userSettings={this.state.userSettings}
+                      scoreWeights={this.state.scoreWeights}
+                      tracks={this.state.tracksData.tracks}
                     />
                   )}
                 />

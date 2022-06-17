@@ -7,6 +7,8 @@ import ToggleButton from './ToggleButton'
 import CopyToClipboardButton from './CopyToClipboardButton'
 import * as R from 'ramda'
 import PillButton from './PillButton'
+import scoreWeightDetails from './scoreWeights'
+import Tracks from './Tracks'
 
 const storeNames = {
   bandcamp: 'Bandcamp',
@@ -35,6 +37,11 @@ class Settings extends Component {
 
   constructor(props) {
     super(props)
+
+    const urlSearchParams = new URLSearchParams(window.location.search)
+    const params = Object.fromEntries(urlSearchParams.entries())
+    const { page } = params
+
     this.state = {
       followQuery: '',
       artistFollows: [],
@@ -62,11 +69,14 @@ class Settings extends Component {
       followDetailsDebounce: undefined,
       followDetails: undefined,
       followDetailsUpdateAborted: false,
+      scoreWeightsDebounce: undefined,
       markAllHeardUnlocked: false,
       markingHeard: null,
       settingCartPublic: null,
       publicCarts: new Set(props.carts.filter(R.prop('is_public')).map(R.prop('id'))),
-      page: 'following'
+      page: page || 'following',
+      scoreWeights: this.props.scoreWeights,
+      tracks: this.props.tracks
     }
 
     this.markHeardButton.bind(this)
@@ -153,6 +163,85 @@ class Settings extends Component {
     this.setState({ page })
   }
 
+  async setScoreWeight(property, value) {
+    const newWeights = structuredClone(this.state.scoreWeights)
+    newWeights.find(({ property: p }) => p === property).weight = value
+    this.setState({ scoreWeights: newWeights })
+
+    if (this.state.scoreWeightsDebounce) {
+      clearTimeout(this.state.scoreWeightsDebounce)
+      this.setState({
+        scoreWeightsDebounce: undefined
+      })
+    }
+
+    const timeout = setTimeout(async () => {
+      await requestWithCredentials({
+        path: `/me/score-weights`,
+        method: 'POST',
+        body: newWeights
+      })
+
+      try {
+        this.setState({ updatingTracks: true })
+
+        const { tracks } = await requestJSONwithCredentials({
+          path: `/me/tracks?limit_new=10&limit_recent=0&limit_heard=0`
+        })
+
+        this.setState({ tracks, updatingTracks: false })
+      } catch (e) {
+        console.error(e)
+        this.setState({ updatingTracks: false })
+      }
+    }, 500)
+
+    this.setState({ scoreWeightsDebounce: timeout })
+  }
+
+  renderWeightInputs({ property, weight }) {
+    const weightDetails = scoreWeightDetails[property]
+    const numberProps = { min: weightDetails.min, max: weightDetails.max, step: weightDetails.step }
+    const scaling = weightDetails.isPenalty ? -1 : 1
+    const scaledWeight = scaling * weight
+    return (
+      <div style={{ display: 'table-row', margin: 5 }} key={property} className={'input-layout'}>
+        <label
+          style={{ display: 'table-cell', fontSize: '90%', verticalAlign: 'middle' }}
+          htmlFor={`weights-${property}`}
+        >
+          {weightDetails.label}
+        </label>
+        <div style={{ display: 'table-cell', verticalAlign: 'middle' }}>
+          <input
+            id={`weights-${property}`}
+            type="range"
+            style={{
+              display: 'table-cell',
+              backgroundSize: `${(scaledWeight / (numberProps.max - numberProps.min)) * 100}% 100%`
+            }}
+            value={scaledWeight}
+            onChange={e => this.setScoreWeight(property, Number(e.target.value) * scaling)}
+            {...numberProps}
+          />
+        </div>
+        <div style={{ display: 'table-cell', verticalAlign: 'middle' }}>
+          <input
+            type="number"
+            value={scaledWeight}
+            onChange={e => this.setScoreWeight(property, Number(e.target.value) * scaling)}
+            style={{ display: 'table-cell' }}
+            className={'text-input text-input-small text-input-dark '}
+            {...numberProps}
+          />
+        </div>
+        <div style={{ display: 'table-cell', fontSize: '60%', verticalAlign: 'middle' }}>
+          <div style={{ marginLeft: 6 }}>{weightDetails.unit}</div>
+        </div>
+      </div>
+    )
+  }
+
   render() {
     return (
       <div className="page-container scroll-container">
@@ -164,7 +253,7 @@ class Settings extends Component {
                 type="radio"
                 id="settings-state-following"
                 name="settings-state"
-                defaultChecked={true}
+                checked={this.state.page === 'following'}
                 onChange={() => this.onShowPage('following')}
               />
               <label className="select-button--button" htmlFor="settings-state-following">
@@ -172,8 +261,19 @@ class Settings extends Component {
               </label>
               <input
                 type="radio"
+                id="settings-state-sorting"
+                name="settings-state"
+                checked={this.state.page === 'sorting'}
+                onChange={() => this.onShowPage('sorting')}
+              />
+              <label className="select-button--button" htmlFor="settings-state-sorting">
+                Sorting
+              </label>
+              <input
+                type="radio"
                 id="settings-state-carts"
                 name="settings-state"
+                checked={this.state.page === 'carts'}
                 onChange={() => this.onShowPage('carts')}
               />
               <label className="select-button--button" htmlFor="settings-state-carts">
@@ -183,7 +283,7 @@ class Settings extends Component {
                 type="radio"
                 id="settings-state-notifications"
                 name="settings-state"
-                defaultChecked={this.state.page === 'notifications'}
+                checked={this.state.page === 'notifications'}
                 onChange={() => this.onShowPage('notifications')}
               />
               <label className="select-button--button" htmlFor="settings-state-notifications">
@@ -193,7 +293,7 @@ class Settings extends Component {
                 type="radio"
                 id="settings-state-ignores"
                 name="settings-state"
-                defaultChecked={this.state.page === 'ignores'}
+                checked={this.state.page === 'ignores'}
                 onChange={() => this.onShowPage('ignores')}
               />
               <label className="select-button--button" htmlFor="settings-state-ignores">
@@ -203,7 +303,7 @@ class Settings extends Component {
                 type="radio"
                 id="settings-state-collection"
                 name="settings-state"
-                defaultChecked={this.state.page === 'collection'}
+                checked={this.state.page === 'collection'}
                 onChange={() => this.onShowPage('collection')}
               />
               <label className="select-button--button" htmlFor="settings-state-collection">
@@ -492,6 +592,40 @@ class Settings extends Component {
                   </li>
                 ))}
               </ul>
+            </>
+          ) : null}
+          {this.state.page === 'sorting' ? (
+            <>
+              <p>
+                The track list is sorted according to the following weights. The purpose of the weights is to higlight
+                the most relevant releases.
+              </p>
+              <label>
+                <h4>Weights:</h4>
+                <h5>Bonuses:</h5>
+                <div style={{ display: 'table' }}>
+                  {this.state.scoreWeights
+                    .filter(({ property }) => !scoreWeightDetails[property].isPenalty)
+                    .map(this.renderWeightInputs.bind(this))}
+                </div>
+                <h5>Penalties:</h5>
+                <div style={{ display: 'table' }}>
+                  {this.state.scoreWeights
+                    .filter(({ property }) => scoreWeightDetails[property].isPenalty)
+                    .map(this.renderWeightInputs.bind(this))}
+                </div>
+              </label>
+              <h5>Preview:</h5>
+              <Tracks
+                mode={'list'}
+                tracks={this.state.tracks.new.slice(0, 10) || []}
+                listState={'new'}
+                notifications={[]}
+                carts={[]}
+                height={380}
+                loading={this.state.updatingTracks}
+                onPreviewRequested={() => {}}
+              />
             </>
           ) : null}
           {this.state.page === 'carts' ? (

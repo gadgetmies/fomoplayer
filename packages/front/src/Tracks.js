@@ -122,7 +122,24 @@ class Tracks extends Component {
           </tr>
         ) : null}
         {tracks.map((track, index) => {
-          const { id, title, mix, artists, remixers, labels, releases, released, keys, heard, stores, version } = track
+          const {
+            id,
+            title,
+            mix,
+            artists,
+            remixers,
+            labels,
+            releases,
+            released,
+            published,
+            added,
+            keys,
+            score,
+            score_details,
+            heard,
+            stores,
+            version
+          } = track
           return (
             <Track
               mode={this.props.mode}
@@ -139,7 +156,11 @@ class Tracks extends Component {
               labels={labels}
               released={released}
               releases={releases}
+              published={published}
+              added={added}
               keys={keys}
+              score={score}
+              scoreDetails={score_details}
               stores={stores}
               selected={this.state.selectedTrack === id}
               playing={this.props.currentTrack === id}
@@ -219,7 +240,7 @@ class Tracks extends Component {
     const notificationSubscriptionLoading = this.state.modifyingNotification
 
     return (
-      <div>
+      <div style={{ height: this.props.height, position: 'relative' }}>
         <div className={'top-bar input-layout'}>
           {this.props.mode === 'app' ? (
             <div className="top-bar-group">
@@ -359,6 +380,11 @@ class Tracks extends Component {
             </div>
           )}
         </div>
+        {this.props.loading && (
+          <div onMouseDown={e => e.stopPropagation()} className="loading-overlay">
+            <Spinner size="large" />
+          </div>
+        )}
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
           <thead className={'noselect tracks-table-header'}>
             <tr style={{ display: 'block' }} className={'noselect'}>
@@ -372,10 +398,15 @@ class Tracks extends Component {
                   <div className={'artist-cell track-table-cell'}>Artist</div>
                   <div className={'title-cell track-table-cell'}>Title</div>
                   <div className={'label-cell track-table-cell'}>Label</div>
+                </div>
+                <div className={'track-details-center track-details-content'}>
+                  <div className={'added-cell track-table-cell'}>Added</div>
                   <div className={'released-cell track-table-cell'}>Released</div>
+                  <div className={'published-cell track-table-cell'}>Published</div>
                 </div>
                 <div className={'track-details-right track-details-content'}>
                   <div className={'key-cell track-table-cell'}>Key</div>
+                  <div className={'score-cell track-table-cell'}>Score</div>
                 </div>
               </th>
               {this.props.mode === 'app' ? (

@@ -7,6 +7,8 @@ import PillButton from './PillButton'
 import ExternalLink from './ExternalLink'
 import StoreIcon from './StoreIcon'
 import CopyToClipboardButton from './CopyToClipboardButton'
+import scoreWeights from './scoreWeights'
+import NavButton from './NavButton'
 
 class Track extends Component {
   constructor(props) {
@@ -142,8 +144,16 @@ class Track extends Component {
                 ))
               )}
             </div>
+          </div>
+          <div className={'track-details-center track-details-content'}>
+            <div className={`added-cell track-table-cell ${this.props.added ? '' : 'empty-cell'}`}>
+              {this.props.added}
+            </div>
             <div className={`released-cell track-table-cell ${this.props.released ? '' : 'empty-cell'}`}>
               {this.props.released}
+            </div>
+            <div className={`published-cell track-table-cell ${this.props.published ? '' : 'empty-cell'}`}>
+              {this.props.published}
             </div>
           </div>
           <div className={'track-details-right track-details-content'}>
@@ -156,6 +166,46 @@ class Track extends Component {
                     <li key={key}>{key}</li>
                   ))}
                 </ul>
+              )}
+            </div>
+            <div className={'score-cell track-table-cell'} style={{ position: 'relative', overflow: 'visible' }}>
+              {!this.props.scoreDetails ? (
+                '-'
+              ) : (
+                <>
+                  <span className={'popup-anchor'}>
+                    <PillButton className={'table-cell-button'}>{Math.round(this.props.score)}</PillButton>
+                  </span>
+                  <div
+                    className={`popup-content${
+                      this.props.popupAbove ? ' popup-content__above' : ''
+                    } score-popup-content`}
+                    style={{ width: 250, zIndex: 100 }}
+                  >
+                    <table className={'score-table'}>
+                      <thead>
+                        <tr>
+                          <th>Property</th>
+                          <th>Weight</th>
+                          <th>Value</th>
+                          <th>Score</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(this.props.scoreDetails).map(([key, value]) => (
+                          <tr>
+                            <td>{scoreWeights[key].label}</td>
+                            <td>{value.weight}</td>
+                            <td>{value.score}</td>
+                            <td>{Math.round(value.score * value.weight * 100) / 100}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <hr className={'popup-divider'} />
+                    <NavButton to={'/settings?page=sorting'}>Adjust weights</NavButton>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -211,10 +261,10 @@ class Track extends Component {
                   </PillButton>
                 </span>
                 <div
-                  className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''}`}
+                  className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''} cart-popup-content`}
                   style={{ width: 100, zIndex: 100 }}
                 >
-                  <div style={{ maxHeight: 150, overflowY: 'scroll' }}>
+                  <div className={'carts-list'}>
                     {this.props.carts.map(({ id, name }) => {
                       const isInCart = this.props.inCarts.find(R.propEq('id', id))
                       return (
