@@ -860,7 +860,7 @@ module.exports.queryUserCartDetails = async userId => {
     WITH
         cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_uuid FROM cart WHERE meta_account_user_id=${userId})
        , cart_tracks AS (SELECT cart_id, track_id FROM track__cart NATURAL JOIN cart_details GROUP BY 1, 2)
-       , td AS (SELECT *, track_id AS id FROM track_details((SELECT array_agg(track_id) FROM cart_tracks), ${userId}))
+       , td AS (SELECT *, track_id AS id FROM track_details((SELECT array_agg(DISTINCT track_id) FROM cart_tracks), ${userId}))
        , tracks AS (SELECT cart_id, json_agg(td) AS tracks FROM cart_tracks NATURAL JOIN td GROUP BY 1)
     SELECT
         cart_id         AS id
