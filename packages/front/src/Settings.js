@@ -443,7 +443,9 @@ class Settings extends Component {
                                 )
                               ).map(([isNotExactMatch, grouped]) => (
                                 <>
-                                  <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>
+                                  {type !== 'playlist' && (
+                                    <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>
+                                  )}
                                   <ul className={'no-style-list follow-list'}>
                                     {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
                                       <li key={this.props.id}>
