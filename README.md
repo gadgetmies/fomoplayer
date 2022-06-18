@@ -1,6 +1,6 @@
-# Fomo Player - A Music Store Preview Clip Player.
+# Fomo Player - A Music Discovery App.
 
-A web app for keeping track of heard previews on Bandcamp, Beatport and Spotify
+A web app for listening to and keeping track of heard previews on Bandcamp, Beatport and Spotify
 
 To get started, please [visit the wiki](https://github.com/gadgetmies/fomoplayer/wiki/Getting-started)
 
