@@ -203,12 +203,14 @@ class App extends Component {
   }
 
   async updateFollows() {
-    const artists = await requestJSONwithCredentials({
-      path: `/me/follows/artists`
-    })
-    const labels = await requestJSONwithCredentials({
-      path: `/me/follows/labels`
-    })
+    const [artists, labels] = await Promise.all([
+      requestJSONwithCredentials({
+        path: `/me/follows/artists`
+      }),
+      await requestJSONwithCredentials({
+        path: `/me/follows/labels`
+      })
+    ])
     this.setState({ follows: { artists, labels } })
   }
 
