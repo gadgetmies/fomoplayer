@@ -39,7 +39,7 @@ const {
   deleteArtistIgnoreFromUser,
   setAllHeard,
   setTrackHeard,
-  queryUserCarts,
+  queryUserCartDetails,
   insertCart,
   queryCartDetails,
   deleteCart,
@@ -336,7 +336,7 @@ const verifyNotificationOwnership = async (userId, notificationId) => {
 module.exports.getUserScoreWeights = queryUserScoreWeights
 module.exports.setUserScoreWeights = updateUserScoreWeights
 
-module.exports.getUserCarts = queryUserCarts
+module.exports.getUserCarts = queryUserCartDetails
 module.exports.createCart = insertCart
 module.exports.removeCart = async (userId, cartId) => {
   await verifyCartOwnership(userId, cartId)

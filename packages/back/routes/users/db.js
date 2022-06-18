@@ -816,28 +816,6 @@ WHERE user_track_score_weight_code = w.property
   )
 }
 
-module.exports.queryUserCarts = async userId => {
-  const carts = await pg.queryRowsAsync(
-    // language=PostgreSQL
-    sql`--queryUserCarts
-SELECT
-  cart_id   AS id
-FROM cart
-WHERE
-  meta_account_user_id = ${userId}
-ORDER BY cart_is_default NULLS LAST, cart_name
-`
-  )
-
-  const cartDetails = []
-  for (const { id } of carts) {
-    const details = await queryCartDetails(id, userId)
-    cartDetails.push(details)
-  }
-
-  return cartDetails
-}
-
 module.exports.insertCart = async (userId, name) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
@@ -873,6 +851,31 @@ WHERE
   user_search_notification_id = ${notificationId}
 `
   )
+}
+
+module.exports.queryUserCartDetails = async userId => {
+  const details = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryCartDetails
+    WITH
+        cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_uuid FROM cart WHERE meta_account_user_id=${userId})
+       , cart_tracks AS (SELECT cart_id, track_id FROM track__cart NATURAL JOIN cart_details GROUP BY 1, 2)
+       , td AS (SELECT *, track_id AS id FROM track_details((SELECT array_agg(track_id) FROM cart_tracks), ${userId}))
+       , tracks AS (SELECT cart_id, json_agg(td) AS tracks FROM cart_tracks NATURAL JOIN td GROUP BY 1)
+    SELECT
+        cart_id         AS id
+         , cart_name       AS name
+         , cart_is_default AS is_default
+         , cart_is_public  AS is_public
+         , cart_uuid       AS uuid
+         , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
+    FROM
+        cart_details NATURAL JOIN
+        tracks
+`
+  )
+
+  return details
 }
 
 const queryCartDetails = (module.exports.queryCartDetails = async (cartId, userId) => {
