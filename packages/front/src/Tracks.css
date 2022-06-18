@@ -116,20 +116,17 @@
     width: 33%;
   }
 
-  .key-cell,
-  .score-cell {
-    width: 50%;
+  .key-cell {
+    width: 100%;
     display: inline;
     text-align: center;
   }
 
-  .follow-cell {
-    width: 33%;
-    text-align: center;
-  }
-
+  .score-cell,
+  .follow-cell,
+  .cart-cell,
   .ignore-cell {
-    width: 33%;
+    width: 25%;
     text-align: center;
   }
 
@@ -139,11 +136,6 @@
 
   .ignore-button-icon {
     display: none;
-  }
-
-  .cart-cell {
-    width: 33%;
-    text-align: center;
   }
 
   .cart-button-label {

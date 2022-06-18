@@ -168,6 +168,10 @@ class Track extends Component {
                 </ul>
               )}
             </div>
+          </div>
+        </td>
+        {this.props.mode === 'app' ? (
+          <td className={'follow-ignore-cart-cell tracks-cell'} style={{ overflow: 'visible' }}>
             <div className={'score-cell track-table-cell'} style={{ position: 'relative', overflow: 'visible' }}>
               {!this.props.scoreDetails ? (
                 '-'
@@ -186,8 +190,8 @@ class Track extends Component {
                       <thead>
                         <tr>
                           <th>Property</th>
-                          <th>Weight</th>
                           <th>Value</th>
+                          <th>Weight</th>
                           <th>Score</th>
                         </tr>
                       </thead>
@@ -195,8 +199,8 @@ class Track extends Component {
                         {Object.entries(this.props.scoreDetails).map(([key, value]) => (
                           <tr>
                             <td>{scoreWeights[key].label}</td>
-                            <td>{value.weight}</td>
                             <td>{value.score}</td>
+                            <td>{value.weight}</td>
                             <td>{Math.round(value.score * value.weight * 100) / 100}</td>
                           </tr>
                         ))}
@@ -208,10 +212,6 @@ class Track extends Component {
                 </>
               )}
             </div>
-          </div>
-        </td>
-        {this.props.mode === 'app' ? (
-          <td className={'follow-ignore-cart-cell tracks-cell'} style={{ overflow: 'visible' }}>
             <div className="follow-cell track-table-cell">
               <PillButton
                 className={'table-cell-button'}

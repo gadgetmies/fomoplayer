@@ -406,11 +406,11 @@ class Tracks extends Component {
                 </div>
                 <div className={'track-details-right track-details-content'}>
                   <div className={'key-cell track-table-cell'}>Key</div>
-                  <div className={'score-cell track-table-cell'}>Score</div>
                 </div>
               </th>
               {this.props.mode === 'app' ? (
                 <th className={'follow-ignore-cart-cell tracks-cell'}>
+                  <div className={'score-cell track-table-cell'}>Score</div>
                   <div className={'follow-cell track-table-cell'}>Follow</div>
                   <div className={'ignore-cell track-table-cell'}>Ignore</div>
                   <div className={'cart-cell track-table-cell'}>Cart</div>
