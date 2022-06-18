@@ -396,14 +396,14 @@ class Tracks extends Component {
               ) : null}
               <th className={'track-details tracks-cell'}>
                 <div className={'track-details-left track-details-content'}>
-                  <div className={'artist-cell track-table-cell'}>Artist</div>
-                  <div className={'title-cell track-table-cell'}>Title</div>
-                  <div className={'label-cell track-table-cell'}>Label</div>
+                  <div className={'artist-cell track-table-cell text-header-cell'}>Artist</div>
+                  <div className={'title-cell track-table-cell text-header-cell'}>Title</div>
+                  <div className={'label-cell track-table-cell text-header-cell'}>Label</div>
                 </div>
                 <div className={'track-details-center track-details-content'}>
-                  <div className={'added-cell track-table-cell'}>Added</div>
-                  <div className={'released-cell track-table-cell'}>Released</div>
-                  <div className={'published-cell track-table-cell'}>Published</div>
+                  <div className={'added-cell track-table-cell text-header-cell'}>Added</div>
+                  <div className={'released-cell track-table-cell text-header-cell'}>Released</div>
+                  <div className={'published-cell track-table-cell text-header-cell'}>Published</div>
                 </div>
                 <div className={'track-details-right track-details-content'}>
                   <div className={'key-cell track-table-cell'}>Key</div>

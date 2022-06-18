@@ -5,6 +5,10 @@
   vertical-align: top;
 }
 
+.text-header-cell {
+  text-align: left;
+}
+
 .track-table-cell {
   padding: 4px;
   box-sizing: border-box;
