@@ -122,7 +122,10 @@ class Track extends Component {
               {R.intersperse(
                 ', ',
                 artistsAndRemixers.map(artist => (
-                  <span className={artist.following ? 'following' : ''} key={artist.name}>
+                  <span
+                    className={this.props.follows?.artists.find(({ id }) => id === artist.id) ? 'following' : ''}
+                    key={artist.name}
+                  >
                     {artist.name}
                   </span>
                 ))
@@ -138,7 +141,10 @@ class Track extends Component {
               {R.intersperse(
                 ', ',
                 this.props.labels.map(label => (
-                  <span className={label.following ? 'following' : ''} key={label.name}>
+                  <span
+                    className={this.props.follows?.labels.find(({ id }) => id === label.id) ? 'following' : ''}
+                    key={label.name}
+                  >
                     {label.name}
                   </span>
                 ))

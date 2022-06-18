@@ -554,11 +554,15 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
         query.append(sql` NULLS LAST
           LIMIT ${limits.new}
       )
-         , heard_tracks AS (
-          SELECT track_id
+        , heard_tracks AS (
+          SELECT track_id, user__track_heard
           FROM user__track
                    NATURAL JOIN logged_user
           WHERE user__track_heard IS NOT NULL
+      )
+        , recently_heard AS (
+          SELECT *
+          FROM heard_tracks
           ORDER BY user__track_heard DESC
           LIMIT ${limits.heard}
       )
@@ -577,7 +581,7 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
           (
             SELECT track_id FROM new_tracks_with_scores
             UNION ALL
-            SELECT track_id FROM heard_tracks
+            SELECT track_id FROM recently_heard
             UNION ALL
             SELECT track_id FROM recently_added
           ) t
@@ -585,7 +589,7 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
          , tracks_with_details AS (
           SELECT track_id AS id
                , title
-               , heard
+               , user__track_heard AS heard
                , duration
                , added :: DATE AS added
                , artists
@@ -599,8 +603,8 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
                , published
                , releases
           FROM limited_tracks lt
-                   JOIN track_details((SELECT ARRAY_AGG(track_id) FROM limited_tracks),
-                                      (SELECT meta_account_user_id FROM logged_user)) td USING (track_id)
+                   JOIN track_details((SELECT ARRAY_AGG(track_id) FROM limited_tracks)) td USING (track_id)
+                   NATURAL LEFT JOIN heard_tracks
       )
          , new_tracks_with_details AS (
           SELECT JSON_AGG(t) AS new_tracks
@@ -614,8 +618,8 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
           SELECT JSON_AGG(t) AS heard_tracks
           FROM (
                    SELECT * FROM tracks_with_details
-                   JOIN heard_tracks ON (id = track_id)
-                   ORDER BY heard DESC
+                   JOIN recently_heard ON (id = track_id)
+                   ORDER BY user__track_heard DESC
                ) t
       )
          , recently_added_tracks_with_details AS (
@@ -860,7 +864,7 @@ module.exports.queryUserCartDetails = async userId => {
     WITH
         cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_uuid FROM cart WHERE meta_account_user_id=${userId})
        , cart_tracks AS (SELECT cart_id, track_id FROM track__cart NATURAL JOIN cart_details GROUP BY 1, 2)
-       , td AS (SELECT *, track_id AS id FROM track_details((SELECT array_agg(DISTINCT track_id) FROM cart_tracks), ${userId}))
+       , td AS (SELECT *, track_id AS id FROM track_details((SELECT array_agg(DISTINCT track_id) FROM cart_tracks)))
        , tracks AS (SELECT cart_id, json_agg(td) AS tracks FROM cart_tracks NATURAL JOIN td GROUP BY 1)
     SELECT
         cart_id         AS id
@@ -885,7 +889,7 @@ const queryCartDetails = (module.exports.queryCartDetails = async (cartId, userI
 WITH
   cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_uuid FROM cart WHERE cart_id = ${cartId})
 , cart_tracks AS (SELECT array_agg(track_id) AS tracks FROM track__cart WHERE cart_id = ${cartId})
-, td AS (SELECT *, track_id AS id FROM track_details((SELECT tracks FROM cart_tracks), ${userId}))
+, td AS (SELECT *, track_id AS id FROM track_details((SELECT tracks FROM cart_tracks)))
 , tracks AS (SELECT json_agg(td) AS tracks FROM td)
 SELECT
   cart_id         AS id

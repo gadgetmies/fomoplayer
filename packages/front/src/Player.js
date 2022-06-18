@@ -398,6 +398,7 @@ class Player extends Component {
           listState={this.state.listState}
           currentTrack={(currentTrack || {}).id}
           processingCart={this.props.processingCart}
+          follows={this.props.follows}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onAddToCart={this.props.onAddToCart}
           onRemoveFromCart={this.props.onRemoveFromCart}
