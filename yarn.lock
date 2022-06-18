@@ -2919,9 +2919,9 @@ boolbase@^1.0.0, boolbase@~1.0.0:
   resolved "https://registry.yarnpkg.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
   integrity sha1-aN/1++YMUes3cl6p4+0xDcwed24=
 
-bp-api@gadgetmies/bp-api#v3.1.7:
-  version "3.1.7"
-  resolved "https://codeload.github.com/gadgetmies/bp-api/tar.gz/6bbe853383ad2c552416f3b4154b7c9cb39ff871"
+bp-api@gadgetmies/bp-api#v3.1.8:
+  version "3.1.8"
+  resolved "https://codeload.github.com/gadgetmies/bp-api/tar.gz/93ce57ab8e7156d2ce5c4a0aace767239548f0b2"
   dependencies:
     html-entities "^2.3.2"
     jsdom "^19.0.0"

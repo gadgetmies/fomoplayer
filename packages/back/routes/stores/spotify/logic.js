@@ -52,7 +52,7 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
 
 module.exports.getFollowDetails = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
-  const store = {name: storeName.toLowerCase()}
+  const store = { name: storeName.toLowerCase() }
   let name
   for (const { regex, type } of regexes) {
     const match = urlString.match(regex)
@@ -102,11 +102,12 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
 
 module.exports.search = async query => {
   const items = (await spotifyApi.searchArtists(query)).body.artists.items
-  return items.map(({ external_urls: { spotify }, id, name, type }) => ({
+  return items.map(({ external_urls: { spotify }, id, name, type, images: [{ url: img }] }) => ({
     url: spotify,
     id,
     name,
     store: { name: storeName.toLowerCase() },
-    type
+    type,
+    img
   }))
 }

@@ -118,7 +118,7 @@ const getPageDetails = (url, callback) => {
 }
 
 const mapSearchResults = ({ auto: { results } }) =>
-  results.map(({ is_label, url, id, name }) => ({ type: is_label ? 'label' : 'artist', url, id, name }))
+  results.map(({ is_label, url, id, name, img }) => ({ type: is_label ? 'label' : 'artist', url, id, name, img }))
 
 const getSearchResults = (query, callback) => {
   return request({
