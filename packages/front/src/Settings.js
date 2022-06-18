@@ -9,6 +9,7 @@ import * as R from 'ramda'
 import PillButton from './PillButton'
 import scoreWeightDetails from './scoreWeights'
 import Tracks from './Tracks'
+import FollowItemButton from './FollowItemButton'
 
 const storeNames = {
   bandcamp: 'Bandcamp',
@@ -429,56 +430,37 @@ class Settings extends Component {
                                 {type[0].toLocaleUpperCase()}
                                 {type.substring(1)}s
                               </h5>
-                              {items.map(({ id, name, store: { name: storeName }, type, url }) => (
-                                <SpinnerButton
-                                  key={id}
-                                  className="button button-push_button-large button-push_button-primary"
-                                  style={{ margin: 4 }}
-                                  disabled={
-                                    this.state.updatingFollowWithUrl !== null ||
-                                    (type === 'artist'
-                                      ? this.state.artistFollows
-                                      : type === 'label'
-                                      ? this.state.labelFollows
-                                      : this.state.playlistFollows
-                                    ).find(R.propEq('url', url))
-                                  }
-                                  loading={this.state.updatingFollowWithUrl === url}
-                                  onClick={async () => {
-                                    try {
-                                      this.setState({ updatingFollowWithUrl: url })
-                                      const props = {
-                                        body: [{ url }]
-                                      }
-
-                                      await requestJSONwithCredentials({
-                                        path: `/me/follows/${type}s`,
-                                        method: 'POST',
-                                        ...props
-                                      })
-
-                                      await this.updateFollows()
-                                    } catch (e) {
-                                      console.error(e)
-                                    } finally {
-                                      this.setState({ updatingFollowWithUrl: null })
-                                    }
-                                  }}
-                                >
-                                  <FontAwesomeIcon icon="plus" /> Follow {type}:{' '}
-                                  <span className="pill" style={{ backgroundColor: 'white', color: 'black' }}>
-                                    <span aria-hidden="true" className={`store-icon store-icon-${storeName}`}></span>{' '}
-                                    {name}
-                                  </span>{' '}
-                                  <a
-                                    href={url}
-                                    target="_blank"
-                                    onClick={e => e.stopPropagation()}
-                                    title={'Check details from store'}
-                                  >
-                                    <FontAwesomeIcon icon="external-link-alt" />
-                                  </a>
-                                </SpinnerButton>
+                              {R.sortBy(
+                                R.prop(0),
+                                Object.entries(
+                                  R.groupBy(
+                                    R.propSatisfies(
+                                      name => name.toLocaleLowerCase() !== this.state.followQuery.toLocaleLowerCase(),
+                                      'name'
+                                    ),
+                                    items
+                                  )
+                                )
+                              ).map(([isNotExactMatch, grouped]) => (
+                                <>
+                                  <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>
+                                  <ul className={'no-style-list follow-list'}>
+                                    {grouped.map(({ id, name, store: { name: storeName }, type, url }) => (
+                                      <li key={this.props.id}>
+                                        <FollowItemButton
+                                          id={id}
+                                          name={name}
+                                          storeName={storeName}
+                                          type={type}
+                                          url={url}
+                                          disabled={this.getFollowItemDisabled(type, url)}
+                                          loading={this.state.updatingFollowWithUrl === url}
+                                          onClick={() => this.onFollowItemClick.bind(this)(url, type)}
+                                        />
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </>
                               ))}
                             </>
                           )
@@ -932,6 +914,41 @@ class Settings extends Component {
           ) : null}
         </div>
       </div>
+    )
+  }
+
+  onFollowItemClick(url, type) {
+    return async () => {
+      try {
+        this.setState({ updatingFollowWithUrl: url })
+        const props = {
+          body: [{ url }]
+        }
+
+        await requestJSONwithCredentials({
+          path: `/me/follows/${type}s`,
+          method: 'POST',
+          ...props
+        })
+
+        await this.updateFollows()
+      } catch (e) {
+        console.error(e)
+      } finally {
+        this.setState({ updatingFollowWithUrl: null })
+      }
+    }
+  }
+
+  getFollowItemDisabled(type, url) {
+    return (
+      this.state.updatingFollowWithUrl !== null ||
+      (type === 'artist'
+        ? this.state.artistFollows
+        : type === 'label'
+        ? this.state.labelFollows
+        : this.state.playlistFollows
+      ).find(R.propEq('url', url))
     )
   }
 }
