@@ -419,16 +419,17 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
         FROM logged_user
                  NATURAL JOIN user__track
                  NATURAL JOIN track
-                 NATURAL JOIN store__track
-                 NATURAL JOIN store
         WHERE user__track_heard IS NULL
           AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
-        GROUP BY 1, 2, 3
+        ORDER BY track_added DESC
+    )
+       , tracks_to_score AS (
+       SELECT track_id FROM new_tracks LIMIT 500
     )
        , label_scores AS (
         SELECT track_id
              , SUM(COALESCE(user_label_scores_score, 0)) AS label_score
-        FROM new_tracks
+        FROM tracks_to_score
                  NATURAL LEFT JOIN track__label
                  NATURAL LEFT JOIN user_label_scores
         GROUP BY 1
@@ -436,7 +437,7 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
        , label_follow_scores AS (
         SELECT track_id,
                CASE WHEN BOOL_OR(meta_account_user_id IS NOT NULL) THEN 1 ELSE 0 END AS label_follow_score
-        FROM new_tracks
+        FROM tracks_to_score
                  NATURAL LEFT JOIN track__label
                  NATURAL LEFT JOIN store__label
                  NATURAL LEFT JOIN store__label_watch
@@ -456,7 +457,7 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
         WITH follows AS (
             SELECT DISTINCT ON (track_id, artist_id) track_id
                                                    , CASE WHEN BOOL_OR(store__artist_watch_id IS NOT NULL) THEN 1 ELSE 0 END AS score
-            FROM new_tracks
+            FROM tracks_to_score
                      NATURAL JOIN track__artist
                      NATURAL JOIN store__artist
                      NATURAL LEFT JOIN store__artist_watch
@@ -530,10 +531,10 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
                       WHERE user_track_score_weight_code = 'date_published'
             ) AS date_published_multiplier
               FROM new_tracks
-                       NATURAL JOIN label_scores
-                       NATURAL JOIN artist_scores
-                       NATURAL JOIN label_follow_scores
-                       NATURAL JOIN artist_follow_scores
+                       NATURAL LEFT JOIN label_scores
+                       NATURAL LEFT JOIN artist_scores
+                       NATURAL LEFT JOIN label_follow_scores
+                       NATURAL LEFT JOIN artist_follow_scores
              ) AS tracks
                  LEFT JOIN track_date_added_score AS added_score USING (track_id)
                  LEFT JOIN track_date_released_score AS released_score USING (track_id)
