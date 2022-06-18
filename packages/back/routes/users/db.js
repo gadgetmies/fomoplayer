@@ -487,13 +487,13 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
                COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) +
                COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) AS score
              , JSON_BUILD_OBJECT(
-                'label', JSON_BUILD_OBJECT('score', label_score, 'weight', label_multiplier),
                 'artist', JSON_BUILD_OBJECT('score', artist_score, 'weight', artist_multiplier),
+                'artist_follow', JSON_BUILD_OBJECT('score', artist_follow_score, 'weight', artist_follow_multiplier),
+                'label', JSON_BUILD_OBJECT('score', label_score, 'weight', label_multiplier),
+                'label_follow', JSON_BUILD_OBJECT('score', label_follow_score, 'weight', label_follow_multiplier),
                 'date_added', JSON_BUILD_OBJECT('score', round(added_score.score, 1), 'weight', date_added_multiplier),
                 'date_released', JSON_BUILD_OBJECT('score', round(released_score.score, 1), 'weight', date_released_multiplier),
-                'date_published', JSON_BUILD_OBJECT('score', round(published_score.score, 1), 'weight', date_published_multiplier),
-                'artist_follow', JSON_BUILD_OBJECT('score', artist_follow_score, 'weight', artist_follow_multiplier),
-                'label_follow', JSON_BUILD_OBJECT('score', label_follow_score, 'weight', label_follow_multiplier)
+                'date_published', JSON_BUILD_OBJECT('score', round(published_score.score, 1), 'weight', date_published_multiplier)
             )                                                                            AS score_details
         FROM (SELECT track_id
                    , user__track_heard
