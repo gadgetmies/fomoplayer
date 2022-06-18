@@ -325,6 +325,7 @@ class App extends Component {
                       onAddToCart={this.addToCart.bind(this)}
                       onRemoveFromCart={this.removeFromCart.bind(this)}
                       onMarkPurchased={this.onMarkPurchased.bind(this)}
+                      onFollow={this.updateFollows.bind(this)}
                       processingCart={this.state.processingCart}
                     />
                   )}

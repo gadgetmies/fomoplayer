@@ -187,6 +187,8 @@ class Player extends Component {
         'content-type': 'application/vnd.multi-store-player.artist-ids+json;ver=1'
       }
     })
+
+    await this.props.onFollow()
   }
 
   async followLabel(labelId, follow) {
@@ -198,6 +200,8 @@ class Player extends Component {
         'content-type': 'application/vnd.multi-store-player.label-ids+json;ver=1'
       }
     })
+
+    await this.props.onFollow()
   }
 
   // TODO: change to POST {ignore: true} /me/labels/?
@@ -399,6 +403,7 @@ class Player extends Component {
           currentTrack={(currentTrack || {}).id}
           processingCart={this.props.processingCart}
           follows={this.props.follows}
+          onFollow={this.props.onFollow}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onAddToCart={this.props.onAddToCart}
           onRemoveFromCart={this.props.onRemoveFromCart}

@@ -12,8 +12,6 @@ class FollowPopup extends Component {
     this.state = {
       subscribingToLabel: null,
       subscribingToArtist: null,
-      followedLabels: new Set(props.follows.labels.map(prop('id'))),
-      followedArtists: new Set(props.follows.artists.map(prop('id'))),
       refreshingList: false
     }
   }
@@ -27,69 +25,60 @@ class FollowPopup extends Component {
       <FullScreenPopup title="Follow / unfollow" {...this.props}>
         <h2>Artists</h2>
         <div className="input-layout">
-          {this.props.track.remixers.concat(this.props.track.artists).map(artist => (
-            <SpinnerButton
-              loading={this.state.subscribingToArtist === artist.id}
-              disabled={this.state.subscribingToArtist}
-              key={`artist-${artist.id}`}
-              className={'button button-push_button-large button-push_button-primary'}
-              onClick={async () => {
-                const followedArtists = this.state.followedArtists
+          {this.props.track.remixers.concat(this.props.track.artists).map(artist => {
+            const following = this.getFollowingArtist(artist)
+            return (
+              <SpinnerButton
+                loading={this.state.subscribingToArtist === artist.id}
+                disabled={this.state.subscribingToArtist}
+                key={`artist-${artist.id}`}
+                className={'button button-push_button-large button-push_button-primary'}
+                onClick={async () => {
+                  try {
+                    this.setState({ subscribingToArtist: artist.id })
+                    await this.props.onFollowArtist(artist.id, !following)
+                  } catch (e) {
+                    console.error(e)
+                  }
 
-                try {
-                  const following = followedArtists.has(artist.id)
-                  this.setState({ subscribingToArtist: artist.id })
-                  await this.props.onFollowArtist(artist.id, !following)
-                  followedArtists[following ? 'delete' : 'add'](artist.id)
-                } catch (e) {
-                  console.error(e)
-                }
-
-                this.setState({ followedArtists, subscribingToArtist: null })
-              }}
-            >
-              <FontAwesomeIcon icon={`${this.state.followedArtists.has(artist.id) ? 'heart-broken' : 'heart'}`} />{' '}
-              {artist.name}
-            </SpinnerButton>
-          ))}
+                  this.setState({ subscribingToArtist: null })
+                }}
+              >
+                <FontAwesomeIcon icon={`${following ? 'heart-broken' : 'heart'}`} /> {artist.name}
+              </SpinnerButton>
+            )
+          })}
         </div>
         {this.props.track.labels.length === 0 ? null : (
           <>
             <h2>Labels</h2>
             <div className="input-layout">
-              {this.props.track.labels.map(label => (
-                <SpinnerButton
-                  loading={this.state.subscribingToLabel === label.id}
-                  disabled={this.state.subscribingToLabel}
-                  key={`label-${label.id}`}
-                  className={'button button-push_button-large button-push_button-primary'}
-                  onClick={async () => {
-                    const followedLabels = this.state.followedLabels
+              {this.props.track.labels.map(label => {
+                const following = this.getFollowingLabel(label)
+                return (
+                  <SpinnerButton
+                    loading={this.state.subscribingToLabel === label.id}
+                    disabled={this.state.subscribingToLabel}
+                    key={`label-${label.id}`}
+                    className={'button button-push_button-large button-push_button-primary'}
+                    onClick={async () => {
+                      try {
+                        this.setState({ subscribingToLabel: label.id })
+                        await this.props.onFollowLabel(label.id, !following)
+                      } catch (e) {
+                        console.error(e)
+                      }
 
-                    try {
-                      const following = followedLabels.has(label.id)
-                      this.setState({ subscribingToLabel: label.id })
-                      await this.props.onFollowLabel(label.id, !following)
-                      followedLabels[following ? 'delete' : 'add'](label.id)
-                    } catch (e) {
-                      console.error(e)
-                    }
-
-                    this.setState({ followedLabels, subscribingToLabel: null })
-                  }}
-                >
-                  <FontAwesomeIcon icon={`${this.state.followedLabels.has(label.id) ? 'heart-broken' : 'heart'}`} />{' '}
-                  {label.name}
-                </SpinnerButton>
-              ))}
+                      this.setState({ subscribingToLabel: null })
+                    }}
+                  >
+                    <FontAwesomeIcon icon={`${following ? 'heart-broken' : 'heart'}`} /> {label.name}
+                  </SpinnerButton>
+                )
+              })}
             </div>
           </>
         )}
-        <p>
-          NOTE: The followed state of the artists and labels is not updated from the server and thus some of the artists
-          and labels might already be followed. Also note that you need to refresh the track list in the player manually
-          after following.
-        </p>
         <p>
           <Link
             className="no-style-link"
@@ -119,6 +108,14 @@ class FollowPopup extends Component {
         </SpinnerButton>
       </FullScreenPopup>
     )
+  }
+
+  getFollowingArtist(artist) {
+    return this.props.follows.artists.find(({ id }) => id === artist.id) !== undefined
+  }
+
+  getFollowingLabel(label) {
+    return this.props.follows.labels.find(({ id }) => id === label.id) !== undefined
   }
 }
 
