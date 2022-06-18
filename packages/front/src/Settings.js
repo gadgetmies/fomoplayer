@@ -411,10 +411,10 @@ class Settings extends Component {
                     )}
                   </label>
                 </div>
-                <br />
                 {this.state.updatingFollowDetails !== null &&
                 Object.values(this.state.updatingFollowDetails).some(val => val) ? (
                   <>
+                    <br />
                     Searching <Spinner size="large" />
                   </>
                 ) : this.state.followDetails === undefined ? null : (
