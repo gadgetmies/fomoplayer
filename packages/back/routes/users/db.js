@@ -897,8 +897,6 @@ SELECT
 FROM
   cart_details,
   tracks
-WHERE
-  cart_id = ${cartId}
 `
   )
 
