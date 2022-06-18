@@ -635,7 +635,7 @@ input[type='radio'] + .select-icon--icon {
 }
 
 .follow-list {
-  max-height: 150px;
+  max-height: 185px;
   overflow-y: scroll;
   margin: 0.5em 0;
 }

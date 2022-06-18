@@ -445,7 +445,7 @@ class Settings extends Component {
                                 <>
                                   <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>
                                   <ul className={'no-style-list follow-list'}>
-                                    {grouped.map(({ id, name, store: { name: storeName }, type, url }) => (
+                                    {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
                                       <li key={this.props.id}>
                                         <FollowItemButton
                                           id={id}
@@ -453,9 +453,10 @@ class Settings extends Component {
                                           storeName={storeName}
                                           type={type}
                                           url={url}
+                                          img={img}
                                           disabled={this.getFollowItemDisabled(type, url)}
                                           loading={this.state.updatingFollowWithUrl === url}
-                                          onClick={() => this.onFollowItemClick.bind(this)(url, type)}
+                                          onClick={(() => this.onFollowItemClick(url, type)).bind(this)}
                                         />
                                       </li>
                                     ))}
@@ -917,26 +918,24 @@ class Settings extends Component {
     )
   }
 
-  onFollowItemClick(url, type) {
-    return async () => {
-      try {
-        this.setState({ updatingFollowWithUrl: url })
-        const props = {
-          body: [{ url }]
-        }
-
-        await requestJSONwithCredentials({
-          path: `/me/follows/${type}s`,
-          method: 'POST',
-          ...props
-        })
-
-        await this.updateFollows()
-      } catch (e) {
-        console.error(e)
-      } finally {
-        this.setState({ updatingFollowWithUrl: null })
+  async onFollowItemClick(url, type) {
+    try {
+      this.setState({ updatingFollowWithUrl: url })
+      const props = {
+        body: [{ url }]
       }
+
+      await requestJSONwithCredentials({
+        path: `/me/follows/${type}s`,
+        method: 'POST',
+        ...props
+      })
+
+      await this.updateFollows()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      this.setState({ updatingFollowWithUrl: null })
     }
   }
 
