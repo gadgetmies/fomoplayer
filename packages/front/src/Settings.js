@@ -608,6 +608,7 @@ class Settings extends Component {
                 height={380}
                 loading={this.state.updatingTracks}
                 onPreviewRequested={() => {}}
+                follows={this.props.follows}
               />
             </>
           ) : null}

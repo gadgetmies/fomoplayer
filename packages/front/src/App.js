@@ -347,6 +347,7 @@ class App extends Component {
                       userSettings={this.state.userSettings}
                       scoreWeights={this.state.scoreWeights}
                       tracks={this.state.tracksData.tracks}
+                      follows={this.state.follows}
                     />
                   )}
                 />
