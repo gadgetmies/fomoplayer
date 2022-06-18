@@ -102,12 +102,12 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
 
 module.exports.search = async query => {
   const items = (await spotifyApi.searchArtists(query)).body.artists.items
-  return items.map(({ external_urls: { spotify }, id, name, type, images: [{ url: img }] }) => ({
+  return items.map(({ external_urls: { spotify }, id, name, type, images }) => ({
     url: spotify,
     id,
     name,
     store: { name: storeName.toLowerCase() },
     type,
-    img
+    img: images[0]?.url
   }))
 }
