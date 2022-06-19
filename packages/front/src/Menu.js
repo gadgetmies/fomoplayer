@@ -41,7 +41,7 @@ export default class Menu extends Component {
           <h3>Links</h3>
           <p>
             <a
-              href={'https://github.com/gadgetmies/fomoplayer'}
+              href={'https://github.com/gadgetmies/fomoplayer/wiki/Getting-started'}
               className={`button menu-item button-push_button-large button-push_button-menu link`}
               target="_blank"
               rel="noopener noreferrer"
