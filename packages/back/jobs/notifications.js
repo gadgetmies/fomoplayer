@@ -14,16 +14,14 @@ module.exports.updateNotifications = async () => {
 
   for (const { notificationId, text, userId, email, trackIds } of notificationSearches) {
     try {
-      const searchResults = searchForTracks(text, userId)
+      const searchResults = await searchForTracks(text, userId)
       const currentTrackIds = searchResults.map(R.prop('track_id'))
-      const intersection = R.intersection(trackIds, currentTrackIds)
-
-      logger.info(`Notification intersection`, intersection)
+      const intersection = R.without(trackIds, currentTrackIds)
 
       await using(pg.getTransaction(), async tx => {
         if (intersection.length !== 0) {
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
-          await updateNotificationTracks(tx, notificationId, trackIds)
+          await updateNotificationTracks(tx, notificationId, currentTrackIds)
           await scheduleEmail(
             process.env.NOTIFICATION_EMAIL_SENDER,
             email,
