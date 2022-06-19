@@ -361,7 +361,7 @@ class Tracks extends Component {
                   {this.props.notificationsEnabled ? (
                     ''
                   ) : (
-                    <div style={{ fontSize: '60%', order: 5 }}>
+                    <div className={'email-not-verified-info'}>
                       Email not set or verified.{' '}
                       <Link to={'/settings?page=notifications'}>
                         <strong>Please update details in the settings</strong>

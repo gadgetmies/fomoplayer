@@ -40,8 +40,9 @@
   width: 100%;
 }
 
-.score-table {
-
+.email-not-verified-note {
+  font-size: 60%;
+  order: 5;
 }
 
 @media (min-width: 900px) {
@@ -293,5 +294,9 @@
 
   .search-cell::before {
     content: 'Search:\A';
+  }
+
+  .email-not-verified-note {
+    display: none;
   }
 }
