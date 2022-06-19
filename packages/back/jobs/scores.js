@@ -33,3 +33,20 @@ module.exports.updateDatePublishedScore = async () => {
 
   return { success: true }
 }
+
+module.exports.updatePurchasedScores = async () => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`--updateDateReleasedScore
+    REFRESH MATERIALIZED VIEW user_label_scores;
+    `
+  )
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`--updateDateReleasedScore
+    REFRESH MATERIALIZED VIEW user_artist_scores;
+    `
+  )
+
+  return { success: true }
+}

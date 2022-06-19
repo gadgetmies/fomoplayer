@@ -45,7 +45,7 @@ module.exports.getCartDetails = async uuid => {
   if (!isPublic) {
     return null
   }
-  return await queryCartDetails(id, null)
+  return await queryCartDetails(id)
 }
 
 module.exports.verifyEmail = verifyEmail

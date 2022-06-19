@@ -370,7 +370,7 @@ module.exports.updateAllCartContents = async (userId, operations) => {
   const tracksToBeRemoved = operations.filter(R.propEq('op', 'remove')).map(R.prop('trackId'))
   const tracksToBeAdded = operations.filter(R.propEq('op', 'add')).map(R.prop('trackId'))
 
-  const carts = await queryUserCarts(userId)
+  const carts = await queryUserCartDetails(userId)
   for (const { id } of carts) {
     await removeTracksFromCart(userId, id, tracksToBeRemoved)
     await addTracksToCart(userId, id, tracksToBeAdded)
@@ -379,7 +379,7 @@ module.exports.updateAllCartContents = async (userId, operations) => {
 
 const getCartDetails = (module.exports.getCartDetails = async (userId, cartId) => {
   await verifyCartOwnership(userId, cartId)
-  return await queryCartDetails(cartId, userId)
+  return await queryCartDetails(cartId)
 })
 
 module.exports.getDefaultCartDetails = async userId => {

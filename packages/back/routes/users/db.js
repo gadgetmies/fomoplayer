@@ -7,11 +7,12 @@ const { using } = require('bluebird')
 module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {
   await pg.queryAsync(
     // language=PostgreSQL
-    sql`-- addPurchasedTrackToUser
-INSERT INTO public.user__store__track_purchased (meta_account_user_id, store__track_id)
-SELECT ${userId}, store__track_id
-FROM store__track
-WHERE track_id = ANY(${trackIds})
+    sql`-- addPurchasedTracksToUser
+INSERT INTO track__cart (cart_id, track_id) 
+SELECT cart_id, track_id
+FROM cart, unnest(${trackIds} :: BIGINT[]) AS tracks(track_id)
+WHERE meta_account_user_id = ${userId} AND cart_is_purchased
+ON CONFLICT DO NOTHING
 `
   )
 }
@@ -19,20 +20,21 @@ WHERE track_id = ANY(${trackIds})
 module.exports.addPurchasedStoreTrackToUser = async (tx, userId, storeTrack) =>
   await tx.queryAsync(
     // language=PostgreSQL
-    sql`-- addPurchasedTrackToUser
-INSERT INTO user__store__track_purchased
-  (meta_account_user_id, user__store__track_purchased_time, store__track_id)
-SELECT
-  ${userId}
-, ${storeTrack.purchased}
-, store__track_id
-FROM store__track
-WHERE
-  store__track_store_id = ${storeTrack.id}
+    sql`-- addPurchasedStoreTrackToUser
+INSERT INTO track__cart
+    (cart_id, track_id, track__cart_added)
+SELECT cart_id,
+       track_id
+        ,
+       ${storeTrack.purchased}
+FROM cart,
+     store__track
+WHERE store__track_store_id = ${storeTrack.id}
+  AND meta_account_user_id = ${userId}
+  AND cart_is_purchased
 ON CONFLICT
-  ON CONSTRAINT user__store__track_purchased_meta_account_user_id_store__tr_key
-  DO UPDATE SET
-  user__store__track_purchased_time = ${storeTrack.purchased}
+    ON CONSTRAINT track__cart_cart_id_track_id_key
+    DO UPDATE SET track__cart_added = ${storeTrack.purchased}
 `
   )
 
@@ -401,9 +403,10 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
     )
        , user_purchased_tracks AS (
         SELECT track_id
-        FROM user__store__track_purchased
-                 NATURAL JOIN store__track
-                 NATURAL JOIN logged_user
+        FROM track__cart
+            NATURAL JOIN cart
+            NATURAL JOIN logged_user
+        WHERE cart_is_purchased
     )
        , user_tracks_meta AS (
         SELECT COUNT(*)                                          AS total
@@ -862,27 +865,35 @@ module.exports.queryUserCartDetails = async userId => {
     // language=PostgreSQL
     sql`--queryCartDetails
     WITH
-        cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_uuid FROM cart WHERE meta_account_user_id=${userId})
-       , cart_tracks AS (SELECT cart_id, track_id FROM track__cart NATURAL JOIN cart_details GROUP BY 1, 2)
+        cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_is_purchased, cart_uuid FROM cart WHERE meta_account_user_id=${userId})
+       , cart_tracks AS (
+           SELECT * FROM (
+               SELECT ROW_NUMBER() OVER (PARTITION BY cart_id) AS r, t.* FROM (
+                    SELECT cart_id, track_id FROM track__cart NATURAL JOIN cart_details GROUP BY 1, 2, track__cart_added ORDER BY track__cart_added DESC 
+               ) t
+           ) x WHERE x.r < 100
+         ) 
        , td AS (SELECT *, user__track_heard as heard, track_id AS id FROM track_details((SELECT array_agg(DISTINCT track_id) FROM cart_tracks)) NATURAL LEFT JOIN user__track)
        , tracks AS (SELECT cart_id, json_agg(td) AS tracks FROM cart_tracks NATURAL JOIN td GROUP BY 1)
     SELECT
-        cart_id         AS id
-         , cart_name       AS name
-         , cart_is_default AS is_default
-         , cart_is_public  AS is_public
-         , cart_uuid       AS uuid
+           cart_id                       AS id
+         , cart_name                     AS name
+         , cart_is_default IS NOT NULL   AS is_default
+         , cart_is_public                AS is_public
+         , cart_is_purchased IS NOT NULL AS is_purchased
+         , cart_uuid                     AS uuid
          , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
     FROM
         cart_details NATURAL LEFT JOIN
         tracks
+    ORDER BY cart_is_default, cart_is_purchased, cart_name
 `
   )
 
   return details
 }
 
-const queryCartDetails = (module.exports.queryCartDetails = async (cartId, userId) => {
+module.exports.queryCartDetails = async cartId => {
   const [details] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryCartDetails
@@ -892,11 +903,11 @@ WITH
 , td AS (SELECT *, track_id AS id FROM track_details((SELECT tracks FROM cart_tracks)))
 , tracks AS (SELECT json_agg(td) AS tracks FROM td)
 SELECT
-  cart_id         AS id
-, cart_name       AS name
-, cart_is_default AS is_default
-, cart_is_public  AS is_public
-, cart_uuid       AS uuid
+  cart_id                     AS id
+, cart_name                   AS name
+, cart_is_default IS NOT NULL AS is_default
+, cart_is_public              AS is_public
+, cart_uuid                   AS uuid
 , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
 FROM
   cart_details,
@@ -905,7 +916,7 @@ FROM
   )
 
   return details
-})
+}
 
 module.exports.deleteCart = async cartId =>
   pg.queryRowsAsync(

@@ -303,18 +303,22 @@ class Track extends Component {
                       )
                     })}
                   </div>
-                  <hr className={'popup-divider'} />
-                  <button
-                    disabled={processingCart}
-                    style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
-                    className="button button-push_button-small button-push_button-primary"
-                    onClick={e => {
-                      e.stopPropagation()
-                      return handleMarkPurchasedButtonClick()
-                    }}
-                  >
-                    Mark purchased and remove from carts
-                  </button>
+                  {!this.props.selectedCartIsPurchased && (
+                    <>
+                      <hr className={'popup-divider'} />
+                      <button
+                        disabled={processingCart}
+                        style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
+                        className="button button-push_button-small button-push_button-primary"
+                        onClick={e => {
+                          e.stopPropagation()
+                          return handleMarkPurchasedButtonClick()
+                        }}
+                      >
+                        Mark purchased and remove from carts
+                      </button>
+                    </>
+                  )}
                 </div>
               </span>
             </div>

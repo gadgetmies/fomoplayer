@@ -142,6 +142,7 @@ class Tracks extends Component {
           } = track
           const inCarts = this.props.carts.filter(cart => cart.tracks.find(R.propEq('id', id)))
           const selectedCartId = this.props.selectedCart?.id
+          const selectedCartIsPurchased = this.props.selectedCart?.is_purchased
           return (
             <Track
               mode={this.props.mode}
@@ -150,6 +151,7 @@ class Tracks extends Component {
               carts={this.props.carts}
               defaultCartId={this.props.carts.find(R.prop('is_default'))?.id}
               selectedCartId={selectedCartId}
+              selectedCartIsPurchased={selectedCartIsPurchased}
               id={id}
               index={index}
               title={title}

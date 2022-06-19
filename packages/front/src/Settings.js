@@ -517,10 +517,7 @@ class Settings extends Component {
                     <span className="button pill pill-button">
                       <span className="pill-button-contents">
                         <>
-                          <span
-                            aria-hidden="true"
-                            className={`store-icon store-icon-${storeName.toLowerCase()}`}
-                          ></span>{' '}
+                          <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
                         </>
                         {name}{' '}
                         <button
@@ -650,7 +647,7 @@ class Settings extends Component {
                 </div>
               </label>
               <div>
-                {this.props.carts.map(({ id, is_default, is_public, name, uuid }) => {
+                {this.props.carts.map(({ id, is_default, is_public, is_purchased, name, uuid }) => {
                   const buttonId = `sharing-${id}`
                   const publicLink = new URL(`/cart/${uuid}`, window.location).toString()
                   return (
@@ -680,7 +677,7 @@ class Settings extends Component {
                           </div>
                         ) : null}
                       </div>
-                      {is_default ? null : (
+                      {is_default || is_purchased ? null : (
                         <p>
                           <SpinnerButton
                             loading={this.state.deletingCart}
