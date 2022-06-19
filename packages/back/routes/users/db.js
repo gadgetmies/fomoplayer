@@ -874,7 +874,7 @@ module.exports.queryUserCartDetails = async userId => {
          , cart_uuid       AS uuid
          , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
     FROM
-        cart_details NATURAL JOIN
+        cart_details NATURAL LEFT JOIN
         tracks
 `
   )
