@@ -85,8 +85,10 @@ class Track extends Component {
     const cartLink = new URL(`/cart/${this.props.cartUuid}`, window.location).toString()
     const handleCartButtonClick = this.handleCartButtonClick.bind(this)
     const handleMarkPurchasedButtonClick = this.handlMarkPurchasedButtonClick.bind(this)
-    const defaultCartId = this.props.defaultCartId
+    const currentCartId = this.props.listState === 'cart' ? this.props.selectedCartId : this.props.defaultCartId
+    const inCurrentCart = this.props.inCurrentCart
     const inDefaultCart = this.props.inDefaultCart
+    const inCart = this.props.listState === 'cart' ? inCurrentCart : inDefaultCart
     const processingCart = this.props.processingCart || this.state.processingCart
 
     return (
@@ -247,11 +249,11 @@ class Track extends Component {
                   className={'table-cell-button'}
                   onClick={e => {
                     e.stopPropagation()
-                    return handleCartButtonClick(defaultCartId, inDefaultCart)
+                    return handleCartButtonClick(currentCartId, inCart)
                   }}
                 >
-                  <FontAwesomeIcon icon={inDefaultCart ? 'minus' : 'plus'} />{' '}
-                  <span className={'cart-button-label'}>{inDefaultCart ? 'Remove from cart' : 'Add to cart'}</span>
+                  <FontAwesomeIcon icon={inCart ? 'minus' : 'plus'} />{' '}
+                  <span className={'cart-button-label'}>{inCart ? 'Remove from cart' : 'Add to cart'}</span>
                 </PillButton>
                 <span className={'popup-anchor'}>
                   <PillButton

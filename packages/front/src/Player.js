@@ -397,7 +397,7 @@ class Player extends Component {
           mode={this.props.mode}
           carts={this.props.carts}
           notifications={this.props.notifications}
-          selectedCart={this.props.carts[0]}
+          selectedCart={this.props.carts?.find(({ id }) => id === this.state.selectedCartId)}
           tracks={tracks}
           listState={this.state.listState}
           currentTrack={(currentTrack || {}).id}

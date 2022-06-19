@@ -15,7 +15,7 @@ class Tracks extends Component {
     super(props)
     this.state = {
       selectedTrack: (props.tracks[0] || {}).id,
-      selectedCart: null,
+      selectedCart: props.selectedCart,
       currentTrack: -1,
       markingHeard: false,
       currentBelowScreen: false,
@@ -140,6 +140,8 @@ class Tracks extends Component {
             stores,
             version
           } = track
+          const inCarts = this.props.carts.filter(cart => cart.tracks.find(R.propEq('id', id)))
+          const selectedCartId = this.props.selectedCart?.id
           return (
             <Track
               mode={this.props.mode}
@@ -147,6 +149,7 @@ class Tracks extends Component {
               cartUuid={this.props.selectedCart?.uuid}
               carts={this.props.carts}
               defaultCartId={this.props.carts.find(R.prop('is_default'))?.id}
+              selectedCartId={selectedCartId}
               id={id}
               index={index}
               title={title}
@@ -167,7 +170,8 @@ class Tracks extends Component {
               version={version}
               heard={heard}
               inDefaultCart={defaultCart ? defaultCart.tracks.find(R.propEq('id', id)) !== undefined : false}
-              inCarts={this.props.carts.filter(cart => cart.tracks.find(R.propEq('id', id)))}
+              inCurrentCart={inCarts.find(({ id }) => id === selectedCartId) !== undefined}
+              inCarts={inCarts}
               popupAbove={tracks.length > 10 && tracks.length - index < 10}
               processingCart={this.props.processingCart}
               key={id}
