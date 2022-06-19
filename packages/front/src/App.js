@@ -88,7 +88,7 @@ class App extends Component {
     this.state = {
       addingToCart: false,
       slideout: null,
-      carts: {},
+      carts: [],
       scoreWeights: {},
       notifications: [],
       loggedIn: false,
@@ -101,8 +101,8 @@ class App extends Component {
   }
 
   async updateStatesFromServer() {
+    this.updateCarts().then(() => {})
     await Promise.all([
-      this.updateCarts(),
       this.updateScoreWeights(),
       this.updateTracks(),
       this.updateFollows(),

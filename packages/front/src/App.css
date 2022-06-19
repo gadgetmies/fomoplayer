@@ -517,6 +517,12 @@ input[type='radio']:checked + .select-button--button,
   opacity: 1;
 }
 
+input[type='radio']:disabled + .select-button--button,
+.select-button--button__active {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .preview-icons-container {
   position: absolute;
   right: 0;

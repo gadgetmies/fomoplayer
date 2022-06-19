@@ -19,7 +19,7 @@ class Player extends Component {
       listState: props.tracks ? 'new' : 'cart',
       searchResults: [],
       togglingCurrentInCart: false,
-      selectedCartId: props.carts[0].id,
+      selectedCartId: props.carts[0]?.id,
       requestNotificationSearch: '',
       nextDoubleClickStarted: false,
       playPauseDoubleClickStarted: false
@@ -73,6 +73,16 @@ class Player extends Component {
     if (this.props.carts.length !== 0 && !Number.isNaN(this.props.initialPosition)) {
       const currentTrack = this.props.carts[0].tracks[this.props.initialPosition - 1]
       this.setCurrentTrack(currentTrack)
+    }
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (
+      prevProps.carts !== this.props.carts &&
+      this.props.carts.length > 0 &&
+      this.state.selectedCartId === undefined
+    ) {
+      this.setState({ selectedCartId: this.props.carts[0].id })
     }
   }
 

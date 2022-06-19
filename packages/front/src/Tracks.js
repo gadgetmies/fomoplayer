@@ -140,7 +140,7 @@ class Tracks extends Component {
             stores,
             version
           } = track
-          const inCarts = this.props.carts.filter(cart => cart.tracks.find(R.propEq('id', id)))
+          const inCarts = this.props.carts.filter(cart => cart.tracks?.find(R.propEq('id', id)))
           const selectedCartId = this.props.selectedCart?.id
           const selectedCartIsPurchased = this.props.selectedCart?.is_purchased
           return (
@@ -291,6 +291,7 @@ class Tracks extends Component {
                   name="tracklist-state"
                   defaultChecked={this.props.listState === 'cart'}
                   onChange={this.props.onShowCartClicked}
+                  disabled={this.props.carts.length === 0}
                 />
                 <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-cart">
                   Carts
