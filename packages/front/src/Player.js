@@ -413,6 +413,7 @@ class Player extends Component {
           currentTrack={(currentTrack || {}).id}
           processingCart={this.props.processingCart}
           follows={this.props.follows}
+          notificationsEnabled={this.props.notificationsEnabled}
           onFollow={this.props.onFollow}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onAddToCart={this.props.onAddToCart}

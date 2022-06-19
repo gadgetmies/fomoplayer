@@ -316,6 +316,7 @@ class App extends Component {
                       onUpdateTracksClicked={this.updateTracks.bind(this)}
                       carts={this.state.carts}
                       notifications={this.state.notifications}
+                      notificationsEnabled={this.state.userSettings.emailVerified}
                       onRequestNotification={this.requestNotification.bind(this)}
                       onRemoveNotification={this.removeNotification.bind(this)}
                       follows={this.state.follows}

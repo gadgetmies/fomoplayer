@@ -243,7 +243,8 @@ class Tracks extends Component {
     )
 
     const subscribedForNotification = this.getNotificationSubscription() !== undefined
-    const notificationSubscriptionDisabled = this.state.search === '' || this.state.modifyingNotification
+    const notificationSubscriptionDisabled =
+      this.state.search === '' || this.state.modifyingNotification || !this.props.notificationsEnabled
     const notificationSubscriptionLoading = this.state.modifyingNotification
 
     return (
@@ -323,7 +324,7 @@ class Tracks extends Component {
           {this.props.listState !== 'search' ? null : (
             <>
               <div className="top-bar-group">
-                <div className={'input-layout'}>
+                <div className={'input-layout'} style={{ alignItems: 'center' }}>
                   <label className="search-bar">
                     <input
                       autoFocus
@@ -357,6 +358,17 @@ class Tracks extends Component {
                     <FontAwesomeIcon icon={subscribedForNotification ? 'bell-slash' : 'bell'} />{' '}
                     {subscribedForNotification ? 'Unsubscribe' : 'Subscribe'}
                   </SpinnerButton>
+                  {this.props.notificationsEnabled ? (
+                    ''
+                  ) : (
+                    <div style={{ fontSize: '60%', order: 5 }}>
+                      Email not set or verified.{' '}
+                      <Link to={'/settings?page=notifications'}>
+                        <strong>Please update details in the settings</strong>
+                      </Link>
+                      .
+                    </div>
+                  )}
                 </div>
               </div>
             </>
