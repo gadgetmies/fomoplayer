@@ -155,7 +155,7 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
       logger.info(`Processing ${tracks.length} tracks`)
       await addStoreTracksToUsers(storeUrl, tracks, users, 'tracks', sourceId)
     } catch (e) {
-      const error = [`Failed to add artist tracks to users`, { error: e.toString(), tracks, details }]
+      const error = [`Failed to add artist tracks to users`, { error: e.toString(), details }]
       combinedErrors.push(error)
       logger.error(...error)
     }
@@ -171,7 +171,12 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
 module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   logger.info(`Updating label tracks: ${details.url}`)
   const storeModule = getStoreModule(storeUrl)
-  const users = await getUsersFollowingLabel(details.storeLabelId)
+  let users
+  try {
+    users = await getUsersFollowingLabel(details.storeLabelId)
+  } catch (e) {
+    logger.error('Error in updateLabelTracks 1')
+  }
   const generator = storeModule.logic.getLabelTracks(details)
 
   logger.info(`Processing tracks for label: ${details.url}`)
@@ -190,7 +195,11 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   }
 
   if (combinedErrors.length === 0) {
-    await setLabelUpdated(details.storeLabelId)
+    try {
+      await setLabelUpdated(details.storeLabelId)
+    } catch (e) {
+      logger.error('Error in updateLabelTrack 2')
+    }
   }
 
   return combinedErrors
