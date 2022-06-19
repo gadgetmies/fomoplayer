@@ -178,10 +178,8 @@ class Track extends Component {
         </td>
         {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'} style={{ overflow: 'visible' }}>
-            <div className={'score-cell track-table-cell'} style={{ position: 'relative', overflow: 'visible' }}>
-              {!this.props.scoreDetails ? (
-                '-'
-              ) : (
+            {this.props.listState === 'new' && (
+              <div className={'score-cell track-table-cell'} style={{ position: 'relative', overflow: 'visible' }}>
                 <>
                   <span className={'popup-anchor'}>
                     <PillButton className={'table-cell-button'}>{Math.round(this.props.score)}</PillButton>
@@ -216,8 +214,8 @@ class Track extends Component {
                     <NavButton to={'/settings?page=sorting'}>Adjust weights</NavButton>
                   </div>
                 </>
-              )}
-            </div>
+              </div>
+            )}
             <div className="follow-cell track-table-cell">
               <PillButton
                 className={'table-cell-button'}
