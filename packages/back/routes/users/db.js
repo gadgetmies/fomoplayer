@@ -873,7 +873,12 @@ module.exports.queryUserCartDetails = async userId => {
                ) t
            ) x WHERE x.r < 100
          ) 
-       , td AS (SELECT *, user__track_heard as heard, track_id AS id FROM track_details((SELECT array_agg(DISTINCT track_id) FROM cart_tracks)) NATURAL LEFT JOIN user__track)
+       , td AS (
+           SELECT *, user__track_heard as heard, track_id AS id 
+           FROM track_details((SELECT array_agg(DISTINCT track_id) FROM cart_tracks)) 
+               NATURAL LEFT JOIN user__track 
+           WHERE meta_account_user_id = ${userId}
+         )
        , tracks AS (SELECT cart_id, json_agg(td) AS tracks FROM cart_tracks NATURAL JOIN td GROUP BY 1)
     SELECT
            cart_id                       AS id
