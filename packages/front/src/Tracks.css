@@ -243,7 +243,8 @@
   .added-cell {
     font-size: 80%;
     opacity: 0.8;
-    display: inline-block;
+    display: block;
+    padding: 0 4px;
   }
 
   .key-cell::before {
