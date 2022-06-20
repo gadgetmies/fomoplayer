@@ -17,6 +17,7 @@ module.exports.updateNotifications = async () => {
       const searchResults = await searchForTracks(text, userId)
       const currentTrackIds = searchResults.map(R.prop('track_id'))
       const intersection = R.without(trackIds, currentTrackIds)
+      const uriEncoded = encodeURI(text)
 
       await using(pg.getTransaction(), async tx => {
         if (intersection.length !== 0) {
@@ -25,13 +26,13 @@ module.exports.updateNotifications = async () => {
           await scheduleEmail(
             process.env.NOTIFICATION_EMAIL_SENDER,
             email,
-            `New results for your search '${text}'!`,
-            `New results for your search '${text}'!
-
-Check out the new tracks at https://fomoplayer.com/          
+            `New results for your search '${uriEncoded}'!`,
+            `Check out the results at https://fomoplayer.com/search/?q=${uriEncoded}
 `,
-            `<h1>New results for your search '${text}'!</h1>
-<a href="https://fomoplayer.com/">Check out the new tracks!</a>`
+            `<h1>New results for your search '${uriEncoded}'!</h1>
+<a href="https://fomoplayer.com/search/?q=${uriEncoded}">
+  Check out the results at https://fomoplayer.com/search/?q=${uriEncoded}
+</a>`
           )
         }
 

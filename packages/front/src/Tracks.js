@@ -20,7 +20,7 @@ class Tracks extends Component {
       markingHeard: false,
       currentBelowScreen: false,
       currentAboveScreen: false,
-      search: '',
+      search: props.search,
       searchOpen: false,
       searchDebounce: undefined,
       searchInProgress: false,
@@ -28,6 +28,12 @@ class Tracks extends Component {
       modifyingNotification: false
     }
     this.handleScroll = this.handleScroll.bind(this)
+  }
+
+  componentDidMount() {
+    if (this.props.search !== undefined) {
+      this.triggerSearch().then(() => {})
+    }
   }
 
   handleScroll() {

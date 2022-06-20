@@ -7,16 +7,16 @@ import MediaSession from '@mebtte/react-media-session'
 import FollowPopup from './FollowPopup'
 import IgnorePopup from './IgnorePopup'
 import { trackTitle, artistNamesToString, trackArtistsAndTitle } from './trackFunctions'
+import { useHistory } from 'react-router-dom'
 
 class Player extends Component {
   constructor(props) {
     super(props)
-
     this.state = {
       currentTrack: null,
       heardTracks: props.tracks ? props.tracks.heard : [],
       listenedTracks: 0,
-      listState: props.tracks ? 'new' : 'cart',
+      listState: props.listState,
       searchResults: [],
       togglingCurrentInCart: false,
       selectedCartId: props.carts[0]?.id,
@@ -249,6 +249,7 @@ class Player extends Component {
 
   setListState(listState) {
     this.setState({ listState })
+    window.history.replaceState(undefined, undefined, `/${listState}`)
   }
 
   setSearchResults(searchResults) {
@@ -275,7 +276,7 @@ class Player extends Component {
       tracks = this.props.tracks.new.slice()
     } else if (this.state.listState === 'heard') {
       tracks = this.state.heardTracks
-    } else if (this.state.listState === 'recentlyAdded') {
+    } else if (this.state.listState === 'recent') {
       tracks = this.props.tracks.recentlyAdded.slice()
     } else if (this.state.listState === 'cart') {
       tracks = this.props.carts.find(R.propEq('id', this.state.selectedCartId)).tracks
@@ -414,6 +415,7 @@ class Player extends Component {
           processingCart={this.props.processingCart}
           follows={this.props.follows}
           notificationsEnabled={this.props.notificationsEnabled}
+          search={this.props.search}
           onFollow={this.props.onFollow}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onAddToCart={this.props.onAddToCart}
@@ -428,7 +430,7 @@ class Player extends Component {
           onIgnoreClicked={this.openIgnorePopup.bind(this)}
           onShowNewClicked={this.setListState.bind(this, 'new')}
           onShowHeardClicked={this.setListState.bind(this, 'heard')}
-          onShowRecentlyAddedClicked={this.setListState.bind(this, 'recentlyAdded')}
+          onShowRecentlyAddedClicked={this.setListState.bind(this, 'recent')}
           onShowCartClicked={this.setListState.bind(this, 'cart')}
           onShowSearchClicked={this.setListState.bind(this, 'search')}
           onSearchResults={this.setSearchResults.bind(this)}

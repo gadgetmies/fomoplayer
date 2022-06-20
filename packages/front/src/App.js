@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
-import { BrowserRouter as Router, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Route, Redirect } from 'react-router-dom'
 import Login from './UserLogin.js'
 import Menu from './Menu.js'
 import Player from './Player.js'
@@ -306,30 +306,39 @@ class App extends Component {
                 >
                   <FontAwesomeIcon icon="bars" />
                 </button>
+                <Route exact path="/">
+                  <Redirect to="/new" />
+                </Route>
                 <Route
-                  path="/"
-                  render={() => (
-                    <Player
-                      mode="app"
-                      initialPosition={NaN}
-                      addingToCart={this.state.addingToCart}
-                      onUpdateTracksClicked={this.updateTracks.bind(this)}
-                      carts={this.state.carts}
-                      notifications={this.state.notifications}
-                      notificationsEnabled={this.state.userSettings.emailVerified}
-                      onRequestNotification={this.requestNotification.bind(this)}
-                      onRemoveNotification={this.removeNotification.bind(this)}
-                      follows={this.state.follows}
-                      tracks={this.state.tracksData.tracks}
-                      newTracks={this.state.tracksData.meta.newTracks}
-                      totalTracks={this.state.tracksData.meta.totalTracks}
-                      onAddToCart={this.addToCart.bind(this)}
-                      onRemoveFromCart={this.removeFromCart.bind(this)}
-                      onMarkPurchased={this.onMarkPurchased.bind(this)}
-                      onFollow={this.updateFollows.bind(this)}
-                      processingCart={this.state.processingCart}
-                    />
-                  )}
+                  path="/:path"
+                  render={props => {
+                    const query = new URLSearchParams(props.location.search)
+                    console.log({ props })
+                    return (
+                      <Player
+                        mode="app"
+                        listState={props.match.params.path}
+                        search={query.get('q')}
+                        initialPosition={NaN}
+                        addingToCart={this.state.addingToCart}
+                        onUpdateTracksClicked={this.updateTracks.bind(this)}
+                        carts={this.state.carts}
+                        notifications={this.state.notifications}
+                        notificationsEnabled={this.state.userSettings.emailVerified}
+                        onRequestNotification={this.requestNotification.bind(this)}
+                        onRemoveNotification={this.removeNotification.bind(this)}
+                        follows={this.state.follows}
+                        tracks={this.state.tracksData.tracks}
+                        newTracks={this.state.tracksData.meta.newTracks}
+                        totalTracks={this.state.tracksData.meta.totalTracks}
+                        onAddToCart={this.addToCart.bind(this)}
+                        onRemoveFromCart={this.removeFromCart.bind(this)}
+                        onMarkPurchased={this.onMarkPurchased.bind(this)}
+                        onFollow={this.updateFollows.bind(this)}
+                        processingCart={this.state.processingCart}
+                      />
+                    )
+                  }}
                 />
                 <Route
                   exact
