@@ -318,7 +318,7 @@ class App extends Component {
                       <Player
                         mode="app"
                         listState={props.match.params.path}
-                        search={query.get('q')}
+                        search={query.get('q') || undefined}
                         initialPosition={NaN}
                         addingToCart={this.state.addingToCart}
                         onUpdateTracksClicked={this.updateTracks.bind(this)}
