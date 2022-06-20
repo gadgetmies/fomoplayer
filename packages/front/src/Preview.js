@@ -312,20 +312,22 @@ class Preview extends Component {
               />
               {currentTrack ? (
                 <div className="preview-icons-container select-icon--container">
-                  {currentTrack?.previews?.map(({ id, store }) => (
-                    <span key={id} onMouseDown={e => e.stopPropagation()}>
-                      <input
-                        type="radio"
-                        id={`preview-${id}`}
-                        name="preview"
-                        checked={this.state.mp3Preview?.id === id}
-                        onChange={this.onPreviewStoreClicked.bind(this, id)}
-                      />
-                      <label className="select-icon--icon" htmlFor={`preview-${id}`}>
-                        <StoreIcon code={store} />
-                      </label>
-                    </span>
-                  ))}
+                  {currentTrack?.previews
+                    ?.reduce((acc, cur) => (acc.some(({ store }) => store === cur.store) ? acc : [...acc, cur]), [])
+                    .map(({ id, store }) => (
+                      <span key={id} onMouseDown={e => e.stopPropagation()}>
+                        <input
+                          type="radio"
+                          id={`preview-${id}`}
+                          name="preview"
+                          checked={this.state.mp3Preview?.id === id}
+                          onChange={this.onPreviewStoreClicked.bind(this, id)}
+                        />
+                        <label className="select-icon--icon" htmlFor={`preview-${id}`}>
+                          <StoreIcon code={store} />
+                        </label>
+                      </span>
+                    ))}
                 </div>
               ) : null}
               {this.state.loading ? (
