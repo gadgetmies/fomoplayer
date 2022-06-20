@@ -758,7 +758,11 @@ class Settings extends Component {
                 <div className="input-layout">
                   <input
                     className="text-input text-input-large text-input-dark"
-                    disabled={this.state.updatingNotifications}
+                    disabled={
+                      this.state.updatingNotifications ||
+                      this.state.updatingEmail ||
+                      !this.props.userSettings.emailVerified
+                    }
                     value={this.state.notificationSearch}
                     onChange={e => {
                       this.setState({ notificationSearch: e.target.value })
@@ -766,7 +770,11 @@ class Settings extends Component {
                   />
                   <SpinnerButton
                     className="button button-push_button-large button-push_button-primary"
-                    disabled={this.state.updatingNotifications}
+                    disabled={
+                      this.state.updatingNotifications ||
+                      this.state.updatingEmail ||
+                      !this.props.userSettings.emailVerified
+                    }
                     loading={this.state.updatingNotifications}
                     onClick={async () => {
                       await this.props.onRequestNotification(this.state.notificationSearch)
