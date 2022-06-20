@@ -123,9 +123,7 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = '
 
     const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, sourceId)
 
-    if (Date.now() - new Date(track.published) > aYear) {
-      logger.info(`Skipping track published on ${track.published}`)
-    } else {
+    if (Date.now() - new Date(track.published) < aYear) {
       for (const userId of userIds) {
         await addTrackToUser(tx, userId, artists, trackId, labelId, sourceId)
 
