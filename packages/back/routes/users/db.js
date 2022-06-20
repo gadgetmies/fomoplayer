@@ -1017,19 +1017,10 @@ const updateNotificationTracks = (module.exports.updateNotificationTracks = asyn
   await tx.queryAsync(
     // language=PostgreSQL
     sql`--updateNotificationTracks delete
-DELETE
-FROM user_search_notification__track
+UPDATE user_search_notification
+SET user_search_notification_tracks = ${trackIds}
 WHERE user_search_notification_id = ${notificationId}
 `
-  )
-
-  await tx.queryAsync(
-    // language=PostgreSQL
-    sql`--updateNotificationTracks insert
-    INSERT INTO user_search_notification__track (user_search_notification_id, track_id)
-    SELECT ${notificationId}, track_id
-    FROM unnest(${trackIds} :: INTEGER[]) AS track_id
-    `
   )
 })
 
