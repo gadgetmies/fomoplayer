@@ -313,8 +313,23 @@ class App extends Component {
                   path="/:path"
                   render={props => {
                     const query = new URLSearchParams(props.location.search)
-                    console.log({ props })
-                    return (
+                    return props.match.params.path === 'settings' ? (
+                      <Settings
+                        carts={this.state.carts}
+                        onUpdateCarts={this.updateCarts.bind(this)}
+                        notifications={this.state.notifications}
+                        onRequestNotification={this.requestNotification.bind(this)}
+                        onRemoveNotification={this.removeNotification.bind(this)}
+                        onMarkHeardClicked={this.markHeard.bind(this)}
+                        onUpdateEmail={this.updateEmail.bind(this)}
+                        newTracks={this.state.tracksData.meta.newTracks}
+                        totalTracks={this.state.tracksData.meta.totalTracks}
+                        userSettings={this.state.userSettings}
+                        scoreWeights={this.state.scoreWeights}
+                        tracks={this.state.tracksData.tracks}
+                        follows={this.state.follows}
+                      />
+                    ) : (
                       <Player
                         mode="app"
                         listState={props.match.params.path}
@@ -339,27 +354,6 @@ class App extends Component {
                       />
                     )
                   }}
-                />
-                <Route
-                  exact
-                  path="/settings"
-                  render={() => (
-                    <Settings
-                      carts={this.state.carts}
-                      onUpdateCarts={this.updateCarts.bind(this)}
-                      notifications={this.state.notifications}
-                      onRequestNotification={this.requestNotification.bind(this)}
-                      onRemoveNotification={this.removeNotification.bind(this)}
-                      onMarkHeardClicked={this.markHeard.bind(this)}
-                      onUpdateEmail={this.updateEmail.bind(this)}
-                      newTracks={this.state.tracksData.meta.newTracks}
-                      totalTracks={this.state.tracksData.meta.totalTracks}
-                      userSettings={this.state.userSettings}
-                      scoreWeights={this.state.scoreWeights}
-                      tracks={this.state.tracksData.tracks}
-                      follows={this.state.follows}
-                    />
-                  )}
                 />
               </SlideoutPanel>
             </>
