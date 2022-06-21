@@ -867,28 +867,36 @@ module.exports.queryUserCartDetails = async userId => {
     WITH
         cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_is_purchased, cart_uuid FROM cart WHERE meta_account_user_id=${userId})
        , cart_tracks AS (
-           SELECT * FROM (
-               SELECT ROW_NUMBER() OVER (PARTITION BY cart_id) AS r, t.* FROM (
-                    SELECT cart_id, track_id FROM track__cart NATURAL JOIN cart_details GROUP BY 1, 2, track__cart_added ORDER BY track__cart_added DESC 
-               ) t
-           ) x WHERE x.r < 100
-         ) 
-       , td AS (
-           SELECT *, user__track_heard as heard, track_id AS id 
-           FROM track_details((SELECT array_agg(DISTINCT track_id) FROM cart_tracks)) 
-               NATURAL LEFT JOIN user__track 
-           WHERE meta_account_user_id = ${userId}
-         )
-       , tracks AS (SELECT cart_id, json_agg(td) AS tracks FROM cart_tracks NATURAL JOIN td GROUP BY 1)
-    SELECT
-           cart_id                       AS id
-         , cart_name                     AS name
-         , cart_is_default IS NOT NULL   AS is_default
-         , cart_is_public                AS is_public
-         , cart_is_purchased IS NOT NULL AS is_purchased
-         , cart_uuid                     AS uuid
-         , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
-    FROM
+           SELECT *
+    FROM (
+             SELECT ROW_NUMBER() OVER (PARTITION BY cart_id) AS r, t.*
+             FROM (
+                      SELECT cart_id, track_id, track__cart_added
+                      FROM track__cart
+                               NATURAL JOIN cart_details
+                      GROUP BY 1, 2, 3
+                  ) t
+         ) x
+    WHERE x.r < 100
+)
+   , td AS (
+    SELECT DISTINCT ON (track_id) *, user__track_heard as heard, track_id AS id
+    FROM track_details((SELECT array_agg(track_id) FROM cart_tracks))
+             NATURAL LEFT JOIN user__track
+    WHERE meta_account_user_id = ${userId}
+)
+   , tracks AS (SELECT cart_id, json_agg(td ORDER BY track__cart_added DESC) AS tracks
+                FROM cart_tracks
+                         NATURAL JOIN td
+                GROUP BY 1)
+SELECT cart_id                                                                AS id
+     , cart_name                                                              AS name
+     , cart_is_default IS NOT NULL                                            AS is_default
+     , cart_is_public                                                         AS is_public
+     , cart_is_purchased IS NOT NULL                                          AS is_purchased
+     , cart_uuid                                                              AS uuid
+     , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
+FROM 
         cart_details NATURAL LEFT JOIN
         tracks
     ORDER BY cart_is_default, cart_is_purchased, cart_name
