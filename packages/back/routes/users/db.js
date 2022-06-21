@@ -398,151 +398,203 @@ module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, 
     let query =
       // language=PostgreSQL
       sql`-- queryUserTracks
-    WITH logged_user AS (
+WITH
+    logged_user AS (
         SELECT ${userId} :: INT AS meta_account_user_id
     )
-       , user_purchased_tracks AS (
-        SELECT track_id
-        FROM track__cart
+  , user_purchased_tracks AS (
+    SELECT
+        track_id
+    FROM
+        track__cart
             NATURAL JOIN cart
             NATURAL JOIN logged_user
-        WHERE cart_is_purchased
-    )
-       , user_tracks_meta AS (
-        SELECT COUNT(*)                                          AS total
-             , COUNT(*) FILTER (WHERE user__track_heard IS NULL) AS new
-        FROM user__track
-                 NATURAL JOIN logged_user
-        WHERE track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
-    )
-       , new_tracks AS (
-        SELECT track_id
-             , track_added
-             , user__track_heard
-        FROM logged_user
-                 NATURAL JOIN user__track
-                 NATURAL JOIN track
-        WHERE user__track_heard IS NULL
-          AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
-        ORDER BY track_added DESC
-    )
-       , tracks_to_score AS (
-       SELECT track_id FROM new_tracks LIMIT 500
-    )
-       , label_scores AS (
-        SELECT track_id
-             , SUM(COALESCE(user_label_scores_score, 0)) AS label_score
-        FROM tracks_to_score
-                 NATURAL LEFT JOIN track__label
-                 NATURAL LEFT JOIN user_label_scores
-        GROUP BY 1
-    )
-       , label_follow_scores AS (
-        SELECT track_id,
-               CASE WHEN BOOL_OR(meta_account_user_id IS NOT NULL) THEN 1 ELSE 0 END AS label_follow_score
-        FROM tracks_to_score
-                 NATURAL LEFT JOIN track__label
-                 NATURAL LEFT JOIN store__label
-                 NATURAL LEFT JOIN store__label_watch
-                 NATURAL LEFT JOIN store__label_watch__user
-                 NATURAL LEFT JOIN logged_user
-        GROUP BY 1
-    )
-       , artist_scores AS (
-        SELECT track_id
-             , SUM(COALESCE(user_artist_scores_score, 0)) AS artist_score
-        FROM new_tracks
-                 NATURAL JOIN track__artist
-                 NATURAL LEFT JOIN user_artist_scores
-        GROUP BY 1
-    )
-       , artist_follow_scores AS (
-        WITH follows AS (
-            SELECT DISTINCT ON (track_id, artist_id) track_id
-                                                   , CASE WHEN BOOL_OR(store__artist_watch_id IS NOT NULL) THEN 1 ELSE 0 END AS score
-            FROM tracks_to_score
-                     NATURAL JOIN track__artist
-                     NATURAL JOIN store__artist
-                     NATURAL LEFT JOIN store__artist_watch
-                     NATURAL LEFT JOIN store__artist_watch__user
-                     NATURAL LEFT JOIN logged_user
+    WHERE
+        cart_is_purchased
+)
+  , user_tracks_meta AS (
+    SELECT
+        COUNT(*)                                          AS total
+      , COUNT(*) FILTER (WHERE user__track_heard IS NULL) AS new
+    FROM
+        user__track
+            NATURAL JOIN logged_user
+    WHERE
+        track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
+)
+  , new_tracks AS (
+    SELECT
+        track_id
+      , track_added
+      , user__track_heard
+    FROM
+        logged_user
+            NATURAL JOIN user__track
+            NATURAL JOIN track
+    WHERE
+          user__track_heard IS NULL
+      AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
+    ORDER BY track_added DESC
+)
+  , tracks_to_score AS (
+    SELECT track_id
+    FROM new_tracks
+    LIMIT 500
+)
+  , label_scores AS (
+    SELECT
+        track_id
+      , SUM(COALESCE(user_label_scores_score, 0)) AS label_score
+    FROM
+        tracks_to_score
+            NATURAL LEFT JOIN track__label
+            NATURAL LEFT JOIN user_label_scores
+    GROUP BY 1
+)
+  , label_follow_scores AS (
+    SELECT
+        track_id
+      , CASE WHEN BOOL_OR(meta_account_user_id IS NOT NULL) THEN 1 ELSE 0 END AS label_follow_score
+    FROM
+        tracks_to_score
+            NATURAL LEFT JOIN track__label
+            NATURAL LEFT JOIN store__label
+            NATURAL LEFT JOIN store__label_watch
+            NATURAL LEFT JOIN store__label_watch__user
+            NATURAL LEFT JOIN logged_user
+    GROUP BY 1
+)
+  , artist_scores AS (
+    SELECT
+        track_id
+      , SUM(COALESCE(user_artist_scores_score, 0)) AS artist_score
+    FROM
+        new_tracks
+            NATURAL JOIN track__artist
+            NATURAL LEFT JOIN user_artist_scores
+    GROUP BY 1
+)
+  , artist_follow_scores AS (
+    WITH
+        follows AS (
+            SELECT DISTINCT ON (track_id, artist_id)
+                track_id
+              , CASE WHEN BOOL_OR(store__artist_watch_id IS NOT NULL) THEN 1 ELSE 0 END AS score
+            FROM
+                tracks_to_score
+                    NATURAL JOIN track__artist
+                    NATURAL JOIN store__artist
+                    NATURAL LEFT JOIN store__artist_watch
+                    NATURAL LEFT JOIN store__artist_watch__user
+                    NATURAL LEFT JOIN logged_user
             GROUP BY 1, artist_id
         )
-        SELECT track_id,
-               SUM(score) AS artist_follow_score
-        FROM follows
-        GROUP BY 1
-    )
-       , user_score_weights AS (
-        SELECT user_track_score_weight_code
-             , user_track_score_weight_multiplier
-        FROM user_track_score_weight
-                 NATURAL JOIN logged_user
-    )
-       , new_tracks_with_scores AS (
-        SELECT track_id
-             , user__track_heard
-             , label_score * COALESCE(label_multiplier, 0) +
-               artist_score * COALESCE(artist_multiplier, 0) +
-               artist_follow_score * COALESCE(artist_follow_multiplier, 0) +
-               label_follow_score * COALESCE(label_follow_multiplier, 0) +
-               COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
-               COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) +
-               COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) AS score
-             , JSON_BUILD_OBJECT(
+    SELECT
+        track_id
+      , SUM(score) AS artist_follow_score
+    FROM
+        follows
+    GROUP BY 1
+)
+  , user_score_weights AS (
+    SELECT
+        user_track_score_weight_code
+      , user_track_score_weight_multiplier
+    FROM
+        user_track_score_weight
+            NATURAL JOIN logged_user
+)
+  , new_tracks_with_scores AS (
+    SELECT
+        track_id
+      , user__track_heard
+      , label_score * COALESCE(label_multiplier, 0) +
+        artist_score * COALESCE(artist_multiplier, 0) +
+        artist_follow_score * COALESCE(artist_follow_multiplier, 0) +
+        label_follow_score * COALESCE(label_follow_multiplier, 0) +
+        COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
+        COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) +
+        COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) AS score
+      , JSON_BUILD_OBJECT(
                 'artist', JSON_BUILD_OBJECT('score', artist_score, 'weight', artist_multiplier),
                 'artist_follow', JSON_BUILD_OBJECT('score', artist_follow_score, 'weight', artist_follow_multiplier),
                 'label', JSON_BUILD_OBJECT('score', label_score, 'weight', label_multiplier),
                 'label_follow', JSON_BUILD_OBJECT('score', label_follow_score, 'weight', label_follow_multiplier),
-                'date_added', JSON_BUILD_OBJECT('score', round(added_score.score, 1), 'weight', date_added_multiplier),
-                'date_released', JSON_BUILD_OBJECT('score', round(released_score.score, 1), 'weight', date_released_multiplier),
-                'date_published', JSON_BUILD_OBJECT('score', round(published_score.score, 1), 'weight', date_published_multiplier)
-            )                                                                            AS score_details
-        FROM (SELECT track_id
-                   , user__track_heard
-                   , label_score
-                   , artist_score
-                   , label_follow_score
-                   , artist_follow_score
-                   , track_added
-                   , (SELECT user_track_score_weight_multiplier
-                      FROM user_score_weights
-                      WHERE user_track_score_weight_code = 'label'
-            ) AS label_multiplier
-                   , (SELECT user_track_score_weight_multiplier
-                      FROM user_score_weights
-                      WHERE user_track_score_weight_code = 'artist'
-            ) AS artist_multiplier
-                   , (SELECT user_track_score_weight_multiplier
-                      FROM user_score_weights
-                      WHERE user_track_score_weight_code = 'artist_follow'
-            ) AS artist_follow_multiplier
-                   , (SELECT user_track_score_weight_multiplier
-                      FROM user_score_weights
-                      WHERE user_track_score_weight_code = 'label_follow'
-            ) AS label_follow_multiplier
-                   , (SELECT user_track_score_weight_multiplier
-                      FROM user_score_weights
-                      WHERE user_track_score_weight_code = 'date_added'
-            ) AS date_added_multiplier
-                   , (SELECT user_track_score_weight_multiplier
-                      FROM user_score_weights
-                      WHERE user_track_score_weight_code = 'date_released'
-            ) AS date_released_multiplier
-                   , (SELECT user_track_score_weight_multiplier
-                      FROM user_score_weights
-                      WHERE user_track_score_weight_code = 'date_published'
-            ) AS date_published_multiplier
-              FROM new_tracks
-                       NATURAL LEFT JOIN label_scores
-                       NATURAL LEFT JOIN artist_scores
-                       NATURAL LEFT JOIN label_follow_scores
-                       NATURAL LEFT JOIN artist_follow_scores
-             ) AS tracks
-                 LEFT JOIN track_date_added_score AS added_score USING (track_id)
-                 LEFT JOIN track_date_released_score AS released_score USING (track_id)
-                 LEFT JOIN track_date_published_score AS published_score USING (track_id)
-        ORDER BY `
+                'date_added', JSON_BUILD_OBJECT('score', ROUND(added_score.score, 1), 'weight', date_added_multiplier),
+                'date_released',
+                JSON_BUILD_OBJECT('score', ROUND(released_score.score, 1), 'weight', date_released_multiplier),
+                'date_published',
+                JSON_BUILD_OBJECT('score', ROUND(published_score.score, 1), 'weight', date_published_multiplier)
+            )                                                                       AS score_details
+    FROM
+        (SELECT
+             track_id
+           , user__track_heard
+           , label_score
+           , artist_score
+           , label_follow_score
+           , artist_follow_score
+           , track_added
+           , (SELECT
+                  user_track_score_weight_multiplier
+              FROM
+                  user_score_weights
+              WHERE
+                  user_track_score_weight_code = 'label'
+             ) AS label_multiplier
+           , (SELECT
+                  user_track_score_weight_multiplier
+              FROM
+                  user_score_weights
+              WHERE
+                  user_track_score_weight_code = 'artist'
+             ) AS artist_multiplier
+           , (SELECT
+                  user_track_score_weight_multiplier
+              FROM
+                  user_score_weights
+              WHERE
+                  user_track_score_weight_code = 'artist_follow'
+             ) AS artist_follow_multiplier
+           , (SELECT
+                  user_track_score_weight_multiplier
+              FROM
+                  user_score_weights
+              WHERE
+                  user_track_score_weight_code = 'label_follow'
+             ) AS label_follow_multiplier
+           , (SELECT
+                  user_track_score_weight_multiplier
+              FROM
+                  user_score_weights
+              WHERE
+                  user_track_score_weight_code = 'date_added'
+             ) AS date_added_multiplier
+           , (SELECT
+                  user_track_score_weight_multiplier
+              FROM
+                  user_score_weights
+              WHERE
+                  user_track_score_weight_code = 'date_released'
+             ) AS date_released_multiplier
+           , (SELECT
+                  user_track_score_weight_multiplier
+              FROM
+                  user_score_weights
+              WHERE
+                  user_track_score_weight_code = 'date_published'
+             ) AS date_published_multiplier
+         FROM
+             new_tracks
+                 NATURAL LEFT JOIN label_scores
+                 NATURAL LEFT JOIN artist_scores
+                 NATURAL LEFT JOIN label_follow_scores
+                 NATURAL LEFT JOIN artist_follow_scores
+        ) AS tracks
+            LEFT JOIN track_date_added_score AS added_score USING (track_id)
+            LEFT JOIN track_date_released_score AS released_score USING (track_id)
+            LEFT JOIN track_date_published_score AS published_score USING (track_id)
+    ORDER BY `
 
     sortParameters.forEach(([column, order]) =>
       query
@@ -864,15 +916,16 @@ module.exports.queryUserCartDetails = async userId => {
   const details = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryCartDetails
-    WITH
-        cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_is_purchased, cart_uuid FROM cart WHERE meta_account_user_id=${userId})
-       , cart_tracks AS (
-           SELECT *
+WITH cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_is_purchased, cart_uuid
+                      FROM cart
+                      WHERE meta_account_user_id = ${userId})
+   , cart_tracks AS (
+    SELECT *
     FROM (
              SELECT ROW_NUMBER() OVER (PARTITION BY cart_id) AS r, t.*
              FROM (
-                      SELECT cart_id, track_id, track__cart_added
-                      FROM track__cart
+                      SELECT cart_id, track_id
+                     , track__cart_added FROM track__cart
                                NATURAL JOIN cart_details
                       GROUP BY 1, 2, 3
                   ) t
@@ -880,7 +933,7 @@ module.exports.queryUserCartDetails = async userId => {
     WHERE x.r < 100
 )
    , td AS (
-    SELECT DISTINCT ON (track_id) *, user__track_heard as heard, track_id AS id
+    SELECT DISTINCT ON (track_id)*, user__track_heard as heard, track_id AS id
     FROM track_details((SELECT array_agg(track_id) FROM cart_tracks))
              NATURAL LEFT JOIN user__track
     WHERE meta_account_user_id = ${userId}
@@ -888,6 +941,7 @@ module.exports.queryUserCartDetails = async userId => {
    , tracks AS (SELECT cart_id, json_agg(td ORDER BY track__cart_added DESC) AS tracks
                 FROM cart_tracks
                          NATURAL JOIN td
+                         
                 GROUP BY 1)
 SELECT cart_id                                                                AS id
      , cart_name                                                              AS name
@@ -896,10 +950,10 @@ SELECT cart_id                                                                AS
      , cart_is_purchased IS NOT NULL                                          AS is_purchased
      , cart_uuid                                                              AS uuid
      , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
-FROM 
-        cart_details NATURAL LEFT JOIN
-        tracks
-    ORDER BY cart_is_default, cart_is_purchased, cart_name
+FROM cart_details
+         NATURAL LEFT JOIN
+     tracks
+ORDER BY cart_is_default, cart_is_purchased, cart_name
 `
   )
 
