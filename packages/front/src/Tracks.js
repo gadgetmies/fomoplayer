@@ -386,17 +386,15 @@ class Tracks extends Component {
                   Cart:
                 </label>
                 {this.props.mode === 'app' ? (
-                  <select
-                    className="select"
-                    id="cart-select"
-                    onChange={e => this.props.onSelectCart(parseInt(e.target.value))}
-                  >
-                    {this.props.carts.map(cart => (
-                      <option value={cart.id} key={cart.id}>
-                        {cart.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className={'select'}>
+                    <select id="cart-select" onChange={e => this.props.onSelectCart(parseInt(e.target.value))}>
+                      {this.props.carts.map(cart => (
+                        <option value={cart.id} key={cart.id}>
+                          {cart.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 ) : (
                   <span className="select-button--button select-button--button select-button--button__active">
                     {this.props.carts[0].name}
