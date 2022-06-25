@@ -424,8 +424,12 @@ class Tracks extends Component {
                   <div className={'label-cell track-table-cell text-header-cell'}>Label</div>
                 </div>
                 <div className={'track-details-center track-details-content'}>
-                  <div className={'added-cell track-table-cell text-header-cell'}>Added</div>
-                  <div className={'released-cell track-table-cell text-header-cell'}>Released</div>
+                  {this.props.listState === 'recent' && (
+                    <div className={'added-cell track-table-cell text-header-cell'}>Added</div>
+                  )}
+                  {this.props.listState !== 'recent' && (
+                    <div className={'released-cell track-table-cell text-header-cell'}>Released</div>
+                  )}
                 </div>
                 <div className={'track-details-right track-details-content'}>
                   <div className={'key-cell track-table-cell'}>Key</div>

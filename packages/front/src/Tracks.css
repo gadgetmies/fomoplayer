@@ -117,7 +117,7 @@
 
   .released-cell,
   .added-cell {
-    width: 33%;
+    width: 100%;
   }
 
   .key-cell {
