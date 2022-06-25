@@ -1059,13 +1059,22 @@ WHERE meta_account_user_id = ${userId}
   )
 
 module.exports.upsertNotification = async (tx, userId, searchString, trackIds) => {
-  const [{ notificationId }] = await tx.queryRowsAsync(
+  await tx.queryRowsAsync(
     // language=PostgreSQL
     sql`--insertNotification user_search_notification
     INSERT INTO user_search_notification (meta_account_user_id, user_search_notification_string)
     VALUES (${userId}, ${searchString})
-    RETURNING user_search_notification_id AS "notificationId"
+    ON CONFLICT ON CONSTRAINT user_search_notification_meta_account_user_id_user_search_n_key DO NOTHING
     `
+  )
+
+  const [{ notificationId }] = await tx.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--selectNotification user_search_notification
+SELECT user_search_notification_id AS "notificationId"
+FROM user_search_notification WHERE meta_account_user_id = ${userId} 
+                                AND user_search_notification_string = ${searchString}
+`
   )
 
   if (trackIds.length > 0) {
