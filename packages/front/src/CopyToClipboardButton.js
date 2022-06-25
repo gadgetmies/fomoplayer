@@ -21,8 +21,10 @@ class CopyToClipboardButton extends Component {
           await new Promise(resolve => setTimeout(resolve, 5000))
           this.setState({ copied: false })
         }}
+        title={this.props.title}
+        style={this.props.style}
       >
-        <FontAwesomeIcon icon={this.state.copied ? 'clipboard-check' : 'clipboard'} />
+        <FontAwesomeIcon icon={this.state.copied ? 'clipboard-check' : 'clipboard'} /> {this.props.label}
       </button>
     )
   }

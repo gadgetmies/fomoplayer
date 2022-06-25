@@ -4,7 +4,7 @@ import * as R from 'ramda'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import PillButton from './PillButton'
-import ExternalLink from './ExternalLink'
+import ShareLink from './ShareLink'
 import StoreIcon from './StoreIcon'
 import CopyToClipboardButton from './CopyToClipboardButton'
 import scoreWeights from './scoreWeights'
@@ -83,6 +83,7 @@ class Track extends Component {
 
     const artistsAndRemixers = R.uniq(this.props.artists.concat(this.props.remixers))
     const cartLink = new URL(`/cart/${this.props.cartUuid}`, window.location).toString()
+    const cartName = this.props.selectedCart?.name
     const handleCartButtonClick = this.handleCartButtonClick.bind(this)
     const handleMarkPurchasedButtonClick = this.handlMarkPurchasedButtonClick.bind(this)
     const currentCartId = this.props.listState === 'cart' ? this.props.selectedCartId : this.props.defaultCartId
@@ -90,6 +91,22 @@ class Track extends Component {
     const inDefaultCart = this.props.inDefaultCart
     const inCart = this.props.listState === 'cart' ? inCurrentCart : inDefaultCart
     const processingCart = this.props.processingCart || this.state.processingCart
+    const [shareLabel, shareContent, shareLink] =
+      this.props.listState === 'cart'
+        ? [
+            'Copy link to cart',
+            `Listen to "${artistsAndRemixers
+              .map(R.prop('name'))
+              .join(', ')} - ${title}" in "${cartName}" on Fomo Player: ${`${cartLink}#${this.props.index + 1}`}`,
+            'https://fomoplayer.com'
+          ]
+        : [
+            'Copy links to clipboard',
+            `Listen to "${artistsAndRemixers.map(R.prop('name')).join(', ')} - ${title}" on ${this.props.stores
+              .map(store => `${store.name}: ${store.url || store.release.url}`)
+              .join('\n')}`,
+            'https://fomoplayer.com'
+          ]
 
     return (
       <tr
@@ -154,15 +171,16 @@ class Track extends Component {
             </div>
           </div>
           <div className={'track-details-center track-details-content'}>
-            <div className={`added-cell track-table-cell ${this.props.added ? '' : 'empty-cell'}`}>
-              {this.props.added}
-            </div>
-            <div className={`released-cell track-table-cell ${this.props.released ? '' : 'empty-cell'}`}>
-              {this.props.released}
-            </div>
-            <div className={`published-cell track-table-cell ${this.props.published ? '' : 'empty-cell'}`}>
-              {this.props.published}
-            </div>
+            {this.props.listState === 'recent' && (
+              <div className={`added-cell track-table-cell ${this.props.added ? '' : 'empty-cell'}`}>
+                {this.props.added}
+              </div>
+            )}
+            {this.props.listState !== 'recent' && (
+              <div className={`released-cell track-table-cell ${this.props.released ? '' : 'empty-cell'}`}>
+                {this.props.released}
+              </div>
+            )}
           </div>
           <div className={'track-details-right track-details-content'}>
             <div className={'key-cell track-table-cell'}>
@@ -179,7 +197,7 @@ class Track extends Component {
           </div>
         </td>
         {this.props.mode === 'app' ? (
-          <td className={'follow-ignore-cart-cell tracks-cell'} style={{ overflow: 'visible' }}>
+          <td className={'follow-ignore-cart-cell tracks-cell'}>
             {this.props.listState === 'new' && (
               <div className={'score-cell track-table-cell'} style={{ position: 'relative', overflow: 'visible' }}>
                 <>
@@ -190,7 +208,7 @@ class Track extends Component {
                     className={`popup-content${
                       this.props.popupAbove ? ' popup-content__above' : ''
                     } score-popup-content`}
-                    style={{ width: 250, zIndex: 100 }}
+                    style={{ zIndex: 100 }}
                   >
                     <table className={'score-table'}>
                       <thead>
@@ -268,7 +286,7 @@ class Track extends Component {
                 </span>
                 <div
                   className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''} cart-popup-content`}
-                  style={{ width: 100, zIndex: 100 }}
+                  style={{ zIndex: 100 }}
                 >
                   <div className={'carts-list'}>
                     {this.props.carts.map(({ id, name }) => {
@@ -303,7 +321,7 @@ class Track extends Component {
                       )
                     })}
                   </div>
-                  {!this.props.selectedCartIsPurchased && (
+                  {!this.props.selectedCartIsPurchased && this.props.listState === 'cart' && (
                     <>
                       <hr className={'popup-divider'} />
                       <button
@@ -324,72 +342,132 @@ class Track extends Component {
             </div>
           </td>
         ) : null}
-        <td className={'open-search-cell tracks-cell'}>
-          <div className={'open-cell track-table-cell'}>
+        <td className={'open-share-cell tracks-cell'}>
+          <div className={'open-cell track-table-cell'} style={{ overflow: 'visible', position: 'relative' }}>
             {R.intersperse(
               ' ',
               this.props.stores.map(store => (
-                <ExternalLink
-                  showIcon={false}
+                <a
+                  onClick={e => {
+                    e.stopPropagation()
+                  }}
                   href={store.url || store.release.url}
                   title={`Open in ${store.name}`}
-                  className={'link link-icon'}
                   key={store.name}
+                  className="pill pill-link table-cell-button"
+                  target="_blank"
                 >
                   <StoreIcon code={store.code} />
-                </ExternalLink>
+                  <span className={'pill-link-text'}>{store.name}</span>
+                  <FontAwesomeIcon icon="external-link-alt" />
+                </a>
               ))
             )}{' '}
-            {this.props.listState === 'cart' ? (
-              <CopyToClipboardButton content={`${cartLink}#${this.props.index + 1}`} />
-            ) : (
-              <CopyToClipboardButton
-                content={`Listen to "${artistsAndRemixers.map(R.prop('name')).join(', ')} - ${title}" on
-${this.props.stores.map(store => `${store.name}: ${store.url || store.release.url}`).join('\n')}`}
-              />
-            )}
-          </div>
-          <div className="search-cell track-table-cell">
             {beaportTrack ? null : (
               <>
-                <ExternalLink
-                  className="link link-icon"
-                  showIcon={false}
+                <a
+                  onClick={e => e.stopPropagation()}
+                  className="pill pill-link table-cell-button"
                   href={`https://www.beatport.com/search/tracks?q=${searchString}`}
+                  title={'Search from Beatport'}
+                  target="_blank"
                 >
                   <StoreIcon code="beatport" />
-                </ExternalLink>{' '}
+                  <span className={'pill-link-text'}>Beatport</span>
+                  <FontAwesomeIcon icon={'search'} />
+                </a>{' '}
               </>
             )}
             {bandcampTrack ? null : (
               <>
-                <ExternalLink
-                  className="link link-icon"
-                  showIcon={false}
+                <a
+                  onClick={e => e.stopPropagation()}
+                  className="pill pill-link table-cell-button"
                   href={`https://bandcamp.com/search?q=${searchString}`}
+                  title={'Search from Bandcamp'}
+                  target="_blank"
                 >
                   <StoreIcon code="bandcamp" />
-                </ExternalLink>{' '}
+                  <span className={'pill-link-text'}>Bandcamp</span>
+                  <FontAwesomeIcon icon={'search'} />
+                </a>{' '}
               </>
             )}
             {spotifyTrack ? null : (
               <>
-                <ExternalLink
-                  className="link link-icon"
-                  showIcon={false}
+                <a
+                  onClick={e => e.stopPropagation()}
+                  className="pill pill-link table-cell-button"
                   href={`https://open.spotify.com/search/${searchString}`}
+                  title={'Search from Spotify'}
+                  target="_blank"
                 >
                   <StoreIcon code="spotify" />
-                </ExternalLink>{' '}
+                  <span className={'pill-link-text'}>Spotify</span>
+                  <FontAwesomeIcon icon={'search'} />
+                </a>{' '}
               </>
             )}
-            <ExternalLink
-              className="link link-icon"
-              showIcon={false}
+            <a
+              className="pill pill-link table-cell-button"
               href={`https://www.youtube.com/results?search_query=${searchString}`}
+              title={'Search from Youtube'}
+              onClick={e => {
+                e.stopPropagation()
+              }}
+              target={'_blank'}
             >
               <FontAwesomeIcon icon={['fab', 'youtube']} />
-            </ExternalLink>
+              <span className={'pill-link-text'}>Youtube</span>
+              <FontAwesomeIcon icon={'search'} />
+            </a>
+            <div className={'share-button-container'}>
+              <span className={'popup-anchor'}>
+                <PillButton className={'table-cell-button'}>
+                  <FontAwesomeIcon icon={'share'} /> <span className={'pill-button-text'}>Share</span>
+                  <FontAwesomeIcon icon={'caret-down'} />
+                </PillButton>
+              </span>
+              <div
+                className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''} share-popup-content`}
+                style={{ zIndex: 100 }}
+              >
+                <span
+                  className="pill pill-button table-cell-button"
+                  style={{ display: 'block', width: '100%', margin: 0, marginBottom: 4, padding: 0, border: 0 }}
+                >
+                  <span className="pill-button-contents">
+                    <CopyToClipboardButton
+                      title={shareLabel}
+                      label={shareLabel}
+                      content={shareContent}
+                      style={{ height: '2rem', width: '100%' }}
+                    />
+                  </span>
+                </span>
+                <ShareLink
+                  href={`https://telegram.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(
+                    shareContent
+                  )}`}
+                  icon={<FontAwesomeIcon icon={['fab', 'telegram']} />}
+                  label={'Share on Telegram'}
+                />
+                <ShareLink
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                    shareLink
+                  )}&t=${encodeURIComponent(shareContent)}`}
+                  icon={<FontAwesomeIcon icon={['fab', 'facebook']} />}
+                  label={'Share on Facebook'}
+                />
+                <ShareLink
+                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
+                    shareLink
+                  )}&text=${encodeURIComponent(shareContent)}`}
+                  icon={<FontAwesomeIcon icon={['fab', 'twitter']} />}
+                  label={'Share on Twitter'}
+                />
+              </div>
+            </div>
           </div>
         </td>
       </tr>

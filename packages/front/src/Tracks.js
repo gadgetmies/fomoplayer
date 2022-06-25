@@ -178,6 +178,7 @@ class Tracks extends Component {
               version={version}
               heard={heard}
               inDefaultCart={defaultCart ? defaultCart.tracks.find(R.propEq('id', id)) !== undefined : false}
+              selectedCart={this.props.selectedCart}
               inCurrentCart={inCarts.find(({ id }) => id === selectedCartId) !== undefined}
               inCarts={inCarts}
               popupAbove={tracks.length > 10 && tracks.length - index < 10}
@@ -440,9 +441,8 @@ class Tracks extends Component {
                   <div className={'cart-cell track-table-cell'}>Cart</div>
                 </th>
               ) : null}
-              <th className={'open-search-cell tracks-cell'}>
-                <div className={'open-cell track-table-cell'}>Open</div>
-                <div className={'search-cell track-table-cell'}>Search</div>
+              <th className={'open-share-cell tracks-cell'}>
+                <div className={'open-cell track-table-cell'}>Open / Share</div>
               </th>
             </tr>
           </thead>

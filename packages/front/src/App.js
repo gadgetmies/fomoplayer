@@ -14,7 +14,7 @@ import config from './config.js'
 
 import 'typeface-lato'
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faGithub, faChrome, faYoutube } from '@fortawesome/free-brands-svg-icons'
+import { faGithub, faChrome, faYoutube, faTwitter, faFacebook, faTelegram } from '@fortawesome/free-brands-svg-icons'
 import {
   faHeart,
   faHeartBroken,
@@ -40,10 +40,14 @@ import {
   faCaretDown,
   faBell,
   faBellSlash,
-  faSearch
+  faSearch,
+  faShare
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
+  faTwitter,
+  faFacebook,
+  faTelegram,
   faHeart,
   faHeartBroken,
   faPlus,
@@ -71,7 +75,8 @@ library.add(
   faCaretDown,
   faBell,
   faBellSlash,
-  faSearch
+  faSearch,
+  faShare
 )
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 

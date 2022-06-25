@@ -79,15 +79,15 @@
   }
 
   .track-details {
-    width: calc(74% - 3rem);
+    width: calc(60% - 3rem);
   }
 
   .track-details-left {
-    width: 61%;
+    width: 75%;
   }
 
   .track-details-center {
-    width: 27%;
+    width: 13%;
   }
 
   .track-details-right {
@@ -135,7 +135,7 @@
   }
 
   .follow-ignore-cart-cell {
-    width: 14%;
+    width: 16%;
   }
 
   .ignore-button-icon {
@@ -146,19 +146,51 @@
     display: none;
   }
 
-  .open-search-cell {
-    width: 12%;
+  .open-share-cell {
+    width: 24%;
   }
 
   .open-cell {
-    width: 40%;
+    width: 100%;
     text-align: center;
     overflow: visible;
   }
 
-  .search-cell {
-    width: 60%;
+  .share-cell {
+    width: 30%;
     text-align: center;
+  }
+
+  .cart-popup-content {
+    left: calc(50% - 50px - 6px);
+    width: 100px;
+  }
+
+  .share-button-container {
+    display: inline-block;
+    position: relative;
+    margin-left: 4px;
+  }
+
+  .score-popup-content {
+    width: 250px;
+    left: calc(50% - 125px - 6px);
+  }
+
+  .share-popup-content {
+    width: 8rem;
+    left: calc(50% - 125px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .track-table-cell .pill-link + .pill-link,
+  .track-table-cell .pill-button + .pill-link {
+    margin-left: 2px;
+  }
+
+  .track-table-cell .pill-link + .pill-button {
+    margin-left: 4px;
   }
 }
 
@@ -267,7 +299,7 @@
     content: 'Ignore...';
   }
 
-  .ignore-cart-cell {
+  .follow-ignore-cart-cell {
     width: 18%;
   }
 
@@ -283,26 +315,42 @@
     width: 100%;
   }
 
-  .open-search-cell {
+  .open-share-cell {
     width: 26%;
+    display: flex;
   }
 
-  .open-cell,
-  .search-cell {
+  .open-cell {
     width: 100%;
-    white-space: pre;
     text-align: center;
-  }
-
-  .open-cell::before {
-    content: 'Open:\A';
-  }
-
-  .search-cell::before {
-    content: 'Search:\A';
   }
 
   .email-not-verified-note {
     display: none;
+  }
+
+  .cart-popup-content {
+    width: 8rem;
+    right: calc(50% - 4rem - 6px);
+  }
+
+  .share-button-container {
+    margin-top: 4px;
+  }
+
+  .score-popup-content {
+    width: 14rem;
+    right: calc(50% - 7rem - 6px);
+  }
+
+  .share-popup-content {
+    left: 2px;
+    right: 2px;
+  }
+
+  .track-table-cell .pill-link + .pill-link,
+  .track-table-cell .pill-button + .pill-link,
+  .track-table-cell .pill-link + .pill-button {
+    margin-top: 4px;
   }
 }
