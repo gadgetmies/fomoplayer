@@ -279,7 +279,7 @@ class Player extends Component {
     } else if (this.state.listState === 'recent') {
       tracks = this.props.tracks.recentlyAdded.slice()
     } else if (this.state.listState === 'cart') {
-      tracks = this.props.carts.find(R.propEq('id', this.state.selectedCartId)).tracks
+      tracks = this.props.carts?.find(R.propEq('id', this.state.selectedCartId))?.tracks || []
     } else if (this.state.listState === 'search') {
       tracks = this.state.searchResults
     }
