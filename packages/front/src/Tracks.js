@@ -281,15 +281,12 @@ class Tracks extends Component {
                 </label>
                 <input
                   type="radio"
-                  id="tracklist-state-recentlyAdded"
+                  id="tracklist-state-recent"
                   name="tracklist-state"
-                  defaultChecked={this.props.listState === 'recentlyAdded'}
+                  defaultChecked={this.props.listState === 'recent'}
                   onChange={this.props.onShowRecentlyAddedClicked}
                 />
-                <label
-                  className="select-button--button state-select-button--button"
-                  htmlFor="tracklist-state-recentlyAdded"
-                >
+                <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-recent">
                   Recently added
                 </label>
                 <input
