@@ -10,6 +10,7 @@ import PillButton from './PillButton'
 import scoreWeightDetails from './scoreWeights'
 import Tracks from './Tracks'
 import FollowItemButton from './FollowItemButton'
+import { Link } from 'react-router-dom'
 
 const storeNames = {
   bandcamp: 'Bandcamp',
@@ -789,16 +790,25 @@ class Settings extends Component {
               <ul className="no-style-list follow-list">
                 {this.props.notifications.map(({ id, text }) => (
                   <li key={id}>
-                    <PillButton
-                      disabled={this.state.updatingNotifications}
-                      onClick={async () => {
-                        this.setState({ updatingNotifications: true })
-                        await this.props.onRemoveNotification(id)
-                        this.setState({ updatingNotifications: false })
-                      }}
-                    >
-                      {text} <FontAwesomeIcon icon="bell-slash" />
-                    </PillButton>
+                    <span className={'button pill pill-button'}>
+                      <span className={'pill-button-contents'}>
+                        <Link to={`/search/?q=${text}`} title={`Search for "${text}"`}>
+                          {text}
+                        </Link>{' '}
+                        <button
+                          disabled={this.state.updatingNotifications}
+                          onClick={async e => {
+                            e.stopPropagation()
+                            this.setState({ updatingNotifications: true })
+                            await this.props.onRemoveNotification(id)
+                            this.setState({ updatingNotifications: false })
+                          }}
+                          title={`Unsubscribe from "${text}"`}
+                        >
+                          <FontAwesomeIcon icon="times-circle" />
+                        </button>
+                      </span>
+                    </span>
                   </li>
                 ))}
               </ul>
