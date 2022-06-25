@@ -222,6 +222,10 @@ button::-moz-focus-inner {
   font-size: 0.7rem;
 }
 
+.mobile .button-push_button-small {
+  line-height: 2;
+}
+
 .button-push_button-large {
   border-radius: 0.25rem;
   padding: 0.375rem 0.75rem;
@@ -434,8 +438,15 @@ audio {
   background: currentColor;
 }
 
+.mobile .pill-button {
+  line-height: 1.5;
+}
+
 .pill-button-contents {
   filter: invert(100%);
+  vertical-align: middle;
+}
+
 }
 
 .no-style-list {
@@ -507,6 +518,10 @@ audio {
   cursor: pointer;
   opacity: 0.7;
   text-align: center;
+}
+
+.mobile .select-button--button {
+  line-height: 2;
 }
 
 .select-button--container input[type='radio'],
