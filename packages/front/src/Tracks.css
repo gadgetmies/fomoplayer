@@ -253,6 +253,13 @@
     white-space: pre;
   }
 
+  .score-cell button::before {
+    content: 'Score: ';
+    white-space: pre;
+    filter: invert(100%);
+    vertical-align: middle;
+  }
+
   .follow-button-label::before {
     content: 'Follow...';
   }
