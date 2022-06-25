@@ -27,6 +27,10 @@ a:active {
   margin-top: 80px;
 }
 
+.mobile .keyboard-shortcuts {
+  display: none;
+}
+
 .ignored {
   text-decoration: line-through;
 }

@@ -357,7 +357,7 @@ class Player extends Component {
     const tracks = this.getTracks()
     const currentTrack = this.getCurrentTrack()
     return (
-      <div className="page-container">
+      <div className={`page-container ${this.props.isMobile ? 'mobile' : ''}`}>
         {this.props.follows ? (
           <FollowPopup
             open={this.state.followPopupOpen}

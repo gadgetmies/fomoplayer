@@ -41,11 +41,11 @@
     -webkit-mask-size: 100% 60px;
   }
 
-  .volume-slider {
-    display: none;
-  }
-
   .waveform_container {
     height: 60px;
   }
+}
+
+.mobile .volume-slider {
+  display: none;
 }

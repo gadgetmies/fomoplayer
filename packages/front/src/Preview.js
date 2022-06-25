@@ -14,7 +14,7 @@ import { trackArtistsAndTitle, trackTitle } from './trackFunctions'
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
 const getShortcuts = mode => (
-  <div style={{ float: 'right', color: 'white' }} className="popup-container">
+  <div style={{ float: 'right', color: 'white' }} className="popup-container keyboard-shortcuts">
     <FontAwesomeIcon
       icon="keyboard"
       className="popup-anchor"
