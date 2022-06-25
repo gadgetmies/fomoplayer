@@ -39,6 +39,10 @@
   color: var(--select-color);
 }
 
+.mobile .select {
+  line-height: 2;
+}
+
 .select select,
 .select::after {
   grid-area: select;
