@@ -24,7 +24,7 @@
   width: 100%;
 }
 
-@media (min-width: 800px) {
+@media (min-width: 900px) {
   .waveform-position {
     mask-size: 100% 40px;
     -webkit-mask-size: 100% 40px;
@@ -35,7 +35,7 @@
   }
 }
 
-@media (max-width: 799px) {
+@media (max-width: 899px) {
   .waveform-position {
     mask-size: 100% 60px;
     -webkit-mask-size: 100% 60px;

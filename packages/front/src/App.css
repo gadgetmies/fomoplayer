@@ -780,7 +780,7 @@ input[type='range']::-webkit-slider-runnable-track {
   background: transparent;
 }
 
-@media (max-width: 799px) {
+@media (max-width: 899px) {
   .full-screen-popup {
     margin: 2em;
   }
@@ -915,7 +915,7 @@ input[type='range']::-webkit-slider-runnable-track {
   }
 }
 
-@media (min-width: 800px) {
+@media (min-width: 900px) {
   .full-screen-popup {
     max-width: 50%;
   }
