@@ -102,7 +102,7 @@ class Track extends Component {
           ]
         : [
             'Copy links to clipboard',
-            `Listen to "${artistsAndRemixers.map(R.prop('name')).join(', ')} - ${title}" on ${this.props.stores
+            `Listen to "${artistsAndRemixers.map(R.prop('name')).join(', ')} - ${title}" on\n${this.props.stores
               .map(store => `${store.name}: ${store.url || store.release.url}`)
               .join('\n')}`,
             'https://fomoplayer.com'
