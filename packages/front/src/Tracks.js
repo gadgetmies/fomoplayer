@@ -426,7 +426,6 @@ class Tracks extends Component {
                 <div className={'track-details-center track-details-content'}>
                   <div className={'added-cell track-table-cell text-header-cell'}>Added</div>
                   <div className={'released-cell track-table-cell text-header-cell'}>Released</div>
-                  <div className={'published-cell track-table-cell text-header-cell'}>Published</div>
                 </div>
                 <div className={'track-details-right track-details-content'}>
                   <div className={'key-cell track-table-cell'}>Key</div>
