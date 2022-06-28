@@ -1,0 +1,2 @@
+ALTER TABLE store__artist_watch DROP COLUMN store__artist_watch_last_update;
+ALTER TABLE store__label_watch DROP COLUMN store__label_watch_last_update;
