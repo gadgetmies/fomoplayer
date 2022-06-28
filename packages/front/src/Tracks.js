@@ -44,9 +44,9 @@ class Tracks extends Component {
     if (current) {
       const currentRect = current.getBoundingClientRect()
       const parentRect = current.parentElement.getBoundingClientRect()
-      if (currentRect.y - parentRect.y - currentRect.height > parentRect.height) {
+      if (currentRect.y - parentRect.y > parentRect.height) {
         currentBelowScreen = true
-      } else if (currentRect.y - parentRect.y < 0) {
+      } else if (currentRect.y - parentRect.y + currentRect.height < 0) {
         currentAboveScreen = true
       }
     }
