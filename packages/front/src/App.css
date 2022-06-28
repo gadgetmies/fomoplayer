@@ -481,7 +481,7 @@ audio {
 }
 
 .table-cell-button {
-  opacity: 0.5;
+  opacity: 0.75;
 }
 
 .table-cell-button:disabled {
