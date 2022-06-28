@@ -18,7 +18,7 @@ WHERE
     store_url = ${storeUrl}
 AND (playlist_last_update IS NULL OR playlist_last_update + INTERVAL '6 hours' < NOW())
 ORDER BY
-  playlist_last_update DESC NULLS FIRST
+  playlist_last_update NULLS FIRST
 LIMIT 20
 `
   )
@@ -41,7 +41,7 @@ WHERE
 AND store__artist_url IS NOT NULL
 AND (store__artist_last_update IS NULL OR store__artist_last_update + INTERVAL '6 hours' < NOW())
 ORDER BY
-  store__artist_last_update DESC NULLS FIRST
+  store__artist_last_update NULLS FIRST
 LIMIT 20
 `
   )
@@ -63,7 +63,7 @@ WHERE
     store_name = ${storeUrl}
 AND (store__label_last_update IS NULL OR store__label_last_update + INTERVAL '6 hours' < NOW())
 ORDER BY
-  store__label_last_update DESC NULLS FIRST
+  store__label_last_update NULLS FIRST
 LIMIT 20
 `
   )
