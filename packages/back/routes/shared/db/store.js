@@ -105,7 +105,7 @@ RETURNING label_id
       FROM store
       WHERE store_url = ${storeUrl}
       ON CONFLICT ON CONSTRAINT store__label_store__label_store_id_store_id_key
-          DO UPDATE SET store__label_url = COALESCE(store__label.store__label_url, excluded.store__label_url)
+          DO UPDATE SET store__label_url = excluded.store__label_url
       `
     )
   }
