@@ -32,5 +32,7 @@ FROM
                            string_agg(coalesce(label_name, ''), ' '))) @@
               websearch_to_tsquery('simple', unaccent(${query}))
           ORDER BY MAX(LEAST(store__track_published, store__track_released)) DESC 
-         LIMIT 100) AS tracks))`
+         LIMIT 100) AS tracks))
+  ORDER BY released DESC
+`
   )
