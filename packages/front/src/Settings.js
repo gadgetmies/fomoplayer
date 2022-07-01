@@ -6,7 +6,6 @@ import Spinner from './Spinner'
 import ToggleButton from './ToggleButton'
 import CopyToClipboardButton from './CopyToClipboardButton'
 import * as R from 'ramda'
-import PillButton from './PillButton'
 import scoreWeightDetails from './scoreWeights'
 import Tracks from './Tracks'
 import FollowItemButton from './FollowItemButton'
@@ -15,7 +14,8 @@ import { Link } from 'react-router-dom'
 const storeNames = {
   bandcamp: 'Bandcamp',
   beatport: 'Beatport',
-  spotify: 'Spotify'
+  spotify: 'Spotify',
+  junodownload: 'Juno Download'
 }
 
 class Settings extends Component {
