@@ -45,7 +45,7 @@
     "spotify-web-api-node": "^5.0.2",
     "sql-template-strings": "^2.2.2",
     "type-is": "^1.6.18",
-    "vm2": "^3.9.9",
+    "vm2": "^3.9.11",
     "winston": "^3.3.3"
   },
   "devDependencies": {
