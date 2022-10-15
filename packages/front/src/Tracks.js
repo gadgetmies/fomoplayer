@@ -170,6 +170,7 @@ class Tracks extends Component {
               published={published}
               added={added}
               keys={keys}
+              bpms={stores.map(R.prop('bpm'))}
               score={score}
               scoreDetails={score_details}
               stores={stores}
@@ -430,6 +431,7 @@ class Tracks extends Component {
                   )}
                 </div>
                 <div className={'track-details-right track-details-content'}>
+                  <div className={'bpm-cell track-table-cell'}>BPM</div>
                   <div className={'key-cell track-table-cell'}>Key</div>
                 </div>
               </th>

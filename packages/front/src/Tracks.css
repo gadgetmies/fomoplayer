@@ -120,8 +120,8 @@
     width: 100%;
   }
 
-  .key-cell {
-    width: 100%;
+  .key-cell, .bpm-cell {
+    width: 50%;
     display: inline;
     text-align: center;
   }
@@ -281,6 +281,11 @@
 
   .key-cell::before {
     content: 'Key: ';
+    white-space: pre;
+  }
+
+  .bpm-cell::before {
+    content: 'BPM: ';
     white-space: pre;
   }
 

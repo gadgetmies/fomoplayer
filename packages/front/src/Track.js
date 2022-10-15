@@ -185,6 +185,17 @@ class Track extends Component {
             )}
           </div>
           <div className={'track-details-right track-details-content'}>
+            <div className={'bpm-cell track-table-cell'}>
+              {this.props.bpms.length === 0 ? (
+                '-'
+              ) : (
+                <ul className="comma-list">
+                  {this.props.bpms.filter(R.identity).map(bpm => (
+                    <li key={bpm}>{bpm}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <div className={'key-cell track-table-cell'}>
               {this.props.keys.length === 0 ? (
                 '-'

@@ -117,6 +117,7 @@ module.exports.beatportTracksTransform = L.collect([
       })
     ],
     key: ['key', L.reread(bpKey => bpKeysToCamelot[bpKey])],
+    bpm: ['bpm'],
     store_details: []
   })
 ])

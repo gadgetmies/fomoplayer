@@ -382,16 +382,18 @@ INSERT INTO store__track
    store__track_url,
    store__track_released,
    store__track_published,
+   store__track_bpm,
    store__track_store_details,
    store__track_source)
 VALUES
-  (${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track}, ${sourceId})
+  (${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track.bpm}, ${track}, ${sourceId})
 ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_track_id_key
   DO UPDATE
   SET
     store__track_url           = ${track.url}
   , store__track_released      = ${track.released}
   , store__track_published     = ${track.published}
+  , store__track_bpm           = ${track.bpm} 
   , store__track_store_details = ${track}
 `
   )
