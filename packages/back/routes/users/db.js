@@ -627,6 +627,7 @@ WITH
           FROM logged_user
                    NATURAL JOIN user__track
                    NATURAL JOIN track
+          WHERE user__track_heard IS NULL
           ORDER BY track_added DESC
           LIMIT ${limits.recent}
       )
