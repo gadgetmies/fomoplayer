@@ -632,11 +632,7 @@ class Settings extends Component {
                     onClick={async () => {
                       this.setState({ updatingCarts: true, addingCart: true })
                       try {
-                        await requestJSONwithCredentials({
-                          path: `/me/carts`,
-                          method: 'POST',
-                          body: { name: this.state.cartName }
-                        })
+                        await this.props.onCreateCart(this.state.cartName)
                         this.setState({ cartName: '' })
                         await this.props.onUpdateCarts()
                       } catch (e) {

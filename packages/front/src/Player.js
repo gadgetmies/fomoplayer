@@ -419,6 +419,8 @@ class Player extends Component {
           onFollow={this.props.onFollow}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onAddToCart={this.props.onAddToCart}
+          onCreateCart={this.props.onCreateCart}
+          onUpdateCarts={this.props.onUpdateCarts}
           onRemoveFromCart={this.props.onRemoveFromCart}
           onMarkPurchased={this.props.onMarkPurchased}
           onIgnoreArtistsByLabels={this.ignoreArtistsByLabels}

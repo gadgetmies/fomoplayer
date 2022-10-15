@@ -18,7 +18,8 @@ class Track extends Component {
       ignoreArtistsByLabelsDisabled: false,
       heardHover: false,
       heard: props.heard,
-      processingCart: false
+      processingCart: false,
+      newCartName: ''
     }
   }
 
@@ -64,6 +65,19 @@ class Track extends Component {
     }
   }
 
+  async handleCreateCartClick(cartName) {
+    try {
+      const res = await this.props.onCreateCart(cartName)
+      this.setState({ newCartName: '' })
+      await this.props.onUpdateCarts()
+      return res
+    } catch (e) {
+      console.error('Error while creating new cart', e)
+    } finally {
+      this.setState({ processingCart: false })
+    }
+  }
+
   async handlMarkPurchasedButtonClick() {
     this.setState({ processingCart: true })
     try {
@@ -87,6 +101,7 @@ class Track extends Component {
     const cartLink = new URL(`/cart/${this.props.cartUuid}`, window.location).toString()
     const cartName = this.props.selectedCart?.name
     const handleCartButtonClick = this.handleCartButtonClick.bind(this)
+    const createCart = this.handleCreateCartClick.bind(this)
     const handleMarkPurchasedButtonClick = this.handlMarkPurchasedButtonClick.bind(this)
     const currentCartId = this.props.listState === 'cart' ? this.props.selectedCartId : this.props.defaultCartId
     const inCurrentCart = this.props.inCurrentCart
@@ -301,7 +316,30 @@ class Track extends Component {
                   className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''} cart-popup-content`}
                   style={{ zIndex: 100 }}
                 >
-                  <div className={'carts-list'}>
+                  <div
+                    className={'carts-list'}
+                    onClick={e => e.stopPropagation()}
+                    onDoubleClick={e => e.stopPropagation()}
+                  >
+                    <div className={'input-layout'}>
+                      <input
+                        placeholder={'New cart'}
+                        style={{ flex: 1, width: '100%' }}
+                        className={'text-input text-input-small text-input-dark'}
+                        value={this.state.newCartName}
+                        onChange={e => this.setState({ newCartName: e.target.value })}
+                      />
+                      <button
+                        className="button button-push_button-small button-push_button-primary"
+                        onClick={async () => {
+                          const { id: cartId } = await createCart(this.state.newCartName)
+                          await handleCartButtonClick(cartId, false)
+                        }}
+                      >
+                        <FontAwesomeIcon icon="plus" />
+                      </button>
+                    </div>
+                    <hr className={'popup-divider'} />
                     {this.props.carts.map(({ id, name }) => {
                       const isInCart = this.props.inCarts.find(R.propEq('id', id))
                       return (

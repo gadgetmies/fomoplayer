@@ -876,16 +876,32 @@ WHERE user_track_score_weight_code = w.property
   )
 }
 
-module.exports.insertCart = async (userId, name) =>
-  pg.queryRowsAsync(
+module.exports.insertCart = async (userId, name) => {
+  await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--insertCart
 INSERT INTO cart
   (cart_name, meta_account_user_id)
 VALUES
   (${name}, ${userId})
-RETURNING cart_id AS id, cart_name AS name`
+ON CONFLICT ON CONSTRAINT cart_cart_name_meta_account_user_id_key DO NOTHING
+`
   )
+
+  const [cart] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`SELECT
+    cart_id   AS id
+  , cart_name AS name
+FROM
+    cart
+WHERE
+      cart_name = ${name}
+  AND meta_account_user_id = ${userId}`
+  )
+
+  return cart
+}
 
 module.exports.queryCartOwner = async cartId => {
   return pg.queryRowsAsync(

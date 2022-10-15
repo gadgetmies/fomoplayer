@@ -288,6 +288,14 @@ class App extends Component {
     await this.updateSettings()
   }
 
+  async createCart(cartName) {
+    return await requestJSONwithCredentials({
+      path: `/me/carts`,
+      method: 'POST',
+      body: { name: cartName }
+    })
+  }
+
   async updateSettings() {
     const userSettings = await requestJSONwithCredentials({
       path: `/me/settings`
@@ -344,6 +352,7 @@ class App extends Component {
                         onRemoveNotification={this.removeNotification.bind(this)}
                         onMarkHeardClicked={this.markHeard.bind(this)}
                         onUpdateEmail={this.updateEmail.bind(this)}
+                        onCreateCart={this.createCart.bind(this)}
                         newTracks={this.state.tracksData.meta.newTracks}
                         totalTracks={this.state.tracksData.meta.totalTracks}
                         userSettings={this.state.userSettings}
@@ -369,6 +378,8 @@ class App extends Component {
                         newTracks={this.state.tracksData.meta.newTracks}
                         totalTracks={this.state.tracksData.meta.totalTracks}
                         onAddToCart={this.addToCart.bind(this)}
+                        onCreateCart={this.createCart.bind(this)}
+                        onUpdateCarts={this.updateCarts.bind(this)}
                         onRemoveFromCart={this.removeFromCart.bind(this)}
                         onMarkPurchased={this.onMarkPurchased.bind(this)}
                         onFollow={this.updateFollows.bind(this)}
