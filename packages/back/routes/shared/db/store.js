@@ -257,7 +257,7 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
       `
     )
 
-    const [{ storeArtistId }] = await tx.queryRowsAsync(
+    const res = await tx.queryRowsAsync(
       // language=PostgreSQL
       sql`-- ensureArtistExists SELECT store__artist_id AS "storeArtistId" FROM store__artist
       SELECT store__artist_id AS "storeArtistId"
@@ -267,7 +267,7 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
       `
     )
 
-    return { id: artistId, storeArtistId, role: artist.role }
+    return { id: artistId, storeArtistId: res[0]?.storeArtistId, role: artist.role }
   } catch (e) {
     logger.error('error adding track', e)
   }
