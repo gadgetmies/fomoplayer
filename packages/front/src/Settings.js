@@ -1,4 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { solid, regular, brands, icon } from '@fortawesome/fontawesome-svg-core/import.macro'
 import React, { Component } from 'react'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
 import SpinnerButton from './SpinnerButton'
@@ -6,7 +7,6 @@ import Spinner from './Spinner'
 import ToggleButton from './ToggleButton'
 import CopyToClipboardButton from './CopyToClipboardButton'
 import * as R from 'ramda'
-import PillButton from './PillButton'
 import scoreWeightDetails from './scoreWeights'
 import Tracks from './Tracks'
 import FollowItemButton from './FollowItemButton'
@@ -476,77 +476,117 @@ class Settings extends Component {
               </label>
               <h4>Followed artists ({this.state.artistFollows.length})</h4>
               <ul className="no-style-list follow-list">
-                {this.state.artistFollows.map(({ name, storeArtistId, store: { name: storeName }, url }) => (
-                  <li key={storeArtistId}>
-                    <span className="button pill pill-button">
-                      <span className="pill-button-contents">
-                        <>
-                          <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
-                        </>
-                        {name}{' '}
-                        <button
-                          disabled={this.state.updatingArtistFollows}
-                          onClick={async () => {
-                            this.setState({ updatingArtistFollows: true })
-                            await requestWithCredentials({
-                              path: `/me/follows/artists/${storeArtistId}`,
-                              method: 'DELETE'
-                            })
-                            await this.updateArtistFollows()
-                            this.setState({ updatingArtistFollows: false })
-                          }}
-                        >
-                          <FontAwesomeIcon icon="times-circle" />{' '}
-                          <a
-                            href={url}
-                            target="_blank"
-                            onClick={e => e.stopPropagation()}
-                            title={'Check details from store'}
-                          >
-                            <FontAwesomeIcon icon="external-link-alt" />
-                          </a>
-                        </button>
-                      </span>
-                    </span>
-                  </li>
-                ))}
+                {this.state.artistFollows.map(
+                  ({ id, name, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
+                    return (
+                      <li key={storeArtistId}>
+                        <span className="button pill pill-button">
+                          <span className="pill-button-contents">
+                            <>
+                              <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
+                            </>
+                            {name}{' '}
+                            <button
+                              disabled={this.state.updatingNotifications}
+                              onClick={async e => {
+                                e.stopPropagation()
+                                this.setState({ updatingNotifications: true })
+                                await this.props.onSetStarred('artists', watchId, !starred)
+                                await this.updateArtistFollows()
+                                this.setState({ updatingNotifications: false })
+                              }}
+                              title={`Star artist "${name}" on ${storeName}`}
+                            >
+                              {starred ? (
+                                <FontAwesomeIcon icon={icon({ name: 'star', style: 'solid' })} />
+                              ) : (
+                                <FontAwesomeIcon icon={icon({ name: 'star', style: 'regular' })} />
+                              )}
+                            </button>{' '}
+                            <button
+                              disabled={this.state.updatingArtistFollows}
+                              onClick={async () => {
+                                this.setState({ updatingArtistFollows: true })
+                                await requestWithCredentials({
+                                  path: `/me/follows/artists/${storeArtistId}`,
+                                  method: 'DELETE'
+                                })
+                                await this.updateArtistFollows()
+                                this.setState({ updatingArtistFollows: false })
+                              }}
+                            >
+                              <FontAwesomeIcon icon="times-circle" />{' '}
+                              <a
+                                href={url}
+                                target="_blank"
+                                onClick={e => e.stopPropagation()}
+                                title={'Check details from store'}
+                              >
+                                <FontAwesomeIcon icon="external-link-alt" />
+                              </a>
+                            </button>
+                          </span>
+                        </span>
+                      </li>
+                    )
+                  }
+                )}
               </ul>
               <h4>Followed labels ({this.state.labelFollows.length})</h4>
               <ul className="no-style-list follow-list">
-                {this.state.labelFollows.map(({ name, url, storeLabelId, store: { name: storeName } }) => (
-                  <li key={storeLabelId}>
-                    <span className="button pill pill-button">
-                      <span className="pill-button-contents">
-                        <>
-                          <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
-                        </>
-                        {name}{' '}
-                        <button
-                          disabled={this.state.updatingLabelFollows}
-                          onClick={async () => {
-                            this.setState({ updatingLabelFollows: true })
-                            await requestWithCredentials({
-                              path: `/me/follows/labels/${storeLabelId}`,
-                              method: 'DELETE'
-                            })
-                            await this.updateLabelFollows()
-                            this.setState({ updatingLabelFollows: false })
-                          }}
-                        >
-                          <FontAwesomeIcon icon="times-circle" />{' '}
-                          <a
-                            href={url}
-                            target="_blank"
-                            onClick={e => e.stopPropagation()}
-                            title={'Check details from store'}
+                {this.state.labelFollows.map(
+                  ({ name, url, storeLabelId, store: { name: storeName, watchId, starred } }) => (
+                    <li key={storeLabelId}>
+                      <span className="button pill pill-button">
+                        <span className="pill-button-contents">
+                          <>
+                            <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
+                          </>
+                          {name}{' '}
+                          <button
+                            disabled={this.state.updatingNotifications}
+                            onClick={async e => {
+                              e.stopPropagation()
+                              this.setState({ updatingNotifications: true })
+                              await this.props.onSetStarred('labels', watchId, !starred)
+                              await this.updateLabelFollows()
+                              this.setState({ updatingNotifications: false })
+                            }}
+                            title={`Star label "${name}" on ${storeName}`}
                           >
-                            <FontAwesomeIcon icon="external-link-alt" />
-                          </a>
-                        </button>
+                            {starred ? (
+                              <FontAwesomeIcon icon={icon({ name: 'star', style: 'solid' })} />
+                            ) : (
+                              <FontAwesomeIcon icon={icon({ name: 'star', style: 'regular' })} />
+                            )}
+                          </button>{' '}
+                          <button
+                            disabled={this.state.updatingLabelFollows}
+                            onClick={async () => {
+                              this.setState({ updatingLabelFollows: true })
+                              await requestWithCredentials({
+                                path: `/me/follows/labels/${storeLabelId}`,
+                                method: 'DELETE'
+                              })
+                              await this.updateLabelFollows()
+                              this.setState({ updatingLabelFollows: false })
+                            }}
+                          >
+                            <FontAwesomeIcon icon="times-circle" />{' '}
+                            <a
+                              href={url}
+                              target="_blank"
+                              onClick={e => e.stopPropagation()}
+                              title={'Check details from store'}
+                            >
+                              <FontAwesomeIcon icon="external-link-alt" />
+                            </a>
+                          </button>
+                        </span>
                       </span>
-                    </span>
-                  </li>
-                ))}
+                    </li>
+                  )
+                )}
               </ul>
               <h4>Followed playlists ({this.state.playlistFollows.length})</h4>
               <ul className="no-style-list follow-list">

@@ -41,7 +41,8 @@ import {
   faBell,
   faBellSlash,
   faSearch,
-  faShare
+  faShare,
+  faStar
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -76,7 +77,8 @@ library.add(
   faBell,
   faBellSlash,
   faSearch,
-  faShare
+  faShare,
+  faStar
 )
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
@@ -255,6 +257,18 @@ class App extends Component {
     await this.updateNotifications()
   }
 
+  async setStarred(type, followId, starred) {
+    await requestWithCredentials({
+      path: `/me/follows/${type}/${followId}`,
+      method: 'PUT',
+      body: {
+        starred
+      }
+    })
+
+    await this.updateNotifications()
+  }
+
   async updateNotifications() {
     this.setState({ notifications: await requestJSONwithCredentials({ path: '/me/notifications' }) })
   }
@@ -350,6 +364,7 @@ class App extends Component {
                         notifications={this.state.notifications}
                         onRequestNotification={this.requestNotification.bind(this)}
                         onRemoveNotification={this.removeNotification.bind(this)}
+                        onSetStarred={this.setStarred.bind(this)}
                         onMarkHeardClicked={this.markHeard.bind(this)}
                         onUpdateEmail={this.updateEmail.bind(this)}
                         onCreateCart={this.createCart.bind(this)}

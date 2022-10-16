@@ -23,6 +23,7 @@ const {
   addStoreArtistWatch,
   addStoreLabelWatch,
   deletePlaylistFollowFromUser,
+  queryFollowOwner,
   queryUserArtistFollows,
   queryUserLabelFollows,
   queryUserPlaylistFollows,
@@ -39,6 +40,7 @@ const {
   deleteArtistIgnoreFromUser,
   setAllHeard,
   setTrackHeard,
+  setFollowStarred,
   queryUserCartDetails,
   insertCart,
   queryCartDetails,
@@ -311,6 +313,11 @@ module.exports.addPlaylistFollows = async (playlists, userId, sourceId) => {
   return addedPlaylists
 }
 
+module.exports.setFollowStarred = async (userId, type, followId, starred) => {
+  await verifyFollowOwnership(userId, type, followId)
+  await setFollowStarred(type, followId, starred)
+}
+
 module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {
   await addPurchasedTracksToUser(userId, trackIds)
 }
@@ -330,6 +337,15 @@ const verifyNotificationOwnership = async (userId, notificationId) => {
     throw new NotFound('Notification with id not found!')
   } else if (rows[0].ownerUserId !== userId) {
     throw new Forbidden('Notification owner does not match the session user!')
+  }
+}
+
+const verifyFollowOwnership = async (userId, type, followId) => {
+  const rows = await queryFollowOwner(type, followId)
+  if (rows.length === 0) {
+    throw new NotFound('Follow with id not found!')
+  } else if (rows[0].ownerUserId !== userId) {
+    throw new Forbidden('Follow owner does not match the session user!')
   }
 }
 

@@ -229,6 +229,8 @@ WITH distinct_store_artists AS (
                   , store__artist_url
                   , store_name
                   , store_id
+                  , store__artist_watch__user_id
+                  , store__artist_watch__user_starred
     FROM artist
              NATURAL JOIN store__artist
              NATURAL JOIN store__artist_watch
@@ -241,7 +243,12 @@ SELECT artist_name                                           AS name
      , artist_id                                             AS id
      , store__artist_id                                      AS "storeArtistId"
      , store__artist_url                                     AS url
-     , json_build_object('name', store_name, 'id', store_id) AS store
+     , json_build_object(
+         'name', store_name, 
+         'id', store_id, 
+         'starred', store__artist_watch__user_starred,
+         'watchId', store__artist_watch__user_id
+     ) AS store
 FROM distinct_store_artists
 ORDER BY 1, store_name
 `
@@ -259,6 +266,8 @@ WITH distinct_store_labels AS (
                   , store__label_url
                   , store_name
                   , store_id
+                  , store__label_watch__user_id
+                  , store__label_watch__user_starred
     FROM label
              NATURAL JOIN store__label
              NATURAL JOIN store__label_watch
@@ -270,7 +279,12 @@ SELECT label_name                                            AS name
      , label_id                                              AS id
      , store__label_id                                       AS "storeLabelId"
      , store__label_url                                      AS url
-     , json_build_object('name', store_name, 'id', store_id) AS store
+     , json_build_object(
+         'name', store_name, 
+         'id', store_id,
+         'starred', store__label_watch__user_starred,
+         'watchId', store__label_watch__user_id
+     ) AS store
 FROM distinct_store_labels
 ORDER BY 1, store_name
 `
@@ -388,7 +402,11 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = (userId, sort = '-score', limits = { new: 100, recent: 100, heard: 50 }) => {
+module.exports.queryUserTracks = (
+  userId,
+  sort = '-artist_starred,-label_starred,-score',
+  limits = { new: 100, recent: 100, heard: 50 }
+) => {
   const sortParameters = sort
     .split(',')
     .map(s => s.trim())
@@ -454,6 +472,7 @@ WITH
   , label_follow_scores AS (
     SELECT
         track_id
+      , COALESCE(BOOL_OR(store__label_watch__user_starred), FALSE) AS label_starred   
       , CASE WHEN BOOL_OR(meta_account_user_id IS NOT NULL) THEN 1 ELSE 0 END AS label_follow_score
     FROM
         tracks_to_score
@@ -479,6 +498,7 @@ WITH
         follows AS (
             SELECT DISTINCT ON (track_id, artist_id)
                 track_id
+              , COALESCE(BOOL_OR(store__artist_watch__user_starred), FALSE) AS artist_starred
               , CASE WHEN BOOL_OR(store__artist_watch_id IS NOT NULL) THEN 1 ELSE 0 END AS score
             FROM
                 tracks_to_score
@@ -492,6 +512,7 @@ WITH
     SELECT
         track_id
       , SUM(score) AS artist_follow_score
+      , BOOL_OR(artist_starred) AS artist_starred
     FROM
         follows
     GROUP BY 1
@@ -507,6 +528,8 @@ WITH
   , new_tracks_with_scores AS (
     SELECT
         track_id
+      , artist_starred
+      , label_starred 
       , user__track_heard
       , label_score * COALESCE(label_multiplier, 0) +
         artist_score * COALESCE(artist_multiplier, 0) +
@@ -514,18 +537,20 @@ WITH
         label_follow_score * COALESCE(label_follow_multiplier, 0) +
         COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
         COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) +
-        COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) AS score
+        COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) 
+      AS score
       , JSON_BUILD_OBJECT(
-                'artist', JSON_BUILD_OBJECT('score', artist_score, 'weight', artist_multiplier),
-                'artist_follow', JSON_BUILD_OBJECT('score', artist_follow_score, 'weight', artist_follow_multiplier),
-                'label', JSON_BUILD_OBJECT('score', label_score, 'weight', label_multiplier),
-                'label_follow', JSON_BUILD_OBJECT('score', label_follow_score, 'weight', label_follow_multiplier),
-                'date_added', JSON_BUILD_OBJECT('score', ROUND(added_score.score, 1), 'weight', date_added_multiplier),
-                'date_released',
-                JSON_BUILD_OBJECT('score', ROUND(released_score.score, 1), 'weight', date_released_multiplier),
-                'date_published',
-                JSON_BUILD_OBJECT('score', ROUND(published_score.score, 1), 'weight', date_published_multiplier)
-            )                                                                       AS score_details
+          'artist', JSON_BUILD_OBJECT('score', artist_score, 'weight', artist_multiplier),
+          'artist_follow', JSON_BUILD_OBJECT('score', artist_follow_score, 'weight', artist_follow_multiplier),
+          'label', JSON_BUILD_OBJECT('score', label_score, 'weight', label_multiplier),
+          'label_follow', JSON_BUILD_OBJECT('score', label_follow_score, 'weight', label_follow_multiplier),
+          'date_added', JSON_BUILD_OBJECT('score', ROUND(added_score.score, 1), 'weight', date_added_multiplier),
+          'date_released',
+          JSON_BUILD_OBJECT('score', ROUND(released_score.score, 1), 'weight', date_released_multiplier),
+          'date_published',
+          JSON_BUILD_OBJECT('score', ROUND(published_score.score, 1), 'weight', date_published_multiplier)
+        )
+      AS score_details
     FROM
         (SELECT
              track_id
@@ -535,6 +560,8 @@ WITH
            , label_follow_score
            , artist_follow_score
            , track_added
+           , artist_starred
+           , label_starred
            , (SELECT
                   user_track_score_weight_multiplier
               FROM
@@ -596,17 +623,19 @@ WITH
             LEFT JOIN track_date_published_score AS published_score USING (track_id)
     ORDER BY `
 
-    sortParameters.forEach(([column, order]) =>
+    sortParameters.forEach(([column, order], index) =>
       query
         .append(tx.escapeIdentifier(column))
         .append(' ')
         .append(order)
+        .append(' NULLS LAST ')
+        .append(index === sortParameters.length - 1 ? '' : ', ')
     )
 
     return tx
       .queryRowsAsync(
         // language=PostgreSQL
-        query.append(sql` NULLS LAST
+        query.append(sql`
           LIMIT ${limits.new}
       )
         , heard_tracks AS (
@@ -665,9 +694,10 @@ WITH
          , new_tracks_with_details AS (
           SELECT JSON_AGG(t) AS new_tracks
           FROM ( -- TODO: Why is the order by needed also here (also in new_tracks_with_scores)
+          -- TODO: do the sort parameters in the request even matter when this is here?
                    SELECT * FROM tracks_with_details 
                    JOIN new_tracks_with_scores ON (id = track_id)
-                   ORDER BY score DESC NULLS LAST, added DESC
+                   ORDER BY artist_starred OR label_starred DESC, score DESC NULLS LAST, added DESC
                ) t
       )
          , heard_tracks_with_details AS (
@@ -929,6 +959,24 @@ WHERE
   )
 }
 
+const followTypeToTable = {
+  artists: 'store__artist_watch__user',
+  labels: 'store__label_watch__user',
+  playlists: 'user__playlist_watch'
+}
+module.exports.queryFollowOwner = async (type, followId) => {
+  return pg.queryRowsAsync(
+    sql`--queryFollowOwner
+SELECT
+  meta_account_user_id AS "ownerUserId"
+FROM `
+      .append(followTypeToTable[type])
+      .append(sql` WHERE `)
+      .append(`${followTypeToTable[type]}_id`)
+      .append(` = ${followId}`)
+  )
+}
+
 module.exports.queryUserCartDetails = async userId => {
   const details = await pg.queryRowsAsync(
     // language=PostgreSQL
@@ -1119,6 +1167,20 @@ module.exports.deleteNotification = async notificationId =>
 DELETE FROM user_search_notification WHERE user_search_notification_id = ${notificationId}
 `
   )
+
+module.exports.setFollowStarred = async (type, followId, starred) => {
+  return pg.queryRowsAsync(
+    sql`--setFollowStarred
+UPDATE `
+      .append(followTypeToTable[type])
+      .append(sql` SET `)
+      .append(`${followTypeToTable[type]}_starred`)
+      .append(sql` = ${starred}`)
+      .append(' WHERE ')
+      .append(`${followTypeToTable[type]}_id`)
+      .append(sql` = ${followId}`)
+  )
+}
 
 module.exports.queryUserSettings = async userId => {
   const [settings] = await pg.queryRowsAsync(

@@ -41,7 +41,8 @@ const {
   removeNotification,
   getNotifications,
   getUserSettings,
-  setEmail
+  setEmail,
+  setFollowStarred
 } = require('./logic')
 const typeIs = require('type-is')
 
@@ -226,6 +227,11 @@ router.post('/follows/playlists', async ({ user: { id: userId }, body }, res) =>
   const sourceId = await insertSource({ operation: '/follows/playlists' })
   const addedPlaylists = await addPlaylistFollows(body, userId, sourceId)
   res.send(addedPlaylists)
+})
+
+router.put('/follows/:type/:id', async ({ user: { id: userId }, params: { id, type }, body: { starred } }, res) => {
+  await setFollowStarred(userId, type, id, starred)
+  res.status(204).send()
 })
 
 router.get('/carts', async ({ user: { id: userId } }, res) => {
