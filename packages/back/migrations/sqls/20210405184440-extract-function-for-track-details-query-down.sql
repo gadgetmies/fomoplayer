@@ -1,1 +1,1 @@
-DROP FUNCTION track_details;
+DROP FUNCTION IF EXISTS track_details;

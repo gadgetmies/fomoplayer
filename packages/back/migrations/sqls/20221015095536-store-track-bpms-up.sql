@@ -2,7 +2,7 @@ ALTER TABLE store__track ADD COLUMN store__track_bpm NUMERIC;
 
 UPDATE store__track SET store__track_bpm = (store__track_store_details->'store_details'->>'bpm') :: NUMERIC;
 
-DROP FUNCTION track_details;
+DROP FUNCTION IF EXISTS track_details;
 CREATE FUNCTION track_details(track_ids integer[])
     returns TABLE
             (

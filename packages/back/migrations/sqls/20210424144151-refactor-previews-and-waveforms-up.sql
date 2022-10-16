@@ -1,4 +1,5 @@
-CREATE OR REPLACE FUNCTION track_details(track_ids INTEGER[], api_url TEXT)
+DROP FUNCTION IF EXISTS track_details;
+CREATE FUNCTION track_details(track_ids INTEGER[], api_url TEXT)
   RETURNS TABLE
           (
             track_id INTEGER,

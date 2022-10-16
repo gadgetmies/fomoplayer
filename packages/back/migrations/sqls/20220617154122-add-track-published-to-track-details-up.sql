@@ -1,5 +1,5 @@
 -- This should match 20211228105148-fix-track-details-user-filter-up.sql
-DROP FUNCTION track_details;
+DROP FUNCTION IF EXISTS track_details;
 CREATE FUNCTION track_details(track_ids integer[], meta_account_user_id_in integer)
     returns TABLE
             (

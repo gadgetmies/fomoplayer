@@ -1,5 +1,6 @@
 -- This should match 20210901072903-remove-nulls-from-preview-waveforms-up.sql
-CREATE OR REPLACE FUNCTION track_details(track_ids integer[], meta_account_user_id_in integer)
+DROP FUNCTION IF EXISTS track_details;
+CREATE FUNCTION track_details(track_ids integer[], meta_account_user_id_in integer)
     returns TABLE
             (
                 track_id integer,

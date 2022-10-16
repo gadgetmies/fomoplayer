@@ -1,5 +1,6 @@
 -- This should match 20210823162614-group-waveforms-in-track-details-up.sql
-CREATE OR REPLACE FUNCTION track_details(track_ids integer[], meta_account_user_id_in integer)
+DROP FUNCTION IF EXISTS track_details;
+CREATE FUNCTION track_details(track_ids integer[], meta_account_user_id_in integer)
     returns TABLE
             (
                 track_id integer,

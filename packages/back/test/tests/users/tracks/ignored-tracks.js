@@ -1,6 +1,7 @@
 const { initDb, pg } = require('../../../lib/db.js')
 const firstTrack = require('../../../fixtures/monty_track.json')
 const assert = require('assert')
+const { updateDates } = require('../../../lib/fixture-utils')
 const { test } = require('../../../lib/test.js')
 const { beatportTracksTransform } = require('../../../../../chrome-extension/src/js/transforms/beatport.js')
 const { addTracks } = require('../../../lib/tracks.js')
@@ -12,7 +13,7 @@ test({
   'when a track is added': {
     setup: async () => {
       await initDb()
-      await addTracks(transformedTracks)
+      await addTracks(updateDates()(transformedTracks))
     },
     'track is added to user': async () => {
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from user__track')

@@ -8,16 +8,28 @@ const beatportTracks = require('../../../fixtures/beatport-tracks.json')
 const libraryTracks = myBeatport.results
 const newTracks = beatportTracks
 const scoreDetails = require('../../../fixtures/score-details.json')
+const { updateDates } = require('../../../lib/fixture-utils')
 const { addNewBeatportTracksToDb, addPurchasedBeatportTracksToDb } = require('../../../lib/tracks.js')
+const {
+  updateDateReleasedScore,
+  updateDatePublishedScore,
+  updateDateAddedScore,
+  updatePurchasedScores
+} = require('../../../../jobs/scores')
 
 const userId = 1
 
 test({
   'when track and a remix is added': {
     setup: async () => {
+      const updateDatesToToday = updateDates()
       await initDb()
-      await addPurchasedBeatportTracksToDb(libraryTracks)
-      await addNewBeatportTracksToDb(newTracks)
+      await addPurchasedBeatportTracksToDb(updateDatesToToday(libraryTracks))
+      await addNewBeatportTracksToDb(updateDatesToToday(newTracks))
+      await updateDateReleasedScore()
+      await updateDatePublishedScore()
+      await updateDateAddedScore()
+      await updatePurchasedScores()
     },
     'two tracks are added': async () => {
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from track')
@@ -26,6 +38,8 @@ test({
     'correct score is returned': async () => {
       const tracks = await getUserTracks(userId)
       const actualScoreDetails = L.collect([L.query(L.props('score_details'), L.flat(L.values))], tracks.tracks.new)
+      console.log(actualScoreDetails)
+      console.log(scoreDetails)
       assert.deepStrictEqual(actualScoreDetails, scoreDetails)
     },
     teardown: async () => {

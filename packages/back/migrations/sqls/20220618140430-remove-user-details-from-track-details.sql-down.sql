@@ -1,5 +1,5 @@
 -- This should match 20220617154122-add-track-published-to-track-details-up.sql
-DROP FUNCTION track_details;
+DROP FUNCTION IF EXISTS track_details;
 CREATE FUNCTION track_details(track_ids integer[], meta_account_user_id_in integer)
     returns TABLE
             (

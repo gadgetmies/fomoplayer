@@ -15,7 +15,7 @@ test({
       assert.equal(trackCount, 2)
     },
     teardown: async () => {
-      // await db.initDb()
+      await initDb()
     }
   }
 })

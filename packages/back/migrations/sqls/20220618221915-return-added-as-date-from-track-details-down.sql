@@ -1,5 +1,5 @@
 -- This should match 20220618140430-remove-user-details-from-track-details.sql-down.sql
-DROP FUNCTION track_details;
+DROP FUNCTION IF EXISTS track_details;
 CREATE FUNCTION track_details(track_ids integer[])
     returns TABLE
             (

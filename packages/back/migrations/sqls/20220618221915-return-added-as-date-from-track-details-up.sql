@@ -1,4 +1,4 @@
-DROP FUNCTION track_details;
+DROP FUNCTION IF EXISTS track_details;
 CREATE FUNCTION track_details(track_ids integer[])
     returns TABLE
             (
