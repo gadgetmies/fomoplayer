@@ -38,8 +38,6 @@ test({
     'correct score is returned': async () => {
       const tracks = await getUserTracks(userId)
       const actualScoreDetails = L.collect([L.query(L.props('score_details'), L.flat(L.values))], tracks.tracks.new)
-      console.log(actualScoreDetails)
-      console.log(scoreDetails)
       assert.deepStrictEqual(actualScoreDetails, scoreDetails)
     },
     teardown: async () => {
