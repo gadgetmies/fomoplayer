@@ -35,7 +35,7 @@
     "multi-store-player-shared-config": "1.0.0",
     "node-cron": "^3.0.0",
     "partial.lenses": "^14.17.0",
-    "passport": "^0.5.2",
+    "passport": "^0.6.0",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
     "passport-openidconnect": "^0.1.1",
