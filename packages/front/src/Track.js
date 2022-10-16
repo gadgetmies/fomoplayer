@@ -67,6 +67,7 @@ class Track extends Component {
 
   async handleCreateCartClick(cartName) {
     try {
+      this.setState({ processingCart: true })
       const res = await this.props.onCreateCart(cartName)
       this.setState({ newCartName: '' })
       await this.props.onUpdateCarts()
@@ -321,25 +322,6 @@ class Track extends Component {
                     onClick={e => e.stopPropagation()}
                     onDoubleClick={e => e.stopPropagation()}
                   >
-                    <div className={'input-layout'}>
-                      <input
-                        placeholder={'New cart'}
-                        style={{ flex: 1, width: '100%' }}
-                        className={'text-input text-input-small text-input-dark'}
-                        value={this.state.newCartName}
-                        onChange={e => this.setState({ newCartName: e.target.value })}
-                      />
-                      <button
-                        className="button button-push_button-small button-push_button-primary"
-                        onClick={async () => {
-                          const { id: cartId } = await createCart(this.state.newCartName)
-                          await handleCartButtonClick(cartId, false)
-                        }}
-                      >
-                        <FontAwesomeIcon icon="plus" />
-                      </button>
-                    </div>
-                    <hr className={'popup-divider'} />
                     {this.props.carts.map(({ id, name }) => {
                       const isInCart = this.props.inCarts.find(R.propEq('id', id))
                       return (
@@ -371,23 +353,43 @@ class Track extends Component {
                         </button>
                       )
                     })}
-                  </div>
-                  {!this.props.selectedCartIsPurchased && this.props.listState === 'cart' && (
-                    <>
-                      <hr className={'popup-divider'} />
+                    <hr className={'popup-divider'} />
+                    <div className={'input-layout'}>
+                      <input
+                        placeholder={'New cart'}
+                        style={{ flex: 1, width: '100%' }}
+                        className={'new-cart-input text-input text-input-small text-input-dark'}
+                        value={this.state.newCartName}
+                        onChange={e => this.setState({ newCartName: e.target.value })}
+                      />
                       <button
-                        disabled={processingCart}
-                        style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
                         className="button button-push_button-small button-push_button-primary"
-                        onClick={e => {
-                          e.stopPropagation()
-                          return handleMarkPurchasedButtonClick()
+                        onClick={async () => {
+                          const { id: cartId } = await createCart(this.state.newCartName)
+                          await handleCartButtonClick(cartId, false)
                         }}
+                        disabled={this.state.newCartName === ''}
                       >
-                        Mark purchased and remove from carts
+                        <FontAwesomeIcon icon="plus" />
                       </button>
-                    </>
-                  )}
+                    </div>
+                    {!this.props.selectedCartIsPurchased && (
+                      <>
+                        <hr className={'popup-divider'} />
+                        <button
+                          disabled={processingCart}
+                          style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
+                          className="button button-push_button-small button-push_button-primary"
+                          onClick={e => {
+                            e.stopPropagation()
+                            return handleMarkPurchasedButtonClick()
+                          }}
+                        >
+                          Mark purchased and remove from carts
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </span>
             </div>

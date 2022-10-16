@@ -36,6 +36,11 @@
   display: none;
 }
 
+.new-cart-input {
+  margin: 2px !important;
+  padding: 6px !important;
+}
+
 .score-table {
   width: 100%;
 }
