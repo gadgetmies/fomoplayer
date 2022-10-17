@@ -1,4 +1,4 @@
-const { using, each } = require('bluebird')
+const { using, map } = require('bluebird')
 const R = require('ramda')
 const pg = require('../../db/pg.js')
 const { scheduleEmail } = require('../../services/mailer')
@@ -36,6 +36,7 @@ const {
   deleteLabelWatchesFromUser,
   deleteLabelWatchFromUser,
   deleteArtistOnLabelIgnoreFromUser,
+  deleteArtistsOnLabelsIgnores,
   deleteLabelIgnoreFromUser,
   deleteArtistIgnoreFromUser,
   setAllHeard,
@@ -102,11 +103,18 @@ module.exports.addArtistOnLabelToIgnore = addArtistOnLabelToIgnore
 module.exports.artistOnLabelInIgnore = artistOnLabelInIgnore
 module.exports.addArtistsOnLabelsToIgnore = (userId, { artistIds, labelIds }) =>
   using(pg.getTransaction(), async tx => {
-    await each(R.xprod(artistIds, labelIds), ([artistId, labelId]) =>
-      addArtistOnLabelToIgnore(tx, artistId, labelId, userId)
-    )
+    const ids = (
+      await map(R.xprod(artistIds, labelIds), ([artistId, labelId]) =>
+        addArtistOnLabelToIgnore(tx, artistId, labelId, userId)
+      )
+    ).map(([{ user__artist__label_ignore }]) => user__artist__label_ignore)
     await removeIgnoredTracksFromUsers(tx, [userId])
+    return ids
   })
+
+module.exports.removeArtistsOnLabelsIgnores = async artistOnLabelIgnoreIds => {
+  await deleteArtistsOnLabelsIgnores(artistOnLabelIgnoreIds)
+}
 
 module.exports.addArtistsToIgnore = async (userId, artistIds) => {
   try {

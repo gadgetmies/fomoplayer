@@ -735,7 +735,7 @@ WITH
 }
 
 module.exports.addArtistOnLabelToIgnore = (tx, artistId, labelId, userId) =>
-  tx.queryAsync(
+  tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- addArtistOnLabelToIgnore
 INSERT INTO user__artist__label_ignore
@@ -744,6 +744,19 @@ VALUES ( ${userId}
        , ${artistId}
        , ${labelId})
 ON CONFLICT ON CONSTRAINT user__artist__label_ignore_unique DO NOTHING
+RETURNING user__artist__label_ignore_id
+`
+  )
+
+module.exports.deleteArtistsOnLabelsIgnores = async artistsOnLabelsIgnoreIds =>
+  pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- removeArtistsOnLabelsIgnores
+DELETE
+FROM
+    user__artist__label_ignore
+WHERE
+    user__artist__label_ignore_id = ANY (${artistsOnLabelsIgnoreIds})
 `
   )
 
