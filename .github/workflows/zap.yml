@@ -1,0 +1,35 @@
+
+name: ZAP Baseline Scan
+on: [push] # on: pull_request
+
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
+    name: Scan the webapplication
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: master
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - name: npm install, build
+        run: |
+          yarn install
+          yarn build
+          yarn start &
+      - name: ZAP Scan
+        uses: zaproxy/action-baseline@v0.7.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target: "http://localhost:4004/"
+          allow_issue_writing: true #false
+          fail_action: true
+          rules_file_name: ".zap-rules.dev.tsv"
+          #token: ${{ secrets.GITHUB_TOKEN }}
+          #docker_name: 'owasp/zap2docker-stable'
+          #target: 'https://www.zaproxy.org'
+          #rules_file_name: '.zap/rules.tsv'
+          #cmd_options: '-a'
