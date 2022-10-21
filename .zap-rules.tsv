@@ -1,0 +1,4 @@
+10202	IGNORE	(No anti-CSRF possible with current email list provider)
+20012	IGNORE	(No anti-CSRF possible with current email list provider)
+10055	IGNORE	(Not sure what causes this, the documentation is not specific. Needs more digging)
+10109	IGNORE	(False positive PWA)
