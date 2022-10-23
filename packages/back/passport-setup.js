@@ -28,7 +28,6 @@ module.exports = function passportSetup() {
         clientSecret: config.googleClientSecret,
         authorizationURL: 'https://accounts.google.com/o/oauth2/auth',
         tokenURL: 'https://www.googleapis.com/oauth2/v3/token',
-        userInfoURL: 'https://openidconnect.googleapis.com/v1/userinfo',
         callbackURL: `${config.apiURL}/auth/login/google/return`
       },
       async (issuer, profile, done) => {
