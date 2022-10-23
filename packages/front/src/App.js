@@ -416,13 +416,21 @@ class App extends Component {
           ) : (
             <div className="align-center-container full-screen-popup-container">
               <div className="full-screen-popup">
-                <h1 style={{ marginTop: 0, textAlign: 'center' }}>Login</h1>
+                <h1 style={{ marginTop: 0, textAlign: 'center' }}>Fomo Player</h1>
                 <Login
                   onLoginDone={this.onLoginDone.bind(this)}
                   onLogoutDone={this.onLogoutDone.bind(this)}
                   googleLoginPath={`${config.apiURL}/auth/login/google`}
                   logoutPath={'/auth/logout'}
                 />
+                <div className="login-separator">or</div>
+                <a
+                  href="https://github.com/gadgetmies/fomoplayer/wiki"
+                  className={'button button-push_button-large button-push_button-primary'}
+                  target='_blank'
+                >
+                  Find out more on Github <FontAwesomeIcon icon={['fab', 'github']} />
+                </a>
               </div>
             </div>
           )}
