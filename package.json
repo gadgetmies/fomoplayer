@@ -7,6 +7,7 @@
     "node": "14.x"
   },
   "scripts": {
+    "migrate": "yarn workspace multi_store_player_back migrate",
     "start:back": "yarn workspace multi_store_player_back start",
     "start:front": "yarn workspace multi_store_player_front start",
     "start:prod-front": "yarn workspace multi_store_player_front start:prod",
