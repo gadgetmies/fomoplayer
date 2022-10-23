@@ -421,7 +421,6 @@ class App extends Component {
                   onLoginDone={this.onLoginDone.bind(this)}
                   onLogoutDone={this.onLogoutDone.bind(this)}
                   googleLoginPath={`${config.apiURL}/auth/login/google`}
-                  loginPath={'/auth/login'}
                   logoutPath={'/auth/logout'}
                 />
               </div>
