@@ -4,22 +4,59 @@ on: [push] # on: pull_request
 
 jobs:
   zap_scan:
-    runs-on: ubuntu-latest
     name: Scan the webapplication
+    runs-on: ubuntu-latest
+    # Docker Hub image that `container-job` executes in
+    container: node:14-alpine
+    strategy:
+      matrix:
+        node-version: [ 14.x ]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           ref: master
-      - name: Use Node.js
+
+      - name: Preinstall system dependencies
+        run: |
+          apk add --no-cache git postgresql-client
+
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: 14.x
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+
+      - name: Setup database
+        run: psql -h postgres -U postgres -c 'CREATE DATABASE "multi-store-player-test";'
+        env:
+          PGPASSWORD: postgres
+
       - name: npm install, build
         run: |
           yarn install
           yarn build
-          yarn start &
+          yarn start:prod &
+        env:
+          DATABASE_URL: postgres://postgres:postgres@postgres/multi-store-player-test
+
       - name: ZAP Scan
         uses: zaproxy/action-baseline@v0.7.0
         with:
