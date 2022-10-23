@@ -3066,15 +3066,15 @@ boolbase@^1.0.0, boolbase@~1.0.0:
   resolved "https://registry.yarnpkg.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
   integrity sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==
 
-bp-api@gadgetmies/bp-api#v3.1.8:
-  version "3.1.8"
-  resolved "https://codeload.github.com/gadgetmies/bp-api/tar.gz/93ce57ab8e7156d2ce5c4a0aace767239548f0b2"
+bp-api@gadgetmies/bp-api#v3.1.9:
+  version "3.1.9"
+  resolved "https://codeload.github.com/gadgetmies/bp-api/tar.gz/fc0790ab88353edb92f1cbe65aaac0c82be730ae"
   dependencies:
     html-entities "^2.3.2"
     jsdom "^19.0.0"
     ramda "^0.25.0"
     request "^2.88.2"
-    request-in-session elysion/request-in-session#v1.2.3
+    request-in-session elysion/request-in-session#v1.2.5
 
 brace-expansion@^1.1.7:
   version "1.1.11"
@@ -7311,7 +7311,7 @@ minimatch@^5.0.1:
   dependencies:
     brace-expansion "^2.0.1"
 
-minimist@^1.2.0, minimist@^1.2.5, minimist@^1.2.6:
+minimist@^1.2.0, minimist@^1.2.6:
   version "1.2.7"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.7.tgz#daa1c4d91f507390437c6a8bc01078e7000c4d18"
   integrity sha512-bzfL1YUZsP41gmu/qjrEk0Q6i2ix/cVeAhbCbqH9u3zYutS1cLg00qhrD0M2MVdCcx4Sc0UpP2eBWo9rotpq6g==
@@ -8870,7 +8870,7 @@ psl@^1.1.28, psl@^1.1.33:
   resolved "https://registry.yarnpkg.com/psl/-/psl-1.9.0.tgz#d0df2a137f00794565fcaf3b2c00cd09f8d5a5a7"
   integrity sha512-E/ZsdU4HLs/68gYzgGTkMicWTLPdAftJLfJFlLUAAKZGkStNU72sZjT66SnMDVOfOWY/YAoiD7Jxa9iHvngcag==
 
-punycode@>=0.2.0, punycode@^2.1.0, punycode@^2.1.1:
+punycode@^2.1.0, punycode@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
@@ -9327,18 +9327,17 @@ renderkid@^3.0.0:
     lodash "^4.17.21"
     strip-ansi "^6.0.1"
 
-request-in-session@elysion/request-in-session#v1.2.3:
-  version "1.2.3"
-  resolved "https://codeload.github.com/elysion/request-in-session/tar.gz/8464746a02ddf1b6332252fac614991d906dedfc"
+request-in-session@elysion/request-in-session#v1.2.5:
+  version "1.2.5"
+  resolved "https://codeload.github.com/elysion/request-in-session/tar.gz/de6ed3f213b5ce2b8904c34804e5ee00aa46f2e7"
   dependencies:
     bluebird "^3.7.2"
     lodash "^4.17.21"
-    minimist "^1.2.5"
+    minimist "^1.2.6"
     prompt-sync "^4.2.0"
     request "^2.88.2"
     request-promise "^4.2.6"
     tough-cookie "^4.0.0"
-    tough-cookie-filestore "^0.0.1"
 
 request-promise-core@1.1.4:
   version "1.1.4"
@@ -10455,13 +10454,6 @@ toidentifier@1.0.1:
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.1.tgz#3be34321a88a820ed1bd80dfaa33e479fbb8dd35"
   integrity sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==
 
-tough-cookie-filestore@^0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/tough-cookie-filestore/-/tough-cookie-filestore-0.0.1.tgz#0bf2308ed293a50ba0733ed7d6289601485570b6"
-  integrity sha512-qPmhBHw6c+BE4LJ35lyq38MmKdmMPtdcUB07xxTcha/mrDRAtSctqk38ySuPXrUqq1IWmJThngQyY48dCrzqAA==
-  dependencies:
-    tough-cookie "~0.12.1"
-
 tough-cookie@^2.3.3, tough-cookie@~2.5.0:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/tough-cookie/-/tough-cookie-2.5.0.tgz#cd9fb2a0aa1d5a12b473bd9fb96fa3dcff65ade2"
@@ -10479,13 +10471,6 @@ tough-cookie@^4.0.0:
     punycode "^2.1.1"
     universalify "^0.2.0"
     url-parse "^1.5.3"
-
-tough-cookie@~0.12.1:
-  version "0.12.1"
-  resolved "https://registry.yarnpkg.com/tough-cookie/-/tough-cookie-0.12.1.tgz#8220c7e21abd5b13d96804254bd5a81ebf2c7d62"
-  integrity sha512-+gd4PklNJsxzu1NoNjhGRfOZZ5llND6VtQZGuaDXdmI0Ii79V5+YCa2sLx8Q6lYhYN2+9frCzUwOLQpuwHvO4Q==
-  dependencies:
-    punycode ">=0.2.0"
 
 tr46@^1.0.1:
   version "1.0.1"
