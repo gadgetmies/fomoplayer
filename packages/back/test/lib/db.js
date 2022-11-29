@@ -1,5 +1,5 @@
 const dbConfig = require('../../database.json')
-console.log('Initializing db-migrate with config: ', dbConfig)
+console.log('Initializing db-migrate with config: ', JSON.stringify(dbConfig))
 
 module.exports = {
   initDb: async () => {
