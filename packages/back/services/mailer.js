@@ -48,7 +48,7 @@ LIMIT ${process.env.EMAIL_SEND_BATCH}
     try {
       await client.sendMessage({
         to: recipient,
-        from: sender,
+        from: `"Fomo Player"<${sender}>`,
         plain,
         html,
         subject
