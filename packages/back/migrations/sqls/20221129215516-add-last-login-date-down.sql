@@ -1,0 +1,1 @@
+ALTER TABLE meta_account DROP COLUMN meta_account_last_login;

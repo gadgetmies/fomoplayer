@@ -1,0 +1,1 @@
+ALTER TABLE meta_account ADD COLUMN meta_account_last_login timestamptz;

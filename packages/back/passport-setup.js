@@ -7,6 +7,9 @@ const LocalStrategy = require('passport-local').Strategy
 const OpenIDStrategy = require('passport-openidconnect').Strategy
 const logger = require('./logger')(__filename)
 
+const pgrm = require('./db/pg.js')
+const sql = require('sql-template-strings')
+
 module.exports = function passportSetup() {
   const checkCredentials = async (username, password, done) => {
     const result = await account.authenticate(username, password)
@@ -38,6 +41,12 @@ module.exports = function passportSetup() {
         try {
           const user = await account.findOrCreateByIdentifier(issuer, profile.id)
           done(null, user)
+          await pgrm.queryAsync(
+            //language=PostgreSQL
+            sql` -- open id login
+UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_id = ${user.id} 
+`
+          )
         } catch (e) {
           logger.error('error', e)
           done(null)
