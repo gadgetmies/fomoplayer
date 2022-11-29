@@ -1,9 +1,7 @@
 'use strict'
 
-const BPromise = require('bluebird')
 const sql = require('sql-template-strings')
 const pgrm = require('./pg.js')
-const using = BPromise.using
 
 const accountAPI = {
   authenticate: async (username, password) => {
