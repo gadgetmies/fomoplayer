@@ -12,11 +12,11 @@ module.exports.updateNotifications = async () => {
   const notificationSearches = await getNotificationDetails()
   const errors = []
 
-  for (const { notificationId, text, userId, email, trackIds } of notificationSearches) {
+  for (const { notificationId, text, userId, email, trackIds: previousTrackIds } of notificationSearches) {
     try {
       const searchResults = await searchForTracks(text, userId)
       const currentTrackIds = searchResults.map(R.prop('track_id'))
-      const newTracks = R.without(trackIds, currentTrackIds)
+      const newTracks = R.without(previousTrackIds, currentTrackIds)
       const uriEncoded = encodeURI(text)
 
       await using(pg.getTransaction(), async tx => {
