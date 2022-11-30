@@ -16,11 +16,11 @@ module.exports.updateNotifications = async () => {
     try {
       const searchResults = await searchForTracks(text, userId)
       const currentTrackIds = searchResults.map(R.prop('track_id'))
-      const intersection = R.without(trackIds, currentTrackIds)
+      const newTracks = R.without(trackIds, currentTrackIds)
       const uriEncoded = encodeURI(text)
 
       await using(pg.getTransaction(), async tx => {
-        if (intersection.length !== 0) {
+        if (newTracks.length !== 0) {
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
           await updateNotificationTracks(tx, notificationId, currentTrackIds)
           await scheduleEmail(
