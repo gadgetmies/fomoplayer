@@ -365,9 +365,7 @@ class Tracks extends Component {
                     <FontAwesomeIcon icon={subscribedForNotification ? 'bell-slash' : 'bell'} />{' '}
                     {subscribedForNotification ? 'Unsubscribe' : 'Subscribe'}
                   </SpinnerButton>
-                  {this.props.notificationsEnabled ? (
-                    ''
-                  ) : (
+                  {!this.props.notificationsEnabled && (
                     <div className={'email-not-verified-info'}>
                       Email not set or verified.{' '}
                       <Link to={'/settings?page=notifications'}>
