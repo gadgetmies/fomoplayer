@@ -1,6 +1,7 @@
 const sql = require('sql-template-strings')
 const R = require('ramda')
 const pg = require('../../db/pg.js')
+const { getSortParameters } = require('../shared/db/search')
 const logger = require('../../logger')(__filename)
 const { using } = require('bluebird')
 
@@ -407,10 +408,7 @@ module.exports.queryUserTracks = (
   sort = '-artist_starred,-label_starred,-score',
   limits = { new: 100, recent: 100, heard: 50 }
 ) => {
-  const sortParameters = sort
-    .split(',')
-    .map(s => s.trim())
-    .map(s => [s.slice(1), s[0] === '+' ? 'ASC' : 'DESC'])
+  const sortParameters = getSortParameters(sort)
 
   return using(pg.getTransaction(), async tx => {
     let query =
