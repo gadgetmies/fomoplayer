@@ -25,7 +25,8 @@ class Tracks extends Component {
       searchDebounce: undefined,
       searchInProgress: false,
       createdNotifications: new Set(),
-      modifyingNotification: false
+      modifyingNotification: false,
+      searchError: undefined
     }
     this.handleScroll = this.handleScroll.bind(this)
   }
@@ -66,7 +67,7 @@ class Tracks extends Component {
   }
 
   async setSearch(search, skipDebounce = false) {
-    this.setState({ search })
+    this.setState({ search, searchError: undefined })
 
     if (this.state.searchDebounce) {
       clearTimeout(this.state.searchDebounce)
@@ -80,9 +81,16 @@ class Tracks extends Component {
     const timeout = setTimeout(
       async () => {
         this.setState({ searchDebounce: undefined, searchInProgress: true })
-        const results = await (await requestWithCredentials({ path: `/tracks?q=${search}` })).json()
-        this.setState({ searchInProgress: false })
-        this.props.onSearchResults(results)
+        try {
+          const results = await (await requestWithCredentials({ path: `/tracks?q=${search}` })).json()
+          this.props.onSearchResults(results)
+        } catch (e) {
+          console.error(e)
+          this.setState({ searchError: 'Search failed, please try again.' })
+          this.props.onSearchResults([])
+        } finally {
+          this.setState({ searchInProgress: false })
+        }
       },
       skipDebounce ? 0 : 500
     )
@@ -95,7 +103,12 @@ class Tracks extends Component {
 
   renderTracks(tracks, carts) {
     const emptyListLabels = {
-      search: this.props.searchDebounce !== undefined ? 'Searching...' : 'No results',
+      search:
+        this.state.searchError !== undefined
+          ? this.state.searchError
+          : this.props.searchDebounce !== undefined
+          ? 'Searching...'
+          : 'No results',
       cart: carts.length === 0 ? 'Loading carts...' : 'Cart empty',
       new: (
         <>
