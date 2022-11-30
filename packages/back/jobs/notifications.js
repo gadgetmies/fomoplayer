@@ -26,10 +26,10 @@ module.exports.updateNotifications = async () => {
           await scheduleEmail(
             process.env.NOTIFICATION_EMAIL_SENDER,
             email,
-            `New results for your search '${uriEncoded}'!`,
+            `New results for your search '${text}'!`,
             `Check out the results at https://fomoplayer.com/search/?q=${uriEncoded}
 `,
-            `<h1>New results for your search '${uriEncoded}'!</h1>
+            `<h1>New results for your search '${text}'!</h1>
 <a href="https://fomoplayer.com/search/?q=${uriEncoded}">
   Check out the results at https://fomoplayer.com/search/?q=${uriEncoded}
 </a>`
