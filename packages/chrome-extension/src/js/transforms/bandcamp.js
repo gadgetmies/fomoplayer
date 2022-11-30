@@ -21,6 +21,12 @@ module.exports.bandcampReleasesTransform = L.collect([
       console.log(match)
       const releaseArtistId = release.url.substring(8, release.url.indexOf('.bandcamp.com'))
       const releaseArtistUrl = release.url.substring(0, release.url.indexOf('/', 8))
+      const artistTemplate = {
+        name: release.artist,
+        id: releaseArtistId || null,
+        role: 'author',
+        url: releaseArtistUrl || null
+      }
       return [
         L.pick({
           id: 'id',
@@ -28,36 +34,31 @@ module.exports.bandcampReleasesTransform = L.collect([
           version: R.always(match?.length === 5 ? `${match[4]} Remix` : null),
           artists: match
             ? R.always(
-                match[2]
-                  ? match[2]
-                      .split(/,&/)
-                      .map(artist => {
-                        const trimmedArtist = artist.trim()
-                        const isReleaseArtist = trimmedArtist.toLocaleLowerCase() === releaseArtistId
-                        return {
-                          name: track.artist || trimmedArtist,
-                          id: isReleaseArtist ? releaseArtistId : null,
-                          role: 'author',
-                          url: isReleaseArtist ? releaseArtistUrl : null
-                        }
-                      })
-                      .concat(
-                        match.length === 5
-                          ? match[4]
-                              .split(/[,&]/)
-                              .map(remixer => ({ name: remixer.trim(), id: null, role: 'remixer', url: null }))
-                          : []
-                      )
-                  : release.artist
+                (match[2]
+                  ? match[2].split(/,&/).map(artist => {
+                      const trimmedArtist = artist.trim()
+                      const isReleaseArtist = trimmedArtist.toLocaleLowerCase() === releaseArtistId
+                      return {
+                        ...artistTemplate,
+                        name: track.artist || trimmedArtist,
+                        ...(isReleaseArtist
+                          ? {
+                              id: releaseArtistId,
+                              url: releaseArtistUrl
+                            }
+                          : {})
+                      }
+                    })
+                  : [artistTemplate]
+                ).concat(
+                  match.length === 5
+                    ? match[4]
+                        .split(/[,&]/)
+                        .map(remixer => ({ name: remixer.trim(), id: null, role: 'remixer', url: null }))
+                    : []
+                )
               )
-            : L.partsOf(
-                L.pick({
-                  name: R.always(release.artist),
-                  id: R.always(releaseArtistId),
-                  role: R.always('author'),
-                  url: R.always(releaseArtistUrl)
-                })
-              ),
+            : R.always([artistTemplate]),
           released: R.always(release.current.release_date),
           published: R.always(release.current.publish_date),
           duration_ms: durationLens,
