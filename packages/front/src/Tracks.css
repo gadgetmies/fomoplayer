@@ -45,7 +45,7 @@
   width: 100%;
 }
 
-.email-not-verified-note {
+.email-not-verified-info {
   font-size: 60%;
   order: 5;
 }
@@ -335,8 +335,12 @@
     text-align: center;
   }
 
-  .email-not-verified-note {
-    display: none;
+  .email-not-verified-info {
+    font-size: 60%;
+    order: 5;
+    width: 15em;
+    display: inline-block;
+    white-space: pre-wrap;
   }
 
   .cart-popup-content {
