@@ -17,7 +17,7 @@ module.exports.bandcampReleasesTransform = L.collect([
     L.filter(R.prop('file')),
     L.elems,
     L.choose(track => {
-      const match = track.title.match(/((.*?) - )?(.*?) \(([^)]*) Remix\)?/)
+      const match = track.title.match(/((.*?) - )?(.*?) (\(([^)]*) Remix\))?/)
       console.log(match)
       const releaseArtistId = release.url.substring(8, release.url.indexOf('.bandcamp.com'))
       const releaseArtistUrl = release.url.substring(0, release.url.indexOf('/', 8))

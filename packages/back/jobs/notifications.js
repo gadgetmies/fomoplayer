@@ -21,6 +21,13 @@ module.exports.updateNotifications = async () => {
 
       await using(pg.getTransaction(), async tx => {
         if (newTracks.length !== 0) {
+          logger.info(
+            `Found new tracks: ${JSON.stringify(
+              { prev: previousTrackIds, current: currentTrackIds, new: newTracks },
+              null,
+              2
+            )}`
+          )
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
           await updateNotificationTracks(tx, notificationId, currentTrackIds)
           await scheduleEmail(
