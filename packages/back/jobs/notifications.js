@@ -15,9 +15,17 @@ module.exports.updateNotifications = async () => {
   for (const { notificationId, text, userId, email, trackIds: previousTrackIds } of notificationSearches) {
     try {
       const searchResults = await searchForTracks(text, userId)
-      const currentTrackIds = searchResults.map(R.prop('track_id'))
+      const currentTrackIds = searchResults.map(R.prop('track_id')).map(String)
       const newTracks = R.without(previousTrackIds, currentTrackIds)
       const uriEncoded = encodeURI(text)
+
+      logger.info(
+        `Found new tracks: ${JSON.stringify(
+          { prev: previousTrackIds, current: currentTrackIds, new: newTracks },
+          null,
+          2
+        )}`
+      )
 
       await using(pg.getTransaction(), async tx => {
         if (newTracks.length !== 0) {
