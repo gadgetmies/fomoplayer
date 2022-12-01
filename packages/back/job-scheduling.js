@@ -114,7 +114,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
           continue
         } else {
           logger.info(`Updating schedule of job '${name}' to ${schedule}`)
-          scheduled[name].task.destroy()
+          scheduled[name].task?.destroy()
         }
       } else {
         logger.info(`Scheduling new job '${name}' with schedule '${schedule}'`)
