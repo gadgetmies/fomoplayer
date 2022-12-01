@@ -17,12 +17,11 @@ module.exports.bandcampReleasesTransform = L.collect([
     L.filter(R.prop('file')),
     L.elems,
     L.choose(track => {
-      const match = track.title.match(/((.*?) - )?(.*?) (\(([^)]*) Remix\))?/)
-      console.log(match)
+      const match = track.title.match(new RegExp(/((.*?) - )?([^(]*)(\(([^)]*) Remix\))?/))
       const releaseArtistId = release.url.substring(8, release.url.indexOf('.bandcamp.com'))
       const releaseArtistUrl = release.url.substring(0, release.url.indexOf('/', 8))
       const artistTemplate = {
-        name: release.artist,
+        name: track.artist || release.artist,
         id: releaseArtistId || null,
         role: 'author',
         url: releaseArtistUrl || null
@@ -30,14 +29,15 @@ module.exports.bandcampReleasesTransform = L.collect([
       return [
         L.pick({
           id: 'id',
-          title: match ? R.always(match[3]) : 'title',
+          title: match ? R.always(match[3].trim()) : 'title',
           version: R.always(match?.length === 5 ? `${match[4]} Remix` : null),
           artists: match
             ? R.always(
                 (match[2]
                   ? match[2].split(/,&/).map(artist => {
                       const trimmedArtist = artist.trim()
-                      const isReleaseArtist = trimmedArtist.toLocaleLowerCase() === releaseArtistId
+                      const artistId = trimmedArtist.toLocaleLowerCase()
+                      const isReleaseArtist = artistId === releaseArtistId
                       return {
                         ...artistTemplate,
                         name: track.artist || trimmedArtist,
@@ -46,7 +46,7 @@ module.exports.bandcampReleasesTransform = L.collect([
                               id: releaseArtistId,
                               url: releaseArtistUrl
                             }
-                          : {})
+                          : { id: artistId, url: null })
                       }
                     })
                   : [artistTemplate]
