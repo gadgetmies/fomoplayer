@@ -103,7 +103,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
     for (const scheduledName of Object.keys(scheduled)) {
       if (!jobSchedules.find(({ name }) => name === scheduledName)) {
         logger.info(`Removing schedule of job '${scheduledName}'`)
-        scheduled[scheduledName].task.destroy()
+        scheduled[scheduledName].task.stop()
         delete scheduled[scheduledName]
       }
     }
@@ -114,7 +114,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
           continue
         } else {
           logger.info(`Updating schedule of job '${name}' to ${schedule}`)
-          scheduled[name].task?.destroy()
+          scheduled[name].task.stop()
         }
       } else {
         logger.info(`Scheduling new job '${name}' with schedule '${schedule}'`)
