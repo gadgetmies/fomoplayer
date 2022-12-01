@@ -60,7 +60,7 @@ FROM
   NATURAL JOIN store__label
   NATURAL JOIN store
 WHERE
-    store_name = ${storeUrl}
+    store_url = ${storeUrl}
 AND (store__label_last_update IS NULL OR store__label_last_update + INTERVAL '6 hours' < NOW())
 ORDER BY
   store__label_last_update NULLS FIRST
