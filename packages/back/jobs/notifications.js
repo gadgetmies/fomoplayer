@@ -1,7 +1,7 @@
 const pg = require('../db/pg.js')
 const sql = require('sql-template-strings')
 const R = require('ramda')
-const { updateNotificationTracks } = require('../routes/users/db')
+const { updateNotificationTracks, getTracksWithIds } = require('../routes/users/db')
 const { searchForTracks } = require('../routes/shared/db/search')
 const { using } = require('bluebird')
 const { scheduleEmail } = require('../services/mailer')
@@ -38,16 +38,26 @@ module.exports.updateNotifications = async () => {
           )
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
           await updateNotificationTracks(tx, notificationId, currentTrackIds)
+          const trackDetails = await getTracksWithIds(newTracks)
+          const newTracksDetails = trackDetails.map(
+            ({ artists, title, version }) =>
+              `${artists.map(({ name }) => name).join(', ')} - ${title}${version ? ` (${version})` : ''}`
+          )
           await scheduleEmail(
             process.env.NOTIFICATION_EMAIL_SENDER,
             email,
             `New results for your search '${text}'!`,
             `Check out the results at https://fomoplayer.com/search/?q=${uriEncoded}
+            
+            New tracks:
+            ${newTracksDetails.join('\n')}
 `,
             `<h1>New results for your search '${text}'!</h1>
 <a href="https://fomoplayer.com/search/?q=${uriEncoded}">
   Check out the results at https://fomoplayer.com/search/?q=${uriEncoded}
-</a>`
+</a><br/><br/>
+New tracks:<br/>
+${newTracksDetails.join('<br/>')}`
           )
         }
 

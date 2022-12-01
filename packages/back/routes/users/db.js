@@ -1171,6 +1171,14 @@ WHERE user_search_notification_id = ${notificationId}
   )
 })
 
+module.exports.getTracksWithIds = async trackIds =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--getTracksWithIds
+SELECT * FROM track_details(${trackIds})
+`
+  )
+
 module.exports.deleteNotification = async notificationId =>
   pg.queryRowsAsync(
     // language=PostgreSQL
