@@ -428,7 +428,7 @@ class App extends Component {
                 <a
                   href="https://github.com/gadgetmies/fomoplayer/wiki"
                   className={'button button-push_button-large button-push_button-primary'}
-                  target='_blank'
+                  target="_blank"
                 >
                   Find out more on Github <FontAwesomeIcon icon={['fab', 'github']} />
                 </a>
