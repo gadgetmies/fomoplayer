@@ -14,7 +14,7 @@ class Player extends Component {
     super(props)
     this.state = {
       currentTrack: null,
-      heardTracks: props.tracks ? props.tracks.heard : [],
+      heardTracks: props.tracks?.heard || [],
       listenedTracks: 0,
       listState: props.listState,
       searchResults: [],
@@ -271,6 +271,9 @@ class Player extends Component {
 
   getTracks() {
     let tracks
+    if (this.props.mode === 'list') {
+      return this.props.tracks
+    }
 
     if (this.state.listState === 'new') {
       tracks = this.props.tracks.new.slice()

@@ -412,6 +412,7 @@ class App extends Component {
               carts={[this.state.list]}
               initialPosition={this.state.initialPosition}
               notifications={this.state.notifications}
+              tracks={this.state.list.tracks}
             />
           ) : (
             <div className="align-center-container full-screen-popup-container">
