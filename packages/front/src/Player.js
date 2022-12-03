@@ -261,6 +261,7 @@ class Player extends Component {
   }
 
   mergeHeardStatus(tracks) {
+    if (!tracks) return
     this.state.heardTracks.forEach(heardTrack => {
       const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
       if (index !== -1) {
@@ -285,6 +286,8 @@ class Player extends Component {
       tracks = this.props.carts?.find(R.propEq('id', this.state.selectedCartId))?.tracks || []
     } else if (this.state.listState === 'search') {
       tracks = this.state.searchResults
+    } else {
+      tracks = []
     }
     this.mergeHeardStatus(tracks)
 
@@ -360,7 +363,7 @@ class Player extends Component {
     const tracks = this.getTracks()
     const currentTrack = this.getCurrentTrack()
     return (
-      <div className={`page-container ${this.props.isMobile ? 'mobile' : ''}`}>
+      <div className={`page-container ${this.props.isMobile ? 'mobile' : ''}`} style={{ ...this.props.style }}>
         {this.props.follows ? (
           <FollowPopup
             open={this.state.followPopupOpen}

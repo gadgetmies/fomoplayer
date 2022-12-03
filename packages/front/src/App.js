@@ -357,50 +357,54 @@ class App extends Component {
                   path="/:path"
                   render={props => {
                     const query = new URLSearchParams(props.location.search)
-                    return props.match.params.path === 'settings' ? (
-                      <Settings
-                        carts={this.state.carts}
-                        onUpdateCarts={this.updateCarts.bind(this)}
-                        notifications={this.state.notifications}
-                        onRequestNotification={this.requestNotification.bind(this)}
-                        onRemoveNotification={this.removeNotification.bind(this)}
-                        onSetStarred={this.setStarred.bind(this)}
-                        onMarkHeardClicked={this.markHeard.bind(this)}
-                        onUpdateEmail={this.updateEmail.bind(this)}
-                        onCreateCart={this.createCart.bind(this)}
-                        newTracks={this.state.tracksData.meta.newTracks}
-                        totalTracks={this.state.tracksData.meta.totalTracks}
-                        userSettings={this.state.userSettings}
-                        scoreWeights={this.state.scoreWeights}
-                        tracks={this.state.tracksData.tracks}
-                        follows={this.state.follows}
-                      />
-                    ) : (
-                      <Player
-                        mode="app"
-                        listState={props.match.params.path}
-                        search={query.get('q') || undefined}
-                        initialPosition={NaN}
-                        addingToCart={this.state.addingToCart}
-                        onUpdateTracksClicked={this.updateTracks.bind(this)}
-                        carts={this.state.carts}
-                        notifications={this.state.notifications}
-                        notificationsEnabled={this.state.userSettings.emailVerified}
-                        onRequestNotification={this.requestNotification.bind(this)}
-                        onRemoveNotification={this.removeNotification.bind(this)}
-                        follows={this.state.follows}
-                        tracks={this.state.tracksData.tracks}
-                        newTracks={this.state.tracksData.meta.newTracks}
-                        totalTracks={this.state.tracksData.meta.totalTracks}
-                        onAddToCart={this.addToCart.bind(this)}
-                        onCreateCart={this.createCart.bind(this)}
-                        onUpdateCarts={this.updateCarts.bind(this)}
-                        onRemoveFromCart={this.removeFromCart.bind(this)}
-                        onMarkPurchased={this.onMarkPurchased.bind(this)}
-                        onFollow={this.updateFollows.bind(this)}
-                        processingCart={this.state.processingCart}
-                        isMobile={this.state.isMobile}
-                      />
+                    const settingsVisible = props.match.params.path === 'settings'
+                    return (
+                      <>
+                        <Settings
+                          carts={this.state.carts}
+                          onUpdateCarts={this.updateCarts.bind(this)}
+                          notifications={this.state.notifications}
+                          onRequestNotification={this.requestNotification.bind(this)}
+                          onRemoveNotification={this.removeNotification.bind(this)}
+                          onSetStarred={this.setStarred.bind(this)}
+                          onMarkHeardClicked={this.markHeard.bind(this)}
+                          onUpdateEmail={this.updateEmail.bind(this)}
+                          onCreateCart={this.createCart.bind(this)}
+                          newTracks={this.state.tracksData.meta.newTracks}
+                          totalTracks={this.state.tracksData.meta.totalTracks}
+                          userSettings={this.state.userSettings}
+                          scoreWeights={this.state.scoreWeights}
+                          tracks={this.state.tracksData.tracks}
+                          follows={this.state.follows}
+                          style={{ display: settingsVisible ? 'block' : 'none' }}
+                        />
+                        <Player
+                          mode="app"
+                          listState={settingsVisible ? 'new' : props.match.params.path}
+                          search={query.get('q') || undefined}
+                          initialPosition={NaN}
+                          addingToCart={this.state.addingToCart}
+                          onUpdateTracksClicked={this.updateTracks.bind(this)}
+                          carts={this.state.carts}
+                          notifications={this.state.notifications}
+                          notificationsEnabled={this.state.userSettings.emailVerified}
+                          onRequestNotification={this.requestNotification.bind(this)}
+                          onRemoveNotification={this.removeNotification.bind(this)}
+                          follows={this.state.follows}
+                          tracks={this.state.tracksData.tracks}
+                          newTracks={this.state.tracksData.meta.newTracks}
+                          totalTracks={this.state.tracksData.meta.totalTracks}
+                          onAddToCart={this.addToCart.bind(this)}
+                          onCreateCart={this.createCart.bind(this)}
+                          onUpdateCarts={this.updateCarts.bind(this)}
+                          onRemoveFromCart={this.removeFromCart.bind(this)}
+                          onMarkPurchased={this.onMarkPurchased.bind(this)}
+                          onFollow={this.updateFollows.bind(this)}
+                          processingCart={this.state.processingCart}
+                          isMobile={this.state.isMobile}
+                          style={{ display: !settingsVisible ? 'block' : 'none' }}
+                        />
+                      </>
                     )
                   }}
                 />

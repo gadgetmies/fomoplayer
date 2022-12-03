@@ -246,7 +246,7 @@ class Settings extends Component {
 
   render() {
     return (
-      <div className="page-container scroll-container">
+      <div className="page-container scroll-container" style={{ ...this.props.style }}>
         <div className="settings-container">
           <h2>Settings</h2>
           <div>
