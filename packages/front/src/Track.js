@@ -249,7 +249,7 @@ class Track extends Component {
                         </tr>
                       </thead>
                       <tbody>
-                        {Object.entries(this.props.scoreDetails).map(([key, value]) => (
+                        {Object.entries(this.props.scoreDetails || {}).map(([key, value]) => (
                           <tr>
                             <td>{scoreWeights[key].label}</td>
                             <td>{value.score}</td>
