@@ -40,6 +40,7 @@ module.exports.updateNotifications = async () => {
           await updateNotificationTracks(tx, notificationId, currentTrackIds)
           const trackDetails = await getTracksWithIds(newTracks)
           const root = `https://fomoplayer.com`
+          const notificationsUrl = `${root}/settings?page=notifications`
           const newTracksDetails = trackDetails.map(
             ({ artists, title, version }) =>
               `${artists.map(({ name }) => name).join(', ')} - ${title}${version ? ` (${version})` : ''}`
@@ -53,13 +54,19 @@ module.exports.updateNotifications = async () => {
             
             New tracks:
             ${newTracksDetails.join('\n')}
+            
+            Unsubscribe / adjust notification settings at: ${notificationsUrl}
 `,
             `<h1>New results for your search '${text}'!</h1>
 <a href="${searchUrl}">
   Check out the results at ${searchUrl}
 </a><br/><br/>
 New tracks:<br/>
-${newTracksDetails.join('<br/>')}`
+${newTracksDetails.join('<br/>')}
+<br/>
+<br/>
+<a href="${notificationsUrl}">Unsubscribe / adjust notification settings</a> 
+`
           )
         }
 
