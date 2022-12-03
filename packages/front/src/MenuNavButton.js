@@ -7,5 +7,5 @@ export default props => (
     activeClassName="button-push_button-menu-active"
     to={props.to}
     {...props}
-  ></NavLink>
+  />
 )
