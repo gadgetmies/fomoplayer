@@ -39,22 +39,24 @@ module.exports.updateNotifications = async () => {
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
           await updateNotificationTracks(tx, notificationId, currentTrackIds)
           const trackDetails = await getTracksWithIds(newTracks)
+          const root = `https://fomoplayer.com`
           const newTracksDetails = trackDetails.map(
             ({ artists, title, version }) =>
               `${artists.map(({ name }) => name).join(', ')} - ${title}${version ? ` (${version})` : ''}`
           )
+          const searchUrl = `${root}/search/?q=${uriEncoded}`
           await scheduleEmail(
             process.env.NOTIFICATION_EMAIL_SENDER,
             email,
             `New results for your search '${text}'!`,
-            `Check out the results at https://fomoplayer.com/search/?q=${uriEncoded}
+            `Check out the results at ${searchUrl}
             
             New tracks:
             ${newTracksDetails.join('\n')}
 `,
             `<h1>New results for your search '${text}'!</h1>
-<a href="https://fomoplayer.com/search/?q=${uriEncoded}">
-  Check out the results at https://fomoplayer.com/search/?q=${uriEncoded}
+<a href="${searchUrl}">
+  Check out the results at ${searchUrl}
 </a><br/><br/>
 New tracks:<br/>
 ${newTracksDetails.join('<br/>')}`
