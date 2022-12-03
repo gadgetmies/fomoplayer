@@ -51,7 +51,7 @@ module.exports.bandcampReleasesTransform = L.collect([
                     })
                   : [artistTemplate]
                 ).concat(
-                  match.length === 5
+                  match.length === 6
                     ? match[4]
                         .split(/[,&]/)
                         .map(remixer => ({ name: remixer.trim(), id: null, role: 'remixer', url: null }))
