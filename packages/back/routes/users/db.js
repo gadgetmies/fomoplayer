@@ -1043,8 +1043,8 @@ module.exports.queryCartDetails = async cartId => {
 WITH
   cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_uuid FROM cart WHERE cart_id = ${cartId})
 , cart_tracks AS (SELECT array_agg(track_id) AS tracks FROM track__cart WHERE cart_id = ${cartId})
-, td AS (SELECT *, track_id AS id FROM track_details((SELECT tracks FROM cart_tracks)))
-, tracks AS (SELECT json_agg(td) AS tracks FROM td)
+, td AS (SELECT *, track_id AS id FROM track_details((SELECT tracks FROM cart_tracks)) natural join track__cart WHERE cart_id = ${cartId})
+, tracks AS (SELECT json_agg(td ORDER BY track__cart_added DESC) AS tracks FROM td)
 SELECT
   cart_id                     AS id
 , cart_name                   AS name
