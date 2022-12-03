@@ -327,18 +327,7 @@ class Track extends Component {
                       return (
                         <button
                           disabled={processingCart}
-                          style={{
-                            display: 'block',
-                            width: '100%',
-                            marginBottom: 4,
-                            position: 'relative',
-                            paddingLeft: '20px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            textAlign: 'left'
-                          }}
-                          className="button button-push_button-small button-push_button-primary"
+                          className="button button-push_button-small button-push_button-primary cart-button"
                           onClick={e => {
                             e.stopPropagation()
                             return handleCartButtonClick(id, isInCart)

@@ -41,6 +41,19 @@
   padding: 6px !important;
 }
 
+.cart-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 4px;
+  position: relative;
+  padding-left: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
 .score-table {
   width: 100%;
 }
