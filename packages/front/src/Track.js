@@ -322,26 +322,24 @@ class Track extends Component {
                     onClick={e => e.stopPropagation()}
                     onDoubleClick={e => e.stopPropagation()}
                   >
-                    {this.props.carts.map(({ id, name }) => {
-                      const isInCart = this.props.inCarts.find(R.propEq('id', id))
-                      return (
-                        <button
-                          disabled={processingCart}
-                          className="button button-push_button-small button-push_button-primary cart-button"
-                          onClick={e => {
-                            e.stopPropagation()
-                            return handleCartButtonClick(id, isInCart)
-                          }}
-                          key={`cart-${id}`}
-                        >
-                          <FontAwesomeIcon
-                            icon={isInCart ? 'minus' : 'plus'}
-                            style={{ position: 'absolute', left: 0, marginLeft: 6 }}
-                          />{' '}
-                          {name}
-                        </button>
-                      )
-                    })}
+                    {this.props.carts.length === 0
+                      ? 'Loading carts...'
+                      : this.props.carts.map(({ id, name }) => {
+                          const isInCart = this.props.inCarts.find(R.propEq('id', id))
+                          return (
+                            <button
+                              disabled={processingCart}
+                              className="button button-push_button-small button-push_button-primary cart-button"
+                              onClick={e => {
+                                e.stopPropagation()
+                                return handleCartButtonClick(id, isInCart)
+                              }}
+                              key={`cart-${id}`}
+                            >
+                              <FontAwesomeIcon icon={isInCart ? 'minus' : 'plus'} style={{ marginRight: 6 }} /> {name}
+                            </button>
+                          )
+                        })}
                     <hr className={'popup-divider'} />
                     <div className={'input-layout'}>
                       <input
