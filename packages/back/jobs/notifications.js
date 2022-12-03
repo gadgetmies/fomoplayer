@@ -12,9 +12,9 @@ module.exports.updateNotifications = async () => {
   const notificationSearches = await getNotificationDetails()
   const errors = []
 
-  for (const { notificationId, text, userId, email, trackIds: previousTrackIds } of notificationSearches) {
+  for (const { notificationId, text, email, trackIds: previousTrackIds } of notificationSearches) {
     try {
-      const searchResults = await searchForTracks(text, userId)
+      const searchResults = await searchForTracks(text, { limit: 20, sort: '-added' })
       const currentTrackIds = searchResults.map(R.prop('track_id')).map(String)
       const newTracks = R.without(previousTrackIds, currentTrackIds)
       const uriEncoded = encodeURI(text)
