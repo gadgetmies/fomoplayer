@@ -191,7 +191,12 @@ class Preview extends Component {
     if (this.state.playing !== playing) {
       const player = this.getPlayer()
       if (player) {
-        player[playing ? 'play' : 'pause']()
+        try {
+          await player[playing ? 'play' : 'pause']()
+        } catch (e) {
+          console.error('Unable to set playback status', e)
+          this.setState({ playing: false })
+        }
       }
     }
 
@@ -203,7 +208,7 @@ class Preview extends Component {
       } catch (e) {
         console.error(e)
       }
-      this.setState({ loading: false })
+      this.setState({ loading: false, playing: true })
     }
   }
 
@@ -347,8 +352,8 @@ class Preview extends Component {
               }}
             />
             <audio
-              ref="player0"
               autoPlay={true}
+              ref="player0"
               onEnded={() => {
                 this.setPlaying(false)
                 this.props.onNext()

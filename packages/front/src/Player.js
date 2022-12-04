@@ -347,6 +347,7 @@ class Player extends Component {
   }
 
   async handlePlayPauseToggle(playing) {
+    if (this.props.mode !== 'app') return
     if (playing && this.state.playPauseDoubleClickStarted) {
       this.setState({ playPauseDoubleClickStarted: false })
       await this.props.onAddToCart(this.getDefaultCart().id, this.state.currentTrack.id)
