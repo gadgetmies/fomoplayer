@@ -75,6 +75,7 @@ ${newTracksDetails.join('<br/>')}
           sql`--update notification update time
 UPDATE user_search_notification
 SET user_search_notification_last_update = NOW()
+WHERE user_search_notification_id = ${notificationId}
           `
         )
       })
