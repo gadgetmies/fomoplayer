@@ -42,14 +42,15 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s } = {})
         ORDER BY `
 
     const sortParameters = getSortParameters(sort)
-    sortParameters.forEach(([column, order], index) =>
+    sortParameters.forEach(([column, order]) =>
       query
         .append(tx.escapeIdentifier(column))
         .append(' ')
         .append(order)
-        .append(' NULLS LAST ')
-        .append(index === sortParameters.length - 1 ? '' : ', ')
+        .append(' NULLS LAST, ')
     )
+
+    query.append(' track_id DESC')
 
     return await tx.queryRowsAsync(query)
   })
