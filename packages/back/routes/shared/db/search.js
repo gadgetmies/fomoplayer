@@ -2,7 +2,7 @@ const pg = require('../../../db/pg.js')
 const sql = require('sql-template-strings')
 const { using } = require('bluebird')
 
-module.exports.searchForTracks = async (queryString, { limit: l, sort: s } = {}) => {
+module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId } = {}) => {
   const limit = l || 100
   const sort = s || '-released'
   return using(pg.getTransaction(), async tx => {
@@ -12,7 +12,8 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s } = {})
       sql`-- searchForTracks
         SELECT
             track_id AS id
-          , *
+          , td.*
+          , user__track_heard AS heard
         FROM
             track_details(
                     (SELECT
@@ -38,7 +39,13 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s } = {})
                                   websearch_to_tsquery('simple', unaccent(${queryString}))
                           ORDER BY MAX(LEAST(store__track_published, store__track_released)) DESC
                           LIMIT ${limit}
-                         ) AS tracks))
+                         ) AS tracks)) td
+        NATURAL LEFT JOIN
+            (
+                SELECT track_id, user__track_heard
+                FROM user__track
+                WHERE meta_account_user_id = ${userId} :: INT
+            ) ut
         ORDER BY `
 
     const sortParameters = getSortParameters(sort)
