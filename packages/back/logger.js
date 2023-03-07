@@ -18,6 +18,11 @@ if (process.env.TELEGRAM_BOT_TOKEN) {
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: combine(
+    colorize({ all: true }),
+    timestamp({
+      format: 'YYYY-MM-DD hh:mm:ss.SSS A'
+    }),
+    align(),
     printf(
       ({ timestamp, moduleName, level, message, ...meta }) =>
         `[${level}] (${moduleName.replace(require.main.path, '')}): ${message}, meta: ${JSON.stringify(meta)}`
