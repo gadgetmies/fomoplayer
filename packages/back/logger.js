@@ -20,7 +20,7 @@ const logger = winston.createLogger({
   format: combine(
     printf(
       ({ timestamp, moduleName, level, message, ...meta }) =>
-        `${level} [${moduleName.replace(require.main.path, '')}]: ${message}, meta: ${JSON.stringify(meta)}`
+        `[${level}] (${moduleName.replace(require.main.path, '')}): ${message}, meta: ${JSON.stringify(meta)}`
     )
   ),
   transports
