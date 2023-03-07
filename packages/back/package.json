@@ -47,7 +47,8 @@
     "sql-template-strings": "^2.2.2",
     "type-is": "^1.6.18",
     "vm2": "^3.9.9",
-    "winston": "^3.3.3"
+    "winston": "^3.3.3",
+    "winston-telegram": "^2.6.0"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.36",
