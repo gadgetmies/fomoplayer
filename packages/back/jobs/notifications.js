@@ -20,7 +20,7 @@ module.exports.updateNotifications = async () => {
       const uriEncoded = encodeURI(text)
 
       logger.debug(
-        `Found tracks: ${JSON.stringify({ prev: previousTrackIds, current: currentTrackIds, new: newTracks }, null, 2)}`
+        'Found tracks for search', { prev: previousTrackIds, current: currentTrackIds, new: newTracks }
       )
 
       await using(pg.getTransaction(), async tx => {
