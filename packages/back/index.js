@@ -93,7 +93,7 @@ app.get('/cart/:uuid', ({ params: { uuid } }, res, next) => {
       const cartDetails = await getCartDetails(uuid)
 
       if (cartDetails === null) {
-        logger.error('Cart details not found', { uuid })
+        logger.debug('Cart details not found', { uuid })
         return res.status(404).end()
       }
 

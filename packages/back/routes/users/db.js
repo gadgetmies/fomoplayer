@@ -818,7 +818,7 @@ SELECT EXISTS(
 }
 
 module.exports.removeReleasesFromUser = (userId, releases) => {
-  logger.info('removeReleasesFromUser', { userId, releases })
+  logger.debug('removeReleasesFromUser', { userId, releases })
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- removeReleasesFromUser
@@ -835,7 +835,7 @@ WHERE
 }
 
 module.exports.setTrackHeard = (trackId, userId, heard) => {
-  logger.info('setTrackHeard', { trackId, userId, heard })
+  logger.debug('setTrackHeard', { trackId, userId, heard })
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- setTrackHeard

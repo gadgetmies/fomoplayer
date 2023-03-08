@@ -78,7 +78,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   type,
   sourceId
 ) => {
-  logger.info('Start processing received tracks', userIds)
+  logger.debug('Start processing received tracks', userIds)
 
   let addedTracks = []
   for (const track of tracks) {
@@ -95,7 +95,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
 
 const addTrackToUser = (module.exports.addTrackToUser = async (tx, userId, artists, trackId, labelId, sourceId) => {
   if (await artistOnLabelInIgnore(tx, userId, artists, labelId)) {
-    logger.info('One of the artists ignored on label by user, skipping', { userId, artists, labelId })
+    logger.debug('One of the artists ignored on label by user, skipping', { userId, artists, labelId })
   } else {
     await addTrackToUserDb(tx, userId, trackId, sourceId)
   }
@@ -139,18 +139,18 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = '
 }
 
 module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
-  logger.info('updateArtistTracks', { storeUrl, details, sourceId })
+  logger.debug('updateArtistTracks', { storeUrl, details, sourceId })
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingArtist(details.storeArtistId)
   const generator = await storeModule.logic.getArtistTracks(details)
   let combinedErrors = []
 
-  logger.info(`Processing tracks for artist: ${details.url}`)
+  logger.debug(`Processing tracks for artist: ${details.url}`)
   for await (const { tracks, errors } of generator) {
-    logger.info(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
+    logger.debug(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
     try {
       combinedErrors.concat(errors)
-      logger.info(`Processing ${tracks.length} tracks`)
+      logger.debug(`Processing ${tracks.length} tracks`)
       await addStoreTracksToUsers(storeUrl, tracks, users, 'tracks', sourceId)
     } catch (e) {
       const error = [`Failed to add artist tracks to users`, { error: e.toString(), details }]
@@ -167,7 +167,7 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
 }
 
 module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
-  logger.info(`Updating label tracks: ${details.url}`)
+  logger.debug(`Updating label tracks: ${details.url}`)
   const storeModule = getStoreModule(storeUrl)
   let users
   try {
@@ -177,12 +177,12 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   }
   const generator = storeModule.logic.getLabelTracks(details)
 
-  logger.info(`Processing tracks for label: ${details.url}`)
+  logger.debug(`Processing tracks for label: ${details.url}`)
   let combinedErrors = []
   for await (const { tracks, errors } of generator) {
     try {
       combinedErrors.concat(errors)
-      logger.info(`Processing ${tracks.length} tracks`)
+      logger.debug(`Processing ${tracks.length} tracks`)
       await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
     } catch (e) {
       console.error(e)

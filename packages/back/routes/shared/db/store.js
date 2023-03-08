@@ -74,7 +74,7 @@ WHERE
     .then(getLabelIdFromResult)
 
   if (!labelId) {
-    logger.info(`Label ${label.name} not found, inserting`)
+    logger.debug(`Label ${label.name} not found, inserting`)
     labelId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
@@ -111,9 +111,9 @@ RETURNING label_id
   }
 
   const res = await getStoreLabelIdForUrl(tx, label.url)
-  logger.info('getStoreLabelIdForUrl', label)
+  logger.debug('getStoreLabelIdForUrl', label)
   const [{ storeLabelId }] = res
-  logger.info('getStoreLabelIdForUrl done')
+  logger.debug('getStoreLabelIdForUrl done')
 
   return { labelId, storeLabelId }
 }
@@ -209,7 +209,7 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
       .then(getArtistIdFromResult)
 
     if (!artistId) {
-      logger.info(`Artist ${artist.name} not found with id, trying with name`)
+      logger.debug(`Artist ${artist.name} not found with id, trying with name`)
       artistId = await tx
         .queryRowsAsync(
           // language=PostgreSQL
@@ -223,7 +223,7 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
     }
 
     if (!artistId) {
-      logger.info(`Artist ${artist.name} not found, inserting`)
+      logger.debug(`Artist ${artist.name} not found, inserting`)
       artistId = await tx
         .queryRowsAsync(
           // language=PostgreSQL
@@ -293,7 +293,7 @@ WHERE
     .then(getTrackIdFromResult)
 
   if (!trackId) {
-    logger.info('Track not found with id, searching with name')
+    logger.debug('Track not found with id, searching with name')
     trackId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
@@ -318,7 +318,7 @@ AND ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedA
   }
 
   if (!trackId) {
-    logger.info('Track not found, inserting')
+    logger.debug('Track not found, inserting')
     trackId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
@@ -332,7 +332,7 @@ RETURNING track_id
       )
       .then(getTrackIdFromResult)
 
-    logger.info(`Inserted new track with id: ${trackId}`)
+    logger.debug(`Inserted new track with id: ${trackId}`)
   } else {
     await tx.queryAsync(
       // language=PostgreSQL

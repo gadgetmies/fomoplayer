@@ -19,13 +19,13 @@ module.exports.updateNotifications = async () => {
       const newTracks = R.without(previousTrackIds, currentTrackIds)
       const uriEncoded = encodeURI(text)
 
-      logger.info(
+      logger.debug(
         `Found tracks: ${JSON.stringify({ prev: previousTrackIds, current: currentTrackIds, new: newTracks }, null, 2)}`
       )
 
       await using(pg.getTransaction(), async tx => {
         if (newTracks.length !== 0) {
-          logger.info(
+          logger.debug(
             `Found new tracks: ${JSON.stringify(
               { prev: previousTrackIds, current: currentTrackIds, new: newTracks },
               null,

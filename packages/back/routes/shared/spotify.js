@@ -7,14 +7,14 @@ const spotifyApi = new SpotifyWebApi({
 })
 
 const refreshToken = (module.exports.refreshToken = async () => {
-  logger.info('Refreshing Spotify token')
+  logger.debug('Refreshing Spotify token')
   try {
     const data = await spotifyApi.clientCredentialsGrant()
     spotifyApi.setAccessToken(data.body['access_token'])
     const expiresIn = data.body['expires_in']
-    logger.info(`Refreshing token in ${expiresIn / 2} seconds`)
-    setTimeout(refreshToken, expiresIn / 2 * 1000)
-    logger.info('Done refreshing Spotify token')
+    logger.debug(`Refreshing token in ${expiresIn / 2} seconds`)
+    setTimeout(refreshToken, (expiresIn / 2) * 1000)
+    logger.debug('Done refreshing Spotify token')
   } catch (e) {
     logger.error('Spotify token refresh failed', e)
   }
