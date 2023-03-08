@@ -187,7 +187,6 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
       logger.debug(`Processing ${tracks.length} tracks`)
       await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
     } catch (e) {
-      console.error(e)
       const error = [`Failed to add label tracks to users`, { error: e.toString(), tracks, details }]
       combinedErrors.push(error)
       logger.error(...error)
@@ -217,7 +216,7 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
       await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
     } catch (e) {
       const error = [`Failed to add playlist tracks to users`, { error: e.toString(), tracks, details }]
-      errors.push(error)
+      err.push(error)
       logger.error(...error)
     }
   }
