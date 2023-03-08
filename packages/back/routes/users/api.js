@@ -74,7 +74,6 @@ router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
 )
 
 router.post('/tracks/:id', ({ user: { id: userId }, params: { id }, body: { heard } }, res) => {
-  logger.info('POST /tracks/:id', { id, heard, userId })
   setTrackHeard(id, userId, heard).tap(() => res.send())
 })
 
