@@ -17,7 +17,7 @@
   "dependencies": {
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.1",
-    "bp-api": "gadgetmies/bp-api#v3.1.9",
+    "bp-api": "gadgetmies/bp-api#v3.2.0",
     "cloudmailin": "^0.0.3",
     "color-stacktrace": "^1.0.3",
     "compression": "^1.7.4",
