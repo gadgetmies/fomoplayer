@@ -269,7 +269,7 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
 
     return { id: artistId, storeArtistId: res[0]?.storeArtistId, role: artist.role }
   } catch (e) {
-    logger.error('error adding track', e)
+    logger.error('Error adding track', e)
   }
 }
 
