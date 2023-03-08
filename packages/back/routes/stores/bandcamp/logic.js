@@ -114,10 +114,8 @@ const getTracksFromReleases = async releaseUrls => {
   const transformed = bandcampReleasesTransform(releaseDetails)
   logger.debug(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
   if (transformed.length === 0) {
-    const error = `No tracks found for releases ${releaseUrls.join(', ')}`
-    logger.error(error)
-    errors.push([error])
-    return errors
+    logger.warn(`No tracks found for releases ${releaseUrls.join(', ')}`)
+    return {errors, tracks: []}
   }
 
   return { errors, tracks: transformed }
