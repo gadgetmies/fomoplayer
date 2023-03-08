@@ -123,7 +123,7 @@ module.exports.addArtistsToIgnore = async (userId, artistIds) => {
       await removeIgnoredTracksFromUsers(tx, [userId])
     })
   } catch (e) {
-    logger.error(e)
+    logger.error('Adding artists to ignore failed', e)
   }
 }
 

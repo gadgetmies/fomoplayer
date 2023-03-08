@@ -196,7 +196,7 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
     try {
       await setLabelUpdated(details.storeLabelId)
     } catch (e) {
-      logger.error('Error in updateLabelTrack 2')
+      logger.error('Error setting label updated')
     }
   }
 

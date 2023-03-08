@@ -72,7 +72,7 @@ app.use(
         ensureAuthenticated(req, res, next)
       }
     } catch (e) {
-      logger.error(e)
+      logger.error('Error authenticating request', e)
       next(e)
     }
   },
@@ -122,7 +122,7 @@ ${cartOpenGraphDetails}`
         )
       return res.send(patchedIndex)
     } catch (e) {
-      logger.error(e)
+      logger.error('Cart page generation failed', e)
       next(e)
     }
   })

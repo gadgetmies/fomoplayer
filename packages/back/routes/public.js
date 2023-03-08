@@ -28,7 +28,7 @@ router.get('/verify-email/:verificationCode', async ({ params: { verificationCod
     await verifyEmail(verificationCode)
     res.send(emailVerificationSuccessPage)
   } catch (e) {
-    logger.error('', e)
+    logger.error('Email verification failed', e)
     res.send(emailVerificationFailPage)
   }
 })
