@@ -87,7 +87,7 @@ app.get('/cart/:uuid', ({ params: { uuid } }, res, next) => {
     try {
       if (err || !uuid) {
         logger.error('Error during file reading', { uuid, err })
-        return res.status(404).end()
+        return res.status(500).end()
       }
 
       const cartDetails = await getCartDetails(uuid)
