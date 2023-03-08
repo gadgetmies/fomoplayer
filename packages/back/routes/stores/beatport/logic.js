@@ -73,8 +73,7 @@ module.exports.getLabelTracks = async function*({ labelStoreId }) {
   const labelTracks = await bpApiStatic.getLabelTracksAsync(labelStoreId, 1)
   if (labelTracks.tracks.length === 0) {
     const error = `No tracks found for label ${labelStoreId}`
-    logger.error(error, { labelStoreId })
-    throw new Error(error)
+    logger.warn(error, { labelStoreId })
   }
 
   const transformed = beatportTracksTransform(labelTracks.tracks)
