@@ -173,7 +173,9 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   try {
     users = await getUsersFollowingLabel(details.storeLabelId)
   } catch (e) {
-    logger.error('Error in updateLabelTracks 1')
+    const error = ['Error fetching user follows for label', { error: e.toString(), storeId, details }]
+    logger.error(...error)
+    return [error]
   }
   const generator = storeModule.logic.getLabelTracks(details)
 
