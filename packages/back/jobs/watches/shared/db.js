@@ -37,7 +37,8 @@ FROM
   NATURAL JOIN store__artist
   NATURAL JOIN store
 WHERE
-    store_url = ${storeUrl}
+    store_url = ${storeUrl} AND
+    store__artist_ignored IS FALSE
 AND store__artist_url IS NOT NULL
 AND (store__artist_last_update IS NULL OR store__artist_last_update + INTERVAL '6 hours' < NOW())
 ORDER BY
@@ -60,7 +61,8 @@ FROM
   NATURAL JOIN store__label
   NATURAL JOIN store
 WHERE
-    store_url = ${storeUrl}
+    store_url = ${storeUrl} AND
+    store__label_ignored IS FALSE
 AND (store__label_last_update IS NULL OR store__label_last_update + INTERVAL '6 hours' < NOW())
 ORDER BY
   store__label_last_update NULLS FIRST
