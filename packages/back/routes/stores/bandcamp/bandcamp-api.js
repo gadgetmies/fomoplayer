@@ -72,6 +72,8 @@ const getPageInfo = (url, callback) => {
       name: getName(dom),
       releaseUrls: getReleaseUrls(url, dom)
     })
+  }).catch(e => {
+    callback(e)
   })
 }
 
@@ -89,6 +91,8 @@ const getTag = (tag, callback) => {
       id: tag,
       name: tagTitle
     })
+  }).catch(e => {
+    callback(e)
   })
 }
 
@@ -114,6 +118,8 @@ const getPageDetails = (url, callback) => {
       name: pageTitle,
       type: artistsLink === null ? 'artist' : 'label'
     })
+  }).catch(e => {
+    callback(e)
   })
 }
 
