@@ -111,6 +111,8 @@ const getTracksFromReleases = async releaseUrls => {
     }
   }
 
+  logger.debug('Release details', {releaseUrls, releaseDetails})
+
   const transformed = bandcampReleasesTransform(releaseDetails)
   logger.debug(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
   if (transformed.length === 0 && releaseDetails.length > 0 && releaseDetails.filter(R.complement(R.prop('is_prerelease')))) {
