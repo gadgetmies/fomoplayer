@@ -66,7 +66,7 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
     logger.error('Artist track transform failed', { transformed, tracks: artistTracks.tracks })
   }
 
-  yield { tracks: transformed, errors: [] }
+  return { tracks: transformed, errors: [] }
 }
 
 module.exports.getLabelTracks = async function*({ labelStoreId }) {
@@ -99,7 +99,7 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
     logger.error('Playlist track transform failed', { transformed, tracks: playlist.tracks.tracks })
   }
 
-  yield { tracks: transformed, errors: [] }
+  return { tracks: transformed, errors: [] }
 }
 
 module.exports.search = async query => {

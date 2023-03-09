@@ -84,7 +84,7 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
     throw new Error(error)
   }
 
-  yield { tracks: transformed, errors: [] }
+  return { tracks: transformed, errors: [] }
 }
 
 module.exports.getArtistTracks = async function*({ artistStoreId }) {
@@ -98,7 +98,7 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
     throw new Error(error)
   }
 
-  yield { tracks: transformed, errors: [] }
+  return { tracks: transformed, errors: [] }
 }
 
 module.exports.search = async query => {
