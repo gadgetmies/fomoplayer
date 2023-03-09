@@ -78,7 +78,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   type,
   sourceId
 ) => {
-  logger.debug('Start processing received tracks', userIds)
+  logger.debug('Start processing received tracks', { userIds })
 
   let addedTracks = []
   for (const track of tracks) {
