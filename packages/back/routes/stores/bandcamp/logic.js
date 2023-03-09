@@ -132,7 +132,7 @@ module.exports.getArtistTracks = async function*({ url }) {
     try {
       yield await getTracksFromReleases([releaseUrl])
     } catch (e) {
-      logger.error('Error getting tracks from release', e)
+      logger.error('Error getting artist tracks from release', e)
       yield { tracks: [], errors: [e] }
     }
   }
@@ -146,7 +146,7 @@ module.exports.getLabelTracks = async function*({ url }) {
     try {
       yield await getTracksFromReleases([releaseUrl])
     } catch (e) {
-      logger.error('Error getting tracks from release', e)
+      logger.error('Error getting label tracks from release', e)
       yield { tracks: [], errors: [e] }
     }
   }
