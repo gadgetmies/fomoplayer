@@ -52,7 +52,7 @@ const getPageTitle = pageSource => {
 
 const getName = dom => {
   const siteNameElement = dom.window.document.querySelector('[property="og:site_name"]')
-  const nameFromTitle = dom.window.document.title.split(' | ')[1]
+  const nameFromTitle = dom.window.document.title && dom.window.document.title.split(' | ')[1]
   return (siteNameElement !== null && siteNameElement.getAttribute('content')) || nameFromTitle
 }
 
