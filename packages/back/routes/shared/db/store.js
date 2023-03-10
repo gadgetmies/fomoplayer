@@ -237,6 +237,8 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
         .then(getArtistIdFromResult)
     }
 
+    logger.debug('Inserting store artist')
+
     await tx.queryRowsAsync(
       // language=PostgreSQL
       sql`-- ensureArtistExists INSERT INTO store__artist
@@ -256,6 +258,8 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
 
       `
     )
+
+    logger.debug('Store artist inserted')
 
     const res = await tx.queryRowsAsync(
       // language=PostgreSQL
