@@ -1,7 +1,9 @@
 const winston = require('winston')
 const TelegramLogger = require('winston-telegram')
 
-let transports = [new winston.transports.Console()]
+let transports = [new winston.transports.Console({
+  handleExceptions: true
+})]
 if (process.env.TELEGRAM_BOT_TOKEN) {
   transports.push(
     new TelegramLogger({
