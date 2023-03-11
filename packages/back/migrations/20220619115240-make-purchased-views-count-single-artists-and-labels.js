@@ -28,7 +28,7 @@ exports.up = function(db) {
     fs.readFile(filePath, { encoding: 'utf-8' }, function(err, data) {
       if (err) return reject(err)
       if (db.log.isSilent !== true) {
-        db.log('received data: ' + data)
+        console.log('received data: ' + data)
       }
 
       resolve(data)
@@ -48,7 +48,7 @@ exports.down = function(db) {
     fs.readFile(filePath, { encoding: 'utf-8' }, function(err, data) {
       if (err) return reject(err)
       if (db.log.isSilent !== true) {
-        db.log('received data: ' + data)
+        console.log('received data: ' + data)
       }
 
       resolve(data)
