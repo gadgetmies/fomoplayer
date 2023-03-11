@@ -113,8 +113,15 @@ const getTracksFromReleases = async releaseUrls => {
 
   logger.debug('Release details', {releaseUrls, releaseDetails})
 
-  const transformed = bandcampReleasesTransform(releaseDetails)
-  logger.debug(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
+  let transformed = []
+  try {
+    transformed = bandcampReleasesTransform(releaseDetails)
+    logger.debug(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
+  } catch (e) {
+    logger.error(`Track transformation failed`, {releaseUrls, releaseDetails})
+    return {errors, tracks: []}
+  }
+
   if (transformed.length === 0 && releaseDetails.length > 0 && releaseDetails.filter(R.complement(R.prop('is_prerelease')))) {
     logger.error(`Track transformation failed`, {releaseUrls, releaseDetails})
     return {errors, tracks: []}
