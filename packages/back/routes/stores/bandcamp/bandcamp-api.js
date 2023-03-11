@@ -1,6 +1,6 @@
 const BPromise = require('bluebird')
 const R = require('ramda')
-const { error } = require('../../../logger')(__filename)
+const logger = require('../../../logger')(__filename)
 const { decode } = require('html-entities')
 const jsdom = require('jsdom')
 const { JSDOM } = jsdom
@@ -39,7 +39,8 @@ const getRelease = (itemUrl, callback) => {
       callback(null, { ...getReleaseInfo(res), url: itemUrl })
     })
     .catch(e => {
-      error(`Fetching release from ${itemUrl} failed`, e)
+      logger.error(`Fetching release from ${itemUrl} failed`)
+      logger.silly(e)
       callback(e)
     })
 }
@@ -141,7 +142,8 @@ const getSearchResults = (query, callback) => {
       callback(null, mapSearchResults(res))
     })
     .catch(e => {
-      error(`Searching for ${query} failed`, e)
+      logger.error(`Searching for ${query} failed`)
+      logger.silly(e)
       callback(e)
     })
 }

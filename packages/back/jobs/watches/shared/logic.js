@@ -36,9 +36,10 @@ module.exports.artistFetchJob = storeUrl => async jobDetails => {
 
       errors.concat(await updateArtistTracks(storeUrl, details, sourceId))
     } catch (e) {
-      const error = [`Failed to fetch artist details for ${details.url}`, e]
-      logger.error(...error)
-      errors.push(error)
+      const errorMessage = `Failed to fetch artist details for ${details.url}`
+      logger.error(errorMessage)
+      logger.silly(e)
+      errors.push([errorMessage, e])
     }
   }
 
