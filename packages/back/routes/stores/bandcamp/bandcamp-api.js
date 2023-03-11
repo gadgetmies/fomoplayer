@@ -39,7 +39,7 @@ const getRelease = (itemUrl, callback) => {
       callback(null, { ...getReleaseInfo(res), url: itemUrl })
     })
     .catch(e => {
-      logger.error(`Fetching release from ${itemUrl} failed`)
+      logger.error(`Fetching release from ${itemUrl} failed`, {statusCode: e.statusCode})
       logger.silly(e)
       callback(e)
     })
@@ -142,7 +142,7 @@ const getSearchResults = (query, callback) => {
       callback(null, mapSearchResults(res))
     })
     .catch(e => {
-      logger.error(`Searching for ${query} failed`)
+      logger.error(`Searching for ${query} failed`, {statusCode: e.statusCode})
       logger.silly(e)
       callback(e)
     })
