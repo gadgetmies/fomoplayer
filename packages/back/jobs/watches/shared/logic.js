@@ -31,7 +31,7 @@ module.exports.artistFetchJob = storeUrl => async jobDetails => {
   let count = 1
   for (const details of artistFollowDetails) {
     try {
-      logger.info(`Updating tracks for artists ${count}/${artistFollowDetails.length}: ${details.storeArtistId}`)
+      logger.info(`Updating tracks for artists ${count}/${artistFollowDetails.length}: ${details.storeArtistId} @ ${storeUrl}`)
       count++
 
       errors.concat(await updateArtistTracks(storeUrl, details, sourceId))
