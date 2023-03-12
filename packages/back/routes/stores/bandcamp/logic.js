@@ -95,6 +95,11 @@ module.exports.getFollowDetails = async urlString => {
   return []
 }
 
+const releaseTracksWithFiles = (releaseDetails) => {
+  const tracks = releaseDetails.reduce((acc, {trackinfo}) => acc.concat(trackinfo), [])
+  return tracks.filter(R.complement(R.propEq('file', null)))
+}
+
 const getTracksFromReleases = async releaseUrls => {
   const errors = []
 
@@ -122,9 +127,15 @@ const getTracksFromReleases = async releaseUrls => {
     return {errors, tracks: []}
   }
 
-  if (transformed.length === 0 && releaseDetails.length > 0 && releaseDetails.filter(R.complement(R.prop('is_prerelease')))) {
-    logger.error(`Track transformation failed`, {releaseUrls, releaseDetails})
-    return {errors, tracks: []}
+  const tracksWithFiles = releaseTracksWithFiles(releaseDetails)
+  if (
+    transformed.length === 0 &&
+    releaseDetails.length > 0 &&
+    releaseDetails.filter(R.complement(R.prop('is_prerelease'))) > 0 &&
+    tracksWithFiles.length > 0
+  ) {
+    logger.error(`Track transformation failed`, { releaseUrls, releaseDetails, tracksWithFiles })
+    return { errors, tracks: [] }
   } else if (transformed.length === 0) {
     logger.warn(`No tracks found for releases`, {releaseUrls, releaseDetails})
   }
