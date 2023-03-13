@@ -78,7 +78,7 @@ module.exports.bandcampReleasesTransform = L.collect([
                 )
               )
             : R.always([artistTemplate]),
-          released: R.always(release.current.release_date),
+          released: R.always(release.current.release_date || release.current.publish_date),
           published: R.always(release.current.publish_date),
           duration_ms: durationLens,
           release: R.always({
