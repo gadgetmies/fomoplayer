@@ -93,7 +93,9 @@ class Track extends Component {
     const beaportTrack = this.getStoreTrackByStoreCode('beatport')
     const bandcampTrack = this.getStoreTrackByStoreCode('bandcamp')
     const searchString = encodeURIComponent(
-      `${this.props.artists.map(R.prop('name')).join('+')}+${this.props.title}+${this.props.version}`
+      `${this.props.artists.map(R.prop('name')).join('+')}+${this.props.title}${
+        this.props.version ? `+${this.props.version}` : ''
+      }`
     )
 
     const title = `${this.props.title} ${this.props.version ? `(${this.props.version})` : ''}`
