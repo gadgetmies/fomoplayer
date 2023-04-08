@@ -7,7 +7,6 @@ import MediaSession from '@mebtte/react-media-session'
 import FollowPopup from './FollowPopup'
 import IgnorePopup from './IgnorePopup'
 import { trackTitle, artistNamesToString, trackArtistsAndTitle } from './trackFunctions'
-import { useHistory } from 'react-router-dom'
 
 class Player extends Component {
   constructor(props) {
