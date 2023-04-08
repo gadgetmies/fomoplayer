@@ -417,6 +417,7 @@ class Player extends Component {
           notifications={this.props.notifications}
           selectedCart={this.props.carts?.find(({ id }) => id === this.state.selectedCartId)}
           tracks={tracks}
+          fetchNewTracks={this.props.fetchNewTracks}
           listState={this.state.listState}
           currentTrack={(currentTrack || {}).id}
           processingCart={this.props.processingCart}

@@ -9,6 +9,7 @@ import './Select.css'
 import Track from './Track'
 import Spinner from './Spinner'
 import { Link } from 'react-router-dom'
+import InfiniteScroll from 'react-infinite-scroll-component'
 
 class Tracks extends Component {
   constructor(props) {
@@ -461,7 +462,7 @@ class Tracks extends Component {
               </th>
             </tr>
           </thead>
-          <tbody style={{ overflow: 'scroll', display: 'block' }} onScroll={this.handleScroll}>
+          <tbody id="tracks" style={{ overflow: 'scroll', display: 'block' }} onScroll={this.handleScroll}>
             <tr style={{ width: '100%', background: 'none', position: 'absolute', zIndex: 1 }}>
               <td
                 style={{
@@ -502,6 +503,18 @@ class Tracks extends Component {
             </tr>
           </tbody>
         </table>
+        <InfiniteScroll
+          dataLength={this.props.tracks.length}
+          next={this.props.fetchNewTracks}
+          hasMore={this.props.listState === 'new'}
+          loader={<h4>Loading...</h4>}
+          endMessage={
+            <p style={{ textAlign: 'center' }}>
+              <b>Yay! You have seen it all</b>
+            </p>
+          }
+          scrollableTarget="tracks"
+        />
       </div>
     )
   }

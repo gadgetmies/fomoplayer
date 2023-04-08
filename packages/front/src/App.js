@@ -284,6 +284,20 @@ class App extends Component {
     this.setState({ tracksData: { tracks, meta: { newTracks, totalTracks } } })
   }
 
+  async fetchNewTracks(page) {
+    console.log('fetchNewTracks')
+    const {
+      meta: { new: newTracks, total: totalTracks },
+      tracks
+    } = await requestJSONwithCredentials({
+      path: `/me/tracks/new?page=${page}`
+    })
+
+    this.setState({
+      tracksData: { tracks: { ...this.state.tracksData.tracks, new: newTracks }, meta: { newTracks, totalTracks } }
+    })
+  }
+
   async markHeard(interval) {
     await requestWithCredentials({
       path: `/me/tracks?interval=${interval}`,
@@ -394,6 +408,7 @@ class App extends Component {
                           tracks={this.state.tracksData.tracks}
                           newTracks={this.state.tracksData.meta.newTracks}
                           totalTracks={this.state.tracksData.meta.totalTracks}
+                          fetchNewTracks={this.fetchNewTracks.bind(this)}
                           onAddToCart={this.addToCart.bind(this)}
                           onCreateCart={this.createCart.bind(this)}
                           onUpdateCarts={this.updateCarts.bind(this)}

@@ -20,6 +20,7 @@ const {
   removeLabelIgnoreFromUser,
   removeArtistIgnoreFromUser,
   getUserTracks,
+  getNewTracks,
   removeArtistWatchFromUser,
   removeLabelWatchFromUser,
   removePlaylistFollowFromUser,
@@ -66,6 +67,13 @@ router.get(
   ) => {
     const userTracks = await getUserTracks(authUserId, sort, { new: limitNew, recent: limitRecent, heard: limitHeard })
     res.json(userTracks)
+  }
+)
+
+router.get(
+  '/tracks/new',
+  async ({ user: { id: authUserId }, query: { page = 1, sort = '-score', limit = 50 }, res }) => {
+    res.json(await getNewTracks(authUserId, sort, limit, page))
   }
 )
 

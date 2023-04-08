@@ -31,6 +31,7 @@ const {
   queryUserLabelIgnores,
   queryUserArtistIgnores,
   queryUserTracks,
+  queryNewTracks,
   deleteArtistWatchesFromUser,
   deleteArtistWatchFromUser,
   deleteLabelWatchesFromUser,
@@ -69,6 +70,7 @@ const logger = require('../../logger')(__filename)
 const { apiURL } = require('../../config')
 
 module.exports.getUserTracks = queryUserTracks
+module.exports.getNewTracks = queryNewTracks
 module.exports.getUserArtistFollows = queryUserArtistFollows
 module.exports.getUserLabelFollows = queryUserLabelFollows
 module.exports.getUserPlaylistFollows = queryUserPlaylistFollows
