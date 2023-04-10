@@ -11,9 +11,6 @@
     "test": "NODE_ENV=test node -r dotenv/config ./test/run-tests.js ./test/tests dotenv_config_path=.env.test",
     "ci:test": "NODE_ENV=ci node -r dotenv/config ./test/run-tests.js ./test/tests dotenv_config_path=.env.ci"
   },
-  "engines": {
-    "node": "14.x"
-  },
   "dependencies": {
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.1",

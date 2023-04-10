@@ -4,7 +4,7 @@
   "description": "",
   "main": "ecosystem.config.js",
   "engines": {
-    "node": "14.x"
+    "node": "16.x"
   },
   "scripts": {
     "migrate": "yarn workspace multi_store_player_back migrate",
@@ -15,7 +15,10 @@
     "start:prod": "concurrently \"yarn run start:back\" \"yarn run start:prod-front\"",
     "ci:test": "yarn workspace multi_store_player_back ci:test",
     "test": "yarn workspace multi_store_player_back test",
-    "build": "yarn workspace multi_store_player_front build"
+    "build": "yarn workspace multi_store_player_front build && mkdir -p packages/infrastructure/resources && cp -r packages/front/build packages/infrastructure/resources/",
+    "build:infrastructure": "yarn workspace multi_store_player_infrastructure build",
+    "synth": "yarn workspace multi_store_player_infrastructure cdk synth",
+    "deploy": "yarn && yarn run build && yarn run synth && yarn workspace multi_store_player_infrastructure cdk deploy --all"
   },
   "repository": {
     "type": "git",

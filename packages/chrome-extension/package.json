@@ -2,9 +2,6 @@
   "name": "multi_store_player_chrome_extension",
   "version": "0.0.2",
   "description": "Multi store player chrome extension",
-  "engines": {
-    "node": "14.x"
-  },
   "scripts": {
     "build": "node utils/build.js",
     "start": "node utils/webserver.js"
