@@ -87,8 +87,7 @@ SELECT meta_account_user_id                  AS "userId",
 FROM user_search_notification
          NATURAL JOIN meta_account_email
 WHERE (
-    user_search_notification_last_update IS NULL
-    OR user_search_notification_last_update + INTERVAL '6 hours' < NOW()
+    user_search_notification_last_update + INTERVAL '6 hours' < NOW()
   )
   AND meta_account_email_verified
 ORDER BY user_search_notification_last_update DESC NULLS FIRST
