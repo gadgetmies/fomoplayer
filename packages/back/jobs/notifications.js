@@ -12,29 +12,17 @@ module.exports.updateNotifications = async () => {
   const notificationSearches = await getNotificationDetails()
   const errors = []
 
-  for (const { notificationId, text, email, trackIds: previousTrackIds } of notificationSearches) {
+  for (const { notificationId, text, email, lastUpdate } of notificationSearches) {
     try {
-      const searchResults = await searchForTracks(text, { limit: 50, sort: '-added' })
-      const currentTrackIds = searchResults.map(R.prop('track_id')).map(String)
-      const newTracks = R.without(previousTrackIds, currentTrackIds)
+      const searchResults = await searchForTracks(text, { limit: 50, sort: '-added', addedSince: lastUpdate })
       const uriEncoded = encodeURI(text)
 
-      logger.debug(
-        'Found tracks for search', { prev: previousTrackIds, current: currentTrackIds, new: newTracks }
-      )
+      logger.debug('Found tracks for search', { searchResults })
 
       await using(pg.getTransaction(), async tx => {
-        if (newTracks.length !== 0) {
-          logger.debug(
-            `Found new tracks: ${JSON.stringify(
-              { prev: previousTrackIds, current: currentTrackIds, new: newTracks },
-              null,
-              2
-            )}`
-          )
+        if (searchResults.length !== 0) {
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
-          await updateNotificationTracks(tx, notificationId, currentTrackIds)
-          const trackDetails = await getTracksWithIds(newTracks)
+          const trackDetails = await getTracksWithIds(searchResults.map(R.prop('track_id')))
           const root = `https://fomoplayer.com`
           const notificationsUrl = `${root}/settings?page=notifications`
           const newTracksDetails = trackDetails.map(
@@ -95,7 +83,7 @@ SELECT meta_account_user_id                  AS "userId",
        user_search_notification_id           AS "notificationId",
        user_search_notification_string       AS text,
        meta_account_email_address            AS email,
-       user_search_notification_tracks       AS "trackIds"
+       user_search_notification_last_update  AS "lastUpdate"
 FROM user_search_notification
          NATURAL JOIN meta_account_email
 WHERE (
