@@ -419,6 +419,8 @@ module.exports.createNotification = async (userId, searchString) => {
   using(pg.getTransaction(), async tx => {
     await upsertNotification(tx, userId, searchString)
   })
+
+  return queryNotifications(userId)
 }
 
 module.exports.removeNotification = async (userId, notificationId) => {
