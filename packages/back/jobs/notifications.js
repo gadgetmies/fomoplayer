@@ -45,7 +45,7 @@ module.exports.updateNotifications = async () => {
 <a href="${searchUrl}">
   Check out the results at ${searchUrl}
 </a><br/><br/>
-New tracks:<br/>
+<strong>New tracks:</strong><br/>
 ${newTracksDetails.join('<br/>')}
 <br/>
 <br/>
