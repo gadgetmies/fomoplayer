@@ -1139,7 +1139,7 @@ module.exports.upsertNotification = async (tx, userId, searchString) => {
     // language=PostgreSQL
     sql`--insertNotification user_search_notification
     INSERT INTO user_search_notification (meta_account_user_id, user_search_notification_string)
-    VALUES (${userId}, ${searchString})
+    VALUES (${userId}, LOWER(${searchString}))
     ON CONFLICT ON CONSTRAINT user_search_notification_meta_account_user_id_user_search_n_key DO NOTHING
     `
   )
