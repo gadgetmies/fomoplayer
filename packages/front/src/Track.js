@@ -97,6 +97,8 @@ class Track extends Component {
         this.props.version ? `+${this.props.version}` : ''
       }`
     )
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
 
     const title = `${this.props.title} ${this.props.version ? `(${this.props.version})` : ''}`
 
