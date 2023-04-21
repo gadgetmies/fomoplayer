@@ -818,7 +818,7 @@ SELECT EXISTS(
 }
 
 module.exports.removeReleasesFromUser = (userId, releases) => {
-  logger.info('removeReleasesFromUser', { userId, releases })
+  logger.debug('removeReleasesFromUser', { userId, releases })
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- removeReleasesFromUser
@@ -835,7 +835,7 @@ WHERE
 }
 
 module.exports.setTrackHeard = (trackId, userId, heard) => {
-  logger.info('setTrackHeard', { trackId, userId, heard })
+  logger.debug('setTrackHeard', { trackId, userId, heard })
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- setTrackHeard
@@ -1134,12 +1134,12 @@ WHERE meta_account_user_id = ${userId}
 `
   )
 
-module.exports.upsertNotification = async (tx, userId, searchString, trackIds) => {
+module.exports.upsertNotification = async (tx, userId, searchString) => {
   await tx.queryRowsAsync(
     // language=PostgreSQL
     sql`--insertNotification user_search_notification
     INSERT INTO user_search_notification (meta_account_user_id, user_search_notification_string)
-    VALUES (${userId}, ${searchString})
+    VALUES (${userId}, LOWER(${searchString}))
     ON CONFLICT ON CONSTRAINT user_search_notification_meta_account_user_id_user_search_n_key DO NOTHING
     `
   )
@@ -1153,23 +1153,8 @@ FROM user_search_notification WHERE meta_account_user_id = ${userId}
 `
   )
 
-  if (trackIds.length > 0) {
-    await updateNotificationTracks(tx, notificationId, trackIds)
-  }
-
   return notificationId
 }
-
-const updateNotificationTracks = (module.exports.updateNotificationTracks = async (tx, notificationId, trackIds) => {
-  await tx.queryAsync(
-    // language=PostgreSQL
-    sql`--updateNotificationTracks delete
-UPDATE user_search_notification
-SET user_search_notification_tracks = ${trackIds}
-WHERE user_search_notification_id = ${notificationId}
-`
-  )
-})
 
 module.exports.getTracksWithIds = async trackIds =>
   pg.queryRowsAsync(

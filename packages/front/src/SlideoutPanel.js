@@ -14,7 +14,8 @@ class SlideoutPanel extends Component {
       panel: document.getElementById('panel'),
       menu: document.getElementById('menu'),
       padding: 256,
-      tolerance: 70
+      tolerance: 70,
+      touch: false
     })
 
     slideout.on('open', this.props.onOpen)

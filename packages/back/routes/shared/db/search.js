@@ -2,7 +2,7 @@ const pg = require('../../../db/pg.js')
 const sql = require('sql-template-strings')
 const { using } = require('bluebird')
 
-module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId } = {}) => {
+module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince } = {}) => {
   const limit = l || 100
   const sort = s || '-released'
   return using(pg.getTransaction(), async tx => {
@@ -28,6 +28,7 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
                                   NATURAL LEFT JOIN track__label
                                   NATURAL LEFT JOIN label
                                   NATURAL JOIN store__track
+                          WHERE ${addedSince}::DATE IS NULL OR track_added > ${addedSince}::DATE
                           GROUP BY track_id, track_title, track_version
                           HAVING
                                   TO_TSVECTOR(

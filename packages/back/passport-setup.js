@@ -48,7 +48,7 @@ UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_
 `
           )
         } catch (e) {
-          logger.error('error', e)
+          logger.error('Creating or fetching user for OIDC failed', e)
           done(null)
         }
       }
@@ -70,7 +70,7 @@ UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_
           return done(null, false)
         }
       } catch (e) {
-        logger.error(e)
+        logger.error('OIDC verification failed', e)
         return done(e)
       }
     }

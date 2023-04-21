@@ -1,0 +1,1 @@
+ALTER TABLE user_search_notification DROP COLUMN user_search_notification_tracks;

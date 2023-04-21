@@ -3077,15 +3077,15 @@ boolbase@^1.0.0, boolbase@~1.0.0:
   resolved "https://registry.yarnpkg.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
   integrity sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==
 
-bp-api@gadgetmies/bp-api#v3.1.9:
-  version "3.1.9"
-  resolved "https://codeload.github.com/gadgetmies/bp-api/tar.gz/fc0790ab88353edb92f1cbe65aaac0c82be730ae"
+bp-api@gadgetmies/bp-api#v3.2.0:
+  version "3.2.0"
+  resolved "https://codeload.github.com/gadgetmies/bp-api/tar.gz/e96ba0d51a9c60d7c39b86539af7d967c22392c2"
   dependencies:
     html-entities "^2.3.2"
     jsdom "^19.0.0"
     ramda "^0.25.0"
     request "^2.88.2"
-    request-in-session elysion/request-in-session#v1.2.5
+    request-in-session elysion/request-in-session#v1.2.3
 
 brace-expansion@^1.1.7:
   version "1.1.11"
@@ -7285,6 +7285,11 @@ minimist@^1.2.0, minimist@^1.2.6:
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.7.tgz#daa1c4d91f507390437c6a8bc01078e7000c4d18"
   integrity sha512-bzfL1YUZsP41gmu/qjrEk0Q6i2ix/cVeAhbCbqH9u3zYutS1cLg00qhrD0M2MVdCcx4Sc0UpP2eBWo9rotpq6g==
 
+minimist@^1.2.5:
+  version "1.2.8"
+  resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.8.tgz#c1a464e7693302e082a075cee0c057741ac4772c"
+  integrity sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==
+
 mkdirp@1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
@@ -8844,6 +8849,11 @@ psl@^1.1.28, psl@^1.1.33:
   resolved "https://registry.yarnpkg.com/psl/-/psl-1.9.0.tgz#d0df2a137f00794565fcaf3b2c00cd09f8d5a5a7"
   integrity sha512-E/ZsdU4HLs/68gYzgGTkMicWTLPdAftJLfJFlLUAAKZGkStNU72sZjT66SnMDVOfOWY/YAoiD7Jxa9iHvngcag==
 
+punycode@>=0.2.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.3.0.tgz#f67fa67c94da8f4d0cfff981aee4118064199b8f"
+  integrity sha512-rRV+zQD8tVFys26lAGR9WUuS4iUAngJScM+ZRSKtvl5tKeZ2t5bvdNFdNHBW9FWR4guGHlgmsZ1G7BSm2wTbuA==
+
 punycode@^2.1.0, punycode@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
@@ -9301,17 +9311,18 @@ renderkid@^3.0.0:
     lodash "^4.17.21"
     strip-ansi "^6.0.1"
 
-request-in-session@elysion/request-in-session#v1.2.5:
-  version "1.2.5"
-  resolved "https://codeload.github.com/elysion/request-in-session/tar.gz/de6ed3f213b5ce2b8904c34804e5ee00aa46f2e7"
+request-in-session@elysion/request-in-session#v1.2.3:
+  version "1.2.3"
+  resolved "https://codeload.github.com/elysion/request-in-session/tar.gz/8464746a02ddf1b6332252fac614991d906dedfc"
   dependencies:
     bluebird "^3.7.2"
     lodash "^4.17.21"
-    minimist "^1.2.6"
+    minimist "^1.2.5"
     prompt-sync "^4.2.0"
     request "^2.88.2"
     request-promise "^4.2.6"
     tough-cookie "^4.0.0"
+    tough-cookie-filestore "^0.0.1"
 
 request-promise-core@1.1.4:
   version "1.1.4"
@@ -10429,6 +10440,13 @@ toidentifier@1.0.1:
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.1.tgz#3be34321a88a820ed1bd80dfaa33e479fbb8dd35"
   integrity sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==
 
+tough-cookie-filestore@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/tough-cookie-filestore/-/tough-cookie-filestore-0.0.1.tgz#0bf2308ed293a50ba0733ed7d6289601485570b6"
+  integrity sha512-qPmhBHw6c+BE4LJ35lyq38MmKdmMPtdcUB07xxTcha/mrDRAtSctqk38ySuPXrUqq1IWmJThngQyY48dCrzqAA==
+  dependencies:
+    tough-cookie "~0.12.1"
+
 tough-cookie@^2.3.3, tough-cookie@~2.5.0:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/tough-cookie/-/tough-cookie-2.5.0.tgz#cd9fb2a0aa1d5a12b473bd9fb96fa3dcff65ade2"
@@ -10446,6 +10464,13 @@ tough-cookie@^4.0.0:
     punycode "^2.1.1"
     universalify "^0.2.0"
     url-parse "^1.5.3"
+
+tough-cookie@~0.12.1:
+  version "0.12.1"
+  resolved "https://registry.yarnpkg.com/tough-cookie/-/tough-cookie-0.12.1.tgz#8220c7e21abd5b13d96804254bd5a81ebf2c7d62"
+  integrity sha512-+gd4PklNJsxzu1NoNjhGRfOZZ5llND6VtQZGuaDXdmI0Ii79V5+YCa2sLx8Q6lYhYN2+9frCzUwOLQpuwHvO4Q==
+  dependencies:
+    punycode ">=0.2.0"
 
 tr46@^1.0.1:
   version "1.0.1"
@@ -10788,10 +10813,10 @@ vizion@~2.2.1:
     ini "^1.3.5"
     js-git "^0.7.8"
 
-vm2@^3.9.8, vm2@^3.9.9:
-  version "3.9.13"
-  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.13.tgz#774a1a3d73b9b90b1aa45bcc5f25e349f2eef649"
-  integrity sha512-0rvxpB8P8Shm4wX2EKOiMp7H2zq+HUE/UwodY0pCZXs9IffIKZq6vUti5OgkVCTakKo9e/fgO4X1fkwfjWxE3Q==
+vm2@^3.9.17, vm2@^3.9.8:
+  version "3.9.17"
+  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.17.tgz#251b165ff8a0e034942b5181057305e39570aeab"
+  integrity sha512-AqwtCnZ/ERcX+AVj9vUsphY56YANXxRuqMb7GsDtAr0m0PcQX3u0Aj3KWiXM0YAHy7i6JEeHrwOnwXbGYgRpAw==
   dependencies:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
@@ -11112,7 +11137,14 @@ wildcard@^2.0.0:
   resolved "https://registry.yarnpkg.com/wildcard/-/wildcard-2.0.0.tgz#a77d20e5200c6faaac979e4b3aadc7b3dd7f8fec"
   integrity sha512-JcKqAHLPxcdb9KM49dufGXn2x3ssnfjbcaQdLlfZsL9rH9wgDQjUtDxbo8NE0F6SFvydeu1VhZe7hZuHsB2/pw==
 
-winston-transport@^4.5.0:
+winston-telegram@^2.6.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/winston-telegram/-/winston-telegram-2.6.0.tgz#df01dc98a4951b7ee2009318e484adc479f72fce"
+  integrity sha512-C2beZyjOzwgqGsa4bqt6uM+iTBiJova7GPuMgNlXJGOHSmRPy10ywHXUfDpqr1w962VfK/CPkkvzNayr9f0jLA==
+  dependencies:
+    winston-transport "^4.3.0"
+
+winston-transport@^4.3.0, winston-transport@^4.5.0:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/winston-transport/-/winston-transport-4.5.0.tgz#6e7b0dd04d393171ed5e4e4905db265f7ab384fa"
   integrity sha512-YpZzcUzBedhlTAfJg6vJDlyEai/IFMIVcaEZZyl3UXIl4gmqRpU7AE89AHLkbzLUsv0NVmw7ts+iztqKxxPW1Q==

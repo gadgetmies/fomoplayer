@@ -507,7 +507,7 @@ class Tracks extends Component {
   }
 
   getNotificationSubscription() {
-    return this.props.notifications.find(R.propEq('text', this.state.search))
+    return this.props.notifications.find(R.propEq('text', this.state.search?.toLocaleLowerCase()))
   }
 }
 

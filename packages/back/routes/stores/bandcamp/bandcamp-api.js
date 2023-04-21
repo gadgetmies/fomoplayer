@@ -1,6 +1,6 @@
 const BPromise = require('bluebird')
 const R = require('ramda')
-const { error } = require('../../../logger')(__filename)
+const logger = require('../../../logger')(__filename)
 const { decode } = require('html-entities')
 const jsdom = require('jsdom')
 const { JSDOM } = jsdom
@@ -39,7 +39,8 @@ const getRelease = (itemUrl, callback) => {
       callback(null, { ...getReleaseInfo(res), url: itemUrl })
     })
     .catch(e => {
-      error(`Fetching release from ${itemUrl} failed`, e)
+      logger.error(`Fetching release from ${itemUrl} failed`, {statusCode: e.statusCode})
+      logger.silly(e)
       callback(e)
     })
 }
@@ -52,7 +53,7 @@ const getPageTitle = pageSource => {
 
 const getName = dom => {
   const siteNameElement = dom.window.document.querySelector('[property="og:site_name"]')
-  const nameFromTitle = dom.window.document.title.split(' | ')[1]
+  const nameFromTitle = dom.window.document.title && dom.window.document.title.split(' | ')[1]
   return (siteNameElement !== null && siteNameElement.getAttribute('content')) || nameFromTitle
 }
 
@@ -72,6 +73,8 @@ const getPageInfo = (url, callback) => {
       name: getName(dom),
       releaseUrls: getReleaseUrls(url, dom)
     })
+  }).catch(e => {
+    callback(e)
   })
 }
 
@@ -89,6 +92,8 @@ const getTag = (tag, callback) => {
       id: tag,
       name: tagTitle
     })
+  }).catch(e => {
+    callback(e)
   })
 }
 
@@ -114,6 +119,8 @@ const getPageDetails = (url, callback) => {
       name: pageTitle,
       type: artistsLink === null ? 'artist' : 'label'
     })
+  }).catch(e => {
+    callback(e)
   })
 }
 
@@ -135,7 +142,8 @@ const getSearchResults = (query, callback) => {
       callback(null, mapSearchResults(res))
     })
     .catch(e => {
-      error(`Searching for ${query} failed`, e)
+      logger.error(`Searching for ${query} failed`, {statusCode: e.statusCode})
+      logger.silly(e)
       callback(e)
     })
 }

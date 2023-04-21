@@ -72,7 +72,7 @@ app.use(
         ensureAuthenticated(req, res, next)
       }
     } catch (e) {
-      logger.error(e)
+      logger.error('Error authenticating request', e)
       next(e)
     }
   },
@@ -87,13 +87,13 @@ app.get('/cart/:uuid', ({ params: { uuid } }, res, next) => {
     try {
       if (err || !uuid) {
         logger.error('Error during file reading', { uuid, err })
-        return res.status(404).end()
+        return res.status(500).end()
       }
 
       const cartDetails = await getCartDetails(uuid)
 
       if (cartDetails === null) {
-        logger.error('Cart details not found', { uuid })
+        logger.debug('Cart details not found', { uuid })
         return res.status(404).end()
       }
 
@@ -122,7 +122,7 @@ ${cartOpenGraphDetails}`
         )
       return res.send(patchedIndex)
     } catch (e) {
-      logger.error(e)
+      logger.error('Cart page generation failed', e)
       next(e)
     }
   })

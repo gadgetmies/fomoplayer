@@ -123,7 +123,7 @@ module.exports.addArtistsToIgnore = async (userId, artistIds) => {
       await removeIgnoredTracksFromUsers(tx, [userId])
     })
   } catch (e) {
-    logger.error(e)
+    logger.error('Adding artists to ignore failed', e)
   }
 }
 
@@ -416,10 +416,11 @@ module.exports.getNotifications = async userId => {
 }
 
 module.exports.createNotification = async (userId, searchString) => {
-  const trackIds = (await searchForTracks(searchString)).map(R.prop('track_id'))
   using(pg.getTransaction(), async tx => {
-    await upsertNotification(tx, userId, searchString, trackIds)
+    await upsertNotification(tx, userId, searchString)
   })
+
+  return queryNotifications(userId)
 }
 
 module.exports.removeNotification = async (userId, notificationId) => {

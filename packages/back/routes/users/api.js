@@ -74,7 +74,6 @@ router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
 )
 
 router.post('/tracks/:id', ({ user: { id: userId }, params: { id }, body: { heard } }, res) => {
-  logger.info('POST /tracks/:id', { id, heard, userId })
   setTrackHeard(id, userId, heard).tap(() => res.send())
 })
 
@@ -277,8 +276,8 @@ router.get('/notifications', async ({ user: { id: userId } }, res) => {
 })
 
 router.post('/notifications', async ({ user: { id: userId }, body: { search } }, res) => {
-  await createNotification(userId, search)
-  res.status(204).send()
+  const notifications = await createNotification(userId, search)
+  res.send(notifications)
 })
 
 router.delete('/notifications/:id', async ({ user: { id: userId }, params: { id } }, res) => {

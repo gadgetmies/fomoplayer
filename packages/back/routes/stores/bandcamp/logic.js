@@ -51,13 +51,13 @@ const getTagFromUrl = function(playlistUrl) {
 
 module.exports.getArtistName = async url => {
   const { name } = await getArtistAsync(url)
-  logger.info(name)
+  logger.debug(name)
   return name
 }
 
 module.exports.getLabelName = async url => {
   const { name } = await getLabelAsync(url)
-  logger.info(name)
+  logger.debug(name)
   return name
 }
 
@@ -95,12 +95,17 @@ module.exports.getFollowDetails = async urlString => {
   return []
 }
 
+const releaseTracksWithFiles = (releaseDetails) => {
+  const tracks = releaseDetails.reduce((acc, {trackinfo}) => acc.concat(trackinfo), [])
+  return tracks.filter(R.complement(R.propEq('file', null)))
+}
+
 const getTracksFromReleases = async releaseUrls => {
   const errors = []
 
   let releaseDetails = []
   for (const releaseUrl of releaseUrls) {
-    logger.info(`Processing release: ${releaseUrl}`)
+    logger.debug(`Processing release: ${releaseUrl}`)
     try {
       const releaseInfo = await getReleaseAsync(releaseUrl)
       releaseDetails.push(releaseInfo)
@@ -111,13 +116,28 @@ const getTracksFromReleases = async releaseUrls => {
     }
   }
 
-  const transformed = bandcampReleasesTransform(releaseDetails)
-  logger.info(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
-  if (transformed.length === 0) {
-    const error = `No tracks found for releases ${releaseUrls.join(', ')}`
-    logger.error(error)
-    errors.push([error])
-    return errors
+  logger.debug('Release details', {releaseUrls, releaseDetails})
+
+  let transformed = []
+  try {
+    transformed = bandcampReleasesTransform(releaseDetails)
+    logger.debug(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
+  } catch (e) {
+    logger.error(`Track transformation error`, {releaseUrls, releaseDetails})
+    return {errors, tracks: []}
+  }
+
+  const tracksWithFiles = releaseTracksWithFiles(releaseDetails)
+  if (
+    transformed.length === 0 &&
+    releaseDetails.length > 0 &&
+    releaseDetails.filter(R.complement(R.prop('is_prerelease'))) > 0 &&
+    tracksWithFiles.length > 0
+  ) {
+    logger.error(`Track transformation failed`, { releaseUrls, releaseDetails, tracksWithFiles })
+    return { errors, tracks: [] }
+  } else if (transformed.length === 0) {
+    logger.warn(`No tracks found for releases`, {releaseUrls, releaseDetails})
   }
 
   return { errors, tracks: transformed }
@@ -125,14 +145,14 @@ const getTracksFromReleases = async releaseUrls => {
 
 module.exports.getArtistTracks = async function*({ url }) {
   const { releaseUrls } = await getArtistAsync(url)
-  logger.info(`Found ${releaseUrls.length} releases for artist ${url}`)
-  logger.info('Processing releases', releaseUrls)
+  logger.debug(`Found ${releaseUrls.length} releases for artist ${url}`)
+  logger.debug('Processing releases', releaseUrls)
   // TODO: figure out how to get rid of the duplication
   for (const releaseUrl of releaseUrls) {
     try {
       yield await getTracksFromReleases([releaseUrl])
     } catch (e) {
-      logger.error(e)
+      logger.error('Error getting artist tracks from release', e)
       yield { tracks: [], errors: [e] }
     }
   }
@@ -140,13 +160,13 @@ module.exports.getArtistTracks = async function*({ url }) {
 
 module.exports.getLabelTracks = async function*({ url }) {
   const { releaseUrls } = await getLabelAsync(url)
-  logger.info(`Found ${releaseUrls.length} releases for label ${url}`)
-  logger.info('Processing releases', releaseUrls)
+  logger.debug(`Found ${releaseUrls.length} releases for label ${url}`)
+  logger.debug('Processing releases', releaseUrls)
   for (const releaseUrl of releaseUrls) {
     try {
       yield await getTracksFromReleases([releaseUrl])
     } catch (e) {
-      logger.error(e)
+      logger.error('Error getting label tracks from release', e)
       yield { tracks: [], errors: [e] }
     }
   }
@@ -156,7 +176,7 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId, type }) {
   if (type === 'tag') {
     const releases = await getTagReleasesAsync(playlistStoreId)
     const releaseUrls = R.uniq(R.flatten(releases.map(R.prop('items'))).map(R.prop('tralbum_url'))).filter(R.identity)
-    logger.info(`Found ${releaseUrls.length} releases for tag ${playlistStoreId}`)
+    logger.debug(`Found ${releaseUrls.length} releases for tag ${playlistStoreId}`)
     for (const releaseUrl of releaseUrls) {
       try {
         yield await getTracksFromReleases([releaseUrl])

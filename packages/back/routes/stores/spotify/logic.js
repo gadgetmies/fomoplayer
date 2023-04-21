@@ -75,11 +75,12 @@ module.exports.getFollowDetails = async urlString => {
 }
 
 module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
-  const res = await spotifyApi.getPlaylistTracks(playlistStoreId)
+  const res = await spotifyApi.getPlaylistTracks(playlistStoreId, {market: 'US'})
   const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
   if (transformed.length === 0) {
     const error = `No tracks found for playlist at ${playlistStoreId}`
     logger.error(error)
+    logger.debug('Spotify API response', {firstItem: res.body.items[0], items: res.body.items})
     throw new Error(error)
   }
 

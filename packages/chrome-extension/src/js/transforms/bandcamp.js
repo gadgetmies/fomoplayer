@@ -10,6 +10,17 @@ module.exports.bandcampTagTracksTransform = L.collect([
   })
 ])
 
+const isVersionOrRemix = match => {
+  if (!match) return false
+  if (match[4] !== undefined) {
+    const title = match[4].toLocaleLowerCase()
+    if (title.includes('version') || title.includes('remix')) {
+      return true
+    }
+  }
+  return false
+}
+
 module.exports.bandcampReleasesTransform = L.collect([
   L.elems,
   L.choose(release => [
@@ -17,7 +28,7 @@ module.exports.bandcampReleasesTransform = L.collect([
     L.filter(R.prop('file')),
     L.elems,
     L.choose(track => {
-      const match = track.title.match(new RegExp(/((.*?) - )?([^(]*)(\(([^)]*) Remix\))?/))
+      const match = track.title.match(new RegExp(/((.*?) - )?([^(]*)(\(([^)]*)\))?/))
       const releaseArtistId = release.url.substring(8, release.url.indexOf('.bandcamp.com'))
       const releaseArtistUrl = release.url.substring(0, release.url.indexOf('/', 8))
       const artistTemplate = {
@@ -26,11 +37,13 @@ module.exports.bandcampReleasesTransform = L.collect([
         role: 'author',
         url: releaseArtistUrl || null
       }
+      const version = isVersionOrRemix(match) ? match[4].substring(1, match[4].length - 1) : null
+
       return [
         L.pick({
           id: 'id',
           title: match ? R.always(match[3].trim()) : 'title',
-          version: R.always(match?.length === 5 ? `${match[4]} Remix` : null),
+          version: R.always(version),
           artists: match
             ? R.always(
                 (match[2]
@@ -51,15 +64,21 @@ module.exports.bandcampReleasesTransform = L.collect([
                     })
                   : [artistTemplate]
                 ).concat(
-                  match.length === 6
-                    ? match[4]
+                  match.length === 6 && match[5] !== undefined
+                    ? match[5]
+                        .replace(/version|remix/i, '')
                         .split(/[,&]/)
-                        .map(remixer => ({ name: remixer.trim(), id: null, role: 'remixer', url: null }))
+                        .map(remixer => ({
+                          name: remixer.trim(),
+                          id: null,
+                          role: 'remixer',
+                          url: null
+                        }))
                     : []
                 )
               )
             : R.always([artistTemplate]),
-          released: R.always(release.current.release_date),
+          released: R.always(release.current.release_date || release.current.publish_date),
           published: R.always(release.current.publish_date),
           duration_ms: durationLens,
           release: R.always({

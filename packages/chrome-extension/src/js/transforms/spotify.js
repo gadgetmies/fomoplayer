@@ -41,7 +41,7 @@ module.exports.spotifyAlbumTracksTransform = L.collect([
     L.choose(({ preview_url }) =>
       preview_url
         ? L.pick({
-            title: ['name'],
+            title: ['name', name => name.replace(/ - original mix/gi, '')],
             id: ['id'],
             url: externalUrlLens,
             artists: L.partsOf(trackArtistsLens),
