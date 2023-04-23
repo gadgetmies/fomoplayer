@@ -28,7 +28,7 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
                                   NATURAL LEFT JOIN track__label
                                   NATURAL LEFT JOIN label
                                   NATURAL JOIN store__track
-                          WHERE ${addedSince}::DATE IS NULL OR track_added > ${addedSince}::DATE
+                          WHERE ${addedSince}::TIMESTAMPTZ IS NULL OR track_added > ${addedSince}::TIMESTAMPTZ
                           GROUP BY track_id, track_title, track_version
                           HAVING
                                   TO_TSVECTOR(
