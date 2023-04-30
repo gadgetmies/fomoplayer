@@ -1000,10 +1000,10 @@ WITH cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public
     FROM (
              SELECT ROW_NUMBER() OVER (PARTITION BY cart_id) AS r, t.*
              FROM (
-                      SELECT cart_id, track_id
-                     , track__cart_added FROM track__cart
+                      SELECT cart_id, track_id, track__cart_added FROM track__cart
                                NATURAL JOIN cart_details
-                      GROUP BY 1, 2, 3
+                      GROUP BY 1, 2, track__cart_added
+                      ORDER BY track__cart_added DESC
                   ) t
          ) x
     WHERE x.r < 100
