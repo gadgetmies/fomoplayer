@@ -1128,32 +1128,81 @@ module.exports.queryNotifications = async userId =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--insertNotification
-SELECT user_search_notification_id AS id, user_search_notification_string AS text
-FROM user_search_notification
+SELECT 
+    user_search_notification_id AS id, 
+    user_search_notification_string AS text, 
+    store_name AS "storeName",
+    store_purchase_available AS "purchaseAvailable"
+FROM user_search_notification NATURAL JOIN user_search_notification__store NATURAL JOIN store
 WHERE meta_account_user_id = ${userId}
 `
   )
 
-module.exports.upsertNotification = async (tx, userId, searchString) => {
-  await tx.queryRowsAsync(
-    // language=PostgreSQL
-    sql`--insertNotification user_search_notification
-    INSERT INTO user_search_notification (meta_account_user_id, user_search_notification_string)
-    VALUES (${userId}, LOWER(${searchString}))
-    ON CONFLICT ON CONSTRAINT user_search_notification_meta_account_user_id_user_search_n_key DO NOTHING
+module.exports.updateNotifications = async (tx, userId, operations) => {
+  for (const { op, text, storeName } of operations) {
+    await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`--insertNotification user_search_notification
+      INSERT INTO user_search_notification (meta_account_user_id, user_search_notification_string)
+      VALUES (${userId}, LOWER(${text}))
+      ON CONFLICT ON CONSTRAINT user_search_notification_meta_account_user_id_user_search_n_key DO NOTHING
+      `
+    )
+
+    const [{ notificationId }] = await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`--selectNotification user_search_notification
+      SELECT user_search_notification_id AS "notificationId"
+      FROM user_search_notification
+      WHERE meta_account_user_id = ${userId}
+        AND user_search_notification_string = ${text}
+      `
+    )
+
+    if (op === 'add') {
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`--store notification stores
+INSERT INTO user_search_notification__store (user_search_notification_id, store_id)
+SELECT ${notificationId}, store_id
+FROM store
+WHERE store_name = ${storeName}
+        `
+      )
+    } else if (op === 'remove') {
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`--store notification stores
+DELETE
+FROM user_search_notification__store
+WHERE user_search_notification_id = ${notificationId}
+  AND store_id = (SELECT store_id
+                  FROM store
+                  WHERE store_name = ${storeName})
+        `
+      )
+    }
+    const [{ subscriptionsExist }] = await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`--deleteNotification search for store notifications
+SELECT EXISTS (SELECT 1
+               FROM user_search_notification__store
+               WHERE user_search_notification_id = ${notificationId}) AS "subscriptionsExist"
     `
-  )
+    )
 
-  const [{ notificationId }] = await tx.queryRowsAsync(
-    // language=PostgreSQL
-    sql`--selectNotification user_search_notification
-SELECT user_search_notification_id AS "notificationId"
-FROM user_search_notification WHERE meta_account_user_id = ${userId} 
-                                AND user_search_notification_string = ${searchString}
-`
-  )
-
-  return notificationId
+    if (!subscriptionsExist) {
+      console.log('no stores exits, removing notification')
+      tx.queryAsync(
+        // language=PostgreSQL
+        sql`--deleteNotification
+    DELETE
+    FROM user_search_notification
+    WHERE user_search_notification_id = ${notificationId}
+    `
+      )
+    }
+  }
 }
 
 module.exports.getTracksWithIds = async trackIds =>
@@ -1161,14 +1210,6 @@ module.exports.getTracksWithIds = async trackIds =>
     // language=PostgreSQL
     sql`--getTracksWithIds
 SELECT * FROM track_details(${trackIds})
-`
-  )
-
-module.exports.deleteNotification = async notificationId =>
-  pg.queryRowsAsync(
-    // language=PostgreSQL
-    sql`--deleteNotification
-DELETE FROM user_search_notification WHERE user_search_notification_id = ${notificationId}
 `
   )
 

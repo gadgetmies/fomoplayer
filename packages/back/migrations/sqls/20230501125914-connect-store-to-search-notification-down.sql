@@ -1,0 +1,1 @@
+DROP TABLE user_search_notification__store;

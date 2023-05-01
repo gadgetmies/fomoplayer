@@ -12,12 +12,6 @@ import Tracks from './Tracks'
 import FollowItemButton from './FollowItemButton'
 import { Link } from 'react-router-dom'
 
-const storeNames = {
-  bandcamp: 'Bandcamp',
-  beatport: 'Beatport',
-  spotify: 'Spotify'
-}
-
 class Settings extends Component {
   unlockMarkAllHeard() {
     this.setState({ markAllHeardUnlocked: true })
@@ -343,7 +337,7 @@ class Settings extends Component {
                         }
                         this.setState({
                           updatingFollowDetails: Object.fromEntries(
-                            Object.keys(storeNames).map(store => [store, true])
+                            this.props.stores.map(({ storeName }) => [storeName, true])
                           ),
                           followDetailsUpdateAborted: false
                         })
@@ -364,9 +358,11 @@ class Settings extends Component {
                               })
                             }
                           } else {
-                            const promises = Object.keys(storeNames).map(store =>
+                            const promises = this.props.stores.map(({ storeName }) =>
                               requestWithCredentials({ path: `/stores/${store}/search/?q=${this.state.followQuery}` })
-                                .then(async res => (await res.json()).map(result => ({ stores: [store], ...result })))
+                                .then(async res =>
+                                  (await res.json()).map(result => ({ stores: [storeName], ...result }))
+                                )
                                 .then(json => {
                                   if (this.state.followDetailsUpdateAborted) return
                                   this.setState({
@@ -377,7 +373,7 @@ class Settings extends Component {
                                             R.compose(R.toLower, R.prop('name')),
                                             this.state.followDetails.concat(json)
                                           ),
-                                    updatingFollowDetails: { ...this.state.updatingFollowDetails, [store]: false }
+                                    updatingFollowDetails: { ...this.state.updatingFollowDetails, [storeName]: false }
                                   })
                                 })
                             )
@@ -814,7 +810,13 @@ class Settings extends Component {
                     }
                     loading={this.state.updatingNotifications}
                     onClick={async () => {
-                      await this.props.onRequestNotification(this.state.notificationSearch)
+                      await this.props.onRequestNotificationUpdate(
+                        this.props.stores.map(({ storeName }) => ({
+                          op: 'add',
+                          storeName,
+                          text: this.state.notificationSearch
+                        }))
+                      )
                       this.setState({ notificationSearch: '' })
                     }}
                   >
@@ -824,7 +826,7 @@ class Settings extends Component {
               </label>
               <h4>Search notification subscriptions</h4>
               <ul className="no-style-list follow-list">
-                {this.props.notifications.map(({ id, text }) => (
+                {this.props.notifications.map(({ id, text, storeName }) => (
                   <li key={id}>
                     <span className={'button pill pill-button'}>
                       <span className={'pill-button-contents'}>
@@ -836,11 +838,17 @@ class Settings extends Component {
                           onClick={async e => {
                             e.stopPropagation()
                             this.setState({ updatingNotifications: true })
-                            await this.props.onRemoveNotification(id)
+                            await this.props.onRequestNotificationUpdate([{
+                              op: 'remove',
+                              storeName,
+                              text
+                            }])
+
                             this.setState({ updatingNotifications: false })
                           }}
                           title={`Unsubscribe from "${text}"`}
                         >
+                          <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
                           <FontAwesomeIcon icon="times-circle" />
                         </button>
                       </span>

@@ -3,6 +3,7 @@ const logger = require('../../logger')(__filename)
 
 const { lstatSync, readdirSync } = require('fs')
 const { join } = require('path')
+const { getStores } = require('./logic')
 
 const isDirectory = source => lstatSync(source).isDirectory()
 const getDirectories = source =>
@@ -18,6 +19,10 @@ const moduleEntries = getDirectories(__dirname).map(storeDir => {
 moduleEntries.forEach(([name, module]) => {
   logger.info(`Initiating routes for ${name}`)
   router.use(`/${name}`, module.router)
+})
+
+router.get('/', async (req, res) => {
+  res.send(await getStores())
 })
 
 const modules = Object.fromEntries(moduleEntries)

@@ -37,8 +37,7 @@ const {
   updateAllCartContents,
   getUserScoreWeights,
   setUserScoreWeights,
-  createNotification,
-  removeNotification,
+  updateNotifications,
   getNotifications,
   getUserSettings,
   setEmail,
@@ -275,14 +274,9 @@ router.get('/notifications', async ({ user: { id: userId } }, res) => {
   res.send(await getNotifications(userId))
 })
 
-router.post('/notifications', async ({ user: { id: userId }, body: { search } }, res) => {
-  const notifications = await createNotification(userId, search)
+router.patch('/notifications', async ({ user: { id: userId }, body: requested }, res) => {
+  const notifications = await updateNotifications(userId, requested)
   res.send(notifications)
-})
-
-router.delete('/notifications/:id', async ({ user: { id: userId }, params: { id } }, res) => {
-  await removeNotification(userId, id)
-  res.status(204).send()
 })
 
 router.get('/settings', async ({ user: { id: userId } }, res) => {

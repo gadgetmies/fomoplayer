@@ -416,6 +416,7 @@ class Player extends Component {
           notifications={this.props.notifications}
           selectedCart={this.props.carts?.find(({ id }) => id === this.state.selectedCartId)}
           tracks={tracks}
+          stores={this.props.stores}
           listState={this.state.listState}
           currentTrack={(currentTrack || {}).id}
           processingCart={this.props.processingCart}
@@ -443,8 +444,7 @@ class Player extends Component {
           onShowSearchClicked={this.setListState.bind(this, 'search')}
           onSearchResults={this.setSearchResults.bind(this)}
           onSelectCart={this.selectCart.bind(this)}
-          onRequestNotification={this.props.onRequestNotification}
-          onRemoveNotification={this.props.onRemoveNotification}
+          onRequestNotificationUpdate={this.props.onRequestNotificationUpdate}
         />
       </div>
     )

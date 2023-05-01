@@ -241,15 +241,41 @@ class Tracks extends Component {
     }
   }
 
-  async handleNotificationClick(e) {
-    const notificationSubscription = this.getNotificationSubscription()
+  isSubscribed(storeName) {
+    const notificationSubscriptions = this.getNotificationSubscriptions()
+    return notificationSubscriptions.find(({ storeName: name }) => storeName === name) !== undefined
+  }
+
+  async handleToggleNotificationClick(e, storeNames = undefined) {
+    const notificationSubscriptions = this.getNotificationSubscriptions()
     const search = this.state.search
     e.stopPropagation()
     this.setState({ modifyingNotification: true })
+
+    let operations = []
     try {
-      await (notificationSubscription !== undefined
-        ? this.props.onRemoveNotification(notificationSubscription.id)
-        : this.props.onRequestNotification(search))
+      if (storeNames === undefined) {
+        if (notificationSubscriptions.length === 0) {
+          operations = operations.concat(
+            this.props.stores.map(({ storeName }) => ({
+              op: 'add',
+              storeName,
+              text: search
+            }))
+          )
+        } else {
+          operations = operations.concat(
+            notificationSubscriptions.map(({ storeName }) => ({ op: 'remove', storeName, text: search }))
+          )
+        }
+      } else {
+        storeNames.forEach(storeName => {
+          const subscribed = this.isSubscribed(storeName)
+          operations.push({ op: subscribed ? 'remove' : 'add', storeName, text: search })
+        })
+      }
+
+      await this.props.onRequestNotificationUpdate(operations)
     } finally {
       this.setState({ modifyingNotification: false })
     }
@@ -265,10 +291,11 @@ class Tracks extends Component {
       </button>
     )
 
-    const subscribedForNotification = this.getNotificationSubscription() !== undefined
+    const notificationSubscriptions = this.getNotificationSubscriptions()
     const notificationSubscriptionDisabled =
       this.state.search === '' || this.state.modifyingNotification || !this.props.notificationsEnabled
     const notificationSubscriptionLoading = this.state.modifyingNotification
+    const subscribed = notificationSubscriptions.length > 0
 
     return (
       <div style={{ height: this.props.height, position: 'relative' }}>
@@ -344,7 +371,7 @@ class Tracks extends Component {
           {this.props.listState !== 'search' ? null : (
             <>
               <div className="top-bar-group">
-                <div className={'input-layout'} style={{ alignItems: 'center' }}>
+                <div className={'input-layout'} style={{ alignItems: 'center', position: 'relative' }}>
                   <label className="search-bar">
                     <input
                       autoFocus
@@ -368,16 +395,54 @@ class Tracks extends Component {
                       <FontAwesomeIcon className={'search-input-icon'} icon="search" />
                     )}
                   </label>
-                  <SpinnerButton
-                    style={{ order: 4, width: '7rem' }}
-                    className={'button button-push_button-small button-push_button-primary'}
-                    onClick={this.handleNotificationClick.bind(this)}
-                    disabled={notificationSubscriptionDisabled}
-                    loading={notificationSubscriptionLoading}
-                  >
-                    <FontAwesomeIcon icon={subscribedForNotification ? 'bell-slash' : 'bell'} />{' '}
-                    {subscribedForNotification ? 'Unsubscribe' : 'Subscribe'}
-                  </SpinnerButton>
+                  <span style={{ position: 'relative', order: 4 }}>
+                    <SpinnerButton
+                      style={{ width: '7rem', borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+                      className={'button button-push_button-small button-push_button-primary'}
+                      onClick={this.handleToggleNotificationClick.bind(this)}
+                      disabled={notificationSubscriptionDisabled}
+                      loading={notificationSubscriptionLoading}
+                    >
+                      <FontAwesomeIcon icon={subscribed ? 'bell-slash' : 'bell'} />{' '}
+                      {subscribed ? 'Unsubscribe' : 'Subscribe'}
+                    </SpinnerButton>
+                    <span className={'popup-anchor'}>
+                      <span
+                        className={'button button-push_button-primary button-push_button-small'}
+                        style={{
+                          backgroundColor: '#000',
+                          borderTopLeftRadius: 0,
+                          borderBottomLeftRadius: 0,
+                          display: 'inline-block'
+                        }}
+                      >
+                        <FontAwesomeIcon icon="caret-down" />
+                      </span>
+                    </span>
+                    <div
+                      className={`popup-content notification-popup-content`}
+                      style={{ zIndex: 100, boxSizing: 'border-box' }}
+                    >
+                      {this.props.stores.map(({ storeName, purchaseAvailable }) => {
+                        const isSubscribed = notificationSubscriptions.find(R.propEq('storeName', storeName))
+                        return (
+                          <button
+                            disabled={notificationSubscriptionDisabled}
+                            style={{ position: 'relative' }}
+                            className="button button-push_button-small button-push_button-primary cart-button"
+                            onClick={(e => this.handleToggleNotificationClick(e, [storeName])).bind(this)}
+                            key={`store-${storeName}`}
+                          >
+                            <FontAwesomeIcon icon={isSubscribed ? 'bell-slash' : 'bell'} style={{ marginRight: 6 }} />{' '}
+                            {storeName}
+                            {purchaseAvailable && (
+                              <FontAwesomeIcon icon="money-bills" style={{ right: 6, position: 'absolute' }} />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </span>
                   {!this.props.notificationsEnabled && (
                     <div className={'email-not-verified-info'}>
                       Email not set or verified.{' '}
@@ -506,8 +571,8 @@ class Tracks extends Component {
     )
   }
 
-  getNotificationSubscription() {
-    return this.props.notifications.find(R.propEq('text', this.state.search?.toLocaleLowerCase()))
+  getNotificationSubscriptions() {
+    return this.props.notifications.filter(R.propEq('text', this.state.search?.toLocaleLowerCase()))
   }
 }
 

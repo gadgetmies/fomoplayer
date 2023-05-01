@@ -42,7 +42,8 @@ import {
   faBellSlash,
   faSearch,
   faShare,
-  faStar
+  faStar,
+  faMoneyBills
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -78,7 +79,8 @@ library.add(
   faBellSlash,
   faSearch,
   faShare,
-  faStar
+  faStar,
+  faMoneyBills
 )
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
@@ -96,6 +98,7 @@ class App extends Component {
       addingToCart: false,
       slideout: null,
       carts: [],
+      stores: [],
       scoreWeights: {},
       notifications: [],
       loggedIn: false,
@@ -131,7 +134,8 @@ class App extends Component {
       this.updateTracks(),
       this.updateFollows(),
       this.updateNotifications(),
-      this.updateSettings()
+      this.updateSettings(),
+      this.updateStores()
     ])
   }
 
@@ -238,23 +242,14 @@ class App extends Component {
     this.setState({ follows: { artists, labels } })
   }
 
-  async requestNotification(search) {
-    await requestWithCredentials({
+  async requestNotificationUpdate(operations) {
+    const notifications = await requestJSONwithCredentials({
       path: `/me/notifications`,
-      method: 'POST',
-      body: { search }
+      method: 'PATCH',
+      body: operations
     })
 
-    await this.updateNotifications()
-  }
-
-  async removeNotification(notificationId) {
-    await requestWithCredentials({
-      path: `/me/notifications/${notificationId}`,
-      method: 'DELETE'
-    })
-
-    await this.updateNotifications()
+    this.setState({ notifications })
   }
 
   async setStarred(type, followId, starred) {
@@ -317,6 +312,13 @@ class App extends Component {
     this.setState({ userSettings })
   }
 
+  async updateStores() {
+    const stores = await requestJSONwithCredentials({
+      path: `/stores/`
+    })
+    this.setState({ stores })
+  }
+
   async updateLogins() {}
 
   render() {
@@ -362,10 +364,10 @@ class App extends Component {
                       <>
                         <Settings
                           carts={this.state.carts}
+                          stores={this.state.stores}
                           onUpdateCarts={this.updateCarts.bind(this)}
                           notifications={this.state.notifications}
-                          onRequestNotification={this.requestNotification.bind(this)}
-                          onRemoveNotification={this.removeNotification.bind(this)}
+                          onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
                           onSetStarred={this.setStarred.bind(this)}
                           onMarkHeardClicked={this.markHeard.bind(this)}
                           onUpdateEmail={this.updateEmail.bind(this)}
@@ -381,17 +383,17 @@ class App extends Component {
                         <Player
                           mode="app"
                           listState={settingsVisible ? 'new' : props.match.params.path}
-                          search={query.get('q') || undefined}
+                          search={query.get('q') || ''}
                           initialPosition={NaN}
                           addingToCart={this.state.addingToCart}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
                           carts={this.state.carts}
                           notifications={this.state.notifications}
                           notificationsEnabled={this.state.userSettings.emailVerified}
-                          onRequestNotification={this.requestNotification.bind(this)}
-                          onRemoveNotification={this.removeNotification.bind(this)}
+                          onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
                           follows={this.state.follows}
                           tracks={this.state.tracksData.tracks}
+                          stores={this.state.stores}
                           newTracks={this.state.tracksData.meta.newTracks}
                           totalTracks={this.state.tracksData.meta.totalTracks}
                           onAddToCart={this.addToCart.bind(this)}

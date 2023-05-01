@@ -2,7 +2,6 @@ const { using, map } = require('bluebird')
 const R = require('ramda')
 const pg = require('../../db/pg.js')
 const { scheduleEmail } = require('../../services/mailer')
-const { searchForTracks } = require('../shared/db/search')
 const { insertUserPlaylistFollow } = require('../shared/db/user')
 const { updateArtistTracks, updatePlaylistTracks, updateLabelTracks } = require('../shared/tracks')
 const {
@@ -54,8 +53,7 @@ const {
   queryUserScoreWeights,
   updateUserScoreWeights,
   queryNotificationOwner,
-  upsertNotification,
-  deleteNotification,
+  updateNotifications,
   queryNotifications,
   addPurchasedTracksToUser,
   queryUserSettings,
@@ -412,20 +410,15 @@ module.exports.getDefaultCartDetails = async userId => {
 }
 
 module.exports.getNotifications = async userId => {
-  return await queryNotifications(userId)
-}
-
-module.exports.createNotification = async (userId, searchString) => {
-  using(pg.getTransaction(), async tx => {
-    await upsertNotification(tx, userId, searchString)
-  })
-
   return queryNotifications(userId)
 }
 
-module.exports.removeNotification = async (userId, notificationId) => {
-  await verifyNotificationOwnership(userId, notificationId)
-  await deleteNotification(notificationId)
+module.exports.updateNotifications = async (userId, operations) => {
+  await using(pg.getTransaction(), async tx => {
+    await updateNotifications(tx, userId, operations)
+  })
+
+  return queryNotifications(userId)
 }
 
 module.exports.getUserSettings = async userId => {

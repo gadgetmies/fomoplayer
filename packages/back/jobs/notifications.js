@@ -1,7 +1,7 @@
 const pg = require('../db/pg.js')
 const sql = require('sql-template-strings')
 const R = require('ramda')
-const { updateNotificationTracks, getTracksWithIds } = require('../routes/users/db')
+const { getTracksWithIds } = require('../routes/users/db')
 const { searchForTracks } = require('../routes/shared/db/search')
 const { using } = require('bluebird')
 const { scheduleEmail } = require('../services/mailer')
@@ -12,9 +12,9 @@ module.exports.updateNotifications = async () => {
   const notificationSearches = await getNotificationDetails()
   const errors = []
 
-  for (const { notificationId, text, email, lastUpdate } of notificationSearches) {
+  for (const { notificationId, text, email, lastUpdate, storeIds, storeNames } of notificationSearches) {
     try {
-      const searchResults = await searchForTracks(text, { limit: 50, sort: '-added', addedSince: lastUpdate })
+      const searchResults = await searchForTracks(text, { limit: 50, sort: '-added', addedSince: lastUpdate, storeIds })
       const uriEncoded = encodeURI(text)
 
       logger.debug('Found tracks for search', { searchResults })
@@ -30,13 +30,16 @@ module.exports.updateNotifications = async () => {
               `${artists.map(({ name }) => name).join(', ')} - ${title}${version ? ` (${version})` : ''}`
           )
           const searchUrl = `${root}/search/?q=${uriEncoded}`
+          const from = `(from ${R.init(storeNames).join(', ')}${
+            storeNames.length > 1 ? ` or ${R.last(storeNames)}` : ''
+          })`
           await scheduleEmail(
             process.env.NOTIFICATION_EMAIL_SENDER,
             email,
             `New results for your search '${text}'!`,
             `Check out the results at ${searchUrl}
             
-            New tracks:
+            New tracks available ${from}:
             ${newTracksDetails.join('\n')}
             
             Unsubscribe / adjust notification settings at: ${notificationsUrl}
@@ -45,7 +48,7 @@ module.exports.updateNotifications = async () => {
 <a href="${searchUrl}">
   Check out the results at ${searchUrl}
 </a><br/><br/>
-<strong>New tracks:</strong><br/>
+<strong>New tracks available</strong> ${from}:<br/>
 ${newTracksDetails.join('<br/>')}
 <br/>
 <br/>
@@ -83,13 +86,18 @@ SELECT meta_account_user_id                  AS "userId",
        user_search_notification_id           AS "notificationId",
        user_search_notification_string       AS text,
        meta_account_email_address            AS email,
-       user_search_notification_last_update  AS "lastUpdate"
+       user_search_notification_last_update  AS "lastUpdate",
+       ARRAY_AGG(store_id)                   AS "storeIds",
+       ARRAY_AGG(store_name)                 AS "storeNames"
 FROM user_search_notification
          NATURAL JOIN meta_account_email
+         NATURAL JOIN user_search_notification__store
+         NATURAL JOIN store
 WHERE (
     user_search_notification_last_update + INTERVAL '6 hours' < NOW()
   )
   AND meta_account_email_verified
+GROUP BY (1, 2, 3, 4, 5)
 ORDER BY user_search_notification_last_update DESC NULLS FIRST
 LIMIT 20
 `

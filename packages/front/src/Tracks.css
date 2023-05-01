@@ -184,6 +184,11 @@
     width: 100px;
   }
 
+  .notification-popup-content {
+    right: 0;
+    width: 100%;
+  }
+
   .share-button-container {
     display: inline-block;
     position: relative;
@@ -359,6 +364,11 @@
   .cart-popup-content {
     width: 8rem;
     right: calc(50% - 4rem - 6px);
+  }
+
+  .notification-popup-content {
+    right: 0;
+    width: 100px;
   }
 
   .share-button-container {
