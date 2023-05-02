@@ -3,6 +3,7 @@ import { PublicBucket } from './constructs/public-bucket'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns'
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 
 export interface BackStackProps extends cdk.StackProps {
   stage: string
@@ -20,15 +21,19 @@ export class BackStack extends cdk.Stack {
       bucketName: `fomoplayer-previews-${props.stage}`
     })
 
+    new ecr.Repository(this, "fomoplayer-api", {
+      repositoryName: "fomoplayer-api"
+    });
+
     const cluster = new ecs.Cluster(this, `FomoPlayerCluster-${props.stage}`, { vpc: this.vpc })
     new ecs_patterns.ApplicationLoadBalancedFargateService(
       this,
       `FomoPlayerFargate-${props.stage}`,
       {
         cluster,
-        listenerPort: 3000,
+        listenerPort: 80,
         taskImageOptions: {
-          image: ecs.ContainerImage.fromAsset(__dirname + '../../back')
+          image: ecs.ContainerImage.fromAsset(__dirname + '/../resources/back')
         }
       }
     )
