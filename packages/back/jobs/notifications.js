@@ -29,7 +29,7 @@ module.exports.updateNotifications = async () => {
             ({ artists, title, version }) =>
               `${artists.map(({ name }) => name).join(', ')} - ${title}${version ? ` (${version})` : ''}`
           )
-          const searchUrl = `${root}/search/?q=${uriEncoded}`
+          const searchUrl = `${root}/search/?q=${uriEncoded}&sort=-added`
           const from = `(from ${R.init(storeNames).join(', ')}${
             storeNames.length > 1 ? ` or ${R.last(storeNames)}` : ''
           })`

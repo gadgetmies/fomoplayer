@@ -423,6 +423,7 @@ class Player extends Component {
           follows={this.props.follows}
           notificationsEnabled={this.props.notificationsEnabled}
           search={this.props.search}
+          sort={this.props.sort}
           onFollow={this.props.onFollow}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onAddToCart={this.props.onAddToCart}

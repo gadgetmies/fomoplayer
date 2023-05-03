@@ -384,6 +384,7 @@ class App extends Component {
                           mode="app"
                           listState={settingsVisible ? 'new' : props.match.params.path}
                           search={query.get('q') || ''}
+                          sort={query.get('sort') || ''}
                           initialPosition={NaN}
                           addingToCart={this.state.addingToCart}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
