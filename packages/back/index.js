@@ -1,15 +1,15 @@
 const colorTrace = require('color-stacktrace')
 colorTrace.init(Error)
 const config = require('./config.js')
-
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
 const pg = require('./db/pg')
 
 const express = require('express')
 const passport = require('passport')
 const session = require('express-session')
 const cors = require('cors')
+/*
 const pgSession = require('connect-pg-simple')(session)
+*/
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const compression = require('compression')
@@ -17,7 +17,10 @@ const path = require('path')
 const fs = require('fs')
 const R = require('ramda')
 
+/*
 const passportSetup = require('./passport-setup.js')
+*/
+
 const auth = require('./routes/auth.js')
 const { HttpError } = require('./routes/shared/httpErrors')
 const { getCartDetails } = require('./routes/logic')
@@ -25,6 +28,7 @@ const logger = require('./logger')(__filename)
 
 const app = express()
 app.use(compression())
+/*
 app.use(
   session({
     store: new pgSession({
@@ -36,10 +40,12 @@ app.use(
     cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 days
   })
 )
-
+*/
+/*
 passportSetup()
 app.use(passport.initialize())
 app.use(passport.session())
+*/
 
 morgan('tiny')
 
@@ -54,7 +60,13 @@ const ensureAuthenticated = (req, res, next) => {
 
 app.use('/api/auth', auth)
 
+/*
 const authenticateJwt = passport.authenticate('jwt', { session: false })
+*/
+
+app.get('/', (req, res) => {
+  res.send('Running')
+})
 
 app.use('/api', require('./routes/public.js'))
 
@@ -128,8 +140,6 @@ ${cartOpenGraphDetails}`
   })
 })
 
-app.get('/*', (req, res) => res.sendFile(path.join(indexPath)))
-
 const handleErrors = (err, req, res, next) => {
   logger.error(err instanceof String ? err : err.toString())
   if (err instanceof HttpError) {
@@ -150,4 +160,6 @@ app.use(handleErrors)
 app.listen(config.port)
 logger.info(`Listening on port: ${config.port}`)
 
+/*
 require('./job-scheduling.js').init()
+*/

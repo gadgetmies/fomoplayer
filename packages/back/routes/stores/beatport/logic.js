@@ -2,7 +2,7 @@ const BPromise = require('bluebird')
 const bpApi = require('bp-api')
 
 const { queryFollowRegexes } = require('../../shared/db/store.js')
-const { beatportTracksTransform } = require('multi_store_player_chrome_extension/src/js/transforms/beatport')
+const { beatportTracksTransform } = require('./transform.js')
 const logger = require('../../../logger')(__filename)
 
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)

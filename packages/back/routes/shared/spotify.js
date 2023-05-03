@@ -1,10 +1,11 @@
 const SpotifyWebApi = require('spotify-web-api-node')
 const logger = require('../../logger')(__filename)
 
-const spotifyApi = new SpotifyWebApi({
+const spotifyApi = {} /*new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET
 })
+*/
 
 const refreshToken = (module.exports.refreshToken = async () => {
   logger.debug('Refreshing Spotify token')

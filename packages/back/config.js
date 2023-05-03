@@ -1,8 +1,9 @@
 const nodeEnv = process.env.NODE_ENV || 'development'
-require('dotenv').config({ path: `.env.${nodeEnv}` })
+//require('dotenv').config({ path: `.env.${nodeEnv}` })
 
 //const resolveServiceURL = require('../shared/resolveServiceURL.js')
 const sharedConfig = {
+  API_PORT: process.env.PORT,
   FRONTEND_URL: 'https://d3lojmgbaazgkr.cloudfront.net',
   API_URL: 'http://backs-fomop-ntxv1350b6v3-1616753071.eu-north-1.elb.amazonaws.com:3000'
 }

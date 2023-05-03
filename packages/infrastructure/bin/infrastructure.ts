@@ -18,21 +18,24 @@ import { DbStack } from '../lib/db-stack'
 // }
 
 const app = new cdk.App()
+
+const dbStack = new DbStack(app, 'DbStack', {
+  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+  stage: 'dev'
+})
+
+const backStack = new BackStack(app, 'BackStack', {
+  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+  stage: 'dev',
+  database: dbStack.rdsInstance
+})
+
 new FrontStack(app, 'FrontStack', {
   // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  stage: 'dev'
+  stage: 'dev',
+  apiUrl: backStack.loadBalancer.loadBalancerDnsName
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-})
-
-new BackStack(app, 'BackStack', {
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  stage: 'dev'
-})
-
-new DbStack(app, 'DbStack', {
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  stage: 'dev'
 })
 
 const build = [

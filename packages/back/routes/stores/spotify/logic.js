@@ -3,7 +3,7 @@ const { spotifyApi } = require('../../shared/spotify.js')
 const {
   spotifyTracksTransform,
   spotifyAlbumTracksTransform
-} = require('multi_store_player_chrome_extension/src/js/transforms/spotify')
+} = require('./transform.js')
 const R = require('ramda')
 const { queryFollowRegexes } = require('../../shared/db/store')
 const logger = require('../../../logger')(__filename)

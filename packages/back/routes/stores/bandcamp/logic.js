@@ -1,6 +1,6 @@
 const R = require('ramda')
 const BPromise = require('bluebird')
-const { bandcampReleasesTransform } = require('multi_store_player_chrome_extension/src/js/transforms/bandcamp')
+const { bandcampReleasesTransform } = require('./transform.js')
 const { queryPreviewDetails } = require('../../shared/db/preview.js')
 const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
 const {

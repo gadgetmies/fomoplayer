@@ -1,10 +1,20 @@
 const logger = require('../logger')(__filename)
+const {
+  DATABASE_URL,
+  DATABASE_USE_SSL,
+  DATABASE_ENDPOINT,
+  DATABASE_USERNAME,
+  DATABASE_SELF_SIGNED_CERT,
+  DATABASE_PASSWORD,
+  STATEMENT_TIMEOUT,
+  DATABASE_NAME
+} = process.env
 
 const env = {
-  dbUrl: process.env.DATABASE_URL,
-  statementTimeout: process.env.STATEMENT_TIMEOUT,
-  ssl: Boolean(process.env.DATABASE_USE_SSL) ? {
-    rejectUnauthorized: !Boolean(process.env.DATABASE_SELF_SIGNED_CERT)
+  dbUrl: DATABASE_URL || `postgres://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@${DATABASE_ENDPOINT}/${DATABASE_NAME}`,
+  statementTimeout: STATEMENT_TIMEOUT,
+  ssl: Boolean(DATABASE_USE_SSL) ? {
+    rejectUnauthorized: !Boolean(DATABASE_SELF_SIGNED_CERT)
   } : false
 }
 
