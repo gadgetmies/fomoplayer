@@ -1,17 +1,16 @@
 import * as cdk from 'aws-cdk-lib'
-import { PublicBucket } from './constructs/public-bucket'
+import { PublicBucket } from './constructs/PublicBucket'
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment'
-import { CfnOutput } from 'aws-cdk-lib'
 import { CloudFrontWebDistribution } from 'aws-cdk-lib/aws-cloudfront'
+import { SharedStack, SharedStackProps } from './SharedStack'
 
 const path = './resources/build'
 
-export interface FrontStackProps extends cdk.StackProps {
-  stage: string,
+export interface FrontStackProps extends SharedStackProps {
   apiUrl: string
 }
 
-export class FrontStack extends cdk.Stack {
+export class FrontStack extends SharedStack {
   constructor(scope: cdk.App, id: string, props: FrontStackProps) {
     super(scope, id, {...props})
 
@@ -47,7 +46,7 @@ export class FrontStack extends cdk.Stack {
         {
           customOriginSource: {
             domainName: props.apiUrl,
-            originPath: 'api/'
+            originPath: '/api'
           },
           behaviors: [{
             pathPattern: 'api/*'

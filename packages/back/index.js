@@ -3,13 +3,19 @@ colorTrace.init(Error)
 const config = require('./config.js')
 const pg = require('./db/pg')
 
+try {
+  const DBMigrate = require('db-migrate')
+  console.log('Running db migration', config.databaseUrl, process.env.NODE_ENV)
+  DBMigrate.getInstance(true, { config: { other: config.databaseUrl }, env: 'other' }).up()
+} catch (e) {
+  console.log('DB migration failed', e)
+}
+
 const express = require('express')
 const passport = require('passport')
 const session = require('express-session')
 const cors = require('cors')
-/*
 const pgSession = require('connect-pg-simple')(session)
-*/
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const compression = require('compression')
@@ -17,9 +23,7 @@ const path = require('path')
 const fs = require('fs')
 const R = require('ramda')
 
-/*
 const passportSetup = require('./passport-setup.js')
-*/
 
 const auth = require('./routes/auth.js')
 const { HttpError } = require('./routes/shared/httpErrors')
@@ -27,8 +31,13 @@ const { getCartDetails } = require('./routes/logic')
 const logger = require('./logger')(__filename)
 
 const app = express()
+
+app.get('/health', (req, res) => {
+  res.send('OK')
+})
+
 app.use(compression())
-/*
+
 app.use(
   session({
     store: new pgSession({
@@ -40,12 +49,9 @@ app.use(
     cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 days
   })
 )
-*/
-/*
 passportSetup()
 app.use(passport.initialize())
 app.use(passport.session())
-*/
 
 morgan('tiny')
 
@@ -64,10 +70,6 @@ app.use('/api/auth', auth)
 const authenticateJwt = passport.authenticate('jwt', { session: false })
 */
 
-app.get('/', (req, res) => {
-  res.send('Running')
-})
-
 app.use('/api', require('./routes/public.js'))
 
 if (process.env.NODE_ENV !== 'production') {
@@ -79,7 +81,7 @@ app.use(
   (req, res, next) => {
     try {
       if (req.headers.authorization) {
-        authenticateJwt(req, res, next)
+        //authenticateJwt(req, res, next)
       } else {
         ensureAuthenticated(req, res, next)
       }
@@ -91,6 +93,7 @@ app.use(
   require('./routes/index.js')
 )
 
+// TODO: This needs to be handled differently in AWS
 app.use(express.static('public'))
 
 const indexPath = path.resolve(__dirname, 'public/index.html')

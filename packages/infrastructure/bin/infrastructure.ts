@@ -2,10 +2,14 @@
 import 'source-map-support/register'
 import * as cdk from 'aws-cdk-lib'
 import { AwsCredentials, GitHubWorkflow } from 'cdk-pipelines-github'
-import { FrontStack } from '../lib/front-stack'
+import { FrontStack } from '../lib/FrontStack'
 import { ShellStep } from 'aws-cdk-lib/pipelines'
-import { BackStack } from '../lib/back-stack'
-import { DbStack } from '../lib/db-stack'
+import { BackStack } from '../lib/BackStack'
+import { VpcStack } from '../lib/VpcStack'
+import { DbStack } from '../lib/DbStack'
+import { SecretsStack } from '../lib/SecretsStack'
+import { EcrStack } from '../lib/EcrStack'
+import { BastionStack } from '../lib/BastionStack'
 
 // class MyGitHubActionRole extends cdk.Stack {
 //   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -18,24 +22,37 @@ import { DbStack } from '../lib/db-stack'
 // }
 
 const app = new cdk.App()
+const stage = 'dev'
+const vpcStack = new VpcStack(app, 'VpcStack', { stage })
+const sharedProps = { stage, vpc: vpcStack.vpc }
+
+const secretsStack = new SecretsStack(app, 'SecretsStack', sharedProps)
 
 const dbStack = new DbStack(app, 'DbStack', {
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  stage: 'dev'
+  credentialsArn: secretsStack.secretArns.dbSecret,
+  securityGroup: vpcStack.defaultSecurityGroup,
+  ...sharedProps
+})
+new BastionStack(app, 'BastionStack', {
+  stage,
+  vpc: vpcStack.vpc,
+  securityGroup: vpcStack.defaultSecurityGroup,
+  database: dbStack.database
 })
 
+const ecrStack = new EcrStack(app, 'EcrStack', sharedProps)
 const backStack = new BackStack(app, 'BackStack', {
   // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  stage: 'dev',
-  database: dbStack.rdsInstance
+  database: dbStack.database,
+  repository: ecrStack.repository,
+  ...sharedProps
 })
 
 new FrontStack(app, 'FrontStack', {
   // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  stage: 'dev',
-  apiUrl: backStack.loadBalancer.loadBalancerDnsName
-
+  apiUrl: backStack.loadBalancer.loadBalancerDnsName,
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+  ...sharedProps
 })
 
 const build = [

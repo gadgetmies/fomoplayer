@@ -22,6 +22,7 @@ module.exports = function passportSetup() {
 
   passport.use(new LocalStrategy(checkCredentials))
 
+  /*
   const googleOpenIDIssuer = 'accounts.google.com'
   passport.use(
     new OpenIDStrategy(
@@ -44,7 +45,7 @@ module.exports = function passportSetup() {
           await pgrm.queryAsync(
             //language=PostgreSQL
             sql` -- open id login
-UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_id = ${user.id} 
+UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_id = ${user.id}
 `
           )
         } catch (e) {
@@ -93,6 +94,7 @@ UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_
       verify
     )
   )
+   */
 
   passport.serializeUser(async (userToSerialize, done) => {
     try {

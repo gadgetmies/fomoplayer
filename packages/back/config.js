@@ -13,6 +13,13 @@ const port = sharedConfig.API_PORT
 const frontendURL = 'https://d3lojmgbaazgkr.cloudfront.net' //resolveServiceURL(sharedConfig.FRONTEND_URL, sharedConfig.IP, sharedConfig.FRONTEND_PORT)
 const apiURL = 'http://backs-fomop-ntxv1350b6v3-1616753071.eu-north-1.elb.amazonaws.com:3000' //resolveServiceURL(sharedConfig.API_URL, sharedConfig.IP, port, '/api')
 
+const {
+  DATABASE_ENDPOINT,
+  DATABASE_USERNAME,
+  DATABASE_PASSWORD,
+  DATABASE_NAME
+} = process.env
+
 module.exports = {
   allowedOrigins: [frontendURL, 'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn'],
   port,
@@ -20,5 +27,6 @@ module.exports = {
   frontendURL,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  sessionSecret: process.env.SESSION_SECRET
+  sessionSecret: process.env.SESSION_SECRET,
+  databaseUrl: `postgres://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@${DATABASE_ENDPOINT}/${DATABASE_NAME}`
 }

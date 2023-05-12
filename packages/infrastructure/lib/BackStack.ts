@@ -1,36 +1,27 @@
 import * as cdk from 'aws-cdk-lib'
+import { Duration } from 'aws-cdk-lib'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
-import * as ecr from 'aws-cdk-lib/aws-ecr'
-import * as iam from 'aws-cdk-lib/aws-iam'
-import * as ssm from 'aws-cdk-lib/aws-ssm'
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
-import { Duration, SecretValue } from 'aws-cdk-lib'
-import { DatabaseInstance } from 'aws-cdk-lib/aws-rds'
 import { Secret } from 'aws-cdk-lib/aws-ecs'
-import { DbStack } from './db-stack'
-import { Port } from 'aws-cdk-lib/aws-ec2'
+import * as iam from 'aws-cdk-lib/aws-iam'
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
+import { DatabaseInstance } from 'aws-cdk-lib/aws-rds'
 import { ApplicationLoadBalancer } from 'aws-cdk-lib/aws-elasticloadbalancingv2'
+import { Repository } from 'aws-cdk-lib/aws-ecr'
+import { SharedStack, SharedStackProps } from './SharedStack'
+import { DbStack } from './DbStack'
 
-export interface BackStackProps extends cdk.StackProps {
-  stage: string
+export interface BackStackProps extends SharedStackProps {
+  repository: Repository,
   database: DatabaseInstance
 }
 
-export class BackStack extends cdk.Stack {
-  public readonly vpc: ec2.Vpc
+export class BackStack extends SharedStack {
   public readonly loadBalancer: ApplicationLoadBalancer
   constructor(scope: cdk.App, id: string, props: BackStackProps) {
     super(scope, id, props)
-    this.vpc = new ec2.Vpc(this, `VPC-${props?.stage}`, {
-      maxAzs: 2
-    })
 
-    const repository = new ecr.Repository(this, 'fomoplayer-back', {
-      repositoryName: 'fomoplayer-back'
-    })
-
-    const cluster = new ecs.Cluster(this, `FomoPlayerCluster-${props.stage}`, { vpc: this.vpc })
+    const cluster = new ecs.Cluster(this, `FomoPlayerCluster`, { vpc: props.vpc })
 
     const executionRolePolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
@@ -79,13 +70,15 @@ export class BackStack extends cdk.Stack {
 
     const container = fargateTaskDefinition.addContainer('fomoplayer-back', {
       // Use an image from Amazon ECR
-      image: ecs.ContainerImage.fromRegistry(repository.repositoryUri),
+      image: ecs.ContainerImage.fromRegistry(props.repository.repositoryUri),
       logging: ecs.LogDrivers.awsLogs({ streamPrefix: 'fomoplayer-back' }),
       environment: {
         PORT: String(containerPort),
         DATABASE_ENDPOINT: props.database.instanceEndpoint.socketAddress,
         DATABASE_NAME: DbStack.databaseName,
         DATABASE_SECRET_ARN: props.database.secret?.secretArn || '',
+        NODE_ENV: props.stage,
+        SESSION_SECRET: 'REPLACE THIS!'
         // GOOGLE_CLIENT_ID: googleClientId,
         // GOOGLE_CLIENT_SECRET: googleClientSecret,
         // SESSION_SECRET: sessionSecret,
@@ -104,46 +97,48 @@ export class BackStack extends cdk.Stack {
       containerPort
     })
 
-    const sg_service = new ec2.SecurityGroup(this, 'FomoPlayerBackSGService', { vpc: this.vpc })
+    const sg_service = new ec2.SecurityGroup(this, 'FomoPlayerBackSGService', { vpc: props.vpc })
     sg_service.addIngressRule(ec2.Peer.ipv4('0.0.0.0/0'), ec2.Port.tcp(3000))
 
     // TODO: Use ApplicationLoadBalancedFargateService?
     const service = new ecs.FargateService(this, 'FomoPlayerBackService', {
       cluster,
       taskDefinition: fargateTaskDefinition,
-      desiredCount: 2,
+      desiredCount: 1,
       assignPublicIp: false,
       securityGroups: [sg_service]
     })
 
-    // service.connections.allowToDefaultPort(
-    //   props.database.connections,
-    //   'Postgres db connection'
-    // )
+    service.connections.allowToDefaultPort(
+      props.database.connections,
+      'Postgres db connection'
+    )
 
     // Setup AutoScaling policy
-    const scaling = service.autoScaleTaskCount({ maxCapacity: 6, minCapacity: 2 })
+    const scaling = service.autoScaleTaskCount({ maxCapacity: 2, minCapacity: 1 })
     scaling.scaleOnCpuUtilization('CpuScaling', {
       targetUtilizationPercent: 50,
       scaleInCooldown: Duration.seconds(60),
       scaleOutCooldown: Duration.seconds(60)
     })
 
-    this.loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'FomoPlayerBackALB', {
-      vpc: this.vpc,
+    const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'FomoPlayerBackALB', {
+      vpc: props.vpc,
       internetFacing: true
     })
 
-    const listener = this.loadBalancer.addListener('Listener', {
+    const listener = loadBalancer.addListener('Listener', {
       port: 80
     })
 
     listener.addTargets('Target', {
       port: 80,
       targets: [service],
-      healthCheck: { path: '/' }
+      healthCheck: { path: '/health' }
     })
 
     listener.connections.allowDefaultPortFromAnyIpv4('Open to the world')
+
+    this.loadBalancer = loadBalancer
   }
 }
