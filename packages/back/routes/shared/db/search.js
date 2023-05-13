@@ -1,10 +1,28 @@
 const pg = require('../../../db/pg.js')
 const sql = require('sql-template-strings')
 const { using } = require('bluebird')
+//const logger = require('../../../logger')(__filename)
 
-module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince, storeIds = null } = {}) => {
+// TODO: would it be possible to somehow derive these from the track_details function?
+const aliasToColumn = {
+  published: 'store__track_published',
+  released: 'store__track_released',
+  added: 'track_added',
+  title: 'track_title',
+  heard: 'user__track_heard'
+}
+
+module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince } = {}) => {
   const limit = l || 100
   const sort = s || '-released'
+  const sortParameters = getSortParameters(sort)
+  const sortColumns = sortParameters
+    .map(([alias, order]) => {
+      const column = aliasToColumn[alias]
+      return column ? [column, order] : null
+    })
+    .filter(i => i)
+
   return using(pg.getTransaction(), async tx => {
     // TODO: this tx is only here for escapeIdentifier -> find out a way to get the function from pg
     let query =
@@ -29,29 +47,36 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
                                   NATURAL LEFT JOIN label
                                   NATURAL JOIN store__track
                           WHERE ${addedSince}::TIMESTAMPTZ IS NULL OR track_added > ${addedSince}::TIMESTAMPTZ
-                          AND (${storeIds}::INT[] IS NULL OR
-                               store_id = ANY(${storeIds}))
-                          GROUP BY track_id, track_title, track_version
-                          HAVING
+                          GROUP BY track_id, track_title, track_version`
+
+    sortColumns.forEach(([column]) => query.append(`, ${tx.escapeIdentifier(column)}`))
+    query.append(`                HAVING
                                   TO_TSVECTOR(
                                           'simple',
                                           unaccent(track_title || ' ' ||
                                                    COALESCE(track_version, '') || ' ' ||
                                                    STRING_AGG(artist_name, ' ') || ' ' ||
                                                    STRING_AGG(COALESCE(label_name, ''), ' '))) @@
-                                  websearch_to_tsquery('simple', unaccent(${queryString}))
-                          ORDER BY MAX(LEAST(store__track_published, store__track_released)) DESC
-                          LIMIT ${limit}
-                         ) AS tracks)) td
+                                  websearch_to_tsquery('simple', unaccent('${queryString}'))
+                                  ORDER BY `)
+
+    sortColumns.forEach(([column, order]) =>
+      query
+        .append(tx.escapeIdentifier(column))
+        .append(' ')
+        .append(order)
+        .append(' NULLS LAST, ')
+    )
+    query.append(` track_id DESC
+        LIMIT ${limit}) AS tracks)) td
         NATURAL LEFT JOIN
             (
                 SELECT track_id, user__track_heard
                 FROM user__track
                 WHERE meta_account_user_id = ${userId} :: INT
             ) ut
-        ORDER BY `
+        ORDER BY `)
 
-    const sortParameters = getSortParameters(sort)
     sortParameters.forEach(([column, order]) =>
       query
         .append(tx.escapeIdentifier(column))
@@ -59,7 +84,6 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
         .append(order)
         .append(' NULLS LAST, ')
     )
-
     query.append(' track_id DESC')
 
     return await tx.queryRowsAsync(query)
@@ -70,5 +94,5 @@ const getSortParameters = (module.exports.getSortParameters = sort => {
   return sort
     .split(',')
     .map(s => s.trim())
-    .map(s => [s.slice(1), s[0] === '+' ? 'ASC' : 'DESC'])
+    .map(s => (s[0] === '-' ? [s.slice(1), 'ASC'] : [s, 'DESC']))
 })
