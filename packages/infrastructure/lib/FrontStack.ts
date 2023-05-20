@@ -1,10 +1,10 @@
 import * as cdk from 'aws-cdk-lib'
 import { PublicBucket } from './constructs/PublicBucket'
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment'
-import { CloudFrontWebDistribution } from 'aws-cdk-lib/aws-cloudfront'
+import { CloudFrontWebDistribution, OriginProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront'
 import { SharedStack, SharedStackProps } from './SharedStack'
 
-const path = './resources/build'
+const path = '../front/build'
 
 export interface FrontStackProps extends SharedStackProps {
   apiUrl: string
@@ -12,7 +12,7 @@ export interface FrontStackProps extends SharedStackProps {
 
 export class FrontStack extends SharedStack {
   constructor(scope: cdk.App, id: string, props: FrontStackProps) {
-    super(scope, id, {...props})
+    super(scope, id, { ...props })
 
     const bucketName = `fomoplayer-front-${props.stage}`
     const frontBucket = new PublicBucket(this, 'FomoPlayerFront', {
@@ -39,18 +39,23 @@ export class FrontStack extends SharedStack {
             s3BucketSource: previewBucket,
             originAccessIdentity: frontBucket.cloudFrontOAI
           },
-          behaviors: [{
-            pathPattern: 'previews/*'
-          }]
+          behaviors: [
+            {
+              pathPattern: 'previews/*'
+            }
+          ]
         },
         {
           customOriginSource: {
             domainName: props.apiUrl,
-            originPath: '/api'
+            originPath: '/api',
+            originProtocolPolicy: OriginProtocolPolicy.HTTP_ONLY
           },
-          behaviors: [{
-            pathPattern: 'api/*'
-          }]
+          behaviors: [
+            {
+              pathPattern: 'api/*'
+            }
+          ]
         }
       ]
       // viewerCertificate: cloudfront.ViewerCertificate.fromAcmCertificate(
@@ -71,8 +76,8 @@ export class FrontStack extends SharedStack {
     new BucketDeployment(this, 'BucketDeployment', {
       sources: [Source.asset(path)],
       destinationBucket: frontBucket,
-      distribution: distribution,
-      distributionPaths: ['/*'],
+      distribution,
+      distributionPaths: ['/*']
     })
   }
 }
