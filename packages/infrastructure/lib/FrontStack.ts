@@ -11,6 +11,7 @@ export interface FrontStackProps extends SharedStackProps {
 }
 
 export class FrontStack extends SharedStack {
+  public readonly dnsName: string
   constructor(scope: cdk.App, id: string, props: FrontStackProps) {
     super(scope, id, { ...props })
 
@@ -48,7 +49,6 @@ export class FrontStack extends SharedStack {
         {
           customOriginSource: {
             domainName: props.apiUrl,
-            originPath: '/api',
             originProtocolPolicy: OriginProtocolPolicy.HTTP_ONLY
           },
           behaviors: [

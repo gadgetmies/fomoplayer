@@ -65,7 +65,10 @@ export class BackStack extends SharedStack {
         DATABASE_ENDPOINT: props.database.instanceEndpoint.socketAddress,
         DATABASE_NAME: DbStack.databaseName,
         DATABASE_SECRET_ARN: props.database.secret?.secretArn || '',
-        NODE_ENV: props.stage
+        NODE_ENV: props.stage,
+        DEBUG: 'express:*',
+        FRONTEND_URL: 'https://d3uvwiid8ib0ub.cloudfront.net',
+        API_URL: 'https://d3uvwiid8ib0ub.cloudfront.net/api'
       },
       secrets: {
         DATABASE_PASSWORD: Secret.fromSecretsManager(props.database.secret!, 'password'),
