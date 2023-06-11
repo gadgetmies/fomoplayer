@@ -405,10 +405,10 @@ AND artist_id = ${artistId}
 
 module.exports.queryUserTracks = (
   userId,
-  sort = '-artist_starred,-label_starred,-score',
+  sort = undefined /* undefined = defaults, see below */,
   limits = { new: 100, recent: 100, heard: 50 }
 ) => {
-  const sortParameters = getSortParameters(sort)
+  const sortParameters = getSortParameters(sort || '-artist_starred,-label_starred,-score')
 
   return using(pg.getTransaction(), async tx => {
     let query =

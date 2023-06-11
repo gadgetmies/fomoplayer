@@ -54,12 +54,7 @@ router.get(
   async (
     {
       user: { id: authUserId },
-      query: {
-        sort = '-score',
-        limit_new: limitNew = 100,
-        limit_recent: limitRecent = 100,
-        limit_heard: limitHeard = 50
-      }
+      query: { sort, limit_new: limitNew = 100, limit_recent: limitRecent = 100, limit_heard: limitHeard = 50 }
     },
     res
   ) => {
