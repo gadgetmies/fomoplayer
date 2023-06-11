@@ -359,7 +359,9 @@ class Settings extends Component {
                             }
                           } else {
                             const promises = this.props.stores.map(({ storeName }) =>
-                              requestWithCredentials({ path: `/stores/${store}/search/?q=${this.state.followQuery}` })
+                              requestWithCredentials({
+                                path: `/stores/${storeName}/search/?q=${this.state.followQuery}`
+                              })
                                 .then(async res =>
                                   (await res.json()).map(result => ({ stores: [storeName], ...result }))
                                 )
@@ -838,11 +840,13 @@ class Settings extends Component {
                           onClick={async e => {
                             e.stopPropagation()
                             this.setState({ updatingNotifications: true })
-                            await this.props.onRequestNotificationUpdate([{
-                              op: 'remove',
-                              storeName,
-                              text
-                            }])
+                            await this.props.onRequestNotificationUpdate([
+                              {
+                                op: 'remove',
+                                storeName,
+                                text
+                              }
+                            ])
 
                             this.setState({ updatingNotifications: false })
                           }}
