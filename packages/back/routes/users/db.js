@@ -1,7 +1,6 @@
 const sql = require('sql-template-strings')
 const R = require('ramda')
 const pg = require('../../db/pg.js')
-const { getSortParameters } = require('../shared/db/search')
 const logger = require('../../logger')(__filename)
 const { using } = require('bluebird')
 
@@ -16,6 +15,17 @@ WHERE meta_account_user_id = ${userId} AND cart_is_purchased
 ON CONFLICT DO NOTHING
 `
   )
+}
+
+const composableSql = (parts, ...args) => {
+  try {
+    return parts.reduce((query, part, i) => {
+      return query.append(part).append(args[i] === undefined ? '' : args[i])
+    }, sql``)
+  } catch (e) {
+    console.error(e)
+    throw e
+  }
 }
 
 module.exports.addPurchasedStoreTrackToUser = async (tx, userId, storeTrack) =>
@@ -403,17 +413,15 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = (
-  userId,
-  sort = undefined /* undefined = defaults, see below */,
-  limits = { new: 100, recent: 100, heard: 50 }
-) => {
-  const sortParameters = getSortParameters(sort || '-artist_starred,-label_starred,-score')
+module.exports.queryUserTracks = (userId, limits = { new: 100, recent: 100, heard: 50 }) => {
+  // language=PostgreSQL
+  const sort = sql`ORDER BY artists_starred + label_starred :: int DESC, score DESC NULLS LAST`
 
   return using(pg.getTransaction(), async tx => {
-    let query =
-      // language=PostgreSQL
-      sql`-- queryUserTracks
+    // language=PostgreSQL
+    return tx
+      .queryRowsAsync(
+        composableSql`-- queryUserTracks
 WITH
     logged_user AS (
         SELECT ${userId} :: INT AS meta_account_user_id
@@ -510,7 +518,7 @@ WITH
     SELECT
         track_id
       , SUM(score) AS artist_follow_score
-      , BOOL_OR(artist_starred) AS artist_starred
+      , SUM(COALESCE(artist_starred :: int, 0)) AS artists_starred
     FROM
         follows
     GROUP BY 1
@@ -526,7 +534,7 @@ WITH
   , new_tracks_with_scores AS (
     SELECT
         track_id
-      , artist_starred
+      , artists_starred
       , label_starred 
       , user__track_heard
       , label_score * COALESCE(label_multiplier, 0) +
@@ -558,7 +566,7 @@ WITH
            , label_follow_score
            , artist_follow_score
            , track_added
-           , artist_starred
+           , artists_starred
            , label_starred
            , (SELECT
                   user_track_score_weight_multiplier
@@ -619,21 +627,7 @@ WITH
             LEFT JOIN track_date_added_score AS added_score USING (track_id)
             LEFT JOIN track_date_released_score AS released_score USING (track_id)
             LEFT JOIN track_date_published_score AS published_score USING (track_id)
-    ORDER BY `
-
-    sortParameters.forEach(([column, order], index) =>
-      query
-        .append(tx.escapeIdentifier(column))
-        .append(' ')
-        .append(order)
-        .append(' NULLS LAST ')
-        .append(index === sortParameters.length - 1 ? '' : ', ')
-    )
-
-    return tx
-      .queryRowsAsync(
-        // language=PostgreSQL
-        query.append(sql`
+          ${sort}
           LIMIT ${limits.new}
       )
         , heard_tracks AS (
@@ -695,7 +689,7 @@ WITH
           -- TODO: do the sort parameters in the request even matter when this is here?
                    SELECT * FROM tracks_with_details 
                    JOIN new_tracks_with_scores ON (id = track_id)
-                   ORDER BY artist_starred OR label_starred DESC, score DESC NULLS LAST, added DESC
+                   ${sort}
                ) t
       )
          , heard_tracks_with_details AS (
@@ -727,7 +721,6 @@ WITH
          , heard_tracks_with_details
          , recently_added_tracks_with_details
          , user_tracks_meta`)
-      )
       .then(R.head)
   })
 }

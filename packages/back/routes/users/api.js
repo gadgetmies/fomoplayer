@@ -54,11 +54,15 @@ router.get(
   async (
     {
       user: { id: authUserId },
-      query: { sort, limit_new: limitNew = 100, limit_recent: limitRecent = 100, limit_heard: limitHeard = 50 }
+      query: {
+        limit_new: limitNew = 100,
+        limit_recent: limitRecent = 100,
+        limit_heard: limitHeard = 50
+      }
     },
     res
   ) => {
-    const userTracks = await getUserTracks(authUserId, sort, { new: limitNew, recent: limitRecent, heard: limitHeard })
+    const userTracks = await getUserTracks(authUserId, { new: limitNew, recent: limitRecent, heard: limitHeard })
     res.json(userTracks)
   }
 )
