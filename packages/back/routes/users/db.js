@@ -537,19 +537,19 @@ WITH
       , artists_starred
       , label_starred 
       , user__track_heard
-      , label_score * COALESCE(label_multiplier, 0) +
-        artist_score * COALESCE(artist_multiplier, 0) +
-        artist_follow_score * COALESCE(artist_follow_multiplier, 0) +
-        label_follow_score * COALESCE(label_follow_multiplier, 0) +
+      , COALESCE(label_score, 0) * COALESCE(label_multiplier, 0) +
+        COALESCE(artist_score, 0) * COALESCE(artist_multiplier, 0) +
+        COALESCE(artist_follow_score, 0) * COALESCE(artist_follow_multiplier, 0) +
+        COALESCE(label_follow_score, 0) * COALESCE(label_follow_multiplier, 0) +
         COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
         COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) +
         COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) 
       AS score
       , JSON_BUILD_OBJECT(
-          'artist', JSON_BUILD_OBJECT('score', artist_score, 'weight', artist_multiplier),
-          'artist_follow', JSON_BUILD_OBJECT('score', artist_follow_score, 'weight', artist_follow_multiplier),
-          'label', JSON_BUILD_OBJECT('score', label_score, 'weight', label_multiplier),
-          'label_follow', JSON_BUILD_OBJECT('score', label_follow_score, 'weight', label_follow_multiplier),
+          'artist', JSON_BUILD_OBJECT('score', COALESCE(artist_score, 0), 'weight', artist_multiplier),
+          'artist_follow', JSON_BUILD_OBJECT('score', COALESCE(artist_follow_score, 0), 'weight', artist_follow_multiplier),
+          'label', JSON_BUILD_OBJECT('score', COALESCE(label_score, 0), 'weight', label_multiplier),
+          'label_follow', JSON_BUILD_OBJECT('score', COALESCE(label_follow_score, 0), 'weight', label_follow_multiplier),
           'date_added', JSON_BUILD_OBJECT('score', ROUND(added_score.score, 1), 'weight', date_added_multiplier),
           'date_released',
           JSON_BUILD_OBJECT('score', ROUND(released_score.score, 1), 'weight', date_released_multiplier),
