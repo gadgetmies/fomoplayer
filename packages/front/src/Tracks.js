@@ -83,7 +83,9 @@ class Tracks extends Component {
       async () => {
         this.setState({ searchDebounce: undefined, searchInProgress: true })
         try {
-          const results = await (await requestWithCredentials({ path: `/tracks?q=${search}&sort=${this.props.sort}` })).json()
+          const results = await (
+            await requestWithCredentials({ path: `/tracks?q=${search}&sort=${this.props.sort}` })
+          ).json()
           this.props.onSearchResults(results)
         } catch (e) {
           console.error(e)
