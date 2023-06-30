@@ -720,7 +720,8 @@ WITH
       FROM new_tracks_with_details
          , heard_tracks_with_details
          , recently_added_tracks_with_details
-         , user_tracks_meta`)
+         , user_tracks_meta`
+      )
       .then(R.head)
   })
 }
@@ -1061,19 +1062,27 @@ WITH
                          cart
                      WHERE
                          cart_id = ${cartId})
-  , cart_tracks AS (SELECT ARRAY_AGG(track_id) AS tracks
-                    FROM track__cart
-                    WHERE cart_id = ${cartId}
-                    ORDER BY track__cart_added DESC
-                    LIMIT 100)
-  , td AS (SELECT *
-                , track_id AS id
+  , cart_tracks AS (SELECT
+                        (ARRAY_AGG(track_id ORDER BY track__cart_added DESC))[1:100] AS tracks
+                    FROM
+                        track__cart
+                    WHERE
+                        cart_id = ${cartId})
+  , td AS (SELECT DISTINCT ON (track_id)
+               d.*
+             , user__track_heard AS heard
+             , track_id          AS id
            FROM
-               track_details((SELECT tracks FROM cart_tracks))
+               track_details((SELECT tracks FROM cart_tracks)) d
                    NATURAL JOIN track__cart
+                   NATURAL LEFT JOIN user__track
            WHERE
                cart_id = ${cartId})
-  , tracks AS (SELECT JSON_AGG(td ORDER BY track__cart_added DESC) AS tracks FROM td)
+  , tracks AS (SELECT
+                   JSON_AGG(td ORDER BY track__cart_added DESC) AS tracks
+               FROM
+                   td
+                       NATURAL JOIN track__cart)
 SELECT
     cart_id                                                                AS id
   , cart_name                                                              AS name
@@ -1081,11 +1090,12 @@ SELECT
   , cart_is_public                                                         AS is_public
   , cart_is_purchased IS NOT NULL                                          AS is_purchased
   , cart_uuid                                                              AS uuid
-  , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
+  , CASE WHEN tracks.tracks IS NULL THEN '[]'::json ELSE tracks.tracks END AS tracks
 FROM
     cart_details
   , tracks
-ORDER BY cart_is_default, cart_is_purchased, cart_name
+ORDER BY
+    cart_is_default, cart_is_purchased, cart_name
 `
   )
 
