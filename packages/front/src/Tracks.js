@@ -483,6 +483,7 @@ class Tracks extends Component {
                     >
                       {this.props.carts.map(cart => (
                         <option value={cart.id} key={cart.id}>
+                          {cart.is_default || cart.is_purchased ? '⭐️ ' : ''}
                           {cart.name}
                         </option>
                       ))}
