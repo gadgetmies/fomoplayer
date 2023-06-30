@@ -1050,10 +1050,22 @@ module.exports.queryCartDetails = async cartId => {
     // language=PostgreSQL
     sql`--queryCartDetails
 WITH
-    cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_is_purchased, cart_uuid
-                     FROM cart
-                     WHERE cart_id = ${cartId})
-  , cart_tracks AS (SELECT ARRAY_AGG(track_id) AS tracks FROM track__cart WHERE cart_id = ${cartId})
+    cart_details AS (SELECT
+                         cart_id
+                       , cart_name
+                       , cart_is_default
+                       , cart_is_public
+                       , cart_is_purchased
+                       , cart_uuid
+                     FROM
+                         cart
+                     WHERE
+                         cart_id = ${cartId})
+  , cart_tracks AS (SELECT ARRAY_AGG(track_id) AS tracks
+                    FROM track__cart
+                    WHERE cart_id = ${cartId}
+                    ORDER BY track__cart_added DESC
+                    LIMIT 100)
   , td AS (SELECT *
                 , track_id AS id
            FROM
