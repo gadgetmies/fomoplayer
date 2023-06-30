@@ -42,6 +42,7 @@ const {
   setTrackHeard,
   setFollowStarred,
   queryUserCartDetails,
+  queryUserCartDetailsWithTracks,
   insertCart,
   queryCartDetails,
   deleteCart,
@@ -359,6 +360,7 @@ module.exports.getUserScoreWeights = queryUserScoreWeights
 module.exports.setUserScoreWeights = updateUserScoreWeights
 
 module.exports.getUserCarts = queryUserCartDetails
+module.exports.getUserCartsWithTracks = queryUserCartDetailsWithTracks
 module.exports.createCart = insertCart
 module.exports.removeCart = async (userId, cartId) => {
   await verifyCartOwnership(userId, cartId)
@@ -400,8 +402,13 @@ module.exports.updateAllCartContents = async (userId, operations) => {
 }
 
 const getCartDetails = (module.exports.getCartDetails = async (userId, cartId) => {
-  await verifyCartOwnership(userId, cartId)
-  return await queryCartDetails(cartId)
+  let realCartId = cartId
+  if (cartId === 'default') {
+    realCartId = await queryDefaultCartId(userId)
+  } else {
+    await verifyCartOwnership(userId, realCartId)
+  }
+  return await queryCartDetails(realCartId)
 })
 
 module.exports.getDefaultCartDetails = async userId => {

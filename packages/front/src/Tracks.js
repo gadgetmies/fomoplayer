@@ -26,7 +26,8 @@ class Tracks extends Component {
       searchInProgress: false,
       createdNotifications: new Set(),
       modifyingNotification: false,
-      searchError: undefined
+      searchError: undefined,
+      fetchingCartDetails: false
     }
     this.handleScroll = this.handleScroll.bind(this)
   }
@@ -127,6 +128,12 @@ class Tracks extends Component {
       <tr style={{ display: 'block' }} key={'search-in-progress'}>
         <td>
           Searching <Spinner />
+        </td>
+      </tr>
+    ) : this.state.fetchingCartDetails ? (
+      <tr style={{ display: 'block' }} key={'search-in-progress'}>
+        <td>
+          Fetching cart details <Spinner />
         </td>
       </tr>
     ) : tracks.length === 0 ? (
@@ -464,7 +471,14 @@ class Tracks extends Component {
                 </label>
                 {this.props.mode === 'app' ? (
                   <div className={'select'}>
-                    <select id="cart-select" onChange={e => this.props.onSelectCart(parseInt(e.target.value))}>
+                    <select
+                      id="cart-select"
+                      onChange={async e => {
+                        this.setState({ fetchingCartDetails: true })
+                        await this.props.onSelectCart(parseInt(e.target.value))
+                        this.setState({ fetchingCartDetails: false })
+                      }}
+                    >
                       {this.props.carts.map(cart => (
                         <option value={cart.id} key={cart.id}>
                           {cart.name}

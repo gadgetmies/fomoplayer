@@ -1,6 +1,6 @@
 import Preview from './Preview.js'
 import Tracks from './Tracks.js'
-import { requestWithCredentials } from './request-json-with-credentials.js'
+import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import MediaSession from '@mebtte/react-media-session'
@@ -255,8 +255,9 @@ class Player extends Component {
     this.setState({ searchResults })
   }
 
-  selectCart(selectedCartId) {
+  async selectCart(selectedCartId) {
     this.setState({ selectedCartId: selectedCartId })
+    await this.props.onFetchCart(selectedCartId)
   }
 
   mergeHeardStatus(tracks) {

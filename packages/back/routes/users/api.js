@@ -30,6 +30,7 @@ const {
   addPlaylistFollows,
   createCart,
   getUserCarts,
+  getUserCartsWithTracks,
   removeCart,
   updateCartDetails,
   getCartDetails,
@@ -235,9 +236,17 @@ router.get('/carts', async ({ user: { id: userId } }, res) => {
   res.send(await getUserCarts(userId))
 })
 
+router.get('/carts?fetch=tracks', async ({ user: { id: userId } }, res) => {
+  res.send(await getUserCartsWithTracks(userId))
+})
+
 router.post('/carts', async ({ user: { id: userId }, body: { name } }, res) => {
   const createdCart = await createCart(userId, name)
   res.send(createdCart)
+})
+
+router.get('/carts/:id', async ({ user: { id: userId }, params: { id: cartId }, res }) => {
+  res.send(await getCartDetails(userId, cartId))
 })
 
 router.delete('/carts/:id', async ({ user: { id: userId }, params: { id } }, res) => {

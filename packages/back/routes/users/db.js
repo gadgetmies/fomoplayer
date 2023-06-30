@@ -981,10 +981,29 @@ FROM `
   )
 }
 
-module.exports.queryUserCartDetails = async userId => {
-  const details = await pg.queryRowsAsync(
+module.exports.queryUserCartDetails = async userId =>
+  pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`--queryCartDetails
+    sql`--queryUserCartDetails
+SELECT
+    cart_id                       AS id
+  , cart_name                     AS name
+  , cart_is_default IS NOT NULL   AS is_default
+  , cart_is_public                AS is_public
+  , cart_is_purchased IS NOT NULL AS is_purchased
+  , cart_uuid                     AS uuid
+FROM
+    cart
+WHERE
+    meta_account_user_id = ${userId}
+ORDER BY cart_is_default, cart_is_purchased, cart_name
+`
+  )
+
+module.exports.queryUserCartDetailsWithTracks = async userId =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryUserCartDetailsWithTracks
 WITH cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_is_purchased, cart_uuid
                       FROM cart
                       WHERE meta_account_user_id = ${userId})
@@ -1026,28 +1045,35 @@ ORDER BY cart_is_default, cart_is_purchased, cart_name
 `
   )
 
-  return details
-}
-
 module.exports.queryCartDetails = async cartId => {
   const [details] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryCartDetails
 WITH
-  cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_uuid FROM cart WHERE cart_id = ${cartId})
-, cart_tracks AS (SELECT array_agg(track_id) AS tracks FROM track__cart WHERE cart_id = ${cartId})
-, td AS (SELECT *, track_id AS id FROM track_details((SELECT tracks FROM cart_tracks)) natural join track__cart WHERE cart_id = ${cartId})
-, tracks AS (SELECT json_agg(td ORDER BY track__cart_added DESC) AS tracks FROM td)
+    cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_is_purchased, cart_uuid
+                     FROM cart
+                     WHERE cart_id = ${cartId})
+  , cart_tracks AS (SELECT ARRAY_AGG(track_id) AS tracks FROM track__cart WHERE cart_id = ${cartId})
+  , td AS (SELECT *
+                , track_id AS id
+           FROM
+               track_details((SELECT tracks FROM cart_tracks))
+                   NATURAL JOIN track__cart
+           WHERE
+               cart_id = ${cartId})
+  , tracks AS (SELECT JSON_AGG(td ORDER BY track__cart_added DESC) AS tracks FROM td)
 SELECT
-  cart_id                     AS id
-, cart_name                   AS name
-, cart_is_default IS NOT NULL AS is_default
-, cart_is_public              AS is_public
-, cart_uuid                   AS uuid
-, CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
+    cart_id                                                                AS id
+  , cart_name                                                              AS name
+  , cart_is_default IS NOT NULL                                            AS is_default
+  , cart_is_public                                                         AS is_public
+  , cart_is_purchased IS NOT NULL                                          AS is_purchased
+  , cart_uuid                                                              AS uuid
+  , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
 FROM
-  cart_details,
-  tracks
+    cart_details
+  , tracks
+ORDER BY cart_is_default, cart_is_purchased, cart_name
 `
   )
 

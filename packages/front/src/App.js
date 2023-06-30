@@ -128,10 +128,11 @@ class App extends Component {
   }
 
   async updateStatesFromServer() {
-    this.updateCarts().then(() => {})
     await Promise.all([
-      this.updateScoreWeights(),
       this.updateTracks(),
+      this.updateCarts(),
+      this.updateDefaultCart(),
+      this.updateScoreWeights(),
       this.updateFollows(),
       this.updateNotifications(),
       this.updateSettings(),
@@ -176,6 +177,26 @@ class App extends Component {
       path: `/me/carts`
     })
     this.setState({ carts })
+  }
+
+  async onFetchCart(cartId) {
+    const cartDetails = await requestJSONwithCredentials({
+      path: `/me/carts/${cartId}`
+    })
+    let updatedCarts = this.state.carts.slice()
+    const cartIndex = updatedCarts.findIndex(({ id }) => id === cartId)
+    updatedCarts[cartIndex] = cartDetails
+    this.setState({ carts: updatedCarts })
+  }
+
+  async updateDefaultCart() {
+    const defaultCart = await requestJSONwithCredentials({
+      path: `/me/carts/default`
+    })
+    let updatedCarts = this.state.carts.slice()
+    const defaultCartIndex = updatedCarts.findIndex(({ is_default }) => is_default)
+    defaultCartIndex !== -1 ? (updatedCarts[defaultCartIndex] = defaultCart) : updatedCarts.push(defaultCart)
+    this.setState({ carts: updatedCarts })
   }
 
   async updateScoreWeights() {
@@ -400,6 +421,7 @@ class App extends Component {
                           onAddToCart={this.addToCart.bind(this)}
                           onCreateCart={this.createCart.bind(this)}
                           onUpdateCarts={this.updateCarts.bind(this)}
+                          onFetchCart={this.onFetchCart.bind(this)}
                           onRemoveFromCart={this.removeFromCart.bind(this)}
                           onMarkPurchased={this.onMarkPurchased.bind(this)}
                           onFollow={this.updateFollows.bind(this)}
