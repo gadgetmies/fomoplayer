@@ -27,51 +27,56 @@ class Player extends Component {
     this.preview = React.createRef()
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     const that = this
-    document.addEventListener('keydown', event => {
-      if (event instanceof KeyboardEvent) {
-        if (
-          event.target.form ||
-          event.altKey ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.shiftKey ||
-          event.target instanceof HTMLInputElement
-        ) {
-          event.stopPropagation()
-          return
-        }
+    try {
+      document.addEventListener('keydown', async event => {
+        if (event instanceof KeyboardEvent) {
+          if (
+            event.target.form ||
+            event.altKey ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.target instanceof HTMLInputElement
+          ) {
+            event.stopPropagation()
+            return
+          }
 
-        switch (event.key) {
-          case 'e':
-            this.playNextTrack()
-            break
-          case 'q':
-            this.playPreviousTrack()
-            break
-          case 'w':
-            that.preview.current.togglePlaying()
-            break
-          case 'r':
-            this.playNextUnheard()
-            break
-          case 'd':
-            this.seek(this.getSeekDistance())
-            break
-          case 'a':
-            this.seek(-this.getSeekDistance())
-            break
-          case 'p':
-            this.toggleCurrentInCart()
-            break
-          default:
+          switch (event.key) {
+            case 'e':
+              await this.playNextTrack()
+              break
+            case 'q':
+              await this.playPreviousTrack()
+              break
+            case 'w':
+              that.preview.current.togglePlaying()
+              break
+            case 'r':
+              await this.playNextUnheard()
+              break
+            case 'd':
+              this.seek(this.getSeekDistance())
+              break
+            case 'a':
+              this.seek(-this.getSeekDistance())
+              break
+            case 'p':
+              await this.toggleCurrentInCart()
+              break
+            default:
+          }
         }
+      })
+      const carts = this.props.carts
+      if (carts.length !== 0 && !Number.isNaN(this.props.initialPosition)) {
+        const currentTrack = carts[0].tracks[this.props.initialPosition - 1]
+        await this.setCurrentTrack(currentTrack)
       }
-    })
-    if (this.props.carts.length !== 0 && !Number.isNaN(this.props.initialPosition)) {
-      const currentTrack = this.props.carts[0].tracks[this.props.initialPosition - 1]
-      this.setCurrentTrack(currentTrack)
+    } catch (e) {
+      console.error('Failed to handle key press', e)
     }
   }
 
