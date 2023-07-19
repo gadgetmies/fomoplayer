@@ -11,55 +11,23 @@ const sharedArtistPropsLens = {
   url: [L.props('slug', 'id'), L.reread(beatportUrl('artist'))]
 }
 
-const bpKeysToCamelot = {
-  'C maj': '1d',
-  'G maj': '2d',
-  'D maj': '3d',
-  'A maj': '4d',
-  'E maj': '5d',
-  'B maj': '6d',
-  'F♯ maj': '7d',
-  'G♭ maj': '7d',
-  'C♯ maj': '8d',
-  'D♭ maj': '8d',
-  'G♯ maj': '9d',
-  'A♭ maj': '9d',
-  'D♯ maj': '10d',
-  'E♭ maj': '10d',
-  'A♯ maj': '11d',
-  'B♭ maj': '11d',
-  'F maj': '12d',
-  'A min': '1m',
-  'E min': '2m',
-  'B min': '3m',
-  'F♯ min': '4m',
-  'G♭ min': '4m',
-  'C♯ min': '5m',
-  'D♭ min': '5m',
-  'G♯ min': '6m',
-  'A♭ min': '6m',
-  'D♯ min': '7m',
-  'E♭ min': '7m',
-  'A♯ min': '8m',
-  'B♭ min': '8m',
-  'F min': '9m',
-  'C min': '10m',
-  'G min': '11m',
-  'D min': '12m'
-}
-
-const previewUrlPath = [1, 'url']
-const keyedPreviewsLens = ['preview', L.keyed, L.filter(R.path(previewUrlPath))]
 const removeOriginalMix = L.cond([R.equals('Original Mix'), L.zero], [[]])
 module.exports.beatportTracksTransform = L.collect([
+  'props',
+  'pageProps',
+  'dehydratedState',
+  'queries',
+  L.elems,
+  'state',
+  'data',
+  'results',
+  L.filter(R.prop('sample_url')),
   L.elems,
   L.pick({
-    title: [
-      L.props('title', 'name', 'mix'),
-      L.reread(({ title, name, mix }) => (title || name).replace(` (${mix})`, ''))
-    ],
-    version: ['mix', removeOriginalMix],
+    title: 'name',
+    version: ['mix_name', removeOriginalMix],
     id: ['id', L.reread(idToString)],
+    isrc: 'isrc',
     url: [L.props('slug', 'id'), L.reread(beatportUrl('track'))],
     artists: L.partsOf(
       L.branch({
@@ -79,8 +47,18 @@ module.exports.beatportTracksTransform = L.collect([
         ]
       })
     ),
-    genres: L.partsOf(['genres', L.elems, 'name']),
-    duration_ms: ['duration', 'milliseconds'],
+    genres: L.partsOf([
+      L.branch({
+        genre: 'name',
+        sub_genre: [
+          'name',
+          L.choose(x => {
+            return x ? [] : L.zero
+          })
+        ]
+      })
+    ]),
+    duration_ms: 'length_ms',
     release: [
       'release',
       L.pick({
@@ -89,19 +67,18 @@ module.exports.beatportTracksTransform = L.collect([
         url: [L.props('slug', 'id'), L.reread(beatportUrl('release'))]
       })
     ],
-    released: ['date', 'released'],
-    published: ['date', 'published'],
+    released: ['new_release_date'],
+    published: ['publish_date'],
     previews: L.partsOf([
-      keyedPreviewsLens,
-      L.elems,
       L.pick({
-        format: 0,
-        url: previewUrlPath,
-        start_ms: [1, 'offset', 'start'],
-        end_ms: [1, 'offset', 'end']
+        format: R.always('mp3'),
+        url: ['sample_url'],
+        start_ms: 'sample_start_ms',
+        end_ms: 'sample_end_ms'
       })
     ]),
     label: [
+      'release',
       'label',
       L.pick({
         id: ['id', L.reread(idToString)],
@@ -111,13 +88,13 @@ module.exports.beatportTracksTransform = L.collect([
     ],
     waveform: [
       L.pick({
-        url: ['waveform', 'large', 'url'],
-        start_ms: [keyedPreviewsLens, 0, 1, 'offset', 'start'],
-        end_ms: [keyedPreviewsLens, 0, 1, 'offset', 'end']
+        url: ['image', 'uri'],
+        start_ms: R.always(0),
+        end_ms: 'length_ms'
       })
     ],
-    key: ['key', L.reread(bpKey => bpKeysToCamelot[bpKey])],
-    bpm: ['bpm'],
+    key: ['key', L.reread(({ camelot_number, camelot_letter }) => `${camelot_number}${camelot_letter}`)],
+    bpm: 'bpm',
     store_details: []
   })
 ])

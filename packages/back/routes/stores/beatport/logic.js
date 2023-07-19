@@ -1,5 +1,5 @@
 const BPromise = require('bluebird')
-const bpApi = require('bp-api')
+const bpApi = require('./bp-api')
 
 const { queryFollowRegexes } = require('../../shared/db/store.js')
 const { beatportTracksTransform } = require('multi_store_player_chrome_extension/src/js/transforms/beatport')
@@ -54,49 +54,39 @@ module.exports.getFollowDetails = async urlString => {
 }
 
 module.exports.getArtistTracks = async function*({ artistStoreId }) {
-  const artistTracks = await bpApiStatic.getArtistTracksAsync(artistStoreId, 1)
-  if (artistTracks.tracks.length === 0) {
+  const artistQueryData = await bpApiStatic.getArtistQueryDataAsync(artistStoreId, 1)
+  const transformed = beatportTracksTransform(artistQueryData)
+
+  if (transformed.length === 0) {
     const warning = `No tracks found for artist ${artistStoreId}`
     logger.warn(warning)
-    return {tracks: [], errors: []}
-  }
-
-  const transformed = beatportTracksTransform(artistTracks.tracks)
-  if (transformed.length !== artistTracks.tracks.length) {
-    logger.error('Artist track transform failed', { transformed, tracks: artistTracks.tracks })
+    return { tracks: [], errors: [] }
   }
 
   yield { tracks: transformed, errors: [] }
 }
 
 module.exports.getLabelTracks = async function*({ labelStoreId }) {
-  const labelTracks = await bpApiStatic.getLabelTracksAsync(labelStoreId, 1)
-  if (labelTracks.tracks.length === 0) {
+  const labelQueryData = await bpApiStatic.getLabelQueryDataAsync(labelStoreId, 1)
+  const transformed = beatportTracksTransform(labelQueryData)
+
+  if (transformed.length === 0) {
     const warning = `No tracks found for label ${labelStoreId}`
     logger.warn(warning, { labelStoreId })
-    return {tracks: [], errors: []}
-  }
-
-  const transformed = beatportTracksTransform(labelTracks.tracks)
-  if (transformed.length !== labelTracks.tracks.length) {
-    logger.error('Label track transform failed', { transformed, tracks: labelTracks.tracks })
+    return { tracks: [], errors: [] }
   }
 
   return { tracks: transformed, errors: [] }
 }
 
 module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
-  const playlist = await bpApiStatic.getTracksOnPageAsync(url)
+  const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
+  const transformed = beatportTracksTransform(queryData.tracks.tracks)
 
-  if (playlist.tracks.tracks === 0) {
+  if (transformed.length === 0) {
     const warning = `No tracks found for playlist at ${url}`
     logger.warn(warning)
-    return {tracks: [], errors: []}
-  }
-
-  const transformed = beatportTracksTransform(playlist.tracks.tracks)
-  if (transformed.length !== playlist.tracks.tracks.length) {
-    logger.error('Playlist track transform failed', { transformed, tracks: playlist.tracks.tracks })
+    return { tracks: [], errors: [] }
   }
 
   yield { tracks: transformed, errors: [] }
