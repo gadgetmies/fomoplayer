@@ -143,7 +143,6 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingArtist(details.storeArtistId)
   const generator = await storeModule.logic.getArtistTracks(details)
-  logger.debug('Got Beatport tracks', { generator })
   let combinedErrors = []
 
   logger.debug(`Processing tracks for artist: ${details.url}`)
