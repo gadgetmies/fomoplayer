@@ -1072,6 +1072,7 @@ WITH
                d.*
              , user__track_heard AS heard
              , track_id          AS id
+             , cart_id
            FROM
                track_details((SELECT tracks FROM cart_tracks)) d
                    NATURAL JOIN track__cart
