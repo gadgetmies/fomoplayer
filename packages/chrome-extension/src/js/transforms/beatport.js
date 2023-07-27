@@ -93,7 +93,13 @@ module.exports.beatportTracksTransform = L.collect([
         end_ms: 'length_ms'
       })
     ],
-    key: ['key', L.reread(({ camelot_number, camelot_letter }) => `${camelot_number}${camelot_letter}`)],
+    key: [
+      'key',
+      L.cond([
+        R.complement(R.equals(null)),
+        L.reread(({ camelot_number, camelot_letter }) => `${camelot_number}${camelot_letter}`)
+      ])
+    ],
     bpm: 'bpm',
     store_details: []
   })
