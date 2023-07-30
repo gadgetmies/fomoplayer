@@ -41,16 +41,6 @@ const {
   setAllHeard,
   setTrackHeard,
   setFollowStarred,
-  queryUserCartDetails,
-  queryUserCartDetailsWithTracks,
-  insertCart,
-  queryCartDetails,
-  deleteCart,
-  updateCart,
-  queryDefaultCartId,
-  insertTracksToCart,
-  deleteTracksFromCart,
-  queryCartOwner,
   queryUserScoreWeights,
   updateUserScoreWeights,
   queryNotificationOwner,
@@ -61,7 +51,9 @@ const {
   upsertEmail,
   getEmailVerificationCode,
   queryStoreArtistIds,
-  queryStoreLabelIds
+  queryStoreLabelIds,
+  queryAuthorizations,
+  deleteAuthorization
 } = require('./db')
 
 const logger = require('../../logger')(__filename)
@@ -81,6 +73,7 @@ module.exports.removeLabelIgnoreFromUser = deleteLabelIgnoreFromUser
 module.exports.removeArtistIgnoreFromUser = deleteArtistIgnoreFromUser
 
 const { removeIgnoredTracksFromUsers } = require('../shared/db/user.js')
+const { deleteUserCartStoreDetails } = require('../shared/cart')
 
 module.exports.queryUserTracks = queryUserTracks
 module.exports.getTracksM3u = userId =>
@@ -329,15 +322,6 @@ module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {
   await addPurchasedTracksToUser(userId, trackIds)
 }
 
-const verifyCartOwnership = async (userId, cartId) => {
-  const rows = await queryCartOwner(cartId)
-  if (rows.length === 0) {
-    throw new NotFound('Cart with id not found!')
-  } else if (rows[0].ownerUserId !== userId) {
-    throw new Forbidden('Cart owner does not match the session user!')
-  }
-}
-
 const verifyNotificationOwnership = async (userId, notificationId) => {
   const rows = await queryNotificationOwner(notificationId)
   if (rows.length === 0) {
@@ -358,63 +342,6 @@ const verifyFollowOwnership = async (userId, type, followId) => {
 
 module.exports.getUserScoreWeights = queryUserScoreWeights
 module.exports.setUserScoreWeights = updateUserScoreWeights
-
-module.exports.getUserCarts = queryUserCartDetails
-module.exports.getUserCartsWithTracks = queryUserCartDetailsWithTracks
-module.exports.createCart = insertCart
-module.exports.removeCart = async (userId, cartId) => {
-  await verifyCartOwnership(userId, cartId)
-  await deleteCart(cartId)
-}
-
-module.exports.updateCartDetails = async (userId, cartId, properties) => {
-  await verifyCartOwnership(userId, cartId)
-  await updateCart(cartId, properties)
-}
-
-const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId, trackIds) => {
-  await verifyCartOwnership(userId, cartId)
-  await insertTracksToCart(cartId, trackIds)
-})
-
-const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userId, cartId, trackIds) => {
-  await verifyCartOwnership(userId, cartId)
-  await deleteTracksFromCart(cartId, trackIds)
-})
-
-module.exports.updateCartContents = async (userId, cartId, operations) => {
-  const tracksToBeRemoved = operations.filter(R.propEq('op', 'remove')).map(R.prop('trackId'))
-  const tracksToBeAdded = operations.filter(R.propEq('op', 'add')).map(R.prop('trackId'))
-
-  await removeTracksFromCart(userId, cartId, tracksToBeRemoved)
-  await addTracksToCart(userId, cartId, tracksToBeAdded)
-}
-
-module.exports.updateAllCartContents = async (userId, operations) => {
-  const tracksToBeRemoved = operations.filter(R.propEq('op', 'remove')).map(R.prop('trackId'))
-  const tracksToBeAdded = operations.filter(R.propEq('op', 'add')).map(R.prop('trackId'))
-
-  const carts = await queryUserCartDetails(userId)
-  for (const { id } of carts) {
-    await removeTracksFromCart(userId, id, tracksToBeRemoved)
-    await addTracksToCart(userId, id, tracksToBeAdded)
-  }
-}
-
-const getCartDetails = (module.exports.getCartDetails = async (userId, cartId) => {
-  let realCartId = cartId
-  if (cartId === 'default') {
-    realCartId = await queryDefaultCartId(userId)
-  } else {
-    await verifyCartOwnership(userId, realCartId)
-  }
-  return await queryCartDetails(realCartId)
-})
-
-module.exports.getDefaultCartDetails = async userId => {
-  const id = await queryDefaultCartId(userId)
-  return getCartDetails(userId, id)
-}
 
 module.exports.getNotifications = async userId => {
   return queryNotifications(userId)
@@ -449,4 +376,10 @@ messages from the Fomo Player by clicking
 following address in your browser: ${verificationURL}.
 </p>`
   )
+}
+
+module.exports.getAuthorizations = queryAuthorizations
+module.exports.removeAuthorization = async (userId, storeName) => {
+  await deleteUserCartStoreDetails(userId, storeName)
+  await deleteAuthorization(userId, storeName)
 }

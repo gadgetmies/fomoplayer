@@ -1,14 +1,14 @@
 const { BadRequest } = require('../../shared/httpErrors')
-const { spotifyApi } = require('../../shared/spotify.js')
+const { spotifyApi, getApiForUser, getSpotifyTrackUris } = require('../../shared/spotify.js')
 const {
   spotifyTracksTransform,
   spotifyAlbumTracksTransform
 } = require('multi_store_player_chrome_extension/src/js/transforms/spotify')
 const R = require('ramda')
 const { queryFollowRegexes } = require('../../shared/db/store')
+const { storeName, storeCode } = require('../../shared/spotify')
 const logger = require('../../../logger')(__filename)
 
-const storeName = (module.exports.storeName = 'Spotify')
 module.exports.storeUrl = 'https://www.spotify.com'
 
 const getPlaylistDetails = async playlistId => {
@@ -52,7 +52,7 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
 
 module.exports.getFollowDetails = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
-  const store = { name: storeName.toLowerCase() }
+  const store = { name: storeCode }
   let name
   for (const { regex, type } of regexes) {
     const match = urlString.match(regex)
@@ -75,12 +75,12 @@ module.exports.getFollowDetails = async urlString => {
 }
 
 module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
-  const res = await spotifyApi.getPlaylistTracks(playlistStoreId, {market: 'US'})
+  const res = await spotifyApi.getPlaylistTracks(playlistStoreId, { market: 'US' })
   const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
   if (transformed.length === 0) {
     const error = `No tracks found for playlist at ${playlistStoreId}`
     logger.error(error)
-    logger.debug('Spotify API response', {firstItem: res.body.items[0], items: res.body.items})
+    logger.debug('Spotify API response', { firstItem: res.body.items[0], items: res.body.items })
     throw new Error(error)
   }
 
@@ -107,7 +107,7 @@ module.exports.search = async query => {
     url: spotify,
     id,
     name,
-    store: { name: storeName.toLowerCase() },
+    store: { name: storeCode },
     type,
     img: images[0]?.url
   }))

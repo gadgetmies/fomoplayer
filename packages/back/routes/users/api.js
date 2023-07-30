@@ -28,6 +28,18 @@ const {
   addArtistFollows,
   addLabelFollows,
   addPlaylistFollows,
+  getUserScoreWeights,
+  setUserScoreWeights,
+  updateNotifications,
+  getNotifications,
+  getUserSettings,
+  setEmail,
+  setFollowStarred,
+  getAuthorizations,
+  removeAuthorization
+} = require('./logic')
+
+const {
   createCart,
   getUserCarts,
   getUserCartsWithTracks,
@@ -35,18 +47,14 @@ const {
   updateCartDetails,
   getCartDetails,
   updateCartContents,
-  updateAllCartContents,
-  getUserScoreWeights,
-  setUserScoreWeights,
-  updateNotifications,
-  getNotifications,
-  getUserSettings,
-  setEmail,
-  setFollowStarred
-} = require('./logic')
+  updateAllCartContents
+} = require('../shared/cart.js')
+
 const typeIs = require('type-is')
 
 const { addStoreTracksToUsers } = require('../shared/tracks.js')
+const { storeName: spotifyStoreName } = require('../shared/spotify')
+const { enableCartSync, removeCartSync } = require('../shared/cart')
 
 const router = require('express-promise-router')()
 
@@ -55,11 +63,7 @@ router.get(
   async (
     {
       user: { id: authUserId },
-      query: {
-        limit_new: limitNew = 100,
-        limit_recent: limitRecent = 100,
-        limit_heard: limitHeard = 50
-      }
+      query: { limit_new: limitNew = 100, limit_recent: limitRecent = 100, limit_heard: limitHeard = 50 }
     },
     res
   ) => {
@@ -298,5 +302,26 @@ router.post('/settings', async ({ user: { id: userId }, body: { email } }, res) 
   }
   res.status(204).send()
 })
+
+router.get('/authorizations', async ({ user: { id: userId } }, res) => {
+  res.send(await getAuthorizations(userId))
+})
+
+router.delete('/authorizations/spotify', async ({ user: { id: userId } }, res) => {
+  await removeAuthorization(userId, spotifyStoreName)
+  res.status(204).send()
+})
+
+router.post(
+  '/carts/:id/sync/spotify',
+  async ({ user: { id: userId }, params: { id: cartId }, body: { setSync } }, res) => {
+    if (setSync) {
+      await enableCartSync(userId, cartId, spotifyStoreName)
+    } else {
+      await removeCartSync(userId, cartId, spotifyStoreName)
+    }
+    res.status(204).send()
+  }
+)
 
 module.exports = router

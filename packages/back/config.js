@@ -15,5 +15,6 @@ module.exports = {
   frontendURL,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  sessionSecret: process.env.SESSION_SECRET
+  sessionSecret: process.env.SESSION_SECRET,
+  cryptoKey: process.env.CRYPTO_KEY
 }

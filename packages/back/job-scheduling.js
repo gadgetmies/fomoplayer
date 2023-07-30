@@ -12,6 +12,7 @@ const {
   updateDateAddedScore,
   updatePurchasedScores
 } = require('./jobs/scores')
+const { syncCarts } = require('./jobs/cart-sync')
 const logger = require('./logger')(__filename)
 
 const init = async () => {
@@ -141,7 +142,8 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
   fetchSpotifyWatches,
   fetchBandcampWatches,
   sendNextEmailBatch,
-  updateNotifications
+  updateNotifications,
+  syncCarts
 }
 
 module.exports = {

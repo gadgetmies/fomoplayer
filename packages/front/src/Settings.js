@@ -11,6 +11,8 @@ import scoreWeightDetails from './scoreWeights'
 import Tracks from './Tracks'
 import FollowItemButton from './FollowItemButton'
 import { Link } from 'react-router-dom'
+import { apiURL } from './config'
+import ExternalLink from './ExternalLink'
 
 class Settings extends Component {
   unlockMarkAllHeard() {
@@ -60,6 +62,7 @@ class Settings extends Component {
       updatingArtistIgnores: false,
       updatingLabelIgnores: false,
       updatingNotifications: false,
+      updatingCartSync: null,
       addingCart: false,
       removingCart: false,
       followDetailsDebounce: undefined,
@@ -70,6 +73,9 @@ class Settings extends Component {
       markingHeard: null,
       settingCartPublic: null,
       publicCarts: new Set(props.carts.filter(R.prop('is_public')).map(R.prop('id'))),
+      syncedCarts: Object.fromEntries(
+        props.carts.filter(R.prop('store_details')).map(({ id, store_details }) => [id, store_details])
+      ),
       page: page || 'following',
       scoreWeights: this.props.scoreWeights,
       tracks: this.props.tracks
@@ -80,7 +86,7 @@ class Settings extends Component {
 
   async componentDidMount() {
     try {
-      await Promise.all([this.updateFollows(), this.updateIgnores()])
+      await Promise.all([this.updateFollows(), this.updateIgnores(), this.updateAuthorizations()])
     } catch (e) {
       console.error(e)
     }
@@ -141,7 +147,14 @@ class Settings extends Component {
     this.setState({ artistOnLabelIgnores })
   }
 
-  async setCartSharing(cartId, setPublic) {
+  async updateAuthorizations() {
+    const authorizations = await requestJSONwithCredentials({
+      path: `/me/authorizations`
+    })
+    this.setState({ authorizations })
+  }
+
+  async setCartPublic(cartId, setPublic) {
     this.setState({ settingCartPublic: cartId, updatingCarts: true })
     await requestWithCredentials({
       path: `/me/carts/${cartId}`,
@@ -153,6 +166,24 @@ class Settings extends Component {
     const updatedPublicCarts = new Set(this.state.publicCarts)
     setPublic ? updatedPublicCarts.add(cartId) : updatedPublicCarts.delete(cartId)
     this.setState({ settingCartPublic: null, updatingCarts: false, publicCarts: updatedPublicCarts })
+  }
+
+  async setCartSync(cartId, setSync) {
+    this.setState({ updatingCartSync: cartId })
+    try {
+      await requestWithCredentials({
+        path: `/me/carts/${cartId}/sync/spotify`,
+        method: 'POST',
+        body: { setSync }
+      })
+      const updatedSyncedCarts = { ...this.state.syncedCarts }
+      setSync ? (updatedSyncedCarts[cartId] = ['spotify']) : delete updatedSyncedCarts[cartId]
+      this.setState({ syncedCarts: updatedSyncedCarts })
+    } catch (e) {
+      console.error('Failed to set cart sync status', e)
+    } finally {
+      this.setState({ updatingCartSync: null, updatingCarts: false })
+    }
   }
 
   onShowPage(page) {
@@ -304,6 +335,16 @@ class Settings extends Component {
               />
               <label className="select-button--button" htmlFor="settings-state-collection">
                 Collection
+              </label>
+              <input
+                type="radio"
+                id="settings-state-authorizations"
+                name="settings-state"
+                checked={this.state.page === 'authorizations'}
+                onChange={() => this.onShowPage('authorizations')}
+              />
+              <label className="select-button--button" htmlFor="settings-state-authorizations">
+                Authorizations
               </label>
             </div>
           </div>
@@ -685,33 +726,12 @@ class Settings extends Component {
                 {this.props.carts.map(({ id, is_default, is_public, is_purchased, name, uuid }) => {
                   const buttonId = `sharing-${id}`
                   const publicLink = new URL(`/cart/${uuid}`, window.location).toString()
+                  const spotifyStoreDetails = this.state.syncedCarts[id].find(
+                    ({ store_name }) => store_name === 'Spotify'
+                  )
                   return (
                     <div key={id}>
                       <h4>{name}</h4>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
-                          <label htmlFor={buttonId} className="noselect">
-                            Sharing enabled:
-                          </label>
-                          <ToggleButton
-                            id={buttonId}
-                            checked={is_public}
-                            disabled={this.state.settingCartPublic !== null || this.state.updatingCarts}
-                            onChange={state => this.setCartSharing(id, state)}
-                          />
-                          {this.state.settingCartPublic === id ? <Spinner size="small" /> : null}
-                        </div>
-                        <br />
-                        {this.state.publicCarts.has(id) ? (
-                          <div style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
-                            <span>URL:</span>
-                            <a href={publicLink} className="link" target="_blank">
-                              {publicLink}
-                            </a>
-                            <CopyToClipboardButton content={publicLink} />
-                          </div>
-                        ) : null}
-                      </div>
                       {is_default || is_purchased ? null : (
                         <p>
                           <SpinnerButton
@@ -728,6 +748,61 @@ class Settings extends Component {
                             Delete cart "{name}"
                           </SpinnerButton>
                         </p>
+                      )}
+                      <h5>Sharing</h5>
+                      <div>
+                        <p style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
+                          <label htmlFor={buttonId} className="noselect">
+                            Sharing enabled:
+                          </label>
+                          <ToggleButton
+                            id={buttonId}
+                            checked={is_public}
+                            disabled={this.state.settingCartPublic !== null || this.state.updatingCarts}
+                            onChange={state => this.setCartPublic(id, state)}
+                          />
+                          {this.state.settingCartPublic === id ? <Spinner size="small" /> : null}
+                        </p>
+                        {this.state.publicCarts.has(id) ? (
+                          <p style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
+                            <span>Share link:</span>
+                            <ExternalLink href={publicLink}>{publicLink}</ExternalLink>
+                            <CopyToClipboardButton content={publicLink} />
+                          </p>
+                        ) : null}
+                      </div>
+                      <h5>Synchronization</h5>
+                      {!this.state.authorizations.includes('Spotify') ? (
+                        <p>
+                          Grant Fomo Player access to Spotify from the{' '}
+                          <a
+                            style={{ textDecoration: 'underline' }}
+                            onClick={this.onShowPage.bind(this, 'authorizations')}
+                          >
+                            Authorizations tab
+                          </a>{' '}
+                          to enable synchronization
+                        </p>
+                      ) : (
+                        <>
+                          <p className="input-layout" style={{ display: 'flex', alignItems: 'center' }}>
+                            <label htmlFor={`${uuid}-sync`} className="noselect">
+                              Spotify sync enabled:
+                            </label>
+                            <ToggleButton
+                              id={`${uuid}-sync`}
+                              checked={spotifyStoreDetails}
+                              disabled={this.state.updatingCartSync !== null || this.state.updatingCarts}
+                              onChange={state => this.setCartSync(id, state)}
+                            />
+                            {this.state.updatingCartSync === id ? <Spinner size="small" /> : null}
+                          </p>
+                          {spotifyStoreDetails && (
+                            <p>
+                              <ExternalLink href={spotifyStoreDetails.url}>Open Spotify playlist</ExternalLink>
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
                   )
@@ -979,9 +1054,70 @@ class Settings extends Component {
               <p className="input-layout">{this.markHeardButton('All tracks', '0')}</p>
             </>
           ) : null}
+          {this.state.page === 'authorizations' ? (
+            <>
+              <p>
+                Fomo Player can synchronize your cart contents with Spotify playlists. To enable this you need to give
+                Fomo Player rights to create and manage playlists in your Spotify account. The authorize link below will
+                take you to a Spotify page where you can grant the rights. After granting the rights, you will be taken
+                back to Fomo Player and you can enable cart synchronization in the{' '}
+                <a style={{ textDecoration: 'underline' }} onClick={this.onShowPage.bind(this, 'carts')}>
+                  Carts tab
+                </a>{' '}
+                in the settings.
+              </p>
+              <h4>Spotify</h4>
+              {this.state.authorizations.includes('Spotify') ? (
+                <>
+                  <p>
+                    <SpinnerButton
+                      onClick={this.onDeauthorizeSpotifyClicked.bind(this)}
+                      loading={this.state.deauthorizingSpotify}
+                    >
+                      De-authrorize
+                    </SpinnerButton>{' '}
+                    <span>Warning! This disable all cart synchronizations</span>
+                  </p>
+                  <p>
+                    <a
+                      href={`${apiURL}/auth/spotify`}
+                      className="button button-push_button-small button-push_button-primary no-style-link"
+                    >
+                      Re-authrorize
+                    </a>{' '}
+                    <span>Try this if synchronization does not work</span>
+                  </p>
+                </>
+              ) : (
+                <p>
+                  <a
+                    href={`${apiURL}/auth/spotify`}
+                    className="button button-push_button-small button-push_button-primary no-style-link"
+                  >
+                    Authorize
+                  </a>
+                </p>
+              )}
+            </>
+          ) : null}
         </div>
       </div>
     )
+  }
+
+  async onDeauthorizeSpotifyClicked() {
+    try {
+      this.setState({ deauthorizingSpotify: true })
+      await requestWithCredentials({
+        method: 'DELETE',
+        path: `/me/authorizations/spotify`
+      })
+      this.setState({ authorizations: [] })
+    } catch (e) {
+      console.error('Removing authorization failed', e)
+    } finally {
+      this.setState({ deauthorizingSpotify: false })
+    }
   }
 
   async onFollowItemClick(url, type) {

@@ -16,6 +16,16 @@ WHERE
     )
     .then(([{ store_id }]) => store_id)
 
+module.exports.queryStoreName = async storeId => {
+  const [{ store_name }] = await pg.queryRowsAsync(
+    //language=PostgreSQL
+    sql`-- queryStoreName
+  SELECT store_name FROM store WHERE store_id = ${storeId}
+  `
+  )
+  return store_name
+}
+
 module.exports.queryStoreRegexes = async () =>
   pg.queryRowsAsync(
     // language=PostgreSQL

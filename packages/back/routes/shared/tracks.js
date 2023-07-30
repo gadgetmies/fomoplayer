@@ -14,6 +14,7 @@ const {
   artistOnLabelInIgnore
 } = require('../users/db.js')
 const { apiURL } = require('../../config.js')
+const { queryTracksForStoreIds, queryTrackDetails } = require('./db/tracks')
 
 const getUsersFollowingArtist = async storeArtistId => {
   const [{ users }] = await pg.queryRowsAsync(
@@ -227,3 +228,6 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
 
   return err
 }
+
+module.exports.getTracksForStoreIds = queryTracksForStoreIds
+module.exports.getTrackDetails = queryTrackDetails

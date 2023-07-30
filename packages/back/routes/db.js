@@ -2,6 +2,8 @@ const sql = require('sql-template-strings')
 const R = require('ramda')
 const pg = require('../db/pg.js')
 const { using } = require('bluebird')
+const { cryptoKey } = require('../config')
+const logger = require('../logger')(__filename)
 
 module.exports.queryLongestPreviewForTrack = (id, format, skip) =>
   pg
@@ -112,4 +114,57 @@ module.exports.verifyEmail = async verificationCode => {
       }
     }
   })
+}
+
+module.exports.upsertUserAuthorizationTokens = async (userId, storeName, accessToken, refreshToken, expires) => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- setUserAuthorizationTokens
+INSERT
+INTO
+    user__store_authorization ( meta_account_user_id, store_id, user__store_authorization_access_token
+                              , user__store_authorization_refresh_token, user__store_authorization_expires)
+SELECT
+    ${userId}
+  , store_id
+  , pgp_sym_encrypt(${accessToken}, ${cryptoKey})
+  , pgp_sym_encrypt(${refreshToken}, ${cryptoKey})
+  , NOW() + ${`${expires} seconds`}::INTERVAL
+FROM
+    store
+WHERE
+    store_name = ${storeName}
+ON CONFLICT ON CONSTRAINT user__store_authorization_meta_account_user_id_store_id_key
+    DO UPDATE SET
+                  user__store_authorization_access_token  = EXCLUDED.user__store_authorization_access_token
+                , user__store_authorization_refresh_token = EXCLUDED.user__store_authorization_refresh_token
+                , user__store_authorization_expires       = EXCLUDED.user__store_authorization_expires`
+  )
+}
+
+module.exports.queryAuthorization = async userId => {
+  const res = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryAuthorization
+SELECT
+    pgp_sym_decrypt(user__store_authorization_access_token, ${cryptoKey}) AS access_token,
+    pgp_sym_decrypt(user__store_authorization_refresh_token, ${cryptoKey}) AS refresh_token,
+    user__store_authorization_expires as expires
+FROM
+    user__store_authorization
+WHERE
+      meta_account_user_id = ${userId}
+  AND store_id = (SELECT store_id FROM store WHERE store_name = 'Spotify')
+    `
+  )
+
+  if (res.length === 0) {
+    throw new Error('Cannot synchronise the cart as user has not granted Spotify access')
+  } else {
+    if (res.length > 1) {
+      logger.error('User has multiple active Spotify authorizations')
+    }
+
+    return res[0]
+  }
 }
