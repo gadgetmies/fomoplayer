@@ -694,7 +694,7 @@ class Settings extends Component {
           {this.state.page === 'carts' ? (
             <>
               <label>
-                <h4>Create cart:</h4>
+                <h4>Create a new cart:</h4>
                 <div className="input-layout">
                   <input
                     className="text-input text-input-large text-input-dark"
@@ -706,8 +706,8 @@ class Settings extends Component {
                     className="button button-push_button-large button-push_button-primary"
                     loading={this.state.addingCart}
                     disabled={this.state.cartName === '' || this.state.addingCart || this.state.updatingCarts}
-                    label="Add"
-                    loadingLabel="Adding"
+                    label="Create"
+                    loadingLabel="Creating"
                     onClick={async () => {
                       this.setState({ updatingCarts: true, addingCart: true })
                       try {
