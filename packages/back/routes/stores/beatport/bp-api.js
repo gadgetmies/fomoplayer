@@ -64,9 +64,7 @@ const getArtistQueryData = (artistId, page = 1, callback) => {
     handleErrorOrCallFn(callback, res => {
       try {
         if (Math.floor(res.statusCode / 100) < 4) {
-          console.log('body', res.body)
           let queryData = getQueryData(res.body)
-          console.log('data', queryData)
           return callback(null, queryData)
         } else {
           const message = `Request returned error status. URL: ${uri}`
