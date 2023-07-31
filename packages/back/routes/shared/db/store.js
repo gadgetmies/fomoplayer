@@ -297,12 +297,13 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
       // language=PostgreSQL
       sql`-- addStoreTrack SELECT track_id 1
 SELECT
-  track_id
+    track_id
 FROM
-  track
-  NATURAL JOIN store__track
+    track
+        NATURAL JOIN store__track
 WHERE
-  store__track_store_id = ${track.id}`
+     store__track_store_id = ${track.id}
+  OR track_isrc = ${track.isrc}`
     )
     .then(getTrackIdFromResult)
 
@@ -338,9 +339,9 @@ AND ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedA
         // language=PostgreSQL
         sql`-- addStoreTrack INSERT INTO track
 INSERT INTO track
-  (track_title, track_version, track_duration_ms, track_source)
+  (track_title, track_version, track_duration_ms, track_isrc, track_source)
 VALUES
-  (${track.title}, ${track.version}, ${track.duration_ms}, ${sourceId})
+  (${track.title}, ${track.version}, ${track.duration_ms}, ${track.isrc}, ${sourceId})
 RETURNING track_id
 `
       )
@@ -353,7 +354,8 @@ RETURNING track_id
       sql`-- addStoreTrack UPDATE track
 UPDATE track
 SET
-  track_duration_ms = COALESCE(track_duration_ms, ${track.duration_ms})
+  track_duration_ms = COALESCE(track_duration_ms, ${track.duration_ms}),
+  track_isrc = COALESCE(track_isrc, ${track.isrc})
 WHERE
   track_id = ${trackId}
 `
@@ -404,7 +406,8 @@ VALUES
 ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_track_id_key
   DO UPDATE
   SET
-    store__track_url           = ${track.url}
+    track_id                   = ${trackId}
+  , store__track_url           = ${track.url}
   , store__track_released      = ${track.released}
   , store__track_published     = ${track.published}
   , store__track_bpm           = ${track.bpm} 

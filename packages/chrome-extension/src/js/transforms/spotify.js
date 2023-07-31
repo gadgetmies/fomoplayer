@@ -1,14 +1,15 @@
 const L = require('partial.lenses')
 const R = require('ramda')
 
-const externalUrlLens = ['external_urls', 'spotify']
+const urlLens = ['external_urls', 'spotify']
+const isrcLens = ['external_urls', 'isrc']
 const trackArtistsLens = L.branch({
   artists: [
     L.elems,
     L.pick({
       name: 'name',
       id: 'id',
-      url: externalUrlLens,
+      url: urlLens,
       role: R.always('author')
     })
   ]
@@ -43,7 +44,8 @@ module.exports.spotifyAlbumTracksTransform = L.collect([
         ? L.pick({
             title: ['name', name => name.replace(/ - original mix/gi, '')],
             id: ['id'],
-            url: externalUrlLens,
+            isrc: isrcLens,
+            url: urlLens,
             artists: L.partsOf(trackArtistsLens),
             duration_ms: ['duration_ms'],
             previews: L.partsOf(previewLens),
@@ -65,7 +67,8 @@ module.exports.spotifyTracksTransform = L.collect([
   L.pick({
     title: ['track', 'name'],
     id: ['track', 'id'],
-    url: ['track', externalUrlLens],
+    url: ['track', urlLens],
+    isrc: ['track', isrcLens],
     artists: L.partsOf('track', trackArtistsLens),
     duration_ms: ['track', 'duration_ms'],
     release: [
@@ -74,7 +77,7 @@ module.exports.spotifyTracksTransform = L.collect([
       L.pick({
         id: 'id',
         title: 'name',
-        url: externalUrlLens
+        url: urlLens
       })
     ],
     released: 'added_at',
