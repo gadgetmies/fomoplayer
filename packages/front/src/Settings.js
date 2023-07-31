@@ -679,7 +679,7 @@ class Settings extends Component {
               </label>
               <h5>Preview:</h5>
               <Tracks
-                mode={'app'}
+                mode={'list'}
                 tracks={this.state.tracks.new.slice(0, 10) || []}
                 listState={'new'}
                 notifications={[]}
