@@ -39,11 +39,21 @@ module.exports.updateCartDetails = async (userId, cartId, properties) => {
   await verifyCartOwnership(userId, cartId)
   const { name, is_public } = properties
   await using(pg.getTransaction(), async tx => {
-    if (name !== undefined && is_public !== undefined) {
-      await updateCartProperties(tx, cartId, properties)
+    if (name !== undefined || is_public !== undefined) {
+      try {
+        await updateCartProperties(tx, cartId, properties)
+      } catch (e) {
+        logger.error(e)
+        throw new Error(`Updating cart properties failed`)
+      }
     } else {
-      throw new Error(`Missing cart details (name, is_public), provided: ${JSON.stringify(properties, null, 2)}`)
+      const message = `Missing cart details (name, is_public), provided: ${JSON.stringify(properties, null, 2)}`
+      logger.error(message)
+      throw new Error(message)
     }
+  }).catch(e => {
+    logger.error(`Updating cart details failed: ${e.toString()}`)
+    throw new Error('Updating cart details failed')
   })
 }
 
