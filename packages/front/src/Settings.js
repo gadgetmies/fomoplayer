@@ -904,7 +904,7 @@ class Settings extends Component {
               <h4>Search notification subscriptions</h4>
               <ul className="no-style-list follow-list">
                 {this.props.notifications.map(({ id, text, storeName }) => (
-                  <li key={id}>
+                  <li key={`${id}-${storeName}`}>
                     <span className={'button pill pill-button'}>
                       <span className={'pill-button-contents'}>
                         <Link to={`/search/?q=${text}`} title={`Search for "${text}"`}>
