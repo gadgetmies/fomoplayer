@@ -2,6 +2,12 @@ const colorTrace = require('color-stacktrace')
 colorTrace.init(Error)
 const config = require('./config.js')
 
+const logger = require('./logger')(__filename)
+
+logger.info('####################################')
+logger.info('####### Starting Fomo Player #######')
+logger.info('####################################')
+
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
 const pg = require('./db/pg')
 
@@ -21,7 +27,6 @@ const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
 const { HttpError } = require('./routes/shared/httpErrors')
 const { getCartDetails } = require('./routes/logic')
-const logger = require('./logger')(__filename)
 
 const app = express()
 app.use(compression())
