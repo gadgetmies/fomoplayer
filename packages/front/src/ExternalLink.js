@@ -19,7 +19,7 @@ class ExternalLink extends Component {
       >
         {this.props.children}
         &nbsp;
-        {this.props.showIcon ? <FontAwesomeIcon icon="external-link" /> : null}
+        {this.props.showIcon ? <FontAwesomeIcon icon="external-link-alt" /> : null}
       </a>
     )
   }
