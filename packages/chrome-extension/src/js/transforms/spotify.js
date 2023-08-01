@@ -2,7 +2,10 @@ const L = require('partial.lenses')
 const R = require('ramda')
 
 const urlLens = ['external_urls', 'spotify']
-const isrcLens = ['external_urls', 'isrc']
+const isrcLens = [
+  L.pick({ isrc: ['external_urls', 'isrc'], track: 'track_number' }),
+  ({ isrc, track }) => (isrc !== undefined ? `${isrc}:${track}` : L.zero)
+]
 const trackArtistsLens = L.branch({
   artists: [
     L.elems,

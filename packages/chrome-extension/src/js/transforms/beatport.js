@@ -27,7 +27,10 @@ module.exports.beatportTracksTransform = L.collect([
     title: 'name',
     version: ['mix_name', removeOriginalMix],
     id: ['id', L.reread(idToString)],
-    isrc: 'isrc',
+    isrc: [
+      L.pick({ isrc: 'isrc', track: 'number' }),
+      ({ isrc, track }) => (isrc !== undefined ? `${isrc}:${track}` : L.zero)
+    ],
     url: [L.props('slug', 'id'), L.reread(beatportUrl('track'))],
     artists: L.partsOf(
       L.branch({
