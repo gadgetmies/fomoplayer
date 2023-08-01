@@ -303,7 +303,7 @@ FROM
         NATURAL JOIN store__track
 WHERE
      store__track_store_id = ${track.id}
-  OR track_isrc = ${track.isrc}`
+    `
     )
     .then(getTrackIdFromResult)
 
