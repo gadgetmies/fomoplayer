@@ -396,44 +396,56 @@ SELECT store__track_id FROM store__track WHERE store__track_store_id = ${track.i
   )
 
   if (storeTrackDetails) {
-    await tx.queryRowsAsync(
-      // language=PostgreSQL
-      sql`-- addStoreTrack UPDATE store__track
-UPDATE store__track
-SET
-    track_id                   = ${trackId}
-  , store__track_url           = ${track.url}
-  , store__track_released      = ${track.released}
-  , store__track_published     = ${track.published}
-  , store__track_bpm           = ${track.bpm}
-  , store__track_store_details = ${track}
-WHERE
-    store__track_store_id = ${track.id}
-      `
-    )
+    try {
+      await tx.queryRowsAsync(
+        // language=PostgreSQL
+        sql`-- addStoreTrack UPDATE store__track
+        UPDATE store__track
+        SET
+            track_id                   = ${trackId}
+          , store__track_url           = ${track.url}
+          , store__track_released      = ${track.released}
+          , store__track_published     = ${track.published}
+          , store__track_bpm           = ${track.bpm}
+          , store__track_store_details = ${track}
+        WHERE
+            store__track_store_id = ${track.id}
+        `
+      )
+    } catch (e) {
+      logger.error(`addStoreTrack UPDATE store__track failed for track: ${JSON.stringify(track)}`)
+      logger.error(e)
+      throw e
+    }
   } else {
-    await tx.queryRowsAsync(
-      // language=PostgreSQL
-      sql`-- addStoreTrack INSERT INTO store__track
-      INSERT
-      INTO
-          store__track
-      ( track_id, store_id, store__track_store_id, store__track_url, store__track_released, store__track_published
-      , store__track_bpm, store__track_store_details, store__track_source)
-      VALUES
-          ( ${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track.bpm}
-          , ${track}, ${sourceId})
-      ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_track_id_key
-          DO UPDATE
-          SET
-              track_id                   = ${trackId}
-            , store__track_url           = ${track.url}
-            , store__track_released      = ${track.released}
-            , store__track_published     = ${track.published}
-            , store__track_bpm           = ${track.bpm}
-            , store__track_store_details = ${track}
-      `
-    )
+    try {
+      await tx.queryRowsAsync(
+        // language=PostgreSQL
+        sql`-- addStoreTrack INSERT INTO store__track
+        INSERT
+        INTO
+            store__track
+        ( track_id, store_id, store__track_store_id, store__track_url, store__track_released, store__track_published
+        , store__track_bpm, store__track_store_details, store__track_source)
+        VALUES
+            ( ${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track.bpm}
+            , ${track}, ${sourceId})
+        ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_track_id_key
+            DO UPDATE
+            SET
+                track_id                   = ${trackId}
+              , store__track_url           = ${track.url}
+              , store__track_released      = ${track.released}
+              , store__track_published     = ${track.published}
+              , store__track_bpm           = ${track.bpm}
+              , store__track_store_details = ${track}
+        `
+      )
+    } catch (e) {
+      logger.error(`addStoreTrack INSERT INTO store__track failed for track: ${JSON.stringify(track)}`)
+      logger.error(e)
+      throw e
+    }
   }
 
   const storeTrackId = await tx
