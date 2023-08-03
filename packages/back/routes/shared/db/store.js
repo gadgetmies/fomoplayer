@@ -430,7 +430,7 @@ SELECT store__track_id FROM store__track WHERE store__track_store_id = ${track.i
         VALUES
             ( ${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track.bpm}
             , ${track}, ${sourceId})
-        ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_track_id_key
+        ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_key
             DO UPDATE
             SET
                 track_id                   = ${trackId}
