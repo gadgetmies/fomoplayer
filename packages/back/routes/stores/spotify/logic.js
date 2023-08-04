@@ -1,5 +1,5 @@
 const { BadRequest } = require('../../shared/httpErrors')
-const { spotifyApi, getApiForUser, getSpotifyTrackUris } = require('../../shared/spotify.js')
+const { spotifyApi } = require('../../shared/spotify.js')
 const {
   spotifyTracksTransform,
   spotifyAlbumTracksTransform
@@ -74,6 +74,41 @@ module.exports.getFollowDetails = async urlString => {
   return []
 }
 
+const getTrackAudioFeatures = (module.exports.getTrackAudioFeatures = async trackIds => {
+  const { body, statusCode } = await spotifyApi.getAudioFeaturesForTracks(trackIds)
+
+  if (statusCode !== 200) {
+    const error = `Failed to fetch details for tracks: ${JSON.stringify(trackIds)}`
+    logger.error(error)
+    throw new Error(error)
+  }
+
+  const { trackAudioFeatures } = body.audio_features
+
+  if (trackAudioFeatures.length !== trackIds.length) {
+    const error = `Returned track audio feature length does not match the length of the track ids: ${JSON.stringify(
+      trackIds
+    )}, ${JSON.stringify(trackAudioFeatures)}`
+    logger.error(error)
+    throw new Error(error)
+  }
+
+  return trackAudioFeatures
+})
+
+const appendAudioFeatures = async tracks => {
+  const trackAudioFeatures = await getTrackAudioFeatures(tracks.map(({ id }) => id))
+  return trackAudioFeatures.map(({ id, ...rest }) => {
+    const features = trackAudioFeatures.find(({ id: fid }) => id === fid) || {}
+    return {
+      id,
+      features,
+      bpm: features.tempo,
+      ...rest
+    }
+  })
+}
+
 module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
   const res = await spotifyApi.getPlaylistTracks(playlistStoreId, { market: 'US' })
   const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
@@ -84,7 +119,7 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
     throw new Error(error)
   }
 
-  yield { tracks: transformed, errors: [] }
+  yield { tracks: await appendAudioFeatures(transformed), errors: [] }
 }
 
 module.exports.getArtistTracks = async function*({ artistStoreId }) {
@@ -98,7 +133,7 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
     throw new Error(error)
   }
 
-  yield { tracks: transformed, errors: [] }
+  yield { tracks: await appendAudioFeatures(transformed), errors: [] }
 }
 
 module.exports.search = async query => {
