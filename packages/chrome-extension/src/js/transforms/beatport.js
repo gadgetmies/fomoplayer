@@ -121,6 +121,7 @@ module.exports.beatportTracksTransform = L.collect([
 ])
 
 module.exports.beatportLibraryTransform = L.collect([
+  // TODO: ensure this works on the new site + add catalog number, track number and isrc
   L.elems,
   L.pick({
     title: ['name'],

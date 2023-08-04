@@ -18,6 +18,7 @@ const scrapeJSON = R.curry((startString, stopString, string) => {
   const start = string.indexOf(startString) + startString.length
   const stop = string.indexOf(stopString, start)
   const text = string.substring(start, stop)
+  // TODO: handle status code here?
   try {
     return JSON.parse(text)
   } catch (e) {

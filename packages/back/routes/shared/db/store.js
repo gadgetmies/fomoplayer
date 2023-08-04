@@ -78,7 +78,7 @@ SELECT
   label_id
 FROM label
 WHERE
-  LOWER(label_name) = LOWER(${label.name})
+  LOWER(label_name) = LOWER(${label.name}) -- TODO: Use improved heuristic
 `
     )
     .then(getLabelIdFromResult)
