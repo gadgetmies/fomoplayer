@@ -29,6 +29,7 @@ const scrapeJSON = R.curry((startString, stopString, string) => {
 
 const getQueryData = pageSource =>
   scrapeJSON('<script id="__NEXT_DATA__" type="application/json">', '</script>', pageSource)
+
 const getPageTitleFromSource = pageSource => {
   const startString = '<title>'
   const start = pageSource.indexOf(startString) + startString.length
