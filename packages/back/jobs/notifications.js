@@ -12,9 +12,15 @@ module.exports.updateNotifications = async () => {
   const notificationSearches = await getNotificationDetails()
   const errors = []
 
-  for (const { notificationId, text, email, lastUpdate, storeIds, storeNames } of notificationSearches) {
+  for (const { userId, notificationId, text, email, lastUpdate, storeIds, storeNames } of notificationSearches) {
     try {
-      const searchResults = await searchForTracks(text, { limit: 50, sort: '-added', addedSince: lastUpdate, storeIds })
+      const searchResults = await searchForTracks(text, {
+        userId,
+        limit: 50,
+        sort: '-added',
+        addedSince: lastUpdate,
+        storeIds
+      })
       const uriEncoded = encodeURI(text)
 
       logger.debug('Found tracks for search', { searchResults })
@@ -97,7 +103,7 @@ WHERE (
     user_search_notification_last_update + INTERVAL '6 hours' < NOW()
   )
   AND meta_account_email_verified
-GROUP BY (1, 2, 3, 4, 5)
+GROUP BY 1, 2, 3, 4, 5
 ORDER BY user_search_notification_last_update DESC NULLS FIRST
 LIMIT 20
 `
