@@ -12,6 +12,100 @@ const sharedArtistPropsLens = {
 }
 
 const removeOriginalMix = L.cond([R.equals('Original Mix'), L.zero], [[]])
+
+const trackTransform = L.pick({
+  title: 'name',
+  version: ['mix_name', removeOriginalMix],
+  id: ['id', L.reread(idToString)],
+  url: [L.props('slug', 'id'), L.reread(beatportUrl('track'))],
+  artists: L.partsOf(
+    L.branch({
+      artists: [
+        L.elems,
+        L.pick({
+          ...sharedArtistPropsLens,
+          role: R.always('author')
+        })
+      ],
+      remixers: [
+        L.elems,
+        L.pick({
+          ...sharedArtistPropsLens,
+          role: R.always('remixer')
+        })
+      ]
+    })
+  ),
+  genres: L.partsOf([
+    L.branch({
+      genre: 'name',
+      sub_genre: [
+        'name',
+        L.choose(x => {
+          return x ? [] : L.zero
+        })
+      ]
+    })
+  ]),
+  duration_ms: 'length_ms',
+  release: [
+    L.partsOf(
+      L.branch({
+        release: [
+          L.pick({
+            id: ['id', L.reread(idToString)],
+            title: 'name',
+            url: [L.props('slug', 'id'), L.reread(beatportUrl('release'))]
+          })
+        ],
+        isrc: [],
+        catalog_number: []
+      })
+    ),
+    ([release, isrc, catalog_number]) => {
+      return { isrc, catalog_number, ...release }
+    }
+  ],
+  released: ['new_release_date'], // TODO: move to release?
+  published: ['publish_date'],
+  previews: L.partsOf([
+    L.pick({
+      format: R.always('mp3'),
+      url: ['sample_url'],
+      start_ms: 'sample_start_ms',
+      end_ms: 'sample_end_ms'
+    })
+  ]),
+  label: [
+    'release',
+    'label',
+    L.pick({
+      id: ['id', L.reread(idToString)],
+      name: 'name',
+      url: [L.props('slug', 'id'), L.reread(beatportUrl('label'))]
+    })
+  ],
+  waveform: [
+    L.pick({
+      url: ['image', 'uri'],
+      start_ms: R.always(0),
+      end_ms: 'length_ms'
+    })
+  ],
+  key: [
+    'key',
+    L.cond([
+      R.complement(R.equals(null)),
+      L.reread(({ camelot_number, camelot_letter }) => `${camelot_number}${camelot_letter}`)
+    ])
+  ],
+  bpm: 'bpm',
+  track_number: 'number',
+  store_details: []
+})
+
+module.exports.beatportTrackTransform = L.get(trackTransform)
+
 module.exports.beatportTracksTransform = L.collect([
   'props',
   'pageProps',
@@ -23,89 +117,7 @@ module.exports.beatportTracksTransform = L.collect([
   'results',
   L.filter(R.prop('sample_url')),
   L.elems,
-  L.pick({
-    title: 'name',
-    version: ['mix_name', removeOriginalMix],
-    id: ['id', L.reread(idToString)],
-    isrc: [
-      L.pick({ isrc: 'isrc', track: 'number' }),
-      ({ isrc, track }) => (isrc !== undefined ? `${isrc}:${track}` : L.zero)
-    ],
-    url: [L.props('slug', 'id'), L.reread(beatportUrl('track'))],
-    artists: L.partsOf(
-      L.branch({
-        artists: [
-          L.elems,
-          L.pick({
-            ...sharedArtistPropsLens,
-            role: R.always('author')
-          })
-        ],
-        remixers: [
-          L.elems,
-          L.pick({
-            ...sharedArtistPropsLens,
-            role: R.always('remixer')
-          })
-        ]
-      })
-    ),
-    genres: L.partsOf([
-      L.branch({
-        genre: 'name',
-        sub_genre: [
-          'name',
-          L.choose(x => {
-            return x ? [] : L.zero
-          })
-        ]
-      })
-    ]),
-    duration_ms: 'length_ms',
-    release: [
-      'release',
-      L.pick({
-        id: ['id', L.reread(idToString)],
-        title: 'name',
-        url: [L.props('slug', 'id'), L.reread(beatportUrl('release'))]
-      })
-    ],
-    released: ['new_release_date'],
-    published: ['publish_date'],
-    previews: L.partsOf([
-      L.pick({
-        format: R.always('mp3'),
-        url: ['sample_url'],
-        start_ms: 'sample_start_ms',
-        end_ms: 'sample_end_ms'
-      })
-    ]),
-    label: [
-      'release',
-      'label',
-      L.pick({
-        id: ['id', L.reread(idToString)],
-        name: 'name',
-        url: [L.props('slug', 'id'), L.reread(beatportUrl('label'))]
-      })
-    ],
-    waveform: [
-      L.pick({
-        url: ['image', 'uri'],
-        start_ms: R.always(0),
-        end_ms: 'length_ms'
-      })
-    ],
-    key: [
-      'key',
-      L.cond([
-        R.complement(R.equals(null)),
-        L.reread(({ camelot_number, camelot_letter }) => `${camelot_number}${camelot_letter}`)
-      ])
-    ],
-    bpm: 'bpm',
-    store_details: []
-  })
+  trackTransform
 ])
 
 module.exports.beatportLibraryTransform = L.collect([

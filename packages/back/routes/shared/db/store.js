@@ -136,31 +136,21 @@ module.exports.ensureReleaseExists = async (tx, storeUrl, release, sourceId) => 
       // language=PostgreSQL
       sql`-- ensureReleaseExists SELECT release_id
 SELECT
-  release_id
+    release_id
 FROM
-  store__release
-  NATURAL JOIN store
+    store__release
+        NATURAL JOIN release
+        NATURAL JOIN store
 WHERE
-    store_url = ${storeUrl}
-AND (store__release_store_id = ${release.id} OR store__release_url = ${release.url})
+     (store__release_store_id = ${release.id} AND store_url = ${storeUrl})
+  OR store__release_url = ${release.url}
+  OR release_isrc = ${release.isrc}
+  OR release_catalog_number = ${release.catalog_number} -- TODO: is this safe?
 `
     )
     .then(getReleaseIdFromResult)
 
-  if (!releaseId) {
-    releaseId = await tx
-      .queryRowsAsync(
-        // language=PostgreSQL
-        sql`-- ensureReleaseExists SELECT release_id
-SELECT
-  release_id
-FROM release
-WHERE
-  LOWER(release_name) = LOWER(${release.title})
-`
-      )
-      .then(getReleaseIdFromResult)
-  }
+  // TODO: add heuristics to match e.g. by artists and release name?
 
   if (!releaseId) {
     releaseId = await tx
@@ -168,13 +158,25 @@ WHERE
         // language=PostgreSQL
         sql`-- ensureReleaseExists INSERT INTO release
 INSERT INTO release
-  (release_name, release_source)
+  (release_name, release_source, release_isrc, release_catalog_number)
 VALUES
-  (${release.title}, ${sourceId})
+  (${release.title}, ${sourceId}, ${release.isrc}, ${release.catalog_number})
 RETURNING release_id
 `
       )
       .then(getReleaseIdFromResult)
+  } else {
+    await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`-- ensureReleaseExists UPDATE release
+UPDATE release
+SET
+    release_isrc           = COALESCE(release_isrc, ${release.isrc})
+  , release_catalog_number = COALESCE(release_catalog_number, ${release.catalog_number})
+WHERE
+    release_id = ${releaseId}
+`
+    )
   }
 
   await tx.queryRowsAsync(
@@ -511,11 +513,16 @@ ON CONFLICT ON CONSTRAINT store__track_preview_waveform_store__track_preview_id_
     await tx.queryAsync(
       // language=PostgreSQL
       sql`-- addStoreTrack INSERT INTO release__track
-INSERT INTO release__track
-  (release_id, track_id)
+INSERT
+INTO
+    release__track
+    (release_id, track_id, release__track_track_number)
 VALUES
-  (${releaseId}, ${trackId})
-ON CONFLICT ON CONSTRAINT release__track_release_id_track_id_key DO NOTHING
+    (${releaseId}, ${trackId}, ${track.track_number})
+ON CONFLICT ON CONSTRAINT release__track_release_id_track_id_key DO UPDATE
+    SET
+        release__track_track_number = COALESCE(release__track.release__track_track_number,
+                                               excluded.release__track_track_number) 
 `
     )
   }

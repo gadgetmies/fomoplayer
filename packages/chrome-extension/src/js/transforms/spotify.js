@@ -2,10 +2,6 @@ const L = require('partial.lenses')
 const R = require('ramda')
 
 const urlLens = ['external_urls', 'spotify']
-const isrcLens = [
-  L.pick({ isrc: ['external_urls', 'isrc'], track: 'track_number' }),
-  ({ isrc, track }) => (isrc !== undefined ? `${isrc}:${track}` : L.zero)
-]
 const trackArtistsLens = L.branch({
   artists: [
     L.elems,
@@ -38,7 +34,7 @@ const releaseDateLens = releaseDate => R.always(releaseDate.length > 4 ? release
 
 module.exports.spotifyAlbumTracksTransform = L.collect([
   L.elems,
-  L.choose(({ release_date, name, id, href }) => [
+  L.choose(({ release_date, name, id, href, external_ids: { isrc } }) => [
     'tracks',
     'items',
     L.elems,
@@ -47,14 +43,13 @@ module.exports.spotifyAlbumTracksTransform = L.collect([
         ? L.pick({
             title: ['name', name => name.replace(/ - original mix/gi, '')],
             id: ['id'],
-            isrc: isrcLens,
             url: urlLens,
             artists: L.partsOf(trackArtistsLens),
             duration_ms: ['duration_ms'],
             previews: L.partsOf(previewLens),
             released: releaseDateLens(release_date),
             published: releaseDateLens(release_date),
-            release: R.always({ id, title: name, url: href }),
+            release: R.always({ id, title: name, url: href, isrc }),
             // TODO: release, released, published from album
             // TODO: get from properties
             // key: ['key', L.reread(bpKey => spotifyKeysToCamelot[bpKey])],
@@ -71,23 +66,19 @@ module.exports.spotifyTracksTransform = L.collect([
     title: ['track', 'name'],
     id: ['track', 'id'],
     url: ['track', urlLens],
-    isrc: ['track', isrcLens],
     artists: L.partsOf('track', trackArtistsLens),
     duration_ms: ['track', 'duration_ms'],
     release: [
       'track',
-      'album',
-      L.pick({
-        id: 'id',
-        title: 'name',
-        url: urlLens
-      })
+      L.partsOf(
+        L.branch({ isrc: ['external_urls', 'isrc'], album: L.pick({ id: 'id', title: 'name', url: urlLens }) })
+      ),
+      ([isrc, album]) => ({ isrc, ...album })
     ],
+    track_number: 'track_number',
     released: 'added_at',
     published: 'added_at',
     previews: L.partsOf(['track', previewLens]),
-    // TODO: get from properties
-    // key: ['key', L.reread(bpKey => spotifyKeysToCamelot[bpKey])],
     store_details: []
   })
 ])
