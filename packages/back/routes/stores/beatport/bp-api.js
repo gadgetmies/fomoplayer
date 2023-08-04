@@ -32,13 +32,57 @@ const getQueryData = pageSource =>
 
 const getPageTitleFromSource = pageSource => {
   const startString = '<title>'
-  const start = pageSource.indexOf(startString) + startString.length
-  const stop = pageSource.indexOf('</title>')
-  return decode(pageSource.substring(start, stop))
-    .replace(' :: Beatport', '')
-    .replace(' artists & music download - Beatport', '')
-    .replace(' music download - Beatport', '')
+  const start = pageSource.indexOf(startString)
+  if (start !== -1) {
+    const stop = pageSource.indexOf('</title>')
+    return decode(pageSource.substring(start + startString.length, stop))
+      .replace(' :: Beatport', '')
+      .replace(' artists & music download - Beatport', '')
+      .replace(' music download - Beatport', '')
+  } else {
+    const pageData = getQueryData(pageSource)
+    const { artist, label, track } = pageData.props.pageProps
+    if (!artist && !label && !track) {
+      throw new Error('Unable to extract page title!')
+    }
+    return (artist || label || track).name
+  }
 }
+
+const getImageFromSource = pageSource => {
+  const pageData = getQueryData(pageSource)
+  const { artist, label } = pageData.props.pageProps
+  if (!artist && !label) {
+    throw new Error('Unable to extract page title!')
+  }
+  return (artist || label).image.uri
+}
+
+const getDetails = (uri, callback) =>
+  request(
+    uri,
+    handleErrorOrCallFn(callback, res => {
+      try {
+        if (Math.floor(res.statusCode / 100) < 4) {
+          const name = getPageTitleFromSource(res.body)
+          let img
+          try {
+            img = getImageFromSource(res.body)
+          } catch (e) {
+            console.error(`Unable to find image for uri: ${uri}`)
+          }
+          return callback(null, { name, img })
+        } else {
+          const message = `Request returned error status. URL: ${uri}`
+          console.error(message)
+          callback(new Error(message))
+        }
+      } catch (e) {
+        console.error(`Failed to fetch details for uri: ${uri}`, e)
+        callback(e)
+      }
+    })
+  )
 
 const getPageTitleForUri = (uri, callback) =>
   request(
@@ -280,6 +324,7 @@ const staticFns = {
   getLabelQueryData,
   getQueryDataOnPage: getPageQueryData,
   getTitle: getPageTitleForUri,
+  getDetails,
   searchForArtists,
   searchForLabels
 }

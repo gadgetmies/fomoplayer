@@ -10,43 +10,31 @@ const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
 // TODO: add export?
 const storeName = (module.exports.storeName = 'Beatport')
 module.exports.storeUrl = 'https://www.beatport.com'
-
-const getArtistName = (module.exports.getArtistName = async url => {
-  const title = await bpApiStatic.getTitleAsync(url)
-  return title.replace(' music download - Beatport', '')
-})
-
-const getLabelName = (module.exports.getLabelName = async url => {
-  const title = await bpApiStatic.getTitleAsync(url)
-  return title.replace(' artists & music download - Beatport', '')
-})
-
 module.exports.getPlaylistId = id => id
 
 const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
-  return await bpApiStatic.getTitleAsync(url)
+  const { name } = await bpApiStatic.getDetailsAsync(url)
+  return name
 })
 
 module.exports.getFollowDetails = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
   const store = { name: storeName.toLowerCase() }
-  let name
+  let details
 
   for (const { regex, type } of regexes) {
     const match = urlString.match(regex)
     if (match) {
       const id = match[1]
-      if (type === 'artist') {
-        name = await getArtistName(urlString)
-      } else if (type === 'label') {
-        name = await getLabelName(urlString)
+      if (type === 'artist' || type === 'label') {
+        details = await bpApiStatic.getDetailsAsync(urlString)
       } else if (type === 'playlist') {
-        name = await getPlaylistName(type, urlString)
+        details = await getPlaylistName(type, urlString)
       } else {
         throw new Error('URL did not match any regex')
       }
 
-      return [{ id, name, type, store, url: urlString }]
+      return [{ id, ...details, type, store, url: urlString }]
     }
   }
 
@@ -64,6 +52,10 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
   }
 
   yield { tracks: transformed, errors: [] }
+
+module.exports.getLabelName = module.exports.getArtistName = async url => {
+  const { name } = await bpApiStatic.getDetailsAsync(url)
+  return name
 }
 
 module.exports.getLabelTracks = async function*({ labelStoreId }) {
