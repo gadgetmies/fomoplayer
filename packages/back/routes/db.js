@@ -32,7 +32,7 @@ OFFSET ${skip} LIMIT 1;
 module.exports.searchForArtistsAndLabels = query =>
   pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`-- searchForTracks
+    sql`-- searchForArtistsAndLabels
 WITH
   query AS (SELECT websearch_to_tsquery('simple', unaccent(${query})) AS query)
 SELECT
@@ -85,7 +85,7 @@ UNION ALL
 module.exports.queryCartDetailsByUuid = async uuid => {
   const [details] = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`-- searchForTracks
+    sql`-- queryCartDetailsByUuid
 SELECT cart_id AS "id", cart_is_public AS "isPublic"
 FROM cart
 WHERE cart_uuid = ${uuid}`
