@@ -402,16 +402,17 @@ SELECT store__track_id FROM store__track WHERE store__track_store_id = ${track.i
       await tx.queryRowsAsync(
         // language=PostgreSQL
         sql`-- addStoreTrack UPDATE store__track
-        UPDATE store__track
-        SET
-            track_id                   = ${trackId}
-          , store__track_url           = ${track.url}
-          , store__track_released      = ${track.released}
-          , store__track_published     = ${track.published}
-          , store__track_bpm           = ${track.bpm}
-          , store__track_store_details = ${track}
-        WHERE
-            store__track_store_id = ${track.id}
+UPDATE store__track
+SET
+    track_id                   = ${trackId}
+  , store__track_url           = ${track.url}
+  , store__track_released      = ${track.released}
+  , store__track_published     = ${track.published}
+  , store__track_bpm           = ${track.bpm}
+  , store__track_store_details = ${track}
+WHERE
+      store__track_store_id = ${track.id}
+  AND store_id = ${storeId}
         `
       )
     } catch (e) {
