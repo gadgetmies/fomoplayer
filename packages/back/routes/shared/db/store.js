@@ -413,7 +413,7 @@ SELECT store__track_id FROM store__track WHERE store__track_store_id = ${track.i
         `
       )
     } catch (e) {
-      logger.error(`addStoreTrack UPDATE store__track failed for track: ${JSON.stringify(track)}`)
+      logger.error(`addStoreTrack UPDATE store__track failed for id: ${trackId}, track: ${JSON.stringify(track)}`)
       logger.error(e)
       throw e
     }
