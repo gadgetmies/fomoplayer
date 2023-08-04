@@ -93,8 +93,8 @@ module.exports.getFollowDetails = async urlString => {
   return []
 }
 
-const releaseTracksWithFiles = (releaseDetails) => {
-  const tracks = releaseDetails.reduce((acc, {trackinfo}) => acc.concat(trackinfo), [])
+const releaseTracksWithFiles = releaseDetails => {
+  const tracks = releaseDetails.reduce((acc, { trackinfo }) => acc.concat(trackinfo), [])
   return tracks.filter(R.complement(R.propEq('file', null)))
 }
 
@@ -119,8 +119,8 @@ const getTracksFromReleases = async releaseUrls => {
     transformed = bandcampReleasesTransform(releaseDetails)
     logger.debug(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
   } catch (e) {
-    logger.error(`Track transformation error`, {releaseUrls, releaseDetails})
-    return {errors, tracks: []}
+    logger.error(`Track transformation error`, { releaseUrls, releaseDetails })
+    return { errors, tracks: [] }
   }
 
   const tracksWithFiles = releaseTracksWithFiles(releaseDetails)
@@ -133,7 +133,7 @@ const getTracksFromReleases = async releaseUrls => {
     logger.error(`Track transformation failed`, { releaseUrls, releaseDetails, tracksWithFiles })
     return { errors, tracks: [] }
   } else if (transformed.length === 0) {
-    logger.warn(`No tracks found for releases`, {releaseUrls, releaseDetails})
+    logger.warn(`No tracks found for releases`, { releaseUrls, releaseDetails })
   }
 
   return { errors, tracks: transformed }
