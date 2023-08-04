@@ -104,7 +104,7 @@ const getSearchResults = html => {
   const dom = new JSDOM(html)
   const elements = Array.from(dom.window.document.querySelectorAll('.bucket-item'))
 
-  const results = elements.map(element => {
+  return elements.map(element => {
     const url = element.querySelector('a').getAttribute('href')
     const type = url.substring(1, url.indexOf('/', 1))
     const name = element.querySelector(`.${type}-name`).textContent
@@ -119,8 +119,6 @@ const getSearchResults = html => {
       id
     }
   })
-
-  return results
 }
 
 const search = (query, type, callback) => {
