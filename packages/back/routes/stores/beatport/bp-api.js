@@ -171,8 +171,6 @@ const getApi = session => {
       session.get(
         `${beatportUri}/my-beatport?page=${page}&_pjax=%23pjax-inner-wrapper`,
         handleErrorOrCallFn(callback, res => {
-          console.log(`${beatportUri}/my-beatport?page=${page}&_pjax=%23pjax-inner-wrapper`)
-          console.log(res)
           return callback(null, getQueryData(res))
         })
       ),

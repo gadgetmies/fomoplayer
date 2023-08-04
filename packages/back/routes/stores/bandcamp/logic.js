@@ -51,13 +51,11 @@ const getTagFromUrl = function(playlistUrl) {
 
 module.exports.getArtistName = async url => {
   const { name } = await getArtistAsync(url)
-  logger.debug(name)
   return name
 }
 
 module.exports.getLabelName = async url => {
   const { name } = await getLabelAsync(url)
-  logger.debug(name)
   return name
 }
 
@@ -115,8 +113,6 @@ const getTracksFromReleases = async releaseUrls => {
       errors.push(error)
     }
   }
-
-  logger.debug('Release details', {releaseUrls, releaseDetails})
 
   let transformed = []
   try {
