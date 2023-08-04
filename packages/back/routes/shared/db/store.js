@@ -435,12 +435,12 @@ SELECT store__track_id FROM store__track WHERE store__track_store_id = ${track.i
         ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_key
             DO UPDATE
             SET
-                track_id                   = ${trackId}
-              , store__track_url           = ${track.url}
-              , store__track_released      = ${track.released}
-              , store__track_published     = ${track.published}
-              , store__track_bpm           = ${track.bpm}
-              , store__track_store_details = ${track}
+                track_id                   = EXCLUDED.track_id
+              , store__track_url           = EXCLUDED.store__track_url
+              , store__track_released      = EXCLUDED.store__track_released
+              , store__track_published     = EXCLUDED.store__track_published
+              , store__track_bpm           = EXCLUDED.store__track_bpm
+              , store__track_store_details = EXCLUDED.store__track_store_details
         `
       )
     } catch (e) {
