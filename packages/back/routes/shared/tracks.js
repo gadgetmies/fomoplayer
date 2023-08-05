@@ -164,6 +164,8 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
     await setArtistUpdated(details.storeArtistId)
   }
 
+  logger.debug(`Processing tracks for artist: ${details.url} done. Errors: ${JSON.stringify(combinedErrors)}`)
+
   return combinedErrors
 }
 
@@ -201,6 +203,8 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
       logger.error('Error setting label updated')
     }
   }
+
+  logger.debug(`Processing tracks for label: ${details.url} done. Errors: ${JSON.stringify(combinedErrors)}`)
 
   return combinedErrors
 }
