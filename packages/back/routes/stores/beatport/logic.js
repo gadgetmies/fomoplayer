@@ -48,10 +48,11 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
   if (transformed.length === 0) {
     const warning = `No tracks found for artist ${artistStoreId}`
     logger.warn(warning)
-    return { tracks: [], errors: [] }
+    yield { tracks: [], errors: [] }
   }
 
   yield { tracks: transformed, errors: [] }
+}
 
 module.exports.getLabelName = module.exports.getArtistName = async url => {
   const { name } = await bpApiStatic.getDetailsAsync(url)
@@ -65,10 +66,10 @@ module.exports.getLabelTracks = async function*({ labelStoreId }) {
   if (transformed.length === 0) {
     const warning = `No tracks found for label ${labelStoreId}`
     logger.warn(warning, { labelStoreId })
-    return { tracks: [], errors: [] }
+    yield { tracks: [], errors: [] }
   }
 
-  return { tracks: transformed, errors: [] }
+  yield { tracks: transformed, errors: [] }
 }
 
 module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
