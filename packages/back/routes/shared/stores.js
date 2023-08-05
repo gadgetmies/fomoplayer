@@ -13,7 +13,6 @@ module.exports.getStoreModuleForArtistByUrl = async artistUrl => {
     throw new BadRequest(`Invalid artist URL ${artistUrl}`)
   }
 
-  console.log(matchingStore, storeModules)
   const module = storeModules[matchingStore.name]
   const [{ id }] = await module.logic.getFollowDetails(artistUrl)
   return { module, id }

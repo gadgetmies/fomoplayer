@@ -121,9 +121,7 @@ RETURNING label_id
   }
 
   const res = await getStoreLabelIdForUrl(tx, label.url)
-  logger.debug('getStoreLabelIdForUrl', label)
   const [{ storeLabelId }] = res
-  logger.debug('getStoreLabelIdForUrl done')
 
   return { labelId, storeLabelId }
 }
