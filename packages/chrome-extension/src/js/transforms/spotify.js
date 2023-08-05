@@ -47,9 +47,12 @@ module.exports.spotifyAlbumTracksTransform = L.collect([
             artists: L.partsOf(trackArtistsLens),
             duration_ms: ['duration_ms'],
             previews: L.partsOf(previewLens),
+            label: L.pick({ name: ['label'] }),
             released: releaseDateLens(release_date),
             published: releaseDateLens(release_date),
             release: R.always({ id, title: name, url: href, isrc }),
+            isrc: ['external_ids', 'isrc'],
+            track_number: 'track_number',
             // TODO: release, released, published from album
             // TODO: get from properties
             // key: ['key', L.reread(bpKey => spotifyKeysToCamelot[bpKey])],

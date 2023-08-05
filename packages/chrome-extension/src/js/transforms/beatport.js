@@ -58,12 +58,11 @@ const trackTransform = L.pick({
             url: [L.props('slug', 'id'), L.reread(beatportUrl('release'))]
           })
         ],
-        isrc: [],
         catalog_number: []
       })
     ),
-    ([release, isrc, catalog_number]) => {
-      return { isrc, catalog_number, ...release }
+    ([release, catalog_number]) => {
+      return { catalog_number, ...release }
     }
   ],
   released: ['new_release_date'], // TODO: move to release?
@@ -100,6 +99,7 @@ const trackTransform = L.pick({
     ])
   ],
   bpm: 'bpm',
+  isrc: 'isrc',
   track_number: 'number',
   store_details: []
 })

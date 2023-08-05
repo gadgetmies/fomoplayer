@@ -1,6 +1,7 @@
 const BPromise = require('bluebird')
 const L = require('partial.lenses')
 const bpApi = require('./bp-api')
+const { processChunks } = require('../../shared/requests')
 
 const { queryFollowRegexes } = require('../../shared/db/store.js')
 const {
@@ -60,21 +61,7 @@ const getTrackInfo = (module.exports.getTrackInfo = async url => {
 
 const appendTrackNumbers = async tracks => {
   try {
-    const trackInfos = await BPromise.map(
-      tracks,
-      async ({ id, url }) => {
-        try {
-          //  TODO: yield?
-          return await getTrackInfo(url)
-        } catch (e) {
-          logger.error(e)
-          return {}
-        }
-      },
-      { concurrency: 4 }
-    ).catch(e => {
-      logger.error(e)
-    })
+    const trackInfos = await processChunks(tracks, 50, ({ url }) => getTrackInfo(url), { concurrency: 4 })
 
     // TODO: yield
     return tracks.map(({ id, ...rest }) => ({

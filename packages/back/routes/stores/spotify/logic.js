@@ -1,12 +1,14 @@
 const { BadRequest } = require('../../shared/httpErrors')
 const { spotifyApi } = require('../../shared/spotify.js')
+const BPromise = require('bluebird')
 const {
   spotifyTracksTransform,
   spotifyAlbumTracksTransform
 } = require('multi_store_player_chrome_extension/src/js/transforms/spotify')
 const R = require('ramda')
+const { storeName, storeCode, getSpotifyTrackUris } = require('../../shared/spotify')
 const { queryFollowRegexes } = require('../../shared/db/store')
-const { storeName, storeCode } = require('../../shared/spotify')
+const { processChunks } = require('../../shared/requests')
 const logger = require('../../../logger')(__filename)
 
 module.exports.storeUrl = 'https://www.spotify.com'
@@ -74,6 +76,28 @@ module.exports.getFollowDetails = async urlString => {
   return []
 }
 
+const getTracks = (module.exports.getTracks = async trackIds => {
+  const { body, statusCode } = await spotifyApi.getTracks(trackIds)
+
+  if (statusCode !== 200) {
+    const error = `Failed to fetch details for tracks: ${JSON.stringify(trackIds)}`
+    logger.error(error)
+    throw new Error(error)
+  }
+
+  const trackInfos = body.tracks
+
+  if (trackInfos.length !== trackIds.length) {
+    const error = `Returned tracks length does not match the length of the track ids: ${JSON.stringify(
+      trackIds
+    )}, ${JSON.stringify(trackInfos)}`
+    logger.error(error)
+    throw new Error(error)
+  }
+
+  return trackInfos
+})
+
 const getTrackAudioFeatures = (module.exports.getTrackAudioFeatures = async trackIds => {
   const { body, statusCode } = await spotifyApi.getAudioFeaturesForTracks(trackIds)
 
@@ -83,7 +107,7 @@ const getTrackAudioFeatures = (module.exports.getTrackAudioFeatures = async trac
     throw new Error(error)
   }
 
-  const { trackAudioFeatures } = body.audio_features
+  const trackAudioFeatures = body.audio_features
 
   if (trackAudioFeatures.length !== trackIds.length) {
     const error = `Returned track audio feature length does not match the length of the track ids: ${JSON.stringify(
@@ -96,14 +120,23 @@ const getTrackAudioFeatures = (module.exports.getTrackAudioFeatures = async trac
   return trackAudioFeatures
 })
 
-const appendAudioFeatures = async tracks => {
-  const trackAudioFeatures = await getTrackAudioFeatures(tracks.map(({ id }) => id))
-  return trackAudioFeatures.map(({ id, ...rest }) => {
-    const features = trackAudioFeatures.find(({ id: fid }) => id === fid) || {}
+const appendTrackDetails = async tracks => {
+  const trackIds = tracks.map(({ id }) => id)
+  const [trackAudioFeatures, trackInfos] = await Promise.all([
+    processChunks(trackIds, 100, getTrackAudioFeatures, { concurrency: 4 }),
+    processChunks(trackIds, 50, getTracks, { concurrency: 4 })
+  ])
+
+  return tracks.map(({ id, ...rest }) => {
+    const idMatch = track => id === track?.id
+    const features = trackAudioFeatures.find(idMatch) || {}
+    const info = trackInfos.find(idMatch) || {}
+
     return {
       id,
       features,
       bpm: features.tempo,
+      isrc: info.external_ids?.isrc,
       ...rest
     }
   })
@@ -119,12 +152,11 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
     throw new Error(error)
   }
 
-  yield { tracks: await appendAudioFeatures(transformed), errors: [] }
+  yield { tracks: await appendTrackDetails(transformed), errors: [] }
 }
 
 module.exports.getArtistTracks = async function*({ artistStoreId }) {
   const albumIds = (await spotifyApi.getArtistAlbums(artistStoreId)).body.items.map(R.prop('id'))
-  // TODO: Store albums as releases
   const albums = (await spotifyApi.getAlbums(albumIds)).body.albums
   const transformed = R.flatten(spotifyAlbumTracksTransform(albums))
   if (transformed.length === 0) {
@@ -133,7 +165,7 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
     throw new Error(error)
   }
 
-  yield { tracks: await appendAudioFeatures(transformed), errors: [] }
+  yield { tracks: await appendTrackDetails(transformed), errors: [] }
 }
 
 module.exports.search = async query => {

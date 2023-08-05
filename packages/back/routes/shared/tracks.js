@@ -15,6 +15,7 @@ const {
 } = require('../users/db.js')
 const { apiURL } = require('../../config.js')
 const { queryTracksForStoreIds, queryTrackDetails } = require('./db/tracks')
+const { queryLabelForRelease } = require('./db/release')
 
 const getUsersFollowingArtist = async storeArtistId => {
   const [{ users }] = await pg.queryRowsAsync(
@@ -108,16 +109,19 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = '
     let labelId
     let releaseId
 
-    if (track.label) {
-      labelId = (await ensureLabelExists(tx, storeUrl, track.label, sourceId)).labelId
-    }
-
     if (track.release) {
       releaseId = await ensureReleaseExists(tx, storeUrl, track.release, sourceId)
     }
 
+    if (releaseId) {
+      labelId = await queryLabelForRelease(tx, releaseId)
+    } else if (track.label) {
+      labelId = (await ensureLabelExists(tx, storeUrl, track.label, sourceId)).labelId
+    }
+
     let artists = []
     for (const artist of track.artists) {
+      // TODO: match by release / isrc
       const res = await ensureArtistExists(tx, storeUrl, artist, sourceId)
       artists.push(res)
     }

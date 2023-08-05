@@ -142,7 +142,6 @@ FROM
 WHERE
      (store__release_store_id = ${release.id} AND store_url = ${storeUrl})
   OR store__release_url = ${release.url}
-  OR release_isrc = ${release.isrc}
   OR release_catalog_number = ${release.catalog_number} -- TODO: is this safe?
 `
     )
@@ -156,9 +155,9 @@ WHERE
         // language=PostgreSQL
         sql`-- ensureReleaseExists INSERT INTO release
 INSERT INTO release
-  (release_name, release_source, release_isrc, release_catalog_number)
+  (release_name, release_source, release_catalog_number)
 VALUES
-  (${release.title}, ${sourceId}, ${release.isrc}, ${release.catalog_number})
+  (${release.title}, ${sourceId}, ${release.catalog_number})
 RETURNING release_id
 `
       )
@@ -169,8 +168,7 @@ RETURNING release_id
       sql`-- ensureReleaseExists UPDATE release
 UPDATE release
 SET
-    release_isrc           = COALESCE(release_isrc, ${release.isrc})
-  , release_catalog_number = COALESCE(release_catalog_number, ${release.catalog_number})
+    release_catalog_number = COALESCE(release_catalog_number, ${release.catalog_number})
 WHERE
     release_id = ${releaseId}
 `
@@ -301,8 +299,15 @@ SELECT
 FROM
     track
         NATURAL JOIN store__track
+        NATURAL LEFT JOIN release__track
+        NATURAL LEFT JOIN release
 WHERE
      store__track_store_id = ${track.id}
+  OR (
+             (release_catalog_number = ${track.release.catalog_number}
+                 OR release_isrc = ${track.release.isrc})
+             AND release__track_track_number = ${track.track_number})
+  OR track_isrc = ${track.isrc}
     `
     )
     .then(getTrackIdFromResult)

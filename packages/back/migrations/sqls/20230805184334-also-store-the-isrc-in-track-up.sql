@@ -1,0 +1,1 @@
+ALTER TABLE track ADD COLUMN track_isrc TEXT UNIQUE;
