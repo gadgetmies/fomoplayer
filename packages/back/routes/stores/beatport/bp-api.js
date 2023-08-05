@@ -185,7 +185,9 @@ const search = (query, type, callback) => {
         callback(e)
       }
     })
-  )
+  ).catch(e => {
+    callback(e)
+  })
 }
 
 const searchForArtists = (query, callback) => search(query, 'artists', callback)
