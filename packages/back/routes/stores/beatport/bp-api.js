@@ -193,20 +193,23 @@ const search = (query, type, callback) => {
 const searchForArtists = (query, callback) => search(query, 'artists', callback)
 const searchForLabels = (query, callback) => search(query, 'labels', callback)
 
-const getPageQueryData = (uri, callback) => {
+const getQueryDataOnPage = (uri, callback) => {
   request(
     uri,
     handleErrorOrCallFn(callback, res => {
       try {
-        const tracks = getQueryData(res.body)
+        const data = getQueryData(res.body)
         const title = getPageTitleFromSource(res.body)
-        return callback(null, { tracks, title })
+        return callback(null, { data, title })
       } catch (e) {
         console.error(`Failed fetching details from ${uri}`, e)
         callback(e)
       }
     })
-  )
+  ).catch(e => {
+    console.error(e)
+    callback(e)
+  })
 }
 
 const getApi = session => {
@@ -324,7 +327,7 @@ const initializers = {
 const staticFns = {
   getArtistQueryData,
   getLabelQueryData,
-  getQueryDataOnPage: getPageQueryData,
+  getQueryDataOnPage,
   getTitle: getPageTitleForUri,
   getDetails,
   searchForArtists,

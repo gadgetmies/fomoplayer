@@ -1,8 +1,12 @@
 const BPromise = require('bluebird')
+const L = require('partial.lenses')
 const bpApi = require('./bp-api')
 
 const { queryFollowRegexes } = require('../../shared/db/store.js')
-const { beatportTracksTransform } = require('multi_store_player_chrome_extension/src/js/transforms/beatport')
+const {
+  beatportTracksTransform,
+  beatportTrackTransform
+} = require('multi_store_player_chrome_extension/src/js/transforms/beatport')
 const logger = require('../../../logger')(__filename)
 
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
@@ -41,6 +45,48 @@ module.exports.getFollowDetails = async urlString => {
   return []
 }
 
+const getTrackInfo = (module.exports.getTrackInfo = async url => {
+  const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
+  const transformed = beatportTrackTransform(queryData.data.props.pageProps.track)
+
+  if (!transformed || transformed.length === 0) {
+    const error = `Track data extraction failed: ${url}`
+    logger.error(error)
+    throw new Error(error)
+  }
+
+  return transformed[0]
+})
+
+const appendTrackNumbers = async tracks => {
+  try {
+    const trackInfos = await BPromise.map(
+      tracks,
+      async ({ id, url }) => {
+        try {
+          //  TODO: yield?
+          return await getTrackInfo(url)
+        } catch (e) {
+          logger.error(e)
+          return {}
+        }
+      },
+      { concurrency: 4 }
+    ).catch(e => {
+      logger.error(e)
+    })
+
+    // TODO: yield
+    return tracks.map(({ id, ...rest }) => ({
+      id,
+      ...rest,
+      track_number: trackInfos.find(track => id === track?.id)?.track_number
+    }))
+  } catch (e) {
+    logger.error(`appendTrackNumbers failed: ${e.toString()}`)
+  }
+}
+
 module.exports.getArtistTracks = async function*({ artistStoreId }) {
   const artistQueryData = await bpApiStatic.getArtistQueryDataAsync(artistStoreId, 1)
   const transformed = beatportTracksTransform(artistQueryData)
@@ -51,7 +97,7 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
     yield { tracks: [], errors: [] }
   }
 
-  yield { tracks: transformed, errors: [] }
+  yield { tracks: await appendTrackNumbers(transformed), errors: [] }
 }
 
 module.exports.getLabelName = module.exports.getArtistName = async url => {
@@ -69,12 +115,12 @@ module.exports.getLabelTracks = async function*({ labelStoreId }) {
     yield { tracks: [], errors: [] }
   }
 
-  yield { tracks: transformed, errors: [] }
+  yield { tracks: await appendTrackNumbers(transformed), errors: [] }
 }
 
 module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
   const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
-  const transformed = beatportTracksTransform(queryData.tracks.tracks)
+  const transformed = beatportTracksTransform(queryData.data.tracks)
 
   if (transformed.length === 0) {
     const warning = `No tracks found for playlist at ${url}`
@@ -82,7 +128,7 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
     return { tracks: [], errors: [] }
   }
 
-  yield { tracks: transformed, errors: [] }
+  yield { tracks: await appendTrackNumbers(transformed), errors: [] }
 }
 
 module.exports.search = async query => {
