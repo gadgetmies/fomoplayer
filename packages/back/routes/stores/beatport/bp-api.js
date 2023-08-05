@@ -3,8 +3,6 @@ const R = require('ramda')
 const { init, initWithSession } = require('request-in-session')
 const request = require('request-promise').defaults({ strictSSL: false, resolveWithFullResponse: true })
 const { decode } = require('html-entities')
-const jsdom = require('jsdom')
-const { JSDOM } = jsdom
 
 const beatportUri = 'https://www.beatport.com'
 const loginUri = 'https://www.beatport.com/account/login'
@@ -97,7 +95,7 @@ const getPageTitleForUri = (uri, callback) =>
           callback(new Error(message))
         }
       } catch (e) {
-        console.error('Failed to fetch the playlist title', e)
+        console.error('Failed to fetch the page title', e)
         callback(e)
       }
     })
@@ -127,6 +125,7 @@ const getArtistQueryData = (artistId, page = 1, callback) => {
 
 const getLabelQueryData = (labelId, page = 1, callback) => {
   const uri = `${beatportUri}/label/_/${labelId}/tracks?per-page=50&page=${page}`
+  console.log(`Fetching label details from ${uri}`)
   request(
     uri,
     handleErrorOrCallFn(callback, res => {
@@ -147,28 +146,26 @@ const getLabelQueryData = (labelId, page = 1, callback) => {
 }
 
 const getSearchResults = html => {
-  const dom = new JSDOM(html)
-  const elements = Array.from(dom.window.document.querySelectorAll('.bucket-item'))
+  const queryData = getQueryData(html)
+  const results = queryData.props.pageProps.dehydratedState.queries[0].state.data.data
 
-  return elements.map(element => {
-    const url = element.querySelector('a').getAttribute('href')
-    const type = url.substring(1, url.indexOf('/', 1))
-    const name = element.querySelector(`.${type}-name`).textContent
-    const id = url.substring(url.lastIndexOf('/') + 1)
-    const img = element.querySelector(`img`).src
-
+  return results.map(({ label_name, artist_name, label_id, artist_id, label_image_uri, artist_image_uri }) => {
+    const type = label_id ? 'label' : 'artist'
+    const name = label_name || artist_name
+    const id = label_id || artist_id
     return {
       type,
+      id,
       name,
-      url: `${beatportUri}${url}`,
-      img,
-      id
+      img: label_image_uri || artist_image_uri,
+      url: `${beatportUri}/${type}/${name.toLowerCase()}/${id}`
     }
   })
 }
 
 const search = (query, type, callback) => {
-  const uri = `${beatportUri}/search/${type}?q=${query}&_pjax=%23pjax-inner-wrapper`
+  const uri = `${beatportUri}/search/${type}?q=${query}`
+  console.log(`Performing Beatport search: ${uri}`)
   request(
     uri,
     handleErrorOrCallFn(callback, res => {
