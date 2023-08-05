@@ -30,7 +30,8 @@ const previewLens = [
   })
 ]
 
-const releaseDateLens = releaseDate => R.always(releaseDate.length > 4 ? releaseDate : `${releaseDate}-01-01`)
+const releaseDateLens = releaseDate =>
+  R.always(releaseDate.length > 7 ? releaseDate : releaseDate.length > 4 ? `${releaseDate}-01` : `${releaseDate}-01-01`)
 
 module.exports.spotifyAlbumTracksTransform = L.collect([
   L.elems,
