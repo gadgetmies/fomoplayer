@@ -322,15 +322,6 @@ module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {
   await addPurchasedTracksToUser(userId, trackIds)
 }
 
-const verifyNotificationOwnership = async (userId, notificationId) => {
-  const rows = await queryNotificationOwner(notificationId)
-  if (rows.length === 0) {
-    throw new NotFound('Notification with id not found!')
-  } else if (rows[0].ownerUserId !== userId) {
-    throw new Forbidden('Notification owner does not match the session user!')
-  }
-}
-
 const verifyFollowOwnership = async (userId, type, followId) => {
   const rows = await queryFollowOwner(type, followId)
   if (rows.length === 0) {
