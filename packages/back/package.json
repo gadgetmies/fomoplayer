@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "supervisor index.js",
+    "start": "supervisor -- --inspect index.js",
     "start:prod": "node index.js",
     "migrate": "db-migrate -e dev up",
     "db-migrate:prod": "db-migrate -e prod up",
