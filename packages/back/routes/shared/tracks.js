@@ -151,7 +151,12 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
 
   logger.debug(`Processing tracks for artist: ${details.url}`)
   for await (const { tracks, errors } of generator) {
+    if (errors.length > 0) {
+      logger.error(`Errors in fetching tracks for artist (${details.url}): ${JSON.stringify(errors)}`)
+    }
+
     logger.debug(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
+
     try {
       combinedErrors.concat(errors)
       logger.debug(`Processing ${tracks.length} tracks`)
@@ -188,6 +193,12 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   logger.debug(`Processing tracks for label: ${details.url}`)
   let combinedErrors = []
   for await (const { tracks, errors } of generator) {
+    if (errors.length > 0) {
+      logger.error(`Errors in fetching tracks for label (${details.url}): ${JSON.stringify(errors)}`)
+    }
+
+    logger.debug(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
+
     try {
       combinedErrors.concat(errors)
       logger.debug(`Processing ${tracks.length} tracks`)
