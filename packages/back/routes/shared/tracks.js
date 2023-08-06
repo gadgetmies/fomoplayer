@@ -144,7 +144,6 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = '
 }
 
 module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
-  logger.debug('updateArtistTracks', { storeUrl, details, sourceId })
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingArtist(details.storeArtistId)
   const generator = await storeModule.logic.getArtistTracks(details)
