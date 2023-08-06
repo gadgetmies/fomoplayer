@@ -50,18 +50,18 @@ const getTrackInfo = (module.exports.getTrackInfo = async url => {
   const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
   const transformed = beatportTrackTransform(queryData.data.props.pageProps.track)
 
-  if (!transformed || transformed.length === 0) {
+  if (!transformed) {
     const error = `Track data extraction failed: ${url}`
     logger.error(error)
     throw new Error(error)
   }
 
-  return transformed[0]
+  return transformed
 })
 
 const appendTrackNumbers = async tracks => {
   try {
-    const trackInfos = await processChunks(tracks, 50, ({ url }) => getTrackInfo(url), { concurrency: 4 })
+    const trackInfos = await processChunks(tracks, 4, ([{ url }]) => getTrackInfo(url), { concurrency: 4 })
 
     // TODO: yield
     return tracks.map(({ id, ...rest }) => ({

@@ -17,11 +17,11 @@ const safeCall = async (fn, ...args) => {
   }
 }
 
-const processConcurrently = async (arr, fn, bluebirdOptions = { concurrency: 1 }) =>
-  await BPromise.map(arr, async item => safeCall(fn, item), bluebirdOptions)
+const processConcurrently = async (arr, fn, bluebirdOptions = { concurrency: 1 }) => {
+  return await BPromise.map(arr, async item => safeCall(fn, item), bluebirdOptions)
+}
 
 module.exports.processChunks = async (arr, chunkSize, fn, bluebirdOptions = { concurrency: 1 }) => {
   const res = await processConcurrently(R.splitEvery(chunkSize, arr), fn, bluebirdOptions)
-  console.log(res)
   return R.flatten(res)
 }

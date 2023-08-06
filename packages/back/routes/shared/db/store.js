@@ -448,7 +448,7 @@ WHERE
         `
       )
     } catch (e) {
-      logger.error(`addStoreTrack INSERT INTO store__track failed for track: ${JSON.stringify(track)}`)
+      logger.error(`addStoreTrack INSERT INTO store__track failed for track: ${e.toString()}, ${JSON.stringify(track)}`)
       logger.error(e)
       throw e
     }

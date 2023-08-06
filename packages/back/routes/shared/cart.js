@@ -43,8 +43,9 @@ module.exports.updateCartDetails = async (userId, cartId, properties) => {
       try {
         await updateCartProperties(tx, cartId, properties)
       } catch (e) {
-        logger.error(e)
-        throw new Error(`Updating cart properties failed`)
+        const error = `Updating cart properties failed, error: ${e.toString()}`
+        logger.error(error)
+        throw new Error(error)
       }
     } else {
       const message = `Missing cart details (name, is_public), provided: ${JSON.stringify(properties, null, 2)}`
@@ -140,8 +141,7 @@ module.exports.enableCartSync = async (userId, cartId, storeName) => {
     const { id: spotifyPlaylistId, url, versionId } = await createCart(userId, `Fomo Player: ${name}`, tracks)
     await insertCartStoreDetails(cartId, storeName, spotifyPlaylistId, url, versionId)
   } catch (e) {
-    logger.error(`Enabling cart sync failed for user: ${userId}, cart: ${cartId}`)
-    logger.error(e)
+    logger.error(`Enabling cart sync failed for user: ${userId}, cart: ${cartId}, error: ${e.toString()}`)
     throw e
   }
 }

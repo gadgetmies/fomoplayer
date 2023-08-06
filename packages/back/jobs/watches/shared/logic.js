@@ -31,12 +31,14 @@ module.exports.artistFetchJob = storeUrl => async jobDetails => {
   let count = 1
   for (const details of artistFollowDetails) {
     try {
-      logger.info(`Updating tracks for artists ${count}/${artistFollowDetails.length}: ${details.storeArtistId} @ ${storeUrl}`)
+      logger.info(
+        `Updating tracks for artists ${count}/${artistFollowDetails.length}: ${details.storeArtistId} @ ${storeUrl}`
+      )
       count++
 
       errors.concat(await updateArtistTracks(storeUrl, details, sourceId))
     } catch (e) {
-      const errorMessage = `Failed to fetch artist details for ${details.url}`
+      const errorMessage = `Failed to fetch artist details for ${details.url}, ${e.toString()}`
       logger.error(errorMessage)
       logger.silly(e)
       errors.push([errorMessage, e])

@@ -40,7 +40,7 @@ router.get('/spotify/callback', async ({ user: { id: userId }, query: { code, st
     const { expires_in, access_token, refresh_token } = result.body
     await upsertUserAuthorizationTokens(userId, spotifyStoreName, access_token, refresh_token, expires_in)
   } catch (e) {
-    logger.error(e)
+    logger.error(`Spotify callback handling failed: ${e.toString()}`)
   }
   res.redirect(`${frontendURL}/settings`) // TODO: redirect to authorizations
 })
