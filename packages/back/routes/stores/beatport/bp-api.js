@@ -39,11 +39,12 @@ const getPageTitleFromSource = pageSource => {
       .replace(' music download - Beatport', '')
   } else {
     const pageData = getQueryData(pageSource)
-    const { artist, label, track } = pageData.props.pageProps
-    if (!artist && !label && !track) {
+    const { artist, label, track, dehydratedState } = pageData.props.pageProps
+    const playlist = R.pathOr(undefined, ['queries', '1', 'state', 'data'], dehydratedState)
+    if (!artist && !label && !track && !playlist) {
       throw new Error('Unable to extract page title!')
     }
-    return (artist || label || track).name
+    return (artist || label || track || playlist).name
   }
 }
 
@@ -82,7 +83,7 @@ const getDetails = (uri, callback) =>
     })
   )
 
-const getPageTitleForUri = (uri, callback) =>
+const getTitle = (uri, callback) =>
   request(
     uri,
     handleErrorOrCallFn(callback, res => {
@@ -325,7 +326,7 @@ const staticFns = {
   getArtistQueryData,
   getLabelQueryData,
   getQueryDataOnPage,
-  getTitle: getPageTitleForUri,
+  getTitle,
   getDetails,
   searchForArtists,
   searchForLabels
