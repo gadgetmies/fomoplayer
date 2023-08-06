@@ -35,7 +35,7 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
         FROM
             track_details(
                     (SELECT
-                         ARRAY_AGG(track_id)
+                         ARRAY_AGG(DISTINCT track_id)
                      FROM
                          (SELECT
                               track_id
