@@ -8,7 +8,12 @@ const safeCall = async (fn, ...args) => {
   try {
     return await fn(...args)
   } catch (e) {
-    logger.error(`safeCall failed ${fn.name}, ${e.toString()}`)
+    logger.error(
+      `safeCall failed for function: '${fn.name}' with arguments: '${JSON.stringify(args).substring(
+        0,
+        100
+      )}', ${e.toString()}`
+    )
   }
 }
 
