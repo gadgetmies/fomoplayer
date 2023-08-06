@@ -94,5 +94,5 @@ const getSortParameters = (module.exports.getSortParameters = sort => {
   return sort
     .split(',')
     .map(s => s.trim())
-    .map(s => (s[0] === '-' ? [s.slice(1), 'ASC'] : [s, 'DESC']))
+    .map(s => (s[0] === '-' ? [s.slice(1), 'DESC'] : [s, 'ASC']))
 })
