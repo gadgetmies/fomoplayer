@@ -211,7 +211,7 @@ class Track extends Component {
               ) : (
                 <ul className="comma-list">
                   {this.props.bpms.filter(R.identity).map(bpm => (
-                    <li key={bpm}>{bpm}</li>
+                    <li key={bpm}>{Math.round(bpm)}</li>
                   ))}
                 </ul>
               )}
