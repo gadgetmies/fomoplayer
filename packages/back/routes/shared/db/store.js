@@ -354,6 +354,7 @@ RETURNING track_id
 
     logger.debug(`Inserted new track with id: ${trackId}`)
   } else {
+    try {
     await tx.queryAsync(
       // language=PostgreSQL
       sql`-- addStoreTrack UPDATE track
@@ -364,7 +365,11 @@ SET
 WHERE
   track_id = ${trackId}
 `
-    )
+      )
+    } catch (e) {
+      logger.error(`Updating track details failed: ${e.toString()}, ${JSON.stringify(track).substring(0, 400)}`)
+      throw e
+    }
   }
 
   for (const { id, role } of artists) {
@@ -514,21 +519,44 @@ ON CONFLICT ON CONSTRAINT store__track_preview_waveform_store__track_preview_id_
   }
 
   if (releaseId) {
-    await tx.queryAsync(
+    const [releaseTrackDetails] = await tx.queryRowsAsync(
       // language=PostgreSQL
-      sql`-- addStoreTrack INSERT INTO release__track
-INSERT
-INTO
-    release__track
-    (release_id, track_id, release__track_track_number)
-VALUES
-    (${releaseId}, ${trackId}, ${track.track_number})
-ON CONFLICT ON CONSTRAINT release__track_release_id_track_id_key DO UPDATE
-    SET
-        release__track_track_number = COALESCE(release__track.release__track_track_number,
-                                               excluded.release__track_track_number) 
+      sql`-- addStoreTrack SELECT release__track_id FROM release__track
+SELECT release__track_track_number AS "trackNumber"
+FROM release__track
+WHERE release_id = ${releaseId}
+  AND track_id = ${trackId}
 `
     )
+
+    if (!releaseTrackDetails) {
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- addStoreTrack INSERT INTO release__track
+INSERT
+INTO release__track
+    (release_id, track_id, release__track_track_number)
+VALUES (${releaseId}, ${trackId}, ${track.track_number})
+        `
+      )
+    } else {
+      const { trackNumber } = releaseTrackDetails
+      if (trackNumber !== track.track_number) {
+        logger.warn(
+          `Overwriting track number for release (${releaseId}). Previous: ${trackNumber}, new: ${track.track_number}`
+        )
+      }
+
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- addStoreTrack UPDATE release__track
+UPDATE release__track
+SET release__track_track_number = COALESCE(release__track.release__track_track_number, ${track.trackNumber})
+WHERE track_id = ${trackId}
+  AND release_id = ${releaseId}
+`
+      )
+    }
   }
 
   if (labelId) {
