@@ -339,25 +339,28 @@ AND ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedA
 
   if (!trackId) {
     logger.debug('Track not found, inserting')
-    trackId = await tx
-      .queryRowsAsync(
-        // language=PostgreSQL
-        sql`-- addStoreTrack INSERT INTO track
-INSERT INTO track
-  (track_title, track_version, track_duration_ms, track_isrc, track_source)
-VALUES
-  (${track.title}, ${track.version}, ${track.duration_ms}, ${track.isrc}, ${sourceId})
-RETURNING track_id
-`
-      )
-      .then(getTrackIdFromResult)
-
-    logger.debug(`Inserted new track with id: ${trackId}`)
+    try {
+      trackId = await tx
+        .queryRowsAsync(
+          // language=PostgreSQL
+          sql`-- addStoreTrack INSERT INTO track
+          INSERT INTO track
+          (track_title, track_version, track_duration_ms, track_isrc, track_source)
+          VALUES (${track.title}, ${track.version}, ${track.duration_ms}, ${track.isrc}, ${sourceId})
+          RETURNING track_id
+          `
+        )
+        .then(getTrackIdFromResult)
+      logger.debug(`Inserted new track with id: ${trackId}`)
+    } catch (e) {
+      logger.error(`Inserting track failed: ${e.toString()}, ${JSON.stringify(track).substring(0, 400)}`)
+      throw e
+    }
   } else {
     try {
-    await tx.queryAsync(
-      // language=PostgreSQL
-      sql`-- addStoreTrack UPDATE track
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- addStoreTrack UPDATE track
 UPDATE track
 SET
   track_duration_ms = COALESCE(track_duration_ms, ${track.duration_ms}),
@@ -368,7 +371,6 @@ WHERE
       )
     } catch (e) {
       logger.error(`Updating track details failed: ${e.toString()}, ${JSON.stringify(track).substring(0, 400)}`)
-      throw e
     }
   }
 
