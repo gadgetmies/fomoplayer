@@ -298,7 +298,7 @@ SELECT
     track_id
 FROM
     track
-        NATURAL JOIN store__track
+        NATURAL LEFT JOIN store__track
         NATURAL LEFT JOIN release__track
         NATURAL LEFT JOIN release
 WHERE
