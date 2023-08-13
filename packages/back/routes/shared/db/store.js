@@ -370,7 +370,12 @@ WHERE
 `
       )
     } catch (e) {
-      logger.error(`Updating track details failed: ${e.toString()}, ${JSON.stringify(track).substring(0, 400)}`)
+      logger.error(
+        `Updating track details failed: ${e.toString()}, isrc: ${track.isrc}, ${JSON.stringify(track).substring(
+          0,
+          400
+        )}`
+      )
       throw e
     }
   }
