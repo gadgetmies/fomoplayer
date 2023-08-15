@@ -12,13 +12,18 @@ module.exports.bandcampTagTracksTransform = L.collect([
 
 const isVersionOrRemix = match => {
   if (!match) return false
-  if (match[4] !== undefined) {
+  if (match[4] !== undefined && !match[4].startsWith('(feat.')) {
     const title = match[4].toLocaleLowerCase()
     if (title.includes('version') || title.includes('remix')) {
       return true
     }
   }
   return false
+}
+
+const hasFeat = match => {
+  if (!match) return false
+  return match[4] !== undefined && match[4].startsWith('(feat.')
 }
 
 module.exports.bandcampReleasesTransform = L.collect([
@@ -37,7 +42,10 @@ module.exports.bandcampReleasesTransform = L.collect([
         role: 'author',
         url: releaseArtistUrl || null
       }
-      const version = isVersionOrRemix(match) ? match[4].substring(1, match[4].length - 1) : null
+      const versionOrRemix = isVersionOrRemix(match)
+      const version = versionOrRemix ? match[4].substring(1, match[4].length - 1) : null
+      const featuringArtists =
+        !versionOrRemix && hasFeat(match) ? match[4].substring('(feat. '.length, match[4].length - 1).split(/,&/) : []
 
       return [
         L.pick({
@@ -63,19 +71,28 @@ module.exports.bandcampReleasesTransform = L.collect([
                       }
                     })
                   : [artistTemplate]
-                ).concat(
-                  match.length === 6 && match[5] !== undefined
-                    ? match[5]
-                        .replace(/version|remix/i, '')
-                        .split(/[,&]/)
-                        .map(remixer => ({
-                          name: remixer.trim(),
-                          id: null,
-                          role: 'remixer',
-                          url: null
-                        }))
-                    : []
                 )
+                  .concat(
+                    match.length === 6 && match[5] !== undefined
+                      ? match[5]
+                          .replace(/version|remix/i, '')
+                          .split(/[,&]/)
+                          .map(remixer => ({
+                            name: remixer.trim(),
+                            id: null,
+                            role: 'remixer',
+                            url: null
+                          }))
+                      : []
+                  )
+                  .concat(
+                    featuringArtists.map(name => ({
+                      name: name.trim(),
+                      id: null,
+                      role: 'author',
+                      url: null
+                    }))
+                  )
               )
             : R.always([artistTemplate]),
           released: R.always(release.current.release_date || release.current.publish_date),
