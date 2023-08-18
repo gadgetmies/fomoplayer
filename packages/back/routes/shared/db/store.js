@@ -564,7 +564,7 @@ VALUES (${releaseId}, ${trackId}, ${track.track_number})
       )
     } else {
       const { trackNumber } = releaseTrackDetails
-      if (trackNumber !== track.track_number) {
+      if (track.track_number !== undefined && trackNumber !== track.track_number) {
         logger.warn(
           `Overwriting track number for release (${releaseId}). Previous: ${trackNumber}, new: ${track.track_number}`
         )

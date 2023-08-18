@@ -18,6 +18,7 @@ router.get(
     if (process.env.NODE_ENV === 'dev' || userId === 2) {
       logger.info(`Merging tracks: ${trackToBeDeleted} ${trackToKeep}`)
       await mergeTracks({ trackToBeDeleted, trackToKeep })
+      res.send('OK')
     } else {
       res.status(401).send({ error: 'Access denied' })
     }
