@@ -1,6 +1,7 @@
 const pg = require('../../../db/pg.js')
 const R = require('ramda')
 const sql = require('sql-template-strings')
+const { apiURL } = require('../../../config')
 const logger = require('../../../logger')(__filename)
 
 module.exports.queryStoreId = storeName =>
@@ -285,6 +286,12 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
   }
 }
 
+const getIsrcDebugData = async (isrc, storeTrackStoreId) =>
+  pg.queryRowsAsync(sql`
+-- getIsrcDebugData
+SELECT (isrc_conflict_debug(${isrc}, ${storeTrackStoreId})).*
+`)
+
 module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists, track, sourceId) => {
   const getTrackIdFromResult = getFieldFromResult('track_id')
 
@@ -370,11 +377,19 @@ WHERE
 `
       )
     } catch (e) {
+      const debugData = await getIsrcDebugData(track.isrc, track.id)
+      const [
+        { track_id: firstId, track_title: firstTitle, track_version: firstVersion },
+        { track_id: secondId, track_title: secondTitle, track_version: secondVersion }
+      ] = debugData
       logger.error(
-        `Updating track details failed: ${e.toString()}, isrc: ${track.isrc}, ${JSON.stringify(track).substring(
-          0,
-          400
-        )}`
+        `Updating track details failed: ${e.toString()}, 
+ISRC: ${track.isrc} 
+Details: ${JSON.stringify(debugData, null, 2)}
+
+Merge:
+https://${apiURL}/admin/merge-tracks/${firstId}/to/${secondId} (${firstTitle} (${firstVersion}) -> ${secondTitle} (${secondVersion}))
+https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (${secondVersion}) -> ${firstTitle} (${firstVersion}))`
       )
       throw e
     }
