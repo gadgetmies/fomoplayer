@@ -22,7 +22,7 @@ WHERE
     logger.warn(`Label not found for release: ${releaseId}`)
   }
   if (labelIds.length > 1) {
-    logger.warn(`Multiple (${labelIds.length}) labels found for release: ${releaseId}`)
+    logger.debug(`Multiple (${labelIds.length}) labels found for release: ${releaseId}`)
   }
 
   return labelIds[0]
