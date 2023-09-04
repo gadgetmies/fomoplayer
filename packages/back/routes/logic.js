@@ -3,7 +3,7 @@ const { queryLongestPreviewForTrack, searchForArtistsAndLabels } = require('./db
 const { searchForTracks } = require('./shared/db/search.js')
 const { queryPreviewDetails } = require('./shared/db/preview')
 const { modules: storeModules } = require('./stores/index.js')
-const { queryCartDetails } = require('./users/db')
+const { queryCartDetails } = require('./shared/db/cart')
 const { queryCartDetailsByUuid, verifyEmail } = require('./db')
 
 module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
