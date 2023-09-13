@@ -163,7 +163,7 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
     } catch (e) {
       const error = [`Failed to add artist tracks to users`, { error: e.toString(), sourceId, details }]
       combinedErrors.push(error)
-      logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 400)}, stack: ${e.stack}`)
+      logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
     }
   }
 
@@ -184,7 +184,7 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
     users = await getUsersFollowingLabel(details.storeLabelId)
   } catch (e) {
     const error = ['Error fetching user follows for label', { error: e.toString(), sourceId, details }]
-    logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 400)}, stack: ${e.stack}`)
+    logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
     return [error]
   }
   const generator = storeModule.logic.getLabelTracks(details)
@@ -205,7 +205,7 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
     } catch (e) {
       const error = [`Failed to add label tracks to users`, { error: e.toString(), tracks, details }]
       combinedErrors.push(error)
-      logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 400)}, stack: ${e.stack}`)
+      logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
     }
   }
 
@@ -235,7 +235,7 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
     } catch (e) {
       const error = [`Failed to add playlist tracks to users`, { error: e.toString(), tracks, sourceId, details }]
       err.push(error)
-      logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 400)}, stack: ${e.stack}`)
+      logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
     }
   }
 
