@@ -15,7 +15,8 @@
     "start:prod": "concurrently \"yarn run start:back\" \"yarn run start:prod-front\"",
     "ci:test": "yarn workspace multi_store_player_back ci:test",
     "test": "yarn workspace multi_store_player_back test",
-    "build": "yarn workspace multi_store_player_front build"
+    "build": "yarn workspace multi_store_player_front build",
+    "db:backup": "heroku pg:backups:capture"
   },
   "repository": {
     "type": "git",
