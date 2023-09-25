@@ -413,7 +413,7 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = (userId, limits = { new: 100, recent: 100, heard: 50 }) => {
+module.exports.queryUserTracks = (userId, limits = { new: 80, recent: 50, heard:20 }) => {
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC, score DESC NULLS LAST`
 
