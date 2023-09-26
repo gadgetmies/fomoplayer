@@ -4,6 +4,7 @@ const router = require('express-promise-router')()
 const { getPreview, searchForTracks, getFollowDetails } = require('./logic.js')
 const { Unauthorized } = require('./shared/httpErrors')
 const adminRouter = require('./admin/index.js')
+const { ensureAuthenticated } = require('./shared/auth.js')
 
 router.use(bodyParser.json())
 
@@ -36,6 +37,14 @@ router.use(
   },
   usersRouter
 )
+
+const logRouter = require('./log/index.js')
+router.use(
+  '/log',
+  ensureAuthenticated,
+  logRouter
+)
+
 router.use('/me/', usersRouter)
 router.use('/admin/', adminRouter)
 

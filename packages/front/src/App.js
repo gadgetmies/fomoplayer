@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import { BrowserRouter as Router, Route, Redirect } from 'react-router-dom'
+import { ErrorBoundary } from 'react-error-boundary'
 import Login from './UserLogin.js'
 import Menu from './Menu.js'
 import Player from './Player.js'
@@ -344,128 +345,134 @@ class App extends Component {
 
   render() {
     return (
-      <Root>
-        <Router>
-          {this.state.loading ? (
-            <div className="loading-overlay">
-              🚀 Launching app
-              <Spinner />
-            </div>
-          ) : this.state.loggedIn ? (
-            <>
-              <Menu
-                ref="menu"
-                logoutPath={`/auth/logout`}
-                loggedIn={this.state.loggedIn}
-                onNavButtonClicked={() => {
-                  this.refs['slideout'].toggle()
-                }}
-                onLogoutDone={this.onLogoutDone.bind(this)}
-                onStoreLoginDone={() => {}} //this.onStoreLoginDone.bind(this)}
-                onUpdateTracks={this.updateTracks.bind(this)}
-              />
-              <SlideoutPanel ref="slideout" onOpen={this.updateLogins.bind(this)}>
-                <button
-                  style={{ position: 'absolute', left: 0, margin: 10, color: 'white', zIndex: 11 }}
-                  onClick={() => {
+      <ErrorBoundary
+        onError={(error, errorInfo) =>
+          requestWithCredentials({ url: `/log/error`, method: 'POST', body: { error, errorInfo } })
+        }
+      >
+        <Root>
+          <Router>
+            {this.state.loading ? (
+              <div className="loading-overlay">
+                🚀 Launching app
+                <Spinner />
+              </div>
+            ) : this.state.loggedIn ? (
+              <>
+                <Menu
+                  ref="menu"
+                  logoutPath={`/auth/logout`}
+                  loggedIn={this.state.loggedIn}
+                  onNavButtonClicked={() => {
                     this.refs['slideout'].toggle()
                   }}
-                >
-                  <FontAwesomeIcon icon="bars" />
-                </button>
-                <Route exact path="/">
-                  <Redirect to="/new" />
-                </Route>
-                <Route
-                  path="/:path"
-                  render={props => {
-                    const query = new URLSearchParams(props.location.search)
-                    const settingsVisible = props.match.params.path === 'settings'
-                    return (
-                      <>
-                        <Settings
-                          carts={this.state.carts}
-                          stores={this.state.stores}
-                          onUpdateCarts={this.updateCarts.bind(this)}
-                          notifications={this.state.notifications}
-                          onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
-                          onSetStarred={this.setStarred.bind(this)}
-                          onMarkHeardClicked={this.markHeard.bind(this)}
-                          onUpdateEmail={this.updateEmail.bind(this)}
-                          onCreateCart={this.createCart.bind(this)}
-                          newTracks={this.state.tracksData.meta.newTracks}
-                          totalTracks={this.state.tracksData.meta.totalTracks}
-                          userSettings={this.state.userSettings}
-                          scoreWeights={this.state.scoreWeights}
-                          tracks={this.state.tracksData.tracks}
-                          follows={this.state.follows}
-                          style={{ display: settingsVisible ? 'block' : 'none' }}
-                        />
-                        <Player
-                          mode="app"
-                          listState={settingsVisible ? 'new' : props.match.params.path}
-                          search={query.get('q') || ''}
-                          sort={query.get('sort') || ''}
-                          initialPosition={NaN}
-                          addingToCart={this.state.addingToCart}
-                          onUpdateTracksClicked={this.updateTracks.bind(this)}
-                          carts={this.state.carts}
-                          notifications={this.state.notifications}
-                          notificationsEnabled={this.state.userSettings.emailVerified}
-                          onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
-                          follows={this.state.follows}
-                          tracks={this.state.tracksData.tracks}
-                          stores={this.state.stores}
-                          newTracks={this.state.tracksData.meta.newTracks}
-                          totalTracks={this.state.tracksData.meta.totalTracks}
-                          onAddToCart={this.addToCart.bind(this)}
-                          onCreateCart={this.createCart.bind(this)}
-                          onUpdateCarts={this.updateCarts.bind(this)}
-                          onFetchCart={this.onFetchCart.bind(this)}
-                          onRemoveFromCart={this.removeFromCart.bind(this)}
-                          onMarkPurchased={this.onMarkPurchased.bind(this)}
-                          onFollow={this.updateFollows.bind(this)}
-                          processingCart={this.state.processingCart}
-                          isMobile={this.state.isMobile}
-                          style={{ display: !settingsVisible ? 'block' : 'none' }}
-                        />
-                      </>
-                    )
-                  }}
-                />
-              </SlideoutPanel>
-            </>
-          ) : this.state.list ? (
-            <Player
-              mode="list"
-              carts={[this.state.list]}
-              initialPosition={this.state.initialPosition}
-              notifications={this.state.notifications}
-              tracks={this.state.list.tracks}
-            />
-          ) : (
-            <div className="align-center-container full-screen-popup-container">
-              <div className="full-screen-popup">
-                <h1 style={{ marginTop: 0, textAlign: 'center' }}>Fomo Player</h1>
-                <Login
-                  onLoginDone={this.onLoginDone.bind(this)}
                   onLogoutDone={this.onLogoutDone.bind(this)}
-                  googleLoginPath={`${config.apiURL}/auth/login/google`}
-                  logoutPath={'/auth/logout'}
+                  onStoreLoginDone={() => {}} //this.onStoreLoginDone.bind(this)}
+                  onUpdateTracks={this.updateTracks.bind(this)}
                 />
-                <div className="login-separator">or</div>
-                <a
-                  href="https://github.com/gadgetmies/fomoplayer/wiki"
-                  className={'button button-push_button-large button-push_button-primary'}
-                  target="_blank"
-                >
-                  Find out more on Github <FontAwesomeIcon icon={['fab', 'github']} />
-                </a>
+                <SlideoutPanel ref="slideout" onOpen={this.updateLogins.bind(this)}>
+                  <button
+                    style={{ position: 'absolute', left: 0, margin: 10, color: 'white', zIndex: 11 }}
+                    onClick={() => {
+                      this.refs['slideout'].toggle()
+                    }}
+                  >
+                    <FontAwesomeIcon icon="bars" />
+                  </button>
+                  <Route exact path="/">
+                    <Redirect to="/new" />
+                  </Route>
+                  <Route
+                    path="/:path"
+                    render={props => {
+                      const query = new URLSearchParams(props.location.search)
+                      const settingsVisible = props.match.params.path === 'settings'
+                      return (
+                        <>
+                          <Settings
+                            carts={this.state.carts}
+                            stores={this.state.stores}
+                            onUpdateCarts={this.updateCarts.bind(this)}
+                            notifications={this.state.notifications}
+                            onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
+                            onSetStarred={this.setStarred.bind(this)}
+                            onMarkHeardClicked={this.markHeard.bind(this)}
+                            onUpdateEmail={this.updateEmail.bind(this)}
+                            onCreateCart={this.createCart.bind(this)}
+                            newTracks={this.state.tracksData.meta.newTracks}
+                            totalTracks={this.state.tracksData.meta.totalTracks}
+                            userSettings={this.state.userSettings}
+                            scoreWeights={this.state.scoreWeights}
+                            tracks={this.state.tracksData.tracks}
+                            follows={this.state.follows}
+                            style={{ display: settingsVisible ? 'block' : 'none' }}
+                          />
+                          <Player
+                            mode="app"
+                            listState={settingsVisible ? 'new' : props.match.params.path}
+                            search={query.get('q') || ''}
+                            sort={query.get('sort') || ''}
+                            initialPosition={NaN}
+                            addingToCart={this.state.addingToCart}
+                            onUpdateTracksClicked={this.updateTracks.bind(this)}
+                            carts={this.state.carts}
+                            notifications={this.state.notifications}
+                            notificationsEnabled={this.state.userSettings.emailVerified}
+                            onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
+                            follows={this.state.follows}
+                            tracks={this.state.tracksData.tracks}
+                            stores={this.state.stores}
+                            newTracks={this.state.tracksData.meta.newTracks}
+                            totalTracks={this.state.tracksData.meta.totalTracks}
+                            onAddToCart={this.addToCart.bind(this)}
+                            onCreateCart={this.createCart.bind(this)}
+                            onUpdateCarts={this.updateCarts.bind(this)}
+                            onFetchCart={this.onFetchCart.bind(this)}
+                            onRemoveFromCart={this.removeFromCart.bind(this)}
+                            onMarkPurchased={this.onMarkPurchased.bind(this)}
+                            onFollow={this.updateFollows.bind(this)}
+                            processingCart={this.state.processingCart}
+                            isMobile={this.state.isMobile}
+                            style={{ display: !settingsVisible ? 'block' : 'none' }}
+                          />
+                        </>
+                      )
+                    }}
+                  />
+                </SlideoutPanel>
+              </>
+            ) : this.state.list ? (
+              <Player
+                mode="list"
+                carts={[this.state.list]}
+                initialPosition={this.state.initialPosition}
+                notifications={this.state.notifications}
+                tracks={this.state.list.tracks}
+              />
+            ) : (
+              <div className="align-center-container full-screen-popup-container">
+                <div className="full-screen-popup">
+                  <h1 style={{ marginTop: 0, textAlign: 'center' }}>Fomo Player</h1>
+                  <Login
+                    onLoginDone={this.onLoginDone.bind(this)}
+                    onLogoutDone={this.onLogoutDone.bind(this)}
+                    googleLoginPath={`${config.apiURL}/auth/login/google`}
+                    logoutPath={'/auth/logout'}
+                  />
+                  <div className="login-separator">or</div>
+                  <a
+                    href="https://github.com/gadgetmies/fomoplayer/wiki"
+                    className={'button button-push_button-large button-push_button-primary'}
+                    target="_blank"
+                  >
+                    Find out more on Github <FontAwesomeIcon icon={['fab', 'github']} />
+                  </a>
+                </div>
               </div>
-            </div>
-          )}
-        </Router>
-      </Root>
+            )}
+          </Router>
+        </Root>
+      </ErrorBoundary>
     )
   }
 }

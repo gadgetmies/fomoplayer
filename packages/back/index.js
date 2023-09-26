@@ -23,6 +23,7 @@ const path = require('path')
 const fs = require('fs')
 const R = require('ramda')
 
+const { ensureAuthenticated } = require('./routes/shared/auth.js')
 const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
 const { HttpError } = require('./routes/shared/httpErrors')
@@ -52,10 +53,6 @@ app.use(cors({ credentials: true, origin: config.allowedOrigins }))
 app.options('*', cors()) // include before other routes
 
 app.use(bodyParser.json({ limit: '50mb', extended: true, type: ['application/json', 'application/*+json'] }))
-
-const ensureAuthenticated = (req, res, next) => {
-  return req.isAuthenticated() ? next() : res.status(401).end()
-}
 
 app.use('/api/auth', auth)
 
