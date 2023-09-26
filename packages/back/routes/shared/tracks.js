@@ -85,7 +85,9 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   let addedTracks = []
   for (const track of tracks) {
     const trackId = await addStoreTrackToUsers(storeUrl, userIds, track, sourceId, type)
-    addedTracks.push(`${apiURL}/tracks/${trackId}`)
+    if (trackId) {
+      addedTracks.push(`${apiURL}/tracks/${trackId}`)
+    }
   }
 
   await using(pg.getTransaction(), async tx => {
@@ -109,26 +111,26 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = '
     let labelId
     let releaseId
 
-    if (track.release) {
-      releaseId = await ensureReleaseExists(tx, storeUrl, track.release, sourceId)
-    }
+    if (Date.now() - new Date(track.published) < 2 * aYear) {
+      if (track.release) {
+        releaseId = await ensureReleaseExists(tx, storeUrl, track.release, sourceId)
+      }
 
-    if (releaseId) {
-      labelId = await queryLabelForRelease(tx, releaseId)
-    } else if (track.label) {
-      labelId = (await ensureLabelExists(tx, storeUrl, track.label, sourceId)).labelId
-    }
+      if (releaseId) {
+        labelId = await queryLabelForRelease(tx, releaseId)
+      } else if (track.label) {
+        labelId = (await ensureLabelExists(tx, storeUrl, track.label, sourceId)).labelId
+      }
 
-    let artists = []
-    for (const artist of track.artists) {
-      // TODO: match by release / isrc
-      const res = await ensureArtistExists(tx, storeUrl, artist, sourceId)
-      artists.push(res)
-    }
+      let artists = []
+      for (const artist of track.artists) {
+        // TODO: match by release / isrc
+        const res = await ensureArtistExists(tx, storeUrl, artist, sourceId)
+        artists.push(res)
+      }
 
-    const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, sourceId)
+      const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, sourceId)
 
-    if (Date.now() - new Date(track.published) < aYear) {
       for (const userId of userIds) {
         await addTrackToUser(tx, userId, artists, trackId, labelId, sourceId)
 
@@ -136,10 +138,10 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = '
           await addPurchasedStoreTrackToUser(tx, userId, track)
         }
       }
+
+      return trackId
     }
     // TODO: Update materialized views
-
-    return trackId
   })
 }
 
