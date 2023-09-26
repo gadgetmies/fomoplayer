@@ -22,6 +22,7 @@ const compression = require('compression')
 const path = require('path')
 const fs = require('fs')
 const R = require('ramda')
+const timeout = require('connect-timeout')
 
 const { ensureAuthenticated } = require('./routes/shared/auth.js')
 const passportSetup = require('./passport-setup.js')
@@ -42,6 +43,8 @@ app.use(
     cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 days
   })
 )
+
+app.use(timeout('25s'))
 
 passportSetup()
 app.use(passport.initialize())
