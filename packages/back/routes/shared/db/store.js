@@ -253,13 +253,22 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
       sql`-- ensureArtistExists INSERT INTO store__artist
       INSERT INTO store__artist
       (store__artist_store_id, store__artist_url, store_id, artist_id, store__artist_source)
-      SELECT ${artist.id}
-           , ${artist.url}
-           , store_id
-           , ${artistId}
-           , ${sourceId}
-      FROM store
-      WHERE store_url = ${storeUrl}
+      SELECT
+          ${artist.id}
+        , ${artist.url}
+        , store_id
+        , ${artistId}
+        , ${sourceId}
+      FROM
+          store
+      WHERE
+          NOT EXISTS (
+              SELECT store__artist_id
+              FROM store__artist
+                   NATURAL JOIN store
+              WHERE store_url = ${storeUrl}
+                AND artist_id = ${artistId})
+          AND store_url = ${storeUrl}
       ON CONFLICT ON CONSTRAINT store__artist_store__artist_store_id_store_id_key DO UPDATE
           SET store__artist_url      = ${artist.url}
             , store__artist_store_id = ${artist.id}
