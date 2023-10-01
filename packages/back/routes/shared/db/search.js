@@ -28,26 +28,33 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
     let query =
       // language=PostgreSQL
       sql`-- searchForTracks
-        SELECT
-            track_id AS id
-          , td.*
-          , user__track_heard AS heard
-        FROM
-            track_details(
-                    (SELECT
-                         ARRAY_AGG(DISTINCT track_id)
-                     FROM
-                         (SELECT
-                              track_id
-                          FROM
-                              track
-                                  NATURAL JOIN track__artist
-                                  NATURAL JOIN artist
-                                  NATURAL LEFT JOIN track__label
-                                  NATURAL LEFT JOIN label
-                                  NATURAL JOIN store__track
-                          WHERE ${addedSince}::TIMESTAMPTZ IS NULL OR track_added > ${addedSince}::TIMESTAMPTZ
-                          GROUP BY track_id, track_title, track_version`
+SELECT track_id          AS id
+     , td.*
+     , user__track_heard AS heard
+FROM
+  track_details
+  JOIN JSON_TO_RECORD(track_details) AS td ( track_id INT, title TEXT, duration INT, added DATE, artists JSON
+                                           , version TEXT, labels JSON, remixers JSON, releases JSON, keys JSON
+                                           , previews JSON, stores JSON, released DATE, published DATE)
+       USING (track_id)
+  NATURAL LEFT JOIN
+    (SELECT track_id, user__track_heard
+     FROM
+       user__track
+     WHERE meta_account_user_id = ${userId} :: INT) ut
+
+WHERE track_id IN
+      (SELECT track_id
+       FROM
+         track
+         NATURAL JOIN track__artist
+         NATURAL JOIN artist
+         NATURAL LEFT JOIN track__label
+         NATURAL LEFT JOIN label
+         NATURAL JOIN store__track
+       WHERE ${addedSince}::TIMESTAMPTZ IS NULL
+          OR track_added > ${addedSince}::TIMESTAMPTZ
+       GROUP BY track_id, track_title, track_version`
 
     sortColumns.forEach(([column]) => query.append(`, ${tx.escapeIdentifier(column)}`))
     query.append(`                HAVING
@@ -68,13 +75,7 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
         .append(' NULLS LAST, ')
     )
     query.append(` track_id DESC
-        LIMIT ${limit}) AS tracks)) td
-        NATURAL LEFT JOIN
-            (
-                SELECT track_id, user__track_heard
-                FROM user__track
-                WHERE meta_account_user_id = ${userId} :: INT
-            ) ut
+        LIMIT ${limit})
         ORDER BY `)
 
     sortParameters.forEach(([column, order]) =>

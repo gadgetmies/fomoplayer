@@ -665,22 +665,22 @@ WITH
       )
          , tracks_with_details AS (
           SELECT track_id AS id
-               , title
+               , track_details->>'title' AS title
                , user__track_heard AS heard
-               , duration
-               , added :: DATE AS added
-               , artists
-               , version
-               , labels
-               , remixers
-               , keys
-               , previews
-               , stores
-               , released
-               , published
-               , releases
+               , track_details->>'duration' AS duration
+               , cast(track_details->>'added' AS DATE) AS added
+               , track_details->'artists' AS artists
+               , track_details->>'version' AS version
+               , track_details->'labels' AS labels
+               , track_details->'remixers' AS remixers
+               , track_details->'keys' AS keys
+               , track_details->'previews' AS previews
+               , track_details->'stores' AS stores
+               , track_details->>'released' AS released
+               , track_details->>'published' AS published
+               , track_details->'releases' AS releases
           FROM limited_tracks lt
-                   JOIN track_details((SELECT ARRAY_AGG(track_id) FROM limited_tracks)) td USING (track_id)
+                   NATURAL JOIN track_details
                    NATURAL LEFT JOIN heard_tracks
       )
          , new_tracks_with_details AS (

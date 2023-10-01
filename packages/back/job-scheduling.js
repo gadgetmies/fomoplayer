@@ -6,6 +6,7 @@ const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
 const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')
 const { sendNextEmailBatch } = require('./services/mailer')
 const { updateNotifications } = require('./jobs/notifications')
+const { updateTrackDetails } = require('./jobs/track_details')
 const {
   updateDateReleasedScore,
   updateDatePublishedScore,
@@ -143,6 +144,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
   fetchBandcampWatches,
   sendNextEmailBatch,
   updateNotifications,
+  updateTrackDetails,
   syncCarts
 }
 

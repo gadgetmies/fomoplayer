@@ -614,6 +614,17 @@ ON CONFLICT ON CONSTRAINT track__key_track_id_key_id_key DO NOTHING
     )
   }
 
+  tx.queryAsync(
+    // language=PostgreSQL
+    sql`-- addStoreTrack INSERT INTO track_details
+INSERT INTO track_details (track_id, track_details)
+SELECT ${trackId}, row_to_json(track_details(ARRAY_AGG(${trackId}::INT)))
+ON CONFLICT ON CONSTRAINT track_details_track_id_key DO UPDATE
+    SET track_details         = EXCLUDED.track_details,
+        track_details_updated = NOW()
+`
+  )
+
   return trackId
 }
 

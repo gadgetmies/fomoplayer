@@ -74,9 +74,9 @@ WITH cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public
 )
    , td AS (
     SELECT DISTINCT ON (track_id)*, user__track_heard as heard, track_id AS id
-    FROM track_details((SELECT array_agg(track_id) FROM cart_tracks))
+    FROM track_details
              NATURAL LEFT JOIN user__track
-    WHERE meta_account_user_id = ${userId}
+    WHERE meta_account_user_id = ${userId} AND track_id IN (cart_tracks)
 )
    , tracks AS (SELECT cart_id, json_agg(td ORDER BY track__cart_added DESC) AS tracks
                 FROM cart_tracks
@@ -144,18 +144,22 @@ WITH
                                    NATURAL JOIN store
                            GROUP BY cart_id)
   , cart_tracks AS (SELECT
-                        (ARRAY_AGG(track_id ORDER BY track__cart_added DESC))[1:100] AS tracks -- TODO: this limit does not work!
+                        track_id, track_details
                     FROM
                         track__cart
+                    NATURAL JOIN track_details
                     WHERE
-                        cart_id = ${cartId})
+                        cart_id = ${cartId}
+                    ORDER BY track__cart_added DESC
+                    LIMIT 100)
   , td AS (SELECT DISTINCT ON (track_id)
-               d.*
+             td.*
              , user__track_heard AS heard
              , track_id          AS id
              , cart_id
            FROM
-               track_details((SELECT tracks FROM cart_tracks)) d -- TODO: add limit here?
+               cart_tracks
+                   NATURAL JOIN JSON_TO_RECORD(track_details) AS td (track_id INT, title TEXT, duration INT, added DATE, artists JSON, version TEXT, labels JSON, remixers JSON, releases JSON, keys JSON, previews JSON, stores JSON, released DATE, published DATE)
                    NATURAL JOIN track__cart
                    NATURAL LEFT JOIN user__track
            WHERE
