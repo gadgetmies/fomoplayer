@@ -200,7 +200,7 @@ class Tracks extends Component {
               playing={this.props.currentTrack === id}
               version={version}
               heard={heard}
-              inDefaultCart={defaultCart ? defaultCart.tracks.find(R.propEq('id', id)) !== undefined : false}
+              inDefaultCart={defaultCart ? defaultCart.tracks?.find(R.propEq('id', id)) !== undefined : false}
               selectedCart={this.props.selectedCart}
               inCurrentCart={inCarts.find(({ id }) => id === selectedCartId) !== undefined}
               inCarts={inCarts}
