@@ -221,13 +221,12 @@ module.exports.ensureReleaseExists = async (tx, storeUrl, release, sourceId) => 
 }
 
 module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
-  try {
-    const getArtistIdFromResult = getFieldFromResult('artist_id')
+  const getArtistIdFromResult = getFieldFromResult('artist_id')
 
-    let artistId = await tx
-      .queryRowsAsync(
-        // language=PostgreSQL
-        sql`-- ensureArtistExists SELECT artist_id
+  let artistId = await tx
+    .queryRowsAsync(
+      // language=PostgreSQL
+      sql`-- ensureArtistExists SELECT artist_id
         SELECT
             artist_id
         FROM
@@ -237,15 +236,15 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
             store_url = ${storeUrl}
           AND (store__artist_store_id = ${artist.id} OR store__artist_url = ${artist.url}) -- TODO: add name matching for bandcamp support?
         `
-      )
-      .then(getArtistIdFromResult)
+    )
+    .then(getArtistIdFromResult)
 
-    if (!artistId) {
-      logger.debug(`Artist ${artist.name} not found with id, trying with name`)
-      artistId = await tx
-        .queryRowsAsync(
-          // language=PostgreSQL
-          sql`-- ensureArtistExists SELECT artist_id
+  if (!artistId) {
+    logger.debug(`Artist ${artist.name} not found with id, trying with name`)
+    artistId = await tx
+      .queryRowsAsync(
+        // language=PostgreSQL
+        sql`-- ensureArtistExists SELECT artist_id
           SELECT
               artist_id
           FROM
@@ -253,16 +252,16 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
           WHERE
               LOWER(artist_name) = LOWER(${artist.name})
           `
-        )
-        .then(getArtistIdFromResult)
-    }
+      )
+      .then(getArtistIdFromResult)
+  }
 
-    if (!artistId) {
-      logger.debug(`Artist ${artist.name} not found, inserting`)
-      artistId = await tx
-        .queryRowsAsync(
-          // language=PostgreSQL
-          sql`-- ensureArtistExists INSERT INTO artist
+  if (!artistId) {
+    logger.debug(`Artist ${artist.name} not found, inserting`)
+    artistId = await tx
+      .queryRowsAsync(
+        // language=PostgreSQL
+        sql`-- ensureArtistExists INSERT INTO artist
           INSERT
           INTO
               artist
@@ -271,15 +270,15 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
               (${artist.name}, ${sourceId})
           RETURNING artist_id
           `
-        )
-        .then(getArtistIdFromResult)
-    }
+      )
+      .then(getArtistIdFromResult)
+  }
 
-    logger.debug('Inserting store artist')
+  logger.debug('Inserting store artist')
 
-    await tx.queryRowsAsync(
-      // language=PostgreSQL
-      sql`-- ensureArtistExists INSERT INTO store__artist
+  await tx.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- ensureArtistExists INSERT INTO store__artist
       INSERT
       INTO
           store__artist
@@ -307,13 +306,13 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
             , store__artist_source   = ${sourceId}
 
       `
-    )
+  )
 
-    logger.debug('Store artist inserted')
+  logger.debug('Store artist inserted')
 
-    const res = await tx.queryRowsAsync(
-      // language=PostgreSQL
-      sql`-- ensureArtistExists SELECT store__artist_id AS "storeArtistId" FROM store__artist
+  const res = await tx.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- ensureArtistExists SELECT store__artist_id AS "storeArtistId" FROM store__artist
       SELECT
           store__artist_id AS "storeArtistId"
       FROM
@@ -322,12 +321,9 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
       WHERE
           store__artist_url = ${artist.url}
       `
-    )
+  )
 
-    return { id: artistId, storeArtistId: res[0]?.storeArtistId, role: artist.role }
-  } catch (e) {
-    logger.error('Error adding track', e)
-  }
+  return { id: artistId, storeArtistId: res[0]?.storeArtistId, role: artist.role }
 }
 
 const getIsrcDebugData = async (isrc, storeTrackStoreId) =>
