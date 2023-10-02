@@ -304,7 +304,6 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
               store__artist_url      = ${artist.url}
             , store__artist_store_id = ${artist.id}
             , store__artist_source   = ${sourceId}
-
       `
   )
 
