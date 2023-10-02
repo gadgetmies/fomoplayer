@@ -427,7 +427,8 @@ WHERE
       ] = debugData
       logger.error(
         `Updating track details failed: ${e.toString()}, 
-ISRC: ${track.isrc} 
+Track ISRC: ${track.isrc}
+Release ISRC: ${track.release?.isrc}
 Details: ${JSON.stringify(debugData, null, 2)}
 
 Merge:
