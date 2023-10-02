@@ -1,0 +1,1 @@
+ALTER TABLE track_details ADD COLUMN track_details_id SERIAL PRIMARY KEY;

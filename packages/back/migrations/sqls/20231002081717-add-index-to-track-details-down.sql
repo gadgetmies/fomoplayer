@@ -1,0 +1,1 @@
+ALTER TABLE track_details DROP COLUMN track_details_id;
