@@ -343,7 +343,7 @@ class Player extends Component {
   isCurrentInCart() {
     const currentTrack = this.getCurrentTrack()
     return currentTrack && this.getDefaultCart()
-      ? this.getDefaultCart().tracks.find(R.propEq('id', currentTrack.id))
+      ? this.getDefaultCart().tracks?.find(R.propEq('id', currentTrack.id))
       : null
   }
 
@@ -363,6 +363,11 @@ class Player extends Component {
         that.setState({ playPauseDoubleClickStarted: false })
       }, 200)
     }
+  }
+
+  async markPurchased(trackId) {
+    await this.props.onMarkPurchased(trackId)
+    await this.selectCart(this.state.selectedCartId)
   }
 
   render() {
@@ -436,7 +441,7 @@ class Player extends Component {
           onCreateCart={this.props.onCreateCart}
           onUpdateCarts={this.props.onUpdateCarts}
           onRemoveFromCart={this.props.onRemoveFromCart}
-          onMarkPurchased={this.props.onMarkPurchased}
+          onMarkPurchased={this.markPurchased.bind(this)}
           onIgnoreArtistsByLabels={this.ignoreArtistsByLabels}
           onPreviewRequested={id => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
