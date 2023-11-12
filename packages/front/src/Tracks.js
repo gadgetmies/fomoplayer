@@ -95,7 +95,7 @@ class Tracks extends Component {
           this.setState({ searchInProgress: false })
         }
       },
-      skipDebounce ? 0 : 500
+      skipDebounce ? 0 : 1000
     )
     this.setState({ searchDebounce: timeout })
   }
