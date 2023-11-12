@@ -132,7 +132,11 @@ class Player extends Component {
 
   async jumpTracks(numberOfTracksToJump) {
     const currentTrackIndex = this.getCurrentTrackIndex()
-    const indexToJumpTo = R.clamp(0, this.getTracks().length - 1, currentTrackIndex + numberOfTracksToJump)
+    const trackCount = this.getTracks().length - 1
+    const indexToJumpTo = R.clamp(0, trackCount, currentTrackIndex + numberOfTracksToJump)
+    if (indexToJumpTo === trackCount) {
+      this.props.onUpdateTracksClicked()
+    }
     await this.setCurrentTrack(this.getTracks()[indexToJumpTo])
   }
 
