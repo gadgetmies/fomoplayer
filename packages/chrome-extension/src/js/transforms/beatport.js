@@ -77,7 +77,8 @@ const trackTransform = L.pick({
   ]),
   label: [
     'release',
-    'label',
+    'release',
+      'label',
     L.pick({
       id: ['id', L.reread(idToString)],
       name: 'name',
