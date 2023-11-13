@@ -1076,7 +1076,7 @@ class Settings extends Component {
                     >
                       De-authrorize
                     </SpinnerButton>{' '}
-                    <span>Warning! This disable all cart synchronizations</span>
+                    <span>Warning! This will disable all cart synchronizations</span>
                   </p>
                   <p>
                     <a
