@@ -17,7 +17,7 @@
   "dependencies": {
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.1",
-    "bp-api": "gadgetmies/bp-api#v4.0.0",
+    "bp-api": "gadgetmies/bp-api#v4.2.1",
     "cloudmailin": "^0.0.3",
     "color-stacktrace": "^1.0.3",
     "compression": "^1.7.4",
@@ -49,7 +49,9 @@
     "type-is": "^1.6.18",
     "vm2": "^3.9.19",
     "winston": "^3.3.3",
-    "winston-telegram": "^2.6.0"
+    "winston-telegram": "^2.6.0",
+    "request": "^2.88.2",
+    "request-in-session": "elysion/request-in-session#v1.2.5"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.36",

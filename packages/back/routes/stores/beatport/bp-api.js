@@ -146,12 +146,11 @@ const getLabelQueryData = (labelId, page = 1, callback) => {
   )
 }
 
-const getSearchResults = html => {
+const getSearchResults = (html, type) => {
   const queryData = getQueryData(html)
   const results = queryData.props.pageProps.dehydratedState.queries[0].state.data.data
 
   return results.map(({ label_name, artist_name, label_id, artist_id, label_image_uri, artist_image_uri }) => {
-    const type = label_id ? 'label' : 'artist'
     const name = label_name || artist_name
     const id = label_id || artist_id
     return {
@@ -159,20 +158,20 @@ const getSearchResults = html => {
       id,
       name,
       img: label_image_uri || artist_image_uri,
-      url: `${beatportUri}/${type}/${name.toLowerCase()}/${id}`
+      url: `${beatportUri}/${type}/${encodeURI(name.toLowerCase().replace(' ', '-'))}/${id}`
     }
   })
 }
 
 const search = (query, type, callback) => {
-  const uri = `${beatportUri}/search/${type}?q=${query}`
+  const uri = `${beatportUri}/search/${type}s?q=${query}`
   console.log(`Performing Beatport search: ${uri}`)
   request(
     uri,
     handleErrorOrCallFn(callback, res => {
       try {
         if (Math.floor(res.statusCode / 100) < 4) {
-          return callback(null, getSearchResults(res.body))
+          return callback(null, getSearchResults(res.body, type))
         } else {
           const message = `Request returned error status. URL: ${uri}`
           console.error(message)
@@ -188,8 +187,8 @@ const search = (query, type, callback) => {
   })
 }
 
-const searchForArtists = (query, callback) => search(query, 'artists', callback)
-const searchForLabels = (query, callback) => search(query, 'labels', callback)
+const searchForArtists = (query, callback) => search(query, 'artist', callback)
+const searchForLabels = (query, callback) => search(query, 'label', callback)
 
 const getQueryDataOnPage = (uri, callback) => {
   request(
