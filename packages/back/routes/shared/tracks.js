@@ -118,7 +118,9 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = '
 
       if (releaseId) {
         labelId = await queryLabelForRelease(tx, releaseId)
-      } else if (track.label) {
+      }
+
+      if (!labelId && track.label) {
         labelId = (await ensureLabelExists(tx, storeUrl, track.label, sourceId)).labelId
       }
 
