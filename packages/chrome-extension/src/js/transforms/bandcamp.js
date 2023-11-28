@@ -23,7 +23,7 @@ const isVersionOrRemix = match => {
 
 const hasFeat = match => {
   if (!match) return false
-  return match[4] !== undefined && match[4].startsWith('(feat.')
+  return match[4] !== undefined && (match[4].startsWith('(feat.') || match[4].startsWith('(ft.'))
 }
 
 module.exports.bandcampReleasesTransform = L.collect([
@@ -45,7 +45,7 @@ module.exports.bandcampReleasesTransform = L.collect([
       const versionOrRemix = isVersionOrRemix(match)
       const version = versionOrRemix ? match[4].substring(1, match[4].length - 1) : null
       const featuringArtists =
-        !versionOrRemix && hasFeat(match) ? match[4].substring('(feat. '.length, match[4].length - 1).split(/,&/) : []
+        !versionOrRemix && hasFeat(match) ? match[4].replace('(feat. ', '').replace('(ft. ', '').replace(')', '').split(/,&/) : []
 
       return [
         L.pick({
