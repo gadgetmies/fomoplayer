@@ -120,6 +120,7 @@ const getTracksFromReleases = async releaseUrls => {
     logger.debug(`Found ${transformed.length} tracks for ${releaseUrls.length} releases`)
   } catch (e) {
     logger.error(`Track transformation error`, { releaseUrls, releaseDetails })
+    logger.error(e)
     return { errors, tracks: [] }
   }
 
