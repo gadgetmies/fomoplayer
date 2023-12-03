@@ -13,6 +13,8 @@ import FollowItemButton from './FollowItemButton'
 import { Link } from 'react-router-dom'
 import { apiURL } from './config'
 import ExternalLink from './ExternalLink'
+import Onboarding from './Onboarding'
+import { SettingsHelp } from './SettingsHelp'
 
 class Settings extends Component {
   unlockMarkAllHeard() {
@@ -78,7 +80,8 @@ class Settings extends Component {
       ),
       page: page || 'following',
       scoreWeights: this.props.scoreWeights,
-      tracks: this.props.tracks
+      tracks: this.props.tracks,
+      helpActive: false
     }
 
     this.markHeardButton.bind(this)
@@ -226,6 +229,15 @@ class Settings extends Component {
     this.setState({ scoreWeightsDebounce: timeout })
   }
 
+  clearSearch() {
+    this.setState({
+      followQuery: '',
+      updatingFollowDetails: null,
+      followDetails: undefined,
+      updatingFollowWithUrl: null
+    })
+  }
+
   renderWeightInputs({ property, weight }) {
     const weightDetails = scoreWeightDetails[property]
     const numberProps = { min: weightDetails.min, max: weightDetails.max, step: weightDetails.step }
@@ -272,8 +284,22 @@ class Settings extends Component {
   render() {
     return (
       <div className="page-container scroll-container" style={{ ...this.props.style }}>
+        <SettingsHelp
+          active={this.state.helpActive}
+          onActiveChanged={active => this.setState({ helpActive: active })}
+        />
         <div className="settings-container">
-          <h2>Settings</h2>
+          <h2>
+            Settings{' '}
+            <FontAwesomeIcon
+              icon="circle-question"
+              style={{ fontSize: '50%', verticalAlign: 'top' }}
+              onClick={() => {
+                this.setState({ helpActive: !this.state.helpActive })
+              }}
+              data-onboarding-id="help-button"
+            />
+          </h2>
           <div>
             <div className="select-button select-button--container state-select-button--container noselect">
               <input
@@ -283,7 +309,7 @@ class Settings extends Component {
                 checked={this.state.page === 'following'}
                 onChange={() => this.onShowPage('following')}
               />
-              <label className="select-button--button" htmlFor="settings-state-following">
+              <label className="select-button--button" htmlFor="settings-state-following" data-help-id="following-tab">
                 Following
               </label>
               <input
@@ -293,7 +319,7 @@ class Settings extends Component {
                 checked={this.state.page === 'sorting'}
                 onChange={() => this.onShowPage('sorting')}
               />
-              <label className="select-button--button" htmlFor="settings-state-sorting">
+              <label className="select-button--button" htmlFor="settings-state-sorting" data-help-id="sorting-tab">
                 Sorting
               </label>
               <input
@@ -303,7 +329,7 @@ class Settings extends Component {
                 checked={this.state.page === 'carts'}
                 onChange={() => this.onShowPage('carts')}
               />
-              <label className="select-button--button" htmlFor="settings-state-carts">
+              <label className="select-button--button" htmlFor="settings-state-carts" data-help-id="carts-tab">
                 Carts
               </label>
               <input
@@ -313,7 +339,11 @@ class Settings extends Component {
                 checked={this.state.page === 'notifications'}
                 onChange={() => this.onShowPage('notifications')}
               />
-              <label className="select-button--button" htmlFor="settings-state-notifications">
+              <label
+                className="select-button--button"
+                htmlFor="settings-state-notifications"
+                data-help-id="notifications-tab"
+              >
                 Notifications
               </label>
               <input
@@ -323,7 +353,7 @@ class Settings extends Component {
                 checked={this.state.page === 'ignores'}
                 onChange={() => this.onShowPage('ignores')}
               />
-              <label className="select-button--button" htmlFor="settings-state-ignores">
+              <label className="select-button--button" htmlFor="settings-state-ignores" data-help-id="ignores-tab">
                 Ignores
               </label>
               <input
@@ -333,7 +363,11 @@ class Settings extends Component {
                 checked={this.state.page === 'collection'}
                 onChange={() => this.onShowPage('collection')}
               />
-              <label className="select-button--button" htmlFor="settings-state-collection">
+              <label
+                className="select-button--button"
+                htmlFor="settings-state-collection"
+                data-help-id="collection-tab"
+              >
                 Collection
               </label>
               <input
@@ -343,7 +377,11 @@ class Settings extends Component {
                 checked={this.state.page === 'authorizations'}
                 onChange={() => this.onShowPage('authorizations')}
               />
-              <label className="select-button--button" htmlFor="settings-state-authorizations">
+              <label
+                className="select-button--button"
+                htmlFor="settings-state-authorizations"
+                data-help-id="authorizations-tab"
+              >
                 Authorizations
               </label>
             </div>
@@ -355,6 +393,7 @@ class Settings extends Component {
                 <div className="input-layout">
                   <label className="search-bar">
                     <input
+                      data-onboarding-id="follow-search"
                       className="text-input text-input-large text-input-dark search"
                       disabled={this.state.updatingFollowWithUrl !== null}
                       value={this.state.followQuery}
@@ -420,14 +459,22 @@ class Settings extends Component {
                                   })
                                 })
                             )
-                            Promise.all(promises).catch(e => {
-                              console.error('Error updating follow details', e)
-                              clearTimeout(this.state.followDetailsDebounce)
-                              this.setState({
-                                updatingFollowDetails: null,
-                                followDetailsDebounce: undefined
+                            Promise.all(promises)
+                              .then(() => {
+                                if (!this.state.followDetailsUpdateAborted && this.state.followDetails.length !== 0) {
+                                  if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Search)) {
+                                    Onboarding.helpers.next()
+                                  }
+                                }
                               })
-                            })
+                              .catch(e => {
+                                console.error('Error updating follow details', e)
+                                clearTimeout(this.state.followDetailsDebounce)
+                                this.setState({
+                                  updatingFollowDetails: null,
+                                  followDetailsDebounce: undefined
+                                })
+                              })
                           }
                         }, 500)
                         this.setState({ followDetailsDebounce: timeout })
@@ -435,14 +482,7 @@ class Settings extends Component {
                     />
                     {this.state.followQuery ? (
                       <FontAwesomeIcon
-                        onClick={() =>
-                          this.setState({
-                            followQuery: '',
-                            updatingFollowDetails: null,
-                            followDetails: undefined,
-                            updatingFollowWithUrl: null
-                          })
-                        }
+                        onClick={this.clearSearch.bind(this)}
                         className={'search-input-icon clear-search'}
                         icon="times-circle"
                       />
@@ -499,6 +539,7 @@ class Settings extends Component {
                                           disabled={this.getFollowItemDisabled(type, url)}
                                           loading={this.state.updatingFollowWithUrl === url}
                                           onClick={(() => this.onFollowItemClick(url, type)).bind(this)}
+                                          data-onboarding-id="follow-item"
                                         />
                                       </li>
                                     ))}
@@ -518,7 +559,7 @@ class Settings extends Component {
                 {this.state.artistFollows.map(
                   ({ id, name, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
                     return (
-                      <li key={storeArtistId}>
+                      <li key={storeArtistId} data-onboarding-id="follow-item">
                         <span className="button pill pill-button">
                           <span className="pill-button-contents">
                             <>
@@ -533,8 +574,12 @@ class Settings extends Component {
                                 await this.props.onSetStarred('artists', watchId, !starred)
                                 await this.updateArtistFollows()
                                 this.setState({ updatingNotifications: false })
+                                if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Star)) {
+                                  Onboarding.helpers.next()
+                                }
                               }}
                               title={`Star artist "${name}" on ${storeName}`}
+                              data-onboarding-id="star-button"
                             >
                               {starred ? (
                                 <FontAwesomeIcon icon={icon({ name: 'star', style: 'solid' })} />
@@ -552,7 +597,11 @@ class Settings extends Component {
                                 })
                                 await this.updateArtistFollows()
                                 this.setState({ updatingArtistFollows: false })
+                                if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Unfollow)) {
+                                  Onboarding.helpers.next()
+                                }
                               }}
+                              data-onboarding-id="unfollow-button"
                             >
                               <FontAwesomeIcon icon="times-circle" />{' '}
                               <a
@@ -1134,6 +1183,10 @@ class Settings extends Component {
       })
 
       await this.updateFollows()
+      if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.FollowButton)) {
+        this.clearSearch()
+        Onboarding.moveToNextWhenItemVisible(`[data-onboarding-id="follow-item"]`)
+      }
     } catch (e) {
       console.error(e)
     } finally {

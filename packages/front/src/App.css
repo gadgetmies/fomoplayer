@@ -810,6 +810,11 @@ input[type='range']::-webkit-slider-runnable-track {
   background: transparent;
 }
 
+.react-joyride__tooltip button:disabled {
+  background-color: transparent !important;
+  color: #333333 !important;
+}
+
 @media (max-width: 899px) {
   .full-screen-popup {
     margin: 2em;

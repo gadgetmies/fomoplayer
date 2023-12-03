@@ -15,37 +15,41 @@ import config from './config.js'
 
 import 'typeface-lato'
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faGithub, faChrome, faYoutube, faTwitter, faFacebook, faTelegram } from '@fortawesome/free-brands-svg-icons'
+import { faChrome, faFacebook, faGithub, faTelegram, faTwitter, faYoutube } from '@fortawesome/free-brands-svg-icons'
 import {
-  faHeart,
-  faHeartBroken,
-  faPlus,
-  faMinus,
-  faTimesCircle,
-  faCopy,
-  faBars,
-  faExternalLinkAlt,
-  faBan,
-  faExclamationCircle,
-  faForward,
   faBackward,
-  faPlay,
-  faStepForward,
-  faStepBackward,
-  faPause,
-  faKeyboard,
-  faCircle,
-  faInfoCircle,
-  faClipboard,
-  faClipboardCheck,
-  faCaretDown,
+  faBan,
+  faBars,
   faBell,
   faBellSlash,
+  faCaretDown,
+  faCircle,
+  faCircleQuestion,
+  faClipboard,
+  faClipboardCheck,
+  faCopy,
+  faExclamationCircle,
+  faLightbulb,
+  faExternalLinkAlt,
+  faForward,
+  faHeart,
+  faHeartBroken,
+  faInfoCircle,
+  faKeyboard,
+  faMinus,
+  faMoneyBills,
+  faPause,
+  faPlay,
+  faPlus,
   faSearch,
   faShare,
   faStar,
-  faMoneyBills
+  faStepBackward,
+  faStepForward,
+  faTimesCircle
 } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import Onboarding from './Onboarding'
 
 library.add(
   faTwitter,
@@ -61,6 +65,7 @@ library.add(
   faExternalLinkAlt,
   faBan,
   faExclamationCircle,
+  faLightbulb,
   faForward,
   faBackward,
   faPlay,
@@ -72,6 +77,7 @@ library.add(
   faChrome,
   faYoutube,
   faCircle,
+  faCircleQuestion,
   faInfoCircle,
   faClipboard,
   faClipboardCheck,
@@ -83,7 +89,6 @@ library.add(
   faStar,
   faMoneyBills
 )
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 // import injectTapEventPlugin from 'react-tap-event-plugin';
 // injectTapEventPlugin();
@@ -108,7 +113,8 @@ class App extends Component {
       initialPosition: NaN,
       processingCart: false,
       userSettings: {},
-      isMobile: this.mobileCheck()
+      isMobile: this.mobileCheck(),
+      onboarding: false
     }
   }
 
@@ -299,7 +305,10 @@ class App extends Component {
       path: `/me/tracks`
     })
 
-    this.setState({ tracksData: { tracks, meta: { newTracks, totalTracks } } })
+    this.setState({
+      tracksData: { tracks, meta: { newTracks, totalTracks } },
+      onboarding: tracks.new.length === 0 && tracks.heard.length === 0
+    })
   }
 
   async markHeard(interval) {
@@ -344,6 +353,20 @@ class App extends Component {
 
   async updateLogins() {}
 
+  onOnboardingButtonClicked() {
+    this.setState({ onboarding: !this.state.onboarding })
+  }
+
+  openMenu() {
+    console.log('open menu')
+    debugger
+    this.refs['slideout'].open()
+  }
+
+  toggleMenu() {
+    this.refs['slideout'].toggle()
+  }
+
   render() {
     return (
       <ErrorBoundary
@@ -360,22 +383,33 @@ class App extends Component {
               </div>
             ) : this.state.loggedIn ? (
               <>
+                <Onboarding
+                  active={this.state.onboarding}
+                  onOpenMenuRequested={(() => {
+                    this.refs['slideout'].open()
+                  }).bind(this)}
+                  onOnboardingEnd={() => {
+                    this.setState({ onboarding: false })
+                  }}
+                />
                 <Menu
                   ref="menu"
                   logoutPath={`/auth/logout`}
                   loggedIn={this.state.loggedIn}
-                  onNavButtonClicked={() => {
-                    this.refs['slideout'].toggle()
-                  }}
+                  onNavButtonClicked={this.toggleMenu.bind(this)}
                   onLogoutDone={this.onLogoutDone.bind(this)}
                   onStoreLoginDone={() => {}} //this.onStoreLoginDone.bind(this)}
                   onUpdateTracks={this.updateTracks.bind(this)}
                 />
                 <SlideoutPanel ref="slideout" onOpen={this.updateLogins.bind(this)}>
                   <button
+                    data-onboarding-id="slideout-button"
                     style={{ position: 'absolute', left: 0, margin: 10, color: 'white', zIndex: 11 }}
                     onClick={() => {
                       this.refs['slideout'].toggle()
+                      if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Menu)) {
+                        Onboarding.helpers.next()
+                      }
                     }}
                   >
                     <FontAwesomeIcon icon="bars" />
@@ -432,6 +466,7 @@ class App extends Component {
                             onRemoveFromCart={this.removeFromCart.bind(this)}
                             onMarkPurchased={this.onMarkPurchased.bind(this)}
                             onFollow={this.updateFollows.bind(this)}
+                            onOnboardingButtonClicked={this.onOnboardingButtonClicked.bind(this)}
                             processingCart={this.state.processingCart}
                             isMobile={this.state.isMobile}
                             style={{ display: !settingsVisible ? 'block' : 'none' }}

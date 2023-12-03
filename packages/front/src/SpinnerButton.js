@@ -7,25 +7,28 @@ class SpinnerButton extends Component {
   }
 
   render() {
+    const { className, label, loading, loadingLabel, disabled, children, size, style, onClick, ...rest } = this.props
+
     return (
       <button
         type="submit"
-        disabled={this.props.disabled || this.props.loading}
-        className={`button button-push_button-${this.props.size} button-push_button-primary ${this.props.className || ''}`}
-        style={this.props.style}
-        onClick={this.props.onClick}
+        disabled={disabled || loading}
+        className={`button button-push_button-${size} button-push_button-primary ${className || ''}`}
+        style={style}
+        onClick={onClick}
+        {...rest}
       >
-        {this.props.children !== undefined ? (
+        {children !== undefined ? (
           <>
-            {this.props.children} {this.props.loading ? <Spinner size={this.props.size} /> : null}
+            {children} {loading ? <Spinner size={size} /> : null}
           </>
-        ) : this.props.loading ? (
+        ) : loading ? (
           <>
-            {this.props.loadingLabel}
+            {loadingLabel}
             <Spinner />
           </>
         ) : (
-          this.props.label
+          label
         )}
       </button>
     )

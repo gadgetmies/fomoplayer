@@ -319,7 +319,11 @@ class Tracks extends Component {
                   defaultChecked={this.props.listState === 'new'}
                   onChange={this.props.onShowNewClicked}
                 />
-                <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-new">
+                <label
+                  className="select-button--button state-select-button--button"
+                  htmlFor="tracklist-state-new"
+                  data-help-id="new-tracks"
+                >
                   New tracks
                 </label>
                 <input
@@ -329,7 +333,11 @@ class Tracks extends Component {
                   defaultChecked={this.props.listState === 'recent'}
                   onChange={this.props.onShowRecentlyAddedClicked}
                 />
-                <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-recent">
+                <label
+                  className="select-button--button state-select-button--button"
+                  htmlFor="tracklist-state-recent"
+                  data-help-id="recently-added-tracks"
+                >
                   Recently added
                 </label>
                 <input
@@ -339,7 +347,11 @@ class Tracks extends Component {
                   defaultChecked={this.props.listState === 'heard'}
                   onChange={this.props.onShowHeardClicked}
                 />
-                <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-heard">
+                <label
+                  className="select-button--button state-select-button--button"
+                  htmlFor="tracklist-state-heard"
+                  data-help-id="recently-played-tracks"
+                >
                   Recently played
                 </label>
                 <input
@@ -350,7 +362,11 @@ class Tracks extends Component {
                   onChange={this.props.onShowCartClicked}
                   disabled={this.props.carts.length === 0}
                 />
-                <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-cart">
+                <label
+                  className="select-button--button state-select-button--button"
+                  htmlFor="tracklist-state-cart"
+                  data-help-id="carts"
+                >
                   Carts
                 </label>
                 <input
@@ -360,7 +376,11 @@ class Tracks extends Component {
                   defaultChecked={this.props.listState === 'search'}
                   onChange={this.props.onShowSearchClicked}
                 />
-                <label className="select-button--button state-select-button--button" htmlFor="tracklist-state-search">
+                <label
+                  className="select-button--button state-select-button--button"
+                  htmlFor="tracklist-state-search"
+                  data-help-id="search"
+                >
                   Search
                 </label>
               </div>

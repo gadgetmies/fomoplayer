@@ -18,9 +18,13 @@ const getShortcuts = mode => (
     <FontAwesomeIcon
       icon="keyboard"
       className="popup-anchor"
-      style={{ right: 0, top: 0, margin: 10, position: 'absolute', zIndex: 2 }}
+      style={{ margin: 10, zIndex: 2 }}
+      data-help-id="keyboard-shortcuts"
     />
-    <div className="popup-content" style={{ right: 0, top: 0, margin: '0 5 5 5', paddingRight: 50 }}>
+    <div
+      className="popup-content"
+      style={{ right: 0, top: 0, margin: '0 5 5 5', paddingRight: 50, width: '20%', minWidth: '300px' }}
+    >
       <h2 style={{ marginTop: 0 }}>Shortcuts</h2>
       <table>
         <tbody>
@@ -264,7 +268,14 @@ class Preview extends Component {
 
     return (
       <div className="preview noselect">
-        {this.shortcuts}
+        <div style={{ position: 'absolute', right: 0, top: 0 }}>
+          <FontAwesomeIcon
+            icon="circle-question"
+            style={{ cursor: 'pointer', margin: 10, zIndex: 2 }}
+            onClick={this.props.onHelpButtonClicked}
+          />
+          {this.shortcuts}
+        </div>
         <div className="preview-title">
           {this.props.currentTrack ? trackArtistsAndTitle(this.props.currentTrack) : <div>&nbsp;</div>}
         </div>
@@ -396,6 +407,7 @@ class Preview extends Component {
                 onClick={async () => {
                   await this.props.onToggleCurrentInCart()
                 }}
+                data-help-id="add-to-default-cart"
               >
                 <FontAwesomeIcon icon={this.props.inCart ? 'minus' : 'plus'} />
               </button>

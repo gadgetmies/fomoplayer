@@ -4,6 +4,7 @@ import MenuNavButton from './MenuNavButton'
 import { requestWithCredentials } from './request-json-with-credentials.js'
 import './Menu.css'
 import ExternalLink from './ExternalLink'
+import Onboarding from './Onboarding'
 
 export default class Menu extends Component {
   constructor(props) {
@@ -29,7 +30,16 @@ export default class Menu extends Component {
           </MenuNavButton>
           <h3>User</h3>
           <p>
-            <MenuNavButton to={'/settings'} onClick={() => this.props.onNavButtonClicked()}>
+            <MenuNavButton
+              to={'/settings'}
+              onClick={() => {
+                this.props.onNavButtonClicked()
+                if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Settings)) {
+                  setTimeout(() => Onboarding.helpers.next(), 500)
+                }
+              }}
+              data-onboarding-id="settings-button"
+            >
               Settings
             </MenuNavButton>
             <button
@@ -46,6 +56,7 @@ export default class Menu extends Component {
               className={`button menu-item button-push_button-large button-push_button-menu link no-style-link`}
               target="_blank"
               rel="noopener noreferrer"
+              data-onboarding-id="instructions-button"
             >
               <FontAwesomeIcon icon={['fab', 'github']} />
               &nbsp; Instructions
@@ -64,9 +75,20 @@ export default class Menu extends Component {
               className={`button menu-item button-push_button-large button-push_button-menu link no-style-link`}
               target="_blank"
               rel="noopener noreferrer"
+              data-onboarding-id="issues-button"
             >
               <FontAwesomeIcon icon="exclamation-circle" />
               &nbsp; Report an issue
+            </ExternalLink>
+            <ExternalLink
+              href={'https://github.com/gadgetmies/fomoplayer/discussions/new?category=ideas'}
+              className={`button menu-item button-push_button-large button-push_button-menu link no-style-link`}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-onboarding-id="improvements-button"
+            >
+              <FontAwesomeIcon icon="lightbulb" />
+              &nbsp; Share improvement ideas
             </ExternalLink>
           </p>
         </div>

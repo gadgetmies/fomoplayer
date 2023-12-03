@@ -7,6 +7,7 @@ import MediaSession from '@mebtte/react-media-session'
 import FollowPopup from './FollowPopup'
 import IgnorePopup from './IgnorePopup'
 import { trackTitle, artistNamesToString, trackArtistsAndTitle } from './trackFunctions'
+import { PlayerHelp } from './PlayerHelp'
 
 class Player extends Component {
   constructor(props) {
@@ -21,7 +22,8 @@ class Player extends Component {
       selectedCartId: props.carts[0]?.id,
       requestNotificationSearch: '',
       nextDoubleClickStarted: false,
-      playPauseDoubleClickStarted: false
+      playPauseDoubleClickStarted: false,
+      helpActive: false
     }
 
     this.preview = React.createRef()
@@ -379,6 +381,7 @@ class Player extends Component {
     const currentTrack = this.getCurrentTrack()
     return (
       <div className={`page-container ${this.props.isMobile ? 'mobile' : ''}`} style={{ ...this.props.style }}>
+        <PlayerHelp active={this.state.helpActive} onActiveChanged={active => this.setState({ helpActive: active })} />
         {this.props.follows ? (
           <FollowPopup
             open={this.state.followPopupOpen}
@@ -423,6 +426,9 @@ class Player extends Component {
           onPlayPauseToggle={this.handlePlayPauseToggle.bind(this)}
           inCart={this.isCurrentInCart()}
           ref={this.preview}
+          onHelpButtonClicked={() => {
+            this.setState({ helpActive: !this.state.helpActive })
+          }}
         />
         <Tracks
           key={'tracks'}

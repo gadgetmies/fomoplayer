@@ -29,6 +29,10 @@ class SlideoutPanel extends Component {
     this.state.slideout.toggle()
   }
 
+  open() {
+    this.state.slideout.open()
+  }
+
   render() {
     return (
       <div id="panel" style={{ height: '100%', overflow: 'hidden' }}>
