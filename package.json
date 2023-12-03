@@ -4,7 +4,7 @@
   "description": "",
   "main": "ecosystem.config.js",
   "engines": {
-    "node": "16.x"
+    "node": "18.x"
   },
   "scripts": {
     "migrate": "yarn workspace multi_store_player_back migrate",

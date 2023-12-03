@@ -3,7 +3,7 @@
   "version": "0.0.2",
   "description": "Multi store player chrome extension",
   "engines": {
-    "node": "16.x"
+    "node": "18.x"
   },
   "scripts": {
     "build": "node utils/build.js",

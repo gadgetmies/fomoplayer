@@ -12,7 +12,7 @@
     "ci:test": "NODE_ENV=ci node -r dotenv/config ./test/run-tests.js ./test/tests dotenv_config_path=.env.ci"
   },
   "engines": {
-    "node": "16.x"
+    "node": "18.x"
   },
   "dependencies": {
     "bluebird": "^3.7.2",
