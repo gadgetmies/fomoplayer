@@ -151,7 +151,7 @@ WITH
                     WHERE
                         cart_id = ${cartId}
                     ORDER BY track__cart_added DESC
-                    LIMIT 100)
+                    LIMIT 200)
   , td AS (SELECT DISTINCT ON (track_id)
              td.*
              , user__track_heard AS heard
