@@ -456,7 +456,8 @@ audio {
   box-sizing: border-box;
 }
 
-.pill-link-text, .pill-button-text {
+.pill-link-text,
+.pill-button-text {
   margin: 4px;
 }
 
@@ -1040,7 +1041,8 @@ input[type='range']::-webkit-slider-runnable-track {
     padding: 0.375rem 0.75rem;
   }
 
-  .pill-link-text, .pill-button-text {
+  .pill-link-text,
+  .pill-button-text {
     visibility: hidden;
     width: 0;
     height: 0;

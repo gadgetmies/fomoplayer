@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
-import { BrowserRouter as Router, Route, Redirect } from 'react-router-dom'
+import { BrowserRouter as Router, Redirect, Route } from 'react-router-dom'
 import { ErrorBoundary } from 'react-error-boundary'
 import Login from './UserLogin.js'
 import Menu from './Menu.js'
