@@ -25,7 +25,17 @@ class FollowItemButton extends Component {
           <img src={img} style={{ height: '100%', width: '100%', objectFit: 'cover' }} />
           <FontAwesomeIcon icon="external-link-alt" style={{ position: 'absolute', right: 5, bottom: 5 }} />
         </a>
-        <div style={{ margin: '2px 4px 6px 4px' }}>{name}</div>
+        <div
+          style={{
+            margin: '2px 4px 6px 4px',
+            textOverflow: 'ellipsis',
+            textWrap: 'nowrap',
+            width: 100,
+            overflow: 'hidden'
+          }}
+        >
+          {name}
+        </div>
         <SpinnerButton
           className="button button-push_button-small button-push_button-primary"
           loading={loading}
