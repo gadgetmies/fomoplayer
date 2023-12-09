@@ -1264,13 +1264,20 @@ class Settings extends Component {
 
   async onImportPlaylistItemClick(url) {
     this.setState({ importingPlaylist: url })
-    const { id: playlistId } = await requestJSONwithCredentials({
-      url: `${apiURL}/me/carts`,
-      method: 'POST',
-      body: { url }
-    })
-    await this.props.onUpdateCarts()
-    this.setState({ importingPlaylist: null, importedPlaylists: [...this.state.importingPlaylist, url] })
+    try {
+      await requestJSONwithCredentials({
+        url: `${apiURL}/me/carts`,
+        method: 'POST',
+        body: { url }
+      })
+      await this.props.onUpdateCarts()
+      this.setState({ importedPlaylists: [...this.state.importedPlaylists, url] })
+    } catch (e) {
+      console.error('Error importing playlist', e)
+      throw e
+    } finally {
+      this.setState({ importingPlaylist: null })
+    }
   }
 }
 
