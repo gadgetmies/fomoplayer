@@ -374,6 +374,9 @@ class Preview extends Component {
               onTimeUpdate={({ currentTarget: { currentTime } }) => {
                 this.setState({ position: currentTime * 1000 })
               }}
+              onError={e => {
+                requestWithCredentials({ url: '/log/error', method: 'POST', body: e })
+              }}
               controlsList="nodownload"
               src={this.state.previewUrl}
             />
