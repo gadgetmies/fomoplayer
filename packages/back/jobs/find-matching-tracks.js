@@ -37,7 +37,6 @@ async function processMissingSpotifyTracks(missingFromSpotify, sourceId) {
     spotifyTracks = missingFromSpotify
       ? await spotifyModule.getTracksForISRCs(missingFromSpotify.map(R.prop('isrc')))
       : []
-    console.log({ spotifyTracks })
     await addStoreTracksToUsers(spotifyModule.storeUrl, spotifyTracks, [], sourceId)
     return { errors: [] }
   } catch (e) {
@@ -71,9 +70,7 @@ module.exports.findMatchingTracks = async jobDetails => {
   const missing = Object.values(R.groupBy(R.path(['stores', 0, 'id']))(missingFromOneStore))
   const missingFromBeatport = missing.find(R.pathEq(['0', 'stores', 0, 'name'], 'Spotify'))
   const missingFromSpotify = missing.find(R.pathEq(['0', 'stores', 0, 'name'], 'Beatport'))
-
-  console.log({ missing, missingFromBeatport, missingFromSpotify })
-
+  
   await pg.queryAsync(sql`
     UPDATE track
     SET track_isrc_update_time = NOW()
