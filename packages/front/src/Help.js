@@ -23,6 +23,7 @@ class Help extends Component {
   render() {
     return (
       <Joyride
+        disableScrollParentFix={true}
         steps={Object.values(this.props.steps)}
         run={this.state.active}
         spotlightClicks={true}
