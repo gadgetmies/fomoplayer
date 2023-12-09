@@ -33,7 +33,7 @@ WHERE
   return users
 }
 
-const getUsersFollowingLabel = async storeLabelId => {
+const getUsersFollowingLabel = (module.exports.getUsersFollowingLabel = async storeLabelId => {
   const [{ users }] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--getUsersFollowingLabel
@@ -46,8 +46,8 @@ WHERE
   store__label_id = ${storeLabelId}`
   )
 
-  return users
-}
+  return users || []
+})
 
 const getUsersFollowingPlaylist = async playlistId => {
   const [{ users }] = await pg.queryRowsAsync(

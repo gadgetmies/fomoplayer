@@ -65,25 +65,27 @@ module.exports.spotifyAlbumTracksTransform = L.collect([
   ])
 ])
 
+const trackOrRoot = L.choices('track', [])
 module.exports.spotifyTracksTransform = L.collect([
   L.elems,
   L.pick({
-    title: ['track', 'name'],
-    id: ['track', 'id'],
-    url: ['track', urlLens],
-    artists: L.partsOf('track', trackArtistsLens),
-    duration_ms: ['track', 'duration_ms'],
+    title: [trackOrRoot, 'name'],
+    id: [trackOrRoot, 'id'],
+    url: [trackOrRoot, urlLens],
+    artists: L.partsOf(trackOrRoot, trackArtistsLens),
+    duration_ms: [trackOrRoot, 'duration_ms'],
     release: [
-      'track',
-      L.partsOf(
+      trackOrRoot,
+      L.partsOf( // TODO: is the isrc ever defined for an album?
         L.branch({ isrc: ['external_urls', 'isrc'], album: L.pick({ id: 'id', title: 'name', url: urlLens }) })
       ),
       ([isrc, album]) => ({ isrc, ...album })
     ],
+    isrc: [trackOrRoot, 'external_ids', 'isrc'],
     track_number: 'track_number',
-    released: 'added_at',
-    published: 'added_at',
-    previews: L.partsOf(['track', previewLens]),
+    released: ['album', 'release_date'],
+    published: L.choices('added_at', ['album', 'release_date']),
+    previews: L.partsOf([trackOrRoot, previewLens]),
     store_details: []
   })
 ])

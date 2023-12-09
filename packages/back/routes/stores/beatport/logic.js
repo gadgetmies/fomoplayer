@@ -1,5 +1,5 @@
 const BPromise = require('bluebird')
-const L = require('partial.lenses')
+const R = require('ramda')
 const bpApi = require('./bp-api')
 const { processChunks } = require('../../shared/requests')
 
@@ -121,6 +121,28 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
 module.exports.search = async query => {
   const promises = [bpApiStatic.searchForArtistsAsync(query), bpApiStatic.searchForLabelsAsync(query)]
   return (await Promise.all(promises))
-    .reduce((acc, curr) => acc.concat(curr), [])
+    .reduce((acc, { results }) => acc.concat(results), [])
     .map(item => ({ ...item, store: { name: storeName.toLowerCase() } }))
+}
+
+module.exports.getTracksForISRCs = async isrcs => {
+  const tracks = (
+    await processChunks(
+      isrcs,
+      1,
+      async ([trackISRC]) => {
+        const { results, buildId } = await bpApiStatic.searchForTracksAsync(trackISRC)
+        if (results.length === 0) return []
+        // TODO: remove duplicates
+        return await bpApiStatic.getTrackQueryDataAsync(results[0].id, buildId)
+      },
+      { concurrency: 1 }
+    )
+  ).flat()
+  return R.uniq(
+    tracks
+      .map(beatportTracksTransform)
+      .flat()
+      .filter(({ isrc }) => isrcs.includes(isrc))
+  )
 }

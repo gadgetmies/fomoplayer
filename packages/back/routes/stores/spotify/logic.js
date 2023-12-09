@@ -179,3 +179,11 @@ module.exports.search = async query => {
     img: images[0]?.url
   }))
 }
+
+module.exports.getTracksForISRCs = async isrcs => {
+  const results = (
+    await processChunks(isrcs, 1, ([isrc]) => spotifyApi.searchTracks(`isrc:${isrc}`), { concurrency: 4 })
+  ).flat()
+  const tracks = results.map(R.path(['body', 'tracks', 'items'])).flat()
+  return spotifyTracksTransform(tracks)
+}

@@ -102,8 +102,7 @@ const getTitle = (uri, callback) =>
     })
   )
 
-const getArtistQueryData = (artistId, page = 1, callback) => {
-  const uri = `${beatportUri}/artist/_/${artistId}/tracks?per-page=50&page=${page}`
+const getPageQueryData = (uri, callback) => {
   request(
     uri,
     handleErrorOrCallFn(callback, res => {
@@ -124,15 +123,14 @@ const getArtistQueryData = (artistId, page = 1, callback) => {
   )
 }
 
-const getLabelQueryData = (labelId, page = 1, callback) => {
-  const uri = `${beatportUri}/label/_/${labelId}/tracks?per-page=50&page=${page}`
-  console.log(`Fetching label details from ${uri}`)
+const getTrackQueryData = (trackId, buildId, callback) => {
+  const uri = `${beatportUri}/_next/data/${buildId}/en/track/_/${trackId}.json?id=11351675`
   request(
     uri,
     handleErrorOrCallFn(callback, res => {
       try {
         if (Math.floor(res.statusCode / 100) < 4) {
-          return callback(null, getQueryData(res.body))
+          return callback(null, JSON.parse(res.body))
         } else {
           const message = `Request returned error status. URL: ${uri}`
           console.error(message)
@@ -146,25 +144,44 @@ const getLabelQueryData = (labelId, page = 1, callback) => {
   )
 }
 
+const getArtistQueryData = (artistId, page = 1, callback) => {
+  const uri = `${beatportUri}/artist/_/${artistId}/tracks?per-page=50&page=${page}`
+  getPageQueryData(uri, callback)
+}
+
+const getLabelQueryData = (labelId, page = 1, callback) => {
+  const uri = `${beatportUri}/label/_/${labelId}/tracks?per-page=50&page=${page}`
+  console.log(`Fetching label details from ${uri}`)
+  getPageQueryData(uri, callback)
+}
+
 const getSearchResults = (html, type) => {
   const queryData = getQueryData(html)
   const results = queryData.props.pageProps.dehydratedState.queries[0].state.data.data
+  return {
+    results: results.map(
+      ({ label_name, artist_name, track_name, label_id, artist_id, track_id, label_image_uri, artist_image_uri }) => {
+        const name = label_name || artist_name || track_name
+        const id = label_id || artist_id || track_id
+        return {
+          type,
+          id,
+          name,
+          img: label_image_uri || artist_image_uri,
+          url: `${beatportUri}/${type}/${encodeURI(name.toLowerCase().replace(' ', '-'))}/${id}`
+        }
+      }
+    ),
+    buildId: queryData.buildId
+  }
+}
 
-  return results.map(({ label_name, artist_name, label_id, artist_id, label_image_uri, artist_image_uri }) => {
-    const name = label_name || artist_name
-    const id = label_id || artist_id
-    return {
-      type,
-      id,
-      name,
-      img: label_image_uri || artist_image_uri,
-      url: `${beatportUri}/${type}/${encodeURI(name.toLowerCase().replace(' ', '-'))}/${id}`
-    }
-  })
+function getSearchUri(query, type = '') {
+  return `${beatportUri}/search/${type ? `${type}s` : ''}?q=${query}`
 }
 
 const search = (query, type, callback) => {
-  const uri = `${beatportUri}/search/${type}s?q=${query}`
+  const uri = getSearchUri(query, type)
   console.log(`Performing Beatport search: ${uri}`)
   request(
     uri,
@@ -189,6 +206,7 @@ const search = (query, type, callback) => {
 
 const searchForArtists = (query, callback) => search(query, 'artist', callback)
 const searchForLabels = (query, callback) => search(query, 'label', callback)
+const searchForTracks = (query, callback) => search(query, 'track', callback)
 
 const getQueryDataOnPage = (uri, callback) => {
   request(
@@ -324,11 +342,13 @@ const initializers = {
 const staticFns = {
   getArtistQueryData,
   getLabelQueryData,
+  getTrackQueryData,
   getQueryDataOnPage,
   getTitle,
   getDetails,
   searchForArtists,
-  searchForLabels
+  searchForLabels,
+  searchForTracks
 }
 
 module.exports = { ...initializers, staticFns }

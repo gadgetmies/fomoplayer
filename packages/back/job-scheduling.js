@@ -13,6 +13,7 @@ const {
   updateDateAddedScore,
   updatePurchasedScores
 } = require('./jobs/scores')
+const { findMatchingTracks } = require('./jobs/find-matching-tracks')
 const { syncCarts } = require('./jobs/cart-sync')
 const logger = require('./logger')(__filename)
 
@@ -145,7 +146,8 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
   sendNextEmailBatch,
   updateNotifications,
   updateTrackDetails,
-  syncCarts
+  syncCarts,
+  findMatchingTracks
 }
 
 module.exports = {

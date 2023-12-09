@@ -77,7 +77,7 @@ const trackTransform = L.pick({
   ]),
   label: [
     'release',
-      'label',
+    'label',
     L.pick({
       id: ['id', L.reread(idToString)],
       name: 'name',
@@ -107,16 +107,14 @@ const trackTransform = L.pick({
 module.exports.beatportTrackTransform = L.get(trackTransform)
 
 module.exports.beatportTracksTransform = L.collect([
-  'props',
+  L.choices('props',[]),
   'pageProps',
   'dehydratedState',
   'queries',
   L.elems,
   'state',
   'data',
-  'results',
-  L.filter(R.prop('sample_url')),
-  L.elems,
+  L.choices(['results', L.filter(R.prop('sample_url')), L.elems], []),
   trackTransform
 ])
 

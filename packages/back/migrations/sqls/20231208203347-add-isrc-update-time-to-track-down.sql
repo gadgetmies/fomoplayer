@@ -1,0 +1,1 @@
+ALTER TABLE track DROP COLUMN track_isrc_update_time;
