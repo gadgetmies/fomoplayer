@@ -15,6 +15,7 @@ import { apiURL } from './config'
 import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
 import { SettingsHelp } from './SettingsHelp'
+import ImportPlaylistButton from './ImportPlaylistButton'
 
 class Settings extends Component {
   unlockMarkAllHeard() {
@@ -81,7 +82,9 @@ class Settings extends Component {
       page: page || 'following',
       scoreWeights: this.props.scoreWeights,
       tracks: this.props.tracks,
-      helpActive: false
+      helpActive: false,
+      importingPlaylist: null,
+      importedPlaylists: []
     }
 
     this.markHeardButton.bind(this)
@@ -372,17 +375,17 @@ class Settings extends Component {
               </label>
               <input
                 type="radio"
-                id="settings-state-authorizations"
+                id="settings-state-integrations"
                 name="settings-state"
-                checked={this.state.page === 'authorizations'}
-                onChange={() => this.onShowPage('authorizations')}
+                checked={this.state.page === 'integrations'}
+                onChange={() => this.onShowPage('integrations')}
               />
               <label
                 className="select-button--button"
-                htmlFor="settings-state-authorizations"
-                data-help-id="authorizations-tab"
+                htmlFor="settings-state-integrations"
+                data-help-id="integrations-tab"
               >
-                Authorizations
+                Integrations
               </label>
             </div>
           </div>
@@ -826,9 +829,9 @@ class Settings extends Component {
                           Grant Fomo Player access to Spotify from the{' '}
                           <a
                             style={{ textDecoration: 'underline' }}
-                            onClick={this.onShowPage.bind(this, 'authorizations')}
+                            onClick={this.onShowPage.bind(this, 'integrations')}
                           >
-                            Authorizations tab
+                            Integrations tab
                           </a>{' '}
                           to enable synchronization
                         </p>
@@ -1103,7 +1106,7 @@ class Settings extends Component {
               <p className="input-layout">{this.markHeardButton('All tracks', '0')}</p>
             </>
           ) : null}
-          {this.state.page === 'authorizations' ? (
+          {this.state.page === 'integrations' ? (
             <>
               <p>
                 Fomo Player can synchronize your cart contents with Spotify playlists. To enable this you need to give
@@ -1136,16 +1139,69 @@ class Settings extends Component {
                     </a>{' '}
                     <span>Try this if synchronization does not work</span>
                   </p>
+                  <h5>Import playlists</h5>
+                  <p>
+                    You can import playlists from Spotify as carts to e.g. check the track availability from stores.
+                  </p>
+                  <p>
+                    <SpinnerButton
+                      loading={this.state.fetchingPlaylists}
+                      onClick={() => {
+                        this.setState({ fetchingPlaylists: true })
+                        requestJSONwithCredentials({
+                          path: `/stores/spotify/my-playlists`,
+                          method: 'GET'
+                        })
+                          .then(playlists => {
+                            this.setState({ spotifyPlaylists: playlists })
+                          })
+                          .finally(() => this.setState({ fetchingPlaylists: false }))
+                      }}
+                    >
+                      {this.state.spotifyPlaylists ? 'Refresh' : 'Get'} Spotify playlists
+                    </SpinnerButton>
+                    {this.state.spotifyPlaylists?.length === 0 ? (
+                      <h5>No playlists found</h5>
+                    ) : (
+                      this.state.spotifyPlaylists && <h5>Available playlists</h5>
+                    )}
+                    <ul className={'no-style-list'} style={{ display: 'flex', flexWrap: 'wrap' }}>
+                      {this.state.spotifyPlaylists?.map(({ id, url, name, img }) => (
+                        <li key={this.props.id}>
+                          <ImportPlaylistButton
+                            id={id}
+                            name={name}
+                            storeName="spotify"
+                            type="playlist"
+                            url={url}
+                            img={img}
+                            loading={this.state.importingPlaylist === url}
+                            disabled={this.state.importingPlaylist !== null}
+                            imported={this.state.importedPlaylists.includes(url)}
+                            onClick={(() => this.onImportPlaylistItemClick(url)).bind(this)}
+                            data-onboarding-id="follow-item"
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </p>
                 </>
               ) : (
-                <p>
-                  <a
-                    href={`${apiURL}/auth/spotify`}
-                    className="button button-push_button-small button-push_button-primary no-style-link"
-                  >
-                    Authorize
-                  </a>
-                </p>
+                <>
+                  <p>
+                    <a
+                      href={`${apiURL}/auth/spotify`}
+                      className="button button-push_button-small button-push_button-primary no-style-link"
+                    >
+                      Authorize
+                    </a>
+                  </p>
+                  <p>
+                    <strong>Note</strong>: Even when the authorization is successful, you will not be redirected back to
+                    this view (this feature is work in progress). After you return to the player, just reopen the
+                    Integrations tab.
+                  </p>
+                </>
               )}
             </>
           ) : null}
@@ -1204,6 +1260,17 @@ class Settings extends Component {
         : this.state.playlistFollows
       ).find(R.propEq('url', url))
     )
+  }
+
+  async onImportPlaylistItemClick(url) {
+    this.setState({ importingPlaylist: url })
+    const { id: playlistId } = await requestJSONwithCredentials({
+      url: `${apiURL}/me/carts`,
+      method: 'POST',
+      body: { url }
+    })
+    await this.props.onUpdateCarts()
+    this.setState({ importingPlaylist: null, importedPlaylists: [...this.state.importingPlaylist, url] })
   }
 }
 

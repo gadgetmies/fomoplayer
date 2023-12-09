@@ -36,7 +36,8 @@ const {
   setEmail,
   setFollowStarred,
   getAuthorizations,
-  removeAuthorization
+  removeAuthorization,
+  addStoreTracksToUsers
 } = require('./logic')
 
 const {
@@ -52,9 +53,9 @@ const {
 
 const typeIs = require('type-is')
 
-const { addStoreTracksToUsers } = require('../shared/tracks.js')
 const { storeName: spotifyStoreName } = require('../shared/spotify')
-const { enableCartSync, removeCartSync } = require('../shared/cart')
+const { enableCartSync, removeCartSync, importPlaylistAsCart } = require('../shared/cart')
+const { apiURL } = require('../../config')
 
 const router = require('express-promise-router')()
 
@@ -142,18 +143,7 @@ const tracksHandler = type => async (
   { body: tracks, headers: { 'x-multi-store-player-store': storeUrl }, user: { id: userId } },
   res
 ) => {
-  let addedTracks = []
-  if (!storeUrl) {
-    await addPurchasedTracksToUser(userId, tracks.map(R.prop('trackId')))
-  } else {
-    const sourceId = await insertSource({
-      operation: 'tracksHandler',
-      type,
-      storeUrl
-    })
-
-    addedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], sourceId, type)
-  }
+  const addedTracks = addStoreTracksToUsers(storeUrl, tracks, [userId], null, type)
   res.status(201).send(addedTracks)
 }
 
@@ -244,8 +234,15 @@ router.get('/carts?fetch=tracks', async ({ user: { id: userId } }, res) => {
   res.send(await getUserCartsWithTracks(userId))
 })
 
-router.post('/carts', async ({ user: { id: userId }, body: { name } }, res) => {
-  const createdCart = await createCart(userId, name)
+router.post('/carts', async ({ user: { id: userId }, body: { name, url } }, res) => {
+  let createdCart
+  if (name) {
+    createdCart = await createCart(userId, name)
+  } else if (url) {
+    createdCart = await importPlaylistAsCart(userId, url)
+  } else {
+    throw new Error('Either name or url must be provided!')
+  }
   res.send(createdCart)
 })
 

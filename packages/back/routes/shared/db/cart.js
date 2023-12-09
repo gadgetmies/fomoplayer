@@ -230,6 +230,33 @@ AND meta_account_user_id = ${userId}
   return id
 }
 
+module.exports.insertCart = async (userId, name) => {
+  await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--insertCart
+INSERT INTO cart
+  (cart_name, meta_account_user_id)
+VALUES
+  (${name}, ${userId})
+ON CONFLICT ON CONSTRAINT cart_cart_name_meta_account_user_id_key DO NOTHING
+`
+  )
+
+  const [cart] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`SELECT
+    cart_id   AS id
+  , cart_name AS name
+FROM
+    cart
+WHERE
+      cart_name = ${name}
+  AND meta_account_user_id = ${userId}`
+  )
+
+  return cart
+}
+
 module.exports.insertTracksToCart = async (cartId, trackIds) =>
   pg.queryRowsAsync(
     // language=PostgreSQL

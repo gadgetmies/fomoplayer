@@ -1,8 +1,8 @@
 const {
   queryUserCartDetails,
   queryUserCartDetailsWithTracks,
-  insertCart,
   deleteCart,
+  insertCart,
   queryCartDetails,
   updateCartProperties,
   insertTracksToCart,
@@ -23,8 +23,9 @@ const {
   createCart,
   storeName: spotifyStoreName
 } = require('./spotify')
-const { getTrackDetails } = require('./tracks')
+const { getTrackDetails, addStoreTracksToUsers } = require('./tracks')
 const { updateCartStoreVersionId, deleteUserCartStoreDetails } = require('./db/cart')
+const { getStoreModuleForPlaylistByUrl } = require('./stores')
 const logger = require('../../logger')(__filename)
 
 module.exports.getUserCarts = queryUserCartDetails
@@ -134,6 +135,15 @@ module.exports.getCartDetails = async (userId, cartId) => {
 module.exports.insertCartStoreDetails = insertCartStoreDetails
 module.exports.deleteCartStoreDetails = deleteCartStoreDetails
 module.exports.deleteUserCartStoreDetails = deleteUserCartStoreDetails
+
+module.exports.importPlaylistAsCart = async (userId, url) => {
+  const { module: storeModule } = await getStoreModuleForPlaylistByUrl(url)
+  const { title, tracks } = await storeModule.logic.getPlaylistDetailsWithTracks(url)
+  const storedTracks = await addStoreTracksToUsers(storeModule.logic.storeUrl, tracks, [], null)
+  const createdCart = await insertCart(userId, title)
+  await insertTracksToCart(createdCart.id, storedTracks)
+  return createdCart
+}
 
 module.exports.enableCartSync = async (userId, cartId, storeName) => {
   try {

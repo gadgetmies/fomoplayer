@@ -122,3 +122,17 @@ module.exports.addTracksToSyncedCart = async (userId, trackDetails, cartStoreDet
     }
   }
 }
+
+module.exports.requestUserPlaylists = async userId => {
+  const api = await getApiForUser(userId)
+  const res = await api.getUserPlaylists()
+  const {
+    body: { items }
+  } = res
+  return items.map(({ id, name, external_urls: { spotify }, images }) => ({
+    id,
+    name,
+    url: spotify,
+    img: images[0]?.url
+  }))
+}

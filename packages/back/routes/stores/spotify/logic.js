@@ -1,5 +1,5 @@
 const { BadRequest } = require('../../shared/httpErrors')
-const { spotifyApi } = require('../../shared/spotify.js')
+const { spotifyApi, requestUserPlaylists } = require('../../shared/spotify.js')
 const BPromise = require('bluebird')
 const {
   spotifyTracksTransform,
@@ -13,7 +13,11 @@ const logger = require('../../../logger')(__filename)
 
 module.exports.storeUrl = 'https://www.spotify.com'
 
-const getPlaylistDetails = async playlistId => {
+const getUserPlaylists = (module.exports.getUserPlaylists = async userId => {
+  return await requestUserPlaylists(userId)
+})
+
+const getPlaylistDetails = (module.exports.getFollowDetails = async playlistId => {
   const details = await spotifyApi.getPlaylist(playlistId)
   const {
     name: title,
@@ -21,6 +25,18 @@ const getPlaylistDetails = async playlistId => {
   } = details.body
 
   return { title, author }
+})
+
+module.exports.getPlaylistDetailsWithTracks = async playlistUrl => {
+  const playlistId = getPlaylistId(playlistUrl)
+  const generator = getPlaylistTracks({ playlistStoreId: playlistId })
+  let tracks = []
+  for await (const { tracks: t } of generator) {
+    tracks = [...tracks, ...t]
+  }
+
+  const details = await getPlaylistDetails(playlistId)
+  return { ...details, tracks }
 }
 
 const getArtistName = (module.exports.getArtistName = async url => {
@@ -142,7 +158,7 @@ const appendTrackDetails = async tracks => {
   })
 }
 
-module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
+const getPlaylistTracks = (module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
   const res = await spotifyApi.getPlaylistTracks(playlistStoreId, { market: 'US' })
   const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
   if (transformed.length === 0) {
@@ -153,7 +169,7 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
   }
 
   yield { tracks: await appendTrackDetails(transformed), errors: [] }
-}
+})
 
 module.exports.getArtistTracks = async function*({ artistStoreId }) {
   const albumIds = (await spotifyApi.getArtistAlbums(artistStoreId)).body.items.map(R.prop('id'))

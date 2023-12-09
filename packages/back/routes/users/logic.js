@@ -3,7 +3,12 @@ const R = require('ramda')
 const pg = require('../../db/pg.js')
 const { scheduleEmail } = require('../../services/mailer')
 const { insertUserPlaylistFollow } = require('../shared/db/user')
-const { updateArtistTracks, updatePlaylistTracks, updateLabelTracks } = require('../shared/tracks')
+const {
+  updateArtistTracks,
+  updatePlaylistTracks,
+  updateLabelTracks,
+  addStoreTracksToUsers
+} = require('../shared/tracks')
 const {
   getStoreModuleForArtistByUrl,
   getStoreModuleForLabelByUrl,
@@ -74,6 +79,7 @@ module.exports.removeArtistIgnoreFromUser = deleteArtistIgnoreFromUser
 
 const { removeIgnoredTracksFromUsers } = require('../shared/db/user.js')
 const { deleteUserCartStoreDetails } = require('../shared/cart')
+const { insertSource } = require('../../jobs/watches/shared/db')
 
 module.exports.queryUserTracks = queryUserTracks
 module.exports.getTracksM3u = userId =>
@@ -373,4 +379,20 @@ module.exports.getAuthorizations = queryAuthorizations
 module.exports.removeAuthorization = async (userId, storeName) => {
   await deleteUserCartStoreDetails(userId, storeName)
   await deleteAuthorization(userId, storeName)
+}
+
+module.exports.addStoreTracksToUsers = async (storeUrl, tracks, userIds, sourceId, type = 'tracks') => {
+  let storedTracks = []
+  if (!storeUrl) {
+    await addPurchasedTracksToUser(userIds, tracks.map(R.prop('trackId')))
+  } else {
+    const sourceId = await insertSource({
+      operation: 'tracksHandler',
+      type,
+      storeUrl
+    })
+
+    storedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], sourceId, type)
+  }
+  return storedTracks.map(({ trackId }) => `${apiURL}/tracks/${trackId}`)
 }

@@ -82,11 +82,11 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
 ) => {
   logger.debug('Start processing received tracks', { userIds, storeUrl })
 
-  let addedTracks = []
+  let storedTracks = []
   for (const track of tracks) {
     const trackId = await addStoreTrackToUsers(storeUrl, userIds, track, sourceId, type)
     if (trackId) {
-      addedTracks.push(`${apiURL}/tracks/${trackId}`)
+      storedTracks.push(trackId)
     }
   }
 
@@ -94,7 +94,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
     await removeIgnoredTracksFromUsers(tx, userIds)
   })
 
-  return addedTracks
+  return storedTracks
 })
 
 const addTrackToUser = (module.exports.addTrackToUser = async (tx, userId, artists, trackId, labelId, sourceId) => {
