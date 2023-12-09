@@ -1,15 +1,33 @@
 const logger = require('../../logger')(__filename)
 const router = require('express-promise-router')()
 const { runJob } = require('../../job-scheduling')
-const { mergeTracks } = require('./db')
+const { mergeTracks, queryJobLinks } = require('./db')
 
-router.post('/jobs/:name/run', async ({ user: { id: userId }, params: { name } }, res) => {
+const ensureIsAdmin = ({ user: { id: userId } }, res, next) => {
   if (process.env.NODE_ENV === 'dev' || userId === 2) {
-    logger.info(`Starting job: ${name} `)
-    res.send(await runJob(name))
+    next()
   } else {
     res.status(401).send({ error: 'Access denied' })
   }
+}
+
+router.use(ensureIsAdmin)
+router.get('/jobs', async ({ user: { id: userId } }, res) => {
+  res.send(await queryJobLinks())
+})
+
+async function startJobRun(name, res) {
+  logger.info(`Starting job: ${name} `)
+  await runJob(name)
+  res.send('Job started')
+}
+
+router.get('/jobs/:name/run', ({ user: { id: userId }, params: { name } }, res) => {
+  return startJobRun(name, res)
+})
+
+router.post('/jobs/:name/run', ({ user: { id: userId }, params: { name } }, res) => {
+  return startJobRun(name, res)
 })
 
 router.get(
