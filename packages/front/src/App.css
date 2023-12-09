@@ -616,7 +616,6 @@ input[type='radio'] + .select-icon--icon {
   position: absolute;
   display: none;
   background: black;
-  margin: 1px;
   padding: 0.5em;
   border-radius: 0.25em;
   z-index: 1;
