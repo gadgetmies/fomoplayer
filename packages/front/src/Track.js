@@ -407,7 +407,7 @@ class Track extends Component {
                 </a>
               ))
             )}{' '}
-            {beaportTrack ? null : (
+            {beaportTrack || !this.props.enabledStoreSearch.includes('Beatport') ? null : (
               <>
                 <a
                   onClick={e => e.stopPropagation()}
@@ -422,7 +422,7 @@ class Track extends Component {
                 </a>{' '}
               </>
             )}
-            {bandcampTrack ? null : (
+            {bandcampTrack || !this.props.enabledStoreSearch.includes('Bandcamp') ? null : (
               <>
                 <a
                   onClick={e => e.stopPropagation()}
@@ -437,7 +437,7 @@ class Track extends Component {
                 </a>{' '}
               </>
             )}
-            {spotifyTrack ? null : (
+            {spotifyTrack || !this.props.enabledStoreSearch.includes('Spotify') ? null : (
               <>
                 <a
                   onClick={e => e.stopPropagation()}
@@ -452,19 +452,21 @@ class Track extends Component {
                 </a>{' '}
               </>
             )}
-            <a
-              className="pill pill-link table-cell-button"
-              href={`https://www.youtube.com/results?search_query=${searchString}`}
-              title={'Search from Youtube'}
-              onClick={e => {
-                e.stopPropagation()
-              }}
-              target={'_blank'}
-            >
-              <FontAwesomeIcon icon={['fab', 'youtube']} />
-              <span className={'pill-link-text'}>Youtube</span>
-              <FontAwesomeIcon icon={'search'} />
-            </a>
+            {this.props.enabledStoreSearch.includes('Youtube') && (
+              <a
+                className="pill pill-link table-cell-button"
+                href={`https://www.youtube.com/results?search_query=${searchString}`}
+                title={'Search from Youtube'}
+                onClick={e => {
+                  e.stopPropagation()
+                }}
+                target={'_blank'}
+              >
+                <FontAwesomeIcon icon={['fab', 'youtube']} />
+                <span className={'pill-link-text'}>Youtube</span>
+                <FontAwesomeIcon icon={'search'} />
+              </a>
+            )}
             <div className={'share-button-container'}>
               <span className={'popup-anchor'}>
                 <PillButton className={'table-cell-button'}>

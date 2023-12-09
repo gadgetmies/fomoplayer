@@ -1,17 +1,20 @@
 import Preview from './Preview.js'
 import Tracks from './Tracks.js'
-import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
+import { requestWithCredentials } from './request-json-with-credentials.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import MediaSession from '@mebtte/react-media-session'
 import FollowPopup from './FollowPopup'
 import IgnorePopup from './IgnorePopup'
-import { trackTitle, artistNamesToString, trackArtistsAndTitle } from './trackFunctions'
+import { artistNamesToString, trackArtistsAndTitle, trackTitle } from './trackFunctions'
 import { PlayerHelp } from './PlayerHelp'
 
 class Player extends Component {
   constructor(props) {
     super(props)
+    const allStores = this.props.stores.map(({ storeName }) => storeName)
+    const enabledStores = JSON.parse(window.localStorage.getItem('enabledStores')) || allStores
+    const enabledStoreSearch = JSON.parse(window.localStorage.getItem('enabledStoreSearch')) || allStores
     this.state = {
       currentTrack: null,
       heardTracks: props.tracks?.heard || [],
@@ -23,7 +26,9 @@ class Player extends Component {
       requestNotificationSearch: '',
       nextDoubleClickStarted: false,
       playPauseDoubleClickStarted: false,
-      helpActive: false
+      helpActive: false,
+      enabledStores,
+      enabledStoreSearch
     }
 
     this.preview = React.createRef()
@@ -376,6 +381,32 @@ class Player extends Component {
     await this.selectCart(this.state.selectedCartId)
   }
 
+  toggleStoreEnabled(storeName) {
+    const { enabledStores } = this.state
+    const newState = enabledStores.includes(storeName)
+      ? enabledStores.filter(name => name !== storeName)
+      : [...enabledStores, storeName]
+
+    window.localStorage.setItem('enabledStores', JSON.stringify(newState))
+
+    this.setState({
+      enabledStores: newState
+    })
+  }
+
+  toggleStoreSearchEnabled(storeName) {
+    const { enabledStoreSearch } = this.state
+    const newState = enabledStoreSearch.includes(storeName)
+      ? enabledStoreSearch.filter(name => name !== storeName)
+      : [...enabledStoreSearch, storeName]
+
+    window.localStorage.setItem('enabledStoreSearch', JSON.stringify(newState))
+
+    this.setState({
+      enabledStoreSearch: newState
+    })
+  }
+
   render() {
     const tracks = this.getTracks()
     const currentTrack = this.getCurrentTrack()
@@ -467,6 +498,10 @@ class Player extends Component {
           onSearchResults={this.setSearchResults.bind(this)}
           onSelectCart={this.selectCart.bind(this)}
           onRequestNotificationUpdate={this.props.onRequestNotificationUpdate}
+          onToggleStoreEnabled={this.toggleStoreEnabled.bind(this)}
+          enabledStores={this.state.enabledStores}
+          onToggleStoreSearchEnabled={this.toggleStoreSearchEnabled.bind(this)}
+          enabledStoreSearch={this.state.enabledStoreSearch}
         />
       </div>
     )

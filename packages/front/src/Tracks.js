@@ -9,6 +9,7 @@ import './Select.css'
 import Track from './Track'
 import Spinner from './Spinner'
 import { Link } from 'react-router-dom'
+import ToggleButton from './ToggleButton'
 
 class Tracks extends Component {
   constructor(props) {
@@ -104,7 +105,7 @@ class Tracks extends Component {
     this.setState({ searchOpen: !this.state.searchOpen })
   }
 
-  renderTracks(tracks, carts) {
+  renderTracks(tracks, carts, enabledStoreSearch) {
     const emptyListLabels = {
       search:
         this.state.searchError !== undefined
@@ -112,7 +113,12 @@ class Tracks extends Component {
           : this.props.searchDebounce !== undefined
           ? 'Searching...'
           : 'No results',
-      cart: carts.length === 0 ? 'Loading carts...' : 'Cart empty',
+      cart:
+        carts.length === 0
+          ? 'Loading carts...'
+          : this.props.tracks.length === 0
+          ? 'Cart empty'
+          : 'No tracks matching filters',
       new: (
         <>
           No tracks available. Perhaps you need to{' '}
@@ -200,6 +206,7 @@ class Tracks extends Component {
               playing={this.props.currentTrack === id}
               version={version}
               heard={heard}
+              enabledStoreSearch={enabledStoreSearch}
               inDefaultCart={defaultCart ? defaultCart.tracks?.find(R.propEq('id', id)) !== undefined : false}
               selectedCart={this.props.selectedCart}
               inCurrentCart={inCarts.find(({ id }) => id === selectedCartId) !== undefined}
@@ -562,7 +569,62 @@ class Tracks extends Component {
                 </th>
               ) : null}
               <th className={'open-share-cell tracks-cell'}>
-                <div className={'open-cell track-table-cell'}>Open / Share</div>
+                <div className={'open-cell track-table-cell'} style={{ position: 'relative' }}>
+                  <div className={'popup-anchor'}>
+                    <span
+                      className={` ${this.props.enabledStores.length < this.props.stores.length && 'filter-active'}`}
+                    >
+                      Open / Share {this.props.listState === 'cart' && <FontAwesomeIcon icon="caret-down" />}
+                    </span>
+                  </div>
+                  {this.props.listState === 'cart' && (
+                    <div className={'popup-content header-popup'}>
+                      <div>Show tracks available on:</div>
+                      {this.props.stores.map(({ storeName }) => {
+                        const elementId = `${storeName}-enabled`
+                        return (
+                          <div
+                            className="input-layout"
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}
+                          >
+                            <label htmlFor={elementId} className="noselect" style={{ flex: 1, textAlign: 'left' }}>
+                              {storeName}
+                            </label>
+                            <div style={{ display: 'flex', justifyContent: 'space-around', flex: 1 }}>
+                              <ToggleButton
+                                id={elementId}
+                                checked={this.props.enabledStores.includes(storeName)}
+                                onChange={() => this.props.onToggleStoreEnabled(storeName)}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                      <hr className={'popup-divider'} />
+                      <div>Show search for:</div>
+                      {[...this.props.stores, { storeName: 'Youtube' }].map(({ storeName }) => {
+                        const elementId = `${storeName}-search-enabled`
+                        return (
+                          <div
+                            className="input-layout"
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}
+                          >
+                            <label htmlFor={elementId} className="noselect" style={{ flex: 1, textAlign: 'left' }}>
+                              {storeName}
+                            </label>
+                            <div style={{ display: 'flex', justifyContent: 'space-around', flex: 1 }}>
+                              <ToggleButton
+                                id={elementId}
+                                checked={this.props.enabledStoreSearch.includes(storeName)}
+                                onChange={() => this.props.onToggleStoreSearchEnabled(storeName)}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               </th>
             </tr>
           </thead>
@@ -578,7 +640,15 @@ class Tracks extends Component {
                 {scrollToCurrentButton}
               </td>
             </tr>
-            {this.renderTracks(this.props.tracks, this.props.carts)}
+            {this.renderTracks(
+              this.props.listState === 'cart'
+                ? this.props.tracks.filter(({ stores }) =>
+                    this.props.enabledStores.some(storeName => stores.find(R.propEq('name', storeName)))
+                  )
+                : this.props.tracks,
+              this.props.carts,
+              this.props.enabledStoreSearch
+            )}
             {this.props.listState === 'new' ? (
               <tr style={{ display: 'flex' }}>
                 <td style={{ flex: 1 }}>

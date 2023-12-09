@@ -639,6 +639,20 @@ input[type='radio'] + .select-icon--icon {
   border-bottom: 1px solid gray;
 }
 
+.header-popup {
+  left: 50%;
+  margin-left: -80px;
+  width: 160px;
+  box-sizing: border-box;
+  padding: 1em;
+}
+
+.filter-active {
+  background-color: #b40089;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
 .keyboard-shortcut {
   text-align: center;
   width: 1.5em;
