@@ -76,7 +76,11 @@ const getSpotifyTrackUris = (module.exports.getSpotifyTrackUris = tracks =>
 
 const setCartTracks = (module.exports.setCartTracks = async (api, cartStoreId, tracks) => {
   const spotifyTrackUrls = getSpotifyTrackUris(tracks)
-  await api.replaceTracksInPlaylist(cartStoreId, spotifyTrackUrls)
+  const chunks = R.splitEvery(100, spotifyTrackUrls)
+  await api.replaceTracksInPlaylist(cartStoreId, chunks[0])
+  for (const chunk of chunks.slice(1)) {
+    await api.addTracksToPlaylist(cartStoreId, chunk)
+  }
 })
 
 module.exports.createCart = async (userId, cartName, tracks) => {
