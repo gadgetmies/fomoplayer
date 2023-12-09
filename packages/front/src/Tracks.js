@@ -515,6 +515,9 @@ class Tracks extends Component {
                   </span>
                 )}
               </div>
+              <span className="select-button--button select-button--button">
+                Tracks in cart: {this.props.tracks.length}
+              </span>
             </div>
           )}
         </div>
