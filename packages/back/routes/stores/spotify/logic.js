@@ -12,6 +12,7 @@ const { processChunks } = require('../../shared/requests')
 const logger = require('../../../logger')(__filename)
 
 module.exports.storeUrl = 'https://www.spotify.com'
+module.exports.storeName = storeName
 
 const getUserPlaylists = (module.exports.getUserPlaylists = async userId => {
   return await requestUserPlaylists(userId)

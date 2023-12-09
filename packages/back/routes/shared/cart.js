@@ -140,7 +140,7 @@ module.exports.importPlaylistAsCart = async (userId, url) => {
   const { module: storeModule } = await getStoreModuleForPlaylistByUrl(url)
   const { title, tracks } = await storeModule.logic.getPlaylistDetailsWithTracks(url)
   const storedTracks = await addStoreTracksToUsers(storeModule.logic.storeUrl, tracks, [], null)
-  const createdCart = await insertCart(userId, title)
+  const createdCart = await insertCart(userId, `${storeModule.storeName}: ${title}`)
   await insertTracksToCart(createdCart.id, storedTracks)
   return createdCart
 }
