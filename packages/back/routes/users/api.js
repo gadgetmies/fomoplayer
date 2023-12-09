@@ -152,7 +152,7 @@ const tracksHandler = type => async (
       storeUrl
     })
 
-    addedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], type, sourceId)
+    addedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], sourceId, type)
   }
   res.status(201).send(addedTracks)
 }

@@ -77,8 +77,8 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   storeUrl,
   tracks,
   userIds,
-  type,
-  sourceId
+  sourceId,
+  type = 'tracks'
 ) => {
   logger.debug('Start processing received tracks', { userIds })
 
@@ -163,7 +163,7 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
 
     try {
       combinedErrors.concat(errors)
-      await addStoreTracksToUsers(storeUrl, tracks, users, 'tracks', sourceId)
+      await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
     } catch (e) {
       const error = [`Failed to add artist tracks to users`, { error: e.toString(), sourceId, details }]
       combinedErrors.push(error)
