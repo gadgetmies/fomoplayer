@@ -358,7 +358,6 @@ class App extends Component {
   }
 
   openMenu() {
-    console.log('open menu')
     debugger
     this.refs['slideout'].open()
   }

@@ -1037,7 +1037,7 @@ SELECT EXISTS (SELECT 1
     )
 
     if (!subscriptionsExist) {
-      console.log('no stores exits, removing notification')
+      logger.info('no stores exits, removing notification')
       tx.queryAsync(
         // language=PostgreSQL
         sql`--deleteNotification
