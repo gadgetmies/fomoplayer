@@ -239,7 +239,12 @@ router.post('/carts', async ({ user: { id: userId }, body: { name, url } }, res)
   if (name) {
     createdCart = await createCart(userId, name)
   } else if (url) {
-    createdCart = await importPlaylistAsCart(userId, url)
+    try {
+      createdCart = await importPlaylistAsCart(userId, url)
+    } catch (e) {
+      logger.error(`Failed to import playlist from url: ${url}`, e)
+      return res.status(500).send({ error: `Failed to import playlist from url: ${url}`})
+    }
   } else {
     throw new Error('Either name or url must be provided!')
   }
