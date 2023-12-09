@@ -83,8 +83,8 @@ module.exports.spotifyTracksTransform = L.collect([
     ],
     isrc: [trackOrRoot, 'external_ids', 'isrc'],
     track_number: 'track_number',
-    released: ['album', 'release_date'],
-    published: L.choices('added_at', ['album', 'release_date']),
+    released: [trackOrRoot, 'album', 'release_date'],
+    published: L.choices('added_at', [trackOrRoot, 'album', 'release_date']),
     previews: L.partsOf([trackOrRoot, previewLens]),
     store_details: []
   })
