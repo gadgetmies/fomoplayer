@@ -43,4 +43,8 @@ router.get(
   }
 )
 
+router.get('/info', async (_, res) => {
+  res.send({ version: process.env.RAILWAY_GIT_COMMIT_SHA })
+})
+
 module.exports = router

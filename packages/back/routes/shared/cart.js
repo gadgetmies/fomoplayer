@@ -137,10 +137,14 @@ module.exports.deleteCartStoreDetails = deleteCartStoreDetails
 module.exports.deleteUserCartStoreDetails = deleteUserCartStoreDetails
 
 module.exports.importPlaylistAsCart = async (userId, url) => {
+  logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}`)
   const { module: storeModule } = await getStoreModuleForPlaylistByUrl(url)
   const { title, tracks } = await storeModule.logic.getPlaylistDetailsWithTracks(url)
+  logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}`, tracks.length)
   const storedTracks = await addStoreTracksToUsers(storeModule.logic.storeUrl, tracks, [], null)
+  logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}`, storedTracks)
   const createdCart = await insertCart(userId, `${storeModule.storeName}: ${title}`)
+  logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}`, createdCart)
   await insertTracksToCart(createdCart.id, storedTracks)
   return createdCart
 }

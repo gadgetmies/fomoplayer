@@ -52,6 +52,7 @@ async function processMissingSpotifyTracks(missingFromSpotify, sourceId) {
 }
 
 module.exports.findMatchingTracks = async jobDetails => {
+  logger.debug('findMatchingTracks', { jobDetails })
   const sourceId = await insertSource({ operation: 'findMatchingTracks', jobDetails })
 
   const missingFromOneStore = await pg.queryRowsAsync(sql`
