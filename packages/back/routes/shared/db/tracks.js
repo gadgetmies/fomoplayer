@@ -26,3 +26,20 @@ module.exports.queryTrackDetails = async trackIds =>
 SELECT * FROM track_details(${trackIds})
     `
   )
+
+module.exports.queryStoredTracksForUrls = async urls => {
+  const [{ track_details }] = await pg.queryRowsAsync(
+    //language=PostgreSQL
+    sql`-- queryStoredTracksForUrls
+    WITH tracks AS (SELECT JSON_AGG(JSON_BUILD_OBJECT('id', track_id, 'url', store__track_url)) AS track_details
+                    FROM
+                      track
+                      NATURAL JOIN store__track
+                    WHERE store__track_url = ANY (${urls}))
+    SELECT CASE WHEN track_details IS NULL THEN '[]'::JSON ELSE track_details END AS track_details
+    FROM
+      tracks
+    `
+  )
+  return track_details
+}

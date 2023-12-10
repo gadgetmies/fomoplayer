@@ -1,5 +1,6 @@
 const pg = require('../../db/pg.js')
 const sql = require('sql-template-strings')
+const R = require('ramda')
 const { setArtistUpdated, setPlaylistUpdated, setLabelUpdated } = require('./db/watch')
 const { modules: storeModules } = require('../stores/index.js')
 const { using } = require('bluebird')
@@ -14,7 +15,7 @@ const {
   artistOnLabelInIgnore
 } = require('../users/db.js')
 const { apiURL } = require('../../config.js')
-const { queryTracksForStoreIds, queryTrackDetails } = require('./db/tracks')
+const { queryTracksForStoreIds, queryTrackDetails, queryStoredTracksForUrls } = require('./db/tracks')
 const { queryLabelForRelease } = require('./db/release')
 
 const getUsersFollowingArtist = async storeArtistId => {
@@ -82,11 +83,11 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
 ) => {
   logger.debug('Start processing received tracks', { userIds, storeUrl })
 
-  let storedTracks = []
-  for (const track of tracks) {
+  let storedTracks = await queryStoredTracksForUrls(tracks.map(R.prop('url')))
+  for (const track of tracks.filter(({ url }) => !storedTracks.find(R.propEq('url', url)))) {
     const trackId = await addStoreTrackToUsers(storeUrl, userIds, track, sourceId, type)
     if (trackId) {
-      storedTracks.push(trackId)
+      storedTracks.push({ id: trackId })
     }
   }
 
@@ -94,7 +95,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
     await removeIgnoredTracksFromUsers(tx, userIds)
   })
 
-  return storedTracks
+  return storedTracks.map(R.prop('id'))
 })
 
 const addTrackToUser = (module.exports.addTrackToUser = async (tx, userId, artists, trackId, labelId, sourceId) => {
