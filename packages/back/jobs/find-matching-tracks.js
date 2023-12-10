@@ -9,12 +9,13 @@ const beatportModule = require('../routes/stores/beatport/logic')
 const spotifyModule = require('../routes/stores/spotify/logic')
 
 async function processMissingBeatportTracks(missingFromBeatport, sourceId) {
+  logger.debug('Prosessing missing Beatport tracks', { missingFromBeatport })
   let beatportTracks = []
   try {
     beatportTracks = missingFromBeatport
       ? await beatportModule.getTracksForISRCs(missingFromBeatport.map(R.prop('isrc')))
       : []
-
+    logger.debug('Beatport tracks for ISRCs', { beatportTracks })
     const beatportLabelTracks = R.groupBy(R.path(['label', 'id']))(beatportTracks)
     for (const [labelId, tracks] of Object.entries(beatportLabelTracks)) {
       // TODO: optimise to use only one query
@@ -22,8 +23,10 @@ async function processMissingBeatportTracks(missingFromBeatport, sourceId) {
         continue
       }
       const users = await getUsersFollowingLabel(labelId)
+      logger.debug('Adding missing tracks to users following label', { labelId, users, tracks })
       await addStoreTracksToUsers(beatportModule.storeUrl, tracks, users, sourceId)
     }
+    logger.debug('Beatport tracks added to users', { beatportTracks })
     return { errors: [] }
   } catch (e) {
     logger.error('Beatport ISRC search failed', e)
@@ -32,12 +35,15 @@ async function processMissingBeatportTracks(missingFromBeatport, sourceId) {
 }
 
 async function processMissingSpotifyTracks(missingFromSpotify, sourceId) {
+  logger.debug('Prosessing missing Spotify tracks', { missingFromSpotify })
   let spotifyTracks = []
   try {
     spotifyTracks = missingFromSpotify
       ? await spotifyModule.getTracksForISRCs(missingFromSpotify.map(R.prop('isrc')))
       : []
+    logger.debug('Spotify tracks for ISRCs', { spotifyTracks })
     await addStoreTracksToUsers(spotifyModule.storeUrl, spotifyTracks, [], sourceId)
+    logger.debug('Spotify tracks added to users', { spotifyTracks })
     return { errors: [] }
   } catch (e) {
     logger.error('Spotify ISRC search failed', e)
