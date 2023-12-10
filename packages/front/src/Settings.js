@@ -778,7 +778,7 @@ class Settings extends Component {
                 {this.props.carts.map(({ id, is_default, is_public, is_purchased, name, uuid }) => {
                   const buttonId = `sharing-${id}`
                   const publicLink = new URL(`/cart/${uuid}`, window.location).toString()
-                  const spotifyStoreDetails = this.state.syncedCarts[id].find(
+                  const spotifyStoreDetails = this.state.syncedCarts[id]?.find(
                     ({ store_name }) => store_name === 'Spotify'
                   )
                   return (
