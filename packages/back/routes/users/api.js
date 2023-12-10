@@ -1,12 +1,10 @@
 const logger = require('../../logger')(__filename)
-const R = require('ramda')
 const { insertSource } = require('../../jobs/watches/shared/db')
 const {
   addArtistsOnLabelsToIgnore,
   addArtistsToIgnore,
   addLabelsToIgnore,
   addReleasesToIgnore,
-  addPurchasedTracksToUser,
   addArtistFollowsWithIds,
   addLabelFollowsWithIds,
   getTracksM3u,
