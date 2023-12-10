@@ -143,7 +143,7 @@ module.exports.importPlaylistAsCart = async (userId, url) => {
   logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}`, tracks.length)
   const storedTracks = await addStoreTracksToUsers(storeModule.logic.storeUrl, tracks, [], null)
   logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}`, storedTracks)
-  const createdCart = await insertCart(userId, `${storeModule.storeName}: ${title}`)
+  const createdCart = await insertCart(userId, `${storeModule.logic.storeName}: ${title}`)
   logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}`, createdCart)
   await insertTracksToCart(createdCart.id, storedTracks)
   return createdCart
