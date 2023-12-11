@@ -14,13 +14,13 @@ const {
 
 const userId = 1
 
-const addTracks = (module.exports.addTracks = async (tracks, type = 'new') => {
+const addTracks = (module.exports.addTracks = async (tracks, skipOld, type = 'new') => {
   const sourceId = await insertSource({
     operation: 'tracksHandlerTest',
     type: 'new',
     storeUrl: beatportUrl
   })
-  const addedTracks = await addStoreTracksToUsers(beatportUrl, tracks, [userId], type, sourceId)
+  const addedTracks = await addStoreTracksToUsers(beatportUrl, tracks, [userId], sourceId, skipOld, type)
 
   return {
     sourceId,
@@ -29,10 +29,10 @@ const addTracks = (module.exports.addTracks = async (tracks, type = 'new') => {
 })
 
 const addNewBeatportTracksToDb = (module.exports.addNewBeatportTracksToDb = async tracks =>
-  await addTracks(beatportTracksTransform(tracks)))
+  await addTracks(beatportTracksTransform(tracks), true))
 
 const addPurchasedBeatportTracksToDb = (module.exports.addPurchasedBeatportTracksToDb = async tracks =>
-  await addTracks(beatportLibraryTransform(tracks), 'purchased'))
+  await addTracks(beatportLibraryTransform(tracks), false, 'purchased'))
 
 const removeTracks = (module.exports.removeTracks = async trackIds =>
   await pg.queryRowsAsync(

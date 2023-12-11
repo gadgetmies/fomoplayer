@@ -55,7 +55,7 @@ GROUP BY
             playlist.tracks.items.filter(({ track: { uri } }) => added.includes(uri))
           )
 
-          const addedTracks = await addStoreTracksToUsers(storeUrl, newTrackInCart, [userId])
+          const addedTracks = await addStoreTracksToUsers(storeUrl, newTrackInCart, [userId], null, false)
           await addTracksToCart(userId, cartId, addedTracks)
         } catch (e) {
           logger.error(`Updating cart ${cartId} to match playlist ${cartStoreId} failed`, e)

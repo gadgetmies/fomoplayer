@@ -24,7 +24,7 @@ async function processMissingBeatportTracks(missingFromBeatport, sourceId) {
       }
       const users = await getUsersFollowingLabel(labelId)
       logger.debug('Adding missing tracks to users following label', { labelId, users, tracks })
-      await addStoreTracksToUsers(beatportModule.storeUrl, tracks, users, sourceId)
+      await addStoreTracksToUsers(beatportModule.storeUrl, tracks, users, sourceId, false)
     }
     logger.debug('Beatport tracks added to users', { beatportTracks })
     return { errors: [] }
@@ -42,7 +42,7 @@ async function processMissingSpotifyTracks(missingFromSpotify, sourceId) {
       ? await spotifyModule.getTracksForISRCs(missingFromSpotify.map(R.prop('isrc')))
       : []
     logger.debug('Spotify tracks for ISRCs', { spotifyTracks })
-    await addStoreTracksToUsers(spotifyModule.storeUrl, spotifyTracks, [], sourceId)
+    await addStoreTracksToUsers(spotifyModule.storeUrl, spotifyTracks, [], sourceId, false)
     logger.debug('Spotify tracks added to users', { spotifyTracks })
     return { errors: [] }
   } catch (e) {

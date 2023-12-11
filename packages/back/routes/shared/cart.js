@@ -139,12 +139,15 @@ module.exports.deleteUserCartStoreDetails = deleteUserCartStoreDetails
 module.exports.importPlaylistAsCart = async (userId, url) => {
   logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}`)
   const { module: storeModule } = await getStoreModuleForPlaylistByUrl(url)
+  // TODO: Only available in Spotify for now
   const { title, tracks } = await storeModule.logic.getPlaylistDetailsWithTracks(url)
-  logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}`, tracks.length)
-  const storedTracks = await addStoreTracksToUsers(storeModule.logic.storeUrl, tracks, [], null)
-  logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}`, storedTracks)
+  logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}, tracks: ${tracks.length}`)
+  const storedTracks = await addStoreTracksToUsers(storeModule.logic.storeUrl, tracks, [], null, false)
+  logger.debug(
+    `Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}, tracks: ${storedTracks.length}`
+  )
   const createdCart = await insertCart(userId, `${storeModule.logic.storeName}: ${title}`)
-  logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}`, createdCart)
+  logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}, cart: ${createdCart.id}`)
   await insertTracksToCart(createdCart.id, storedTracks)
   return createdCart
 }

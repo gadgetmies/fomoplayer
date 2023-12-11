@@ -141,7 +141,7 @@ const tracksHandler = type => async (
   { body: tracks, headers: { 'x-multi-store-player-store': storeUrl }, user: { id: userId } },
   res
 ) => {
-  const addedTracks = addStoreTracksToUsers(storeUrl, tracks, [userId], null, type)
+  const addedTracks = addStoreTracksToUsers(storeUrl, tracks, [userId], null, true, type)
   res.status(201).send(addedTracks)
 }
 
@@ -241,7 +241,7 @@ router.post('/carts', async ({ user: { id: userId }, body: { name, url } }, res)
       createdCart = await importPlaylistAsCart(userId, url)
     } catch (e) {
       logger.error(`Failed to import playlist from url: ${url}`, e)
-      return res.status(500).send({ error: `Failed to import playlist from url: ${url}`})
+      return res.status(500).send({ error: `Failed to import playlist from url: ${url}` })
     }
   } else {
     throw new Error('Either name or url must be provided!')

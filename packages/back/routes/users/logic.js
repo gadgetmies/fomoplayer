@@ -381,7 +381,7 @@ module.exports.removeAuthorization = async (userId, storeName) => {
   await deleteAuthorization(userId, storeName)
 }
 
-module.exports.addStoreTracksToUsers = async (storeUrl, tracks, userIds, sourceId, type = 'tracks') => {
+module.exports.addStoreTracksToUsers = async (storeUrl, tracks, userIds, sourceId, skipOld, type = 'tracks') => {
   let storedTracks = []
   if (!storeUrl) {
     await addPurchasedTracksToUser(userIds, tracks.map(R.prop('trackId')))
@@ -392,7 +392,7 @@ module.exports.addStoreTracksToUsers = async (storeUrl, tracks, userIds, sourceI
       storeUrl
     })
 
-    storedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], sourceId, type)
+    storedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], sourceId, skipOld, type)
   }
   return storedTracks.map(({ trackId }) => `${apiURL}/tracks/${trackId}`)
 }

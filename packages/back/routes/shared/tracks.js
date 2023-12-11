@@ -79,17 +79,25 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   tracks,
   userIds,
   sourceId,
+  skipOld = true,
   type = 'tracks'
 ) => {
-  logger.debug('Start processing received tracks', { userIds, storeUrl })
+  logger.debug('Start processing received tracks', { userIds, storeUrl, skipOld, type })
 
   let storedTracks = await queryStoredTracksForUrls(tracks.map(R.prop('url')))
   for (const track of tracks.filter(({ url }) => !storedTracks.find(R.propEq('url', url)))) {
-    const trackId = await addStoreTrackToUsers(storeUrl, userIds, track, sourceId, type)
-    if (trackId) {
-      storedTracks.push({ id: trackId })
+    try {
+      const trackId = await addStoreTrackToUsers(storeUrl, userIds, track, sourceId, skipOld, type)
+      logger.debug(`Stored track: ${trackId}`)
+      if (trackId) {
+        storedTracks.push({ id: trackId })
+      }
+    } catch (e) {
+      logger.error(`Failed to add track to users`, e)
     }
   }
+
+  logger.info(`Stored tracks: ${storedTracks.length}`)
 
   await using(pg.getTransaction(), async tx => {
     await removeIgnoredTracksFromUsers(tx, userIds)
@@ -107,12 +115,14 @@ const addTrackToUser = (module.exports.addTrackToUser = async (tx, userId, artis
 })
 
 const aYear = 1000 * 60 * 60 * 24 * 30 * 12
-const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, type = 'tracks') => {
+const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld = true, type = 'tracks') => {
   return using(pg.getTransaction(), async tx => {
     let labelId
     let releaseId
 
-    if (Date.now() - new Date(track.published) < 2 * aYear) {
+    if (skipOld && Date.now() - new Date(track.published) > 2 * aYear) {
+      logger.info(`Track too old, skipping: ${track.url}`)
+    } else {
       if (track.release) {
         releaseId = await ensureReleaseExists(tx, storeUrl, track.release, sourceId)
       }

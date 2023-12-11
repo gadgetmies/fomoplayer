@@ -30,8 +30,10 @@ const previewLens = [
   })
 ]
 
-const releaseDateLens = releaseDate =>
-  R.always(releaseDate.length > 7 ? releaseDate : releaseDate.length > 4 ? `${releaseDate}-01` : `${releaseDate}-01-01`)
+const padDate = date => (date.length > 7 ? date : date.length > 4 ? `${date}-01` : `${date}-01-01`)
+const releaseDateLens = releaseDate => {
+  return R.always(padDate(releaseDate))
+}
 
 module.exports.spotifyAlbumTracksTransform = L.collect([
   L.elems,
@@ -83,8 +85,8 @@ module.exports.spotifyTracksTransform = L.collect([
     ],
     isrc: [trackOrRoot, 'external_ids', 'isrc'],
     track_number: 'track_number',
-    released: [trackOrRoot, 'album', 'release_date'],
-    published: L.choices('added_at', [trackOrRoot, 'album', 'release_date']),
+    released: [trackOrRoot, 'album', 'release_date', padDate],
+    published: L.choices('added_at', [trackOrRoot, 'album', 'release_date'], padDate),
     previews: L.partsOf([trackOrRoot, previewLens]),
     store_details: []
   })
