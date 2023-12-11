@@ -114,7 +114,7 @@ module.exports.beatportTracksTransform = L.collect([
   L.elems,
   'state',
   'data',
-  L.choices(['results', L.filter(R.prop('sample_url')), L.elems], []),
+  L.choices(['results', L.filter(R.prop('sample_url')), L.elems], [L.satisfying(R.prop('sample_url'))]),
   trackTransform
 ])
 
