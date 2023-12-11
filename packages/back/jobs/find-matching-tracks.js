@@ -80,7 +80,7 @@ module.exports.findMatchingTracks = async jobDetails => {
   const missing = Object.values(R.groupBy(R.path(['stores', 0, 'id']))(missingFromOneStore))
   const missingFromBeatport = missing.find(R.pathEq(['0', 'stores', 0, 'name'], 'Spotify'))
   const missingFromSpotify = missing.find(R.pathEq(['0', 'stores', 0, 'name'], 'Beatport'))
-  
+
   await pg.queryAsync(sql`
     UPDATE track
     SET track_isrc_update_time = NOW()
