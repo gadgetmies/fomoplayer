@@ -59,9 +59,13 @@ const getTrackInfo = (module.exports.getTrackInfo = async url => {
   return transformed
 })
 
+function trackInfo([{ url }]) {
+  return getTrackInfo(url)
+}
+
 const appendTrackNumbers = async tracks => {
   try {
-    const trackInfos = await processChunks(tracks, 4, ([{ url }]) => getTrackInfo(url), { concurrency: 4 })
+    const trackInfos = await processChunks(tracks, 4, trackInfo, { concurrency: 4 })
 
     // TODO: yield
     return tracks.map(({ id, ...rest }) => ({

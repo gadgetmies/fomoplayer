@@ -99,7 +99,8 @@ module.exports.getFollowDetails = async urlString => {
   return []
 }
 
-const getTracks = (module.exports.getTracks = async trackIds => {
+module.exports.getTracks = getTracks
+async function getTracks(trackIds) {
   const { body, statusCode } = await spotifyApi.getTracks(trackIds)
 
   if (statusCode !== 200) {
@@ -119,9 +120,10 @@ const getTracks = (module.exports.getTracks = async trackIds => {
   }
 
   return trackInfos
-})
+}
 
-const getTrackAudioFeatures = (module.exports.getTrackAudioFeatures = async trackIds => {
+module.exports.getTrackAudioFeatures = getTrackAudioFeatures
+async function getTrackAudioFeatures(trackIds) {
   const { body, statusCode } = await spotifyApi.getAudioFeaturesForTracks(trackIds)
 
   if (statusCode !== 200) {
@@ -141,7 +143,7 @@ const getTrackAudioFeatures = (module.exports.getTrackAudioFeatures = async trac
   }
 
   return trackAudioFeatures
-})
+}
 
 const appendTrackDetails = async tracks => {
   const trackIds = tracks.map(({ id }) => id)
@@ -203,10 +205,12 @@ module.exports.search = async query => {
   }))
 }
 
+function processIsrc([isrc]) {
+  return spotifyApi.searchTracks(`isrc:${isrc}`)
+}
+
 module.exports.getTracksForISRCs = async isrcs => {
-  const results = (
-    await processChunks(isrcs, 1, ([isrc]) => spotifyApi.searchTracks(`isrc:${isrc}`), { concurrency: 4 })
-  ).flat()
+  const results = (await processChunks(isrcs, 1, processIsrc, { concurrency: 4 })).flat()
   const tracks = results.map(R.path(['body', 'tracks', 'items'])).flat()
   return spotifyTracksTransform(tracks)
 }
