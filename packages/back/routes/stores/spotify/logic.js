@@ -41,6 +41,7 @@ module.exports.getPlaylistDetailsWithTracks = async playlistUrl => {
   for await (const { tracks: t } of generator) {
     tracks = [...tracks, ...t]
   }
+  logger.info(`Got ${tracks.length} tracks for playlist ${playlistId}`)
 
   const details = await getPlaylistDetails(playlistId)
   return { ...details, tracks }
