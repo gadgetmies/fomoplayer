@@ -65,8 +65,11 @@ module.exports.findMatchingTracks = async jobDetails => {
       NATURAL JOIN store__track
       NATURAL JOIN store
     WHERE store_name IN ('Spotify', 'Beatport')
-      AND track_isrc_update_time IS NULL
-       OR track_isrc_update_time < NOW() - INTERVAL '1 day'
+      AND track_isrc IS NOT NULL
+      AND (
+        track_isrc_update_time IS NULL
+        OR track_isrc_update_time < NOW() - INTERVAL '1 day'
+      )
     GROUP BY track_id, track_isrc, track_isrc_update_time
     HAVING COUNT(store_id) < 2
     ORDER BY track_isrc_update_time DESC
