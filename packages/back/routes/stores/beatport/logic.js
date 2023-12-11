@@ -70,7 +70,7 @@ const appendTrackNumbers = async tracks => {
       track_number: trackInfos.find(track => id === track?.id)?.track_number
     }))
   } catch (e) {
-    logger.error(`appendTrackNumbers failed: ${e.toString()}`)
+    logger.error(`appendTrackNumbers failed: ${e.toString().substring(0, 100)}`)
   }
 }
 
