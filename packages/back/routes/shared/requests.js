@@ -12,8 +12,11 @@ const safeCall = async (fn, ...args) => {
       `safeCall failed for function: '${fn.name}' with arguments: '${JSON.stringify(args).substring(
         0,
         100
-      )}', ${JSON.stringify(e)}`,
-      e
+      )}', ${JSON.stringify(e).substring(0, 100)}`,
+      {
+        ...e,
+        message: e.message.substring(0, 100)
+      }
     )
   }
 }
