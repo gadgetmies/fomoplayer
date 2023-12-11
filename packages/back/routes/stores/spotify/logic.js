@@ -15,7 +15,13 @@ module.exports.storeUrl = 'https://www.spotify.com'
 module.exports.storeName = storeName
 
 const getUserPlaylists = (module.exports.getUserPlaylists = async userId => {
-  return await requestUserPlaylists(userId)
+  logger.info('Fetching user playlists from Spotify', { userId })
+  try {
+    return await requestUserPlaylists(userId)
+  } catch (e) {
+    logger.error(`Fetching user (${userId}) playlists from Spotify failed`, e)
+    throw e
+  }
 })
 
 const getPlaylistDetails = (module.exports.getFollowDetails = async playlistId => {
