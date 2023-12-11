@@ -29,7 +29,7 @@ class ImportPlaylistButton extends Component {
           style={{
             margin: '2px 4px 6px 4px',
             textOverflow: 'ellipsis',
-            textWrap: 'nowrap',
+            whiteSpace: 'nowrap',
             width: 100,
             overflow: 'hidden'
           }}
