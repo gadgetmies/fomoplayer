@@ -121,7 +121,7 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
     let releaseId
 
     if (skipOld && Date.now() - new Date(track.published) > 2 * aYear) {
-      logger.info(`Track too old, skipping: ${track.url}`)
+      logger.info(`Track too old, skipping: ${track.id}`)
     } else {
       if (track.release) {
         releaseId = await ensureReleaseExists(tx, storeUrl, track.release, sourceId)
