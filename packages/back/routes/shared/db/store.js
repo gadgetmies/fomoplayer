@@ -374,20 +374,17 @@ WHERE
       .queryRowsAsync(
         // language=PostgreSQL
         sql`-- addStoreTrack SELECT track_id 2
-        SELECT
-            track_id
+        SELECT track_id
         FROM
-            track
-                NATURAL JOIN track__artist
-                NATURAL JOIN artist
-        WHERE
-            LOWER(track_title) = LOWER(${track.title})
-          AND (${track.version}::TEXT IS NULL OR LOWER(track_version) = LOWER(${track.version}))
-        GROUP BY
-            track_id
-        HAVING
-            ARRAY_AGG(artist_id ORDER BY artist_id) = ${R.pluck('id', sortedArtists)}
-          AND ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedArtists)}
+          track
+          NATURAL JOIN track__artist
+          NATURAL JOIN artist
+        WHERE LOWER(track_title) = LOWER(${track.title})
+          AND ((${track.version}::TEXT IS NULL AND track_version IS NULL) OR
+               LOWER(track_version) = LOWER(${track.version}))
+        GROUP BY track_id
+        HAVING ARRAY_AGG(artist_id ORDER BY artist_id) = ${R.pluck('id', sortedArtists)}
+           AND ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedArtists)}
         `
       )
       .then(getTrackIdFromResult)
