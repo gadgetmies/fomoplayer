@@ -332,10 +332,9 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
 
   const sortedArtists = R.sortBy(R.prop('id'), artists)
 
-  let trackId = await tx
-    .queryRowsAsync(
-      // language=PostgreSQL
-      sql`-- addStoreTrack SELECT track_id 1
+  const res = await tx.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- addStoreTrack SELECT track_id 1
 SELECT
     track_id
 FROM
@@ -351,11 +350,26 @@ WHERE
              AND release__track_track_number = ${track.track_number})
   OR track_isrc = ${track.isrc}
     `
-    )
-    .then(getTrackIdFromResult)
+  )
 
-  if (!trackId) {
-    logger.debug('Track not found with id, searching with name')
+  if (res.length > 1) {
+    logger.info(
+      `Multiple tracks (${res.map(R.prop('track_id')).join(', ')})found with ISRC: ${track.isrc}, catalog number: ${
+        track.release.catalog_number
+      } and track number: ${track.track_number}`
+    )
+  }
+
+  let trackId = getTrackIdFromResult(res)
+
+  if (trackId) {
+    logger.info(
+      `Track ${trackId} found with ISRC: ${track.isrc} or catalog number: ${track.release.catalog_number} and track number: ${track.track_number}`
+    )
+  } else {
+    logger.info(
+      `Track not found with with ISRC: ${track.isrc}, catalog number: ${track.release.catalog_number} and track number: ${track.track_number}, searching with name`
+    )
     trackId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
@@ -424,6 +438,7 @@ WHERE
         `Updating track details failed: ${e.toString()}, 
 Track ISRC: ${track.isrc}
 Release ISRC: ${track.release?.isrc}
+Release catalog number: ${track.release?.catalog_number}
 Details: ${JSON.stringify(debugData, null, 2)}
 
 Merge:
