@@ -68,29 +68,33 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
   }
 })
 
-module.exports.getFollowDetails = async urlString => {
+const getFollowDetailsFromUrl = (module.exports.getFollowDetailsFromUrl = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
-  const store = { name: storeName.toLowerCase() }
   for (const { regex, type } of regexes) {
     const match = urlString.match(regex)
     if (match) {
       const id = match[1]
-      let details
-      if (['artist', 'label'].includes(type)) {
-        const { name, type: pageType } = await getPageDetailsAsync(urlString)
-        details = { id, name, type: pageType, store, url: urlString }
-      } else if (type === 'tag') {
-        const label = await getPlaylistName(type, urlString)
-        details = { id, name: `Tag: ${label}`, type: 'playlist', store, url: urlString }
-      } else {
-        throw new Error('URL did not match any regex')
-      }
-
-      return [details]
+      return { id, type }
     }
   }
 
-  return []
+  throw new Error(`URL ${urlString} did not match any regex`)
+})
+
+module.exports.getFollowDetails = async urlString => {
+  const { id, type } = await getFollowDetailsFromUrl(urlString)
+  let details
+  if (['artist', 'label'].includes(type)) {
+    const { name, type: pageType } = await getPageDetailsAsync(urlString)
+    details = { id, name, type: pageType, url: urlString }
+  } else if (type === 'tag') {
+    const label = await getPlaylistName(type, urlString)
+    details = { id, name: `Tag: ${label}`, type: 'playlist', url: urlString }
+  } else {
+    throw new Error('Regex type not handled in code!')
+  }
+
+  return [{ ...details, name: storeName.toLowerCase() }]
 }
 
 const releaseTracksWithFiles = releaseDetails => {

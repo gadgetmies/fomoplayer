@@ -1,12 +1,17 @@
 const { BadRequest } = require('../../shared/httpErrors')
-const { spotifyApi, requestUserPlaylists } = require('../../shared/spotify.js')
+const {
+  spotifyApi,
+  storeName,
+  storeCode,
+  requestUserFollowedArtists,
+  requestUserPlaylists
+} = require('../../shared/spotify.js')
 const BPromise = require('bluebird')
 const {
   spotifyTracksTransform,
   spotifyAlbumTracksTransform
 } = require('multi_store_player_chrome_extension/src/js/transforms/spotify')
 const R = require('ramda')
-const { storeName, storeCode, getSpotifyTrackUris } = require('../../shared/spotify')
 const { queryFollowRegexes } = require('../../shared/db/store')
 const { processChunks } = require('../../shared/requests')
 const logger = require('../../../logger')(__filename)
@@ -24,7 +29,17 @@ const getUserPlaylists = (module.exports.getUserPlaylists = async userId => {
   }
 })
 
-const getPlaylistDetails = (module.exports.getFollowDetails = async playlistId => {
+const getUserFollowedArtists = (module.exports.getUserFollowedArtists = async userId => {
+  logger.info("Fetching user's followed artists from Spotify", { userId })
+  try {
+    return await requestUserFollowedArtists(userId)
+  } catch (e) {
+    logger.error(`Fetching user (${userId}) followed artists from Spotify failed`, e)
+    throw e
+  }
+})
+
+const getPlaylistDetails = (module.exports.getPlaylistDetails = async playlistId => {
   const details = await spotifyApi.getPlaylist(playlistId)
   const {
     name: title,
@@ -76,28 +91,32 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
   return `${author}: ${title}`
 })
 
-module.exports.getFollowDetails = async urlString => {
+const getFollowDetailsFromUrl = (module.exports.getFollowDetailsFromUrl = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
-  const store = { name: storeCode }
-  let name
   for (const { regex, type } of regexes) {
     const match = urlString.match(regex)
-
     if (match) {
       const id = match[4]
-      if (type === 'artist') {
-        name = await getArtistName(urlString)
-      } else if (type === 'playlist') {
-        name = await getPlaylistName(type, urlString)
-      } else {
-        throw new Error('URL did not match any regex')
-      }
-
-      return [{ id, name, type, store, url: urlString }]
+      return { id, type }
     }
   }
 
-  return []
+  throw new Error(`URL ${urlString} did not match any regex`)
+})
+
+module.exports.getFollowDetails = async urlString => {
+  let name
+  const { id, type } = getFollowDetailsFromUrl(urlString)
+
+  if (type === 'artist') {
+    name = await getArtistName(urlString)
+  } else if (type === 'playlist') {
+    name = await getPlaylistName(type, urlString)
+  } else {
+    throw new Error('Regex type not handled in code!')
+  }
+
+  return [{ id, name, type, store: { name: storeCode }, url: urlString }]
 }
 
 module.exports.getTracks = getTracks

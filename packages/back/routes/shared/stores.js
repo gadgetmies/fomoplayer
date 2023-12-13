@@ -14,7 +14,7 @@ module.exports.getStoreModuleForArtistByUrl = async artistUrl => {
   }
 
   const module = storeModules[matchingStore.name]
-  const [{ id }] = await module.logic.getFollowDetails(artistUrl)
+  const { id } = await module.logic.getFollowDetailsFromUrl(artistUrl)
   return { module, id }
 }
 

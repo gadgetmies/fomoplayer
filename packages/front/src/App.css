@@ -495,6 +495,7 @@ audio {
 
 .no-style-link {
   text-decoration: none;
+  display: inline-block;
 }
 
 .comma-list {

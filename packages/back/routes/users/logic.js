@@ -203,8 +203,10 @@ module.exports.addArtistFollows = async (storeUrl, artists, userId, sourceId) =>
       sourceId
     )
     addedFollows.push({
+      name,
       artist: `${apiURL}/artists/${artistId}`,
-      follow: `${apiURL}/users/${userId}/follows/artists/${followId}`
+      follow: `${apiURL}/users/${userId}/follows/artists/${followId}`,
+      url: fullUrl
     })
 
     process.nextTick(async () => {

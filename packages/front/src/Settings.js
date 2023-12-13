@@ -16,6 +16,7 @@ import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
 import { SettingsHelp } from './SettingsHelp'
 import ImportPlaylistButton from './ImportPlaylistButton'
+import FollowedItem from './FollowedItem'
 
 class Settings extends Component {
   unlockMarkAllHeard() {
@@ -84,7 +85,8 @@ class Settings extends Component {
       tracks: this.props.tracks,
       helpActive: false,
       importingPlaylist: null,
-      importedPlaylists: []
+      importedPlaylists: null,
+      importedArtists: null
     }
 
     this.markHeardButton.bind(this)
@@ -556,68 +558,47 @@ class Settings extends Component {
                     )}
                   </>
                 )}
+                <div style={{ fontSize: '75%', marginTop: 5 }}>
+                  <a href="" onClick={e => {
+                    e.preventDefault()
+                    this.setState({ page: 'integrations' })
+                  }}>
+                    To import followed artists from Spotify use the integrations tab
+                  </a>
+                </div>
               </label>
               <h4>Followed artists ({this.state.artistFollows.length})</h4>
               <ul className="no-style-list follow-list">
                 {this.state.artistFollows.map(
-                  ({ id, name, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
+                  ({ name, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
                     return (
                       <li key={storeArtistId} data-onboarding-id="follow-item">
-                        <span className="button pill pill-button">
-                          <span className="pill-button-contents">
-                            <>
-                              <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
-                            </>
-                            {name}{' '}
-                            <button
-                              disabled={this.state.updatingNotifications}
-                              onClick={async e => {
-                                e.stopPropagation()
-                                this.setState({ updatingNotifications: true })
-                                await this.props.onSetStarred('artists', watchId, !starred)
-                                await this.updateArtistFollows()
-                                this.setState({ updatingNotifications: false })
-                                if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Star)) {
-                                  Onboarding.helpers.next()
-                                }
-                              }}
-                              title={`Star artist "${name}" on ${storeName}`}
-                              data-onboarding-id="star-button"
-                            >
-                              {starred ? (
-                                <FontAwesomeIcon icon={icon({ name: 'star', style: 'solid' })} />
-                              ) : (
-                                <FontAwesomeIcon icon={icon({ name: 'star', style: 'regular' })} />
-                              )}
-                            </button>{' '}
-                            <button
-                              disabled={this.state.updatingArtistFollows}
-                              onClick={async () => {
-                                this.setState({ updatingArtistFollows: true })
-                                await requestWithCredentials({
-                                  path: `/me/follows/artists/${storeArtistId}`,
-                                  method: 'DELETE'
-                                })
-                                await this.updateArtistFollows()
-                                this.setState({ updatingArtistFollows: false })
-                                if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Unfollow)) {
-                                  Onboarding.helpers.next()
-                                }
-                              }}
-                              data-onboarding-id="unfollow-button"
-                            >
-                              <FontAwesomeIcon icon="times-circle" />{' '}
-                              <a
-                                href={url}
-                                target="_blank"
-                                onClick={e => e.stopPropagation()}
-                                title={'Check details from store'}
-                              >
-                                <FontAwesomeIcon icon="external-link-alt" />
-                              </a>
-                            </button>
-                          </span>
-                        </span>
+                        <FollowedItem
+                          disabled={this.state.updatingArtistFollows}
+                          onStarClick={async e => {
+                            e.stopPropagation()
+                            this.setState({ updatingArtistFollows: true })
+                            await this.props.onSetStarred('artists', watchId, !starred)
+                            await this.updateArtistFollows()
+                            this.setState({ updatingArtistFollows: false })
+                            if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Star)) {
+                              Onboarding.helpers.next()
+                            }
+                          }}
+                          onUnfollowClick={async () => {
+                            this.setState({ updatingArtistFollows: true })
+                            await requestWithCredentials({
+                              path: `/me/follows/artists/${storeArtistId}`,
+                              method: 'DELETE'
+                            })
+                            await this.updateArtistFollows()
+                            this.setState({ updatingArtistFollows: false })
+                            if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Unfollow)) {
+                              Onboarding.helpers.next()
+                            }
+                          }}
+                          {...{ storeName, title: name, starred, url }}
+                        />
                       </li>
                     )
                   }
@@ -628,53 +609,26 @@ class Settings extends Component {
                 {this.state.labelFollows.map(
                   ({ name, url, storeLabelId, store: { name: storeName, watchId, starred } }) => (
                     <li key={storeLabelId}>
-                      <span className="button pill pill-button">
-                        <span className="pill-button-contents">
-                          <>
-                            <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
-                          </>
-                          {name}{' '}
-                          <button
-                            disabled={this.state.updatingNotifications}
-                            onClick={async e => {
-                              e.stopPropagation()
-                              this.setState({ updatingNotifications: true })
-                              await this.props.onSetStarred('labels', watchId, !starred)
-                              await this.updateLabelFollows()
-                              this.setState({ updatingNotifications: false })
-                            }}
-                            title={`Star label "${name}" on ${storeName}`}
-                          >
-                            {starred ? (
-                              <FontAwesomeIcon icon={icon({ name: 'star', style: 'solid' })} />
-                            ) : (
-                              <FontAwesomeIcon icon={icon({ name: 'star', style: 'regular' })} />
-                            )}
-                          </button>{' '}
-                          <button
-                            disabled={this.state.updatingLabelFollows}
-                            onClick={async () => {
-                              this.setState({ updatingLabelFollows: true })
-                              await requestWithCredentials({
-                                path: `/me/follows/labels/${storeLabelId}`,
-                                method: 'DELETE'
-                              })
-                              await this.updateLabelFollows()
-                              this.setState({ updatingLabelFollows: false })
-                            }}
-                          >
-                            <FontAwesomeIcon icon="times-circle" />{' '}
-                            <a
-                              href={url}
-                              target="_blank"
-                              onClick={e => e.stopPropagation()}
-                              title={'Check details from store'}
-                            >
-                              <FontAwesomeIcon icon="external-link-alt" />
-                            </a>
-                          </button>
-                        </span>
-                      </span>
+                      <FollowedItem
+                        disabled={this.state.updatingLabelFollows}
+                        onStarClick={async e => {
+                          e.stopPropagation()
+                          this.setState({ updatingLabelFollows: true })
+                          await this.props.onSetStarred('labels', watchId, !starred)
+                          await this.updateLabelFollows()
+                          this.setState({ updatingLabelFollows: false })
+                        }}
+                        onUnfollowClick={async () => {
+                          this.setState({ updatingLabelFollows: true })
+                          await requestWithCredentials({
+                            path: `/me/follows/labels/${storeLabelId}`,
+                            method: 'DELETE'
+                          })
+                          await this.updateLabelFollows()
+                          this.setState({ updatingLabelFollows: false })
+                        }}
+                        {...{ storeName, title: name, starred, url }}
+                      />
                     </li>
                   )
                 )}
@@ -683,26 +637,19 @@ class Settings extends Component {
               <ul className="no-style-list follow-list">
                 {this.state.playlistFollows.map(({ id, storeName, title }) => (
                   <li key={id}>
-                    <span key={id} className="button pill pill-button">
-                      <span className="pill-button-contents">
-                        <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
-                        {title}{' '}
-                        <button
-                          disabled={this.state.updatingPlaylistFollows}
-                          onClick={async () => {
-                            this.setState({ updatingPlaylistFollows: true })
-                            await requestWithCredentials({
-                              path: `/me/follows/playlists/${id}`,
-                              method: 'DELETE'
-                            })
-                            await this.updatePlaylistFollows()
-                            this.setState({ updatingPlaylistFollows: false })
-                          }}
-                        >
-                          <FontAwesomeIcon icon="times-circle" />
-                        </button>
-                      </span>
-                    </span>
+                    <FollowedItem
+                      disabled={this.state.updatingPlaylistFollows}
+                      onUnfollowClick={async () => {
+                        this.setState({ updatingPlaylistFollows: true })
+                        await requestWithCredentials({
+                          path: `/me/follows/playlists/${id}`,
+                          method: 'DELETE'
+                        })
+                        await this.updatePlaylistFollows()
+                        this.setState({ updatingPlaylistFollows: false })
+                      }}
+                      {...{ storeName, title }}
+                    />
                   </li>
                 ))}
               </ul>
@@ -1127,8 +1074,10 @@ class Settings extends Component {
                       loading={this.state.deauthorizingSpotify}
                     >
                       De-authrorize
-                    </SpinnerButton>{' '}
-                    <span>Warning! This will disable all cart synchronizations</span>
+                    </SpinnerButton>
+                    <div style={{ fontSize: '75%', marginTop: 5 }}>
+                      Warning! This will disable all cart synchronizations
+                    </div>
                   </p>
                   <p>
                     <a
@@ -1136,8 +1085,61 @@ class Settings extends Component {
                       className="button button-push_button-small button-push_button-primary no-style-link"
                     >
                       Re-authrorize
-                    </a>{' '}
-                    <span>Try this if synchronization does not work</span>
+                    </a>
+                    <div style={{ fontSize: '75%', marginTop: 5 }}>Try this if synchronization does not work</div>
+                  </p>
+                  <h5>Import followed artists</h5>
+                  <p>
+                    <SpinnerButton
+                      loading={this.state.importingFollowedArtists}
+                      onClick={async () => {
+                        this.setState({ importingFollowedArtists: true, importedArtists: null })
+                        try {
+                          const followedArtists = await requestJSONwithCredentials({
+                            path: `/stores/spotify/my-followed-artists`,
+                            method: 'GET'
+                          })
+
+                          const importedArtists = await requestJSONwithCredentials({
+                            path: `/me/follows/artists`,
+                            method: 'POST',
+                            body: followedArtists
+                          })
+                          await this.updateArtistFollows()
+                          this.setState({ importedArtists })
+                        } catch (e) {
+                          console.error('Error importing followed artists', e)
+                          this.setState({ followedArtistsImportFailed: true })
+                        } finally {
+                          this.setState({ importingFollowedArtists: false })
+                        }
+                      }}
+                    >
+                      {this.state.importedArtists ? 'Refresh' : 'Import'} followed artists from Spotify
+                    </SpinnerButton>
+                    {this.state.followedArtistsImportFailed && (
+                      <div style={{ fontSize: '75%', marginTop: 5 }}>
+                        Importing followed artists failed. Please try again.
+                      </div>
+                    )}
+                    {this.state.importedArtists && <h6>{this.state.importedArtists.length} artists imported:</h6>}
+                    {this.state.importedArtists?.map(({ name, url }) => {
+                      return (
+                        <FollowedItem
+                          disabled={this.state.updatingArtistFollows}
+                          onUnfollowClick={async () => {
+                            this.setState({ updatingArtistFollows: true })
+                            await requestWithCredentials({
+                              path: `/me/follows/artists/${storeArtistId}`,
+                              method: 'DELETE'
+                            })
+                            await this.updateArtistFollows()
+                            this.setState({ updatingArtistFollows: false })
+                          }}
+                          {...{ storeName: 'spotify', title: name, starred: false, url }}
+                        />
+                      )
+                    })}
                   </p>
                   <h5>Import playlists</h5>
                   <p>
@@ -1147,7 +1149,7 @@ class Settings extends Component {
                     <SpinnerButton
                       loading={this.state.fetchingPlaylists}
                       onClick={() => {
-                        this.setState({ fetchingPlaylists: true })
+                        this.setState({ fetchingPlaylists: true, importedPlaylists: null })
                         requestJSONwithCredentials({
                           path: `/stores/spotify/my-playlists`,
                           method: 'GET'
@@ -1177,7 +1179,7 @@ class Settings extends Component {
                             img={img}
                             loading={this.state.importingPlaylist === url}
                             disabled={this.state.importingPlaylist !== null}
-                            imported={this.state.importedPlaylists.includes(url)}
+                            imported={this.state.importedPlaylists?.includes(url)}
                             onClick={(() => this.onImportPlaylistItemClick(url)).bind(this)}
                             data-onboarding-id="follow-item"
                           />

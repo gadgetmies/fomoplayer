@@ -58,7 +58,7 @@ const refreshToken = (module.exports.refreshToken = async () => {
 
 module.exports.getAuthorizationUrl = () => {
   // Create the authorization URL
-  const scopes = ['playlist-modify-private', 'playlist-modify-public', 'playlist-read-private']
+  const scopes = ['playlist-modify-private', 'playlist-modify-public', 'playlist-read-private', 'user-follow-read']
   const state = ''
   return spotifyApi.createAuthorizeURL(scopes, state)
 }
@@ -133,6 +133,23 @@ module.exports.requestUserPlaylists = async userId => {
   const {
     body: { items }
   } = res
+  return items.map(({ id, name, external_urls: { spotify }, images }) => ({
+    id,
+    name,
+    url: spotify,
+    img: images[0]?.url
+  }))
+}
+
+module.exports.requestUserFollowedArtists = async userId => {
+  const api = await getApiForUser(userId)
+  const res = await api.getFollowedArtists()
+  const {
+    body: {
+      artists: { items }
+    }
+  } = res
+
   return items.map(({ id, name, external_urls: { spotify }, images }) => ({
     id,
     name,

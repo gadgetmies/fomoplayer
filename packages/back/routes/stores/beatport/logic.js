@@ -22,28 +22,33 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
   return name
 })
 
-module.exports.getFollowDetails = async urlString => {
+const getFollowDetailsFromUrl = (module.exports.getFollowDetailsFromUrl = async urlString => {
   const regexes = await queryFollowRegexes(storeName)
   const store = { name: storeName.toLowerCase() }
-  let details
-
   for (const { regex, type } of regexes) {
     const match = urlString.match(regex)
     if (match) {
       const id = match[1]
-      if (type === 'artist' || type === 'label') {
-        details = await bpApiStatic.getDetailsAsync(urlString)
-      } else if (type === 'playlist') {
-        details = await getPlaylistName(type, urlString)
-      } else {
-        throw new Error('URL did not match any regex')
-      }
-
-      return [{ id, ...details, type, store, url: urlString }]
+      return { id, type }
     }
   }
 
-  return []
+  throw new Error(`URL ${urlString} did not match any regex`)
+})
+
+module.exports.getFollowDetails = async urlString => {
+  const { id, type } = await getFollowDetailsFromUrl(urlString)
+  let details
+
+  if (type === 'artist' || type === 'label') {
+    details = await bpApiStatic.getDetailsAsync(urlString)
+  } else if (type === 'playlist') {
+    details = await getPlaylistName(type, urlString)
+  } else {
+    throw new Error('Regex type not handled in code!')
+  }
+
+  return [{ id, ...details, type, store, url: urlString }]
 }
 
 const getTrackInfo = (module.exports.getTrackInfo = async url => {
