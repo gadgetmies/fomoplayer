@@ -407,7 +407,7 @@ class Track extends Component {
                 </a>
               ))
             )}{' '}
-            {beaportTrack || !this.props.enabledStoreSearch.includes('Beatport') ? null : (
+            {beaportTrack || !this.props.enabledStoreSearch?.includes('Beatport') ? null : (
               <>
                 <a
                   onClick={e => e.stopPropagation()}
@@ -422,7 +422,7 @@ class Track extends Component {
                 </a>{' '}
               </>
             )}
-            {bandcampTrack || !this.props.enabledStoreSearch.includes('Bandcamp') ? null : (
+            {bandcampTrack || !this.props.enabledStoreSearch?.includes('Bandcamp') ? null : (
               <>
                 <a
                   onClick={e => e.stopPropagation()}
@@ -437,7 +437,7 @@ class Track extends Component {
                 </a>{' '}
               </>
             )}
-            {spotifyTrack || !this.props.enabledStoreSearch.includes('Spotify') ? null : (
+            {spotifyTrack || !this.props.enabledStoreSearch?.includes('Spotify') ? null : (
               <>
                 <a
                   onClick={e => e.stopPropagation()}
@@ -452,7 +452,7 @@ class Track extends Component {
                 </a>{' '}
               </>
             )}
-            {this.props.enabledStoreSearch.includes('Youtube') && (
+            {this.props.enabledStoreSearch?.includes('Youtube') && (
               <a
                 className="pill pill-link table-cell-button"
                 href={`https://www.youtube.com/results?search_query=${searchString}`}

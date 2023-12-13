@@ -572,7 +572,7 @@ class Tracks extends Component {
                 <div className={'open-cell track-table-cell'} style={{ position: 'relative' }}>
                   <div className={'popup-anchor'}>
                     <span
-                      className={` ${this.props.enabledStores.length < this.props.stores.length && 'filter-active'}`}
+                      className={` ${this.props.enabledStores && this.props.enabledStores.length < this.props.stores.length && 'filter-active'}`}
                     >
                       Open / Share {this.props.listState === 'cart' && <FontAwesomeIcon icon="caret-down" />}
                     </span>
@@ -593,7 +593,7 @@ class Tracks extends Component {
                             <div style={{ display: 'flex', justifyContent: 'space-around', flex: 1 }}>
                               <ToggleButton
                                 id={elementId}
-                                checked={this.props.enabledStores.includes(storeName)}
+                                checked={this.props.enabledStores?.includes(storeName)}
                                 onChange={() => this.props.onToggleStoreEnabled(storeName)}
                               />
                             </div>
@@ -615,7 +615,7 @@ class Tracks extends Component {
                             <div style={{ display: 'flex', justifyContent: 'space-around', flex: 1 }}>
                               <ToggleButton
                                 id={elementId}
-                                checked={this.props.enabledStoreSearch.includes(storeName)}
+                                checked={this.props.enabledStoreSearch?.includes(storeName)}
                                 onChange={() => this.props.onToggleStoreSearchEnabled(storeName)}
                               />
                             </div>
@@ -643,7 +643,7 @@ class Tracks extends Component {
             {this.renderTracks(
               this.props.listState === 'cart'
                 ? this.props.tracks.filter(({ stores }) =>
-                    this.props.enabledStores.some(storeName => stores.find(R.propEq('name', storeName)))
+                    this.props.enabledStores?.some(storeName => stores.find(R.propEq('name', storeName)))
                   )
                 : this.props.tracks,
               this.props.carts,
