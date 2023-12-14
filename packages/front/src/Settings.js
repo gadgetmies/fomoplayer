@@ -545,7 +545,7 @@ class Settings extends Component {
                                           img={img}
                                           disabled={this.getFollowItemDisabled(type, url)}
                                           loading={this.state.updatingFollowWithUrl === url}
-                                          onClick={(() => this.onFollowItemClick(url, type)).bind(this)}
+                                          onClick={(() => this.onFollowItemClick(url, name, type)).bind(this)}
                                           data-onboarding-id="follow-item"
                                         />
                                       </li>
@@ -1270,11 +1270,11 @@ class Settings extends Component {
     }
   }
 
-  async onFollowItemClick(url, type) {
+  async onFollowItemClick(url, name, type) {
     try {
       this.setState({ updatingFollowWithUrl: url })
       const props = {
-        body: [{ url }]
+        body: [{ url, name }]
       }
 
       await requestJSONwithCredentials({
