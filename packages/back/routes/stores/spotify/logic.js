@@ -14,6 +14,9 @@ const {
 const R = require('ramda')
 const { queryFollowRegexes } = require('../../shared/db/store')
 const { processChunks } = require('../../shared/requests')
+const { addArtistsToUserFollowed } = require('../../shared/spotify')
+const url = require('url')
+const { getFollowDetailsFromUrls, getFollowDetailsFromUrl } = require('../logic')
 const logger = require('../../../logger')(__filename)
 
 module.exports.storeUrl = 'https://www.spotify.com'
@@ -29,7 +32,7 @@ const getUserPlaylists = (module.exports.getUserPlaylists = async userId => {
   }
 })
 
-const getUserFollowedArtists = (module.exports.getUserFollowedArtists = async userId => {
+module.exports.getUserFollowedArtists = async userId => {
   logger.info("Fetching user's followed artists from Spotify", { userId })
   try {
     return await requestUserFollowedArtists(userId)
@@ -37,7 +40,18 @@ const getUserFollowedArtists = (module.exports.getUserFollowedArtists = async us
     logger.error(`Fetching user (${userId}) followed artists from Spotify failed`, e)
     throw e
   }
-})
+}
+
+module.exports.followArtists = async (userId, artistUrls) => {
+  logger.info(`Following Spotify artists for user ${userId}`, { artistUrls })
+  try {
+    const artistIds = (await getFollowDetailsFromUrls(storeName, artistUrls)).map(({ id }) => id)
+    await addArtistsToUserFollowed(userId, artistIds)
+  } catch (e) {
+    logger.error(`Following Spotify artists for user (${userId}) failed`, e)
+    throw e
+  }
+}
 
 const getPlaylistDetails = (module.exports.getPlaylistDetails = async playlistId => {
   const details = await spotifyApi.getPlaylist(playlistId)
@@ -91,22 +105,9 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
   return `${author}: ${title}`
 })
 
-const getFollowDetailsFromUrl = (module.exports.getFollowDetailsFromUrl = async urlString => {
-  const regexes = await queryFollowRegexes(storeName)
-  for (const { regex, type } of regexes) {
-    const match = urlString.match(regex)
-    if (match) {
-      const id = match[4]
-      return { id, type }
-    }
-  }
-
-  throw new Error(`URL ${urlString} did not match any regex`)
-})
-
 module.exports.getFollowDetails = async urlString => {
   let name
-  const { id, type } = getFollowDetailsFromUrl(urlString)
+  const { id, type } = getFollowDetailsFromUrl(storeName, urlString)
 
   if (type === 'artist') {
     name = await getArtistName(urlString)

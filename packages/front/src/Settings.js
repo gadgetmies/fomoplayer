@@ -86,7 +86,9 @@ class Settings extends Component {
       helpActive: false,
       importingPlaylist: null,
       importedPlaylists: null,
-      importedArtists: null
+      importedArtists: null,
+      exportingFollowedArtists: false,
+      followedArtistsExportSuccess: null
     }
 
     this.markHeardButton.bind(this)
@@ -559,10 +561,13 @@ class Settings extends Component {
                   </>
                 )}
                 <div style={{ fontSize: '75%', marginTop: 5 }}>
-                  <a href="" onClick={e => {
-                    e.preventDefault()
-                    this.setState({ page: 'integrations' })
-                  }}>
+                  <a
+                    href=""
+                    onClick={e => {
+                      e.preventDefault()
+                      this.setState({ page: 'integrations' })
+                    }}
+                  >
                     To import followed artists from Spotify use the integrations tab
                   </a>
                 </div>
@@ -1087,6 +1092,44 @@ class Settings extends Component {
                       Re-authrorize
                     </a>
                     <div style={{ fontSize: '75%', marginTop: 5 }}>Try this if synchronization does not work</div>
+                  </p>
+                  <h5>Export followed artists</h5>
+                  <p>
+                    <SpinnerButton
+                      loading={this.state.exportingFollowedArtists}
+                      onClick={async () => {
+                        this.setState({ exportingFollowedArtists: true, followedArtistsExportSuccess: null })
+                        try {
+                          const followedArtists = await requestJSONwithCredentials({
+                            path: `/me/follows/artists`,
+                            method: 'GET'
+                          })
+
+                          await requestWithCredentials({
+                            path: `/stores/spotify/my-followed-artists`,
+                            method: 'POST',
+                            body: followedArtists
+                              .filter(({ store: { name } }) => name === 'Spotify')
+                              .map(({ url }) => url)
+                          })
+                          this.setState({ followedArtistsExportSuccess: true })
+                        } catch (e) {
+                          console.error('Error exporting followed artists', e)
+                          this.setState({ followedArtistsExportSuccess: false })
+                        } finally {
+                          this.setState({ exportingFollowedArtists: false })
+                        }
+                      }}
+                    >
+                      Export followed artists to Spotify
+                    </SpinnerButton>
+                    {this.state.followedArtistsExportSuccess !== null && (
+                      <div style={{ fontSize: '75%', marginTop: 5 }}>
+                        {this.state.followedArtistsExportSuccess === true
+                          ? 'Artist follows exported successfully'
+                          : 'Exporting followed artists failed. Please try again.'}
+                      </div>
+                    )}
                   </p>
                   <h5>Import followed artists</h5>
                   <p>

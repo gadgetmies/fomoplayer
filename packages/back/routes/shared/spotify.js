@@ -3,6 +3,7 @@ const logger = require('../../logger')(__filename)
 const { apiURL } = require('../../config.js')
 const { queryAuthorization, upsertUserAuthorizationTokens } = require('../db')
 const R = require('ramda')
+const { processChunks } = require('./requests')
 
 const storeName = (module.exports.storeName = 'Spotify')
 module.exports.storeCode = storeName.toLocaleLowerCase()
@@ -58,7 +59,13 @@ const refreshToken = (module.exports.refreshToken = async () => {
 
 module.exports.getAuthorizationUrl = () => {
   // Create the authorization URL
-  const scopes = ['playlist-modify-private', 'playlist-modify-public', 'playlist-read-private', 'user-follow-read']
+  const scopes = [
+    'playlist-modify-private',
+    'playlist-modify-public',
+    'playlist-read-private',
+    'user-follow-read',
+    'user-follow-modify'
+  ]
   const state = ''
   return spotifyApi.createAuthorizeURL(scopes, state)
 }
@@ -156,4 +163,9 @@ module.exports.requestUserFollowedArtists = async userId => {
     url: spotify,
     img: images[0]?.url
   }))
+}
+
+module.exports.addArtistsToUserFollowed = async (userId, artistIds) => {
+  const api = await getApiForUser(userId)
+  await processChunks(artistIds, 50, api.followArtists.bind(api), { concurrency: 4 })
 }

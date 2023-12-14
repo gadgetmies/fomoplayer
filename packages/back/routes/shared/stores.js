@@ -1,5 +1,5 @@
 const { BadRequest } = require('./httpErrors')
-const { queryStoreRegexes, queryStoreName } = require('./db/store')
+const { queryStoreRegexes, queryStoreName, queryFollowRegexes } = require('./db/store')
 const { modules: storeModules } = require('../stores/index.js')
 
 module.exports.getStoreModuleForArtistByUrl = async artistUrl => {
@@ -13,9 +13,7 @@ module.exports.getStoreModuleForArtistByUrl = async artistUrl => {
     throw new BadRequest(`Invalid artist URL ${artistUrl}`)
   }
 
-  const module = storeModules[matchingStore.name]
-  const { id } = await module.logic.getFollowDetailsFromUrl(artistUrl)
-  return { module, id }
+  return storeModules[matchingStore.name]
 }
 
 module.exports.getStoreModuleForLabelByUrl = async labelUrl => {
@@ -30,9 +28,7 @@ module.exports.getStoreModuleForLabelByUrl = async labelUrl => {
     throw new BadRequest(`Invalid label URL ${labelUrl}`)
   }
 
-  const module = storeModules[matchingStore.name]
-  const [{ id }] = await module.logic.getFollowDetails(labelUrl)
-  return { module, id }
+  return storeModules[matchingStore.name]
 }
 
 module.exports.getStoreModuleForPlaylistByUrl = async playlistUrl => {

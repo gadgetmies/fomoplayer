@@ -2,7 +2,7 @@ const R = require('ramda')
 const BPromise = require('bluebird')
 const { bandcampReleasesTransform } = require('multi_store_player_chrome_extension/src/js/transforms/bandcamp')
 const { queryPreviewDetails } = require('../../shared/db/preview.js')
-const { queryStoreId, queryFollowRegexes } = require('../../shared/db/store.js')
+const { queryStoreId } = require('../../shared/db/store.js')
 const {
   getReleaseAsync,
   getTagAsync,
@@ -14,6 +14,7 @@ const {
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl } = require('./db.js')
+const { getFollowDetailsFromUrl } = require('../logic')
 const logger = require('../../../logger')(__filename)
 
 let storeDbId = null
@@ -66,19 +67,6 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
     const res = await getTagAsync(getTagFromUrl(url))
     return res.name
   }
-})
-
-const getFollowDetailsFromUrl = (module.exports.getFollowDetailsFromUrl = async urlString => {
-  const regexes = await queryFollowRegexes(storeName)
-  for (const { regex, type } of regexes) {
-    const match = urlString.match(regex)
-    if (match) {
-      const id = match[1]
-      return { id, type }
-    }
-  }
-
-  throw new Error(`URL ${urlString} did not match any regex`)
 })
 
 module.exports.getFollowDetails = async urlString => {

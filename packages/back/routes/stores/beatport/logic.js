@@ -3,11 +3,12 @@ const R = require('ramda')
 const bpApi = require('./bp-api')
 const { processChunks } = require('../../shared/requests')
 
-const { queryFollowRegexes } = require('../../shared/db/store.js')
+const { queryFollowRegexes } = require('../../shared/db/store')
 const {
   beatportTracksTransform,
   beatportTrackTransform
 } = require('multi_store_player_chrome_extension/src/js/transforms/beatport')
+const { getFollowDetailsFromUrl } = require('../logic.js')
 const logger = require('../../../logger')(__filename)
 
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
@@ -22,22 +23,8 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
   return name
 })
 
-const getFollowDetailsFromUrl = (module.exports.getFollowDetailsFromUrl = async urlString => {
-  const regexes = await queryFollowRegexes(storeName)
-  const store = { name: storeName.toLowerCase() }
-  for (const { regex, type } of regexes) {
-    const match = urlString.match(regex)
-    if (match) {
-      const id = match[1]
-      return { id, type }
-    }
-  }
-
-  throw new Error(`URL ${urlString} did not match any regex`)
-})
-
 module.exports.getFollowDetails = async urlString => {
-  const { id, type } = await getFollowDetailsFromUrl(urlString)
+  const { id, type } = await getFollowDetailsFromUrl(storeName, urlString)
   let details
 
   if (type === 'artist' || type === 'label') {

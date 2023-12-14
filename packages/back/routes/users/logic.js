@@ -80,6 +80,7 @@ module.exports.removeArtistIgnoreFromUser = deleteArtistIgnoreFromUser
 const { removeIgnoredTracksFromUsers } = require('../shared/db/user.js')
 const { deleteUserCartStoreDetails } = require('../shared/cart')
 const { insertSource } = require('../../jobs/watches/shared/db')
+const { getFollowDetailsFromUrl } = require('../stores/logic')
 
 module.exports.queryUserTracks = queryUserTracks
 module.exports.getTracksM3u = userId =>
@@ -184,12 +185,13 @@ function getFullUrl(storeUrl, url) {
   return (storeUrl !== undefined ? storeUrl : '') + url
 }
 
-module.exports.addArtistFollows = async (storeUrl, artists, userId, sourceId) => {
+module.exports.addArtistFollows = async (storeUrl = undefined, artists, userId, sourceId) => {
   // TODO: try first to find from db
   let addedFollows = []
   for (const { name, url } of artists) {
     const fullUrl = getFullUrl(storeUrl, url)
-    const { module: storeModule, id } = await getStoreModuleForArtistByUrl(fullUrl)
+    const storeModule = await getStoreModuleForArtistByUrl(fullUrl)
+    const { id } = await getFollowDetailsFromUrl(storeModule.logic.storeName, fullUrl)
     let artistDetails = { url: fullUrl, id, name }
 
     if (name === undefined) {
@@ -248,7 +250,8 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {
   let addedFollows = []
   for (const { name, url } of labels) {
     const fullUrl = getFullUrl(storeUrl, url)
-    const { module: storeModule, id } = await getStoreModuleForLabelByUrl(fullUrl)
+    const storeModule = await getStoreModuleForLabelByUrl(fullUrl)
+    const { id } = await getFollowDetailsFromUrl(storeModule.logic.storeName, fullUrl)
     let labelDetails = { url: fullUrl, id, name }
 
     if (name === undefined) {
