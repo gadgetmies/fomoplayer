@@ -89,14 +89,15 @@ ${printName(node[0], style)}${
 
     let result = []
     for (const key of Object.keys(rest)) {
+      console.log(`Running: ${key}`.blue)
       const restElement = rest[key]
-
       let singleResult
       try {
         singleResult = R.is(Function, restElement)
           ? { error: R.defaultTo(null, await restElement(setupResult)) }
           : await run(restElement)
       } catch (e) {
+        console.error(`Test '${key}' failed:`.red, e)
         singleResult = { error: e.toString() }
       }
       result.push([key, singleResult])
