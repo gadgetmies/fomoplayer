@@ -12,7 +12,6 @@ const {
   spotifyAlbumTracksTransform
 } = require('multi_store_player_chrome_extension/src/js/transforms/spotify')
 const R = require('ramda')
-const { queryFollowRegexes } = require('../../shared/db/store')
 const { processChunks } = require('../../shared/requests')
 const { addArtistsToUserFollowed } = require('../../shared/spotify')
 const url = require('url')
@@ -22,7 +21,7 @@ const logger = require('../../../logger')(__filename)
 module.exports.storeUrl = 'https://www.spotify.com'
 module.exports.storeName = storeName
 
-const getUserPlaylists = (module.exports.getUserPlaylists = async userId => {
+module.exports.getUserPlaylists = async userId => {
   logger.info('Fetching user playlists from Spotify', { userId })
   try {
     return await requestUserPlaylists(userId)
@@ -30,7 +29,7 @@ const getUserPlaylists = (module.exports.getUserPlaylists = async userId => {
     logger.error(`Fetching user (${userId}) playlists from Spotify failed`, e)
     throw e
   }
-})
+}
 
 module.exports.getUserFollowedArtists = async userId => {
   logger.info("Fetching user's followed artists from Spotify", { userId })
