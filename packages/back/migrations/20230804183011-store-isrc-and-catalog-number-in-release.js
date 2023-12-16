@@ -23,7 +23,9 @@ exports.up = function(db) {
   return new Promise(function(resolve, reject) {
     fs.readFile(filePath, { encoding: 'utf-8' }, function(err, data) {
       if (err) return reject(err)
-      console.log('received data: ' + data)
+      if (db.log.isSilent !== true) {
+        console.log('received data: ' + data)
+      }
 
       resolve(data)
     })
@@ -36,8 +38,9 @@ exports.down = function(db) {
   var filePath = path.join(__dirname, 'sqls', '20230804183011-store-isrc-and-catalog-number-in-release-down.sql')
   return new Promise(function(resolve, reject) {
     fs.readFile(filePath, { encoding: 'utf-8' }, function(err, data) {
-      if (err) return reject(err)
-      console.log('received data: ' + data)
+      if (db.log.isSilent !== true) {
+        console.log('received data: ' + data)
+      }
 
       resolve(data)
     })
