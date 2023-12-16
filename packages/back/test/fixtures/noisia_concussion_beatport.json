@@ -1,0 +1,940 @@
+{
+  "pageProps": {
+    "_sentryTraceData": "1590b69126314b7497e87eb0b4fcc5ed-ad92b4c25ff6cbff-0",
+    "_sentryBaggage": "sentry-environment=production,sentry-release=V7goWk4B7063GKj9nFPyC,sentry-public_key=ac053d08206c40feaaa94212ec8c18db,sentry-trace_id=1590b69126314b7497e87eb0b4fcc5ed,sentry-sample_rate=0.001,sentry-transaction=%2Ftrack%2F%5Bdescription%5D%2F%5Bid%5D,sentry-sampled=false",
+    "dehydratedState": {
+      "mutations": [],
+      "queries": [
+        {
+          "state": {
+            "data": {
+              "artists": [
+                {
+                  "id": 912,
+                  "image": {
+                    "id": 19818374,
+                    "uri": "https://geo-media.beatport.com/image_size/590x404/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg",
+                    "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg"
+                  },
+                  "name": "Noisia",
+                  "slug": "noisia",
+                  "url": "https://api-internal.beatportprod.com/v4/catalog/artists/912/"
+                }
+              ],
+              "audio_format": null,
+              "available_worldwide": true,
+              "bpm": 86,
+              "catalog_number": "VSN001",
+              "current_status": {
+                "id": 10,
+                "name": "General Content",
+                "url": "https://api-internal.beatportprod.com/v4/auxiliary/current-status/10/"
+              },
+              "desc": "",
+              "enabled": true,
+              "encode_status": "CONVERTED",
+              "encoded_date": "2006-10-02T14:35:00-06:00",
+              "exclusive": false,
+              "exclusive_period": {
+                "days": 0,
+                "description": "Not exclusive",
+                "id": 1,
+                "url": "https://api-internal.beatportprod.com/v4/auxiliary/exclusive-period/1/"
+              },
+              "free_downloads": [],
+              "free_download_start_date": null,
+              "free_download_end_date": null,
+              "genre": {
+                "id": 1,
+                "name": "Drum & Bass",
+                "slug": "drum-bass",
+                "url": "https://api-internal.beatportprod.com/v4/catalog/genres/1/"
+              },
+              "hidden": false,
+              "id": 194481,
+              "image": {
+                "id": 19271466,
+                "uri": "https://geo-media.beatport.com/image_size/1500x250/86bf4d78-eadd-4b77-9282-6550d36e231e.png",
+                "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/86bf4d78-eadd-4b77-9282-6550d36e231e.png"
+              },
+              "is_available_for_streaming": true,
+              "is_classic": true,
+              "isrc": "NLCK40700053",
+              "key": {
+                "camelot_number": 4,
+                "camelot_letter": "A",
+                "chord_type": {
+                  "id": 1,
+                  "name": "Minor",
+                  "url": "https://api-internal.beatportprod.com/v4/catalog/chord-types/1/"
+                },
+                "id": 4,
+                "is_sharp": false,
+                "is_flat": false,
+                "letter": "F",
+                "name": "F Minor",
+                "url": "https://api-internal.beatportprod.com/v4/catalog/keys/4/"
+              },
+              "label_track_identifier": "1103613",
+              "length": "5:34",
+              "length_ms": 334883,
+              "mix_name": "Original Mix",
+              "name": "Concussion",
+              "new_release_date": "2005-11-14",
+              "number": 2,
+              "pre_order": false,
+              "pre_order_date": null,
+              "price": {
+                "code": "EUR",
+                "symbol": "€",
+                "value": 1.39,
+                "display": "€1.39"
+              },
+              "publish_date": "2005-11-14",
+              "publish_status": "published",
+              "release": {
+                "id": 33448,
+                "name": "The Tide / Concussion",
+                "image": {
+                  "id": 19271338,
+                  "uri": "https://geo-media.beatport.com/image_size/1400x1400/94defb10-1235-46e1-b5da-d190f659bd0f.jpg",
+                  "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/94defb10-1235-46e1-b5da-d190f659bd0f.jpg"
+                },
+                "label": {
+                  "id": 3040,
+                  "name": "Vision Recordings",
+                  "image": {
+                    "id": 12375544,
+                    "uri": "https://geo-media.beatport.com/image_size/500x500/654150eb-48ed-4900-83f6-373bc62f585c.jpg",
+                    "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/654150eb-48ed-4900-83f6-373bc62f585c.jpg"
+                  },
+                  "slug": "vision-recordings"
+                },
+                "slug": "the-tide-concussion"
+              },
+              "remixers": [],
+              "sale_type": {
+                "id": 1,
+                "name": "purchase",
+                "url": "https://api-internal.beatportprod.com/v4/auxiliary/sale-types/1/"
+              },
+              "sample_url": "https://geo-samples.beatport.com/track/0b2eb958-76ec-4a20-b6d1-f24061f4ce83.LOFI.mp3",
+              "sample_start_ms": 133953,
+              "sample_end_ms": 253953,
+              "slug": "concussion",
+              "sub_genre": null,
+              "was_ever_exclusive": false,
+              "is_hype": false
+            },
+            "dataUpdateCount": 1,
+            "dataUpdatedAt": 1702741799925,
+            "error": null,
+            "errorUpdateCount": 0,
+            "errorUpdatedAt": 0,
+            "fetchFailureCount": 0,
+            "fetchFailureReason": null,
+            "fetchMeta": null,
+            "isInvalidated": false,
+            "status": "success",
+            "fetchStatus": "idle"
+          },
+          "queryKey": ["track-194481"],
+          "queryHash": "[\"track-194481\"]"
+        }
+      ]
+    },
+    "track": {
+      "artists": [
+        {
+          "id": 912,
+          "image": {
+            "id": 19818374,
+            "uri": "https://geo-media.beatport.com/image_size/590x404/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg",
+            "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg"
+          },
+          "name": "Noisia",
+          "slug": "noisia",
+          "url": "https://api-internal.beatportprod.com/v4/catalog/artists/912/"
+        }
+      ],
+      "audio_format": null,
+      "available_worldwide": true,
+      "bpm": 86,
+      "catalog_number": "VSN001",
+      "current_status": {
+        "id": 10,
+        "name": "General Content",
+        "url": "https://api-internal.beatportprod.com/v4/auxiliary/current-status/10/"
+      },
+      "desc": "",
+      "enabled": true,
+      "encode_status": "CONVERTED",
+      "encoded_date": "2006-10-02T14:35:00-06:00",
+      "exclusive": false,
+      "exclusive_period": {
+        "days": 0,
+        "description": "Not exclusive",
+        "id": 1,
+        "url": "https://api-internal.beatportprod.com/v4/auxiliary/exclusive-period/1/"
+      },
+      "free_downloads": [],
+      "free_download_start_date": null,
+      "free_download_end_date": null,
+      "genre": {
+        "id": 1,
+        "name": "Drum & Bass",
+        "slug": "drum-bass",
+        "url": "https://api-internal.beatportprod.com/v4/catalog/genres/1/"
+      },
+      "hidden": false,
+      "id": 194481,
+      "image": {
+        "id": 19271466,
+        "uri": "https://geo-media.beatport.com/image_size/1500x250/86bf4d78-eadd-4b77-9282-6550d36e231e.png",
+        "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/86bf4d78-eadd-4b77-9282-6550d36e231e.png"
+      },
+      "is_available_for_streaming": true,
+      "is_classic": true,
+      "isrc": "NLCK40700053",
+      "key": {
+        "camelot_number": 4,
+        "camelot_letter": "A",
+        "chord_type": {
+          "id": 1,
+          "name": "Minor",
+          "url": "https://api-internal.beatportprod.com/v4/catalog/chord-types/1/"
+        },
+        "id": 4,
+        "is_sharp": false,
+        "is_flat": false,
+        "letter": "F",
+        "name": "F Minor",
+        "url": "https://api-internal.beatportprod.com/v4/catalog/keys/4/"
+      },
+      "label_track_identifier": "1103613",
+      "length": "5:34",
+      "length_ms": 334883,
+      "mix_name": "Original Mix",
+      "name": "Concussion",
+      "new_release_date": "2005-11-14",
+      "number": 2,
+      "pre_order": false,
+      "pre_order_date": null,
+      "price": {
+        "code": "EUR",
+        "symbol": "€",
+        "value": 1.39,
+        "display": "€1.39"
+      },
+      "publish_date": "2005-11-14",
+      "publish_status": "published",
+      "release": {
+        "id": 33448,
+        "name": "The Tide / Concussion",
+        "image": {
+          "id": 19271338,
+          "uri": "https://geo-media.beatport.com/image_size/1400x1400/94defb10-1235-46e1-b5da-d190f659bd0f.jpg",
+          "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/94defb10-1235-46e1-b5da-d190f659bd0f.jpg"
+        },
+        "label": {
+          "id": 3040,
+          "name": "Vision Recordings",
+          "image": {
+            "id": 12375544,
+            "uri": "https://geo-media.beatport.com/image_size/500x500/654150eb-48ed-4900-83f6-373bc62f585c.jpg",
+            "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/654150eb-48ed-4900-83f6-373bc62f585c.jpg"
+          },
+          "slug": "vision-recordings"
+        },
+        "slug": "the-tide-concussion"
+      },
+      "remixers": [],
+      "sale_type": {
+        "id": 1,
+        "name": "purchase",
+        "url": "https://api-internal.beatportprod.com/v4/auxiliary/sale-types/1/"
+      },
+      "sample_url": "https://geo-samples.beatport.com/track/0b2eb958-76ec-4a20-b6d1-f24061f4ce83.LOFI.mp3",
+      "sample_start_ms": 133953,
+      "sample_end_ms": 253953,
+      "slug": "concussion",
+      "sub_genre": null,
+      "was_ever_exclusive": false,
+      "is_hype": false
+    },
+    "_nextI18Next": {
+      "initialI18nStore": {
+        "en": {
+          "translation": {
+            "Account": {
+              "AlreadyHaveAccount": "Already have an account? Sign in",
+              "BillingPreferences": "Billing Preferences",
+              "Cookies": "Cookies",
+              "CreateAccount": "Create Account",
+              "CreateAnAccount": "Create an account",
+              "CreateBeatportAccount": "Create a Beatport Account",
+              "DoNotHaveAccount": "Don't have a Beatport account?",
+              "DownloadPreferences": "Download Preferences",
+              "Email": {
+                "Confirmed": "Email Confirmed",
+                "EmailAddress": "Email Address",
+                "Options": {
+                  "Beatport": {
+                    "description": "A bi-weekly rundown on the electronic music industry from our online publication.",
+                    "label": "Beatport"
+                  },
+                  "Content": {
+                    "description": "Weekly personalized and professionally curated store content just for you.",
+                    "label": "Content"
+                  },
+                  "ExclusiveOffers": {
+                    "description": "Join to receive regular special offers on all of our products.",
+                    "label": "Exclusive Offers"
+                  },
+                  "Happenings": {
+                    "description": "Occasional company announcements, DJ contests and events.",
+                    "label": "Happenings"
+                  },
+                  "LoopmastsersPluginBoutique": {
+                    "description": "Monthly offerings of the hottest sample packs, plugins and producer contests.",
+                    "label": "Loopmasters/Plugin Boutique"
+                  },
+                  "Snooze": {
+                    "description": "Need a break but don't want to miss out completely? Snooze our communication from a choice of 2 weeks, one month and two months.",
+                    "label": "Snooze"
+                  },
+                  "SubscriptionSettings": {
+                    "description": "Unsubscribe from all lists. Hope you come back soon!",
+                    "label": "Unsubscribe all",
+                    "name": "Subscription Settings"
+                  }
+                },
+                "Preferences": "Email Preferences",
+                "Update": "Update the email address you would like to be contacted at and which emails you would like to receive."
+              },
+              "FavouriteGenres": "Favorite Genres",
+              "FirstName": "First Name",
+              "ForgotPassword": {
+                "Description": "If you've forgotten your username or password, please enter the email address associated with your account below and we will send you your username and a link to reset your password.",
+                "ResetPassword": "Reset password",
+                "ResetSuccess": "Reset Password Success",
+                "ResetYourPassword": "Reset your password",
+                "Success": "You will receive an email shortly with your username and instructions to help you reset your password.",
+                "Title": "Forgot your username or password?"
+              },
+              "GenrePreferences": "Genre Preferences",
+              "Genres": {
+                "Choose": "Choose 3 or more genres you like.",
+                "Select": "Select the genres that you prefer to play as a DJ. We will use this information to provide personalised content and recommendations across all Beatport environments"
+              },
+              "HavingIssues": "Having issues? Contact customer support.",
+              "JoinForFree": "Join Beatport for free.",
+              "LastName": "Last Name",
+              "Login": "Login",
+              "Password": {
+                "ChangeSuccess": "Password successfully changed",
+                "Choose": "Choose a password",
+                "Confirm": "Confirm password",
+                "Contains": "Must contain 8 characters, ABC, abc, 123, !@%",
+                "Create": "Create Password",
+                "IdentityPassword": "Identity and Password",
+                "New": "New Password",
+                "NewRetype": "Retype new Password",
+                "NotEditable": "Your name and Beatport username are not currently editable.",
+                "Old": "Old Password",
+                "Save": "Save Password",
+                "Title": "Password",
+                "Validation": "Your password must be at least 8 characters long and contain at least 1 number and 1 alphabetic character. Remember, your password is CaSe SeNsiTiVe."
+              },
+              "Preferences": "Preferences",
+              "PreferencesUpdatedSuccess": "Your preferences were updated successfully",
+              "Profile": "Profile",
+              "ProfilePreferences": "Profile Preferences",
+              "ProfilePreferencesUpdatedSuccess": "Your profile preferences were updated successfully",
+              "Settings": "Account Settings",
+              "Signup": "Signup",
+              "Title": "Account",
+              "Username": "Username"
+            },
+            "Actions": {
+              "Add": "Add",
+              "AddToCart": "Add to cart",
+              "AddToPlaylist": "Add to playlist",
+              "AddToQueue": "Add to queue",
+              "AddTracks": "Add Tracks",
+              "Back": "Back",
+              "BackToTop": "Back to top",
+              "Browse": "Browse",
+              "Cancel": "Cancel",
+              "Continue": "Continue",
+              "Delete": "Delete",
+              "Edit": "Edit",
+              "End": "End",
+              "GetStarted": "Get started",
+              "GoBack": "Go Back",
+              "Loading": "Loading",
+              "Login": "Log In",
+              "Logout": "Log Out",
+              "Next": "Next",
+              "Off": "Off",
+              "On": "On",
+              "Play": "Play",
+              "Previous": "Previous",
+              "Publish": "Publish",
+              "Remove": "Remove",
+              "Save": "Save",
+              "SaveChanges": "Save Changes",
+              "SelectAll": "Select All",
+              "Showing": "Showing",
+              "Signup": "Sign Up!",
+              "Start": "Start",
+              "Submit": "Submit",
+              "Subscribe": "Subscribe",
+              "View": "View",
+              "ViewAll": "View all"
+            },
+            "AddChartTitle": "Add Chart Title",
+            "AddPromoCode": "Add Promo Code",
+            "AddStreaming": "Add Streaming",
+            "AllDJCharts": "All DJ Charts",
+            "And": "and",
+            "AppearsOn": "Appears On",
+            "Apply": "Apply",
+            "Artist": "Artist",
+            "Artists": "Artists",
+            "ArtistsRemixers": "Artists/Remixers",
+            "AtBeatport": "at Beatport",
+            "BeatportMusicStore": "Beatport is the world's largest electronic music store for DJs.",
+            "Billing": {
+              "Address": "Billing Address",
+              "BillingInformation": "Billing Information",
+              "CardDetails": "Card Details",
+              "CardNumber": "Card Number",
+              "CardType": "Card Type",
+              "City": "City",
+              "ContinuePaypal": "Continue to PayPal",
+              "Country": "Country",
+              "EnterYour": "Enter your",
+              "FinishSubscription": "To finish the subscription process, click the button and log into your account.",
+              "Label": "Billing",
+              "Save": "Save Billing information for your subscription.",
+              "SaveSuccess": "Billing information saved successfully.",
+              "SelectA": "Select a",
+              "SelectingPaypal": "By selecting PayPal, you will leave Beatport to complete the order process with PayPal’s Site. You will be returned to Beatport with completion of payment.",
+              "StateProvince": "State/Province",
+              "StreetAddress": "Street Address",
+              "UnitSuite": "Unit/Suite",
+              "Update": "Update Billing",
+              "UpdatePayment": "Update Payment Method",
+              "WithPurchase": "With this purchase, I accept",
+              "ZipPostal": "Zip/Postal code"
+            },
+            "BuyAll": "Buy All",
+            "Cart": {
+              "AddedToCart": "added to cart",
+              "BackToCart": "Back to Cart",
+              "Create": "Create new Cart",
+              "CreateSuccess": "Cart Successfully created.",
+              "CreditBalance": "Credit Balance:",
+              "Credits": "Credits:",
+              "DeleteConfirmation": "Delete Cart confirmation",
+              "DeleteSuccess": "Cart Successfully deleted.",
+              "DeleteWarning": "You are about to delete a cart. The contents of this cart will be unrecoverable after this action.",
+              "Discount": "Discount:",
+              "FAQ": "FAQ page",
+              "GrandTotal": "Grand Total:",
+              "ItemChanged": "{{item}} Audio Format changed to {{audioFormat}}.",
+              "ItemMoved": "{{item}} moved to {{cart}}.",
+              "ItemRemoved": "{{item}} removed from Cart.",
+              "ItemSubtotal": "Item Subtotal:",
+              "ItemSuccess": "Items successfully added to cart.",
+              "LosslessFees": "Lossless Fees:",
+              "LosslessUpgrade": "Lossless Upgrade",
+              "MoveToCart": "Move to Cart",
+              "Multiple": {
+                "CreateNew": "Create new carts",
+                "DefaultCart": "Your default cart is where items are automatically added when you click a buy button.",
+                "Description": "Having multiple carts allows you to organize the music you're purchasing however you would like.",
+                "RenameDelete": "Rename or delete existing carts",
+                "SelectChangeDefault": "Select or change your default cart",
+                "StillHaveQuestions": "If you still have questions, please click here for our",
+                "Title": "Multiple Carts",
+                "Use": "To use the multiple cart feature, click the down arrow next to any buy button. You will then see a dropdown that lets you create a cart or select an existing cart to add to.",
+                "UsePageTo": "Use this page to:"
+              },
+              "MyCarts": "My Carts",
+              "NewCart": "New Cart",
+              "NotExist": "Selected Cart does not exist",
+              "NotFound": "Cart Not Found",
+              "Preferences": "Cart Preferences",
+              "ReleasesSubtotal": "Releases subtotal:",
+              "ReleasesTotal": "{{length}} Releases Total",
+              "RemovedFromCart": "removed from cart.",
+              "ReservedNames": "{{cart}}, {{holdbin}}, {{upperHoldBin}} or {{MainCart}} names are reserved. Please choose another name.",
+              "SeeItems": "See items you’ve saved in your",
+              "SelectedItemsChanged": "Selected Items Audio Format changed to {{audioFormat}}.",
+              "SelectedItemsMoved": "Selected Items moved to {{cart}}.",
+              "SelectedItemsRemoved": "Selected Items removed from cart.",
+              "Settings": "Cart Settings",
+              "ShoppingCart": "Shopping Cart",
+              "ShoppingCarts": "Shopping Carts",
+              "StartShopping": "Start shopping from the",
+              "Subtotal": "Cart Subtotal:",
+              "SuccessAddedToCart": "successfully added to cart.",
+              "Taxes": "Taxes:",
+              "TracksSubtotal": "Tracks subtotal:",
+              "TracksTotal": "{{length}} Tracks Total",
+              "UnsupportedItem": "Unsupported Cart Item",
+              "UpdateSuccess": "Cart Successfully updated.",
+              "UseHoldBin": "Use your hold bin to save items you'd like to purchase later. You can move any item from your cart to your hold bin. Items can easily be re-added to your cart at later time.",
+              "UseShoppingCart": "Your shopping cart is ready and waiting. Click any of the pink buy buttons throughout the site to add items to your cart. Come back here when you're ready to check out."
+            },
+            "CartActions": "Cart Actions",
+            "Catalog": "Catalog",
+            "Chart": "Chart",
+            "ChartPublished": "Congrats! Your Chart has now been published",
+            "Charts": {
+              "AllowToCompile": "Charts allow you to compile and share music with the world.",
+              "CreateDJProfile": "Create your DJ Profile",
+              "FindMusic": "Find music for your chart",
+              "GetStarted": "To get started, click on the \"New Chart\" button and start creating your first chart.",
+              "GetStartedCreating": "To get started creating charts, create a DJ profile in the account settings.",
+              "MyDjCharts": {
+                "Modal": {
+                  "DeleteConfirm": "Are you sure you want to delete this chart?",
+                  "DeleteHeader": "Delete Chart",
+                  "DeleteTrackConfirm": "Are you sure you want to delete this track?",
+                  "DeleteTrackHeader": "Delete Chart Track"
+                },
+                "Toast": {
+                  "Error": "Failed to add track to your chart",
+                  "MaxLength": "Maximum of 100 tracks allowed",
+                  "Success": "Successfully added track to your chart"
+                }
+              },
+              "NoCharts": "You currently have no charts created.",
+              "NoTracks": "In order to publish your chart, you must add a minimum of 10 tracks.",
+              "label": "Charts"
+            },
+            "Checkout": {
+              "PurchasesReady": "Your purchased tracks are now ready and available in your collection to download or stream.",
+              "Success": "Checkout Success",
+              "ThankYou": "Thank you for your order",
+              "Title": "Checkout"
+            },
+            "Collection": {
+              "AddToDownloads": "Add to Downloads",
+              "LimitReached": "{{downloads}} track download limit reached",
+              "AddedToDownloads": "Added to Downloads",
+              "AddedToDownloadsToast": {
+                "Success": "Your track has been added to Downloads"
+              },
+              "NotAvailableStreaming": "This track is not licensed for streaming",
+              "Preorder": "Pre-orders are only available on their release date",
+              "Unavailable": "This track is no longer available on Beatport",
+              "Unfollow": "Unfollow",
+              "label": "Collection",
+              "FinalDownload": "This is your final download",
+              "UpgradeToDownloadMore": "Free accounts are limited to 5 downloads per track. Upgrade to <0>Beatport Streaming</0> to unlock unlimited re-downloads."
+            },
+            "Company": "Company",
+            "DJApp": "DJ App",
+            "Dates": {
+              "EndDate": "End date",
+              "LastDays": "Last {{number}} days",
+              "PleasePick": "Please pick the {{textValue}} date",
+              "StartDate": "Start date",
+              "Today": "Today",
+              "Yesterday": "Yesterday"
+            },
+            "Days": "Days",
+            "DjCharts": "DJ Charts",
+            "DjChartsGenre": "DJ Charts by Genre",
+            "DownloadDay": "Download Day",
+            "DownloadMonth": "Download Month",
+            "DownloadNowBeatport": "Download Now on Beatport",
+            "DownloadYear": "Download Year",
+            "Downloads": {
+              "CustomFileNaming": "Custom file naming",
+              "Help": "Need help downloading?",
+              "NoTracksQueued": "You do not have any tracks queued for download.",
+              "Title": "Downloads"
+            },
+            "DragDropImage": "Drag & Drop Image Here",
+            "DropIt": "Drop It",
+            "EnterCoupon": "Enter Coupon",
+            "Error": {
+              "Billing": "Something went wrong saving your billing information",
+              "Download": "There was an error with your download",
+              "OhNoTerritoryRestricted": "Oh No! Territory Restricted.",
+              "Paypal": "Something went wrong with Paypal",
+              "PleaseTryAgain": "Please Try Again",
+              "ProcessRequest": "Unable to process request.",
+              "PublishingChart": "There was an error while publishing your chart",
+              "ReturnToHomepage": "Return to Homepage",
+              "SavingChart": "There was an error trying to save your chart",
+              "SavingImage": "An error occurred saving your image",
+              "ServiceStatus": "Service Status",
+              "SorryNotAvailableRegion": "Sorry, but this content is not available in your region. Please use the navigation above to continue browsing, or return to the homepage.",
+              "StrongAuthentication": "Strong Customer Authentication required",
+              "TerritoryRestriction": "Territory Restriction",
+              "UnableAddTracks": "Unable to add tracks to playlist",
+              "UnableAuthenticatePayment": "We were unable to authenticate your payment method, choose a different payment method and try again.",
+              "UnableSubscribe": "Unable to subscribe.",
+              "UnableToLoad": "Unable to load {{type}} Tracks",
+              "UnableToProcessCard": "Unable to process your card. Please try again later...",
+              "UnknownAction": "Unknown Action",
+              "UsernamePassword": "Your username and/or password were incorrect."
+            },
+            "Exclusive": "Exclusive",
+            "ExclusiveOffers": "Exclusive Offers",
+            "Explore": "Exploring the artists and music of {{name}}? Find the newest, exclusive music here on Beatport.",
+            "ExploreComplexCharts": "Exploring the complex melodies and beats of {{name}}? Find the newest, exclusive charts here on Beatport.",
+            "ExploreComplexReleases": "Exploring the complex melodies and beats of {{name}}? Find the newest, exclusive releases here on Beatport.",
+            "ExploreComplexTracks": "Exploring the complex melodies and beats of {{name}}? Find the newest, exclusive tracks here on Beatport.",
+            "FavouriteArtistsDescription": "Get the tracks that your favourite artists are playing on Beatport, the world's largest music store for DJs.",
+            "Featured": "Featured",
+            "FeaturedCharts": "Featured Charts",
+            "FindAtBeatport": "Find {{name}} Downloads & Songs at Beatport",
+            "Follow": "Follow",
+            "Following": "Following",
+            "Footer": {
+              "AboutBeatport": "About Beatport",
+              "Careers": "Careers",
+              "ContactUs": "Contact Us",
+              "CopyrightInfringement": "Report Copyright Infringement",
+              "CustomerSupport": "Customer Support",
+              "LogosAndImages": "Logos And Images",
+              "PrivacyPolicy": "Privacy and Cookie Policy",
+              "TermsAndConditions": "Terms and Conditions"
+            },
+            "Forms": {
+              "AudioFormat": {
+                "AudioQuality": "Audio quality",
+                "ChooseAudioQuality": "Choose your preferred audio quality for purchases.",
+                "CustomizeNaming": "Customize your naming structure for downloads.",
+                "FileNaming": "File Naming",
+                "ReplaceWhitespace": "Replace whitespace"
+              },
+              "DefaultCart": "Set as default cart",
+              "Example": "Example",
+              "Keyword": "Keyword",
+              "Name": "Name",
+              "Signup": {
+                "Agree": "By clicking “Continue”, you agree to our",
+                "Previews": "2-minute previews on Web, Mobile and DJ applications.",
+                "PrivacyPolicy": "Privacy Policy",
+                "Purchases": "Purchase and download tracks and releases.",
+                "StayConnected": "Stay Connected with Beatport",
+                "TermsOfUse": "Terms of Use",
+                "UnlimitedPlaylists": "Create and manage unlimited playlists.",
+                "Unsubscribe": "Remember, you can unsubscribe from our emails at any time. For further info please refer to our",
+                "WantAlerts": "Yes - I want alerts about new music updates, exclusive special offers, and other key information from The Beatport Group.",
+                "WhatsIncluded": "What's included"
+              }
+            },
+            "Genre": "Genre",
+            "Genres": "Genres",
+            "HypePicks": "Hype Picks",
+            "Key": "Key",
+            "Label": {
+              "ArtistMusicDownload": "{{label}} artists & music download",
+              "Labels": "Labels",
+              "Title": "Label"
+            },
+            "LabelName": "Label Name",
+            "LatestReleases": "Latest Releases",
+            "Length": "Length",
+            "MixName": "Mix Name",
+            "Month": "Month",
+            "MoreFromThisLabel": "More From This Label",
+            "MusicDownload": "{{name}} Music download",
+            "MusicalKey": "Musical Key",
+            "MyBeatport": "My Beatport",
+            "MyBeatportNotFollowing": {
+              "Artists": {
+                "description": "My Beatport lets you follow your favorite artists so you can find out when they release new tracks.",
+                "header": "You're not following any artists yet!"
+              },
+              "General": {
+                "description": "My Beatport lets you follow your favorite DJs and labels so you can find out when they release new tracks. So go follow someone!",
+                "header": "You're not following anyone yet!"
+              },
+              "Labels": {
+                "description": "My Beatport lets you follow your favorite labels so you can find out when they release new tracks.",
+                "header": "You're not following any labels yet!"
+              },
+              "NoNewTracks": {
+                "description": "None of the artists or labels you follow have any new releases.",
+                "header": "No new releases at this time!"
+              },
+              "TrackFilters": {
+                "description": "Please reset selected search filters",
+                "header": "No results found."
+              }
+            },
+            "MyCharts": "My Charts",
+            "NewChart": "New Chart",
+            "NewCharts": "New Charts",
+            "NewOnBeatport": "New on Beatport",
+            "NewReleases": "New Releases",
+            "No": "No",
+            "NoPurchasedTracks": "You have no purchased tracks",
+            "NoPurchases": "You haven't made any purchases lately. Beatbot uses your purchase history to recommend tracks to you.",
+            "NoRecommended": "You don't have any recommended tracks!",
+            "NoThanks": "No Thanks",
+            "Of": "of",
+            "OnBeatport": "on Beatport",
+            "Or": "or",
+            "OriginalMix": "Original Mix",
+            "PeopleAlsoBought": "People Also Bought",
+            "Playlist": "Playlist",
+            "Playlists": {
+              "AddMulti": "Add to Playlists",
+              "AddTo": "Add to Playlist",
+              "AddedMulti": "added to {{number}} Playlists",
+              "AddedTo": "added to Playlist",
+              "ConfirmDelete": "Are you sure you want to delete playlist(s)?",
+              "Create": "Create playlist",
+              "Delete": "Delete playlists?",
+              "DuplicateTracks": {
+                "SomeExist": "Some of the tracks exist in the following playlists:",
+                "TrackAlreadyIn": "Track {{track}} is already in {{playlist}} playlist.",
+                "TrackInFollowing": "Track {{track}} is already in the following playlists:",
+                "TracksExist": "Some of the tracks exist in {{playlist}} playlist."
+              },
+              "Edit": "Edit Playlist",
+              "Name": "Playlist Name",
+              "NoPlaylistsFound": "No playlists found. To create a new playlist, click the \"Create Playlist\" button.",
+              "ReorderError": "Unable to reorder Playlists",
+              "Reordered": "Playlists Reordered",
+              "SaveSuccess": "Playlist saved successfully",
+              "Select": "Select playlist",
+              "Title": "Playlists",
+              "TrackRemoveError": "Unable to remove track from Playlist",
+              "TrackRemoved": "Track Removed from Playlist",
+              "TracksReorderError": "Unable to reorder Playlist tracks",
+              "TracksReordered": "Playlist Tracks Reordered"
+            },
+            "PleaseNote": "Please Note:",
+            "PopularReleases": "Popular Releases",
+            "PreOrder": "Pre-Order",
+            "Public": "Public",
+            "PublishDate": "Publish Date",
+            "Published": "Published",
+            "Purchase": {
+              "ConfirmRepurchase": "Are you sure you'd like to repurchase it again?",
+              "PreviouslyPurchased": "You've previously purchased",
+              "PreviouslyPurchasedItems": "Previously Purchased Items",
+              "Repurchase": "It looks like you’ve previously purchased the following items. Are you sure you’d like to repurchase them?"
+            },
+            "PurchaseDate": "Purchase Date",
+            "PurchaseDay": "Purchase Day",
+            "PurchaseMonth": "Purchase Month",
+            "PurchaseYear": "Purchase Year",
+            "Queue": {
+              "Add": "Add to Queue",
+              "Added": "added to Queue"
+            },
+            "Recommended": "Recommended",
+            "RecommendedTracks": "Recommended Tracks",
+            "Release": "Release",
+            "ReleaseDate": "Release Date",
+            "ReleaseDay": "Release Day",
+            "ReleaseMonth": "Release Month",
+            "ReleaseYear": "Release Year",
+            "Released": "Released",
+            "Releases": "Releases",
+            "Remixers": "Remixers",
+            "Reset": "Reset",
+            "ResetAll": "Reset All",
+            "ResultsPerPage": "Results per page",
+            "Search": "Search",
+            "SearchTracksReleasesEtc": "Search tracks, releases, artists, labels, and charts...",
+            "Share": {
+              "CopyClipboard": "Copy to clipboard",
+              "Embed": "Embed",
+              "EmbedLink": "Embed link copied to clipboard",
+              "Link": "Link",
+              "ShareLink": "Share link copied to clipboard",
+              "ShareOn": "Share on {{brand}}",
+              "label": "Share"
+            },
+            "Shortcuts": {
+              "AddTrackToShoppingCart": "Add Track to Shopping Cart",
+              "LeftArrow": "Left Arrow",
+              "NextTrack": "Next Track in Queue",
+              "PreviousTrack": "Previous Track in Queue",
+              "RightArrow": "Right Arrow",
+              "SeekBackwards": "Seek Backwards",
+              "SeekForwards": "Seek Forward",
+              "ToggleOpenPlaylist": "Toggle Open Playlist",
+              "TogglePlayPause": "Toggle Play / Pause",
+              "ToggleShortcuts": "Toggle Shortcuts",
+              "ToggleWaveformZoom": "Toggle Waveform Zoom"
+            },
+            "SkipFinish": "Skip and finish",
+            "SortBy": "Sort By:",
+            "SortOptions": {
+              "GenreAZ": "Genre A-Z",
+              "GenreZA": "Genre Z-A",
+              "LabelAZ": "Label A-Z",
+              "LabelZA": "Label Z-A",
+              "NewestOldest": "Newest to Oldest",
+              "OldestNewest": "Oldest to Newest",
+              "TitleAZ": "Title A-Z",
+              "TitleZA": "Title Z-A"
+            },
+            "Subscriptions": {
+              "AddStreaming": "Add Beatport Streaming",
+              "Billing": "{{billingDate}}, you will be charged {{symbol}}{{planPrice}} + applicable taxes for \"{{planCode}}\"",
+              "BillingStarts": "Billing Starts",
+              "ByDowngrading": "By downgrading from {{currentPlan}} to {{newPlan}} you will loose the following features:",
+              "Cancel": "Cancel Subscription",
+              "CancelAcknowledgement": "If you cancel your Beatport {{planCode}} plan you will lose access to {{featuresList}} and the ability to stream the entire Beatport catalog.",
+              "CancellationGoIntoEffect": "Cancellation will go into effect at the end of your current billing period on {{date}}",
+              "ChangePlan": "Change Plan",
+              "CheckoutAvailable": "Check out the available subscriptions.",
+              "Complete": "Complete your subscription",
+              "ContinueCancellation": "Continue Cancellation",
+              "CurrentPlan": "Current plan",
+              "Description": "Download and listen to new, exclusive, electronic dance music and house tracks. Available on mp3 and wav at the world’s largest store for DJs.",
+              "DowngradePlan": "Downgrade Plan",
+              "DowngradePlanQuestion": "Downgrade Plan?",
+              "DownloadLimitWarning": "Non-Streaming subscribers can re-download tracks up to 5 times with no time limit. To unlock unlimited re-downloads please subscribe to <0>Beatport Streaming</0>",
+              "DueToday": "Due Today",
+              "Expires": "Your current plan is set to expire on {{billingDate}}",
+              "Feedback": "Continuing to enhance Beatport and our subscription service is a priority for us. We value your insights and would be grateful if you could share your feedback with us. The survey should take no more than 5 minutes to complete.",
+              "FreeTrial": "Free Trial",
+              "FreeTrialExpires": "Free trial expires on {{nextDate}}, you will then be charged {{symbol}}{{planPrice}} / month unless you cancel your subscription. A reminder email will be sent 6 days before your trial expires.",
+              "LearnMoreStreaming": "Learn more",
+              "MostPopular": "Most Popular",
+              "MySubscription": "My subscription",
+              "MySubscriptions": "My Subscriptions",
+              "NoPlan": "You will no longer have high quality streaming, curated and custom playlists or your purchase history.",
+              "Plans": {
+                "Advanced": "Advanced",
+                "AdvancedEmployee": "Advanced Employee",
+                "AdvancedPartner": "Advanced Partner",
+                "CommonFeatures": {
+                  "DjWebApp": "Beatport DJ Web App",
+                  "FullTrackPlayback": "Full-Length Track Playback",
+                  "HighQualityStreaming": "Highest-Quality Audio",
+                  "Integrations": "DJ platform integrations",
+                  "MobileApp": "Beatport Mobile App",
+                  "OfflinePlayback": "Offline Library (1,000 Tracks)",
+                  "ReDownload": "Unlimited Re-Downloads of Purchased Tracks",
+                  "Website": "Beatport Website"
+                },
+                "Descriptions": {
+                  "BP": "Best for music discovery",
+                  "BP_LINK": "Best value for DJ platform integrations",
+                  "BP_PRO": "Best for highest-quality audio",
+                  "BP_PRO_PLUS": "Best for highest-quality audio"
+                },
+                "Essential": "Essential",
+                "EssentialEmployee": "Essential Employee",
+                "EssentialPartner": "Essential Partner",
+                "Footnotes": {
+                  "AvailableIntegrations": "CDJ-3000, DEX3, djay (Algoriddim), DJUCED, edjing Mix, Engine DJ OS (Denon DJ, Numark), future.dj.pro, rekordbox, Serato, Traktor, Tribe XR, VirtualDJ, WeDJ.",
+                  "NoFreeDownloads": "No free downloads included.",
+                  "UnsupportedIntegrations": "Not supported by the CDJ-3000 or Engine DJ OS (Denon DJ, Numark). DJ Platform Integrations only."
+                },
+                "LinkPro": "LINK Pro+",
+                "Professional": "Professional",
+                "ProfessionalAmbassador": "Professional Ambassador",
+                "ProfessionalEmployee": "Professional Employee",
+                "ProfessionalPartner": "Professional Partner"
+              },
+              "PleaseLetUsKnowHowWeCanImprove": "Please let us know how we can improve.",
+              "Start": "Start subscription",
+              "StreamingCTA": "Stream over 10 million full-length tracks from the Beatport catalog to play in any of our connected apps or DJ platform integrations.",
+              "SubscriptionPlans": "Subscription Plans",
+              "SwitchPlan": "You can switch to Beatport {{planCode}} plan for {{symbol}}{{price}}/month plus applicable taxes to keep {{featuresList}}",
+              "Title": "Subscriptions",
+              "TryFree": "Try {{planLength}} {{planInterval}} Free",
+              "Welcome": "Welcome to {{planCode}}"
+            },
+            "TakeSurvey": "Take Survey",
+            "Time": "time",
+            "Title": "Title",
+            "Top": {
+              "CheckOutTop100": "Check out the top 100 electronic dance music tracks on Beatport. Explore the artists and songs for these EDM DJ tracks now.",
+              "Top100Releases": "Top 100 Releases",
+              "Top100Songs": "Top 100 Songs & DJ Tracks",
+              "Top100Tracks": "Top 100 Tracks",
+              "Top10Releases": "Top 10 Releases",
+              "Top10Tracks": "Top 10 Tracks"
+            },
+            "Track": "Track",
+            "TrackID": "Track ID",
+            "TrackName": "Track Name",
+            "Tracks": "Tracks",
+            "Unknown": {
+              "Artist": "Unknown Artist",
+              "Mix": "Unknown Mix",
+              "Unknown": "Unknown"
+            },
+            "Unpublished": "Unpublished",
+            "Upgrade": "Upgrade",
+            "Validation": {
+              "64Characters": "Cannot exceed 64 characters",
+              "CVV": "Please enter a valid CVV",
+              "ChartTracks": "Minimum of 10 tracks allowed",
+              "Exists": "This {{field}} exists. Please choose another.",
+              "InvalidCoupon": "Invalid Coupon.",
+              "InvalidEmail": "Please enter a valid email address.",
+              "Name": "Name must consist of only letters, numbers, underscore and dash",
+              "Password": "Password must be at least 8 characters and contain at least 1 letter and number.",
+              "PasswordOldNew": "New password cannot be your old password",
+              "PasswordsNoMatch": "Passwords do not match",
+              "Required": "Required",
+              "RequiredField": "This field is required.",
+              "Username": {
+                "3Characters": "Username must be at least 3 characters long",
+                "45Characters": "Username must have 45 characters or fewer",
+                "ConsistOf": "Username must consist of only letters, numbers, and underscores",
+                "NotProvided": "Username not provided",
+                "Underscore": "Username cannot begin with an underscore"
+              }
+            },
+            "Warning": {
+              "CouponDoesNotApply": "Coupon does not apply toward lossless upgrades",
+              "DownloadUnavailable": "Download Unavailable",
+              "DownloadsNotAvailable": "Downloads are not available on this device. Please visit this page on a desktop computer to download your purchases.",
+              "MakeSureSearchCorrect": "Make sure all names and titles are spelled correctly or try using different keywords in your search.",
+              "NoResults": "Your search \"{{searchQuery}}\" did not return any results.",
+              "TryBrowsing": "If that doesn’t work, try browsing the available genre.",
+              "UnsubscribeAll": "Please unselect unsubscribe all option"
+            },
+            "Welcome": "Welcome to Beatport",
+            "Year": "Year",
+            "Yes": "Yes",
+            "YesDelete": "Yes, Delete"
+          }
+        }
+      },
+      "initialLocale": "en",
+      "ns": ["translation"],
+      "userConfig": {
+        "i18n": {
+          "defaultLocale": "en",
+          "locales": ["en", "de", "fr", "es", "it", "ja", "pt", "nl"]
+        },
+        "localePath": "/home/bpnext/beatport-next/public/locales",
+        "defaultNS": "translation",
+        "localeDetection": false,
+        "default": {
+          "i18n": {
+            "defaultLocale": "en",
+            "locales": ["en", "de", "fr", "es", "it", "ja", "pt", "nl"]
+          },
+          "localePath": "/home/bpnext/beatport-next/public/locales",
+          "defaultNS": "translation",
+          "localeDetection": false
+        }
+      }
+    }
+  },
+  "__N_SSP": true
+}

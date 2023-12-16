@@ -1,12 +1,12 @@
+require('../../../lib/httpInterceptor').init()
 const L = require('partial.lenses')
 const { initDb, pg } = require('../../../lib/db.js')
 const { getUserTracks } = require('../../../../routes/users/logic.js')
 const assert = require('assert')
 const { test } = require('../../../lib/test.js')
-const myBeatport = require('../../../fixtures/my-beatport.json')
-const beatportTracks = require('../../../fixtures/beatport-tracks.json')
-const libraryTracks = myBeatport.results
-const newTracks = beatportTracks
+const beatportLibrary = require('../../../fixtures/my-beatport.json')
+const firstTrack = require('../../../fixtures/noisia_concussion_beatport.json')
+const secondTrack = require('../../../fixtures/noisia_purpose_beatport.json')
 const scoreDetails = require('../../../fixtures/score-details.json')
 const { updateDates } = require('../../../lib/fixture-utils')
 const { addNewBeatportTracksToDb, addPurchasedBeatportTracksToDb } = require('../../../lib/tracks.js')
@@ -16,6 +16,8 @@ const {
   updateDateAddedScore,
   updatePurchasedScores
 } = require('../../../../jobs/scores')
+const { setupBeatportTracks } = require('../../../lib/tracks')
+require('../../../lib/httpInterceptor').init()
 
 const userId = 1
 
@@ -24,8 +26,9 @@ test({
     setup: async () => {
       const updateDatesToToday = updateDates()
       await initDb()
-      await addPurchasedBeatportTracksToDb(updateDatesToToday(libraryTracks))
-      await addNewBeatportTracksToDb(updateDatesToToday(newTracks))
+      await addPurchasedBeatportTracksToDb(updateDatesToToday(beatportLibrary))
+      await addNewBeatportTracksToDb(updateDatesToToday(firstTrack))
+      await addNewBeatportTracksToDb(updateDatesToToday(secondTrack))
       await updateDateReleasedScore()
       await updateDatePublishedScore()
       await updateDateAddedScore()
@@ -33,7 +36,7 @@ test({
     },
     'two tracks are added': async () => {
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from track')
-      assert.strictEqual(trackCount, 4)
+      assert.strictEqual(trackCount, 3)
     },
     'correct score is returned': async () => {
       const tracks = await getUserTracks(userId)

@@ -1,0 +1,46 @@
+{
+  "artists": [
+    {
+      "id": 1,
+      "name": "Noisia"
+    }
+  ],
+  "duration": 334883,
+  "keys": [],
+  "labels": [],
+  "previews": [
+    {
+      "end_ms": null,
+      "format": "mp3",
+      "id": 1,
+      "length_ms": null,
+      "start_ms": null,
+      "store": "spotify",
+      "url": "https://p.scdn.co/mp3-preview/c05f17f98aab138bf451864c5a06033a996a6f71?cid=1266bb005f1947ffba2eff7601873056",
+      "waveforms": []
+    }
+  ],
+  "releases": [
+    {
+      "id": 1,
+      "name": "The Tide / Concussion"
+    }
+  ],
+  "remixers": [],
+  "stores": [
+    {
+      "bpm": null,
+      "code": "spotify",
+      "id": 3,
+      "name": "Spotify",
+      "release": {
+        "url": "https://open.spotify.com/album/1xq7DkoMBlQY3cKRizz2fl"
+      },
+      "trackId": "2cUvoVjOfB3WNgkVjtaYST",
+      "url": "https://open.spotify.com/track/2cUvoVjOfB3WNgkVjtaYST"
+    }
+  ],
+  "title": "Concussion",
+  "track_id": 1,
+  "version": null
+}

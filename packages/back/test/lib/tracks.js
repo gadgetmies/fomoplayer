@@ -3,6 +3,7 @@ const { removeSources } = require('./sources')
 const { pg } = require('./db')
 const { insertSource } = require('../../jobs/watches/shared/db')
 const { storeUrl: beatportUrl } = require('../../routes/stores/beatport/logic.js')
+const { storeUrl: spotifyUrl } = require('../../routes/stores/spotify/logic.js')
 const { addStoreTracksToUsers } = require('../../routes/shared/tracks.js')
 const { queryArtistsForTracks, removeArtists } = require('./artists.js')
 const { queryReleasesForTracks, removeReleases } = require('./releases')
@@ -11,10 +12,11 @@ const {
   beatportTracksTransform,
   beatportLibraryTransform
 } = require('../../../chrome-extension/src/js/transforms/beatport.js')
+const { spotifyTracksTransform } = require('multi_store_player_chrome_extension/src/js/transforms/spotify')
 
 const userId = 1
 
-const addTracks = (module.exports.addTracks = async (tracks, skipOld, type = 'new') => {
+const addBeatportTracks = (module.exports.addTracks = async (tracks, skipOld, type = 'new') => {
   const sourceId = await insertSource({
     operation: 'tracksHandlerTest',
     type: 'new',
@@ -28,11 +30,25 @@ const addTracks = (module.exports.addTracks = async (tracks, skipOld, type = 'ne
   }
 })
 
-const addNewBeatportTracksToDb = (module.exports.addNewBeatportTracksToDb = async tracks =>
-  await addTracks(beatportTracksTransform(tracks), true))
+const addSpotifyTracks = (module.exports.addTracks = async (tracks, skipOld, type = 'new') => {
+  const sourceId = await insertSource({
+    operation: 'tracksHandlerTest',
+    type: 'new',
+    storeUrl: spotifyUrl
+  })
+  const addedTracks = await addStoreTracksToUsers(spotifyUrl, tracks, [userId], sourceId, skipOld, type)
+
+  return {
+    sourceId,
+    addedTracks
+  }
+})
+
+const addNewBeatportTracksToDb = (module.exports.addNewBeatportTracksToDb = async (tracks, skipOld) =>
+  await addBeatportTracks(beatportTracksTransform(tracks), skipOld))
 
 const addPurchasedBeatportTracksToDb = (module.exports.addPurchasedBeatportTracksToDb = async tracks =>
-  await addTracks(beatportLibraryTransform(tracks), false, 'purchased'))
+  await addBeatportTracks(beatportLibraryTransform(tracks), false, 'purchased'))
 
 const removeTracks = (module.exports.removeTracks = async trackIds =>
   await pg.queryRowsAsync(
@@ -42,13 +58,33 @@ DELETE from track WHERE track_id = ANY(${trackIds})
 `
   ))
 
-module.exports.setupTracks = async (...trackBatches) => {
+module.exports.addNewSpotifyTracksToDb = async (tracks, skipOld = false) => {
+  const sourceId = await insertSource({
+    operation: 'tracksHandlerTest',
+    type: 'new',
+    storeUrl: spotifyUrl
+  })
+  const addedTracks = await addStoreTracksToUsers(
+    spotifyUrl,
+    spotifyTracksTransform(tracks),
+    [userId],
+    sourceId,
+    skipOld
+  )
+
+  return {
+    sourceId,
+    addedTracks
+  }
+}
+
+module.exports.setupBeatportTracks = async (trackBatches, skipOld = false) => {
   let addedSources = []
   let addedTracksAgg = []
 
   for (const { type = 'new', tracks } of trackBatches) {
     const { sourceId, addedTracks } = await (type === 'new'
-      ? addNewBeatportTracksToDb
+      ? tracks => addNewBeatportTracksToDb(tracks, skipOld)
       : addPurchasedBeatportTracksToDb)(tracks)
     addedSources.push(sourceId)
     addedTracksAgg = [...addedTracksAgg, ...addedTracks]
@@ -61,11 +97,10 @@ module.exports.setupTracks = async (...trackBatches) => {
 }
 
 module.exports.teardownTracks = async ({ addedTracks, addedSources }) => {
-  const addedTrackIds = addedTracks.map(url => url.substring(url.lastIndexOf('/') + 1))
-  const [{ artistIds }] = await queryArtistsForTracks(addedTrackIds)
-  const [{ labelIds }] = await queryLabelsForTracks(addedTrackIds)
-  const [{ releaseIds }] = await queryReleasesForTracks(addedTrackIds)
-  await removeTracks(addedTrackIds)
+  const [{ artistIds }] = await queryArtistsForTracks(addedTracks)
+  const [{ labelIds }] = await queryLabelsForTracks(addedTracks)
+  const [{ releaseIds }] = await queryReleasesForTracks(addedTracks)
+  await removeTracks(addedTracks)
   await removeArtists(artistIds)
   await removeLabels(labelIds)
   await removeReleases(releaseIds)

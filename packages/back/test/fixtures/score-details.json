@@ -1,15 +1,15 @@
 [
   {
-    "artist": { "score": 2, "weight": 5 },
+    "artist": { "score": 1, "weight": 5 },
     "artist_follow": { "score": 0, "weight": 1 },
-    "label": { "score": 0, "weight": 1 },
+    "label": { "score": 1, "weight": 1 },
     "label_follow": { "score": 0, "weight": 1 },
     "date_added": { "score": 0, "weight": -0.1 },
     "date_released": { "score": 0, "weight": -0.1 },
     "date_published": { "score": 0, "weight": -0.1 }
   },
   {
-    "artist": { "score": 0, "weight": 5 },
+    "artist": { "score": 1, "weight": 5 },
     "artist_follow": { "score": 0, "weight": 1 },
     "label": { "score": 1, "weight": 1 },
     "label_follow": { "score": 0, "weight": 1 },

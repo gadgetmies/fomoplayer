@@ -78,10 +78,8 @@ module.exports.spotifyTracksTransform = L.collect([
     duration_ms: [trackOrRoot, 'duration_ms'],
     release: [
       trackOrRoot,
-      L.partsOf( // TODO: is the isrc ever defined for an album?
-        L.branch({ isrc: ['external_urls', 'isrc'], album: L.pick({ id: 'id', title: 'name', url: urlLens }) })
-      ),
-      ([isrc, album]) => ({ isrc, ...album })
+      'album',
+      L.pick({ id: 'id', title: 'name', url: urlLens })
     ],
     isrc: [trackOrRoot, 'external_ids', 'isrc'],
     track_number: 'track_number',

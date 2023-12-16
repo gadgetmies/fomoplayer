@@ -67,6 +67,7 @@ const trackTransform = L.pick({
   ],
   released: ['new_release_date'], // TODO: move to release?
   published: ['publish_date'],
+  purchased: ['purchase_date'],
   previews: L.partsOf([
     L.pick({
       format: R.always('mp3'),
@@ -120,64 +121,14 @@ module.exports.beatportTracksTransform = L.collect([
 
 module.exports.beatportLibraryTransform = L.collect([
   // TODO: ensure this works on the new site + add catalog number, track number and isrc
+  L.choices('props',[]),
+  'pageProps',
+  'dehydratedState',
+  'queries',
   L.elems,
-  L.pick({
-    title: ['name'],
-    version: ['mix_name', removeOriginalMix],
-    id: ['id', L.reread(idToString)],
-    url: [L.props('slug', 'id'), L.reread(beatportUrl('track'))],
-    artists: L.partsOf(
-      L.branch({
-        artists: [
-          L.elems,
-          L.pick({
-            ...sharedArtistPropsLens,
-            role: R.always('author')
-          })
-        ],
-        remixers: [
-          L.elems,
-          L.pick({
-            ...sharedArtistPropsLens,
-            role: R.always('remixer')
-          })
-        ]
-      })
-    ),
-    genres: L.partsOf(['genre', 'name']),
-    duration_ms: ['length_ms'],
-    release: [
-      'release',
-      L.pick({
-        id: ['id', L.reread(idToString)],
-        title: 'name',
-        url: [L.props('slug', 'id'), L.reread(beatportUrl('release'))]
-      })
-    ],
-    released: ['new_release_date'],
-    published: ['publish_date'],
-    purchased: ['purchase_date'],
-    previews: L.partsOf(
-      L.pick({
-        format: R.always('mp3'),
-        url: ['sample_url'],
-        start_ms: ['sample_start_ms'],
-        end_ms: ['sample_end_ms']
-      })
-    ),
-    label: [
-      'release',
-      'label',
-      L.pick({
-        id: ['id', L.reread(idToString)],
-        name: 'name',
-        url: [L.props('slug', 'id'), L.reread(beatportUrl('label'))]
-      })
-    ],
-    key: [
-      L.props('camelot_number', 'camelot_letter'),
-      L.reread(({ camelot_number, camelot_letter }) => `${camelot_number}${camelot_letter}`)
-    ],
-    store_details: []
-  })
+  'state',
+  'data',
+  'results',
+  L.elems,
+  trackTransform
 ])

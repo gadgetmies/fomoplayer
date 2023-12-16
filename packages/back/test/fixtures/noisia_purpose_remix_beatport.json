@@ -1,151 +1,157 @@
 {
   "props": {
     "pageProps": {
-      "_sentryTraceData": "7b7a1010b4fb4654b3213df74d401607-b27cf36dd6e82bd9-0",
-      "_sentryBaggage": "sentry-environment=production,sentry-release=V7goWk4B7063GKj9nFPyC,sentry-public_key=ac053d08206c40feaaa94212ec8c18db,sentry-trace_id=7b7a1010b4fb4654b3213df74d401607,sentry-sample_rate=0.001,sentry-transaction=%2Flibrary,sentry-sampled=false",
-      "accessToken": "be4Q0byRspc1MOePIUBAOoD2GElnxM",
+      "_sentryTraceData": "95100ecd04c9403883c6851722297601-9b73ba6acac5265d-0",
+      "_sentryBaggage": "sentry-environment=production,sentry-release=V7goWk4B7063GKj9nFPyC,sentry-public_key=ac053d08206c40feaaa94212ec8c18db,sentry-trace_id=95100ecd04c9403883c6851722297601,sentry-sample_rate=0.001,sentry-transaction=%2Ftrack%2F%5Bdescription%5D%2F%5Bid%5D,sentry-sampled=false",
       "dehydratedState": {
         "mutations": [],
         "queries": [
           {
             "state": {
               "data": {
-                "next": "api-internal.beatportprod.com/v4/my/downloads/?page=2&per_page=25&name=",
-                "previous": null,
-                "count": 3051,
-                "page": "1/123",
-                "per_page": 25,
-                "results": [
+                "artists": [
                   {
-                    "artists": [
-                      {
-                        "id": 912,
-                        "image": {
-                          "id": 19818374,
-                          "uri": "https://geo-media.beatport.com/image_size/590x404/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg",
-                          "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg"
-                        },
-                        "name": "Noisia",
-                        "slug": "noisia",
-                        "url": "https://api-internal.beatportprod.com/v4/catalog/artists/912/"
-                      },
-                      {
-                        "id": 10584,
-                        "image": {
-                          "id": 26829734,
-                          "uri": "https://geo-media.beatport.com/image_size/590x404/50e31cec-c838-4a45-a99b-68517e7f299e.jpg",
-                          "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/50e31cec-c838-4a45-a99b-68517e7f299e.jpg"
-                        },
-                        "name": "Phace",
-                        "slug": "phace",
-                        "url": "https://api-internal.beatportprod.com/v4/catalog/artists/10584/"
-                      }
-                    ],
-                    "audio_format": {
-                      "id": 1,
-                      "name": "mp3"
-                    },
-                    "bpm": 104,
-                    "enabled": true,
-                    "genre": {
-                      "id": 1,
-                      "name": "Drum & Bass",
-                      "slug": "drum-bass",
-                      "url": "https://api-internal.beatportprod.com/v4/catalog/genres/1/"
-                    },
-                    "id": 16039305,
+                    "id": 912,
                     "image": {
-                      "id": 30103311,
-                      "uri": "https://geo-media.beatport.com/image_size/1500x250/5099762b-21a1-40f3-b2eb-3c59677b87cc.png",
-                      "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/5099762b-21a1-40f3-b2eb-3c59677b87cc.png"
+                      "id": 19818374,
+                      "uri": "https://geo-media.beatport.com/image_size/590x404/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg",
+                      "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg"
                     },
-                    "initial_download": false,
-                    "is_available_for_streaming": true,
-                    "key": {
-                      "camelot_number": 7,
-                      "camelot_letter": "B",
-                      "chord_type": {
-                        "id": 2,
-                        "name": "Major",
-                        "url": "https://api-internal.beatportprod.com/v4/catalog/chord-types/2/"
-                      },
-                      "id": 19,
-                      "is_sharp": false,
-                      "is_flat": false,
-                      "letter": "F",
-                      "name": "F Major",
-                      "url": "https://api-internal.beatportprod.com/v4/catalog/keys/19/"
+                    "name": "Noisia",
+                    "slug": "noisia",
+                    "url": "https://api-internal.beatportprod.com/v4/catalog/artists/912/"
+                  },
+                  {
+                    "id": 10584,
+                    "image": {
+                      "id": 26829734,
+                      "uri": "https://geo-media.beatport.com/image_size/590x404/50e31cec-c838-4a45-a99b-68517e7f299e.jpg",
+                      "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/50e31cec-c838-4a45-a99b-68517e7f299e.jpg"
                     },
-                    "length_ms": 272091,
-                    "mix_name": "Buunshin Remix",
-                    "name": "Purpose",
-                    "new_release_date": "2021-12-17",
-                    "order_item_download_id": 739178828,
-                    "order_item_download_try_count": 1,
-                    "pre_order_date": null,
-                    "pre_order": false,
-                    "price": {
-                      "code": "EUR",
-                      "symbol": "€",
-                      "value": 1.39,
-                      "display": "€1.39"
-                    },
-                    "publish_date": "2021-12-17",
-                    "purchase_date": "2023-07-21T11:31:34-06:00",
-                    "received_status": true,
-                    "release": {
-                      "id": 3594754,
-                      "name": "The Resonance I",
-                      "image": {
-                        "id": 30103300,
-                        "uri": "https://geo-media.beatport.com/image_size/1400x1400/5042867e-bc82-4b41-b914-a46e2b53caea.jpg",
-                        "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/5042867e-bc82-4b41-b914-a46e2b53caea.jpg"
-                      },
-                      "label": {
-                        "id": 3040,
-                        "name": "Vision Recordings",
-                        "image": {
-                          "id": 12375544,
-                          "uri": "https://geo-media.beatport.com/image_size/500x500/654150eb-48ed-4900-83f6-373bc62f585c.jpg",
-                          "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/654150eb-48ed-4900-83f6-373bc62f585c.jpg"
-                        },
-                        "slug": "vision-recordings"
-                      },
-                      "slug": "the-resonance-i"
-                    },
-                    "remixers": [
-                      {
-                        "id": 743621,
-                        "image": {
-                          "id": 27206003,
-                          "uri": "https://geo-media.beatport.com/image_size/590x404/55fc06cf-383b-4e63-a0ae-cd949fc628f8.jpg",
-                          "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/55fc06cf-383b-4e63-a0ae-cd949fc628f8.jpg"
-                        },
-                        "name": "Buunshin",
-                        "slug": "buunshin",
-                        "url": "https://api-internal.beatportprod.com/v4/catalog/artists/743621/"
-                      }
-                    ],
-                    "sample_url": "https://geo-samples.beatport.com/track/5099762b-21a1-40f3-b2eb-3c59677b87cc.LOFI.mp3",
-                    "sample_start_ms": 108836,
-                    "sample_end_ms": 228836,
-                    "slug": "purpose",
-                    "sub_genre": null,
-                    "upgrade_fees": {
-                      "aiff": {
-                        "code": "EUR",
-                        "symbol": "€",
-                        "value": 0.75,
-                        "display": "€0.75"
-                      }
-                    },
-                    "url": "https://api-internal.beatportprod.com/v4/catalog/tracks/16039305/",
-                    "is_hype": false
+                    "name": "Phace",
+                    "slug": "phace",
+                    "url": "https://api-internal.beatportprod.com/v4/catalog/artists/10584/"
                   }
-                ]
+                ],
+                "audio_format": null,
+                "available_worldwide": false,
+                "bpm": 104,
+                "catalog_number": "VSN089",
+                "current_status": {
+                  "id": 10,
+                  "name": "General Content",
+                  "url": "https://api-internal.beatportprod.com/v4/auxiliary/current-status/10/"
+                },
+                "desc": null,
+                "enabled": true,
+                "encode_status": "CONVERTED",
+                "encoded_date": "2021-12-09T02:18:24-07:00",
+                "exclusive": false,
+                "exclusive_period": {
+                  "days": 0,
+                  "description": "Not exclusive",
+                  "id": 1,
+                  "url": "https://api-internal.beatportprod.com/v4/auxiliary/exclusive-period/1/"
+                },
+                "free_downloads": [],
+                "free_download_start_date": null,
+                "free_download_end_date": null,
+                "genre": {
+                  "id": 1,
+                  "name": "Drum \u0026 Bass",
+                  "slug": "drum-bass",
+                  "url": "https://api-internal.beatportprod.com/v4/catalog/genres/1/"
+                },
+                "hidden": false,
+                "id": 16039305,
+                "image": {
+                  "id": 30103311,
+                  "uri": "https://geo-media.beatport.com/image_size/1500x250/5099762b-21a1-40f3-b2eb-3c59677b87cc.png",
+                  "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/5099762b-21a1-40f3-b2eb-3c59677b87cc.png"
+                },
+                "is_available_for_streaming": true,
+                "is_classic": false,
+                "isrc": "UKACT2133031",
+                "key": {
+                  "camelot_number": 7,
+                  "camelot_letter": "B",
+                  "chord_type": {
+                    "id": 2,
+                    "name": "Major",
+                    "url": "https://api-internal.beatportprod.com/v4/catalog/chord-types/2/"
+                  },
+                  "id": 19,
+                  "is_sharp": false,
+                  "is_flat": false,
+                  "letter": "F",
+                  "name": "F Major",
+                  "url": "https://api-internal.beatportprod.com/v4/catalog/keys/19/"
+                },
+                "label_track_identifier": "4781279855",
+                "length": "4:32",
+                "length_ms": 272091,
+                "mix_name": "Buunshin Remix",
+                "name": "Purpose",
+                "new_release_date": "2021-12-17",
+                "number": 6,
+                "pre_order": false,
+                "pre_order_date": null,
+                "price": {
+                  "code": "EUR",
+                  "symbol": "€",
+                  "value": 1.39,
+                  "display": "€1.39"
+                },
+                "publish_date": "2021-12-17",
+                "publish_status": "published",
+                "release": {
+                  "id": 3594754,
+                  "name": "The Resonance I",
+                  "image": {
+                    "id": 30103300,
+                    "uri": "https://geo-media.beatport.com/image_size/1400x1400/5042867e-bc82-4b41-b914-a46e2b53caea.jpg",
+                    "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/5042867e-bc82-4b41-b914-a46e2b53caea.jpg"
+                  },
+                  "label": {
+                    "id": 3040,
+                    "name": "Vision Recordings",
+                    "image": {
+                      "id": 12375544,
+                      "uri": "https://geo-media.beatport.com/image_size/500x500/654150eb-48ed-4900-83f6-373bc62f585c.jpg",
+                      "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/654150eb-48ed-4900-83f6-373bc62f585c.jpg"
+                    },
+                    "slug": "vision-recordings"
+                  },
+                  "slug": "the-resonance-i"
+                },
+                "remixers": [
+                  {
+                    "id": 743621,
+                    "image": {
+                      "id": 27206003,
+                      "uri": "https://geo-media.beatport.com/image_size/590x404/55fc06cf-383b-4e63-a0ae-cd949fc628f8.jpg",
+                      "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/55fc06cf-383b-4e63-a0ae-cd949fc628f8.jpg"
+                    },
+                    "name": "Buunshin",
+                    "slug": "buunshin",
+                    "url": "https://api-internal.beatportprod.com/v4/catalog/artists/743621/"
+                  }
+                ],
+                "sale_type": {
+                  "id": 1,
+                  "name": "purchase",
+                  "url": "https://api-internal.beatportprod.com/v4/auxiliary/sale-types/1/"
+                },
+                "sample_url": "https://geo-samples.beatport.com/track/5099762b-21a1-40f3-b2eb-3c59677b87cc.LOFI.mp3",
+                "sample_start_ms": 108836,
+                "sample_end_ms": 228836,
+                "slug": "purpose",
+                "sub_genre": null,
+                "was_ever_exclusive": false,
+                "is_hype": false
               },
               "dataUpdateCount": 1,
-              "dataUpdatedAt": 1702755855507,
+              "dataUpdatedAt": 1702743342801,
               "error": null,
               "errorUpdateCount": 0,
               "errorUpdatedAt": 0,
@@ -156,10 +162,152 @@
               "status": "success",
               "fetchStatus": "idle"
             },
-            "queryKey": ["library-collection", "OQeE0ObRMxpGns2Mc1oeI4blDAPyUB"],
-            "queryHash": "[\"library-collection\",\"OQeE0ObRMxpGns2Mc1oeI4blDAPyUB\"]"
+            "queryKey": ["track-16039305"],
+            "queryHash": "[\"track-16039305\"]"
           }
         ]
+      },
+      "track": {
+        "artists": [
+          {
+            "id": 912,
+            "image": {
+              "id": 19818374,
+              "uri": "https://geo-media.beatport.com/image_size/590x404/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg",
+              "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg"
+            },
+            "name": "Noisia",
+            "slug": "noisia",
+            "url": "https://api-internal.beatportprod.com/v4/catalog/artists/912/"
+          },
+          {
+            "id": 10584,
+            "image": {
+              "id": 26829734,
+              "uri": "https://geo-media.beatport.com/image_size/590x404/50e31cec-c838-4a45-a99b-68517e7f299e.jpg",
+              "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/50e31cec-c838-4a45-a99b-68517e7f299e.jpg"
+            },
+            "name": "Phace",
+            "slug": "phace",
+            "url": "https://api-internal.beatportprod.com/v4/catalog/artists/10584/"
+          }
+        ],
+        "audio_format": null,
+        "available_worldwide": false,
+        "bpm": 104,
+        "catalog_number": "VSN089",
+        "current_status": {
+          "id": 10,
+          "name": "General Content",
+          "url": "https://api-internal.beatportprod.com/v4/auxiliary/current-status/10/"
+        },
+        "desc": null,
+        "enabled": true,
+        "encode_status": "CONVERTED",
+        "encoded_date": "2021-12-09T02:18:24-07:00",
+        "exclusive": false,
+        "exclusive_period": {
+          "days": 0,
+          "description": "Not exclusive",
+          "id": 1,
+          "url": "https://api-internal.beatportprod.com/v4/auxiliary/exclusive-period/1/"
+        },
+        "free_downloads": [],
+        "free_download_start_date": null,
+        "free_download_end_date": null,
+        "genre": {
+          "id": 1,
+          "name": "Drum \u0026 Bass",
+          "slug": "drum-bass",
+          "url": "https://api-internal.beatportprod.com/v4/catalog/genres/1/"
+        },
+        "hidden": false,
+        "id": 16039305,
+        "image": {
+          "id": 30103311,
+          "uri": "https://geo-media.beatport.com/image_size/1500x250/5099762b-21a1-40f3-b2eb-3c59677b87cc.png",
+          "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/5099762b-21a1-40f3-b2eb-3c59677b87cc.png"
+        },
+        "is_available_for_streaming": true,
+        "is_classic": false,
+        "isrc": "UKACT2133031",
+        "key": {
+          "camelot_number": 7,
+          "camelot_letter": "B",
+          "chord_type": {
+            "id": 2,
+            "name": "Major",
+            "url": "https://api-internal.beatportprod.com/v4/catalog/chord-types/2/"
+          },
+          "id": 19,
+          "is_sharp": false,
+          "is_flat": false,
+          "letter": "F",
+          "name": "F Major",
+          "url": "https://api-internal.beatportprod.com/v4/catalog/keys/19/"
+        },
+        "label_track_identifier": "4781279855",
+        "length": "4:32",
+        "length_ms": 272091,
+        "mix_name": "Buunshin Remix",
+        "name": "Purpose",
+        "new_release_date": "2021-12-17",
+        "number": 6,
+        "pre_order": false,
+        "pre_order_date": null,
+        "price": {
+          "code": "EUR",
+          "symbol": "€",
+          "value": 1.39,
+          "display": "€1.39"
+        },
+        "publish_date": "2021-12-17",
+        "publish_status": "published",
+        "release": {
+          "id": 3594754,
+          "name": "The Resonance I",
+          "image": {
+            "id": 30103300,
+            "uri": "https://geo-media.beatport.com/image_size/1400x1400/5042867e-bc82-4b41-b914-a46e2b53caea.jpg",
+            "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/5042867e-bc82-4b41-b914-a46e2b53caea.jpg"
+          },
+          "label": {
+            "id": 3040,
+            "name": "Vision Recordings",
+            "image": {
+              "id": 12375544,
+              "uri": "https://geo-media.beatport.com/image_size/500x500/654150eb-48ed-4900-83f6-373bc62f585c.jpg",
+              "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/654150eb-48ed-4900-83f6-373bc62f585c.jpg"
+            },
+            "slug": "vision-recordings"
+          },
+          "slug": "the-resonance-i"
+        },
+        "remixers": [
+          {
+            "id": 743621,
+            "image": {
+              "id": 27206003,
+              "uri": "https://geo-media.beatport.com/image_size/590x404/55fc06cf-383b-4e63-a0ae-cd949fc628f8.jpg",
+              "dynamic_uri": "https://geo-media.beatport.com/image_size/{w}x{h}/55fc06cf-383b-4e63-a0ae-cd949fc628f8.jpg"
+            },
+            "name": "Buunshin",
+            "slug": "buunshin",
+            "url": "https://api-internal.beatportprod.com/v4/catalog/artists/743621/"
+          }
+        ],
+        "sale_type": {
+          "id": 1,
+          "name": "purchase",
+          "url": "https://api-internal.beatportprod.com/v4/auxiliary/sale-types/1/"
+        },
+        "sample_url": "https://geo-samples.beatport.com/track/5099762b-21a1-40f3-b2eb-3c59677b87cc.LOFI.mp3",
+        "sample_start_ms": 108836,
+        "sample_end_ms": 228836,
+        "slug": "purpose",
+        "sub_genre": null,
+        "was_ever_exclusive": false,
+        "is_hype": false
       },
       "_nextI18Next": {
         "initialI18nStore": {
@@ -434,7 +582,7 @@
                 "Unfollow": "Unfollow",
                 "label": "Collection",
                 "FinalDownload": "This is your final download",
-                "UpgradeToDownloadMore": "Free accounts are limited to 5 downloads per track. Upgrade to <0>Beatport Streaming</0> to unlock unlimited re-downloads."
+                "UpgradeToDownloadMore": "Free accounts are limited to 5 downloads per track. Upgrade to \u003c0\u003eBeatport Streaming\u003c/0\u003e to unlock unlimited re-downloads."
               },
               "Company": "Company",
               "DJApp": "DJ App",
@@ -459,7 +607,7 @@
                 "NoTracksQueued": "You do not have any tracks queued for download.",
                 "Title": "Downloads"
               },
-              "DragDropImage": "Drag & Drop Image Here",
+              "DragDropImage": "Drag \u0026 Drop Image Here",
               "DropIt": "Drop It",
               "EnterCoupon": "Enter Coupon",
               "Error": {
@@ -494,7 +642,7 @@
               "FavouriteArtistsDescription": "Get the tracks that your favourite artists are playing on Beatport, the world's largest music store for DJs.",
               "Featured": "Featured",
               "FeaturedCharts": "Featured Charts",
-              "FindAtBeatport": "Find {{name}} Downloads & Songs at Beatport",
+              "FindAtBeatport": "Find {{name}} Downloads \u0026 Songs at Beatport",
               "Follow": "Follow",
               "Following": "Following",
               "Footer": {
@@ -537,7 +685,7 @@
               "HypePicks": "Hype Picks",
               "Key": "Key",
               "Label": {
-                "ArtistMusicDownload": "{{label}} artists & music download",
+                "ArtistMusicDownload": "{{label}} artists \u0026 music download",
                 "Labels": "Labels",
                 "Title": "Label"
               },
@@ -700,7 +848,7 @@
                 "Description": "Download and listen to new, exclusive, electronic dance music and house tracks. Available on mp3 and wav at the world’s largest store for DJs.",
                 "DowngradePlan": "Downgrade Plan",
                 "DowngradePlanQuestion": "Downgrade Plan?",
-                "DownloadLimitWarning": "Non-Streaming subscribers can re-download tracks up to 5 times with no time limit. To unlock unlimited re-downloads please subscribe to <0>Beatport Streaming</0>",
+                "DownloadLimitWarning": "Non-Streaming subscribers can re-download tracks up to 5 times with no time limit. To unlock unlimited re-downloads please subscribe to \u003c0\u003eBeatport Streaming\u003c/0\u003e",
                 "DueToday": "Due Today",
                 "Expires": "Your current plan is set to expire on {{billingDate}}",
                 "Feedback": "Continuing to enhance Beatport and our subscription service is a priority for us. We value your insights and would be grateful if you could share your feedback with us. The survey should take no more than 5 minutes to complete.",
@@ -760,7 +908,7 @@
               "Top": {
                 "CheckOutTop100": "Check out the top 100 electronic dance music tracks on Beatport. Explore the artists and songs for these EDM DJ tracks now.",
                 "Top100Releases": "Top 100 Releases",
-                "Top100Songs": "Top 100 Songs & DJ Tracks",
+                "Top100Songs": "Top 100 Songs \u0026 DJ Tracks",
                 "Top100Tracks": "Top 100 Tracks",
                 "Top10Releases": "Top 10 Releases",
                 "Top10Tracks": "Top 10 Tracks"
@@ -837,9 +985,10 @@
     },
     "__N_SSP": true
   },
-  "page": "/library",
+  "page": "/track/[description]/[id]",
   "query": {
-    "name": ""
+    "description": "purpose",
+    "id": "16039305"
   },
   "buildId": "V7goWk4B7063GKj9nFPyC",
   "isFallback": false,
