@@ -1,4 +1,4 @@
-require('../../../lib/httpInterceptor').init() // this must be after the ../../../lib/tracks require
+require('../../../lib/spotifyInterceptor').init()
 const { initDb, pg } = require('../../../lib/db.js')
 const firstTrack = require('../../../fixtures/noisia_concussion_beatport.json')
 const assert = require('assert')

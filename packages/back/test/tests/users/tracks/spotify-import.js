@@ -1,4 +1,4 @@
-require('../../../lib/httpInterceptor').init()
+require('../../../lib/spotifyInterceptor').init()
 const R = require('ramda')
 const { initDb, pg } = require('../../../lib/db.js')
 const track = require('../../../fixtures/noisia_concussion_spotify.json')

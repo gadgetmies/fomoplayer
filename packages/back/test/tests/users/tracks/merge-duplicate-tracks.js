@@ -1,4 +1,4 @@
-require('../../../lib/httpInterceptor').init()
+require('../../../lib/spotifyInterceptor').init()
 const L = require('partial.lenses')
 const R = require('ramda')
 const { initDb, pg } = require('../../../lib/db.js')

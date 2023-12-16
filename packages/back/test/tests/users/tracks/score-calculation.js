@@ -1,4 +1,4 @@
-require('../../../lib/httpInterceptor').init()
+require('../../../lib/spotifyInterceptor').init()
 const L = require('partial.lenses')
 const { initDb, pg } = require('../../../lib/db.js')
 const { getUserTracks } = require('../../../../routes/users/logic.js')
@@ -17,7 +17,6 @@ const {
   updatePurchasedScores
 } = require('../../../../jobs/scores')
 const { setupBeatportTracks } = require('../../../lib/tracks')
-require('../../../lib/httpInterceptor').init()
 
 const userId = 1
 

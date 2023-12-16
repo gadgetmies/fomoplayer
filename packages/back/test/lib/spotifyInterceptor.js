@@ -1,7 +1,12 @@
 const { BatchInterceptor } = require('@mswjs/interceptors')
 const { default: nodeInterceptors } = require('@mswjs/interceptors/presets/node')
 const R = require('ramda')
+const { SpotifyUrlRegex } = require('../../routes/shared/spotify')
 const logger = require('../../logger')(__filename)
+const spotifySearchMock = require('../fixtures/spotify-search.json')
+
+const spotifyApiRedirect = process.env.SPOTIFY_API_REDIRECT
+const spotifyAccountsRedirect = process.env.SPOTIFY_ACCOUNTS_REDIRECT
 
 module.exports.init = function init() {
   console.log('Enabling development / test http request interceptors')
@@ -16,12 +21,20 @@ module.exports.init = function init() {
     const { request } = args[0]
     const clone = request.clone()
     if (clone.url.match(require('../../routes/shared/spotify').SpotifyUrlRegex)) {
-      if (process.env.SPOTIFY_URL) {
-        const proxyUrl = clone.url.startsWith('https://api.spotify.com')
-          ? 'http://localhost:3000'
-          : 'http://localhost:3001'
+      if (spotifyAccountsRedirect && spotifyApiRedirect) {
+        const proxyUrl = clone.url.startsWith('https://api')
+          ? spotifyApiRedirect
+          : clone.url.startsWith('https://accounts')
+          ? spotifyAccountsRedirect
+          : null
+
+        if (proxyUrl === null) {
+          logger.info('Not proxying Spotify request', clone.url)
+          return request.end(...args)
+        }
+
         logger.info(`Proxying Spotify request to ${proxyUrl}`)
-        const body1 = await clone.text()
+        const requestBody = await clone.text()
         const rewrittenUrl = clone.url.replace(SpotifyUrlRegex, `${proxyUrl}$1`)
 
         const options = {
@@ -29,15 +42,15 @@ module.exports.init = function init() {
           headers: {
             authorization: clone.headers.get('authorization')
           },
-          body: body1,
+          body: requestBody,
           duplex: clone.duplex
         }
         const res = await fetch(rewrittenUrl, request)
-        const body = await res.json()
+        const responseJson = await res.json()
         const headers = Object.fromEntries(res.headers)
 
         return request.respondWith(
-          new Response(JSON.stringify(body), {
+          new Response(JSON.stringify(responseJson), {
             status: 200,
             statusText: 'OK',
             headers: R.omit(['content-encoding'], headers)
@@ -45,7 +58,8 @@ module.exports.init = function init() {
         )
       } else if (!process.env.SPOTIFY_CLIENT_ID) {
         console.log('Mocking Spotify request', request.url)
-        if (new URL(request.url).pathname === '/api/token') {
+        const pathname = new URL(request.url).pathname
+        if (pathname === '/api/token') {
           console.log('Mocking Spotify token request')
           return request.respondWith(
             new Response(
@@ -64,8 +78,22 @@ module.exports.init = function init() {
               }
             )
           )
+        } else if (pathname === '/v1/search/') {
+          console.log('Mocking Spotify search')
+          return request.respondWith(
+            new Response(
+              JSON.stringify(spotifySearchMock),
+              {
+                status: 200,
+                statusText: 'OK',
+                headers: {
+                  'content-type': 'application/json'
+                }
+              }
+            )
+          )
         } else {
-          throw new Error(`Request not mocked ${v}`)
+          throw new Error(`Request not mocked ${pathname}`)
         }
       }
     }

@@ -1,11 +1,10 @@
-require('../../../lib/httpInterceptor').init() // this must be after the ../../../lib/tracks require
+require('../../../lib/spotifyInterceptor').init()
 const { initDb, pg } = require('../../../lib/db.js')
 const firstTrack = require('../../../fixtures/noisia_purpose_beatport.json')
 const secondTrack = require('../../../fixtures/noisia_purpose_remix_beatport.json')
 const assert = require('assert')
 const { test } = require('../../../lib/test.js')
 const { setupBeatportTracks, teardownTracks } = require('../../../lib/tracks.js')
-require('../../../lib/httpInterceptor').init()
 
 test({
   setup: async () => {
