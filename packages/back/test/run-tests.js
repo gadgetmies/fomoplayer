@@ -1,5 +1,5 @@
 const R = require('ramda')
-const { recFindByRegex } = require('./lib/file-utils.js')
+const { recursivelyFindByRegex } = require('./lib/file-utils.js')
 const BPromise = require('bluebird')
 const { fork } = require('child_process')
 const yargs = require('yargs')
@@ -18,7 +18,7 @@ const runTest = test => {
 }
 
 const main = async (path, regex = /\.js/) => {
-  const testFiles = recFindByRegex(path, regex)
+  const testFiles = recursivelyFindByRegex(path, regex)
 
   const exitStatuses = []
   await BPromise.mapSeries(testFiles, async test => {
