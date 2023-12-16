@@ -5,6 +5,7 @@ const { queryAuthorization, upsertUserAuthorizationTokens } = require('../db')
 const R = require('ramda')
 const { processChunks } = require('./requests')
 
+module.exports.SpotifyUrlRegex = /^https:\/\/.*\.spotify.com(.*)/
 const storeName = (module.exports.storeName = 'Spotify')
 module.exports.storeCode = storeName.toLocaleLowerCase()
 

@@ -1,12 +1,15 @@
 const colorTrace = require('color-stacktrace')
 colorTrace.init(Error)
 const config = require('./config.js')
-
 const logger = require('./logger')(__filename)
 
 logger.info('####################################')
 logger.info('####### Starting Fomo Player #######')
 logger.info('####################################')
+
+if (process.env.NODE_ENV !== 'production') {
+  require('./test/lib/httpInterceptor').init()
+}
 
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
 const pg = require('./db/pg')
