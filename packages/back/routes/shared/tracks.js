@@ -97,8 +97,6 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
     }
   }
 
-  logger.info(`Stored tracks: ${storedTracks.length}`)
-
   await using(pg.getTransaction(), async tx => {
     await removeIgnoredTracksFromUsers(tx, userIds)
   })
