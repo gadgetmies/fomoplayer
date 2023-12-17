@@ -7,7 +7,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const config = require('./utils/config.js')
 
 const nodeEnv = process.env.NODE_ENV || 'development'
-const sharedConfig = require('multi-store-player-shared-config')(nodeEnv).config
+const sharedConfig = require('fomoplayer_shared_config')(nodeEnv).config
 
 const alias = {
   'react-dom': '@hot-loader/react-dom'

@@ -2,7 +2,7 @@ const nodeEnv = process.env.NODE_ENV || 'development'
 require('dotenv').config({ path: `.env.${nodeEnv}` })
 
 const resolveServiceURL = require('../shared/resolveServiceURL.js')
-const sharedConfig = require('multi-store-player-shared-config')(nodeEnv).config
+const sharedConfig = require('fomoplayer_shared_config')(nodeEnv).config
 
 const port = sharedConfig.API_PORT
 const frontendURL = resolveServiceURL(sharedConfig.FRONTEND_URL, sharedConfig.IP, sharedConfig.FRONTEND_PORT)

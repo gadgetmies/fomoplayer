@@ -10,7 +10,7 @@ const BPromise = require('bluebird')
 const {
   spotifyTracksTransform,
   spotifyAlbumTracksTransform
-} = require('multi_store_player_chrome_extension/src/js/transforms/spotify')
+} = require('fomoplayer_chrome_extension/src/js/transforms/spotify')
 const R = require('ramda')
 const { processChunks } = require('../../shared/requests')
 const { addArtistsToUserFollowed } = require('../../shared/spotify')

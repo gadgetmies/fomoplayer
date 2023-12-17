@@ -1,5 +1,5 @@
 {
-  "name": "multi_store_player_back",
+  "name": "fomoplayer_back",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
@@ -34,7 +34,7 @@
     "jsdom": "^19.0.0",
     "jwks-rsa": "^2.0.5",
     "morgan": "^1.10.0",
-    "multi-store-player-shared-config": "1.0.0",
+    "fomoplayer_shared_config": "1.0.0",
     "node-cron": "^3.0.0",
     "partial.lenses": "^14.17.0",
     "passport": "^0.6.0",

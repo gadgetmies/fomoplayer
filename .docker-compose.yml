@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./packages/front/Dockerfile
-    command: yarn workspace multi_store_player_front start
+    command: yarn workspace fomoplayer_front start
     ports:
       - ${FRONTEND_PORT}:${FRONTEND_PORT}
     environment:
@@ -20,7 +20,7 @@ services:
     build:
       context: .
       dockerfile: ./packages/back/Dockerfile
-    command: yarn workspace multi_store_player_back start
+    command: yarn workspace fomoplayer_back start
     ports:
       - ${API_PORT}:${API_PORT}
     environment:

@@ -1,5 +1,5 @@
 const nodeEnv = process.env.NODE_ENV || 'development'
-const sharedConfig = require('multi-store-player-shared-config')(nodeEnv).config
+const sharedConfig = require('fomoplayer_shared_config')(nodeEnv).config
 
 module.exports = {
   PLAYER_API_URL: JSON.stringify(sharedConfig.API_URL),

@@ -7,7 +7,7 @@ const { queryFollowRegexes } = require('../../shared/db/store')
 const {
   beatportTracksTransform,
   beatportTrackTransform
-} = require('multi_store_player_chrome_extension/src/js/transforms/beatport')
+} = require('fomoplayer_chrome_extension/src/js/transforms/beatport')
 const { getFollowDetailsFromUrl } = require('../logic.js')
 const logger = require('../../../logger')(__filename)
 

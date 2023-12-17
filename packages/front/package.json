@@ -1,5 +1,5 @@
 {
-  "name": "multi_store_player_front",
+  "name": "fomoplayer_front",
   "version": "0.1.0",
   "private": true,
   "homepage": "/",
@@ -17,7 +17,7 @@
     "karet": "^2.0.0",
     "karet.util": "^0.17.1",
     "kefir": "^3.8.0",
-    "multi-store-player-shared-config": "1.0.0",
+    "fomoplayer_shared_config": "1.0.0",
     "partial.lenses": "^14.17.0",
     "ramda": "^0.28.0",
     "react": "^18.2.0",

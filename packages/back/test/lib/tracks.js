@@ -12,7 +12,7 @@ const {
   beatportTracksTransform,
   beatportLibraryTransform
 } = require('../../../chrome-extension/src/js/transforms/beatport.js')
-const { spotifyTracksTransform } = require('multi_store_player_chrome_extension/src/js/transforms/spotify')
+const { spotifyTracksTransform } = require('fomoplayer_chrome_extension/src/js/transforms/spotify')
 
 const userId = 1
 

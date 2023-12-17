@@ -1,5 +1,5 @@
 {
-  "name": "multi-store-player-shared-config",
+  "name": "fomoplayer_shared_config",
   "version": "1.0.0",
   "description": "Shared constants for keeping backend, frontend and Chrome Extension configs in sync",
   "main": "index.js",
