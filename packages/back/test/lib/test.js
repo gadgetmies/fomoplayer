@@ -56,6 +56,8 @@ module.exports.test = async suite => {
 
   const printPass = (style = 'console') => (style === 'console' ? 'PASS'.green : '<span class="pass">PASS</span>')
 
+  const printSkip = (style = 'console') => (style === 'console' ? 'SKIP'.yellow : '<span class="pass">SKIP</span>')
+
   const printName = (name, style = 'console') =>
     style === 'console' ? `• ${name.cyan}:\n` : `<span class="test">${name}:</span>\n`
 
@@ -67,35 +69,52 @@ module.exports.test = async suite => {
     return `\
 ${printName(node[0], style)}${
       R.is(Array, node[1])
-        ? printChildren(node[1].map(n => indentString.concat(printStructure(n, style, indent + 2))), style)
+        ? printChildren(
+            node[1].map(n => indentString.concat(printStructure(n, style, indent + 2))),
+            style
+          )
         : node[1].error !== null
-          ? indentString.concat(printFail(node[1].error, style))
-          : indentString.concat(printPass(style))
+        ? indentString.concat(printFail(node[1].error, style))
+        : node[1].skipped
+        ? indentString.concat(printSkip(style))
+        : indentString.concat(printPass(style))
     }`
   }
 
-  const run = async suite => {
-    const { setup = noop, teardown = noop, ...rest } = suite
+  const run = async (suite, skippingReason) => {
+    const { setup = noop, teardown = noop, skip = noop, ...rest } = suite
+
+    if (skip !== noop) {
+      skippingReason = skippingReason || skip()
+    }
 
     let setupResult
-    try {
-      setupResult = await setup()
-    } catch (e) {
-      console.error(e)
-      return {
-        error: `Setup failed with: '${e.toString()}'`
+    if (skippingReason === undefined) {
+      try {
+        setupResult = await setup()
+      } catch (e) {
+        console.error(e)
+        return {
+          error: `Setup failed with: '${e.toString()}'`
+        }
       }
     }
 
     let result = []
     for (const key of Object.keys(rest)) {
-      console.log(`Running: ${key}`.blue)
+      console.log(
+        `${skippingReason ? `SKIPPING${skippingReason !== true ? ` (reason: ${skippingReason})` : ''}` : 'Running'}: ${key}`.blue
+      )
       const restElement = rest[key]
+
       let singleResult
       try {
         singleResult = R.is(Function, restElement)
-          ? { error: R.defaultTo(null, await restElement(setupResult)) }
-          : await run(restElement)
+          ? {
+              skipped: skippingReason,
+              error: skippingReason ? null : R.defaultTo(null, await restElement(setupResult))
+            }
+          : await run(restElement, skippingReason)
       } catch (e) {
         console.error(`Test '${key}' failed:`.red, e)
         singleResult = { error: e.toString() }
@@ -103,12 +122,14 @@ ${printName(node[0], style)}${
       result.push([key, singleResult])
     }
 
-    try {
-      await teardown(setupResult)
-    } catch (e) {
-      console.error(e)
-      return {
-        error: `Teardown failed with: '${e.toString()}'`
+    if (!skippingReason) {
+      try {
+        await teardown(setupResult)
+      } catch (e) {
+        console.error(e)
+        return {
+          error: `Teardown failed with: '${e.toString()}'`
+        }
       }
     }
 

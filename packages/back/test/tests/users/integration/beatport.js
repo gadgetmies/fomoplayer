@@ -1,0 +1,27 @@
+require('../../../lib/spotifyInterceptor').init()
+const beatportInterceptor = require('../../../lib/beatportInterceptor').init()
+const { test } = require('../../../lib/test')
+const beatportLogic = require('../../../../routes/stores/beatport/logic')
+const beatportSearch = require('../../../fixtures/beatport-search.json')
+const assert = require('assert')
+
+test({
+  setup: () => {},
+  skip: () =>
+    process.env.BEATPORT_API_REDIRECT === '' && !process.env.BEATPORT_API_MOCK
+      ? 'Beatport redirects set or mocks not set'
+      : undefined,
+  'requests are intercepted': async () => {
+    const res = await beatportLogic.search('noisia')
+    assert.equal(beatportInterceptor.mockedRequests.length, 2)
+    assert.notEqual(
+      beatportInterceptor.mockedRequests.find(({ url }) => new URL(url).pathname === '/search/artists'),
+      undefined
+    )
+    assert.notEqual(
+      beatportInterceptor.mockedRequests.find(({ url }) => new URL(url).pathname === '/search/artists'),
+      undefined
+    )
+    assert.deepEqual(res, beatportSearch)
+  }
+})
