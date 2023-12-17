@@ -13,13 +13,13 @@ test({
       : undefined,
   'requests are intercepted': async () => {
     const res = await beatportLogic.search('noisia')
-    assert.equal(beatportInterceptor.mockedRequests.length, 2)
+    assert.equal(beatportInterceptor.getMockedRequests().length, 2)
     assert.notEqual(
-      beatportInterceptor.mockedRequests.find(({ url }) => new URL(url).pathname === '/search/artists'),
+      beatportInterceptor.getMockedRequests().find(({ url }) => new URL(url).pathname === '/search/artists'),
       undefined
     )
     assert.notEqual(
-      beatportInterceptor.mockedRequests.find(({ url }) => new URL(url).pathname === '/search/artists'),
+      beatportInterceptor.getMockedRequests().find(({ url }) => new URL(url).pathname === '/search/artists'),
       undefined
     )
     assert.deepEqual(res, beatportSearch)

@@ -17,6 +17,7 @@ const { findMatchingTracks } = require('./jobs/find-matching-tracks')
 const { syncCarts } = require('./jobs/cart-sync')
 const { beatportIntegrationTest } = require('./jobs/integration/beatport')
 const logger = require('./logger')(__filename)
+const { bandcampIntegrationTest } = require('./jobs/integration/bandcamp')
 
 const init = async () => {
   await pg.queryAsync(
@@ -149,7 +150,8 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
   updateTrackDetails,
   syncCarts,
   findMatchingTracks,
-  beatportIntegrationTest
+  beatportIntegrationTest,
+  bandcampIntegrationTest
 }
 
 module.exports = {
