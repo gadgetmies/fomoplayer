@@ -1,5 +1,5 @@
 const sql = require('sql-template-strings')
-const logger = require('../../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.queryLabelForRelease = async (tx, releaseId) => {
   const labelIds = await tx

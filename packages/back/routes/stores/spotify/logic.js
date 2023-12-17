@@ -16,7 +16,7 @@ const { processChunks } = require('../../shared/requests')
 const { addArtistsToUserFollowed } = require('../../shared/spotify')
 const url = require('url')
 const { getFollowDetailsFromUrls, getFollowDetailsFromUrl } = require('../logic')
-const logger = require('../../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.storeUrl = 'https://www.spotify.com'
 module.exports.storeName = storeName

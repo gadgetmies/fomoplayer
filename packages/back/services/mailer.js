@@ -1,7 +1,7 @@
-const pg = require('../db/pg.js')
+const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const { MessageClient } = require('cloudmailin')
-const logger = require('../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 const config = require('../config')
 
 let options = {

@@ -1,17 +1,17 @@
 const interceptor = require('./interceptor.js')
-const { BeatportUrlRegex } = require('../../routes/shared/beatport')
+const { BeatportUrlRegex } = require('../integrations/beatport')
 const { readSync } = require('fs')
 const fs = require('fs')
 const path = require('path')
 
 const beatportSearchMock = fs
-  .readFileSync(path.resolve(`${__dirname}/../fixtures/beatport-search.html`))
+  .readFileSync(path.resolve(`${__dirname}/fixtures/beatport-search.html`))
   .toString('utf-8')
 const beatportArtistsSearchMock = fs
-  .readFileSync(path.resolve(`${__dirname}/../fixtures/beatport-artists-search.html`))
+  .readFileSync(path.resolve(`${__dirname}/fixtures/beatport-artists-search.html`))
   .toString('utf-8')
 const beatportLabelsSearchMock = fs
-  .readFileSync(path.resolve(`${__dirname}/../fixtures/beatport-labels-search.html`))
+  .readFileSync(path.resolve(`${__dirname}/fixtures/beatport-labels-search.html`))
   .toString('utf-8')
 
 const beatportRedirect = process.env.BEATPORT_API_REDIRECT

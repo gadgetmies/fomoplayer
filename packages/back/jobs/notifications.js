@@ -1,4 +1,4 @@
-const pg = require('../db/pg.js')
+const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const R = require('ramda')
 const { getTracksWithIds } = require('../routes/users/db')
@@ -6,7 +6,7 @@ const { searchForTracks } = require('../routes/shared/db/search')
 const { using } = require('bluebird')
 const { scheduleEmail } = require('../services/mailer')
 
-const logger = require('../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.updateNotifications = async () => {
   const notificationSearches = await getNotificationDetails()

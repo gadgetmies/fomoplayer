@@ -9,7 +9,7 @@ const {
   beatportTrackTransform
 } = require('fomoplayer_chrome_extension/src/js/transforms/beatport')
 const { getFollowDetailsFromUrl } = require('../logic.js')
-const logger = require('../../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
 

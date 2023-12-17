@@ -1,6 +1,6 @@
-require('../../../lib/spotifyInterceptor').init()
-const beatportInterceptor = require('../../../lib/beatportInterceptor').init()
-const { test } = require('../../../lib/test')
+require('fomoplayer_shared').interceptors.spotify.init()
+const beatportInterceptor = require('fomoplayer_shared').interceptors.beatport.init()
+const { test } = require('fomoplayer_shared').test.test
 const beatportLogic = require('../../../../routes/stores/beatport/logic')
 const beatportSearch = require('../../../fixtures/beatport-search.json')
 const assert = require('assert')

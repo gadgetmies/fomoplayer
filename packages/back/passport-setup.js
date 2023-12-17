@@ -5,9 +5,9 @@ const passport = require('passport')
 const account = require('./db/account.js')
 const LocalStrategy = require('passport-local').Strategy
 const OpenIDStrategy = require('passport-openidconnect').Strategy
-const logger = require('./logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
-const pgrm = require('./db/pg.js')
+const pgrm = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 
 module.exports = function passportSetup() {

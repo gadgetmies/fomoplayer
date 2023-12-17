@@ -1,5 +1,5 @@
 const nodeEnv = process.env.NODE_ENV || 'development'
-const sharedConfig = require('fomoplayer_shared_config')(nodeEnv).config
+const sharedConfig = require('fomoplayer_shared/config')(nodeEnv).config
 
 module.exports = {
   PLAYER_API_URL: JSON.stringify(sharedConfig.API_URL),
@@ -7,5 +7,5 @@ module.exports = {
   PORT: process.env.PORT,
   NODE_ENV: nodeEnv,
   EXTENSION_KEY: process.env.EXTENSION_KEY,
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID
+  GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID
 }

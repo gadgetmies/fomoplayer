@@ -1,6 +1,6 @@
 const BPromise = require('bluebird')
 const R = require('ramda')
-const logger = require('../../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 const { decode } = require('html-entities')
 const jsdom = require('jsdom')
 const { JSDOM } = jsdom

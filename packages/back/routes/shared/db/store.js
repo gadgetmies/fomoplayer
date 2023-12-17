@@ -1,8 +1,8 @@
-const pg = require('../../../db/pg.js')
+const pg = require('fomoplayer_shared').db.pg
 const R = require('ramda')
 const sql = require('sql-template-strings')
 const { apiURL } = require('../../../config')
-const logger = require('../../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.queryStoreId = storeName =>
   pg

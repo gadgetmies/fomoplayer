@@ -1,6 +1,6 @@
-require('../../../lib/spotifyInterceptor').init()
-const bandcampInterceptor = require('../../../lib/bandcampInterceptor').init()
-const { test } = require('../../../lib/test')
+require('fomoplayer_shared').interceptors.spotify.init()
+const bandcampInterceptor = require('fomoplayer_shared').interceptors.bandcamp.init()
+const { test } = require('fomoplayer_shared').test.test
 const bandcampLogic = require('../../../../routes/stores/bandcamp/logic')
 const bandcampSearchMapped = require('../../../fixtures/bandcamp-noisia-search-mapped.json')
 const differentEyesTracks = require('../../../fixtures/bandcamp-different-eyes-tracks.json')
@@ -20,9 +20,9 @@ test({
       const res = await bandcampLogic.search('noisia')
       assert.equal(bandcampInterceptor.getMockedRequests().length, 1)
       assert.notEqual(
-        bandcampInterceptor.getMockedRequests().find(
-          ({ url }) => new URL(url).pathname === '/api/bcsearch_public_api/1/autocomplete_elastic'
-        ),
+        bandcampInterceptor
+          .getMockedRequests()
+          .find(({ url }) => new URL(url).pathname === '/api/bcsearch_public_api/1/autocomplete_elastic'),
         undefined
       )
       assert.deepEqual(res, bandcampSearchMapped)

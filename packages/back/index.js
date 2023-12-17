@@ -1,18 +1,18 @@
 const colorTrace = require('color-stacktrace')
 colorTrace.init(Error)
 const config = require('./config.js')
-const logger = require('./logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 logger.info('####################################')
 logger.info('####### Starting Fomo Player #######')
 logger.info('####################################')
 
 if (process.env.NODE_ENV !== 'production') {
-  require('./test/lib/spotifyInterceptor').init()
+  require('fomoplayer_shared').interceptors.spotify.init()
 }
 
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
-const pg = require('./db/pg')
+const pg = require('fomoplayer_shared').db.pg
 
 const express = require('express')
 const passport = require('passport')

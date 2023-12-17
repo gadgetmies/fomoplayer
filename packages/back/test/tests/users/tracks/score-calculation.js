@@ -1,9 +1,9 @@
-require('../../../lib/spotifyInterceptor').init()
+require('fomoplayer_shared').interceptors.spotify.init()
 const L = require('partial.lenses')
 const { initDb, pg } = require('../../../lib/db.js')
 const { getUserTracks } = require('../../../../routes/users/logic.js')
 const assert = require('assert')
-const { test } = require('../../../lib/test.js')
+const { test } = require('fomoplayer_shared').test.test
 const beatportLibrary = require('../../../fixtures/my-beatport.json')
 const firstTrack = require('../../../fixtures/noisia_concussion_beatport.json')
 const secondTrack = require('../../../fixtures/noisia_purpose_beatport.json')

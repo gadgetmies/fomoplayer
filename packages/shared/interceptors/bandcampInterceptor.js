@@ -1,23 +1,22 @@
 const interceptor = require('./interceptor.js')
-const { BandcampUrlRegex } = require('../../routes/shared/bandcamp')
+const { BandcampUrlRegex } = require('../integrations/bandcamp')
 const { readFileSync } = require('fs')
-const fs = require('fs')
 const path = require('path')
 
-const bandcampNoisiaSearchMock = require('../fixtures/bandcamp-noisia-search.json')
-const bandcampNoisiaMock = readFileSync(path.resolve(`${__dirname}/../fixtures/bandcamp-noisia.html`)).toString('utf-8')
-const bandcampVisionMock = readFileSync(path.resolve(`${__dirname}/../fixtures/bandcamp-vision.html`)).toString('utf-8')
-const bandcampF4kY00Mock = readFileSync(path.resolve(`${__dirname}/../fixtures/bandcamp-f4k-y00.html`)).toString(
+const bandcampNoisiaSearchMock = require('./fixtures/bandcamp-noisia-search.json')
+const bandcampNoisiaMock = readFileSync(path.resolve(`${__dirname}/fixtures/bandcamp-noisia.html`)).toString('utf-8')
+const bandcampVisionMock = readFileSync(path.resolve(`${__dirname}/fixtures/bandcamp-vision.html`)).toString('utf-8')
+const bandcampF4kY00Mock = readFileSync(path.resolve(`${__dirname}/fixtures/bandcamp-f4k-y00.html`)).toString(
   'utf-8'
 )
 const bandcampDifferentEyesMock = readFileSync(
-  path.resolve(`${__dirname}/../fixtures/bandcamp-different-eyes.html`)
+  path.resolve(`${__dirname}/fixtures/bandcamp-different-eyes.html`)
 ).toString('utf-8')
 const bandcampResonanceVMock = readFileSync(
-  path.resolve(`${__dirname}/../fixtures/bandcamp-resonance-v.html`)
+  path.resolve(`${__dirname}/fixtures/bandcamp-resonance-v.html`)
 ).toString('utf-8')
 const bandcampResonanceVIMock = readFileSync(
-  path.resolve(`${__dirname}/../fixtures/bandcamp-resonance-vi.html`)
+  path.resolve(`${__dirname}/fixtures/bandcamp-resonance-vi.html`)
 ).toString('utf-8')
 
 const bandcampRedirect = process.env.BANDCAMP_API_REDIRECT

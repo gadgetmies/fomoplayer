@@ -1,11 +1,10 @@
 const SpotifyWebApi = require('spotify-web-api-node')
-const logger = require('../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 const { apiURL } = require('../../config.js')
 const { queryAuthorization, upsertUserAuthorizationTokens } = require('../db')
 const R = require('ramda')
 const { processChunks } = require('./requests')
 
-module.exports.SpotifyUrlRegex = /^https:\/\/.*\.spotify.com(.*)/
 const storeName = (module.exports.storeName = 'Spotify')
 module.exports.storeCode = storeName.toLocaleLowerCase()
 
@@ -72,6 +71,7 @@ module.exports.getAuthorizationUrl = () => {
 }
 
 module.exports.requestTokens = code => spotifyApi.authorizationCodeGrant(code)
+
 ;(async () => {
   await refreshToken()
 })()

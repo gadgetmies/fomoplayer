@@ -1,9 +1,9 @@
 const sql = require('sql-template-strings')
 const R = require('ramda')
-const pg = require('../db/pg.js')
+const pg = require('fomoplayer_shared').db.pg
 const { using } = require('bluebird')
 const { cryptoKey } = require('../config')
-const logger = require('../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.queryLongestPreviewForTrack = (id, format, skip) =>
   pg

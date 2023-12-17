@@ -1,10 +1,11 @@
 {
-  "name": "fomoplayer_shared_config",
+  "name": "fomoplayer_shared",
   "version": "1.0.0",
   "description": "Shared constants for keeping backend, frontend and Chrome Extension configs in sync",
   "main": "index.js",
   "bin": {
-    "get-frontend-port": "./get-frontend-port.js"
+    "get-frontend-port": "./get-frontend-port.js",
+    "run-tests": "./test/run-tests.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,6 +13,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^8.2.0"
+    "dotenv": "^8.2.0",
+    "ramda": "^0.29.1",
+    "partial.lenses": "^14.17.0",
+    "colors": "^1.4.0",
+    "bluebird": "^3.7.2",
+    "child_process": "^1.0.2",
+    "yargs": "^17.7.2"
   }
 }

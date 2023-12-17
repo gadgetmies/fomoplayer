@@ -8,8 +8,8 @@
     "start:prod": "node index.js",
     "migrate": "db-migrate -e dev up",
     "db-migrate:prod": "db-migrate -e prod up",
-    "test": "NODE_ENV=test node -r dotenv/config ./test/run-tests.js ./test/tests dotenv_config_path=.env.test",
-    "ci:test": "NODE_ENV=ci node -r dotenv/config ./test/run-tests.js ./test/tests dotenv_config_path=.env.ci"
+    "test": "NODE_ENV=test node -r dotenv/config ../shared/test/run-tests.js ./test/tests dotenv_config_path=.env.test",
+    "ci:test": "NODE_ENV=ci node -r dotenv/config ../shared/test/run-tests.js ./test/tests dotenv_config_path=.env.ci"
   },
   "engines": {
     "node": "18.x"
@@ -34,7 +34,7 @@
     "jsdom": "^19.0.0",
     "jwks-rsa": "^2.0.5",
     "morgan": "^1.10.0",
-    "fomoplayer_shared_config": "1.0.0",
+    "fomoplayer_shared": "1.0.0",
     "node-cron": "^3.0.0",
     "partial.lenses": "^14.17.0",
     "passport": "^0.6.0",

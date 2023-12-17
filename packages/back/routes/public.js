@@ -3,7 +3,7 @@ const path = require('path')
 const bodyParser = require('body-parser')
 const router = require('express-promise-router')()
 const config = require('../config')
-const logger = require('../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 router.use(bodyParser.json())
 const { verifyEmail, getCartDetails } = require('./logic.js')

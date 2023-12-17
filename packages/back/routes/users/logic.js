@@ -1,6 +1,6 @@
 const { using, map } = require('bluebird')
 const R = require('ramda')
-const pg = require('../../db/pg.js')
+const pg = require('fomoplayer_shared').db.pg
 const { scheduleEmail } = require('../../services/mailer')
 const { insertUserPlaylistFollow } = require('../shared/db/user')
 const {
@@ -61,7 +61,7 @@ const {
   deleteAuthorization
 } = require('./db')
 
-const logger = require('../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 const { apiURL } = require('../../config')
 
 module.exports.getUserTracks = queryUserTracks

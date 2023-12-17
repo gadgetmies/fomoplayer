@@ -15,7 +15,7 @@ const {
 
 const { queryAlbumUrl } = require('./db.js')
 const { getFollowDetailsFromUrl } = require('../logic')
-const logger = require('../../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 let storeDbId = null
 const storeName = (module.exports.storeName = 'Bandcamp')

@@ -1,6 +1,6 @@
 const R = require('ramda')
 const BPromise = require('bluebird')
-const logger = require('../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 // TODO: this returns undefined if the function call throws. Probably not the best design but needed in order
 // TODO: to not get an uncaught exception

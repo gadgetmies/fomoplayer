@@ -1,9 +1,9 @@
-const pg = require('../db/pg')
+const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const R = require('ramda')
 const { insertSource } = require('./watches/shared/db.js')
 const { addStoreTracksToUsers, getUsersFollowingLabel } = require('../routes/shared/tracks.js')
-const logger = require('../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 const beatportModule = require('../routes/stores/beatport/logic')
 const spotifyModule = require('../routes/stores/spotify/logic')

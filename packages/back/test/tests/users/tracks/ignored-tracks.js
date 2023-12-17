@@ -1,10 +1,10 @@
-require('../../../lib/spotifyInterceptor').init()
+require('fomoplayer_shared').interceptors.spotify.init()
 const { initDb, pg } = require('../../../lib/db.js')
 const firstTrack = require('../../../fixtures/noisia_concussion_beatport.json')
 const assert = require('assert')
 const { setupBeatportTracks, teardownTracks } = require('../../../lib/tracks')
 const { updateDates } = require('../../../lib/fixture-utils')
-const { test } = require('../../../lib/test.js')
+const { test } = require('fomoplayer_shared').test.test
 
 const { addArtistsOnLabelsToIgnore, removeArtistsOnLabelsIgnores } = require('../../../../routes/users/logic.js')
 

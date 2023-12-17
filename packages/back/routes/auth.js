@@ -1,9 +1,9 @@
 const router = require('express').Router()
 const passport = require('passport')
 const { frontendURL } = require('../config.js')
-const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('./shared/spotify')
+const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/stores/spotify')
 const { upsertUserAuthorizationTokens } = require('./db')
-const logger = require('../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 const logout = (req, res, next) => {
   req.logout(err => {

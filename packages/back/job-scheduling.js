@@ -1,5 +1,5 @@
 const sql = require('sql-template-strings')
-const pg = require('./db/pg.js')
+const pg = require('fomoplayer_shared').db.pg
 const cron = require('node-cron')
 const fetchBeatportWatches = require('./jobs/watches/fetch-beatport-watches')
 const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
@@ -16,8 +16,8 @@ const {
 const { findMatchingTracks } = require('./jobs/find-matching-tracks')
 const { syncCarts } = require('./jobs/cart-sync')
 const { beatportIntegrationTest } = require('./jobs/integration/beatport')
-const logger = require('./logger')(__filename)
 const { bandcampIntegrationTest } = require('./jobs/integration/bandcamp')
+const logger = require('fomoplayer_shared').logger(__filename)
 
 const init = async () => {
   await pg.queryAsync(

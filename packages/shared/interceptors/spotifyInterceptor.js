@@ -1,7 +1,7 @@
 const interceptor = require('./interceptor.js')
-const { SpotifyUrlRegex } = require('../../routes/shared/spotify')
-const spotifyTokenMock = require('../fixtures/spotify-token.json')
-const spotifySearchMock = require('../fixtures/spotify-search.json')
+const { SpotifyUrlRegex } = require('../integrations/spotify')
+const spotifyTokenMock = require('./fixtures/spotify-token.json')
+const spotifySearchMock = require('./fixtures/spotify-search.json')
 
 const spotifyApiRedirect = process.env.SPOTIFY_API_REDIRECT
 const spotifyAccountsRedirect = process.env.SPOTIFY_ACCOUNTS_REDIRECT

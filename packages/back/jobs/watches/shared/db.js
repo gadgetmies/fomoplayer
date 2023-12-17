@@ -1,4 +1,4 @@
-const pg = require('../../../db/pg.js')
+const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 
 module.exports.getPlaylistFollowDetails = async storeUrl =>

@@ -1,5 +1,6 @@
+#!/usr/bin/env node
 const R = require('ramda')
-const { recursivelyFindByRegex } = require('./lib/file-utils.js')
+const { recursivelyFindByRegex } = require('./file-utils.js')
 const BPromise = require('bluebird')
 const { fork } = require('child_process')
 const yargs = require('yargs')
@@ -9,6 +10,7 @@ require('colors')
 process.NODE_ENV = 'test'
 
 const runTest = test => {
+  // TODO: implement regex filtering
   const child = fork(test)
 
   return new BPromise(function(resolve, reject) {
@@ -18,7 +20,7 @@ const runTest = test => {
 }
 
 const main = async (path, regex = /\.js/) => {
-  const testFiles = recursivelyFindByRegex(path, regex)
+  const testFiles = recursivelyFindByRegex(require('path').resolve(`${process.cwd()}/${path}`), regex)
 
   const exitStatuses = []
   await BPromise.mapSeries(testFiles, async test => {
@@ -67,6 +69,7 @@ const argv = yargs
       })
     },
     async argv => {
+      console.log({ argv })
       return await main(argv.path, argv.regex)
     }
   )

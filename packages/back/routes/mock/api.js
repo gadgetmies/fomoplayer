@@ -1,4 +1,4 @@
-const logger = require('../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 const router = require('express-promise-router')()
 const jobScheduling = require('../../job-scheduling')
 

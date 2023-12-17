@@ -1,7 +1,7 @@
 const sql = require('sql-template-strings')
 const R = require('ramda')
-const pg = require('../../db/pg.js')
-const logger = require('../../logger')(__filename)
+const pg = require('fomoplayer_shared').db.pg
+const logger = require('fomoplayer_shared').logger(__filename)
 const { using } = require('bluebird')
 
 module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {

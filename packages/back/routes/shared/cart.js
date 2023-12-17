@@ -14,7 +14,7 @@ const {
   queryCartStoreDetails
 } = require('./db/cart.js')
 const { using } = require('bluebird')
-const pg = require('../../db/pg')
+const pg = require('fomoplayer_shared').db.pg
 const R = require('ramda')
 const { NotFound, Forbidden } = require('./httpErrors')
 const {
@@ -26,7 +26,7 @@ const {
 const { getTrackDetails, addStoreTracksToUsers } = require('./tracks')
 const { updateCartStoreVersionId, deleteUserCartStoreDetails } = require('./db/cart')
 const { getStoreModuleForPlaylistByUrl } = require('./stores')
-const logger = require('../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.getUserCarts = queryUserCartDetails
 module.exports.getUserCartsWithTracks = queryUserCartDetailsWithTracks

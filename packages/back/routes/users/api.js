@@ -1,4 +1,4 @@
-const logger = require('../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 const { insertSource } = require('../../jobs/watches/shared/db')
 const {
   addArtistsOnLabelsToIgnore,

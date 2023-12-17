@@ -1,6 +1,6 @@
 const { updatePlaylistTracks, updateLabelTracks, updateArtistTracks } = require('../../../routes/shared/tracks')
 const { getArtistFollowDetails, getLabelFollowDetails, getPlaylistFollowDetails, insertSource } = require('./db')
-const logger = require('../../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.playlistFetchJob = storeUrl => async jobDetails => {
   const sourceId = await insertSource({ operation: `${storeUrl}, fetchPlaylists`, jobDetails })

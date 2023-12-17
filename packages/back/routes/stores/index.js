@@ -1,5 +1,5 @@
 const router = require('express').Router()
-const logger = require('../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 
 const { lstatSync, readdirSync } = require('fs')
 const { join } = require('path')

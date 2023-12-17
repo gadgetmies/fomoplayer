@@ -7,7 +7,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const config = require('./utils/config.js')
 
 const nodeEnv = process.env.NODE_ENV || 'development'
-const sharedConfig = require('fomoplayer_shared_config')(nodeEnv).config
+const sharedConfig = require('fomoplayer_shared/config')(nodeEnv).config
 
 const alias = {
   'react-dom': '@hot-loader/react-dom'
@@ -81,7 +81,7 @@ let options = {
                 version: process.env.npm_package_version,
                 key: config.EXTENSION_KEY,
                 oauth2: {
-                  client_id: config.GOOGLE_CLIENT_ID,
+                  client_id: config.GOOGLE_OAUTH_CLIENT_ID,
                   scopes: ['']
                 },
                 ...JSON.parse(content.toString())

@@ -12,7 +12,7 @@
   "dependencies": {
     "@hot-loader/react-dom": "^17.0.1",
     "dotenv": "^10.0.0",
-    "fomoplayer_shared_config": "1.0.0",
+    "fomoplayer_shared": "1.0.0",
     "new-github-issue-url": "^1.0.0",
     "partial.lenses": "^14.17.0",
     "ramda": "^0.27.1",

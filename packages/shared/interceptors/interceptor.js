@@ -1,7 +1,7 @@
 const { BatchInterceptor } = require('@mswjs/interceptors')
 const { default: nodeInterceptors } = require('@mswjs/interceptors/presets/node')
 const R = require('ramda')
-const logger = require('../../logger')(__filename)
+const logger = require('../logger')(__filename)
 
 async function makeRequestAndRespond({ originalRequest, url = undefined, options = {} }) {
   const clone = originalRequest.clone()

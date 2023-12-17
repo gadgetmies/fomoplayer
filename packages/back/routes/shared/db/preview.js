@@ -1,5 +1,5 @@
 const sql = require('sql-template-strings')
-const pg = require('../../../db/pg.js')
+const pg = require('fomoplayer_shared').db.pg
 
 module.exports.queryPreviewDetails = previewId =>
   pg

@@ -1,13 +1,13 @@
-const pg = require('../db/pg')
+const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const { getCartDetails, addTracksToCart, removeTracksFromCart } = require('../routes/shared/cart')
-const logger = require('../logger.js')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 const R = require('ramda')
 const { getTracksForStoreIds, addStoreTracksToUsers } = require('../routes/shared/tracks')
 const { spotifyTracksTransform } = require('fomoplayer_chrome_extension/src/js/transforms/spotify')
 const { addTracks } = require('../test/lib/tracks')
 const { storeUrl } = require('../routes/stores/spotify/logic')
-const { getSpotifyTrackUris, getApiForUser } = require('../routes/shared/spotify')
+const { getSpotifyTrackUris, getApiForUser } = require('../routes/stores/spotify')
 
 module.exports.syncCarts = async () => {
   let errors = []

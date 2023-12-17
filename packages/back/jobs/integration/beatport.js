@@ -1,8 +1,8 @@
 const { getArtistTracks, getLabelTracks, getPlaylistTracks, storeName } = require('../../routes/stores/beatport/logic')
 const { scheduleEmail } = require('../../services/mailer')
-const logger = require('../../logger')(__filename)
+const logger = require('fomoplayer_shared').logger(__filename)
 const sql = require('sql-template-strings')
-const pg = require('../../db/pg')
+const pg = require('fomoplayer_shared').db.pg
 
 const requiredTrackProperties = [
   'title',

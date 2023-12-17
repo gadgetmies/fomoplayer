@@ -1,15 +1,19 @@
 const resolveServiceURL = require('./resolveServiceURL.js')
 
-module.exports = nodeEnv => {
-  const config = require(`./config.${nodeEnv || 'development'}.js`)
-
-  return {
-    resolveServiceURL,
-    config: {
-      ...config,
-      FRONTEND_PORT: config.FRONTEND_PORT,
-      FRONTEND_URL: resolveServiceURL(config.FRONTEND_URL, config.IP, config.FRONTEND_PORT),
-      API_URL: resolveServiceURL(config.API_URL, config.IP, config.API_PORT, '/api')
-    }
-  }
+module.exports = {
+  config: require('./config.js'),
+  interceptors: {
+    bandcamp: require('./interceptors/bandcampInterceptor.js'),
+    beatport: require('./interceptors/beatportInterceptor.js'),
+    googleOAuth: require('./interceptors/googleOAuthInterceptor.js'),
+    spotify: require('./interceptors/spotifyInterceptor.js')
+  },
+  test: {
+    test: require('./test/test.js')
+  },
+  db: {
+    pg: require('./db/pg.js')
+  },
+  logger: require('./logger.js'),
+  resolveServiceURL: require('./resolveServiceURL.js')
 }

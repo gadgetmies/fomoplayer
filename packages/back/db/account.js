@@ -1,7 +1,7 @@
 'use strict'
 
 const sql = require('sql-template-strings')
-const pgrm = require('./pg.js')
+const pgrm = require('fomoplayer_shared').db.pg
 
 const accountAPI = {
   authenticate: async (username, password) => {
