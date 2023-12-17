@@ -15,6 +15,7 @@ const {
 } = require('./jobs/scores')
 const { findMatchingTracks } = require('./jobs/find-matching-tracks')
 const { syncCarts } = require('./jobs/cart-sync')
+const { beatportIntegrationTest } = require('./jobs/integration/beatport')
 const logger = require('./logger')(__filename)
 
 const init = async () => {
@@ -147,7 +148,8 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
   updateNotifications,
   updateTrackDetails,
   syncCarts,
-  findMatchingTracks
+  findMatchingTracks,
+  beatportIntegrationTest
 }
 
 module.exports = {
