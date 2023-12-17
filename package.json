@@ -16,6 +16,8 @@
     "start:prod": "yarn run start:back",
     "ci:test": "yarn workspace fomoplayer_back ci:test",
     "test": "yarn workspace fomoplayer_back test",
+    "ui:test": "yarn workspace fomoplayer_integration_tests test",
+    "ciui:test": "yarn workspace fomoplayer_integration_tests ci:test",
     "build": "yarn workspace fomoplayer_front build",
     "db:backup": "heroku pg:backups:capture"
   },

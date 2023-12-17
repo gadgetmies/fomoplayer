@@ -45,4 +45,16 @@ router.get('/spotify/callback', async ({ user: { id: userId }, query: { code, st
   res.redirect(`${frontendURL}/settings`) // TODO: redirect to authorizations
 })
 
+if (process.env.NODE_ENV !== 'production') {
+  router.post(
+    '/login',
+    (req, res, next) => {
+      console.log({ req, body: req.body, user: req.user, query: req.query, headers: req.headers })
+      next()
+    },
+    passport.authenticate(['local']),
+    (req, res) => res.status(204).end()
+  )
+}
+
 module.exports = router

@@ -11,16 +11,18 @@ const pgrm = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 
 module.exports = function passportSetup() {
-  const checkCredentials = async (username, password, done) => {
-    const result = await account.authenticate(username, password)
-    if (result) {
-      return done(null, result)
-    } else {
-      return done(null, false, { message: 'Incorrect username or password' })
+  if (process.env.NODE_ENV !== 'production') {
+    const checkCredentials = async (username, password, done) => {
+      const result = await account.authenticate(username, password)
+      if (result) {
+        return done(null, result)
+      } else {
+        return done(null, false, { message: 'Incorrect username or password' })
+      }
     }
-  }
 
-  passport.use(new LocalStrategy(checkCredentials))
+    passport.use(new LocalStrategy(checkCredentials))
+  }
 
   const googleOpenIDIssuer = 'accounts.google.com'
   passport.use(

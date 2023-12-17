@@ -494,6 +494,30 @@ class App extends Component {
                     googleLoginPath={`${config.apiURL}/auth/login/google`}
                     logoutPath={'/auth/logout'}
                   />
+                  {process.env.NODE_ENV !== 'production' && (
+                    <p>
+                      <form
+                        onSubmit={e => {
+                          e.preventDefault()
+                          const formData = new FormData(e.target)
+                          console.log(formData)
+                          this.onLoginDone()
+                        }}
+                      >
+                        <label>
+                          Username
+                          <input name="username" value={'testuser'} />
+                        </label>
+                        <br />
+                        <label>
+                          password
+                          <input name="password" value={'testpwd'} />
+                        </label>
+                        <br />
+                        <input type={'submit'} value={'Login'} data-test-id={'form-login-button'} />
+                      </form>
+                    </p>
+                  )}
                   <div className="login-separator">or</div>
                   <a
                     href="https://github.com/gadgetmies/fomoplayer/wiki"

@@ -1,0 +1,17 @@
+{
+  "name": "fomoplayer_integration_tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "NODE_ENV=test npx nightwatch --config nightwatch.conf.js -e chrome",
+    "ci:test": "NODE_ENV=ci npx nightwatch --config nightwatch.conf.js -e chrome"
+  },
+  "devDependencies": {
+    "fomoplayer_shared": "1.0.0",
+    "nightwatch": "^3.3.5",
+    "@nightwatch/apitesting": "^3.1.3"
+  },
+  "author": "",
+  "license": "ISC"
+}
