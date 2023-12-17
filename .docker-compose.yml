@@ -29,8 +29,8 @@ services:
       - API_PORT=${API_PORT}
       - FRONTEND_URL=${FRONTEND_URL}
       - SESSION_SECRET=${SESSION_SECRET}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_OIDC_CLIENT_ID=${GOOGLE_OIDC_CLIENT_ID}
+      - GOOGLE_OIDC_CLIENT_SECRET=${GOOGLE_OIDC_CLIENT_SECRET}
       - DATABASE_URL=postgres://multi-store-player-docker:${DB_PASSWORD}@pg:5432/multi-store-player
     links:
       - pg

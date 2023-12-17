@@ -7,5 +7,5 @@ module.exports = {
   PORT: process.env.PORT,
   NODE_ENV: nodeEnv,
   EXTENSION_KEY: process.env.EXTENSION_KEY,
-  GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID
+  GOOGLE_OIDC_CLIENT_ID: process.env.GOOGLE_OIDC_CLIENT_ID
 }

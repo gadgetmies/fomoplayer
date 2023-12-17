@@ -81,7 +81,7 @@ let options = {
                 version: process.env.npm_package_version,
                 key: config.EXTENSION_KEY,
                 oauth2: {
-                  client_id: config.GOOGLE_OAUTH_CLIENT_ID,
+                  client_id: config.GOOGLE_OIDC_CLIENT_ID,
                   scopes: ['']
                 },
                 ...JSON.parse(content.toString())
