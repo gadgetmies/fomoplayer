@@ -35,8 +35,7 @@
     "start": "REACT_APP_ENV=$NODE_ENV PORT=4004 react-scripts start",
     "build": "REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL react-scripts build && mkdir -p ../back/public && cp -r build/* ../back/public/",
     "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject",
-    "start:prod": "PORT=$(npx -p shared get-frontend-port) npx http-server build"
+    "eject": "react-scripts eject"
   },
   "browserslist": [
     ">0.2%",
