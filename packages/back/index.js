@@ -9,6 +9,8 @@ logger.info('####################################')
 
 if (process.env.NODE_ENV !== 'production') {
   require('fomoplayer_shared').interceptors.spotify.init()
+  require('fomoplayer_shared').interceptors.beatport.init()
+  require('fomoplayer_shared').interceptors.bandcamp.init()
 }
 
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
