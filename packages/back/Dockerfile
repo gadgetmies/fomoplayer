@@ -1,4 +1,5 @@
 FROM node:14
+# not in use
 RUN mkdir -p /usr/src/app
 COPY . /usr/src/app
 WORKDIR /usr/src/app/packages/back
