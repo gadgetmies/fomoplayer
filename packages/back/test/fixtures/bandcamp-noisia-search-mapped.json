@@ -1,0 +1,502 @@
+[
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com",
+    "id": 96499241,
+    "name": "Noisia",
+    "img": "https://f4.bcbits.com/img/0028507596_23.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/closer",
+    "id": 1109993233,
+    "name": "Closer",
+    "img": "https://f4.bcbits.com/img/4116063122_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com",
+    "id": 2473571604,
+    "name": "96NOISIΛ",
+    "img": "https://f4.bcbits.com/img/0025210859_23.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/outer-edges",
+    "id": 2078367484,
+    "name": "Outer Edges",
+    "img": "https://f4.bcbits.com/img/0185385558_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/the-resonance-i",
+    "id": 150372830,
+    "name": "The Resonance I",
+    "img": "https://f4.bcbits.com/img/2604543523_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/the-resonance-ii",
+    "id": 2474595900,
+    "name": "The Resonance II",
+    "img": "https://f4.bcbits.com/img/0114997746_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/purpose-ep",
+    "id": 4110117894,
+    "name": "Purpose EP",
+    "img": "https://f4.bcbits.com/img/1207241988_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/noisva96",
+    "id": 2896582295,
+    "name": "NOISVA96",
+    "img": "https://f4.bcbits.com/img/1548395103_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/unity152",
+    "id": 41188026,
+    "name": "Unity152",
+    "img": "https://f4.bcbits.com/img/1792923535_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://foreignbeggars.bandcamp.com/album/foreign-beggars-noisia-contact",
+    "id": 4253774305,
+    "name": "Foreign Beggars & Noisia // Contact",
+    "img": "https://f4.bcbits.com/img/0093826128_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/rufr-bridge",
+    "id": 3857127340,
+    "name": "RUFR bridge",
+    "img": "https://f4.bcbits.com/img/2075557273_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://visionrecordings.bandcamp.com/album/noisia-radio-best-of-2019",
+    "id": 1840022608,
+    "name": "Noisia Radio Best Of 2019",
+    "img": "https://f4.bcbits.com/img/2985161248_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/world-at-war",
+    "id": 1650228785,
+    "name": "World At War",
+    "img": "https://f4.bcbits.com/img/0101340799_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/psikhushka",
+    "id": 2543826570,
+    "name": "Psikhushka",
+    "img": "https://f4.bcbits.com/img/3202314196_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://twofingersbeats.bandcamp.com/album/dzjengis",
+    "id": 1514841898,
+    "name": "Dzjengis",
+    "img": "https://f4.bcbits.com/img/1143573765_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://visionrecordings.bandcamp.com/album/noisia-presents-ten-years-of-vision-recordings",
+    "id": 911318377,
+    "name": "Noisia Presents Ten Years of Vision Recordings",
+    "img": "https://f4.bcbits.com/img/3609811214_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://visionrecordings.bandcamp.com/album/noisia-radio-best-of-2018",
+    "id": 2540056026,
+    "name": "Noisia Radio Best Of 2018",
+    "img": "https://f4.bcbits.com/img/0364830599_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://mynameisproject.bandcamp.com/album/noisia-vier",
+    "id": 632529483,
+    "name": "NOISIA VIER",
+    "img": "https://f4.bcbits.com/img/2378889015_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://neosignalrecordings.bandcamp.com/album/linked-02",
+    "id": 4065874847,
+    "name": "LINKED 02",
+    "img": "https://f4.bcbits.com/img/4042918227_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://metalheadz.bandcamp.com/album/meth079-bells-of-last-look",
+    "id": 49920767,
+    "name": "METH079 - Bells Of / Last Look",
+    "img": "https://f4.bcbits.com/img/0145265964_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://mynameisproject.bandcamp.com/album/noisia-tre",
+    "id": 3000122109,
+    "name": "NOISIA TRE",
+    "img": "https://f4.bcbits.com/img/0540819819_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/the-resonance-iii",
+    "id": 714430273,
+    "name": "The Resonance III",
+    "img": "https://f4.bcbits.com/img/1243907972_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/the-resonance-iv",
+    "id": 270502004,
+    "name": "The Resonance IV",
+    "img": "https://f4.bcbits.com/img/4014892249_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/the-resonance-v",
+    "id": 1144765497,
+    "name": "The Resonance V",
+    "img": "https://f4.bcbits.com/img/2506304530_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/outer-edges-noisia-remixes",
+    "id": 3930486485,
+    "name": "Outer Edges (Noisia Remixes)",
+    "img": "https://f4.bcbits.com/img/1094305239_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/asteroids-noisia-remix",
+    "id": 1154843584,
+    "name": "Asteroids (Noisia Remix)",
+    "img": "https://f4.bcbits.com/img/0932040249_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/the-resonance-vi",
+    "id": 3222376539,
+    "name": "The Resonance VI",
+    "img": "https://f4.bcbits.com/img/1379365955_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/split-the-atom-special-edition",
+    "id": 2608915819,
+    "name": "Split The Atom (Special Edition)",
+    "img": "https://f4.bcbits.com/img/3909086815_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/halcyon",
+    "id": 2698804075,
+    "name": "Halcyon",
+    "img": "https://f4.bcbits.com/img/4111763065_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/incessant-ep",
+    "id": 711150598,
+    "name": "Incessant EP",
+    "img": "https://f4.bcbits.com/img/2055820617_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/outer-edges-remixes",
+    "id": 3103060560,
+    "name": "Outer Edges Remixes",
+    "img": "https://f4.bcbits.com/img/1705810297_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/dead-limit-ep",
+    "id": 4246192742,
+    "name": "Dead Limit EP",
+    "img": "https://f4.bcbits.com/img/3714395535_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/cleansing",
+    "id": 3651500744,
+    "name": "Cleansing",
+    "img": "https://f4.bcbits.com/img/2019270757_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/deep-down",
+    "id": 898087262,
+    "name": "Deep Down",
+    "img": "https://f4.bcbits.com/img/4133884314_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/armajet-original-game-soundtrack",
+    "id": 2569468287,
+    "name": "Armajet (Original Game Soundtrack)",
+    "img": "https://f4.bcbits.com/img/2274367119_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/outer-edges-live",
+    "id": 1292462523,
+    "name": "Outer Edges ∴ Live",
+    "img": "https://f4.bcbits.com/img/3323626129_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/the-hole-pt-1",
+    "id": 2824903436,
+    "name": "The Hole Pt. 1",
+    "img": "https://f4.bcbits.com/img/2659161474_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/devil-may-cry-original-game-soundtrack-digital-bonus-version",
+    "id": 3017421464,
+    "name": "Devil May Cry (Original Game Soundtrack) (Digital Bonus Version)",
+    "img": "https://f4.bcbits.com/img/1053911764_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/album/i-am-legion",
+    "id": 2544869360,
+    "name": "I Am Legion",
+    "img": "https://f4.bcbits.com/img/0219182997_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/the-sin-ep",
+    "id": 1025105394,
+    "name": "The Sin EP",
+    "img": "https://f4.bcbits.com/img/3826204003_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/inner-chaos",
+    "id": 1026058643,
+    "name": "Inner Chaos",
+    "img": "https://f4.bcbits.com/img/0058289325_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/into-the-darkness",
+    "id": 2611850913,
+    "name": "Into The Darkness",
+    "img": "https://f4.bcbits.com/img/1547637821_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/blood-ship",
+    "id": 2831924453,
+    "name": "Blood Ship",
+    "img": "https://f4.bcbits.com/img/4267771008_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/prevailing-insanity",
+    "id": 293404301,
+    "name": "Prevailing Insanity",
+    "img": "https://f4.bcbits.com/img/3506801137_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/track/noisia-concussion-mefjus-remix",
+    "id": 4028173289,
+    "name": "Noisia - Concussion (Mefjus Remix)",
+    "img": "https://f4.bcbits.com/img/3707797657_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/track/purpose-buunshin-remix",
+    "id": 3398823981,
+    "name": "Purpose (Buunshin Remix)",
+    "img": "https://f4.bcbits.com/img/2604543523_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/track/noisia-phace-program-sleepnet-remix",
+    "id": 2762309973,
+    "name": "Noisia & Phace - Program (Sleepnet Remix)",
+    "img": "https://f4.bcbits.com/img/0344515410_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://96noisia.bandcamp.com/album/reaping-aggregate",
+    "id": 751928292,
+    "name": "Reaping Aggregate",
+    "img": "https://f4.bcbits.com/img/3602389981_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/track/noisia-voodoo-waeys-remix",
+    "id": 3399222451,
+    "name": "Noisia - Voodoo (Waeys Remix)",
+    "img": "https://f4.bcbits.com/img/0756482968_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  },
+  {
+    "type": "artist",
+    "url": "https://noisia.bandcamp.com/track/wordless-with-halogenix",
+    "id": 4203538419,
+    "name": "Wordless (with Halogenix)",
+    "img": "https://f4.bcbits.com/img/4116063122_3.jpg",
+    "store": {
+      "name": "bandcamp"
+    }
+  }
+]

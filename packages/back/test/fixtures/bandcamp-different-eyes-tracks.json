@@ -1,0 +1,513 @@
+[
+  {
+    "id": 3052017814,
+    "title": "It's First Dream",
+    "version": null,
+    "artists": [
+      {
+        "name": "Billain",
+        "id": "billainaethek",
+        "role": "author",
+        "url": "https://billainaethek.bandcamp.com"
+      }
+    ],
+    "released": "17 Nov 2023 00:00:00 GMT",
+    "published": "13 Nov 2023 15:53:12 GMT",
+    "duration_ms": 332701,
+    "release": {
+      "release_date": "2023-11-17T00:00:00.000Z",
+      "url": "https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music",
+      "title": "Different Eyes EP",
+      "id": "1051734106"
+    },
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "billainaethek"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 332701
+      }
+    ],
+    "store_details": {
+      "id": 3052017814,
+      "track_id": 3052017814,
+      "file": {
+        "mp3-128": "https://t4.bcbits.com/stream/26db7a6502fdfda773c6b2a0337b64b3/mp3-128/3052017814?p=0&ts=1702915423&t=b836a3e31339c17dcbfad3812ac774803480d2da&token=1702915423_96f630d3bbdeadc6ae2b96aa4f43e9652bad8de4"
+      },
+      "artist": null,
+      "title": "It's First Dream",
+      "encodings_id": 1168497584,
+      "license_type": 1,
+      "private": null,
+      "track_num": 1,
+      "album_preorder": false,
+      "unreleased_track": false,
+      "title_link": "/track/its-first-dream",
+      "has_lyrics": false,
+      "has_info": false,
+      "streaming": 1,
+      "is_downloadable": true,
+      "has_free_download": null,
+      "free_album_download": false,
+      "duration": 332.701,
+      "lyrics": null,
+      "sizeof_lyrics": 0,
+      "is_draft": false,
+      "video_source_type": null,
+      "video_source_id": null,
+      "video_mobile_url": null,
+      "video_poster_url": null,
+      "video_id": null,
+      "video_caption": null,
+      "video_featured": null,
+      "alt_link": null,
+      "encoding_error": null,
+      "encoding_pending": null,
+      "play_count": 0,
+      "is_capped": false,
+      "track_license_id": null
+    }
+  },
+  {
+    "id": 3564282045,
+    "title": "Baka",
+    "version": null,
+    "artists": [
+      {
+        "name": "Billain",
+        "id": "billainaethek",
+        "role": "author",
+        "url": "https://billainaethek.bandcamp.com"
+      }
+    ],
+    "released": "17 Nov 2023 00:00:00 GMT",
+    "published": "13 Nov 2023 15:53:12 GMT",
+    "duration_ms": 322759,
+    "release": {
+      "release_date": "2023-11-17T00:00:00.000Z",
+      "url": "https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music",
+      "title": "Different Eyes EP",
+      "id": "1051734106"
+    },
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "billainaethek"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 322759
+      }
+    ],
+    "store_details": {
+      "id": 3564282045,
+      "track_id": 3564282045,
+      "file": {
+        "mp3-128": "https://t4.bcbits.com/stream/e2f0fece731409aee5789d8739b10eb2/mp3-128/3564282045?p=0&ts=1702915423&t=d2cd11ff16c67f1a5690d917d48ef63936fd3f1a&token=1702915423_c743a56f038448722ae0a63190a2caf97d8bb88d"
+      },
+      "artist": null,
+      "title": "Baka",
+      "encodings_id": 3721128880,
+      "license_type": 1,
+      "private": null,
+      "track_num": 2,
+      "album_preorder": false,
+      "unreleased_track": false,
+      "title_link": "/track/baka",
+      "has_lyrics": false,
+      "has_info": false,
+      "streaming": 1,
+      "is_downloadable": true,
+      "has_free_download": null,
+      "free_album_download": false,
+      "duration": 322.759,
+      "lyrics": null,
+      "sizeof_lyrics": 0,
+      "is_draft": false,
+      "video_source_type": null,
+      "video_source_id": null,
+      "video_mobile_url": null,
+      "video_poster_url": null,
+      "video_id": null,
+      "video_caption": null,
+      "video_featured": null,
+      "alt_link": null,
+      "encoding_error": null,
+      "encoding_pending": null,
+      "play_count": 0,
+      "is_capped": false,
+      "track_license_id": null
+    }
+  },
+  {
+    "id": 2269543383,
+    "title": "Kinetic",
+    "version": null,
+    "artists": [
+      {
+        "name": "Billain",
+        "id": "billainaethek",
+        "role": "author",
+        "url": "https://billainaethek.bandcamp.com"
+      }
+    ],
+    "released": "17 Nov 2023 00:00:00 GMT",
+    "published": "13 Nov 2023 15:53:12 GMT",
+    "duration_ms": 344052,
+    "release": {
+      "release_date": "2023-11-17T00:00:00.000Z",
+      "url": "https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music",
+      "title": "Different Eyes EP",
+      "id": "1051734106"
+    },
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "billainaethek"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 344052
+      }
+    ],
+    "store_details": {
+      "id": 2269543383,
+      "track_id": 2269543383,
+      "file": {
+        "mp3-128": "https://t4.bcbits.com/stream/6c51c3e6f5a482dd7bd0a170fa2e5d9a/mp3-128/2269543383?p=0&ts=1702915423&t=fd32452fab9e1efa8edbf68e5adbb4d61e6082bb&token=1702915423_83bc8c9e30db8e2dcce0c458c2c8776985cd14bc"
+      },
+      "artist": null,
+      "title": "Kinetic",
+      "encodings_id": 387722802,
+      "license_type": 1,
+      "private": null,
+      "track_num": 3,
+      "album_preorder": false,
+      "unreleased_track": false,
+      "title_link": "/track/kinetic",
+      "has_lyrics": false,
+      "has_info": false,
+      "streaming": 1,
+      "is_downloadable": true,
+      "has_free_download": null,
+      "free_album_download": false,
+      "duration": 344.052,
+      "lyrics": null,
+      "sizeof_lyrics": 0,
+      "is_draft": false,
+      "video_source_type": null,
+      "video_source_id": null,
+      "video_mobile_url": null,
+      "video_poster_url": null,
+      "video_id": null,
+      "video_caption": null,
+      "video_featured": null,
+      "alt_link": null,
+      "encoding_error": null,
+      "encoding_pending": null,
+      "play_count": 0,
+      "is_capped": false,
+      "track_license_id": null
+    }
+  },
+  {
+    "id": 1321317057,
+    "title": "Uncanny Valley",
+    "version": null,
+    "artists": [
+      {
+        "name": "Billain",
+        "id": "billainaethek",
+        "role": "author",
+        "url": "https://billainaethek.bandcamp.com"
+      }
+    ],
+    "released": "17 Nov 2023 00:00:00 GMT",
+    "published": "13 Nov 2023 15:53:12 GMT",
+    "duration_ms": 398614,
+    "release": {
+      "release_date": "2023-11-17T00:00:00.000Z",
+      "url": "https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music",
+      "title": "Different Eyes EP",
+      "id": "1051734106"
+    },
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "billainaethek"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 398614
+      }
+    ],
+    "store_details": {
+      "id": 1321317057,
+      "track_id": 1321317057,
+      "file": {
+        "mp3-128": "https://t4.bcbits.com/stream/770f029cedbcd5768bd5da474c79ce53/mp3-128/1321317057?p=0&ts=1702915423&t=f787e90ba92c06a816c559089577e26026258ee0&token=1702915423_33451a6f547a096db525637dee3c35fed6bcd06f"
+      },
+      "artist": null,
+      "title": "Uncanny Valley",
+      "encodings_id": 1007210999,
+      "license_type": 1,
+      "private": null,
+      "track_num": 4,
+      "album_preorder": false,
+      "unreleased_track": false,
+      "title_link": "/track/uncanny-valley",
+      "has_lyrics": false,
+      "has_info": false,
+      "streaming": 1,
+      "is_downloadable": true,
+      "has_free_download": null,
+      "free_album_download": false,
+      "duration": 398.614,
+      "lyrics": null,
+      "sizeof_lyrics": 0,
+      "is_draft": false,
+      "video_source_type": null,
+      "video_source_id": null,
+      "video_mobile_url": null,
+      "video_poster_url": null,
+      "video_id": null,
+      "video_caption": null,
+      "video_featured": null,
+      "alt_link": null,
+      "encoding_error": null,
+      "encoding_pending": null,
+      "play_count": 0,
+      "is_capped": false,
+      "track_license_id": null
+    }
+  },
+  {
+    "id": 106770869,
+    "title": "F4K Y00",
+    "version": null,
+    "artists": [
+      {
+        "name": "Billain",
+        "id": "billainaethek",
+        "role": "author",
+        "url": "https://billainaethek.bandcamp.com"
+      }
+    ],
+    "released": "17 Nov 2023 00:00:00 GMT",
+    "published": "13 Nov 2023 15:53:12 GMT",
+    "duration_ms": 266667,
+    "release": {
+      "release_date": "2023-11-17T00:00:00.000Z",
+      "url": "https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music",
+      "title": "Different Eyes EP",
+      "id": "1051734106"
+    },
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "billainaethek"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 266667
+      }
+    ],
+    "store_details": {
+      "id": 106770869,
+      "track_id": 106770869,
+      "file": {
+        "mp3-128": "https://t4.bcbits.com/stream/d7a1100eae8dde26ca518e7dc81960c1/mp3-128/106770869?p=0&ts=1702915423&t=c0560abc5ad43bf28a6e0c410468eebd09346615&token=1702915423_bcb522ac057436f79c362ed191833ce884b6731b"
+      },
+      "artist": null,
+      "title": "F4K Y00",
+      "encodings_id": 3883299627,
+      "license_type": 1,
+      "private": null,
+      "track_num": 5,
+      "album_preorder": false,
+      "unreleased_track": false,
+      "title_link": "/track/f4k-y00",
+      "has_lyrics": false,
+      "has_info": false,
+      "streaming": 1,
+      "is_downloadable": true,
+      "has_free_download": null,
+      "free_album_download": false,
+      "duration": 266.667,
+      "lyrics": null,
+      "sizeof_lyrics": 0,
+      "is_draft": false,
+      "video_source_type": null,
+      "video_source_id": null,
+      "video_mobile_url": null,
+      "video_poster_url": null,
+      "video_id": null,
+      "video_caption": null,
+      "video_featured": null,
+      "alt_link": null,
+      "encoding_error": null,
+      "encoding_pending": null,
+      "play_count": 0,
+      "is_capped": false,
+      "track_license_id": null
+    }
+  },
+  {
+    "id": 4043373471,
+    "title": "Void Me",
+    "version": null,
+    "artists": [
+      {
+        "name": "Billain",
+        "id": "billainaethek",
+        "role": "author",
+        "url": "https://billainaethek.bandcamp.com"
+      }
+    ],
+    "released": "17 Nov 2023 00:00:00 GMT",
+    "published": "13 Nov 2023 15:53:12 GMT",
+    "duration_ms": 265686,
+    "release": {
+      "release_date": "2023-11-17T00:00:00.000Z",
+      "url": "https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music",
+      "title": "Different Eyes EP",
+      "id": "1051734106"
+    },
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "billainaethek"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 265686
+      }
+    ],
+    "store_details": {
+      "id": 4043373471,
+      "track_id": 4043373471,
+      "file": {
+        "mp3-128": "https://t4.bcbits.com/stream/bd0396e836b4ea2c1801c3d943832517/mp3-128/4043373471?p=0&ts=1702915423&t=5844ec5c3a87e943d31856fa5baba0be5f9e2fbe&token=1702915423_fb958fe2d408cfc0422ae0eeae0b852faa5dfbd4"
+      },
+      "artist": null,
+      "title": "Void Me",
+      "encodings_id": 2503818959,
+      "license_type": 1,
+      "private": null,
+      "track_num": 6,
+      "album_preorder": false,
+      "unreleased_track": false,
+      "title_link": "/track/void-me",
+      "has_lyrics": false,
+      "has_info": false,
+      "streaming": 1,
+      "is_downloadable": true,
+      "has_free_download": null,
+      "free_album_download": false,
+      "duration": 265.686,
+      "lyrics": null,
+      "sizeof_lyrics": 0,
+      "is_draft": false,
+      "video_source_type": null,
+      "video_source_id": null,
+      "video_mobile_url": null,
+      "video_poster_url": null,
+      "video_id": null,
+      "video_caption": null,
+      "video_featured": null,
+      "alt_link": null,
+      "encoding_error": null,
+      "encoding_pending": null,
+      "play_count": 0,
+      "is_capped": false,
+      "track_license_id": null
+    }
+  },
+  {
+    "id": 2812273221,
+    "title": "Different Eyes",
+    "version": null,
+    "artists": [
+      {
+        "name": "Billain",
+        "id": "billainaethek",
+        "role": "author",
+        "url": "https://billainaethek.bandcamp.com"
+      }
+    ],
+    "released": "17 Nov 2023 00:00:00 GMT",
+    "published": "13 Nov 2023 15:53:12 GMT",
+    "duration_ms": 488832,
+    "release": {
+      "release_date": "2023-11-17T00:00:00.000Z",
+      "url": "https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music",
+      "title": "Different Eyes EP",
+      "id": "1051734106"
+    },
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "billainaethek"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 488832
+      }
+    ],
+    "store_details": {
+      "id": 2812273221,
+      "track_id": 2812273221,
+      "file": {
+        "mp3-128": "https://t4.bcbits.com/stream/db419a860d6bed3a6b65b1109cd21388/mp3-128/2812273221?p=0&ts=1702915423&t=fceca712aeba0cd5949f224903b351d11e0a047a&token=1702915423_f7983d24047b3d27a55035fb881b1657e11ff8f4"
+      },
+      "artist": null,
+      "title": "Different Eyes",
+      "encodings_id": 490219160,
+      "license_type": 1,
+      "private": null,
+      "track_num": 7,
+      "album_preorder": false,
+      "unreleased_track": false,
+      "title_link": "/track/different-eyes-2",
+      "has_lyrics": false,
+      "has_info": false,
+      "streaming": 1,
+      "is_downloadable": true,
+      "has_free_download": null,
+      "free_album_download": false,
+      "duration": 488.832,
+      "lyrics": null,
+      "sizeof_lyrics": 0,
+      "is_draft": false,
+      "video_source_type": null,
+      "video_source_id": null,
+      "video_mobile_url": null,
+      "video_poster_url": null,
+      "video_id": null,
+      "video_caption": null,
+      "video_featured": null,
+      "alt_link": null,
+      "encoding_error": null,
+      "encoding_pending": null,
+      "play_count": 0,
+      "is_capped": false,
+      "track_license_id": null
+    }
+  }
+]

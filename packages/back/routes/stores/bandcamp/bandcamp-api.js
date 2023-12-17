@@ -39,7 +39,7 @@ const getRelease = (itemUrl, callback) => {
       callback(null, { ...getReleaseInfo(res), url: itemUrl })
     })
     .catch(e => {
-      logger.error(`Fetching release from ${itemUrl} failed`, {statusCode: e.statusCode})
+      logger.error(`Fetching release from ${itemUrl} failed`, { statusCode: e.statusCode })
       logger.silly(e)
       callback(e)
     })
@@ -57,25 +57,29 @@ const getName = dom => {
   return (siteNameElement !== null && siteNameElement.getAttribute('content')) || nameFromTitle
 }
 
-const getReleaseUrls = (host, dom) =>
-  Array.from(dom.window.document.querySelectorAll('#music-grid a')).map(i =>
+const getReleaseUrls = (host, dom) => {
+  const items = dom.window.document.querySelectorAll('#music-grid a, .featured-grid a')
+  return Array.from(items).map(i =>
     new URL(i.getAttribute('href'), host).toString()
   )
+}
 
 const getIdFromUrl = url => url.substring(0, url.indexOf('.'))
 
 const getPageInfo = (url, callback) => {
   const id = getIdFromUrl(url)
-  getPageSource(url + '/music').then(res => {
-    const dom = new JSDOM(res)
-    return callback(null, {
-      id,
-      name: getName(dom),
-      releaseUrls: getReleaseUrls(url, dom)
+  getPageSource(url + '/music')
+    .then(res => {
+      const dom = new JSDOM(res)
+      return callback(null, {
+        id,
+        name: getName(dom),
+        releaseUrls: getReleaseUrls(url, dom)
+      })
     })
-  }).catch(e => {
-    callback(e)
-  })
+    .catch(e => {
+      callback(e)
+    })
 }
 
 const getTagUrl = function(tag) {
@@ -84,17 +88,19 @@ const getTagUrl = function(tag) {
 
 const getTag = (tag, callback) => {
   const url = getTagUrl(tag)
-  return getPageSource(url).then(res => {
-    const pageTitle = getPageTitle(res)
-    const tagTitle = decode(pageTitle.substring(0, pageTitle.indexOf(' Music &amp; Artists | Bandcamp')))
+  return getPageSource(url)
+    .then(res => {
+      const pageTitle = getPageTitle(res)
+      const tagTitle = decode(pageTitle.substring(0, pageTitle.indexOf(' Music &amp; Artists | Bandcamp')))
 
-    return callback(null, {
-      id: tag,
-      name: tagTitle
+      return callback(null, {
+        id: tag,
+        name: tagTitle
+      })
     })
-  }).catch(e => {
-    callback(e)
-  })
+    .catch(e => {
+      callback(e)
+    })
 }
 
 const getTagReleases = (tag, callback) => {
@@ -110,27 +116,35 @@ const getTagReleases = (tag, callback) => {
 }
 
 const getPageDetails = (url, callback) => {
-  return getPageSource(url).then(res => {
-    const dom = new JSDOM(res)
-    const pageTitle = getName(dom)
-    const artistsLink = dom.window.document.querySelector('[href="/artists"]')
-    return callback(null, {
-      id: getIdFromUrl,
-      name: pageTitle,
-      type: artistsLink === null ? 'artist' : 'label'
+  return getPageSource(url)
+    .then(res => {
+      const dom = new JSDOM(res)
+      const pageTitle = getName(dom)
+      const artistsLink = dom.window.document.querySelector('[href="/artists"]')
+      return callback(null, {
+        id: getIdFromUrl,
+        name: pageTitle,
+        type: artistsLink === null ? 'artist' : 'label'
+      })
     })
-  }).catch(e => {
-    callback(e)
-  })
+    .catch(e => {
+      callback(e)
+    })
 }
 
 const mapSearchResults = ({ auto: { results } }) =>
-  results.map(({ is_label, url, id, name, img }) => ({ type: is_label ? 'label' : 'artist', url, id, name, img }))
+  results.map(({ is_label, item_url_path, item_url_root, id, name, img }) => ({
+    type: is_label ? 'label' : 'artist',
+    url: item_url_path || item_url_root,
+    id,
+    name,
+    img
+  }))
 
 const getSearchResults = (query, callback) => {
   return request({
     method: 'POST',
-    uri: 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_fuzzy',
+    uri: 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic',
     body: {
       search_text: query,
       search_filter: 'b',
@@ -142,7 +156,7 @@ const getSearchResults = (query, callback) => {
       callback(null, mapSearchResults(res))
     })
     .catch(e => {
-      logger.error(`Searching for ${query} failed`, {statusCode: e.statusCode})
+      logger.error(`Searching for ${query} failed`, { statusCode: e.statusCode })
       logger.silly(e)
       callback(e)
     })

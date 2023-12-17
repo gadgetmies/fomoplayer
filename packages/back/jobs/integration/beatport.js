@@ -1,4 +1,4 @@
-const { getArtistTracks, getLabelTracks, getPlaylistTracks } = require('../../routes/stores/beatport/logic')
+const { getArtistTracks, getLabelTracks, getPlaylistTracks, storeName } = require('../../routes/stores/beatport/logic')
 const { scheduleEmail } = require('../../services/mailer')
 const logger = require('../../logger')(__filename)
 const sql = require('sql-template-strings')
@@ -33,7 +33,7 @@ async function getArtistDetails() {
       NATURAL JOIN artist
       NATURAL JOIN store
     WHERE artist.name = 'Noisia'
-      AND store_name = 'Beatport'
+      AND store_name = ${storeName}
   `)
   return details
 }
@@ -47,7 +47,7 @@ async function getLabelDetails() {
       NATURAL JOIN label
       NATURAL JOIN store
     WHERE label.name = 'Vision Recordings'
-      AND store_name = 'Beatport'
+      AND store_name = ${storeName}
   `)
   return details
 }
@@ -84,7 +84,9 @@ module.exports = async () => {
         )
 
         if (missingTrackProperties.length !== 0) {
-          const error = `Missing properties in fetched tracks for (${details.url}): ${missingTrackProperties.join(', ')}`
+          const error = `Missing properties in fetched tracks for (${details.url}): ${missingTrackProperties.join(
+            ', '
+          )}`
           logger.error(error)
           combinedErrors.push(error)
         }

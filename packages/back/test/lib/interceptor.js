@@ -63,7 +63,7 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
         })
       } else if (mock !== undefined) {
         console.log('Mocking request', clone.url)
-        mockedRequests.push(clone)
+        mockedRequests.push({ url: clone.url, request: clone })
         const pathname = new URL(clone.url).pathname
         const { body, options } = mock.getResponse({ url: clone.url, pathname, request: clone })
         return request.respondWith(new Response(body instanceof Object ? JSON.stringify(body) : body, options))
@@ -78,8 +78,12 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
     mockedRequests = []
   }
 
+  function getMockedRequests() {
+    return mockedRequests
+  }
+
   return {
-    mockedRequests,
-    clearMockedRequests
+    clearMockedRequests,
+    getMockedRequests
   }
 }
