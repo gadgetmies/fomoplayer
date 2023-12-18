@@ -3,12 +3,10 @@ const R = require('ramda')
 const bpApi = require('./bp-api')
 const { processChunks } = require('../../shared/requests')
 
-const { queryFollowRegexes } = require('../../shared/db/store')
 const {
   beatportTracksTransform,
   beatportTrackTransform
 } = require('fomoplayer_chrome_extension/src/js/transforms/beatport')
-const { getFollowDetailsFromUrl } = require('../logic.js')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
@@ -18,27 +16,26 @@ const storeName = (module.exports.storeName = 'Beatport')
 module.exports.storeUrl = 'https://www.beatport.com'
 module.exports.getPlaylistId = id => id
 
-const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
+const getPlaylistName = (module.exports.getPlaylistName = async ({ url }) => {
   const { name } = await bpApiStatic.getDetailsAsync(url)
   return name
 })
 
-module.exports.getFollowDetails = async urlString => {
-  const { id, type } = await getFollowDetailsFromUrl(storeName, urlString)
+module.exports.getFollowDetails = async ({ url }) => {
   let details
 
   if (type === 'artist' || type === 'label') {
-    details = await bpApiStatic.getDetailsAsync(urlString)
+    details = await bpApiStatic.getDetailsAsync(url)
   } else if (type === 'playlist') {
-    details = await getPlaylistName(type, urlString)
+    details = await getPlaylistName({ url })
   } else {
     throw new Error('Regex type not handled in code!')
   }
 
-  return [{ id, ...details, type, store, url: urlString }]
+  return [{ id, ...details, type, store: { name: storeName }, url }]
 }
 
-const getTrackInfo = (module.exports.getTrackInfo = async url => {
+const getTrackInfo = async ({ url }) => {
   const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
   const transformed = beatportTrackTransform(queryData.data.props.pageProps.track)
 
@@ -49,7 +46,7 @@ const getTrackInfo = (module.exports.getTrackInfo = async url => {
   }
 
   return transformed
-})
+}
 
 function trackInfo([{ url }]) {
   return getTrackInfo(url)
@@ -83,7 +80,7 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
   yield { tracks: await appendTrackNumbers(transformed), errors: [] }
 }
 
-module.exports.getLabelName = module.exports.getArtistName = async url => {
+module.exports.getLabelName = module.exports.getArtistName = async ({ url }) => {
   const { name } = await bpApiStatic.getDetailsAsync(url)
   return name
 }

@@ -1,7 +1,28 @@
 const { BadRequest } = require('./httpErrors')
-const { queryStoreRegexes, queryStoreName, queryFollowRegexes } = require('./db/store')
-const { modules: storeModules } = require('../stores/index.js')
+const { queryStoreRegexes, queryStoreName } = require('./db/store')
+const { modules: storeModules } = require('../stores/store-modules')
 
+// TODO: share logic with stores/logic.js
+module.exports.getStoreModuleForUrl = async url => {
+  const storesRegexes = await queryStoreRegexes()
+  const matchingStore = storesRegexes
+    .map(({ name, regex: regexes }) =>
+      Object.entries(regexes).map(([type, regex]) => {
+        const urlMatch = url.match(regex)
+        return { match: urlMatch !== null, type, name }
+      })
+    )
+    .flat()
+    .find(({ match }) => match)
+
+  if (matchingStore === undefined) {
+    throw new BadRequest(`Invalid URL ${url}`)
+  }
+
+  return storeModules[matchingStore.name]
+}
+
+// TODO: share logic with stores/logic.js
 module.exports.getStoreModuleForArtistByUrl = async artistUrl => {
   const storesRegexes = await queryStoreRegexes()
   const matchingStore = storesRegexes.find(({ regex: { artist: artistRegex } }) => {
@@ -16,6 +37,7 @@ module.exports.getStoreModuleForArtistByUrl = async artistUrl => {
   return storeModules[matchingStore.name]
 }
 
+// TODO: share logic with stores/logic.js
 module.exports.getStoreModuleForLabelByUrl = async labelUrl => {
   const storesRegexes = await queryStoreRegexes()
 
@@ -31,6 +53,7 @@ module.exports.getStoreModuleForLabelByUrl = async labelUrl => {
   return storeModules[matchingStore.name]
 }
 
+// TODO: share logic with stores/logic.js
 module.exports.getStoreModuleForPlaylistByUrl = async playlistUrl => {
   const storeRegexes = await queryStoreRegexes()
   let matchingStore = undefined
@@ -54,6 +77,7 @@ module.exports.getStoreModuleForPlaylistByUrl = async playlistUrl => {
   return { module: storeModules[matchingStore.name], typeId: matchingRegex.typeId }
 }
 
+// TODO: share logic with stores/logic.js
 module.exports.getStoreModuleForStoreId = async storeId => {
   const storeName = await queryStoreName(storeId)
   return storeModules[storeName]

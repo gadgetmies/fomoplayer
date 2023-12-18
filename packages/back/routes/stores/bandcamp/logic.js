@@ -14,7 +14,6 @@ const {
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl } = require('./db.js')
-const { getFollowDetailsFromUrl } = require('../logic')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 let storeDbId = null
@@ -50,34 +49,33 @@ const getTagFromUrl = function(playlistUrl) {
   return match[1]
 }
 
-module.exports.getArtistName = async url => {
+module.exports.getArtistName = async ({ url }) => {
   const { name } = await getArtistAsync(url)
   return name
 }
 
-module.exports.getLabelName = async url => {
+module.exports.getLabelName = async ({ url }) => {
   const { name } = await getLabelAsync(url)
   return name
 }
 
 module.exports.getPlaylistId = getTagFromUrl
 
-const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
+const getPlaylistName = (module.exports.getPlaylistName = async ({ url, type }) => {
   if (type === 'tag') {
     const res = await getTagAsync(getTagFromUrl(url))
     return res.name
   }
 })
 
-module.exports.getFollowDetails = async urlString => {
-  const { id, type } = await getFollowDetailsFromUrl(urlString)
+module.exports.getFollowDetails = async ({ id, type, url }) => {
   let details
   if (['artist', 'label'].includes(type)) {
-    const { name, type: pageType } = await getPageDetailsAsync(urlString)
-    details = { id, name, type: pageType, url: urlString }
+    const { name, type: pageType } = await getPageDetailsAsync(url)
+    details = { id, name, type: pageType, url: url }
   } else if (type === 'tag') {
-    const label = await getPlaylistName(type, urlString)
-    details = { id, name: `Tag: ${label}`, type: 'playlist', url: urlString }
+    const label = await getPlaylistName({ url, type })
+    details = { id, name: `Tag: ${label}`, type: 'playlist', url: url }
   } else {
     throw new Error('Regex type not handled in code!')
   }

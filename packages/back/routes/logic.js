@@ -2,9 +2,10 @@ const { apiURL } = require('../config.js')
 const { queryLongestPreviewForTrack, searchForArtistsAndLabels } = require('./db.js')
 const { searchForTracks } = require('./shared/db/search.js')
 const { queryPreviewDetails } = require('./shared/db/preview')
-const { modules: storeModules } = require('./stores/index.js')
 const { queryCartDetails } = require('./shared/db/cart')
 const { queryCartDetailsByUuid, verifyEmail } = require('./db')
+const { getStoreDetailsFromUrl } = require('./stores/logic')
+const { modules: storeModules } = require('./stores/store-modules')
 
 module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
   const { storeCode, storeTrackId } = await queryLongestPreviewForTrack(id, format, skip)
@@ -13,19 +14,15 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
 
 module.exports.searchForTracks = searchForTracks
 module.exports.getFollowDetails = async query => {
-  for (const storeModule of Object.values(storeModules)) {
-    let details
-
-    try {
-      new URL(query)
-      details = await storeModule.logic.getFollowDetails(query)
-    } catch (e) {
-      details = await searchForArtistsAndLabels(query)
-    }
-
-    if (details.length > 0) {
-      return details
-    }
+  let details
+  if (query.match('^https://') !== null) {
+    const [detailsFromURL] = await getStoreDetailsFromUrl(query)
+    details = await storeModules[detailsFromURL.storeName].logic.getFollowDetails(detailsFromURL)
+  } else {
+    details = await searchForArtistsAndLabels(query)
+  }
+  if (details.length > 0) {
+    return details
   }
 
   return []

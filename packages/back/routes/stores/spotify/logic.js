@@ -13,7 +13,7 @@ const {
 const R = require('ramda')
 const { processChunks } = require('../../shared/requests')
 const { addArtistsToUserFollowed } = require('../../shared/spotify')
-const { getFollowDetailsFromUrls, getFollowDetailsFromUrl } = require('../logic')
+const { getStoreDetailsFromUrls, getStoreDetailsFromUrl } = require('../logic')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.storeUrl = 'https://www.spotify.com'
@@ -42,7 +42,7 @@ module.exports.getUserFollowedArtists = async userId => {
 module.exports.followArtists = async (userId, artistUrls) => {
   logger.info(`Following Spotify artists for user ${userId}`, { artistUrls })
   try {
-    const artistIds = (await getFollowDetailsFromUrls(storeName, artistUrls)).map(({ id }) => id)
+    const artistIds = (await getStoreDetailsFromUrls(artistUrls, storeName)).map(({ id }) => id)
     await addArtistsToUserFollowed(userId, artistIds)
   } catch (e) {
     logger.error(`Following Spotify artists for user (${userId}) failed`, e)
@@ -73,7 +73,7 @@ module.exports.getPlaylistDetailsWithTracks = async playlistUrl => {
   return { ...details, tracks }
 }
 
-const getArtistName = (module.exports.getArtistName = async url => {
+const getArtistName = (module.exports.getArtistDetails = async ({ url }) => {
   // TODO: get regex from db
   const artistId = url.match('^https://(api|open).spotify.com/(v1/)?artists?/([0-9A-Za-z]+)')[3]
   const {
@@ -91,7 +91,7 @@ const getPlaylistId = (module.exports.getPlaylistId = url => {
   return id
 })
 
-const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
+const getPlaylistName = (module.exports.getPlaylistName = async url => {
   const id = getPlaylistId(url)
   const { title, author } = await getPlaylistDetails(id)
 
@@ -102,19 +102,18 @@ const getPlaylistName = (module.exports.getPlaylistName = async (type, url) => {
   return `${author}: ${title}`
 })
 
-module.exports.getFollowDetails = async urlString => {
+module.exports.getFollowDetails = async ({ id, type, url }) => {
   let name
-  const { id, type } = getFollowDetailsFromUrl(storeName, urlString)
 
   if (type === 'artist') {
-    name = await getArtistName(urlString)
+    name = await getArtistName({ url })
   } else if (type === 'playlist') {
-    name = await getPlaylistName(type, urlString)
+    name = await getPlaylistName({ url, type })
   } else {
     throw new Error('Regex type not handled in code!')
   }
 
-  return [{ id, name, type, store: { name: storeCode }, url: urlString }]
+  return [{ id, name, type, store: { name: storeCode }, url }]
 }
 
 module.exports.getTracks = getTracks
