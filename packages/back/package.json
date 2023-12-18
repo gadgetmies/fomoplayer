@@ -7,7 +7,7 @@
     "start": "supervisor -- --inspect index.js",
     "start:prod": "node index.js",
     "migrate": "db-migrate -e dev up",
-    "db-migrate:prod": "db-migrate -e prod up",
+    "db-migrate:prod": "db-migrate -v --config ${PWD}/database.json -e prod up",
     "test": "NODE_ENV=test node -r dotenv/config ../shared/test/run-tests.js ./test/tests dotenv_config_path=.env.test",
     "ci:test": "NODE_ENV=ci node -r dotenv/config ../shared/test/run-tests.js ./test/tests dotenv_config_path=.env.ci"
   },

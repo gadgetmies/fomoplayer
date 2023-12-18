@@ -16,6 +16,7 @@
     "ENV": "DATABASE_URL"
   },
   "prod": {
+    "ENV": "DATABASE_URL",
     "driver": "pg",
     "ssl": {
       "rejectUnauthorized": false
