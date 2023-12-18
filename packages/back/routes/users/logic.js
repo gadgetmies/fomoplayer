@@ -11,7 +11,7 @@ const {
 } = require('../shared/tracks')
 const { getStoreModuleForArtistByUrl, getStoreModuleForLabelByUrl } = require('../shared/stores')
 const { NotFound, Forbidden } = require('../shared/httpErrors')
-const storeModules = require('../stores/store-modules')
+const { modules: storeModules } = require('../stores/store-modules')
 const { ensureArtistExists, ensureLabelExists } = require('../shared/db/store')
 
 const {
@@ -285,9 +285,9 @@ module.exports.addPlaylistFollows = async (playlists, userId, sourceId) => {
   // TODO: try first to find from db
   let addedPlaylists = []
   for (const { url } of playlists) {
-    const { storeName, type, url, id } = await getStoreDetailsFromUrl(url)
-    const name = await storeModules[storeName].getPlaylistName({ url, type })
-    const { playlistId, followId } = await insertUserPlaylistFollow(userId, storeName, id, name, type)
+    const [{ storeName, type, id }] = await getStoreDetailsFromUrl(url)
+    const name = await storeModules[storeName].logic.getPlaylistName({ url, type })
+    const { playlistId, followId } = await insertUserPlaylistFollow(userId, storeName, id || url, name, type)
 
     addedPlaylists.push({
       playlist: `${apiURL}/playlists/${playlistId}`,
