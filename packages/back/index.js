@@ -11,8 +11,12 @@ if (process.env.NODE_ENV !== 'production') {
   if (process.env.SPOTIFY_ACCOUNTS_REDIRECT || process.env.SPOTIFY_API_REDIRECT || process.env.SPOTIFY_MOCK) {
     require('fomoplayer_shared').interceptors.spotify.init()
   }
-  require('fomoplayer_shared').interceptors.beatport.init()
-  require('fomoplayer_shared').interceptors.bandcamp.init()
+  if (process.env.BEATPORT_REDIRECT || process.env.BEATPORT_MOCK) {
+    require('fomoplayer_shared').interceptors.beatport.init()
+  }
+  if (process.env.BANDCAMP_REDIRECT || process.env.BANDCAMP_MOCK) {
+    require('fomoplayer_shared').interceptors.bandcamp.init()
+  }
 }
 
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'
