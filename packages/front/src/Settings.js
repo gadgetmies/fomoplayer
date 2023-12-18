@@ -1296,15 +1296,9 @@ class Settings extends Component {
   }
 
   getFollowItemDisabled(type, url) {
-    return (
-      this.state.updatingFollowWithUrl !== null ||
-      (type === 'artist'
-        ? this.state.artistFollows
-        : type === 'label'
-        ? this.state.labelFollows
-        : this.state.playlistFollows
-      ).find(R.propEq('url', url))
-    )
+    return this.state.updatingFollowWithUrl !== null || type === 'playlist'
+      ? this.state.playlistFollows.find(R.propEq('playlistStoreId', url))
+      : (type === 'artist' ? this.state.artistFollows : this.state.labelFollows).find(R.propEq('url', url))
   }
 
   async onImportPlaylistItemClick(url) {

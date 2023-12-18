@@ -63,17 +63,16 @@ module.exports.insertUserPlaylistFollow = async (
     const res = await tx.queryRowsAsync(
       // language=PostgreSQL
       sql`-- insertUserPlaylistFollow SELECT playlist_id
-SELECT
-  playlist_id AS id
-FROM
-  playlist
-  NATURAL JOIN store_playlist_type
-WHERE
-    playlist_store_id = ${playlistId}
-AND ((${playlistType}::TEXT IS NULL AND store_playlist_type_store_id IS NULL) OR
-     store_playlist_type_store_id = ${playlistType})
-AND store_id = (SELECT store_id FROM store WHERE store_name = ${storeName})
-`
+      SELECT playlist_id AS id
+      FROM
+        playlist
+        NATURAL JOIN store_playlist_type
+      WHERE playlist_store_id = ${playlistId}
+        AND (
+          ((${playlistType}::TEXT IS NULL OR ${playlistType} = 'playlist') AND store_playlist_type_store_id IS NULL) OR
+          store_playlist_type_store_id = ${playlistType})
+        AND store_id = (SELECT store_id FROM store WHERE LOWER(store_name) = LOWER(${storeName}))
+      `
     )
 
     let id
@@ -83,20 +82,19 @@ AND store_id = (SELECT store_id FROM store WHERE store_name = ${storeName})
       const r = await tx.queryRowsAsync(
         // language=PostgreSQL
         sql`-- insertUserPlaylistFollow INSERT INTO playlist
-INSERT INTO playlist
-  (playlist_store_id, playlist_title, store_playlist_type_id)
-  (SELECT
-     ${playlistId}
-   , ${playlistTitle}
-   , store_playlist_type_id
-   FROM
-     store
-     NATURAL JOIN store_playlist_type
-   WHERE
-       store_name = ${storeName}
-   AND ((${playlistType}::TEXT IS NULL AND store_playlist_type_store_id IS NULL) OR
-        store_playlist_type_store_id = ${playlistType}))
-RETURNING playlist_id AS id`
+        INSERT INTO playlist
+          (playlist_store_id, playlist_title, store_playlist_type_id)
+          (SELECT ${playlistId}
+                , ${playlistTitle}
+                , store_playlist_type_id
+           FROM
+             store
+             NATURAL JOIN store_playlist_type
+           WHERE LOWER(store_name) = LOWER(${storeName})
+             AND (((${playlistType}::TEXT IS NULL OR ${playlistType} = 'playlist') AND
+                   store_playlist_type_store_id IS NULL) OR
+                  store_playlist_type_store_id = ${playlistType}))
+        RETURNING playlist_id AS id`
       )
 
       id = r[0].id

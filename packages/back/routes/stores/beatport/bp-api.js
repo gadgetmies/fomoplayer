@@ -37,6 +37,8 @@ const getPageTitleFromSource = pageSource => {
       .replace(' :: Beatport', '')
       .replace(' artists & music download - Beatport', '')
       .replace(' music download - Beatport', '')
+      .replace(' Music & Downloads on Beatport', '')
+      .replace(/ \| Download & Stream.*/, '')
   } else {
     const pageData = getQueryData(pageSource)
     const { artist, label, track, dehydratedState } = pageData.props.pageProps
@@ -52,7 +54,7 @@ const getImageFromSource = pageSource => {
   const pageData = getQueryData(pageSource)
   const { artist, label } = pageData.props.pageProps
   if (!artist && !label) {
-    throw new Error('Unable to extract page title!')
+    throw new Error('Unable to extract image!')
   }
   return (artist || label).image.uri
 }

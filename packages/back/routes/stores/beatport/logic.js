@@ -21,13 +21,13 @@ const getPlaylistName = (module.exports.getPlaylistName = async ({ url }) => {
   return name
 })
 
-module.exports.getFollowDetails = async ({ url }) => {
+module.exports.getFollowDetails = async ({ id, url, type }) => {
   let details
 
   if (type === 'artist' || type === 'label') {
     details = await bpApiStatic.getDetailsAsync(url)
   } else if (type === 'playlist') {
-    details = await getPlaylistName({ url })
+    details = { name: await getPlaylistName({ url }) }
   } else {
     throw new Error('Regex type not handled in code!')
   }

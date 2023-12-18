@@ -310,6 +310,7 @@ SELECT
   concat_ws(': ', store_playlist_type_label, playlist_title) AS title
 , playlist_id                                                AS id
 , store_name                                                 AS "storeName"
+, playlist_store_id                                          AS "playlistStoreId"
 , store_id                                                   AS "storeId"
 FROM
   playlist
