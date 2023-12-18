@@ -6,7 +6,6 @@ const {
   requestUserFollowedArtists,
   requestUserPlaylists
 } = require('../../shared/spotify.js')
-const BPromise = require('bluebird')
 const {
   spotifyTracksTransform,
   spotifyAlbumTracksTransform
@@ -14,7 +13,6 @@ const {
 const R = require('ramda')
 const { processChunks } = require('../../shared/requests')
 const { addArtistsToUserFollowed } = require('../../shared/spotify')
-const url = require('url')
 const { getFollowDetailsFromUrls, getFollowDetailsFromUrl } = require('../logic')
 const logger = require('fomoplayer_shared').logger(__filename)
 

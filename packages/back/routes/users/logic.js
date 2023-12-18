@@ -48,7 +48,6 @@ const {
   setFollowStarred,
   queryUserScoreWeights,
   updateUserScoreWeights,
-  queryNotificationOwner,
   updateNotifications,
   queryNotifications,
   addPurchasedTracksToUser,
