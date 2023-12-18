@@ -67,8 +67,6 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
         const pathname = new URL(clone.url).pathname
         const { body, options } = mock.getResponse({ url: clone.url, pathname, request: clone })
         return request.respondWith(new Response(body instanceof Object ? JSON.stringify(body) : body, options))
-      } else {
-        throw new Error(`No proxy or mock found for ${clone.url}`)
       }
     }
   })
