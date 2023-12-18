@@ -3,6 +3,7 @@ const { SpotifyUrlRegex } = require('../integrations/spotify')
 const spotifyTokenMock = require('./fixtures/spotify-token.json')
 const spotifySearchMock = require('./fixtures/spotify-search.json')
 
+const spotifyMock = process.env.SPOTIFY_MOCK
 const spotifyApiRedirect = process.env.SPOTIFY_API_REDIRECT
 const spotifyAccountsRedirect = process.env.SPOTIFY_ACCOUNTS_REDIRECT
 
@@ -30,7 +31,7 @@ module.exports.init = () =>
     ],
     mocks: [
       {
-        test: ({ pathname }) => pathname === '/v1/search/',
+        test: ({ pathname }) => spotifyMock && pathname === '/v1/search/',
         getResponse: () => ({
           body: spotifySearchMock,
           options: {
@@ -41,7 +42,7 @@ module.exports.init = () =>
         })
       },
       {
-        test: ({ pathname }) => pathname === '/api/token',
+        test: ({ pathname }) => spotifyMock && pathname === '/api/token',
         getResponse: () => ({
           body: spotifyTokenMock,
           options: {
