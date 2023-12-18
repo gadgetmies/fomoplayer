@@ -8,7 +8,9 @@ logger.info('####### Starting Fomo Player #######')
 logger.info('####################################')
 
 if (process.env.NODE_ENV !== 'production') {
-  require('fomoplayer_shared').interceptors.spotify.init()
+  if (process.env.SPOTIFY_ACCOUNTS_REDIRECT || process.env.SPOTIFY_API_REDIRECT || process.env.SPOTIFY_MOCK) {
+    require('fomoplayer_shared').interceptors.spotify.init()
+  }
   require('fomoplayer_shared').interceptors.beatport.init()
   require('fomoplayer_shared').interceptors.bandcamp.init()
 }
