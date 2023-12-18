@@ -6,26 +6,22 @@ const spotifySearchMock = require('./fixtures/spotify-search.json')
 const spotifyMock = process.env.SPOTIFY_MOCK
 const spotifyApiRedirect = process.env.SPOTIFY_API_REDIRECT
 const spotifyAccountsRedirect = process.env.SPOTIFY_ACCOUNTS_REDIRECT
+const ACTUAL_SPOTIFY_ACCOUNTS_URL = 'https://accounts.spotify.com'
+const ACTUAL_SPOTIFY_API_URL = 'https://api.spotify.com'
 
 module.exports.init = () =>
   interceptor.init({
     proxies: [
       {
-        test: ({ url }) => spotifyApiRedirect && url.startsWith('https://api'),
+        test: ({ url }) => spotifyApiRedirect && url.startsWith(ACTUAL_SPOTIFY_API_URL),
         url: ({ url }) => {
-          const newUrl = new URL(url)
-          newUrl.host = spotifyApiRedirect
-          newUrl.protocol = 'http'
-          return newUrl.toString()
+          return url.replace(ACTUAL_SPOTIFY_API_URL, spotifyApiRedirect)
         }
       },
       {
-        test: ({ url }) => spotifyAccountsRedirect && url.startsWith('https://accounts'),
+        test: ({ url }) => spotifyAccountsRedirect && url.startsWith(ACTUAL_SPOTIFY_ACCOUNTS_URL),
         url: ({ url }) => {
-          const newUrl = new URL(url)
-          newUrl.host = spotifyAccountsRedirect
-          newUrl.protocol = 'http'
-          return newUrl.toString()
+          return url.replace(ACTUAL_SPOTIFY_ACCOUNTS_URL, spotifyAccountsRedirect)
         }
       }
     ],
