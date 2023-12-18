@@ -3,21 +3,18 @@ const { default: nodeInterceptors } = require('@mswjs/interceptors/presets/node'
 const R = require('ramda')
 const logger = require('../logger')(__filename)
 
-async function makeRequestAndRespond({ originalRequest, url = undefined, options = {} }) {
-  const clone = originalRequest.clone()
+async function makeRequestAndRespond({ request, url = undefined, options = {} }) {
   options = {
-    method: clone.method,
-    duplex: clone.duplex,
-    body: clone.body,
-    headers: clone.headers,
+    method: request.method,
+    duplex: request.duplex,
     ...options
   }
 
-  const res = await fetch(url || originalRequest.url, options)
+  const res = await fetch(url || request.url, options)
   const body = await res.text()
   const headers = Object.fromEntries(res.headers)
 
-  return originalRequest.respondWith(
+  return request.respondWith(
     new Response(body, {
       status: res.status,
       statusText: res.statusText,
@@ -29,7 +26,7 @@ async function makeRequestAndRespond({ originalRequest, url = undefined, options
 module.exports.init = function init({ proxies, mocks, name, regex }) {
   let mockedRequests = []
 
-  console.log(`Enabling development / test http request interceptors for ${name}`)
+  logger.info(`Enabling development / test http request interceptors for ${name}`)
   const interceptor = new BatchInterceptor({
     name: `${name}Interceptor`,
     interceptors: nodeInterceptors
@@ -39,22 +36,23 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
 
   interceptor.on('request', async (...args) => {
     const { request } = args[0]
-    const clone = request.clone()
-    const requestDetails = { url: clone.url, pathname: new URL(clone.url).pathname, request: clone }
+    const url = request.url
+    logger.info('Intercepted request', url)
 
-    if (clone.url.match(regex) && (proxies || mocks)) {
+    const requestDetails = { url, pathname: new URL(url).pathname, request }
+
+    if (url.match(regex) && (proxies || mocks)) {
       const proxy = proxies.find(({ test }) => test(requestDetails))
       const mock = mocks.find(({ test }) => test(requestDetails))
       if (proxy !== undefined) {
-        const requestBody = await clone.text()
+        const requestBody = request.body && (await request.clone().text())
         const rewrittenUrl = proxy.url(requestDetails)
-        logger.info(`Proxying request from ${clone.url} to ${rewrittenUrl}`)
+        logger.info(`Proxying request from ${url} to ${rewrittenUrl}`)
 
         let headers = {}
         request.headers.forEach((value, key) => (headers[key] = value))
 
         return makeRequestAndRespond({
-          originalRequest: request,
           url: rewrittenUrl,
           options: {
             headers,
@@ -63,10 +61,10 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
           request
         })
       } else if (mock !== undefined) {
-        console.log('Mocking request', clone.url)
-        mockedRequests.push({ url: clone.url, request: clone })
-        const pathname = new URL(clone.url).pathname
-        const { body, options } = mock.getResponse({ url: clone.url, pathname, request: clone })
+        logger.info('Mocking request', url)
+        mockedRequests.push({ url, request })
+        const pathname = new URL(url).pathname
+        const { body, options } = mock.getResponse({ url, pathname, request })
         return request.respondWith(new Response(body instanceof Object ? JSON.stringify(body) : body, options))
       }
     }
