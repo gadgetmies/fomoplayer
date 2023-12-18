@@ -28,12 +28,12 @@ const main = async (path, regex = /\.js/) => {
       const code = await runTest(test)
       exitStatuses.push({ test, code })
     } catch (e) {
-      console.error(e)
+      console.error(`${test} execution failed!`, e)
       exitStatuses.push({ test, code: -1 })
     }
   })
 
-  const failedTests = R.reject(R.propEq('code', 0), exitStatuses)
+  const failedTests = R.reject(R.propEq(0, 'code'), exitStatuses)
   if (failedTests.length !== 0) {
     console.error(`${failedTests.length} tests failed:`.red)
     for (const { test } of failedTests) {
