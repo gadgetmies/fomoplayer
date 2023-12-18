@@ -49,7 +49,6 @@ if (process.env.NODE_ENV !== 'production') {
   router.post(
     '/login',
     (req, res, next) => {
-      console.log({ req, body: req.body, user: req.user, query: req.query, headers: req.headers })
       next()
     },
     passport.authenticate(['local']),

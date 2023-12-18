@@ -69,7 +69,6 @@ const argv = yargs
       })
     },
     async argv => {
-      console.log({ argv })
       return await main(argv.path, argv.regex)
     }
   )

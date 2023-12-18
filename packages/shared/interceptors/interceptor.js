@@ -71,7 +71,6 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
         throw new Error(`No proxy or mock found for ${clone.url}`)
       }
     }
-    console.log(`Returning request without modifications for url: ${clone.url} from ${name} interceptor`)
   })
 
   function clearMockedRequests() {
