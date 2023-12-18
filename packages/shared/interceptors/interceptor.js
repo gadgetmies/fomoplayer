@@ -50,13 +50,14 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
         const rewrittenUrl = proxy.url(requestDetails)
         logger.info(`Proxying request from ${clone.url} to ${rewrittenUrl}`)
 
+        let headers = {}
+        request.headers.forEach((value, key) => (headers[key] = value))
+
         return makeRequestAndRespond({
           originalRequest: request,
           url: rewrittenUrl,
           options: {
-            headers: {
-              authorization: clone.headers.get('authorization')
-            },
+            headers,
             body: requestBody
           },
           request
