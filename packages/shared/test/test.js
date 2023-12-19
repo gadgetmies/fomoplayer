@@ -2,7 +2,22 @@ const R = require('ramda')
 const L = require('partial.lenses')
 require('colors')
 
+const DefaultAssertionTimeout = 5000
+const DefaultGroupTimeout = 10000
+
 const noop = () => {}
+const timeout = timeout => {
+  let id
+  const promise = new Promise((_, reject) => {
+    id = setTimeout(() => {
+      reject(`Test timed out after ${timeout}ms`)
+    }, timeout)
+  })
+  return {
+    promise,
+    cancel: () => clearTimeout(id)
+  }
+}
 
 function getCallerFile() {
   var originalFunc = Error.prepareStackTrace
@@ -64,8 +79,9 @@ module.exports.test = async suite => {
   const printChildren = (children, style = 'console') =>
     style === 'console' ? children.join('\n') : `<ul>\n${children.map(c => `<li>${c}</li>\n`).join('')}\n</ul>\n`
 
+  const getIndentString = indent => Array(indent).join(' ')
   const printStructure = (node, style = 'console', indent = 2) => {
-    const indentString = Array(indent).join(' ')
+    const indentString = getIndentString(indent)
     return `\
 ${printName(node[0], style)}${
       R.is(Array, node[1])
@@ -81,66 +97,97 @@ ${printName(node[0], style)}${
     }`
   }
 
-  const run = async (suite, skippingReason) => {
-    const { setup = noop, teardown = noop, skip = noop, ...rest } = suite
+  const run = async (suite, { skippingReason, indent = 0 } = {}) => {
+    try {
+      const { setup = noop, teardown = noop, skip = noop, ...rest } = suite
 
-    if (skip !== noop) {
-      skippingReason = skippingReason || skip()
-    }
+      if (skip !== noop) {
+        skippingReason = skippingReason || skip()
+      }
 
-    let setupResult
-    if (skippingReason === undefined) {
-      try {
-        setupResult = await setup()
-      } catch (e) {
-        console.error(e)
-        return {
-          error: `Setup failed with: '${e.toString()}'`
+      let setupResult
+      if (skippingReason === undefined) {
+        try {
+          setupResult = await setup()
+        } catch (e) {
+          console.error(e)
+          return {
+            error: `Setup failed with: '${e.toString()}'`
+          }
         }
       }
-    }
 
-    let result = []
-    for (const key of Object.keys(rest)) {
-      console.log(
-        `${skippingReason ? `SKIPPING${skippingReason !== true ? ` (reason: ${skippingReason})` : ''}` : 'Running'}: ${key}`.blue
-      )
-      const restElement = rest[key]
+      let result = []
+      for (const key of Object.keys(rest)) {
+        console.log(
+          `${getIndentString(indent)}• ${key} ${
+            skippingReason ? `SKIPPING${skippingReason !== true ? ` (reason: ${skippingReason})` : ''}` : ''
+          }`.blue
+        )
+        const restElement = rest[key]
 
-      let singleResult
-      try {
-        singleResult = R.is(Function, restElement)
-          ? {
-              skipped: skippingReason,
-              error: skippingReason ? null : R.defaultTo(null, await restElement(setupResult))
+        let singleResult
+        let timeouts = []
+        try {
+          if (R.is(Function, restElement)) {
+            if (skippingReason) {
+              singleResult = {
+                skipped: skippingReason,
+                error: skippingReason
+              }
+            } else {
+              const assertionTimeout = timeout(setupResult?.timeout || DefaultAssertionTimeout)
+              timeouts.push(assertionTimeout)
+              const { cancel, promise: timeoutPromise } = assertionTimeout
+              const res = await Promise.race([restElement(setupResult), timeoutPromise])
+              singleResult = {
+                skipped: false,
+                error: R.defaultTo(null, res)
+              }
+              cancel()
             }
-          : await run(restElement, skippingReason)
-      } catch (e) {
-        console.error(`Test '${key}' failed:`.red, e)
-        singleResult = { error: e.toString() }
+          } else {
+            const groupTimeout = timeout(setupResult?.timeout || DefaultGroupTimeout)
+            timeouts.push(groupTimeout)
+            const { cancel, promise: timeoutPromise } = groupTimeout
+            singleResult = await run(restElement, { skippingReason, indent: indent + 2 })
+            cancel()
+          }
+        } catch (e) {
+          console.error(`Test '${key}' failed:`.red, e)
+          singleResult = { error: e.toString() }
+          timeouts.forEach(t => t.cancel())
+        }
+        result.push([key, singleResult])
       }
-      result.push([key, singleResult])
-    }
 
-    if (!skippingReason) {
-      try {
-        await teardown(setupResult)
-      } catch (e) {
-        console.error(e)
-        return {
-          error: `Teardown failed with: '${e.toString()}'`
+      if (!skippingReason) {
+        try {
+          await teardown(setupResult)
+        } catch (e) {
+          console.error(e)
+          throw new Error(`Teardown failed with: '${e.toString()}'`)
         }
       }
-    }
 
-    return [...result]
+      return result
+    } catch (e) {
+      console.error(e)
+      throw new Error(`Test group execution failed!: '${e.toString()}'`)
+    }
   }
 
-  const testFile = getCallerFile()
-  console.log('Running test suite: ', testFile)
-  const result = [testFile].concat([await run(suite)])
-  console.log(printStructure(result))
-  const errors = L.collect(L.satisfying(R.allPass([R.is(Object), R.has('error'), R.propIs(String, 'error')])), result)
-  const exitCode = errors.length === 0 ? 0 : 1
-  process.exit(exitCode)
+  try {
+    const testFile = getCallerFile()
+    console.log('Running test suite: ', testFile)
+    const result = [testFile].concat([await run(suite)])
+    console.log(printStructure(result))
+    const errors = L.collect(L.satisfying(R.allPass([R.is(Object), R.has('error'), R.propIs(String, 'error')])), result)
+    const exitCode = errors.length === 0 ? 0 : 1
+    console.log(`Test suite finished ${exitCode === 0 ? 'successfully' : `with ${errors.length} errors`}`)
+    process.exit(exitCode)
+  } catch (e) {
+    console.error(`Test suite exection failed: ${e.toString()}`.red)
+    console.error(e)
+  }
 }
