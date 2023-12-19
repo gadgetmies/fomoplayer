@@ -4,7 +4,7 @@ const getStoreDetailsFromUrls = (module.exports.getStoreDetailsFromUrls = async 
   const regexes = await queryFollowRegexes(storeName)
   return urlStrings.map(url => {
     for (const { storeName, regex, type } of regexes) {
-      const match = url.match(regex)
+      const match = url.match(new RegExp(regex))
       if (match) {
         const id = match[4]
         return { storeName, id, type, url }
