@@ -107,7 +107,7 @@ const getTagReleases = (tags, callback) => {
     .then(res => {
       const dom = new JSDOM(res)
       return callback(null, {
-        id,
+        id: url,
         name: getTagName(tags),
         releaseUrls: getReleaseUrls(url, dom)
       })
