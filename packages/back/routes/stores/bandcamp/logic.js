@@ -5,12 +5,12 @@ const { queryPreviewDetails } = require('../../shared/db/preview.js')
 const { queryStoreId } = require('../../shared/db/store.js')
 const {
   getReleaseAsync,
-  getTagAsync,
   getArtistAsync,
   getLabelAsync,
   getPageDetailsAsync,
   getTagReleasesAsync,
-  getSearchResultsAsync
+  getSearchResultsAsync,
+  static: { getTagsFromUrl, getTagName }
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl } = require('./db.js')
@@ -44,11 +44,6 @@ module.exports.getPreviewDetails = async previewId => {
   }
 }
 
-const getTagFromUrl = function(playlistUrl) {
-  const match = playlistUrl.match(/^https:\/\/bandcamp.com\/tag\/([^/?]+)/)
-  return match[1]
-}
-
 module.exports.getArtistName = async ({ url }) => {
   const { name } = await getArtistAsync(url)
   return name
@@ -59,12 +54,9 @@ module.exports.getLabelName = async ({ url }) => {
   return name
 }
 
-module.exports.getPlaylistId = getTagFromUrl
-
-const getPlaylistName = (module.exports.getPlaylistName = async ({ url, type }) => {
+const getPlaylistName = (module.exports.getPlaylistName = ({ url, type }) => {
   if (type === 'tag') {
-    const res = await getTagAsync(getTagFromUrl(url))
-    return res.name
+    return getTagName(getTagsFromUrl(url))
   }
 })
 
@@ -72,15 +64,15 @@ module.exports.getFollowDetails = async ({ id, type, url }) => {
   let details
   if (['artist', 'label'].includes(type)) {
     const { name, type: pageType } = await getPageDetailsAsync(url)
-    details = { id, name, type: pageType, url: url }
+    details = { id, name, type: pageType, url }
   } else if (type === 'tag') {
-    const label = await getPlaylistName({ url, type })
-    details = { id, name: `Tag: ${label}`, type: 'playlist', url: url }
+    const name = await getPlaylistName({ url, type })
+    details = { id: url, name, type: 'playlist', url }
   } else {
     throw new Error('Regex type not handled in code!')
   }
 
-  return [{ ...details, name: storeName.toLowerCase() }]
+  return [{ ...details, store: { name: storeName.toLowerCase() } }]
 }
 
 const releaseTracksWithFiles = releaseDetails => {

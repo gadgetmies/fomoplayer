@@ -27,7 +27,7 @@ module.exports.getFollowDetails = async ({ id, url, type }) => {
   if (type === 'artist' || type === 'label') {
     details = await bpApiStatic.getDetailsAsync(url)
   } else if (type === 'playlist') {
-    details = { name: await getPlaylistName({ url }) }
+    details = { id: url, name: await getPlaylistName({ url }) }
   } else {
     throw new Error('Regex type not handled in code!')
   }

@@ -45,12 +45,6 @@ const getRelease = (itemUrl, callback) => {
     })
 }
 
-const getPageTitle = pageSource => {
-  const startText = '<title>'
-  const start = pageSource.indexOf(startText) + startText.length
-  return pageSource.substring(start, pageSource.indexOf('</title>', start))
-}
-
 const getName = dom => {
   const siteNameElement = dom.window.document.querySelector('[property="og:site_name"]')
   const nameFromTitle = dom.window.document.title && dom.window.document.title.split(' | ')[1]
@@ -58,10 +52,8 @@ const getName = dom => {
 }
 
 const getReleaseUrls = (host, dom) => {
-  const items = dom.window.document.querySelectorAll('#music-grid a, .featured-grid a')
-  return Array.from(items).map(i =>
-    new URL(i.getAttribute('href'), host).toString()
-  )
+  const items = dom.window.document.querySelectorAll('#music-grid a, .featured-grid a, .results-grid-item a')
+  return Array.from(items).map(i => new URL(i.getAttribute('href'), host).toString())
 }
 
 const getIdFromUrl = url => url.substring(0, url.indexOf('.'))
@@ -82,35 +74,43 @@ const getPageInfo = (url, callback) => {
     })
 }
 
-const getTagUrl = function(tag) {
-  return `https://bandcamp.com/tag/${tag}`
+const getTagUrl = function(tags) {
+  return `https://bandcamp.com/discover/${tags.genre}${tags.format ? `/${tags.format}` : ''}${
+    tags.subgenre ? `?tags=${tags.subgenre}` : ''
+  }`
 }
 
-const getTag = (tag, callback) => {
-  const url = getTagUrl(tag)
-  return getPageSource(url)
-    .then(res => {
-      const pageTitle = getPageTitle(res)
-      const tagTitle = decode(pageTitle.substring(0, pageTitle.indexOf(' Music &amp; Artists | Bandcamp')))
-
-      return callback(null, {
-        id: tag,
-        name: tagTitle
-      })
-    })
-    .catch(e => {
-      callback(e)
-    })
+const getTagsFromUrl = function(playlistUrl) {
+  const match = playlistUrl.match(/^https:\/\/bandcamp.com\/discover\/(([^/?]+)\/?)?([^/?]*)?(\?tags=([^/?]+))?/)
+  const subgenre = match[5]
+  const format = match[3]
+  const genre = match[2]
+  return { genre, subgenre, format }
 }
 
-const getTagReleases = (tag, callback) => {
-  const url = getTagUrl(tag)
+const capitalize = str => str.charAt(0).toUpperCase() + str.slice(1)
+
+const getTagName = tags =>
+  capitalize(`${tags.genre || 'all'}${tags.subgenre ? ` / ${tags.subgenre}` : ''} (${tags.format || 'all formats'})`)
+
+const getTagDetails = (tags, callback) => {
+  callback(null, {
+    id: getTagUrl(tags),
+    name: getTagName(tags)
+  })
+}
+
+const getTagReleases = (tags, callback) => {
+  const url = getTagUrl(tags instanceof String ? JSON.parse(tags) : tags)
   return getPageSource(url)
     .then(decode)
     .then(res => {
-      const pageData = scrapeJSON('<div id="pagedata" data-blob="(.*})">', res)
-      const { initial_settings: initialSettings, results } = pageData.hub.tabs[1].dig_deeper
-      callback(null, [...pageData.hub.tabs[0].collections, results[initialSettings]])
+      const dom = new JSDOM(res)
+      return callback(null, {
+        id,
+        name: getTagName(tags),
+        releaseUrls: getReleaseUrls(url, dom)
+      })
     })
     .catch(e => callback(e))
 }
@@ -162,12 +162,18 @@ const getSearchResults = (query, callback) => {
     })
 }
 
-module.exports = BPromise.promisifyAll({
-  getRelease,
-  getArtist: getPageInfo,
-  getLabel: getPageInfo,
-  getTag,
-  getTagReleases,
-  getPageDetails,
-  getSearchResults
-})
+module.exports = {
+  ...BPromise.promisifyAll({
+    getRelease,
+    getArtist: getPageInfo,
+    getLabel: getPageInfo,
+    getTagDetails,
+    getTagReleases,
+    getPageDetails,
+    getSearchResults
+  }),
+  static: {
+    getTagsFromUrl,
+    getTagName
+  }
+}
