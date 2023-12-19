@@ -29,7 +29,6 @@ class FollowItemButton extends Component {
           style={{
             margin: '2px 4px 6px 4px',
             textOverflow: 'ellipsis',
-            textWrap: 'nowrap',
             width: 100,
             overflow: 'hidden'
           }}
