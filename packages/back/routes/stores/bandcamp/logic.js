@@ -153,10 +153,10 @@ module.exports.getLabelTracks = async function*({ url }) {
 
 module.exports.getPlaylistTracks = async function*({ playlistStoreId, type }) {
   if (type === 'tag') {
-    const releases = await getTagReleasesAsync(playlistStoreId)
-    const releaseUrls = R.uniq(R.flatten(releases.map(R.prop('items'))).map(R.prop('tralbum_url'))).filter(R.identity)
-    logger.debug(`Found ${releaseUrls.length} releases for tag ${playlistStoreId}`)
-    for (const releaseUrl of releaseUrls) {
+    const { releaseUrls } = await getTagReleasesAsync(getTagsFromUrl(playlistStoreId))
+    const uniqueReleaseUrls = R.uniq(releaseUrls)
+    logger.debug(`Found ${uniqueReleaseUrls.length} releases for tag ${playlistStoreId}`)
+    for (const releaseUrl of uniqueReleaseUrls) {
       try {
         yield await getTracksFromReleases([releaseUrl])
       } catch (e) {

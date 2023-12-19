@@ -286,8 +286,9 @@ module.exports.addPlaylistFollows = async (playlists, userId, sourceId) => {
   let addedPlaylists = []
   for (const { url } of playlists) {
     const [{ storeName, type, id }] = await getStoreDetailsFromUrl(url)
-    const [{ id: storePlaylistId, name }] = await storeModules[storeName].logic.getFollowDetails({ id, url, type })
-    const { playlistId, followId } = await insertUserPlaylistFollow(userId, storeName, storePlaylistId, name, type)
+    const storeModule = storeModules[storeName]
+    const [{ id: playlistStoreId, name }] = await storeModule.logic.getFollowDetails({ id, url, type })
+    const { playlistId, followId } = await insertUserPlaylistFollow(userId, storeName, playlistStoreId, name, type)
 
     addedPlaylists.push({
       playlist: `${apiURL}/playlists/${playlistId}`,
@@ -296,7 +297,11 @@ module.exports.addPlaylistFollows = async (playlists, userId, sourceId) => {
 
     process.nextTick(async () => {
       try {
-        await updatePlaylistTracks(storeModule.logic.storeUrl, { playlistId, id, url, type: type }, sourceId)
+        await updatePlaylistTracks(
+          storeModule.logic.storeUrl,
+          { playlistId, id, url, type, playlistStoreId },
+          sourceId
+        )
       } catch (e) {
         logger.error('Failed to update playlist tracks', e)
       }
