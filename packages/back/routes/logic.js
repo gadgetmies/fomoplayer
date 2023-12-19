@@ -16,7 +16,12 @@ module.exports.searchForTracks = searchForTracks
 module.exports.getFollowDetails = async query => {
   let details
   if (query.match('^https://') !== null) {
-    const [detailsFromURL] = await getStoreDetailsFromUrl(query)
+    let detailsFromURL
+    try {
+      detailsFromURL = (await getStoreDetailsFromUrl(query))[0]
+    } catch (e) {
+      return []
+    }
     details = await storeModules[detailsFromURL.storeName].logic.getFollowDetails(detailsFromURL)
   } else {
     details = await searchForArtistsAndLabels(query)
