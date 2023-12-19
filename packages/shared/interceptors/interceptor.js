@@ -37,7 +37,7 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
   interceptor.on('request', async (...args) => {
     const { request } = args[0]
     const url = request.url
-    logger.info('Intercepted request', url)
+    logger.info(`Intercepted request: ${url}`)
 
     const requestDetails = { url, pathname: new URL(url).pathname, request }
 
@@ -61,7 +61,7 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
           request
         })
       } else if (mock !== undefined) {
-        logger.info('Mocking request', url)
+        logger.info(`Mocking request: ${url}`)
         mockedRequests.push({ url, request })
         const pathname = new URL(url).pathname
         const { body, options } = mock.getResponse({ url, pathname, request })
