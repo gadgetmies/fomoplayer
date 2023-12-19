@@ -30,11 +30,11 @@
     "express": "^4.17.2",
     "express-promise-router": "^4.1.1",
     "express-session": "^1.17.2",
+    "fomoplayer_shared": "1.0.0",
     "html-entities": "^2.3.2",
     "jsdom": "^19.0.0",
     "jwks-rsa": "^2.0.5",
     "morgan": "^1.10.0",
-    "fomoplayer_shared": "1.0.0",
     "node-cron": "^3.0.0",
     "partial.lenses": "^14.17.0",
     "passport": "^0.6.0",
@@ -43,18 +43,19 @@
     "passport-openidconnect": "^0.1.1",
     "pg-using-bluebird": "^4.0.1",
     "ramda": "^0.27.1",
+    "request": "^2.88.2",
+    "request-in-session": "elysion/request-in-session#v1.2.5",
     "request-promise": "^4.2.6",
     "spotify-web-api-node": "^5.0.2",
     "sql-template-strings": "^2.2.2",
     "type-is": "^1.6.18",
     "vm2": "^3.9.19",
     "winston": "^3.3.3",
-    "winston-telegram": "^2.6.0",
-    "request": "^2.88.2",
-    "request-in-session": "elysion/request-in-session#v1.2.5"
+    "winston-telegram": "^2.6.0"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.36",
+    "async-wait-until": "^2.0.12",
     "supervisor": "^0.12.0",
     "yargs": "^17.4.0"
   }
