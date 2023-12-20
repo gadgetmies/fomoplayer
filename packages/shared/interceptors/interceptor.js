@@ -37,7 +37,7 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
   interceptor.on('request', async (...args) => {
     const { request } = args[0]
     const url = request.url
-    logger.info(`Intercepted request: ${url}`)
+    logger.info(`Got request: ${url}`)
 
     const requestDetails = { url, pathname: new URL(url).pathname, request }
 
