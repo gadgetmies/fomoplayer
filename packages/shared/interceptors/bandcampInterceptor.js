@@ -78,9 +78,9 @@ module.exports.init = () =>
       ['https://noisia.bandcamp.com/album/the-resonance-vi', bandcampResonanceVIMock],
       ['https://noisia.bandcamp.com/album/the-resonance-v', bandcampResonanceVMock],
       ['https://visionrecordings.bandcamp.com/music', bandcampVisionMock],
-      ['https://visionrecordings.bandcamp.com/album/f4k-y00label=4289352950&tab=music', bandcampF4kY00Mock],
+      ['https://billainaethek.bandcamp.com/album/f4k-y00?label=4289352950&tab=music', bandcampF4kY00Mock],
       [
-        'https://visionrecordings.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music',
+        'https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music',
         bandcampDifferentEyesMock
       ],
       ['https://bandcamp.com/discover', bandcampAllMock],
