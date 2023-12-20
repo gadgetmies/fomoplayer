@@ -35,7 +35,7 @@ module.exports.getFollowDetails = async ({ id, url, type }) => {
   return [{ id, ...details, type, store: { name: storeName }, url }]
 }
 
-const getTrackInfo = async ({ url }) => {
+const getTrackInfo = async (url) => {
   const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
   const transformed = beatportTrackTransform(queryData.data.props.pageProps.track)
 
