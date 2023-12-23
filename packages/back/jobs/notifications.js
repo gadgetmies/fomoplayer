@@ -21,7 +21,7 @@ module.exports.updateNotifications = async () => {
         addedSince: lastUpdate,
         storeIds
       })
-      const uriEncoded = encodeURI(text)
+      const uriEncoded = encodeURIComponent(text)
 
       logger.debug('Found tracks for search', { searchResults })
 
