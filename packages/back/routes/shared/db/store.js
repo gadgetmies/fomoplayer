@@ -297,7 +297,7 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
   const res = await tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- addStoreTrack SELECT track_id 1
-    SELECT track_id
+    SELECT DISTINCT track_id
     FROM
       track
       NATURAL LEFT JOIN store__track
@@ -314,9 +314,9 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
 
   if (res.length > 1) {
     logger.info(
-      `Multiple tracks (${res.map(R.prop('track_id')).join(', ')})found with ISRC: ${track.isrc}, catalog number: ${
-        track.release.catalog_number
-      } and track number: ${track.track_number}`
+      `Multiple tracks (${res.map(R.prop('track_id')).join(', ')}) found with store id: ${track.id} or ISRC: ${
+        track.isrc
+      } or catalog number: ${track.release.catalog_number} and track number: ${track.track_number}`
     )
   }
 
@@ -324,7 +324,7 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
 
   if (trackId) {
     logger.info(
-      `Track ${trackId} found with ISRC: ${track.isrc} or catalog number: ${track.release.catalog_number} and track number: ${track.track_number}`
+      `Track ${trackId} found with store id: ${track.id} or ISRC: ${track.isrc} or catalog number: ${track.release.catalog_number} and track number: ${track.track_number}`
     )
   } else {
     logger.info(
