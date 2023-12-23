@@ -129,7 +129,7 @@ class Admin extends Component {
               disabled
               onChange={this.updateData.bind(this)}
               rows={10}
-              style={{ width: '100%' }}
+              style={{ width: '100%', border: this.state.dataError ? '1px solid red' : '1px solid black' }}
               value={JSON.stringify(this.state.chartData, null, 2)}
             ></textarea>
           </div>
