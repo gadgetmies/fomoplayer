@@ -36,6 +36,7 @@
     "jwks-rsa": "^2.0.5",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.0",
+    "node-schedule": "^2.1.1",
     "partial.lenses": "^14.17.0",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.0",

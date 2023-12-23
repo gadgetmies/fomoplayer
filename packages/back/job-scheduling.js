@@ -1,6 +1,6 @@
 const sql = require('sql-template-strings')
 const pg = require('fomoplayer_shared').db.pg
-const cron = require('node-cron')
+const { scheduleJob } = require('node-schedule')
 const fetchBeatportWatches = require('./jobs/watches/fetch-beatport-watches')
 const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
 const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')
@@ -15,9 +15,10 @@ const {
 } = require('./jobs/scores')
 const { findMatchingTracks } = require('./jobs/find-matching-tracks')
 const { syncCarts } = require('./jobs/cart-sync')
-const { beatportIntegrationTest } = require('./jobs/integration/beatport')
-const { bandcampIntegrationTest } = require('./jobs/integration/bandcamp')
+const beatportIntegrationTest = require('./jobs/integration/beatport')
+const bandcampIntegrationTest = require('./jobs/integration/bandcamp')
 const logger = require('fomoplayer_shared').logger(__filename)
+const radiator = require('./jobs/radiator/radiator')
 
 const init = async () => {
   await pg.queryAsync(
@@ -131,7 +132,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
       }
 
       scheduled[name] = {
-        task: cron.schedule(schedule, () => runJob(name)),
+        task: scheduleJob(schedule, () => runJob(name)),
         schedule
       }
     }
@@ -151,7 +152,8 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
   syncCarts,
   findMatchingTracks,
   beatportIntegrationTest,
-  bandcampIntegrationTest
+  bandcampIntegrationTest,
+  ...radiator
 }
 
 module.exports = {

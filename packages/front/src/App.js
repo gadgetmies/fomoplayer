@@ -9,6 +9,7 @@ import './App.css'
 import SlideoutPanel from './SlideoutPanel.js'
 import Settings from './Settings.js'
 import Spinner from './Spinner.js'
+import Admin from './Admin.js'
 
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
 import config from './config.js'
@@ -415,6 +416,9 @@ class App extends Component {
                   </button>
                   <Route exact path="/">
                     <Redirect to="/new" />
+                  </Route>
+                  <Route exact path="/admin">
+                    <Admin />
                   </Route>
                   <Route
                     path="/:path"

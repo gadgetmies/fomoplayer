@@ -1,7 +1,7 @@
 const logger = require('fomoplayer_shared').logger(__filename)
 const router = require('express-promise-router')()
 const { runJob } = require('../../job-scheduling')
-const { mergeTracks, queryJobLinks } = require('./db')
+const { mergeTracks, queryJobLinks, getQueryResults } = require('./db')
 
 const ensureIsAdmin = ({ user: { id: userId } }, res, next) => {
   if (process.env.NODE_ENV === 'dev' || userId === 2) {
@@ -45,6 +45,10 @@ router.get(
 
 router.get('/info', async (_, res) => {
   res.send({ version: process.env.RAILWAY_GIT_COMMIT_SHA })
+})
+
+router.get('/radiator', async (_, res) => {
+  res.send(await getQueryResults())
 })
 
 module.exports = router
