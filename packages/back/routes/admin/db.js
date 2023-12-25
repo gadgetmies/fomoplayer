@@ -38,3 +38,54 @@ module.exports.getQueryResults = async () =>
       GROUP BY job_name
     `
   )
+
+module.exports.getConfigs = async () =>
+  await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`
+        -- Query radiator config
+        SELECT
+            radiator_config_id AS id
+          , radiator_config_name AS name
+          , radiator_config_lens AS lens
+          , radiator_config_config AS config
+        FROM
+            radiator_config
+    `
+  )
+
+module.exports.storeConfig = async ({ config, lens, name }) => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`
+        -- Store radiator config
+        INSERT
+        INTO
+            radiator_config (radiator_config_name, radiator_config_lens, radiator_config_config)
+        VALUES
+            (${name}, ${lens}, ${config})
+        ON CONFLICT (radiator_config_name) DO UPDATE
+            SET
+                radiator_config_lens = ${lens}
+              , radiator_config_config = ${config}
+    `
+  )
+
+  const [details] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`
+        -- Query radiator config
+        SELECT
+            radiator_config_id     AS id
+          , radiator_config_name   AS name
+          , radiator_config_lens   AS lens
+          , radiator_config_config AS config
+        FROM
+            radiator_config
+        WHERE
+            radiator_config_name = ${name}
+    `
+  )
+
+  return details
+}

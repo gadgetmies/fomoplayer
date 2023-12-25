@@ -16,6 +16,7 @@
     "babel-plugin-macros": "^3.1.0",
     "chart.js": "^4.4.1",
     "fomoplayer_shared": "1.0.0",
+    "js-beautify": "^1.14.11",
     "karet": "^2.0.0",
     "karet.util": "^0.17.1",
     "kefir": "^3.8.0",

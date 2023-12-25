@@ -1,0 +1,1 @@
+DROP TABLE radiator_config;
