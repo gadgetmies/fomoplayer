@@ -104,7 +104,7 @@ class Admin extends Component {
       }
       this.setState({ dataError: false })
     } catch (e) {
-      this.setState({ dataError: true })
+      this.setState({ dataError: true, collectOutput: [{ time: '2023-12-25', label: 'foo', value: 'bar' }] })
       console.error(e)
     }
     this.setState({ lens: text, lensCode, chartData })
