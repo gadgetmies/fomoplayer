@@ -172,7 +172,7 @@ class Admin extends Component {
         <h1>Radiator</h1>
         <div style={{ display: 'flex', gap: 15 }}>
           <div style={{ width: '50%' }}>
-            <Chart type={config.type} options={config} data={this.state.chartData} />
+            <Chart type={config.type} options={this.state.config} data={this.state.chartData} />
             <h2 onClick={this.toggleChartData.bind(this)}>Chart data</h2>
             {this.state.chartDataVisible && (
               <textarea
