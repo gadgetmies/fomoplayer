@@ -32,6 +32,7 @@ class Admin extends Component {
       visualisations: window.localStorage.getItem('visualisations') || '[]',
       lens: window.localStorage.getItem('lens') || '[]',
       lensCode: [],
+      collectOutput: [],
       config:
         window.localStorage.getItem('config') ||
         JSON.stringify(
@@ -90,7 +91,9 @@ class Admin extends Component {
     let chartData = []
     try {
       lensCode = eval(text)
-      const grouped = R.groupBy(R.prop('label'), L.collect(lensCode, JSON.parse(this.state.data)))
+      const collectOutput = L.collect(lensCode, JSON.parse(this.state.data))
+      this.setState({ collectOutput })
+      const grouped = R.groupBy(R.prop('label'), collectOutput)
       chartData = {
         labels: Object.values(grouped)[0].map(R.prop('time')),
         datasets: Object.entries(grouped).map(([label, values]) => ({
@@ -131,6 +134,13 @@ class Admin extends Component {
               rows={10}
               style={{ width: '100%', border: this.state.dataError ? '1px solid red' : '1px solid black' }}
               value={JSON.stringify(this.state.chartData, null, 2)}
+            ></textarea>
+            <textarea
+              disabled
+              onChange={this.updateData.bind(this)}
+              rows={10}
+              style={{ width: '100%', border: this.state.dataError ? '1px solid red' : '1px solid black' }}
+              value={JSON.stringify(this.state.collectOutput, null, 2)}
             ></textarea>
           </div>
           <div style={{ width: '50%' }}>
