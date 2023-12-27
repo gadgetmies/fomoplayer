@@ -573,7 +573,7 @@ class Tracks extends Component {
                 <div className={'open-cell track-table-cell'} style={{ position: 'relative' }}>
                   <div className={'popup-anchor'}>
                     <span
-                      className={` ${this.props.enabledStores && this.props.enabledStores.length < this.props.stores.length && 'filter-active'}`}
+                      className={` ${this.props.listState === 'cart' && this.props.enabledStores && this.props.enabledStores.length < this.props.stores.length && 'filter-active'}`}
                     >
                       Open / Share {this.props.listState === 'cart' && <FontAwesomeIcon icon="caret-down" />}
                     </span>
