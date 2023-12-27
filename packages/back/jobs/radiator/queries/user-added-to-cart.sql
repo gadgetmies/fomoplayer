@@ -30,5 +30,5 @@ SELECT
 FROM
     meta_account
         NATURAL LEFT JOIN added_to_cart
-        NATURAL LEFT JOIN heard
+        NATURAL JOIN heard
 ;
