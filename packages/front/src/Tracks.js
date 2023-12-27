@@ -128,7 +128,8 @@ class Tracks extends Component {
           ?
         </>
       ),
-      heard: 'No tracks played'
+      heard: 'No tracks played',
+      recent: 'No tracks added'
     }
     const defaultCart = carts.find(R.prop('is_default'))
 
