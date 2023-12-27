@@ -84,8 +84,8 @@ class Settings extends Component {
       tracks: this.props.tracks,
       helpActive: false,
       importingPlaylist: null,
-      importedPlaylists: null,
-      importedArtists: null,
+      importedPlaylists: [],
+      importedArtists: [],
       exportingFollowedArtists: false,
       followedArtistsExportSuccess: null
     }
@@ -1135,7 +1135,7 @@ class Settings extends Component {
                     <SpinnerButton
                       loading={this.state.importingFollowedArtists}
                       onClick={async () => {
-                        this.setState({ importingFollowedArtists: true, importedArtists: null })
+                        this.setState({ importingFollowedArtists: true, importedArtists: [] })
                         try {
                           const followedArtists = await requestJSONwithCredentials({
                             path: `/stores/spotify/my-followed-artists`,
@@ -1164,8 +1164,8 @@ class Settings extends Component {
                         Importing followed artists failed. Please try again.
                       </div>
                     )}
-                    {this.state.importedArtists && <h6>{this.state.importedArtists.length} artists imported:</h6>}
-                    {this.state.importedArtists?.map(({ name, url }) => {
+                    {this.state.importedArtists.length > 0 && <h6>{this.state.importedArtists.length} artists imported:</h6>}
+                    {this.state.importedArtists.map(({ name, url }) => {
                       return (
                         <FollowedItem
                           disabled={this.state.updatingArtistFollows}
