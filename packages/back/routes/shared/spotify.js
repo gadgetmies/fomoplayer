@@ -1,3 +1,7 @@
+if (process.env.SPOTIFY_ACCOUNTS_REDIRECT || process.env.SPOTIFY_API_REDIRECT || process.env.SPOTIFY_MOCK) {
+  require('fomoplayer_shared').interceptors.spotify.init()
+}
+
 const SpotifyWebApi = require('spotify-web-api-node')
 const logger = require('fomoplayer_shared').logger(__filename)
 const { apiURL } = require('../../config.js')
@@ -71,7 +75,6 @@ module.exports.getAuthorizationUrl = () => {
 }
 
 module.exports.requestTokens = code => spotifyApi.authorizationCodeGrant(code)
-
 ;(async () => {
   await refreshToken()
 })()
