@@ -3,17 +3,17 @@ const sql = require('sql-template-strings')
 
 const pg = require('fomoplayer_shared').db.pg
 
-module.exports.removeIgnoredTracksFromUsers = (tx, userIds) =>
+module.exports.updateIgnoresInUserTracks = (tx, userIds) =>
   tx.queryRowsAsync(
     // language=PostgreSQL
-    sql`-- removeIgnoredTracksFromUsers
+    sql`-- updateIgnoresInUserTracks
 WITH
   user_details AS (
     SELECT unnest(${userIds}::INTEGER[]) AS meta_account_user_id
   )
 
-DELETE
-FROM user__track
+UPDATE user__track
+SET user__track_ignored = NOW()
 WHERE
     track_id IN (
     SELECT
@@ -21,12 +21,8 @@ WHERE
     FROM
       user_details
       NATURAL JOIN user__artist__label_ignore
-      NATURAL JOIN meta_account
-      NATURAL JOIN artist
-      NATURAL JOIN label
       NATURAL JOIN track__label
       NATURAL JOIN track__artist
-      NATURAL JOIN track
     UNION ALL
     SELECT
       track_id

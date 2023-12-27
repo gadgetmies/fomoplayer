@@ -72,7 +72,7 @@ module.exports.removeArtistOnLabelIgnoreFromUser = deleteArtistOnLabelIgnoreFrom
 module.exports.removeLabelIgnoreFromUser = deleteLabelIgnoreFromUser
 module.exports.removeArtistIgnoreFromUser = deleteArtistIgnoreFromUser
 
-const { removeIgnoredTracksFromUsers } = require('../shared/db/user.js')
+const { updateIgnoresInUserTracks } = require('../shared/db/user.js')
 const { deleteUserCartStoreDetails } = require('../shared/cart')
 const { insertSource } = require('../../jobs/watches/shared/db')
 const { getStoreDetailsFromUrl } = require('../stores/logic')
@@ -102,7 +102,7 @@ module.exports.addArtistsOnLabelsToIgnore = (userId, { artistIds, labelIds }) =>
         addArtistOnLabelToIgnore(tx, artistId, labelId, userId)
       )
     ).map(([{ user__artist__label_ignore }]) => user__artist__label_ignore)
-    await removeIgnoredTracksFromUsers(tx, [userId])
+    await updateIgnoresInUserTracks(tx, [userId])
     return ids
   })
 
@@ -114,7 +114,7 @@ module.exports.addArtistsToIgnore = async (userId, artistIds) => {
   try {
     using(pg.getTransaction(), async tx => {
       await addArtistsToIgnore(tx, artistIds, userId)
-      await removeIgnoredTracksFromUsers(tx, [userId])
+      await updateIgnoresInUserTracks(tx, [userId])
     })
   } catch (e) {
     logger.error('Adding artists to ignore failed', e)
@@ -124,13 +124,13 @@ module.exports.addArtistsToIgnore = async (userId, artistIds) => {
 module.exports.addLabelsToIgnore = async (userId, labelIds) =>
   using(pg.getTransaction(), async tx => {
     await addLabelsToIgnore(tx, labelIds, userId)
-    await removeIgnoredTracksFromUsers(tx, [userId])
+    await updateIgnoresInUserTracks(tx, [userId])
   })
 
 module.exports.addReleasesToIgnore = async (userId, releaseIds) => {
   using(pg.getTransaction(), async tx => {
     await addReleasesToIgnore(tx, releaseIds, userId)
-    await removeIgnoredTracksFromUsers(tx, [userId])
+    await updateIgnoresInUserTracks(tx, [userId])
   })
 }
 

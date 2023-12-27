@@ -4,7 +4,7 @@ const R = require('ramda')
 const { setArtistUpdated, setPlaylistUpdated, setLabelUpdated } = require('./db/watch')
 const { modules: storeModules } = require('../stores/store-modules')
 const { using } = require('bluebird')
-const { removeIgnoredTracksFromUsers } = require('../shared/db/user')
+const { updateIgnoresInUserTracks } = require('../shared/db/user')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 const { addStoreTrack, ensureArtistExists, ensureReleaseExists, ensureLabelExists } = require('../shared/db/store')
@@ -98,7 +98,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   }
 
   await using(pg.getTransaction(), async tx => {
-    await removeIgnoredTracksFromUsers(tx, userIds)
+    await updateIgnoresInUserTracks(tx, userIds)
   })
 
   return storedTracks.map(R.prop('id'))

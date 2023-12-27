@@ -458,6 +458,7 @@ WITH
             NATURAL JOIN track
     WHERE
           user__track_heard IS NULL
+      AND user__track_ignored IS NULL
       AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
     ORDER BY track_added DESC
 )
