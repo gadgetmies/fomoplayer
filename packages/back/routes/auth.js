@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const passport = require('passport')
 const { frontendURL } = require('../config.js')
-const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/stores/spotify')
+const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/shared/spotify')
 const { upsertUserAuthorizationTokens } = require('./db')
 const logger = require('fomoplayer_shared').logger(__filename)
 
