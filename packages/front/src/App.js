@@ -495,7 +495,7 @@ class App extends Component {
                   <Login
                     onLoginDone={this.onLoginDone.bind(this)}
                     onLogoutDone={this.onLogoutDone.bind(this)}
-                    googleLoginPath={`${config.apiURL}/auth/login/google`}
+                    googleLoginPath={`${config.apiURL}/auth/login/google?state=${window.location.pathname}`}
                     logoutPath={'/auth/logout'}
                   />
                   {process.env.NODE_ENV !== 'production' && (

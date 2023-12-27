@@ -18,19 +18,21 @@ const logout = (req, res, next) => {
 router.post('/logout', logout)
 router.get('/logout', logout)
 
-router.get('/login/google', passport.authenticate('openidconnect'))
+router.get('/login/google', (req, res, next) => {
+  return passport.authenticate('openidconnect', { state: req.query.state })(req, res, next)
+})
 
 // TODO: What should the failureRedirect point to?
 router.get(
   '/login/google/return',
   passport.authenticate('openidconnect', { failureRedirect: `${frontendURL}/auth/login` }),
   function(req, res) {
-    res.redirect(`${frontendURL}`)
+    res.redirect(`${frontendURL}${req.authInfo.state}`)
   }
 )
 
-router.get('/spotify', async ({ user: { id: userId } }, res) => {
-  const authorizationUrl = getAuthorizationUrl()
+router.get('/spotify', async ({ user: { id: userId }, query }, res) => {
+  const authorizationUrl = getAuthorizationUrl(query.state)
   res.redirect(authorizationUrl)
 })
 
@@ -42,7 +44,7 @@ router.get('/spotify/callback', async ({ user: { id: userId }, query: { code, st
   } catch (e) {
     logger.error(`Spotify callback handling failed: ${e.toString()}`)
   }
-  res.redirect(`${frontendURL}/settings`) // TODO: redirect to authorizations
+  res.redirect(`${frontendURL}${state}`)
 })
 
 if (process.env.NODE_ENV !== 'production') {

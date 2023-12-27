@@ -61,7 +61,7 @@ const refreshToken = (module.exports.refreshToken = async () => {
   }
 })
 
-module.exports.getAuthorizationUrl = () => {
+module.exports.getAuthorizationUrl = (state) => {
   // Create the authorization URL
   const scopes = [
     'playlist-modify-private',
@@ -70,7 +70,6 @@ module.exports.getAuthorizationUrl = () => {
     'user-follow-read',
     'user-follow-modify'
   ]
-  const state = ''
   return spotifyApi.createAuthorizeURL(scopes, state)
 }
 

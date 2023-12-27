@@ -38,10 +38,8 @@ class Settings extends Component {
 
   constructor(props) {
     super(props)
-
-    const urlSearchParams = new URLSearchParams(window.location.search)
-    const params = Object.fromEntries(urlSearchParams.entries())
-    const { page } = params
+    let page = window.location.pathname.split('/').pop()
+    page = !page || page === 'settings' ? 'following' : page
 
     this.state = {
       followQuery: '',
@@ -79,7 +77,7 @@ class Settings extends Component {
       syncedCarts: Object.fromEntries(
         props.carts.filter(R.prop('store_details')).map(({ id, store_details }) => [id, store_details])
       ),
-      page: page || 'following',
+      page,
       scoreWeights: this.props.scoreWeights,
       tracks: this.props.tracks,
       helpActive: false,
@@ -87,7 +85,8 @@ class Settings extends Component {
       importedPlaylists: [],
       importedArtists: [],
       exportingFollowedArtists: false,
-      followedArtistsExportSuccess: null
+      followedArtistsExportSuccess: null,
+      authorizations: []
     }
 
     this.markHeardButton.bind(this)
@@ -197,6 +196,7 @@ class Settings extends Component {
 
   onShowPage(page) {
     this.setState({ page })
+    window.history.replaceState(undefined, undefined, `/settings/${page}`)
   }
 
   async setScoreWeight(property, value) {
@@ -288,6 +288,7 @@ class Settings extends Component {
   }
 
   render() {
+    const spotifyAuthorizationURL = `${apiURL}/auth/spotify?state=/settings/integrations`
     return (
       <div className="page-container scroll-container" style={{ ...this.props.style }}>
         <SettingsHelp
@@ -775,7 +776,7 @@ class Settings extends Component {
                         ) : null}
                       </div>
                       <h5>Synchronization</h5>
-                      {!this.state.authorizations.includes('Spotify') ? (
+                      {!this.state.authorizations?.includes('Spotify') ? (
                         <p>
                           Grant Fomo Player access to Spotify from the{' '}
                           <a
@@ -1070,7 +1071,7 @@ class Settings extends Component {
                 in the settings.
               </p>
               <h4>Spotify</h4>
-              {this.state.authorizations.includes('Spotify') ? (
+              {this.state.authorizations?.includes('Spotify') ? (
                 <>
                   <p>
                     <SpinnerButton
@@ -1085,7 +1086,7 @@ class Settings extends Component {
                   </p>
                   <p>
                     <a
-                      href={`${apiURL}/auth/spotify`}
+                      href={spotifyAuthorizationURL}
                       className="button button-push_button-small button-push_button-primary no-style-link"
                     >
                       Re-authrorize
@@ -1164,7 +1165,9 @@ class Settings extends Component {
                         Importing followed artists failed. Please try again.
                       </div>
                     )}
-                    {this.state.importedArtists.length > 0 && <h6>{this.state.importedArtists.length} artists imported:</h6>}
+                    {this.state.importedArtists.length > 0 && (
+                      <h6>{this.state.importedArtists.length} artists imported:</h6>
+                    )}
                     {this.state.importedArtists.map(({ name, url }) => {
                       return (
                         <FollowedItem
@@ -1234,7 +1237,7 @@ class Settings extends Component {
                 <>
                   <p>
                     <a
-                      href={`${apiURL}/auth/spotify`}
+                      href={spotifyAuthorizationURL}
                       className="button button-push_button-small button-push_button-primary no-style-link"
                     >
                       Authorize

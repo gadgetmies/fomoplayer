@@ -31,7 +31,7 @@ export default class Menu extends Component {
           <h3>User</h3>
           <p>
             <MenuNavButton
-              to={'/settings'}
+              to={'/settings/'}
               onClick={() => {
                 this.props.onNavButtonClicked()
                 if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Settings)) {
