@@ -3,7 +3,7 @@ import 'chart.js/auto'
 import { Chart } from 'react-chartjs-2'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
 import { apiURL } from './config'
-import { js as beautify } from 'js-beautify/js'
+import beautify from 'js-beautify'
 
 const L = require('partial.lenses')
 const R = require('ramda')
