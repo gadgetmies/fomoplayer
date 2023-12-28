@@ -7,6 +7,7 @@ const logger = require('fomoplayer_shared').logger(__filename)
 const { apiURL } = require('../../config.js')
 const { queryAuthorization, upsertUserAuthorizationTokens } = require('../db')
 const R = require('ramda')
+const L = require('partial.lenses')
 const { processChunks } = require('./requests')
 
 const storeName = (module.exports.storeName = 'Spotify')
@@ -19,7 +20,36 @@ const credentials = {
   redirectUri: `${apiURL}/auth/spotify/callback`
 }
 
-const spotifyApi = (module.exports.spotifyApi = new SpotifyWebApi(credentials))
+let suspendedUntil = undefined
+const api = new SpotifyWebApi(credentials)
+const spotifyApi = (module.exports.spotifyApi = L.modify(
+  L.query(L.when(R.is(Function))),
+  fn => (...args) => {
+    console.log(fn)
+    if (suspendedUntil && suspendedUntil > new Date()) {
+      throw new Error('Too many calls to Spotify API. Waiting for rate limit to expire.')
+    } else {
+      const res = fn.bind(api)(...args)
+      if (res instanceof Promise) {
+        return res.catch(e => {
+          if (e.statusCode === 429) {
+            const retryAfterMs = e.headers['retry-after'] * 1000
+            logger.error(`Spotify API rate limit exceeded (response status code 429), suspending for ${retryAfterMs}ms`)
+            suspendedUntil = new Date(Date.now() + retryAfterMs)
+            throw new Error('Too many calls to Spotify API')
+          } else {
+            logger.error('Spotify API error', e)
+            throw e
+          }
+        })
+      } else {
+        return res
+      }
+    }
+  },
+  api
+))
+
 
 const getApiForAuthorization = (module.exports.getApiForAuthorization = (accessToken, refreshToken = undefined) => {
   const api = new SpotifyWebApi(credentials)
