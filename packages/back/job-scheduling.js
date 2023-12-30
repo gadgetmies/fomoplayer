@@ -39,6 +39,11 @@ WHERE job_run_ended IS NULL
 let scheduled = {}
 
 const runJob = async jobName => {
+  if (process.env.DISABLE_JOBS) {
+    logger.info(`Skipping job ${jobName} because jobs are disabled`)
+    return
+  }
+
   logger.info(`Running job ${jobName}`)
 
   const [{ running }] = await pg.queryRowsAsync(
