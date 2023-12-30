@@ -13,7 +13,7 @@ test({
   setup: () => {},
   skip: () =>
     process.env.BANDCAMP_API_REDIRECT === '' && !process.env.BANDCAMP_API_MOCK
-      ? 'Beatport redirects set or mocks not set'
+      ? 'Bandcamp redirects set or mocks not set'
       : undefined,
   'search results': {
     'are mapped': async () => {
