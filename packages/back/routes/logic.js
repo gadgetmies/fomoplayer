@@ -18,7 +18,7 @@ module.exports.getFollowDetails = async query => {
   if (query.match('^https://') !== null) {
     let detailsFromURL
     try {
-      detailsFromURL = (await getStoreDetailsFromUrl(query))[0]
+      detailsFromURL = await getStoreDetailsFromUrl(query)
     } catch (e) {
       return []
     }

@@ -285,7 +285,7 @@ module.exports.addPlaylistFollows = async (playlists, userId, sourceId) => {
   // TODO: try first to find from db
   let addedPlaylists = []
   for (const { url } of playlists) {
-    const [{ storeName, type, id }] = await getStoreDetailsFromUrl(url)
+    const { storeName, type, id } = await getStoreDetailsFromUrl(url)
     const storeModule = storeModules[storeName]
     const [{ id: playlistStoreId, name }] = await storeModule.logic.getFollowDetails({ id, url, type })
     const { playlistId, followId } = await insertUserPlaylistFollow(userId, storeName, playlistStoreId, name, type)
