@@ -6,7 +6,7 @@ const getStoreDetailsFromUrls = (module.exports.getStoreDetailsFromUrls = async 
     for (const { storeName, regex, type } of regexes) {
       const match = url.match(new RegExp(regex))
       if (match) {
-        const id = match[4]
+        const id = match[match.length - 1] // TODO: dangerous assumption that the id will be the last match
         return { storeName, id, type, url }
       }
     }
