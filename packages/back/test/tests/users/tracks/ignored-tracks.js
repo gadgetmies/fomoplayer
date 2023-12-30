@@ -24,15 +24,17 @@ test({
     'when artists on labels are added to ignore': {
       setup: async () => ({ ignoreIds: await addArtistsOnLabelsToIgnore(userId, { artistIds: [1], labelIds: [1] }) }),
       teardown: async ({ ignoreIds }) => removeArtistsOnLabelsIgnores(ignoreIds),
-      'user tracks are removed': async () => {
-        const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from user__track')
-        assert.strictEqual(trackCount, 0)
+      'tracks are added for the user with ignore': async () => {
+        const res = await pg.queryRowsAsync('select user__track_ignored from user__track')
+        assert.strictEqual(res.length, 1)
+        assert.notEqual(res[0].user__track_ignored, null)
       },
       'when the track is re-added': {
         setup: async () => setupBeatportTracks([{ tracks: tracksWithUpdatedDates }]),
-        'tracks are not added for the user': async () => {
-          const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from user__track')
-          assert.strictEqual(trackCount, 0)
+        'tracks are added for the user with ignore': async () => {
+          const res = await pg.queryRowsAsync('select user__track_ignored from user__track')
+          assert.strictEqual(res.length, 1)
+          assert.notEqual(res[0].user__track_ignored, null)
         }
       }
       // TODO: when another track from the same artist on the same label is added
