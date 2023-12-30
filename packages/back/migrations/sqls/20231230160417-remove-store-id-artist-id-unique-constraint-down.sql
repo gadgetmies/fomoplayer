@@ -1,0 +1,1 @@
+ALTER TABLE store__artist ADD UNIQUE (store_id, artist_id);
