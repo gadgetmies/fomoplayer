@@ -242,7 +242,7 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
       .then(getArtistIdFromResult)
   }
 
-  await tx.queryRowsAsync(
+  await tx.queryAsync(
     // language=PostgreSQL
     sql`-- ensureArtistExists INSERT INTO store__artist
     INSERT
