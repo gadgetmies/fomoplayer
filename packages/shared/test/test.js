@@ -133,7 +133,7 @@ ${printName(node[0], style)}${
             if (skippingReason) {
               singleResult = {
                 skipped: skippingReason,
-                error: skippingReason
+                error: null
               }
             } else {
               const assertionTimeout = timeout(setupResult?.timeout || DefaultAssertionTimeout)
