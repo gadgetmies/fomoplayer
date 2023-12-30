@@ -142,16 +142,25 @@ const mapSearchResults = ({ auto: { results } }) =>
   }))
 
 const getSearchResults = (query, callback) => {
-  return request({
+  return fetch('https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic', {
     method: 'POST',
-    uri: 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic',
-    body: {
+    body: JSON.stringify({
       search_text: query,
       search_filter: 'b',
-      match_test: false
-    },
-    json: true
+      fan_id: null,
+      full_page: false
+    }),
+    headers: {
+      'Content-Type': 'application/json; charset=UTF-8'
+    }
   })
+    .then(res => {
+      if (!res) {
+        console.error('Bandcamp search failed: No res')
+        throw new Error('No results')
+      }
+      return res.json()
+    })
     .then(res => {
       callback(null, mapSearchResults(res))
     })
