@@ -14,5 +14,5 @@ const getStoreDetailsFromUrls = (module.exports.getStoreDetailsFromUrls = async 
   })
 })
 
-module.exports.getStoreDetailsFromUrl = async ({ url, storeName = undefined }) =>
+module.exports.getStoreDetailsFromUrl = async (url, storeName = undefined) =>
   (await getStoreDetailsFromUrls([url], storeName))[0]
