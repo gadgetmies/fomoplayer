@@ -27,7 +27,7 @@ const spotifyApi = (module.exports.spotifyApi = L.modify(
   fn => (...args) => {
     console.log(fn)
     if (suspendedUntil && suspendedUntil > new Date()) {
-      throw new Error('Too many calls to Spotify API. Waiting for rate limit to expire.')
+      throw new Error(`Too many calls to Spotify API. Waiting for rate limit to expire at ${suspendedUntil}`)
     } else {
       const res = fn.bind(api)(...args)
       if (res instanceof Promise) {
