@@ -52,6 +52,9 @@ const spotifyApi = (module.exports.spotifyApi = L.modify(
 
 
 const getApiForAuthorization = (module.exports.getApiForAuthorization = (accessToken, refreshToken = undefined) => {
+  if (suspendedUntil && suspendedUntil > new Date()) {
+    throw new Error(`Too many calls to Spotify API. Waiting for rate limit to expire at ${suspendedUntil}`)
+  }
   const api = new SpotifyWebApi(credentials)
   api.setAccessToken(accessToken)
   api.setRefreshToken(refreshToken)
