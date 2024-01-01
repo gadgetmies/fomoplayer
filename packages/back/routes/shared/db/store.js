@@ -259,7 +259,8 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
                       FROM
                         store__artist
                         NATURAL JOIN store
-                      WHERE store__artist_url = ${artist.url}) 
+                      WHERE store__artist_store_id = ${artist.id}
+                        AND store_url = ${storeUrl})
       AND store_url = ${storeUrl}
     ON CONFLICT ON CONSTRAINT store__artist_store__artist_url_key DO UPDATE
       SET store__artist_store_id = COALESCE(store__artist.store__artist_store_id, EXCLUDED.store__artist_store_id)
