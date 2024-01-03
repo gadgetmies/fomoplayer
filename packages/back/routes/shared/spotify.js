@@ -100,6 +100,7 @@ module.exports.getAuthorizationUrl = (state) => {
     'playlist-modify-private',
     'playlist-modify-public',
     'playlist-read-private',
+    'playlist-read-collaborative',
     'user-follow-read',
     'user-follow-modify'
   ]
