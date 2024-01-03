@@ -133,7 +133,9 @@ module.exports.createCart = async (userId, cartName, tracks) => {
   if (statusCode !== 201) {
     throw new Error('Creating Spotify playlist failed')
   }
-  await setCartTracks(api, playlist.id, tracks)
+  if (tracks.length > 0) {
+    await setCartTracks(api, playlist.id, tracks)
+  }
 
   const {
     id,
