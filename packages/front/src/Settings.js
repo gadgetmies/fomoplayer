@@ -1078,7 +1078,7 @@ class Settings extends Component {
                       onClick={this.onDeauthorizeSpotifyClicked.bind(this)}
                       loading={this.state.deauthorizingSpotify}
                     >
-                      De-authrorize
+                      De-authorize
                     </SpinnerButton>
                     <div style={{ fontSize: '75%', marginTop: 5 }}>
                       Warning! This will disable all cart synchronizations
@@ -1089,7 +1089,7 @@ class Settings extends Component {
                       href={spotifyAuthorizationURL}
                       className="button button-push_button-small button-push_button-primary no-style-link"
                     >
-                      Re-authrorize
+                      Re-authorize
                     </a>
                     <div style={{ fontSize: '75%', marginTop: 5 }}>Try this if synchronization does not work</div>
                   </p>
