@@ -1,0 +1,21 @@
+.page-container {
+  height: 100%;
+  max-width: 1440px; /* Ensure this is in sync with top_bar_contents */
+  background-color: var(--page-container-background-color);
+  box-sizing: border-box;
+}
+
+.page-container::-webkit-scrollbar {
+  width: 0;
+}
+
+@media (max-width: 590px) {
+  .page-container {
+    margin: 0;
+  }
+}
+@media (min-width: 769px) {
+  .page-container {
+    margin: 0 1rem;
+  }
+}

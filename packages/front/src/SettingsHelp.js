@@ -86,7 +86,7 @@ export class SettingsHelp extends Component {
       )
     },
     Authorizations: {
-      target: '[data-help-id=authorizations-tab]',
+      target: '[data-help-id=integrations-tab]',
       placement: 'bottom',
       content: (
         <p>

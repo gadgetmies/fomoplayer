@@ -13,6 +13,12 @@ const aliasToColumn = {
 }
 
 module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince } = {}) => {
+  const idFilter = queryString
+    .split(' ')
+    .filter(s => s.includes(':'))
+    .map(s => s.split(':'))
+    .filter(([key]) => ['artist', 'label', 'release'].includes(key))[0]
+
   const limit = l || 100
   const sort = s || '-released'
   const sortParameters = getSortParameters(sort)
@@ -51,22 +57,32 @@ WHERE track_id IN
          NATURAL JOIN artist
          NATURAL LEFT JOIN track__label
          NATURAL LEFT JOIN label
-         NATURAL JOIN store__track
-       WHERE ${addedSince}::TIMESTAMPTZ IS NULL
-          OR track_added > ${addedSince}::TIMESTAMPTZ
-       GROUP BY track_id, track_title, track_version`
+         LEFT JOIN release__track USING (track_id)
+         LEFT JOIN release USING (release_id)
+         NATURAL JOIN store__track`
 
+    query.append(sql` WHERE (${addedSince}::TIMESTAMPTZ IS NULL
+          OR track_added > ${addedSince}::TIMESTAMPTZ)`)
+
+    if (idFilter) {
+      query.append(` AND ${tx.escapeIdentifier(`${idFilter[0]}_id`)} = `)
+      query.append(sql`${idFilter[1]}`)
+    }
+
+    query.append(` GROUP BY track_id, track_title, track_version `)
     sortColumns.forEach(([column]) => query.append(`, ${tx.escapeIdentifier(column)}`))
-    query.append(`                HAVING
+    !idFilter &&
+      query.append(sql` HAVING
                                   TO_TSVECTOR(
                                           'simple',
                                           unaccent(track_title || ' ' ||
                                                    COALESCE(track_version, '') || ' ' ||
                                                    STRING_AGG(artist_name, ' ') || ' ' ||
+                                                   STRING_AGG(release_name, ' ') || ' ' ||
                                                    STRING_AGG(COALESCE(label_name, ''), ' '))) @@
-                                  websearch_to_tsquery('simple', unaccent('${queryString}'))
-                                  ORDER BY `)
+                                  websearch_to_tsquery('simple', unaccent(${queryString}))`)
 
+    query.append(` ORDER BY `)
     sortColumns.forEach(([column, order]) =>
       query
         .append(tx.escapeIdentifier(column))

@@ -1,0 +1,7 @@
+.carts-list {
+    overflow-y: scroll;
+}
+
+.carts-list::-webkit-scrollbar {
+    display: none;
+}

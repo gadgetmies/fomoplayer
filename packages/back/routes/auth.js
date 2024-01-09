@@ -32,19 +32,20 @@ router.get(
 )
 
 router.get('/spotify', async ({ user: { id: userId }, query }, res) => {
-  const authorizationUrl = getAuthorizationUrl(query.state)
+  const authorizationUrl = getAuthorizationUrl(query.path, query.write === "true")
   res.redirect(authorizationUrl)
 })
 
 router.get('/spotify/callback', async ({ user: { id: userId }, query: { code, state } }, res) => {
+  const [path] = Array.from(new URLSearchParams(decodeURIComponent(state)).values())
   try {
     const result = await requestTokens(code)
-    const { expires_in, access_token, refresh_token } = result.body
-    await upsertUserAuthorizationTokens(userId, spotifyStoreName, access_token, refresh_token, expires_in)
+    const { expires_in, access_token, refresh_token, scope } = result.body
+    await upsertUserAuthorizationTokens(userId, spotifyStoreName, access_token, refresh_token, expires_in, scope.split(' '))
   } catch (e) {
     logger.error(`Spotify callback handling failed: ${e.toString()}`)
   }
-  res.redirect(`${frontendURL}${state}`)
+  res.redirect(`${frontendURL}${path}`)
 })
 
 if (process.env.NODE_ENV !== 'production') {

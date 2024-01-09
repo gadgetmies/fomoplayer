@@ -41,7 +41,7 @@ export default class Login extends Component {
           <>
             <button
               disabled={this.state.loggingOut}
-              className={`button login-button button-push_button-${this.props.size} button-push_button-primary`}
+              className={`button button-push_button login-button button-push_button-${this.props.size} button-push_button-primary`}
               onClick={this.submitLogout.bind(this)}
             >
               Logout
@@ -52,9 +52,9 @@ export default class Login extends Component {
           <>
             <a
               href={this.props.googleLoginPath}
-              className={`button login-button button-push_button-${this.props.size} button-push_button-primary`}
+              className={`button button-push_button login-button button-push_button-${this.props.size} button-push_button-primary`}
             >
-              Continue with Google
+              Login with Google
             </a>
             {this.state.loginError ? 'Login failed' : ''}
           </>

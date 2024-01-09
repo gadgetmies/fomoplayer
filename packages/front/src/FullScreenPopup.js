@@ -20,7 +20,7 @@ class FullScreenPopup extends Component {
         <div className={`full-screen-popup align-center-item ${this.props.className}`}>
           <h1 className="full-screen-popup-title">{this.props.title}</h1>
           <div className="full-screen-popup-close">
-            <button onClick={this.props.onCloseClicked}>
+            <button onClick={this.props.onCloseClicked} title={'Close popup'}>
               <FontAwesomeIcon icon="times-circle" />
             </button>
           </div>

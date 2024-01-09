@@ -1,0 +1,87 @@
+.popup_content {
+  position: absolute;
+  display: none;
+  background: black;
+  border-radius: 0.25em;
+  z-index: 1;
+  box-shadow: 0px 0px 5px black;
+  padding: 4px;
+}
+
+.popup-anchor:hover + .popup_content,
+.popup_content:hover,
+.popup_content.popup_open {
+  display: flex;
+}
+
+.popup-divider {
+  border: none;
+  border-bottom: 1px solid grey;
+}
+
+@media (max-width: 590px) {
+  .popup_content {
+    left: 2rem;
+    right: 2rem;
+    top: 2rem;
+    bottom: 0;
+    background: black;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    flex-direction: column;
+    align-content: flex-end;
+  }
+
+  .mobile .popup_content {
+    top: auto;
+  }
+}
+
+@media (min-width: 591px) {
+  .popup_container {
+    position: relative;
+  }
+
+  .popup_content {
+    transform: translateX(-50%);
+    left: 50%;
+    max-height: calc(100vh * 0.5);
+  }
+
+  /* TODO: does this work with the top: 100% below? */
+  .popup_content__above {
+    bottom: 100%;
+  }
+
+  .popup_container-center .popup_content {
+    transform: translateX(-50%);
+    left: 50%;
+  }
+
+  .popup_content {
+    top: 100%;
+  }
+
+  .popup_content-left {
+    transform: none;
+    right: 0;
+    left: auto;
+  }
+}
+
+@media (max-width: 768px) {
+}
+
+@media (min-width: 769px) {
+}
+
+@media (max-width: 1279px) {
+  .popup_content-right {
+    transform: none;
+    left: 0;
+    right: auto;
+  }
+}
+
+@media (min-width: 1280px) {
+}

@@ -1,5 +1,6 @@
 .waveform_container {
   position: relative;
+  margin: 1px;
 }
 
 .waveform {
@@ -22,30 +23,217 @@
 .waveform-position {
   background: linear-gradient(to right, #b40089 0%, #ff008b 100%);
   width: 100%;
+  mask-size: 100% 100%;
 }
 
-@media (min-width: 900px) {
-  .waveform-position {
-    mask-size: 100% 40px;
-    -webkit-mask-size: 100% 40px;
-  }
-
-  .waveform_container {
-    height: 40px;
-  }
-}
-
-@media (max-width: 899px) {
-  .waveform-position {
-    mask-size: 100% 60px;
-    -webkit-mask-size: 100% 60px;
-  }
-
-  .waveform_container {
-    height: 60px;
-  }
+.waveform_container {
+  height: 100%;
+  min-height: 100px;
 }
 
 .mobile .volume-slider {
   display: none;
+}
+
+.preview {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+}
+
+.preview_actions_title {
+  font-weight: 300;
+  font-size: 75%;
+}
+
+.preview_title {
+  font-size: 100%;
+  font-weight: 400;
+}
+
+.preview_label {
+}
+
+.preview_detail {
+  font-weight: 300;
+}
+
+.preview_details_wrapper {
+  flex: 1;
+  padding: 1rem 0.5rem;
+  display: flex;
+  gap: 8px;
+}
+
+.preview-wrapper {
+  height: 100%;
+}
+
+.preview_links_wrapper {
+  display: flex;
+}
+
+.preview_actions_wrapper {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.preview-icons-container {
+  border-radius: 2px;
+  display: flex;
+  gap: 4px;
+}
+
+.waveform_container {
+  background-color: black;
+}
+
+.button-playback {
+  color: white;
+  opacity: 0.5;
+}
+
+.button-playback:hover {
+  opacity: 1;
+}
+
+.player-collection-wrapper {
+  background-color: #131313;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview_links_container {
+  display: flex;
+  gap: 16px;
+}
+
+.available_on_list,
+.search_from_list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.preview-samples_container {
+  position: absolute;
+  left: 2px;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  flex: 1;
+  gap: 4px;
+  background: #000c;
+  border-radius: 8px;
+  margin: 4px;
+  align-items: center;
+}
+
+@media (max-width: 590px) {
+  .button-playback {
+    font-size: 150%;
+    padding: 8px 16px;
+  }
+
+  .preview-action_button .button-push_button_icon {
+    display: block;
+  }
+}
+
+@media (min-width: 591px) {
+  .button-playback {
+    padding: 5px 10px;
+  }
+
+  .button-playback {
+    padding: 5px 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .preview {
+    flex-direction: column;
+  }
+
+  .preview-icons-container {
+    font-size: 100%;
+  }
+
+  .player-collection-wrapper {
+    display: block;
+  }
+
+  .preview-samples_container {
+    padding: 4px 8px;
+  }
+
+  .add_to_cart_popup {
+    right: 0;
+    left: auto;
+  }
+
+  .preview_details_wrapper {
+    flex-direction: row;
+    gap: 16px;
+  }
+
+  .preview_links_wrapper {
+    flex-direction: column;
+  }
+
+  .search_from_list {
+    flex-direction: row;
+  }
+
+  .preview_links_container {
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 769px) {
+  .preview-icons-container {
+    font-size: 75%;
+  }
+
+  .player-collection-wrapper {
+    display: flex;
+  }
+
+  .add_to_cart_popup {
+    left: 0;
+    right: auto;
+  }
+  .preview-samples_container {
+    padding: 8px;
+  }
+
+  .preview_details_wrapper {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .preview_links_wrapper {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .search_from_list {
+    flex-direction: row;
+  }
+
+  .preview_links_container {
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 1028px) {
+  .preview-share_caret {
+    display: none;
+  }
+
+  .preview-pill_link .pill-link-text {
+    display: none;
+  }
 }

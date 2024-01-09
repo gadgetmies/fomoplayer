@@ -63,9 +63,9 @@ class IgnorePopup extends Component {
                     loading={this.state.ignoringArtistOnLabels === idString}
                     disabled={this.state.ignoringArtistOnLabels || isIgnored}
                     key={`artist-${artist.id}`}
-                    className={`button button-push_button-large button-push_button-primary ${
-                      isIgnored ? 'ignored' : ''
-                    }`}
+                    title={`Ignore ${artist.name} on ${joinStringList(this.props.track.labels)}`}
+                    size={'large'}
+                    className={`${isIgnored ? 'ignored' : ''}`}
                     onClick={async () => {
                       this.setState({ ignoringArtistOnLabel: idString })
 
@@ -96,10 +96,10 @@ class IgnorePopup extends Component {
                 <SpinnerButton
                   loading={this.state.ignoringRelease === release.id}
                   disabled={this.state.ignoringRelease || this.state.ignoredReleases.has(release.id)}
+                  title={`Ignore ${release.name}`}
                   key={`artist-${release.id}`}
-                  className={`button button-push_button-large button-push_button-primary ${
-                    this.state.ignoredReleases.has(release.id) ? 'ignored' : ''
-                  }`}
+                  size={'large'}
+                  className={`${this.state.ignoredReleases.has(release.id) ? 'ignored' : ''}`}
                   onClick={async () => {
                     this.setState({ ignoringRelease: release.id })
 
@@ -127,10 +127,10 @@ class IgnorePopup extends Component {
             <SpinnerButton
               loading={this.state.ignoringArtist === artist.id}
               disabled={this.state.ignoringArtist || this.state.ignoredArtists.has(artist.id)}
+              title={`Ignore ${artist.name}`}
               key={`artist-${artist.id}`}
-              className={`button button-push_button-large button-push_button-primary ${
-                this.state.ignoredArtists.has(artist.id) ? 'ignored' : ''
-              }`}
+              size={'large'}
+              className={`${this.state.ignoredArtists.has(artist.id) ? 'ignored' : ''}`}
               onClick={async () => {
                 this.setState({ ignoringArtist: artist.id })
 
@@ -156,10 +156,10 @@ class IgnorePopup extends Component {
                 <SpinnerButton
                   loading={this.state.ignoringLabel === label.id}
                   disabled={this.state.ignoringLabel || this.state.ignoredLabels.has(label.id)}
+                  title={`Ignore ${label.name}`}
                   key={`label-${label.id}`}
-                  className={`button button-push_button-large button-push_button-primary ${
-                    this.state.ignoredLabels.has(label.id) ? 'ignored' : ''
-                  }`}
+                  size={'large'}
+                  className={`${this.state.ignoredLabels.has(label.id) ? 'ignored' : ''}`}
                   onClick={async () => {
                     this.setState({ ignoringLabel: label.id })
 
@@ -180,9 +180,9 @@ class IgnorePopup extends Component {
           </>
         )}
         <p>
-          NOTE: The ignored state of the artists and labels is not updated from the server and thus some of the artists
-          and labels might already be ignored. Also note that you need to refresh the track list in the player manually
-          after ignoring.
+          <FontAwesomeIcon icon={'exclamation-circle'} /> NOTE: The ignored state of the artists and labels is not
+          updated from the server and thus some of the artists and labels might already be ignored. Also note that you
+          need to refresh the track list in the player manually after ignoring.
         </p>
         <p>
           <Link
@@ -192,16 +192,14 @@ class IgnorePopup extends Component {
               this.props.onCloseClicked()
             }}
           >
-            <button className={'button button-push_button-large button-push_button-primary'}>
-              Edit the ignores in settings
-            </button>
+            <Link to={'/settings/following'}>Edit the ignores in settings</Link>
           </Link>
         </p>
+        <br />
         <SpinnerButton
           loading={this.state.refreshingList}
           disabled={this.state.refreshingList}
-          type="submit"
-          className="button button-push_button-large button-push_button-primary"
+          size={'large'}
           onClick={async () => {
             this.setState({ refreshingList: true })
             await this.props.onRefreshAndCloseClicked()

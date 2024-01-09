@@ -20,36 +20,33 @@ const credentials = {
   redirectUri: `${apiURL}/auth/spotify/callback`
 }
 
+const injectRateLimiting = L.modify(L.query(L.when(R.is(Function))), fn => (...args) => {
+  console.log(fn)
+  if (suspendedUntil && suspendedUntil > new Date()) {
+    throw new Error(`Too many calls to Spotify API. Waiting for rate limit to expire at ${suspendedUntil}`)
+  } else {
+    const res = fn.bind(api)(...args)
+    if (res instanceof Promise) {
+      return res.catch(e => {
+        if (e.statusCode === 429) {
+          const retryAfterMs = e.headers['retry-after'] * 1000
+          logger.error(`Spotify API rate limit exceeded (response status code 429), suspending for ${retryAfterMs}ms`)
+          suspendedUntil = new Date(Date.now() + retryAfterMs)
+          throw new Error('Too many calls to Spotify API')
+        } else {
+          logger.error('Spotify API error', e)
+          throw e
+        }
+      })
+    } else {
+      return res
+    }
+  }
+})
+
 let suspendedUntil = undefined
 const api = new SpotifyWebApi(credentials)
-const spotifyApi = (module.exports.spotifyApi = L.modify(
-  L.query(L.when(R.is(Function))),
-  fn => (...args) => {
-    console.log(fn)
-    if (suspendedUntil && suspendedUntil > new Date()) {
-      throw new Error(`Too many calls to Spotify API. Waiting for rate limit to expire at ${suspendedUntil}`)
-    } else {
-      const res = fn.bind(api)(...args)
-      if (res instanceof Promise) {
-        return res.catch(e => {
-          if (e.statusCode === 429) {
-            const retryAfterMs = e.headers['retry-after'] * 1000
-            logger.error(`Spotify API rate limit exceeded (response status code 429), suspending for ${retryAfterMs}ms`)
-            suspendedUntil = new Date(Date.now() + retryAfterMs)
-            throw new Error('Too many calls to Spotify API')
-          } else {
-            logger.error('Spotify API error', e)
-            throw e
-          }
-        })
-      } else {
-        return res
-      }
-    }
-  },
-  api
-))
-
+const spotifyApi = (module.exports.spotifyApi = injectRateLimiting(api))
 
 const getApiForAuthorization = (module.exports.getApiForAuthorization = (accessToken, refreshToken = undefined) => {
   if (suspendedUntil && suspendedUntil > new Date()) {
@@ -68,8 +65,8 @@ const getApiForUser = (module.exports.getApiForUser = async userId => {
     const { body, statusCode } = await api.refreshAccessToken()
 
     if (statusCode === 200) {
-      const { access_token, expires_in } = body
-      await upsertUserAuthorizationTokens(userId, storeName, access_token, refresh_token, expires_in)
+      const { access_token, expires_in, scope } = body
+      await upsertUserAuthorizationTokens(userId, storeName, access_token, refresh_token, expires_in, scope)
       api.setAccessToken(access_token)
     } else {
       const errorMessage = `Refreshing access token failed for user: ${userId}`
@@ -94,17 +91,13 @@ const refreshToken = (module.exports.refreshToken = async () => {
   }
 })
 
-module.exports.getAuthorizationUrl = (state) => {
+const writeScopes = ['playlist-modify-private', 'playlist-modify-public', 'user-follow-modify']
+const readScopes = ['playlist-read-private', 'playlist-read-collaborative', 'user-follow-read']
+
+module.exports.getAuthorizationUrl = (returnPath, write) => {
   // Create the authorization URL
-  const scopes = [
-    'playlist-modify-private',
-    'playlist-modify-public',
-    'playlist-read-private',
-    'playlist-read-collaborative',
-    'user-follow-read',
-    'user-follow-modify'
-  ]
-  return spotifyApi.createAuthorizeURL(scopes, state)
+  const scopes = [...(write ? writeScopes : []), ...readScopes]
+  return spotifyApi.createAuthorizeURL(scopes, encodeURIComponent(`path=${returnPath}`))
 }
 
 module.exports.requestTokens = code => spotifyApi.authorizationCodeGrant(code)

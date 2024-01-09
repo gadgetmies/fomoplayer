@@ -29,10 +29,11 @@ class FollowPopup extends Component {
             const following = this.getFollowingArtist(artist)
             return (
               <SpinnerButton
+                title={`${following ? 'Unfollow' : 'Follow'} ${artist.name}`}
                 loading={this.state.subscribingToArtist === artist.id}
                 disabled={this.state.subscribingToArtist}
                 key={`artist-${artist.id}`}
-                className={'button button-push_button-large button-push_button-primary'}
+                size={'large'}
                 onClick={async () => {
                   try {
                     this.setState({ subscribingToArtist: artist.id })
@@ -57,10 +58,11 @@ class FollowPopup extends Component {
                 const following = this.getFollowingLabel(label)
                 return (
                   <SpinnerButton
+                    title={`${following ? 'Unfollow' : 'Follow'} ${label.name}`}
                     loading={this.state.subscribingToLabel === label.id}
                     disabled={this.state.subscribingToLabel}
                     key={`label-${label.id}`}
-                    className={'button button-push_button-large button-push_button-primary'}
+                    size={'large'}
                     onClick={async () => {
                       try {
                         this.setState({ subscribingToLabel: label.id })
@@ -87,16 +89,20 @@ class FollowPopup extends Component {
               this.props.onCloseClicked()
             }}
           >
-            <button className={'button button-push_button-large button-push_button-primary'}>
-              Edit the follows in settings
-            </button>
+            <Link to={'/settings/following'}>Edit the follows in settings</Link>
           </Link>
         </p>
+        <p>
+          <FontAwesomeIcon icon={'exclamation-circle'} /> NOTE: Unfollowing an artist or label does not remove the
+          artists or labels tracks from the collection, but instead only prevents any future tracks from being added to
+          the collection.
+        </p>
+        <br />
         <SpinnerButton
           loading={this.state.refreshingList}
           disabled={this.state.refreshingList}
           type="submit"
-          className="button button-push_button-large button-push_button-primary"
+          size={'large'}
           onClick={async () => {
             this.setState({ refreshingList: true })
             await this.props.onRefreshAndCloseClicked()

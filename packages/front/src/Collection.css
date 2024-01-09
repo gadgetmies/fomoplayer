@@ -1,0 +1,27 @@
+.collection-details {
+  align-items: center;
+}
+
+.collection-details > * {
+  margin-left: 4px;
+}
+
+.collection-details-item {
+  color: white;
+  font-size: 70%;
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .collection-details {
+    display: flex;
+    float: right;
+  }
+}
+
+@media (min-width: 769px) {
+  .collection-details {
+    order: 3;
+    display: flex;
+  }
+}

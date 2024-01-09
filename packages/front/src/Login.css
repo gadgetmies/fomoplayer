@@ -1,0 +1,40 @@
+.login-label-text {
+  padding-bottom: 4px;
+}
+
+.login-label-text-small {
+  display: block;
+}
+
+.login-label-text-large {
+  width: 100px;
+  display: inline-block;
+}
+
+.login-input {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.login-button {
+  margin-top: 1rem;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.login-separator {
+  margin: 1em auto;
+  text-align: center;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.login-separator:before,
+.login-separator:after {
+  display: inline-block;
+  border-top: 1px solid #bbb;
+  content: ' ';
+  top: 0.7em;
+  flex: 1;
+}

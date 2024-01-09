@@ -13,7 +13,7 @@ class SpinnerButton extends Component {
       <button
         type="submit"
         disabled={disabled || loading}
-        className={`button button-push_button-${size} button-push_button-primary ${className || ''}`}
+        className={`button button-push_button button-push_button-${size} button-push_button-primary ${className || ''}`}
         style={style}
         onClick={onClick}
         {...rest}

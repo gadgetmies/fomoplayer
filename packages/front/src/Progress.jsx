@@ -1,28 +1,29 @@
 import React from 'react'
 
-export default function({ percent, height, barColor, bgColor, ...props }) {
+export default function({ percent, height, barColor, bgColor, vertical, ...props }) {
   return (
-    <span
+    <div
       {...props}
       style={{
-        height: '0.5em',
-        width: '100%',
+        height: vertical ? '2em' : undefined,
+        width: vertical ? undefined : '2em',
         padding: 1,
         background: bgColor,
-        borderRadius: '0.25em',
+        borderRadius: '1vh',
+        display: 'flex',
+        flexDirection: vertical ? 'row' : 'column-reverse',
         ...props.style
       }}
     >
-      <span
+      <div
         style={{
-          width: `${percent}%`,
-          height: '100%',
-          borderRadius: '0.25em',
-          display: 'block',
+          width: vertical ? `${percent}%` : '100%',
+          height: vertical ? '100%' : `${percent}%`,
+          borderRadius: '1vh',
           backgroundColor: barColor,
           transition: 'width 0.2s'
         }}
       />
-    </span>
+    </div>
   )
 }

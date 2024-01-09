@@ -1,14 +1,13 @@
-import './Tracks.css'
+import './Track.css'
 import React, { Component } from 'react'
 import * as R from 'ramda'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import PillButton from './PillButton'
-import ShareLink from './ShareLink'
 import StoreIcon from './StoreIcon'
-import CopyToClipboardButton from './CopyToClipboardButton'
 import scoreWeights from './scoreWeights'
 import NavButton from './NavButton'
+import { followableNameLinks, namesToString } from './trackFunctions'
 
 class Track extends Component {
   constructor(props) {
@@ -40,52 +39,7 @@ class Track extends Component {
   }
 
   getStoreTrackByStoreCode(code) {
-    return this.props.stores.find(R.propEq('code', code))
-  }
-
-  async handleCartButtonClick(cartId, inCart) {
-    if (inCart) {
-      this.setState({ processingCart: true })
-      try {
-        await this.props.onRemoveFromCart(cartId, this.props.id)
-      } catch (e) {
-        console.error('Error while removing from cart', e)
-      } finally {
-        this.setState({ processingCart: false })
-      }
-    } else {
-      this.setState({ processingCart: true })
-      try {
-        await this.props.onAddToCart(cartId, this.props.id)
-      } catch (e) {
-        console.error('Error while adding to cart', e)
-      } finally {
-        this.setState({ processingCart: false })
-      }
-    }
-  }
-
-  async handleCreateCartClick(cartName) {
-    try {
-      this.setState({ processingCart: true })
-      const res = await this.props.onCreateCart(cartName)
-      this.setState({ newCartName: '' })
-      await this.props.onUpdateCarts()
-      return res
-    } catch (e) {
-      console.error('Error while creating new cart', e)
-    } finally {
-      this.setState({ processingCart: false })
-    }
-  }
-
-  async handlMarkPurchasedButtonClick() {
-    this.setState({ processingCart: true })
-    try {
-      await this.props.onMarkPurchased(this.props.id)
-    } finally {
-      this.setState({ processingCart: false })
-    }
+    return this.props.trackStores.find(R.propEq('code', code))
   }
 
   render() {
@@ -103,32 +57,11 @@ class Track extends Component {
     const title = `${this.props.title} ${this.props.version ? `(${this.props.version})` : ''}`
 
     const artistsAndRemixers = R.uniq(this.props.artists.concat(this.props.remixers))
-    const cartLink = new URL(`/cart/${this.props.cartUuid}`, window.location).toString()
-    const cartName = this.props.selectedCart?.name
-    const handleCartButtonClick = this.handleCartButtonClick.bind(this)
-    const createCart = this.handleCreateCartClick.bind(this)
-    const handleMarkPurchasedButtonClick = this.handlMarkPurchasedButtonClick.bind(this)
-    const currentCartId = this.props.listState === 'cart' ? this.props.selectedCartId : this.props.defaultCartId
+    const currentCartId = this.props.listState === 'carts' ? this.props.selectedCartId : this.props.defaultCartId
     const inCurrentCart = this.props.inCurrentCart
     const inDefaultCart = this.props.inDefaultCart
-    const inCart = this.props.listState === 'cart' ? inCurrentCart : inDefaultCart
+    const inCart = this.props.listState === 'carts' ? inCurrentCart : inDefaultCart
     const processingCart = this.props.processingCart || this.state.processingCart
-    const [shareLabel, shareContent, shareLink] =
-      this.props.listState === 'cart'
-        ? [
-            'Copy link to cart',
-            `Listen to "${artistsAndRemixers
-              .map(R.prop('name'))
-              .join(', ')} - ${title}" in "${cartName}" on Fomo Player: ${`${cartLink}#${this.props.index + 1}`}`,
-            'https://fomoplayer.com'
-          ]
-        : [
-            'Copy links to clipboard',
-            `Listen to "${artistsAndRemixers.map(R.prop('name')).join(', ')} - ${title}" on\n${this.props.stores
-              .map(store => `${store.name}: ${store.url || store.release.url}`)
-              .join('\n')}`,
-            'https://fomoplayer.com'
-          ]
 
     return (
       <tr
@@ -159,37 +92,17 @@ class Track extends Component {
         ) : null}
         <td className={'track-details tracks-cell'}>
           <div className={'track-details-left track-details-content'}>
-            <div className={'artist-cell track-table-cell'} title={artistsAndRemixers.map(R.prop('name'))}>
-              {R.intersperse(
-                ', ',
-                artistsAndRemixers.map(artist => (
-                  <span
-                    className={this.props.follows?.artists.find(({ id }) => id === artist.id) ? 'following' : ''}
-                    key={artist.name}
-                  >
-                    {artist.name}
-                  </span>
-                ))
-              )}
+            <div className={'artist-cell track-table-cell'} title={namesToString(artistsAndRemixers)}>
+              {followableNameLinks(artistsAndRemixers, this.props.follows, 'artist')}
             </div>
             <div className={'title-cell track-table-cell'} title={title}>
               {title}
             </div>
             <div
               className={`label-cell track-table-cell ${this.props.labels ? '' : 'empty-cell'}`}
-              title={this.props.labels.map(R.prop('name'))}
+              title={namesToString(this.props.labels)}
             >
-              {R.intersperse(
-                ', ',
-                this.props.labels.map(label => (
-                  <span
-                    className={this.props.follows?.labels.find(({ id }) => id === label.id) ? 'following' : ''}
-                    key={label.name}
-                  >
-                    {label.name}
-                  </span>
-                ))
-              )}
+              {followableNameLinks(this.props.labels, this.props.follows, 'label')}
             </div>
           </div>
           <div className={'track-details-center track-details-content'}>
@@ -229,7 +142,7 @@ class Track extends Component {
             </div>
           </div>
         </td>
-        {this.props.mode === 'app' ? (
+        {false && this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'}>
             {this.props.listState === 'new' && (
               <div className={'score-cell track-table-cell'} style={{ position: 'relative', overflow: 'visible' }}>
@@ -238,9 +151,9 @@ class Track extends Component {
                     <PillButton className={'table-cell-button'}>{Math.round(this.props.score)}</PillButton>
                   </span>
                   <div
-                    className={`popup-content${
-                      this.props.popupAbove ? ' popup-content__above' : ''
-                    } score-popup-content`}
+                    className={`popup_content${
+                      this.props.popupAbove ? ' popup_content__above' : ''
+                    } score-popup_content`}
                     style={{ zIndex: 100 }}
                   >
                     <table className={'score-table'}>
@@ -300,7 +213,7 @@ class Track extends Component {
                   className={'table-cell-button'}
                   onClick={e => {
                     e.stopPropagation()
-                    return handleCartButtonClick(currentCartId, inCart)
+                    return this.props.onCartButtonClick(currentCartId, inCart)
                   }}
                 >
                   <FontAwesomeIcon icon={inCart ? 'minus' : 'plus'} />{' '}
@@ -318,7 +231,7 @@ class Track extends Component {
                   </PillButton>
                 </span>
                 <div
-                  className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''} cart-popup-content`}
+                  className={`popup_content${this.props.popupAbove ? ' popup_content__above' : ''} cart-popup_content`}
                   style={{ zIndex: 100 }}
                 >
                   <div
@@ -336,7 +249,7 @@ class Track extends Component {
                               className="button button-push_button-small button-push_button-primary cart-button"
                               onClick={e => {
                                 e.stopPropagation()
-                                return handleCartButtonClick(id, isInCart)
+                                return this.props.onCartButtonClick(id, isInCart)
                               }}
                               key={`cart-${id}`}
                             >
@@ -356,8 +269,8 @@ class Track extends Component {
                       <button
                         className="button button-push_button-small button-push_button-primary"
                         onClick={async () => {
-                          const { id: cartId } = await createCart(this.state.newCartName)
-                          await handleCartButtonClick(cartId, false)
+                          const { id: cartId } = await this.props.onCreateCartClick(this.state.newCartName)
+                          await this.props.onCartButtonClick(cartId, false)
                         }}
                         disabled={this.state.newCartName === ''}
                       >
@@ -373,7 +286,7 @@ class Track extends Component {
                           className="button button-push_button-small button-push_button-primary"
                           onClick={e => {
                             e.stopPropagation()
-                            return handleMarkPurchasedButtonClick()
+                            return this.props.onMarkPurchasedButtonClick()
                           }}
                         >
                           Mark purchased and remove from carts
@@ -390,7 +303,7 @@ class Track extends Component {
           <div className={'open-cell track-table-cell'} style={{ overflow: 'visible', position: 'relative' }}>
             {R.intersperse(
               ' ',
-              this.props.stores.map(store => (
+              this.props.trackStores.map(store => (
                 <a
                   onClick={e => {
                     e.stopPropagation()
@@ -398,7 +311,7 @@ class Track extends Component {
                   href={store.url || store.release.url}
                   title={`Open in ${store.name}`}
                   key={store.name}
-                  className="pill pill-link table-cell-button"
+                  className="pill pill-link pill-link-collapse table-cell-button"
                   target="_blank"
                 >
                   <StoreIcon code={store.code} />
@@ -411,8 +324,8 @@ class Track extends Component {
               <>
                 <a
                   onClick={e => e.stopPropagation()}
-                  className="pill pill-link table-cell-button"
-                  href={`https://www.beatport.com/search/tracks?q=${searchString}`}
+                  className="pill pill-link pill-link-collapse table-cell-button"
+                  href={`${this.props.stores.find(R.propEq('storeName', 'Beatport')).searchUrl}${searchString}`}
                   title={'Search from Beatport'}
                   target="_blank"
                 >
@@ -426,8 +339,8 @@ class Track extends Component {
               <>
                 <a
                   onClick={e => e.stopPropagation()}
-                  className="pill pill-link table-cell-button"
-                  href={`https://bandcamp.com/search?q=${searchString}`}
+                  className="pill pill-link pill-link-collapse table-cell-button"
+                  href={`${this.props.stores.find(R.propEq('storeName', 'Bandcamp')).searchUrl}${searchString}`}
                   title={'Search from Bandcamp'}
                   target="_blank"
                 >
@@ -441,8 +354,8 @@ class Track extends Component {
               <>
                 <a
                   onClick={e => e.stopPropagation()}
-                  className="pill pill-link table-cell-button"
-                  href={`https://open.spotify.com/search/${searchString}`}
+                  className="pill pill-link pill-link-collapse table-cell-button"
+                  href={`${this.props.stores.find(R.propEq('storeName', 'Spotify')).searchUrl}${searchString}`}
                   title={'Search from Spotify'}
                   target="_blank"
                 >
@@ -454,7 +367,7 @@ class Track extends Component {
             )}
             {this.props.enabledStoreSearch?.includes('Youtube') && (
               <a
-                className="pill pill-link table-cell-button"
+                className="pill pill-link pill-link-collapse table-cell-button"
                 href={`https://www.youtube.com/results?search_query=${searchString}`}
                 title={'Search from Youtube'}
                 onClick={e => {
@@ -467,53 +380,6 @@ class Track extends Component {
                 <FontAwesomeIcon icon={'search'} />
               </a>
             )}
-            <div className={'share-button-container'}>
-              <span className={'popup-anchor'}>
-                <PillButton className={'table-cell-button'}>
-                  <FontAwesomeIcon icon={'share'} /> <span className={'pill-button-text'}>Share</span>
-                  <FontAwesomeIcon icon={'caret-down'} />
-                </PillButton>
-              </span>
-              <div
-                className={`popup-content${this.props.popupAbove ? ' popup-content__above' : ''} share-popup-content`}
-                style={{ zIndex: 100 }}
-              >
-                <span
-                  className="pill pill-button table-cell-button"
-                  style={{ display: 'block', width: '100%', margin: 0, marginBottom: 4, padding: 0, border: 0 }}
-                >
-                  <span className="pill-button-contents">
-                    <CopyToClipboardButton
-                      title={shareLabel}
-                      label={shareLabel}
-                      content={shareContent}
-                      style={{ height: '2rem', width: '100%' }}
-                    />
-                  </span>
-                </span>
-                <ShareLink
-                  href={`https://telegram.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(
-                    shareContent
-                  )}`}
-                  icon={<FontAwesomeIcon icon={['fab', 'telegram']} />}
-                  label={'Share on Telegram'}
-                />
-                <ShareLink
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                    shareLink
-                  )}&t=${encodeURIComponent(shareContent)}`}
-                  icon={<FontAwesomeIcon icon={['fab', 'facebook']} />}
-                  label={'Share on Facebook'}
-                />
-                <ShareLink
-                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
-                    shareLink
-                  )}&text=${encodeURIComponent(shareContent)}`}
-                  icon={<FontAwesomeIcon icon={['fab', 'twitter']} />}
-                  label={'Share on Twitter'}
-                />
-              </div>
-            </div>
           </div>
         </td>
       </tr>

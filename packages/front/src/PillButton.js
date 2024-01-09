@@ -1,3 +1,4 @@
+import "./PillButton.css"
 import React, { Component } from 'react'
 
 class PillButton extends Component {

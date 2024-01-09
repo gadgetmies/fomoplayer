@@ -1,3 +1,4 @@
+import './Settings.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { Component } from 'react'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
@@ -9,13 +10,47 @@ import * as R from 'ramda'
 import scoreWeightDetails from './scoreWeights'
 import Tracks from './Tracks'
 import FollowItemButton from './FollowItemButton'
-import { Link } from 'react-router-dom'
+import { Link, withRouter } from 'react-router-dom'
 import { apiURL } from './config'
 import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
 import { SettingsHelp } from './SettingsHelp'
 import ImportPlaylistButton from './ImportPlaylistButton'
 import FollowedItem from './FollowedItem'
+import SearchBar from './SearchBar'
+
+const spotifyAuthorizationURL = `${apiURL}/auth/spotify?path=/settings/integrations`
+const AuthorizationButtons = props => (
+  <>
+    <p>
+      <span className={'input-layout'}>
+        {!props.hasWriteAccess && (
+          <a
+            href={`${spotifyAuthorizationURL}&write=true`}
+            className="button button-push_button button-push_button-small button-push_button-primary no-style-link"
+          >
+            Grant read and write access
+          </a>
+        )}
+        {props.hasWriteAccess !== false && (
+          <>
+            <a
+              href={`${spotifyAuthorizationURL}&write=false`}
+              className="button button-push_button button-push_button-small button-push_button-primary no-style-link"
+            >
+              {props.hasWriteAccess === true ? 'Revoke write access' : 'Grant read-only access'}
+            </a>
+          </>
+        )}
+      </span>
+      {props.hasWriteAccess === true && <RevokeWarning />}
+    </p>
+  </>
+)
+
+const RevokeWarning = () => (
+  <div style={{ fontSize: '75%', marginTop: 5 }}>Warning! This will disable all cart synchronizations</div>
+)
 
 class Settings extends Component {
   unlockMarkAllHeard() {
@@ -287,8 +322,15 @@ class Settings extends Component {
     )
   }
 
+  componentDidUpdate({ location: { pathname: prevPath } }) {
+    const newPath = this.props.location.pathname
+    if (prevPath !== newPath && this.props.location.pathname.startsWith('/settings')) {
+      this.setState({ page: newPath.split('/').pop() || 'following' })
+    }
+  }
+
   render() {
-    const spotifyAuthorizationURL = `${apiURL}/auth/spotify?state=/settings/integrations`
+    const spotifyAuthorization = this.state.authorizations?.find(R.propEq('store_name', 'Spotify'))
     return (
       <div className="page-container scroll-container" style={{ ...this.props.style }}>
         <SettingsHelp
@@ -316,7 +358,7 @@ class Settings extends Component {
                 checked={this.state.page === 'following'}
                 onChange={() => this.onShowPage('following')}
               />
-              <label className="select-button--button" htmlFor="settings-state-following" data-help-id="following-tab">
+              <label className="select_button-button" htmlFor="settings-state-following" data-help-id="following-tab">
                 Following
               </label>
               <input
@@ -326,7 +368,7 @@ class Settings extends Component {
                 checked={this.state.page === 'sorting'}
                 onChange={() => this.onShowPage('sorting')}
               />
-              <label className="select-button--button" htmlFor="settings-state-sorting" data-help-id="sorting-tab">
+              <label className="select_button-button" htmlFor="settings-state-sorting" data-help-id="sorting-tab">
                 Sorting
               </label>
               <input
@@ -336,7 +378,7 @@ class Settings extends Component {
                 checked={this.state.page === 'carts'}
                 onChange={() => this.onShowPage('carts')}
               />
-              <label className="select-button--button" htmlFor="settings-state-carts" data-help-id="carts-tab">
+              <label className="select_button-button" htmlFor="settings-state-carts" data-help-id="carts-tab">
                 Carts
               </label>
               <input
@@ -347,7 +389,7 @@ class Settings extends Component {
                 onChange={() => this.onShowPage('notifications')}
               />
               <label
-                className="select-button--button"
+                className="select_button-button"
                 htmlFor="settings-state-notifications"
                 data-help-id="notifications-tab"
               >
@@ -360,7 +402,7 @@ class Settings extends Component {
                 checked={this.state.page === 'ignores'}
                 onChange={() => this.onShowPage('ignores')}
               />
-              <label className="select-button--button" htmlFor="settings-state-ignores" data-help-id="ignores-tab">
+              <label className="select_button-button" htmlFor="settings-state-ignores" data-help-id="ignores-tab">
                 Ignores
               </label>
               <input
@@ -370,11 +412,7 @@ class Settings extends Component {
                 checked={this.state.page === 'collection'}
                 onChange={() => this.onShowPage('collection')}
               />
-              <label
-                className="select-button--button"
-                htmlFor="settings-state-collection"
-                data-help-id="collection-tab"
-              >
+              <label className="select_button-button" htmlFor="settings-state-collection" data-help-id="collection-tab">
                 Collection
               </label>
               <input
@@ -385,7 +423,7 @@ class Settings extends Component {
                 onChange={() => this.onShowPage('integrations')}
               />
               <label
-                className="select-button--button"
+                className="select_button-button"
                 htmlFor="settings-state-integrations"
                 data-help-id="integrations-tab"
               >
@@ -397,106 +435,93 @@ class Settings extends Component {
             <>
               <label>
                 <h4>Search by name or URL to follow:</h4>
-                <div className="input-layout">
-                  <label className="search-bar">
-                    <input
-                      data-onboarding-id="follow-search"
-                      className="text-input text-input-large text-input-dark search"
-                      disabled={this.state.updatingFollowWithUrl !== null}
-                      value={this.state.followQuery}
-                      onChange={e => {
-                        // TODO: replace aborted and debounce with flatmapLatest
+                <div className="input-layout" style={{ maxWidth: '40ch' }} data-onboarding-id="follow-search">
+                  <SearchBar
+                    disabled={this.state.updatingFollowWithUrl !== null}
+                    styles="large dark"
+                    value={this.state.followQuery}
+                    onClearSearch={this.clearSearch.bind(this)}
+                    onChange={e => {
+                      // TODO: replace aborted and debounce with flatmapLatest
+                      this.setState({
+                        followQuery: e.target.value,
+                        followDetails: undefined,
+                        updatingFollowDetails: null
+                      })
+                      if (this.state.followDetailsDebounce) {
+                        clearTimeout(this.state.followDetailsDebounce)
                         this.setState({
-                          followQuery: e.target.value,
-                          followDetails: undefined,
-                          updatingFollowDetails: null
+                          followDetailsDebounce: undefined,
+                          followDetailsUpdateAborted: this.state.followDetailsDebounce !== undefined
                         })
-                        if (this.state.followDetailsDebounce) {
-                          clearTimeout(this.state.followDetailsDebounce)
-                          this.setState({
-                            followDetailsDebounce: undefined,
-                            followDetailsUpdateAborted: this.state.followDetailsDebounce !== undefined
-                          })
-                        }
+                      }
 
-                        if (e.target.value === '') {
-                          return
-                        }
-                        this.setState({
-                          updatingFollowDetails: Object.fromEntries(
-                            this.props.stores.map(({ storeName }) => [storeName, true])
-                          ),
-                          followDetailsUpdateAborted: false
-                        })
-                        const timeout = setTimeout(async () => {
-                          if (this.state.followQuery.match('^https://')) {
-                            try {
-                              const results = await (
-                                await requestWithCredentials({ path: `/followDetails?q=${this.state.followQuery}` })
-                              ).json()
-                              if (this.state.followDetailsUpdateAborted) return
-                              this.setState({ followDetails: results, updatingFollowDetails: null })
-                            } catch (e) {
+                      if (e.target.value === '') {
+                        return
+                      }
+                      this.setState({
+                        updatingFollowDetails: Object.fromEntries(
+                          this.props.stores.map(({ storeName }) => [storeName, true])
+                        ),
+                        followDetailsUpdateAborted: false
+                      })
+                      const timeout = setTimeout(async () => {
+                        if (this.state.followQuery.match('^https://')) {
+                          try {
+                            const results = await (
+                              await requestWithCredentials({ path: `/followDetails?q=${this.state.followQuery}` })
+                            ).json()
+                            if (this.state.followDetailsUpdateAborted) return
+                            this.setState({ followDetails: results, updatingFollowDetails: null })
+                          } catch (e) {
+                            console.error('Error updating follow details', e)
+                            clearTimeout(this.state.followDetailsDebounce)
+                            this.setState({
+                              updatingFollowDetails: null,
+                              followDetailsDebounce: undefined
+                            })
+                          }
+                        } else {
+                          const promises = this.props.stores.map(({ storeName }) =>
+                            requestWithCredentials({
+                              path: `/stores/${storeName}/search/?q=${this.state.followQuery}`
+                            })
+                              .then(async res => (await res.json()).map(result => ({ stores: [storeName], ...result })))
+                              .then(json => {
+                                if (this.state.followDetailsUpdateAborted) return
+                                this.setState({
+                                  followDetails:
+                                    this.state.followDetails === undefined
+                                      ? json
+                                      : R.sortBy(
+                                          R.compose(R.toLower, R.prop('name')),
+                                          this.state.followDetails.concat(json)
+                                        ),
+                                  updatingFollowDetails: { ...this.state.updatingFollowDetails, [storeName]: false }
+                                })
+                              })
+                          )
+                          Promise.all(promises)
+                            .catch(e => {
                               console.error('Error updating follow details', e)
                               clearTimeout(this.state.followDetailsDebounce)
                               this.setState({
                                 updatingFollowDetails: null,
                                 followDetailsDebounce: undefined
                               })
-                            }
-                          } else {
-                            const promises = this.props.stores.map(({ storeName }) =>
-                              requestWithCredentials({
-                                path: `/stores/${storeName}/search/?q=${this.state.followQuery}`
-                              })
-                                .then(async res =>
-                                  (await res.json()).map(result => ({ stores: [storeName], ...result }))
-                                )
-                                .then(json => {
-                                  if (this.state.followDetailsUpdateAborted) return
-                                  this.setState({
-                                    followDetails:
-                                      this.state.followDetails === undefined
-                                        ? json
-                                        : R.sortBy(
-                                            R.compose(R.toLower, R.prop('name')),
-                                            this.state.followDetails.concat(json)
-                                          ),
-                                    updatingFollowDetails: { ...this.state.updatingFollowDetails, [storeName]: false }
-                                  })
-                                })
-                            )
-                            Promise.all(promises)
-                              .then(() => {
-                                if (!this.state.followDetailsUpdateAborted && this.state.followDetails.length !== 0) {
-                                  if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Search)) {
-                                    Onboarding.helpers.next()
-                                  }
+                            })
+                            .finally(() => {
+                              if (!this.state.followDetailsUpdateAborted && this.state.followDetails?.length !== 0) {
+                                if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Search)) {
+                                  return setTimeout(() => Onboarding.helpers.next(), 500)
                                 }
-                              })
-                              .catch(e => {
-                                console.error('Error updating follow details', e)
-                                clearTimeout(this.state.followDetailsDebounce)
-                                this.setState({
-                                  updatingFollowDetails: null,
-                                  followDetailsDebounce: undefined
-                                })
-                              })
-                          }
-                        }, 500)
-                        this.setState({ followDetailsDebounce: timeout })
-                      }}
-                    />
-                    {this.state.followQuery ? (
-                      <FontAwesomeIcon
-                        onClick={this.clearSearch.bind(this)}
-                        className={'search-input-icon clear-search'}
-                        icon="times-circle"
-                      />
-                    ) : (
-                      <FontAwesomeIcon className={'search-input-icon'} icon="search" />
-                    )}
-                  </label>
+                              }
+                            })
+                        }
+                      }, 500)
+                      this.setState({ followDetailsDebounce: timeout })
+                    }}
+                  />
                 </div>
                 {this.state.updatingFollowDetails !== null &&
                 Object.values(this.state.updatingFollowDetails).some(val => val) ? (
@@ -587,7 +612,7 @@ class Settings extends Component {
                             await this.updateArtistFollows()
                             this.setState({ updatingArtistFollows: false })
                             if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Star)) {
-                              Onboarding.helpers.next()
+                              setTimeout(() => Onboarding.helpers.next(), 500)
                             }
                           }}
                           onUnfollowClick={async () => {
@@ -599,7 +624,10 @@ class Settings extends Component {
                             await this.updateArtistFollows()
                             this.setState({ updatingArtistFollows: false })
                             if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Unfollow)) {
-                              Onboarding.helpers.next()
+                              setTimeout(() => {
+                                document.querySelector('[data-onboarding-id=support-button]').scrollIntoView()
+                                Onboarding.helpers.next()
+                              }, 500)
                             }
                           }}
                           {...{ storeName, title: name, starred, url }}
@@ -776,7 +804,7 @@ class Settings extends Component {
                         ) : null}
                       </div>
                       <h5>Synchronization</h5>
-                      {!this.state.authorizations?.includes('Spotify') ? (
+                      {!spotifyAuthorization ? (
                         <p>
                           Grant Fomo Player access to Spotify from the{' '}
                           <a
@@ -1041,7 +1069,7 @@ class Settings extends Component {
                 <button
                   type="submit"
                   disabled={this.state.markAllHeardUnlocked}
-                  className={`button button-push_button-small button-push_button-primary`}
+                  className={`button button-push_button button-push_button-small button-push_button-primary`}
                   style={this.props.style}
                   onClick={this.unlockMarkAllHeard.bind(this)}
                 >
@@ -1061,38 +1089,41 @@ class Settings extends Component {
           {this.state.page === 'integrations' ? (
             <>
               <p>
-                Fomo Player can synchronize your cart contents with Spotify playlists. To enable this you need to give
-                Fomo Player rights to create and manage playlists in your Spotify account. The authorize link below will
-                take you to a Spotify page where you can grant the rights. After granting the rights, you will be taken
-                back to Fomo Player and you can enable cart synchronization in the{' '}
+                Fomo Player can synchronize your cart contents with Spotify playlists and import followed artists as
+                well as playlists from Spotify.
+              </p>
+              <p>
+                To enable synchronization of Spotify playlists with Fomo Player carts and to export followed artists to
+                Spotify, you need to grant Fomo Player read and write rights in order to create playlists for the carts
+                and to manage those playlists and the artist follows in your Spotify account. If however you do not need
+                the synchronization and export, or are afraid of granting write access, you can grant only read access
+                to enable importing playlists and followed artists from Spotify.
+              </p>
+              <p>
+                The authorize links below will take you to a Spotify page where you can grant the rights. After granting
+                the rights, you will be taken back to Fomo Player and you can enable cart synchronization in the{' '}
                 <a style={{ textDecoration: 'underline' }} onClick={this.onShowPage.bind(this, 'carts')}>
                   Carts tab
                 </a>{' '}
                 in the settings.
               </p>
               <h4>Spotify</h4>
-              {this.state.authorizations?.includes('Spotify') ? (
+              {spotifyAuthorization ? (
                 <>
                   <p>
                     <SpinnerButton
                       onClick={this.onDeauthorizeSpotifyClicked.bind(this)}
                       loading={this.state.deauthorizingSpotify}
                     >
-                      De-authorize
+                      Revoke authorization
                     </SpinnerButton>
-                    <div style={{ fontSize: '75%', marginTop: 5 }}>
-                      Warning! This will disable all cart synchronizations
-                    </div>
+                    <RevokeWarning />
                   </p>
-                  <p>
-                    <a
-                      href={spotifyAuthorizationURL}
-                      className="button button-push_button-small button-push_button-primary no-style-link"
-                    >
-                      Re-authorize
-                    </a>
-                    <div style={{ fontSize: '75%', marginTop: 5 }}>Try this if synchronization does not work</div>
+                  <h5>Re-authorize</h5>
+                  <p style={{ fontSize: '75%', marginTop: 5 }}>
+                    Use this if you want to enable or disable write access to Spotify playlists.
                   </p>
+                  <AuthorizationButtons hasWriteAccess={spotifyAuthorization?.has_write_access} />
                   <h5>Export followed artists</h5>
                   <p>
                     <SpinnerButton
@@ -1188,9 +1219,6 @@ class Settings extends Component {
                   </p>
                   <h5>Import playlists</h5>
                   <p>
-                    You can import playlists from Spotify as carts to e.g. check the track availability from stores.
-                  </p>
-                  <p>
                     <SpinnerButton
                       loading={this.state.fetchingPlaylists}
                       onClick={() => {
@@ -1235,14 +1263,8 @@ class Settings extends Component {
                 </>
               ) : (
                 <>
-                  <p>
-                    <a
-                      href={spotifyAuthorizationURL}
-                      className="button button-push_button-small button-push_button-primary no-style-link"
-                    >
-                      Authorize
-                    </a>
-                  </p>
+                  <h5>Authorize</h5>
+                  <AuthorizationButtons />
                   <p>
                     <strong>Note</strong>: Even when the authorization is successful, you will not be redirected back to
                     this view (this feature is work in progress). After you return to the player, just reopen the
@@ -1322,4 +1344,4 @@ class Settings extends Component {
   }
 }
 
-export default Settings
+export default withRouter(Settings)

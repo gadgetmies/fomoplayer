@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import MenuNavButton from './MenuNavButton'
-import { requestWithCredentials } from './request-json-with-credentials.js'
 import './Menu.css'
 import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
@@ -9,15 +8,6 @@ import Onboarding from './Onboarding'
 export default class Menu extends Component {
   constructor(props) {
     super(props)
-  }
-
-  logout = async () => {
-    try {
-      await requestWithCredentials({ path: this.props.logoutPath, method: 'POST' })
-    } catch (e) {
-      console.error('Logout failed', e)
-    }
-    this.props.onLogoutDone()
   }
 
   render() {

@@ -1,0 +1,3 @@
+ALTER TABLE user__store_authorization
+  DROP COLUMN user__store_authorization_has_write_access
+;

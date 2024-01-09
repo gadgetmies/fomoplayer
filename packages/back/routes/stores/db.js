@@ -5,7 +5,11 @@ module.exports.queryStores = () =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryStores
-SELECT store_name AS "storeName", store_id AS "id", store_purchase_available AS "purchaseAvailable"
-FROM store
-`
+    SELECT store_name AS "storeName"
+         , store_id AS "id"
+         , store_purchase_available AS "purchaseAvailable"
+         , store_search_url AS "searchUrl"
+    FROM
+      store
+    `
   )
