@@ -136,6 +136,8 @@ class App extends Component {
       isMobile: this.mobileCheck(),
       onboarding: false,
       search: '',
+      searchInProgress: false,
+      searchError: undefined,
       searchResults: [],
       listState: 'new',
       heardTracks: defaultTracksData.tracks.heard,
@@ -514,10 +516,19 @@ class App extends Component {
   }
 
   async search(search, sort = '-released') {
-    const searchResults = await (
-      await requestWithCredentials({ path: `/tracks?q=${search}&sort=${sort || ''}` })
-    ).json()
-    this.setState({ searchResults })
+    this.setState({ searchInProgress: true, searchError: undefined })
+    try {
+      const searchResults = await (
+        await requestWithCredentials({ path: `/tracks?q=${search}&sort=${sort || ''}` })
+      ).json()
+      this.setState({ searchResults, searchError: undefined })
+      return undefined
+    } catch (e) {
+      console.error('Search failed', e)
+      this.setState({ searchError: 'Search failed, please try again.' })
+    } finally {
+      this.setState({ searchInProgress: false })
+    }
   }
 
   logout = async () => {
@@ -675,6 +686,7 @@ class App extends Component {
                   modifyingNotification={this.state.modifyingNotification}
                   emailVerified={this.state.userSettings.emailVerified}
                   triggerSearch={this.triggerSearch.bind(this)}
+                  searchInProgress={this.state.searchInProgress}
                   onSearch={this.search.bind(this)}
                   onLogoutClicked={this.logout.bind(this)}
                   handleToggleNotificationClick={this.handleToggleNotificationClick.bind(this)}
@@ -742,6 +754,9 @@ class App extends Component {
                           mode="app"
                           listState={settingsVisible ? 'new' : listState}
                           search={this.state.search || ''}
+                          searchResults={this.state.searchResults}
+                          searchInProgress={this.state.searchInProgress}
+                          searchError={this.state.searchError}
                           initialPosition={NaN}
                           addingToCart={this.state.addingToCart}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
@@ -749,7 +764,6 @@ class App extends Component {
                           follows={this.state.follows}
                           tracks={this.state.tracksData.tracks}
                           heardTracks={this.state.heardTracks}
-                          searchResults={this.state.searchResults}
                           stores={this.state.stores}
                           newTracks={this.state.tracksData.meta.newTracks}
                           totalTracks={this.state.tracksData.meta.totalTracks}
@@ -765,7 +779,6 @@ class App extends Component {
                           processingCart={this.state.processingCart}
                           isMobile={this.state.isMobile}
                           style={{ display: !settingsVisible ? 'block' : 'none' }}
-                          searchInProgress={this.state.searchInProgress}
                           onIgnoreArtistsByLabels={this.ignoreArtistsByLabels.bind(this)}
                           onSetCurrentTrack={this.setCurrentTrack.bind(this)}
                           onOpenFollowPopup={this.openFollowPopup.bind(this)}

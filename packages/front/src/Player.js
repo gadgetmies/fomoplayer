@@ -335,6 +335,8 @@ class Player extends Component {
           follows={this.props.follows}
           notificationsEnabled={this.props.notificationsEnabled}
           search={this.props.search}
+          searchInProgress={this.props.searchInProgress}
+          searchError={this.props.searchError}
           sort={this.props.sort}
           onFollow={this.props.onFollow}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}

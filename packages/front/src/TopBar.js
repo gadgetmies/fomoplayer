@@ -21,8 +21,6 @@ class TopBar extends Component {
     this.state = {
       requestNotificationSearch: '',
       searchDebounce: undefined,
-      searchInProgress: false,
-      searchError: undefined,
       searchActive: query !== null,
       sort,
       supportMenuOpen: false,
@@ -44,7 +42,7 @@ class TopBar extends Component {
   }
 
   async setSearch(search, skipDebounce = false) {
-    this.setState({ search, searchActive: true, searchError: undefined })
+    this.setState({ search, searchActive: true })
 
     if (this.state.searchDebounce) {
       clearTimeout(this.state.searchDebounce)
@@ -57,17 +55,10 @@ class TopBar extends Component {
 
     const timeout = setTimeout(
       async () => {
-        this.setState({ searchDebounce: undefined, searchInProgress: true, listState: 'search' })
-        try {
-          this.props.history.push(`/search/?q=${this.state.search.trim()}&sort=${this.state.sort || ''}`)
-          // TODO: cancel this request if new one is requested
-          await this.props.onSearch(this.state.search, this.state.sort)
-        } catch (e) {
-          console.error(e)
-          this.setState({ searchError: 'Search failed, please try again.' })
-        } finally {
-          this.setState({ searchInProgress: false })
-        }
+        this.setState({ searchDebounce: undefined, listState: 'search' })
+        this.props.history.push(`/search/?q=${this.state.search.trim()}&sort=${this.state.sort || ''}`)
+        // TODO: cancel this request if new one is requested
+        await this.props.onSearch(this.state.search, this.state.sort)
       },
       skipDebounce ? 0 : 1000
     )

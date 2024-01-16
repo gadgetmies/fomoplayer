@@ -63,9 +63,9 @@ class Tracks extends Component {
   renderTracks(tracks, carts, enabledStoreSearch) {
     const emptyListLabels = {
       search:
-        this.state.searchError !== undefined
-          ? this.state.searchError
-          : this.props.searchDebounce !== undefined
+        this.props.searchError !== undefined
+          ? this.props.searchError
+          : this.props.searchInProgress
           ? 'Searching...'
           : 'No results',
       cart:
