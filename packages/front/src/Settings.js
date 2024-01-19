@@ -231,7 +231,7 @@ class Settings extends Component {
 
   onShowPage(page) {
     this.setState({ page })
-    window.history.replaceState(undefined, undefined, `/settings/${page}`)
+    this.props.history.push(`/settings/${page}`)
   }
 
   async setScoreWeight(property, value) {
