@@ -357,9 +357,6 @@ class Player extends Component {
           }}
           onFollowClicked={this.props.onOpenFollowPopup.bind(this)}
           onIgnoreClicked={this.props.onOpenIgnorePopup.bind(this)}
-          onShowNewClicked={this.props.onSetListState.bind(this, 'new')}
-          onShowHeardClicked={this.props.onSetListState.bind(this, 'heard')}
-          onShowRecentlyAddedClicked={this.props.onSetListState.bind(this, 'recent')}
           onSelectCart={this.props.onSelectCart.bind(this)}
           onRequestNotificationUpdate={this.props.onRequestNotificationUpdate}
           onToggleStoreEnabled={this.toggleStoreEnabled.bind(this)}

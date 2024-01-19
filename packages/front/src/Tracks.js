@@ -286,7 +286,6 @@ class Tracks extends Component {
                   id="tracklist-state-new"
                   name="tracklist-state"
                   defaultChecked={this.props.listState === 'new'}
-                  onChange={this.props.onShowNewClicked}
                 />
                 <label
                   className="select_button-button state-select_button-button select_button-button__large"
@@ -302,7 +301,6 @@ class Tracks extends Component {
                   id="tracklist-state-recent"
                   name="tracklist-state"
                   defaultChecked={this.props.listState === 'recent'}
-                  onChange={this.props.onShowRecentlyAddedClicked}
                 />
                 <label
                   className="select_button-button state-select_button-button select_button-button__large"
@@ -318,7 +316,6 @@ class Tracks extends Component {
                   id="tracklist-state-heard"
                   name="tracklist-state"
                   defaultChecked={this.props.listState === 'heard'}
-                  onChange={this.props.onShowHeardClicked}
                 />
                 <label
                   className="select_button-button state-select_button-button select_button-button__large"
