@@ -516,6 +516,7 @@ class App extends Component {
   }
 
   async search(search, sort = '-released') {
+    if (search === '') return
     this.setState({ searchInProgress: true, searchError: undefined })
     try {
       const searchResults = await (
