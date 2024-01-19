@@ -13,7 +13,7 @@ export const followableNameLinks = (followable, follows, type) => {
   const links = followable.map(({ id, name }) => (
     <Link
       className={follows && follows[`${type}s`]?.some(({ id: followableId }) => id === followableId) ? 'followed' : ''}
-      key={name}
+      key={`${type}-${id}`}
       to={`/search?q=${type}:${id}`}
       onClick={e => e.stopPropagation()}
     >
