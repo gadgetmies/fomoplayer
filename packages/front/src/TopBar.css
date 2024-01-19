@@ -322,8 +322,8 @@
 }
 
 @media (min-width: 1280px) {
-  .menu_left .button-top_bar_button:first-of-type {
-    padding-left: 16px;
+  .top_bar_contents {
+    margin: 0 3rem;
   }
 
   .menu_search {
