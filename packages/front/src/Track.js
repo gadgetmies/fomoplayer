@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import PillButton from './PillButton'
 import StoreIcon from './StoreIcon'
 import scoreWeights from './scoreWeights'
-import NavButton from './NavButton'
 import { followableNameLinks, namesToString } from './trackFunctions'
 import DropDownButton from './DropDownButton'
 import { Link } from 'react-router-dom'
@@ -63,6 +62,43 @@ class Track extends Component {
     const processingCart = this.props.processingCart
     const removeLabel = this.props.listState === 'carts' ? 'Remove from current cart' : 'Remove from default cart'
 
+    const actions = this.props.stores
+      ?.map(({ storeName, searchUrl }) => {
+        if (!this.props.enabledStores?.includes(storeName)) return null
+        const trackStore = this.props.trackStores.find(R.propEq('name', storeName))
+        return trackStore
+          ? this.props.enabledStores?.includes(storeName) && (
+              <a
+                onClick={e => {
+                  e.stopPropagation()
+                }}
+                href={trackStore.url || trackStore.release.url}
+                title={`Open in ${trackStore.name}`}
+                key={trackStore.name}
+                className="pill pill-link pill-link-collapse table-cell-button"
+                target="_blank"
+              >
+                <StoreIcon code={trackStore.code} />
+                <span className={'pill-link-text'}>{trackStore.name}</span>
+                <FontAwesomeIcon icon="external-link-alt" />
+              </a>
+            )
+          : this.props.enabledStoreSearch?.includes(storeName) && (
+              <a
+                onClick={e => e.stopPropagation()}
+                className="pill pill-link pill-link-collapse table-cell-button"
+                href={`${searchUrl}${searchString}`}
+                title={`Search from ${storeName}`}
+                target="_blank"
+              >
+                <StoreIcon code={storeName.toLowerCase()} />
+                <span className={'pill-link-text'}>{storeName}</span>
+                <FontAwesomeIcon icon={'search'} />
+              </a>
+            )
+      })
+      ?.filter(i => i)
+    
     return (
       <tr
         ref={'row'}
@@ -145,15 +181,12 @@ class Track extends Component {
         {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'}>
             {this.props.listState === 'new' && (
-              <div
-                className={'score-cell track-table-cell popup_container'}
-                style={{ overflow: 'visible' }}
-              >
+              <div className={'score-cell track-table-cell popup_container'} style={{ overflow: 'visible' }}>
                 <span className={'popup-anchor'}>
                   <PillButton className={'table-cell-button'}>{Math.round(this.props.score)}</PillButton>
                 </span>
                 <div
-                  style={{top: 'auto'}}
+                  style={{ top: 'auto' }}
                   className={`popup_content${this.props.popupAbove ? ' popup_content__above' : ''} score-popup_content`}
                 >
                   <table className={'score-table'}>
@@ -269,40 +302,7 @@ class Track extends Component {
             {R.intersperse(
               ' ',
               //this.props.trackStores.map(store => (
-              this.props.stores?.map(({ storeName, searchUrl }) => {
-                if (!this.props.enabledStores?.includes(storeName)) return null
-                const trackStore = this.props.trackStores.find(R.propEq('name', storeName))
-                return trackStore
-                  ? this.props.enabledStores?.includes(storeName) && (
-                      <a
-                        onClick={e => {
-                          e.stopPropagation()
-                        }}
-                        href={trackStore.url || trackStore.release.url}
-                        title={`Open in ${trackStore.name}`}
-                        key={trackStore.name}
-                        className="pill pill-link pill-link-collapse table-cell-button"
-                        target="_blank"
-                      >
-                        <StoreIcon code={trackStore.code} />
-                        <span className={'pill-link-text'}>{trackStore.name}</span>
-                        <FontAwesomeIcon icon="external-link-alt" />
-                      </a>
-                    )
-                  : this.props.enabledStoreSearch?.includes(storeName) && (
-                      <a
-                        onClick={e => e.stopPropagation()}
-                        className="pill pill-link pill-link-collapse table-cell-button"
-                        href={`${searchUrl}${searchString}`}
-                        title={`Search from ${storeName}`}
-                        target="_blank"
-                      >
-                        <StoreIcon code={storeName.toLowerCase()} />
-                        <span className={'pill-link-text'}>{storeName}</span>
-                        <FontAwesomeIcon icon={'search'} />
-                      </a>
-                    )
-              })
+              actions || []
             )}{' '}
             {this.props.enabledStoreSearch?.includes('Youtube') && (
               <a
