@@ -429,6 +429,7 @@ class Preview extends Component {
                 ) : (
                   <DropDownButton
                     label={!this.props.inCart ? 'Add to cart' : 'Remove from cart'}
+                    title={!this.props.inCart ? 'Add to default cart' : 'Remove from default cart'}
                     icon={this.props.inCart ? 'minus' : 'cart-plus'}
                     loading={this.props.processingCart}
                     disabled={this.props.inCart === null || this.props.togglingCurrentInCart}
