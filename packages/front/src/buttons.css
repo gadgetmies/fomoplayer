@@ -65,7 +65,7 @@ button::-moz-focus-inner {
 
 .button-push_button-primary {
   background-color: #b40089;
-  border: #530059;
+  border-color: #530059;
   color: white;
   transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
     box-shadow 0.15s ease-in-out;
