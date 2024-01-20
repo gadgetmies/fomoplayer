@@ -235,7 +235,7 @@ class Tracks extends Component {
     )
 
     return (
-      <div style={{ height: this.props.height, position: 'relative', borderTop: '1px solid black' }} className="tracks">
+      <div style={{ height: this.props.height, borderTop: '1px solid black' }} className="tracks">
         <div className={'top-bar input-layout'} style={{ width: '100%' }}>
           <div className="tracks-top_bar_group" style={{ width: '100%', display: 'flex' }}>
             {this.props.listState === 'carts' ? (

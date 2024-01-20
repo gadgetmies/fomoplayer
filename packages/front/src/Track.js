@@ -147,14 +147,14 @@ class Track extends Component {
             {this.props.listState === 'new' && (
               <div
                 className={'score-cell track-table-cell popup_container'}
-                style={{ position: 'relative', overflow: 'visible' }}
+                style={{ overflow: 'visible' }}
               >
                 <span className={'popup-anchor'}>
                   <PillButton className={'table-cell-button'}>{Math.round(this.props.score)}</PillButton>
                 </span>
                 <div
+                  style={{top: 'auto'}}
                   className={`popup_content${this.props.popupAbove ? ' popup_content__above' : ''} score-popup_content`}
-                  style={{ zIndex: 100, top: 'auto' }}
                 >
                   <table className={'score-table'}>
                     <thead>
@@ -265,7 +265,7 @@ class Track extends Component {
           </td>
         ) : null}
         <td className={'open-share-cell tracks-cell'}>
-          <div className={'open-cell track-table-cell'} style={{ overflow: 'visible', position: 'relative' }}>
+          <div className={'open-cell track-table-cell'} style={{ overflow: 'visible' }}>
             {R.intersperse(
               ' ',
               //this.props.trackStores.map(store => (

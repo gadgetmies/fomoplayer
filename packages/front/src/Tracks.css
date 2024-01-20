@@ -138,6 +138,7 @@
 
 .score-popup_content {
   flex-direction: column;
+  align-items: center;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -174,6 +175,7 @@
 
   .table-cell-button {
     width: 100%;
+    line-height: 1.5rem;
   }
 
   .refresh-tracks {
@@ -331,14 +333,16 @@
     margin-top: 4px;
   }
 
-  .score-popup_content {
-    width: 14rem;
-  }
-
   .track-table-cell .pill-link + .pill-link,
   .track-table-cell .pill-button + .pill-link,
   .track-table-cell .pill-link + .pill-button {
     margin-top: 4px;
+  }
+}
+
+@media (min-width: 591px) {
+  .score-popup_content {
+    width: 250px;
   }
 }
 
@@ -495,11 +499,6 @@
     display: inline-block;
     position: relative;
     margin-left: 4px;
-  }
-
-  .score-popup_content {
-    width: 250px;
-    left: calc(50% - 125px - 6px);
   }
 
   .track-table-cell .pill-link + .pill-link,
