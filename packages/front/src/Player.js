@@ -1,12 +1,9 @@
 import Preview from './Preview.js'
 import Tracks from './Tracks.js'
-import { requestWithCredentials } from './request-json-with-credentials.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import MediaSession from '@mebtte/react-media-session'
-import FollowPopup from './FollowPopup'
-import IgnorePopup from './IgnorePopup'
-import { namesToString, followableNameLinks, trackArtistsAndTitleText, trackTitle } from './trackFunctions'
+import { namesToString, trackTitle } from './trackFunctions'
 import { PlayerHelp } from './PlayerHelp'
 
 class Player extends Component {

@@ -783,8 +783,6 @@ class App extends Component {
                           onHandleCartButtonClick={this.handleCartButtonClick.bind(this)}
                           onHandleCreateCartClick={this.handleCreateCartClick.bind(this)}
                           onClosePopups={this.closePopups.bind(this)}
-                          onFollowArtist={this.followArtist.bind(this)}
-                          onFollowLabel={this.followLabel.bind(this)}
                           onIgnoreArtist={this.ignoreArtist.bind(this)}
                           onIgnoreLabel={this.ignoreLabel.bind(this)}
                           onIgnoreRelease={this.ignoreRelease.bind(this)}
