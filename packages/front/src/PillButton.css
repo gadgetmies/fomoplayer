@@ -84,6 +84,18 @@
 @media (min-width: 769px) and (max-width: 1279px) {
 }
 
+@media (max-width: 1028px) {
+  .pill-button-contents {
+    flex-wrap: wrap;
+  }
+}
+
+@media (min-width: 1029px) {
+  .pill-button-contents {
+    flex-wrap: nowrap;
+  }
+}
+
 @media (max-width: 1279px) {
 }
 
