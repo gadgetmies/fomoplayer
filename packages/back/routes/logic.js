@@ -6,6 +6,7 @@ const { queryCartDetails } = require('./shared/db/cart')
 const { queryCartDetailsByUuid, verifyEmail } = require('./db')
 const { getStoreDetailsFromUrl } = require('./stores/logic')
 const { modules: storeModules } = require('./stores/store-modules')
+const { queryEntityDetails } = require('./shared/db/entities')
 
 module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
   const { storeCode, storeTrackId } = await queryLongestPreviewForTrack(id, format, skip)
@@ -50,4 +51,7 @@ module.exports.getCartDetails = async uuid => {
   return await queryCartDetails(id)
 }
 
+module.exports.getEntityDetails = queryEntityDetails
+
 module.exports.verifyEmail = verifyEmail
+

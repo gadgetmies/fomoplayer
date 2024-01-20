@@ -5,6 +5,8 @@ const { getPreview, searchForTracks, getFollowDetails } = require('./logic.js')
 const { Unauthorized } = require('./shared/httpErrors')
 const adminRouter = require('./admin/index.js')
 const { ensureAuthenticated } = require('./shared/auth.js')
+const logRouter = require('./log/index.js')
+const { getEntityDetails } = require('./logic')
 
 router.use(bodyParser.json())
 
@@ -23,6 +25,14 @@ router.get('/tracks/', async ({ query: { q }, user: { id: userId }, query: optio
 
 router.use('/stores', require('./stores/index.js').router)
 
+router.get('/artists/:id', async ({ params: { id } }, res) => {
+  res.send(await getEntityDetails('artist', id))
+})
+
+router.get('/labels/:id', async ({ params: { id } }, res) => {
+  res.send(await getEntityDetails('label', id))
+})
+
 router.get('/followDetails', async ({ query: { q } }, res) => {
   res.send(await getFollowDetails(q))
 })
@@ -38,7 +48,6 @@ router.use(
   usersRouter
 )
 
-const logRouter = require('./log/index.js')
 router.use(
   '/log',
   ensureAuthenticated,

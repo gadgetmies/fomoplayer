@@ -603,27 +603,21 @@ class App extends Component {
     this.markHeard(track)
   }
 
-  async followArtist(artistId, follow) {
+  async followStoreArtist(storeArtistId, storeArtistUrl, name, follow) {
     await requestWithCredentials({
-      path: `/me/follows/artists/${follow ? '' : artistId}`,
+      path: `/me/follows/artists/${follow ? '' : storeArtistId}`,
       method: follow ? 'POST' : 'DELETE',
-      body: follow ? [artistId] : undefined,
-      headers: {
-        'content-type': 'application/vnd.multi-store-player.artist-ids+json;ver=1'
-      }
+      body: follow ? [{ url: storeArtistUrl, name }] : undefined
     })
 
     await this.updateFollows()
   }
 
-  async followLabel(labelId, follow) {
+  async followStoreLabel(storeLabelId, storeLabelUrl, name, follow) {
     await requestWithCredentials({
-      path: `/me/follows/labels/${follow ? '' : labelId}`,
+      path: `/me/follows/labels/${follow ? '' : storeLabelId}`,
       method: follow ? 'POST' : 'DELETE',
-      body: follow ? [labelId] : undefined,
-      headers: {
-        'content-type': 'application/vnd.multi-store-player.label-ids+json;ver=1'
-      }
+      body: follow ? [{ url: storeLabelUrl, name }] : undefined
     })
 
     await this.updateFollows()
@@ -663,8 +657,8 @@ class App extends Component {
                     track={this.state.followPopupTrack}
                     follows={this.state.follows}
                     onCloseClicked={this.closePopups.bind(this)}
-                    onFollowArtist={this.followArtist.bind(this)}
-                    onFollowLabel={this.followLabel.bind(this)}
+                    onFollowStoreArtist={this.followStoreArtist.bind(this)}
+                    onFollowStoreLabel={this.followStoreLabel.bind(this)}
                     onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
                   />
                 ) : null}
@@ -673,7 +667,7 @@ class App extends Component {
                   track={this.state.ignorePopupTrack}
                   onCloseClicked={this.closePopups.bind(this)}
                   onIgnoreArtistOnLabels={this.ignoreArtistsByLabels.bind(this)}
-                  onIgnoreArtist={this.ignoreArtist.bind(this)}
+                  onIgnoreStoreArtist={this.ignoreArtist.bind(this)}
                   onIgnoreLabel={this.ignoreLabel.bind(this)}
                   onIgnoreRelease={this.ignoreRelease.bind(this)}
                   onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
