@@ -224,7 +224,10 @@ class Preview extends Component {
                       <span className="preview_label">BPM:</span>{' '}
                       <span className="preview_detail">
                         {this.props.currentTrack.stores?.bpms?.length
-                          ? this.props.currentTrack.stores.map(R.prop('bpm')).filter(R.identity).join(', ')
+                          ? this.props.currentTrack.stores
+                              .map(R.prop('bpm'))
+                              .filter(R.identity)
+                              .join(', ')
                           : '-'}
                       </span>
                       <br />
