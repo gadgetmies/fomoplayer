@@ -237,10 +237,10 @@ class Tracks extends Component {
     return (
       <div style={{ height: this.props.height, borderTop: '1px solid black' }} className="tracks">
         <div className={'top-bar input-layout'} style={{ width: '100%' }}>
-          <div className="tracks-top_bar_group" style={{ width: '100%', display: 'flex' }}>
+          <div className="tracks-top_bar_group" style={{ width: '100%', display: 'flex', padding: 4 }}>
             {this.props.listState === 'carts' ? (
               this.props.mode === 'app' ? (
-                <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <label className="select_button-button select_button-button" htmlFor="cart-select">
                     Cart:
                   </label>
