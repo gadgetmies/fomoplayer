@@ -358,7 +358,11 @@ class Settings extends Component {
                 checked={this.state.page === 'following'}
                 onChange={() => this.onShowPage('following')}
               />
-              <label className="select_button-button" htmlFor="settings-state-following" data-help-id="following-tab">
+              <label
+                className="select_button-button  select_button-button__large"
+                htmlFor="settings-state-following"
+                data-help-id="following-tab"
+              >
                 Following
               </label>
               <input
@@ -368,7 +372,11 @@ class Settings extends Component {
                 checked={this.state.page === 'sorting'}
                 onChange={() => this.onShowPage('sorting')}
               />
-              <label className="select_button-button" htmlFor="settings-state-sorting" data-help-id="sorting-tab">
+              <label
+                className="select_button-button  select_button-button__large"
+                htmlFor="settings-state-sorting"
+                data-help-id="sorting-tab"
+              >
                 Sorting
               </label>
               <input
@@ -378,7 +386,11 @@ class Settings extends Component {
                 checked={this.state.page === 'carts'}
                 onChange={() => this.onShowPage('carts')}
               />
-              <label className="select_button-button" htmlFor="settings-state-carts" data-help-id="carts-tab">
+              <label
+                className="select_button-button  select_button-button__large"
+                htmlFor="settings-state-carts"
+                data-help-id="carts-tab"
+              >
                 Carts
               </label>
               <input
@@ -389,7 +401,7 @@ class Settings extends Component {
                 onChange={() => this.onShowPage('notifications')}
               />
               <label
-                className="select_button-button"
+                className="select_button-button select_button-button__large"
                 htmlFor="settings-state-notifications"
                 data-help-id="notifications-tab"
               >
@@ -402,7 +414,11 @@ class Settings extends Component {
                 checked={this.state.page === 'ignores'}
                 onChange={() => this.onShowPage('ignores')}
               />
-              <label className="select_button-button" htmlFor="settings-state-ignores" data-help-id="ignores-tab">
+              <label
+                className="select_button-button select_button-button__large"
+                htmlFor="settings-state-ignores"
+                data-help-id="ignores-tab"
+              >
                 Ignores
               </label>
               <input
@@ -412,7 +428,11 @@ class Settings extends Component {
                 checked={this.state.page === 'collection'}
                 onChange={() => this.onShowPage('collection')}
               />
-              <label className="select_button-button" htmlFor="settings-state-collection" data-help-id="collection-tab">
+              <label
+                className="select_button-button select_button-button__large"
+                htmlFor="settings-state-collection"
+                data-help-id="collection-tab"
+              >
                 Collection
               </label>
               <input
@@ -423,7 +443,7 @@ class Settings extends Component {
                 onChange={() => this.onShowPage('integrations')}
               />
               <label
-                className="select_button-button"
+                className="select_button-button select_button-button__large"
                 htmlFor="settings-state-integrations"
                 data-help-id="integrations-tab"
               >

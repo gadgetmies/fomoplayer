@@ -121,7 +121,6 @@
 
 .preview-samples_container {
   position: absolute;
-  left: 2px;
   bottom: 0;
   display: flex;
   justify-content: flex-end;
@@ -131,6 +130,16 @@
   border-radius: 8px;
   margin: 4px;
   align-items: center;
+}
+
+.sample-type-select {
+  font-weight: 300;
+  border-radius: 2px;
+  padding: 2px 4px;
+}
+
+.sample-type-select--selected {
+  background-color: #b40089;
 }
 
 @media (max-width: 590px) {

@@ -29,7 +29,8 @@ class Preview extends Component {
       totalDuration: undefined,
       previewUrl: undefined,
       volume: 100,
-      newCartName: ''
+      newCartName: '',
+      preferFullTracks: localStorage.getItem('preferFullTracks') === 'true'
     }
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
@@ -96,7 +97,7 @@ class Preview extends Component {
     if (this.props.currentTrack !== nextTrack) {
       this.setState({ loading: true })
       try {
-        const preview = this.getFirstMp3Preview(nextTrack)
+        const preview = this.getFirstMp3Preview(nextTrack, this.state.preferFullTracks)
         await this.updateTrack(nextTrack, preview)
       } catch (e) {
         console.error(e)
@@ -105,12 +106,25 @@ class Preview extends Component {
     }
   }
 
-  getFirstMp3Preview(track) {
-    return L.get(['previews', L.satisfying(safePropEq('format', 'mp3'))], track)
+  getFirstMp3Preview(track, preferFullTracks = false) {
+    return L.get(
+      [
+        'previews',
+        L.choices(
+          [
+            L.filter(({ store }) => (preferFullTracks ? store === 'bandcamp' : store !== 'bandcamp')),
+            L.ifElse(R.isEmpty, L.zero, [])
+          ],
+          []
+        ),
+        L.satisfying(safePropEq('format', 'mp3'))
+      ],
+      track
+    )
   }
 
   getWaveform(track) {
-    return L.get(['previews', L.elems, 'waveforms', 0], track)
+    return this.getFirstMp3Preview(track, this.state.preferFullTracks).waveforms[0]
   }
 
   async updateWaveform(previewUrl) {
@@ -187,6 +201,12 @@ class Preview extends Component {
               .join('\n')}`,
             'https://fomoplayer.com'
           ]
+
+    const previews = currentTrack?.previews?.filter(({ store }) => store !== 'bandcamp') || []
+    const spotifyAuthorization = this.state.authorizations?.find(R.propEq('store_name', 'Spotify'))
+    const fullTracks = currentTrack?.previews?.filter(({ store }) =>
+      ['bandcamp', ...[spotifyAuthorization ? ['spotify'] : []]].includes(store)
+    )
 
     return (
       <div className="preview noselect">
@@ -383,27 +403,100 @@ class Preview extends Component {
                 src={this.state.previewUrl}
               />
               {currentTrack ? (
-                <div className="preview-samples_container">
-                  <span style={{ fontWeight: 300 }}>Preview</span>
-                  <div className="preview-icons-container select-icon--container">
-                    {currentTrack?.previews
-                      ?.reduce((acc, cur) => (acc.some(({ store }) => store === cur.store) ? acc : [...acc, cur]), [])
-                      .map(({ id, store }) => (
-                        <span key={id} onMouseDown={e => e.stopPropagation()}>
-                          <input
-                            type="radio"
-                            id={`preview-${id}`}
-                            name="preview"
-                            checked={this.state.mp3Preview?.id === id}
-                            onChange={this.onPreviewStoreClicked.bind(this, id)}
-                          />
-                          <label className="select-icon--icon" htmlFor={`preview-${id}`}>
-                            <StoreIcon code={store} />
-                          </label>
-                        </span>
-                      ))}
-                  </div>
-                </div>
+                <>
+                  {previews.length > 0 && (
+                    <div
+                      className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
+                      style={{ left: 2 }}
+                    >
+                      <input
+                        type="radio"
+                        id="sample_select_state-preview"
+                        name="sample-select-state"
+                        checked={!this.state.preferFullTracks}
+                      />
+                      <label
+                        htmlFor="sample_select_state-preview"
+                        className={`select_button-button state-select_button-button select_button-button__small ${
+                          !this.state.preferFullTracks ? 'select_button-button__active' : ''
+                        }`}
+                        onClick={() => {
+                          localStorage.setItem('preferFullTracks', 'false')
+                          this.setState({ preferFullTracks: false })
+                        }}
+                      >
+                        Preview
+                      </label>{' '}
+                      <div className="preview-icons-container select-icon--container" style={{ left: 2 }}>
+                        {previews
+                          ?.reduce(
+                            (acc, cur) => (acc.some(({ store }) => store === cur.store) ? acc : [...acc, cur]),
+                            []
+                          )
+                          .map(({ id, store }) => (
+                            <span key={id} onMouseDown={e => e.stopPropagation()}>
+                              <input
+                                type="radio"
+                                id={`preview-${id}`}
+                                name="preview"
+                                checked={this.state.mp3Preview?.id === id}
+                                onChange={this.onPreviewStoreClicked.bind(this, id)}
+                              />
+                              <label className="select-icon--icon" htmlFor={`preview-${id}`}>
+                                <StoreIcon code={store} />
+                              </label>
+                            </span>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                  {fullTracks?.length > 0 && (
+                    <div
+                      className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
+                      style={{ right: 2 }}
+                    >
+                      <input
+                        type="radio"
+                        id="sample_select_state-full_track"
+                        name="sample-select-state"
+                        checked={this.state.preferFullTracks}
+                      />
+                      <label
+                        htmlFor="sample_select_state-full_track"
+                        className={`select_button-button state-select_button-button select_button-button__small ${
+                          this.state.preferFullTracks ? 'select_button-button__active' : ''
+                        }`}
+                        onClick={() => {
+                          localStorage.setItem('preferFullTracks', 'true')
+                          this.setState({ preferFullTracks: true })
+                        }}
+                      >
+                        Listen
+                      </label>{' '}
+                      <div className="preview-icons-container select-icon--container">
+                        {fullTracks
+                          ?.reduce(
+                            (acc, cur) => (acc.some(({ store }) => store === cur.store) ? acc : [...acc, cur]),
+                            []
+                          )
+                          .map(({ id, store }) => (
+                            <span key={id} onMouseDown={e => e.stopPropagation()}>
+                              <input
+                                type="radio"
+                                id={`preview-${id}`}
+                                name="preview"
+                                checked={this.state.mp3Preview?.id === id}
+                                onChange={this.onPreviewStoreClicked.bind(this, id)}
+                              />
+                              <label className="select-icon--icon" htmlFor={`preview-${id}`}>
+                                <StoreIcon code={store} />
+                              </label>
+                            </span>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : null}
             </div>
             <div className="button-wrapper">

@@ -2,7 +2,7 @@
   border-radius: 0.25rem;
   padding: 2px;
   background-color: #222;
-  display: inline-block;
+  display: inline-flex;
 }
 
 .select_button-button {
@@ -14,10 +14,12 @@
 
 .select_button-button__small {
   font-size: 0.7rem;
+  padding: 0.5rem;
 }
 
 .select_button-button__large {
   font-size: 100%;
+  padding: 1rem;
 }
 
 .select-button--container input[type='radio'],
@@ -56,13 +58,6 @@ input[type='radio'] + .select-icon--icon {
   opacity: 0.5;
 }
 
-.select-button--container {
-  border-radius: 0.25rem;
-  padding: 2px;
-  background-color: #222;
-  display: inline-block;
-}
-
 .select_button-button {
   font-size: 0.7rem;
   display: inline-block;
@@ -87,11 +82,7 @@ input[type='radio']:checked + .select_button-button,
 }
 
 input[type='radio']:disabled + .select_button-button,
-.select_button-button__active {
+input[type='radio']:disabled + .select_button-button__active {
   opacity: 0.3;
   cursor: not-allowed;
-}
-
-.select_button-button {
-  padding: 1rem;
 }
