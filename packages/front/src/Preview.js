@@ -430,7 +430,7 @@ class Preview extends Component {
                   <DropDownButton
                     label={!this.props.inCart ? 'Add to cart' : 'Remove from cart'}
                     icon={this.props.inCart ? 'minus' : 'cart-plus'}
-                    loading={this.props.addingToCart}
+                    loading={this.props.processingCart}
                     disabled={this.props.inCart === null || this.props.togglingCurrentInCart}
                     onClick={async () => {
                       await this.props.onToggleCurrentInCart()
