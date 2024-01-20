@@ -108,6 +108,7 @@
 .preview_links_container {
   display: flex;
   gap: 16px;
+  flex: 1;
 }
 
 .available_on_list,
@@ -115,6 +116,7 @@
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+  gap: 4px;
 }
 
 .preview-samples_container {

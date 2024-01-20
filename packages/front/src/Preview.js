@@ -272,7 +272,7 @@ class Preview extends Component {
                 </div>
                 <div className="preview_links_wrapper">
                   <span className="preview_actions_title">Search</span>
-                  <div style={{ display: 'flex', gap: 2 }} className="search_from_list">
+                  <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
                     {this.props.stores
                       ?.filter(({ storeName }) =>
                         this.props.currentTrack?.stores.every(({ name }) => storeName !== name)
@@ -558,7 +558,7 @@ class Preview extends Component {
                             title={shareLabel}
                             label={shareLabel}
                             content={shareContent}
-                            style={{ height: '2rem', width: '100%' }}
+                            style={{ height: '2rem', width: '100%', padding: '0 4px', boxSizing: 'border-box' }}
                           />
                         </span>
                       </span>
