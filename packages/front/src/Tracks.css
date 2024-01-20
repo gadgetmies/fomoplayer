@@ -90,7 +90,7 @@
 }
 
 .tracks-table > tbody > tr.playing {
-  background-color: #b40089;
+  background-color: #5181bd;
   color: white;
 }
 
@@ -142,11 +142,11 @@
 
 @media (hover: hover) and (pointer: fine) {
   .tracks-table > tbody > tr:hover {
-    background-color: #858585;
+    background-color: #767676;
   }
 
   .tracks-table > tbody > tr.playing:hover {
-    background-color: #d618a8;
+    background-color: #639be7;
   }
 }
 

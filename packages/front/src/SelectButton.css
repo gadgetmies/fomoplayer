@@ -27,7 +27,7 @@
 
 input[type='radio']:checked + .select_button-button,
 .select_button-button__active {
-  background-color: #b40089;
+  background-color: #5996e4;
   border-radius: 0.25rem;
   opacity: 1;
 }
@@ -81,7 +81,7 @@ input[type='radio'] + .select-icon--icon {
 
 input[type='radio']:checked + .select_button-button,
 .select_button-button__active {
-  background-color: #b40089;
+  background-color: #639be7;
   border-radius: 0.25rem;
   opacity: 1;
 }
