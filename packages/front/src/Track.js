@@ -8,6 +8,8 @@ import StoreIcon from './StoreIcon'
 import scoreWeights from './scoreWeights'
 import NavButton from './NavButton'
 import { followableNameLinks, namesToString } from './trackFunctions'
+import DropDownButton from './DropDownButton'
+import { Link } from 'react-router-dom'
 
 class Track extends Component {
   constructor(props) {
@@ -43,9 +45,6 @@ class Track extends Component {
   }
 
   render() {
-    const spotifyTrack = this.getStoreTrackByStoreCode('spotify')
-    const beaportTrack = this.getStoreTrackByStoreCode('beatport')
-    const bandcampTrack = this.getStoreTrackByStoreCode('bandcamp')
     const searchString = encodeURIComponent(
       `${this.props.artists.map(R.prop('name')).join(' ')} ${this.props.title}${
         this.props.version ? ` ${this.props.version}` : ''
@@ -61,7 +60,8 @@ class Track extends Component {
     const inCurrentCart = this.props.inCurrentCart
     const inDefaultCart = this.props.inDefaultCart
     const inCart = this.props.listState === 'carts' ? inCurrentCart : inDefaultCart
-    const processingCart = this.props.processingCart || this.state.processingCart
+    const processingCart = this.props.processingCart
+    const removeLabel = this.props.listState === 'carts' ? 'Remove from current cart' : 'Remove from default cart'
 
     return (
       <tr
@@ -142,97 +142,61 @@ class Track extends Component {
             </div>
           </div>
         </td>
-        {false && this.props.mode === 'app' ? (
+        {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'}>
             {this.props.listState === 'new' && (
-              <div className={'score-cell track-table-cell'} style={{ position: 'relative', overflow: 'visible' }}>
-                <>
-                  <span className={'popup-anchor'}>
-                    <PillButton className={'table-cell-button'}>{Math.round(this.props.score)}</PillButton>
-                  </span>
-                  <div
-                    className={`popup_content${
-                      this.props.popupAbove ? ' popup_content__above' : ''
-                    } score-popup_content`}
-                    style={{ zIndex: 100 }}
-                  >
-                    <table className={'score-table'}>
-                      <thead>
-                        <tr>
-                          <th>Property</th>
-                          <th>Value</th>
-                          <th>Weight</th>
-                          <th>Score</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(this.props.scoreDetails || {}).map(([key, value]) => (
-                          <tr>
-                            <td>{scoreWeights[key].label}</td>
-                            <td>{value.score}</td>
-                            <td>{value.weight}</td>
-                            <td>{Math.round(value.score * value.weight * 100) / 100}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <hr className={'popup-divider'} />
-                    <NavButton to={'/settings?page=sorting'}>Adjust weights</NavButton>
-                  </div>
-                </>
-              </div>
-            )}
-            <div className="follow-cell track-table-cell">
-              <PillButton
-                className={'table-cell-button'}
-                onClick={e => {
-                  e.stopPropagation()
-                  this.props.onFollowClicked()
-                }}
+              <div
+                className={'score-cell track-table-cell popup_container'}
+                style={{ position: 'relative', overflow: 'visible' }}
               >
-                <FontAwesomeIcon icon={'heart'} />
-                <span className={'follow-button-label'} />
-              </PillButton>
-            </div>
-            <div className="ignore-cell track-table-cell">
-              <PillButton
-                className={'table-cell-button'}
-                onClick={e => {
-                  e.stopPropagation()
-                  this.props.onIgnoreClicked()
-                }}
-              >
-                <FontAwesomeIcon icon={'ban'} />
-                <span className={'ignore-button-label'} />
-              </PillButton>
-            </div>
-            <div className={'cart-cell track-table-cell'} style={{ overflow: 'visible' }}>
-              <span className={'table-cell-button-row'} style={{ position: 'relative' }}>
-                <PillButton
-                  disabled={processingCart}
-                  className={'table-cell-button'}
-                  onClick={e => {
-                    e.stopPropagation()
-                    return this.props.onCartButtonClick(currentCartId, inCart)
-                  }}
-                >
-                  <FontAwesomeIcon icon={inCart ? 'minus' : 'plus'} />{' '}
-                  <span className={'cart-button-label'}>{inCart ? 'Remove from cart' : 'Add to cart'}</span>
-                </PillButton>
                 <span className={'popup-anchor'}>
-                  <PillButton
-                    className={'table-cell-button table-cell-button-row__last'}
-                    style={{
-                      backgroundColor: '#000',
-                      color: 'black'
-                    }}
-                  >
-                    <FontAwesomeIcon icon="caret-down" />
-                  </PillButton>
+                  <PillButton className={'table-cell-button'}>{Math.round(this.props.score)}</PillButton>
                 </span>
                 <div
-                  className={`popup_content${this.props.popupAbove ? ' popup_content__above' : ''} cart-popup_content`}
-                  style={{ zIndex: 100 }}
+                  className={`popup_content${this.props.popupAbove ? ' popup_content__above' : ''} score-popup_content`}
+                  style={{ zIndex: 100, top: 'auto' }}
+                >
+                  <table className={'score-table'}>
+                    <thead>
+                      <tr>
+                        <th>Property</th>
+                        <th>Value</th>
+                        <th>Weight</th>
+                        <th>Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(this.props.scoreDetails || {}).map(([key, value]) => (
+                        <tr>
+                          <td>{scoreWeights[key].label}</td>
+                          <td>{value.score}</td>
+                          <td>{value.weight}</td>
+                          <td>{Math.round(value.score * value.weight * 100) / 100}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <hr className={'popup-divider'} />
+                  <Link to={'/settings/sorting'}>Adjust weights in settings</Link>
+                </div>
+              </div>
+            )}
+            <div
+              className={'cart-cell track-table-cell'}
+              style={{ overflow: 'visible', display: 'flex', alignItems: 'center', marginTop: 1 }}
+            >
+              <span className={'table-cell-button-row'} style={{ width: '100%' }}>
+                <DropDownButton
+                  icon={processingCart ? null : inCart ? 'minus' : 'cart-plus'}
+                  title={inCart ? removeLabel : 'Add to default cart'}
+                  buttonClassName="table-cell-button"
+                  popupClassName="popup_content-small"
+                  buttonStyle={{ opacity: 1 }}
+                  loading={processingCart}
+                  onClick={e => {
+                    e.stopPropagation()
+                    return this.props.onCartButtonClick(this.props.id, currentCartId, inCart)
+                  }}
                 >
                   <div
                     className={'carts-list'}
@@ -241,17 +205,17 @@ class Track extends Component {
                   >
                     {this.props.carts.length === 0
                       ? 'Loading carts...'
-                      : this.props.carts.map(({ id, name }) => {
-                          const isInCart = this.props.inCarts.find(R.propEq('id', id))
+                      : this.props.carts.map(({ id: cartId, name }) => {
+                          const isInCart = this.props.inCarts.find(R.propEq('id', cartId))
                           return (
                             <button
                               disabled={processingCart}
-                              className="button button-push_button-small button-push_button-primary cart-button"
+                              className="button button-push_button button-push_button-small button-push_button-primary cart-button"
                               onClick={e => {
                                 e.stopPropagation()
-                                return this.props.onCartButtonClick(id, isInCart)
+                                return this.props.onCartButtonClick(this.props.id, cartId, isInCart)
                               }}
-                              key={`cart-${id}`}
+                              key={`cart-${cartId}`}
                             >
                               <FontAwesomeIcon icon={isInCart ? 'minus' : 'plus'} style={{ marginRight: 6 }} /> {name}
                             </button>
@@ -267,7 +231,7 @@ class Track extends Component {
                         onChange={e => this.setState({ newCartName: e.target.value })}
                       />
                       <button
-                        className="button button-push_button-small button-push_button-primary"
+                        className="button button-push_button button-push_button-small button-push_button-primary"
                         onClick={async () => {
                           const { id: cartId } = await this.props.onCreateCartClick(this.state.newCartName)
                           await this.props.onCartButtonClick(cartId, false)
@@ -283,7 +247,7 @@ class Track extends Component {
                         <button
                           disabled={processingCart}
                           style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
-                          className="button button-push_button-small button-push_button-primary"
+                          className="button button-push_button button-push_button-small button-push_button-primary"
                           onClick={e => {
                             e.stopPropagation()
                             return this.props.onMarkPurchasedButtonClick()
@@ -294,7 +258,8 @@ class Track extends Component {
                       </>
                     )}
                   </div>
-                </div>
+                  {/*</div>*/}
+                </DropDownButton>
               </span>
             </div>
           </td>
@@ -303,68 +268,42 @@ class Track extends Component {
           <div className={'open-cell track-table-cell'} style={{ overflow: 'visible', position: 'relative' }}>
             {R.intersperse(
               ' ',
-              this.props.trackStores.map(store => (
-                <a
-                  onClick={e => {
-                    e.stopPropagation()
-                  }}
-                  href={store.url || store.release.url}
-                  title={`Open in ${store.name}`}
-                  key={store.name}
-                  className="pill pill-link pill-link-collapse table-cell-button"
-                  target="_blank"
-                >
-                  <StoreIcon code={store.code} />
-                  <span className={'pill-link-text'}>{store.name}</span>
-                  <FontAwesomeIcon icon="external-link-alt" />
-                </a>
-              ))
+              //this.props.trackStores.map(store => (
+              this.props.stores?.map(({ storeName, searchUrl }) => {
+                if (!this.props.enabledStores?.includes(storeName)) return null
+                const trackStore = this.props.trackStores.find(R.propEq('name', storeName))
+                return trackStore
+                  ? this.props.enabledStores?.includes(storeName) && (
+                      <a
+                        onClick={e => {
+                          e.stopPropagation()
+                        }}
+                        href={trackStore.url || trackStore.release.url}
+                        title={`Open in ${trackStore.name}`}
+                        key={trackStore.name}
+                        className="pill pill-link pill-link-collapse table-cell-button"
+                        target="_blank"
+                      >
+                        <StoreIcon code={trackStore.code} />
+                        <span className={'pill-link-text'}>{trackStore.name}</span>
+                        <FontAwesomeIcon icon="external-link-alt" />
+                      </a>
+                    )
+                  : this.props.enabledStoreSearch?.includes(storeName) && (
+                      <a
+                        onClick={e => e.stopPropagation()}
+                        className="pill pill-link pill-link-collapse table-cell-button"
+                        href={`${searchUrl}${searchString}`}
+                        title={`Search from ${storeName}`}
+                        target="_blank"
+                      >
+                        <StoreIcon code={storeName.toLowerCase()} />
+                        <span className={'pill-link-text'}>{storeName}</span>
+                        <FontAwesomeIcon icon={'search'} />
+                      </a>
+                    )
+              })
             )}{' '}
-            {beaportTrack || !this.props.enabledStoreSearch?.includes('Beatport') ? null : (
-              <>
-                <a
-                  onClick={e => e.stopPropagation()}
-                  className="pill pill-link pill-link-collapse table-cell-button"
-                  href={`${this.props.stores.find(R.propEq('storeName', 'Beatport')).searchUrl}${searchString}`}
-                  title={'Search from Beatport'}
-                  target="_blank"
-                >
-                  <StoreIcon code="beatport" />
-                  <span className={'pill-link-text'}>Beatport</span>
-                  <FontAwesomeIcon icon={'search'} />
-                </a>{' '}
-              </>
-            )}
-            {bandcampTrack || !this.props.enabledStoreSearch?.includes('Bandcamp') ? null : (
-              <>
-                <a
-                  onClick={e => e.stopPropagation()}
-                  className="pill pill-link pill-link-collapse table-cell-button"
-                  href={`${this.props.stores.find(R.propEq('storeName', 'Bandcamp')).searchUrl}${searchString}`}
-                  title={'Search from Bandcamp'}
-                  target="_blank"
-                >
-                  <StoreIcon code="bandcamp" />
-                  <span className={'pill-link-text'}>Bandcamp</span>
-                  <FontAwesomeIcon icon={'search'} />
-                </a>{' '}
-              </>
-            )}
-            {spotifyTrack || !this.props.enabledStoreSearch?.includes('Spotify') ? null : (
-              <>
-                <a
-                  onClick={e => e.stopPropagation()}
-                  className="pill pill-link pill-link-collapse table-cell-button"
-                  href={`${this.props.stores.find(R.propEq('storeName', 'Spotify')).searchUrl}${searchString}`}
-                  title={'Search from Spotify'}
-                  target="_blank"
-                >
-                  <StoreIcon code="spotify" />
-                  <span className={'pill-link-text'}>Spotify</span>
-                  <FontAwesomeIcon icon={'search'} />
-                </a>{' '}
-              </>
-            )}
             {this.props.enabledStoreSearch?.includes('Youtube') && (
               <a
                 className="pill pill-link pill-link-collapse table-cell-button"

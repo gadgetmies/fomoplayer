@@ -7,7 +7,6 @@
 
 .open-cell {
   width: 100%;
-  max-width: 150px;
   text-align: center;
 }
 
@@ -99,7 +98,7 @@
   background-color: #666;
   margin: 0 0 2px 0;
   color: white;
-  line-height: 1.5rem;
+  line-height: 2rem;
   font-weight: 350;
   cursor: pointer;
 }
@@ -133,6 +132,14 @@
   background-color: #222;
 }
 
+.open-share-cell {
+  display: inline-flex;
+}
+
+.score-popup_content {
+  flex-direction: column;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .tracks-table > tbody > tr:hover {
     background-color: #858585;
@@ -141,6 +148,10 @@
   .tracks-table > tbody > tr.playing:hover {
     background-color: #d618a8;
   }
+}
+
+.follow-ignore-cart-cell {
+  display: inline-flex;
 }
 
 @media (max-width: 768px) {
@@ -279,6 +290,10 @@
     vertical-align: middle;
   }
 
+  .open-cell {
+    max-width: 150px;
+  }
+
   .follow-button-label::before {
     content: 'Follow...';
   }
@@ -288,7 +303,8 @@
   }
 
   .follow-ignore-cart-cell {
-    width: 18%;
+    width: 120px;
+    flex-direction: column;
   }
 
   .cart-cell-content {
@@ -301,10 +317,6 @@
   .cart-button-label {
     display: inline-block;
     width: 100%;
-  }
-
-  .open-share-cell {
-    display: flex;
   }
 
   .email-not-verified-info {
@@ -321,7 +333,6 @@
 
   .score-popup_content {
     width: 14rem;
-    right: calc(50% - 7rem - 6px);
   }
 
   .track-table-cell .pill-link + .pill-link,
@@ -409,8 +420,8 @@
   }
 
   .track-details {
-    /* 3rem = new-cell width, 200px = space reserved for open-share-cell */
-    width: calc(100% - 200px - 3rem);
+    /* 3rem = new-cell width, 183px = space reserved for open-share-cell, 60px = space reserved for score, 64px = cart cell 8px = some margin, padding, \_o_/ */
+    width: calc(100% - 208px - 60px - 64px - 3rem - 8px);
   }
 
   .track-details-content {
@@ -445,16 +456,22 @@
     text-align: center;
   }
 
-  .score-cell,
-  .follow-cell,
-  .cart-cell,
-  .ignore-cell {
-    width: 25%;
+  .score-cell {
+    width: 60px;
     text-align: center;
   }
 
+  .cart-cell {
+    width: 64px;
+  }
+
   .follow-ignore-cart-cell {
-    width: 16%;
+    width: 128px;
+    gap: 4px;
+  }
+
+  .open-share-cell {
+    width: 208px;
   }
 
   .ignore-button-icon {

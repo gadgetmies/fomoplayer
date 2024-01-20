@@ -60,7 +60,7 @@ class Tracks extends Component {
     parent.scrollBy(0, currentRect.y - parentRect.y)
   }
 
-  renderTracks(tracks, carts, enabledStoreSearch) {
+  renderTracks(tracks) {
     const emptyListLabels = {
       search:
         this.props.searchError !== undefined
@@ -69,9 +69,9 @@ class Tracks extends Component {
           ? 'Searching...'
           : 'No results',
       cart:
-        carts.length === 0
+        this.props.carts.length === 0
           ? 'Loading carts...'
-          : this.props.tracks.length === 0
+          : tracks.length === 0
           ? 'Cart empty'
           : 'No tracks matching filters',
       new: (
@@ -86,7 +86,7 @@ class Tracks extends Component {
       heard: 'No tracks played',
       recent: 'No tracks added'
     }
-    const defaultCart = carts.find(R.prop('is_default'))
+    const defaultCart = this.props.carts.find(R.prop('is_default'))
 
     return this.props.searchInProgress ? (
       <tr style={{ display: 'block' }} key={'search-in-progress'}>
@@ -163,9 +163,10 @@ class Tracks extends Component {
               playing={this.props.currentTrack === id}
               version={version}
               heard={heard}
-              enabledStoreSearch={enabledStoreSearch}
-              inDefaultCart={defaultCart ? defaultCart.tracks?.find(R.propEq('id', id)) !== undefined : false}
+              enabledStores={this.props.enabledStores}
+              enabledStoreSearch={this.props.enabledStoreSearch}
               selectedCart={this.props.selectedCart}
+              inDefaultCart={defaultCart ? defaultCart.tracks?.find(R.propEq('id', id)) !== undefined : false}
               inCurrentCart={inCarts.find(({ id }) => id === selectedCartId) !== undefined}
               inCarts={inCarts}
               popupAbove={tracks.length > 10 && tracks.length - index < 10}
@@ -373,14 +374,12 @@ class Tracks extends Component {
                   <div className={'key-cell track-table-cell'}>Key</div>
                 </div>
               </th>
-              {false && this.props.mode === 'app' ? (
-                <th className={'follow-ignore-cart-cell tracks-cell'}>
-                  {this.props.listState === 'new' && <div className={'score-cell track-table-cell'}>Score</div>}
-                  <div className={'follow-cell track-table-cell'}>Follow</div>
-                  <div className={'ignore-cell track-table-cell'}>Ignore</div>
-                  <div className={'cart-cell track-table-cell'}>Cart</div>
-                </th>
-              ) : null}
+              <th className={'follow-ignore-cart-cell tracks-cell'}>
+                {this.props.mode === 'app' && this.props.listState === 'new' ? (
+                  <div className={'score-cell track-table-cell'}>Score</div>
+                ) : null}
+                <div className={'cart-cell track-table-cell'}>Cart</div>
+              </th>
               <th className={'open-share-cell tracks-cell'}>
                 <div className={'open-cell track-table-cell popup_container'} style={{ padding: 0, margin: 4 }}>
                   <div className={'popup-anchor'}>
@@ -394,8 +393,8 @@ class Tracks extends Component {
                     </span>
                   </div>
                   {this.props.listState === 'carts' && (
-                    <div className={'popup_content'} style={{ flexDirection: 'column' }}>
-                      <div>Show tracks available on:</div>
+                    <div className={'popup_content'} style={{ flexDirection: 'column', minWidth: 150, padding: 8 }}>
+                      <div>Enabled stores:</div>
                       {this.props.stores.map(({ storeName }) => {
                         const elementId = `${storeName}-enabled`
                         return (
@@ -406,7 +405,7 @@ class Tracks extends Component {
                             <label htmlFor={elementId} className="noselect" style={{ flex: 1, textAlign: 'left' }}>
                               {storeName}
                             </label>
-                            <div style={{ display: 'flex', justifyContent: 'space-around', flex: 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-around', flex: 0 }}>
                               <ToggleButton
                                 id={elementId}
                                 checked={this.props.enabledStores?.includes(storeName)}
@@ -420,6 +419,10 @@ class Tracks extends Component {
                       <div>Show search for:</div>
                       {[...this.props.stores, { storeName: 'Youtube' }].map(({ storeName }) => {
                         const elementId = `${storeName}-search-enabled`
+                        const storeDisabled =
+                          this.props.stores.some(R.propEq('storeName', storeName)) &&
+                          !this.props.enabledStores?.includes(storeName)
+                        if (storeDisabled) return null
                         return (
                           <div
                             className="input-layout"
@@ -428,10 +431,10 @@ class Tracks extends Component {
                             <label htmlFor={elementId} className="noselect" style={{ flex: 1, textAlign: 'left' }}>
                               {storeName}
                             </label>
-                            <div style={{ display: 'flex', justifyContent: 'space-around', flex: 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-around', flex: 0 }}>
                               <ToggleButton
                                 id={elementId}
-                                checked={this.props.enabledStoreSearch?.includes(storeName)}
+                                checked={storeDisabled ? false : this.props.enabledStoreSearch?.includes(storeName)}
                                 onChange={() => this.props.onToggleStoreSearchEnabled(storeName)}
                               />
                             </div>
@@ -461,9 +464,7 @@ class Tracks extends Component {
                 ? this.props.tracks.filter(({ stores }) =>
                     this.props.enabledStores?.some(storeName => stores.find(R.propEq('name', storeName)))
                   )
-                : this.props.tracks,
-              this.props.carts,
-              this.props.enabledStoreSearch
+                : this.props.tracks
             )}
             {this.props.listState === 'new' ? (
               <tr style={{ display: 'flex' }}>
