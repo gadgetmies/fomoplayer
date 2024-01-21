@@ -742,7 +742,7 @@ class App extends Component {
                           searchResults={this.state.searchResults}
                           searchInProgress={this.state.searchInProgress}
                           searchError={this.state.searchError}
-                          initialPosition={NaN}
+                          initialPosition={this.state.initialPosition}
                           addingToCart={this.state.addingToCart}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
                           carts={this.state.carts}
