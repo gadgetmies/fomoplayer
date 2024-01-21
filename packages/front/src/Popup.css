@@ -23,17 +23,13 @@
   .popup_content {
     left: 2rem;
     right: 2rem;
-    top: 2rem;
     bottom: 0;
     background: black;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     flex-direction: column;
     align-content: flex-end;
-  }
-
-  .mobile .popup_content {
-    top: auto;
+    max-height: calc(100vh - 8rem);
   }
 }
 

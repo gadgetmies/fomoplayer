@@ -213,11 +213,11 @@ class Preview extends Component {
         <div className="preview_details_wrapper">
           {this.props.currentTrack ? (
             <>
+              <div style={{ marginTop: '0' }} className="preview_title">
+                {trackArtistsAndTitle(this.props.currentTrack, this.props.follows)}
+              </div>
               <div style={{ display: 'flex', gap: 8, flex: 1 }}>
                 <div style={{ flex: 1 }}>
-                  <p style={{ marginTop: '0' }} className="preview_title">
-                    {trackArtistsAndTitle(this.props.currentTrack, this.props.follows)}
-                  </p>
                   <div style={{ display: 'flex', gap: 16 }}>
                     <div style={{ fontSize: '75%' }}>
                       <span className="preview_label">Labels:</span>{' '}

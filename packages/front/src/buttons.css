@@ -198,10 +198,6 @@ button::-moz-focus-inner {
   .reveal-search-button {
     order: 2;
   }
-
-  .state-select-button--container {
-    display: flex;
-  }
 }
 
 @media (min-width: 769px) {
@@ -211,10 +207,6 @@ button::-moz-focus-inner {
 
   .reveal-search-button {
     display: none;
-  }
-
-  .state-select-button--container {
-    display: inline-block;
   }
 }
 

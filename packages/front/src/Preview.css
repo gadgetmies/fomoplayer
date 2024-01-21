@@ -65,6 +65,10 @@
   gap: 8px;
 }
 
+.preview_details_wrapper::-webkit-scrollbar {
+  display: none;
+}
+
 .preview_links_wrapper {
   display: flex;
 }
@@ -147,6 +151,14 @@
   .preview-action_button .button-push_button_icon {
     display: block;
   }
+
+  .preview_title {
+    width: 100%;
+  }
+
+  .preview_details_wrapper {
+    flex-wrap: wrap;
+  }
 }
 
 @media (min-width: 591px) {
@@ -174,6 +186,7 @@
 
   .player-collection-wrapper {
     display: block;
+    filter: drop-shadow(0 -3px 3px rgba(0,0,0,0.3));
   }
 
   .preview-samples_container {
@@ -190,6 +203,7 @@
     gap: 16px;
     max-height: 100px;
     overflow-y: auto;
+    flex-wrap: wrap;
   }
 
   .preview_links_wrapper {
@@ -202,6 +216,10 @@
 
   .preview_links_container {
     flex-direction: column;
+  }
+
+  .preview_title {
+    width: 100%;
   }
 }
 

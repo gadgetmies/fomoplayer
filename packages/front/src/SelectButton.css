@@ -3,6 +3,7 @@
   padding: 2px;
   background-color: #222;
   display: inline-flex;
+  flex-wrap: wrap;
 }
 
 .select_button-button {
@@ -85,4 +86,10 @@ input[type='radio']:disabled + .select_button-button,
 input[type='radio']:disabled + .select_button-button__active {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .state-select-button--container {
+    display: flex;
+  }
 }

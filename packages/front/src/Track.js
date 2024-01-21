@@ -69,7 +69,7 @@ class Track extends Component {
         if (!this.props.enabledStores?.includes(storeName)) return null
         const trackStore = this.props.trackStores.find(R.propEq('name', storeName))
         return trackStore
-          ? this.props.enabledStores?.includes(storeName) && (
+          ? (this.props.listState !== 'carts' || this.props.enabledStores?.includes(storeName)) && (
               <a
                 onClick={e => {
                   e.stopPropagation()
@@ -85,7 +85,7 @@ class Track extends Component {
                 <FontAwesomeIcon icon="external-link-alt" />
               </a>
             )
-          : this.props.enabledStoreSearch?.includes(storeName) && (
+          : (this.props.listState !== 'carts' || this.props.enabledStoreSearch?.includes(storeName)) && (
               <a
                 onClick={e => e.stopPropagation()}
                 className="pill pill-link pill-link-collapse table-cell-button"
@@ -183,14 +183,13 @@ class Track extends Component {
         {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'}>
             {this.props.listState === 'new' && (
-              <div className={'score-cell track-table-cell popup_container'} style={{ overflow: 'visible' }}>
+              <div className={'score-cell track-table-cell popup_container'} style={{ overflow: 'visible', paddingRight: 5, paddingBottom: 0 }}>
                 <span className={'popup-anchor'}>
-                  <PillButton className={'table-cell-button'}>
-                    {isNumber(this.props.score) ? '-' : Math.round(this.props.score)}
+                  <PillButton className={'table-cell-button'} style={{ display: 'flex', paddingBottom: 7 }}>
+                    {isNumber(this.props.score) ? Math.round(this.props.score) : '-'}
                   </PillButton>
                 </span>
                 <div
-                  style={{ top: 'auto' }}
                   className={`popup_content${this.props.popupAbove ? ' popup_content__above' : ''} score-popup_content`}
                 >
                   <table className={'score-table'}>
@@ -220,7 +219,7 @@ class Track extends Component {
             )}
             <div
               className={'cart-cell track-table-cell'}
-              style={{ overflow: 'visible', display: 'flex', alignItems: 'center', marginTop: 1 }}
+              style={{ overflow: 'visible', display: 'flex', alignItems: 'center' }}
             >
               <span className={'table-cell-button-row'} style={{ width: '100%' }}>
                 <DropDownButton
@@ -303,12 +302,8 @@ class Track extends Component {
         ) : null}
         <td className={'open-share-cell tracks-cell'}>
           <div className={'open-cell track-table-cell'} style={{ overflow: 'visible' }}>
-            {R.intersperse(
-              ' ',
-              //this.props.trackStores.map(store => (
-              actions || []
-            )}{' '}
-            {this.props.enabledStoreSearch?.includes('Youtube') && (
+            {R.intersperse(' ', actions || [])}{' '}
+            {(this.props.listState !== 'carts' || this.props.enabledStoreSearch?.includes('Youtube')) && (
               <a
                 className="pill pill-link pill-link-collapse table-cell-button"
                 href={`https://www.youtube.com/results?search_query=${searchString}`}

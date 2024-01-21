@@ -205,6 +205,10 @@
     margin: 6px;
   }
 
+  .follow-ignore-cart-cell {
+    max-width: 90px;
+  }
+
   .track-play-button {
     display: none;
   }
