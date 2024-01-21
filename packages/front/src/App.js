@@ -53,7 +53,8 @@ import {
   faLifeRing,
   faCircleExclamation,
   faSquareArrowUpRight,
-  faCirclePlus
+  faCirclePlus,
+  faLink
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Onboarding from './Onboarding'
@@ -107,7 +108,8 @@ library.add(
   faLifeRing,
   faCircleExclamation,
   faSquareArrowUpRight,
-  faCirclePlus
+  faCirclePlus,
+  faLink
 )
 
 // import injectTapEventPlugin from 'react-tap-event-plugin';

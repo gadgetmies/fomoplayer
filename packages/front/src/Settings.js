@@ -774,8 +774,9 @@ class Settings extends Component {
                   />
                 </div>
               </label>
+              <h3>Carts</h3>
               <div>
-                {this.props.carts.map(({ id, is_default, is_public, is_purchased, name, uuid }) => {
+                {this.props.carts.map(({ id, is_default, is_public, is_purchased, name, uuid }, index) => {
                   const buttonId = `sharing-${id}`
                   const publicLink = new URL(`/cart/${uuid}`, window.location).toString()
                   const spotifyStoreDetails = this.state.syncedCarts[id]?.find(
@@ -783,25 +784,7 @@ class Settings extends Component {
                   )
                   return (
                     <div key={id}>
-                      <h4>{name}</h4>
-                      {is_default || is_purchased ? null : (
-                        <p>
-                          <SpinnerButton
-                            loading={this.state.deletingCart}
-                            className={`button button-push_button-small button-push_button-primary`}
-                            disabled={this.state.addingCart || this.state.updatingCarts || this.state.deletingCart}
-                            onClick={async () => {
-                              this.setState({ deletingCart: id, updatingCarts: true })
-                              await requestWithCredentials({ path: `/me/carts/${id}`, method: 'DELETE' })
-                              await this.props.onUpdateCarts()
-                              this.setState({ deletingCart: null, updatingCarts: false })
-                            }}
-                          >
-                            Delete cart "{name}"
-                          </SpinnerButton>
-                        </p>
-                      )}
-                      <h5>Sharing</h5>
+                      <h4 style={{ marginTop: index === 0 ? '1rem' : '3rem' }}>{name}</h4>
                       <div>
                         <p style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
                           <label htmlFor={buttonId} className="noselect">
@@ -814,16 +797,17 @@ class Settings extends Component {
                             onChange={state => this.setCartPublic(id, state)}
                           />
                           {this.state.settingCartPublic === id ? <Spinner size="small" /> : null}
+                          {this.state.publicCarts.has(id) ? (
+                            <>
+                              <ExternalLink className="no-style-link" href={publicLink}>
+                                <FontAwesomeIcon icon="link" />
+                                &nbsp;
+                              </ExternalLink>
+                              <CopyToClipboardButton content={publicLink} />
+                            </>
+                          ) : null}
                         </p>
-                        {this.state.publicCarts.has(id) ? (
-                          <p style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
-                            <span>Share link:</span>
-                            <ExternalLink href={publicLink}>{publicLink}</ExternalLink>
-                            <CopyToClipboardButton content={publicLink} />
-                          </p>
-                        ) : null}
                       </div>
-                      <h5>Synchronization</h5>
                       {!spotifyAuthorization ? (
                         <p>
                           Grant Fomo Player access to Spotify from the{' '}
@@ -855,6 +839,23 @@ class Settings extends Component {
                             </p>
                           )}
                         </>
+                      )}
+                      {is_default || is_purchased ? null : (
+                        <p>
+                          <SpinnerButton
+                            loading={this.state.deletingCart}
+                            className={`button button-push_button-small button-push_button-primary`}
+                            disabled={this.state.addingCart || this.state.updatingCarts || this.state.deletingCart}
+                            onClick={async () => {
+                              this.setState({ deletingCart: id, updatingCarts: true })
+                              await requestWithCredentials({ path: `/me/carts/${id}`, method: 'DELETE' })
+                              await this.props.onUpdateCarts()
+                              this.setState({ deletingCart: null, updatingCarts: false })
+                            }}
+                          >
+                            Delete cart "{name}"
+                          </SpinnerButton>
+                        </p>
                       )}
                     </div>
                   )
