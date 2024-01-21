@@ -126,7 +126,7 @@
   justify-content: flex-end;
   flex: 1;
   gap: 4px;
-  background: #000c;
+  background: #000c !important;
   border-radius: 8px;
   margin: 4px;
   align-items: center;
