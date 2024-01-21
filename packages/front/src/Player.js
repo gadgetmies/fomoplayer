@@ -84,7 +84,7 @@ class Player extends Component {
     this.props.heardTracks.forEach(heardTrack => {
       const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
       if (index !== -1) {
-        tracks[index] = heardTrack
+        tracks[index].heard = heardTrack.heard
       }
     })
   }

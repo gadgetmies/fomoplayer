@@ -10,6 +10,8 @@ import { followableNameLinks, namesToString } from './trackFunctions'
 import DropDownButton from './DropDownButton'
 import { Link } from 'react-router-dom'
 
+const isNumber = value => typeof value === 'number' && !Number.isNaN(value)
+
 class Track extends Component {
   constructor(props) {
     super(props)
@@ -183,7 +185,9 @@ class Track extends Component {
             {this.props.listState === 'new' && (
               <div className={'score-cell track-table-cell popup_container'} style={{ overflow: 'visible' }}>
                 <span className={'popup-anchor'}>
-                  <PillButton className={'table-cell-button'}>{Math.round(this.props.score)}</PillButton>
+                  <PillButton className={'table-cell-button'}>
+                    {isNumber(this.props.score) ? '-' : Math.round(this.props.score)}
+                  </PillButton>
                 </span>
                 <div
                   style={{ top: 'auto' }}
