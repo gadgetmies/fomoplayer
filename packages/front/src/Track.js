@@ -100,7 +100,7 @@ class Track extends Component {
             )
       })
       ?.filter(i => i)
-    
+
     return (
       <tr
         ref={'row'}
