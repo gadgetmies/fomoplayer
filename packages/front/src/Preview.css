@@ -28,7 +28,7 @@
 
 .waveform_container {
   height: 100%;
-  min-height: 100px;
+  min-height: 80px;
 }
 
 .mobile .volume-slider {
@@ -63,10 +63,6 @@
   padding: 1rem 0.5rem;
   display: flex;
   gap: 8px;
-}
-
-.preview-wrapper {
-  height: 100%;
 }
 
 .preview_links_wrapper {
@@ -168,6 +164,10 @@
     flex-direction: column;
   }
 
+  .preview-wrapper {
+    max-height: 100px;
+  }
+
   .preview-icons-container {
     font-size: 100%;
   }
@@ -188,6 +188,8 @@
   .preview_details_wrapper {
     flex-direction: row;
     gap: 16px;
+    max-height: 100px;
+    overflow-y: auto;
   }
 
   .preview_links_wrapper {
@@ -204,6 +206,10 @@
 }
 
 @media (min-width: 769px) {
+  .preview-wrapper {
+    height: 100%;
+  }
+
   .preview-icons-container {
     font-size: 75%;
   }

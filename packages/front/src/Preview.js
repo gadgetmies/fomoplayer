@@ -290,7 +290,7 @@ class Preview extends Component {
                     ))}
                   </div>
                 </div>
-                <div className="preview_links_wrapper">
+                <div className="preview_links_wrapper" style={{ paddingBottom: 8 }}>
                   <span className="preview_actions_title">Search</span>
                   <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
                     {this.props.stores
