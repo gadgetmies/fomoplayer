@@ -349,14 +349,6 @@ class App extends Component {
       return
     }
 
-    // TODO: WTF is interval?
-    /*
-    await requestWithCredentials({
-      path: `/me/tracks?interval=${interval}`,
-      method: 'PATCH',
-      body: { heard: true }
-    })
-    */
     // TODO: if the tracks are always updated, the list refreshes -> problem?
     // await this.updateTracks()
 
@@ -373,12 +365,14 @@ class App extends Component {
     updatedHeardTracks = R.prepend(updatedTrack, updatedHeardTracks)
     this.setState({ heardTracks: updatedHeardTracks })
 
-    // TODO: do this in the background? Although this should not block the UI either
-    await requestWithCredentials({
-      path: `/me/tracks/${track.id}`,
-      method: 'POST',
-      body: { heard: true }
-    })
+    if (this.props.mode === 'app') {
+      // TODO: do this in the background? Although this should not block the UI either
+      await requestWithCredentials({
+        path: `/me/tracks/${track.id}`,
+        method: 'POST',
+        body: { heard: true }
+      })
+    }
   }
 
   async updateEmail(email) {
@@ -588,19 +582,7 @@ class App extends Component {
   async setCurrentTrack(track) {
     this.setState({ currentTrack: track })
     document.title = `${trackArtistsAndTitleText(track)} - Fomo Player`
-
-    // TODO: how to handle this now?
-    if (true || this.props.mode === 'app') {
-      // TODO: should this not be only done in markHeard?
-      /*
-      await requestWithCredentials({
-        path: `/me/tracks/${track.id}`,
-        method: 'POST',
-        body: { heard: true }
-      })
-       */
-    }
-    this.markHeard(track)
+    await this.markHeard(track)
   }
 
   async followStoreArtist(storeArtistId, storeArtistUrl, name, follow) {
