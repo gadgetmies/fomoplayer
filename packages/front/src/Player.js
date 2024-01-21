@@ -91,7 +91,6 @@ class Player extends Component {
 
   getTracks() {
     let tracks
-    // TODO: fix this
     if (this.props.mode === 'list') {
       return this.props.tracks
     }
