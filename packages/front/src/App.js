@@ -141,7 +141,8 @@ class App extends Component {
       searchResults: [],
       listState: 'new',
       heardTracks: defaultTracksData.tracks.heard,
-      selectedCartId: undefined
+      selectedCartId: undefined,
+      mode: location.pathname.startsWith('/carts/') ? 'list' : 'app'
     }
   }
 
@@ -365,7 +366,7 @@ class App extends Component {
     updatedHeardTracks = R.prepend(updatedTrack, updatedHeardTracks)
     this.setState({ heardTracks: updatedHeardTracks })
 
-    if (this.props.mode === 'app') {
+    if (this.state.mode === 'app') {
       // TODO: do this in the background? Although this should not block the UI either
       await requestWithCredentials({
         path: `/me/tracks/${track.id}`,
