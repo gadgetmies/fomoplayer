@@ -66,10 +66,17 @@ class Track extends Component {
 
     const actions = this.props.stores
       ?.map(({ storeName, searchUrl }) => {
-        if (!this.props.enabledStores?.includes(storeName)) return null
+        if (
+          this.props.mode === 'app' &&
+          this.props.listState === 'carts' &&
+          !this.props.enabledStores?.includes(storeName)
+        )
+          return null
         const trackStore = this.props.trackStores.find(R.propEq('name', storeName))
         return trackStore
-          ? (this.props.listState !== 'carts' || this.props.enabledStores?.includes(storeName)) && (
+          ? (this.props.listState !== 'carts' ||
+              this.props.mode !== 'app' ||
+              this.props.enabledStores?.includes(storeName)) && (
               <a
                 onClick={e => {
                   e.stopPropagation()
@@ -183,7 +190,10 @@ class Track extends Component {
         {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'}>
             {this.props.listState === 'new' && (
-              <div className={'score-cell track-table-cell popup_container'} style={{ overflow: 'visible', paddingRight: 5, paddingBottom: 0 }}>
+              <div
+                className={'score-cell track-table-cell popup_container'}
+                style={{ overflow: 'visible', paddingRight: 5, paddingBottom: 0 }}
+              >
                 <span className={'popup-anchor'}>
                   <PillButton className={'table-cell-button'} style={{ display: 'flex', paddingBottom: 7 }}>
                     {isNumber(this.props.score) ? Math.round(this.props.score) : '-'}
@@ -303,7 +313,9 @@ class Track extends Component {
         <td className={'open-share-cell tracks-cell'}>
           <div className={'open-cell track-table-cell'} style={{ overflow: 'visible' }}>
             {R.intersperse(' ', actions || [])}{' '}
-            {(this.props.listState !== 'carts' || this.props.enabledStoreSearch?.includes('Youtube')) && (
+            {(this.props.listState !== 'carts' ||
+              this.props.mode !== 'app' ||
+              this.props.enabledStoreSearch?.includes('Youtube')) && (
               <a
                 className="pill pill-link pill-link-collapse table-cell-button"
                 href={`https://www.youtube.com/results?search_query=${searchString}`}

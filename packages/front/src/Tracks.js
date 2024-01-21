@@ -374,12 +374,12 @@ class Tracks extends Component {
                   <div className={'key-cell track-table-cell'}>Key</div>
                 </div>
               </th>
-              <th className={'follow-ignore-cart-cell tracks-cell'}>
-                {this.props.mode === 'app' && this.props.listState === 'new' ? (
-                  <div className={'score-cell track-table-cell'}>Score</div>
-                ) : null}
-                <div className={'cart-cell track-table-cell'}>Cart</div>
-              </th>
+              {this.props.mode === 'app' && (
+                <th className={'follow-ignore-cart-cell tracks-cell'}>
+                  {this.props.listState === 'new' ? <div className={'score-cell track-table-cell'}>Score</div> : null}
+                  <div className={'cart-cell track-table-cell'}>Cart</div>
+                </th>
+              )}
               <th className={'open-share-cell tracks-cell'}>
                 <div className={'open-cell track-table-cell popup_container'} style={{ padding: 0, margin: 4 }}>
                   <div className={'popup-anchor'}>

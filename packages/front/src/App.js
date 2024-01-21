@@ -187,11 +187,16 @@ class App extends Component {
     if (window.location.pathname.startsWith(cartString)) {
       const uuid = window.location.pathname.substring(cartString.length)
       const position = parseInt(window.location.hash.substring(1))
-      const list = await requestJSONwithCredentials({
-        path: `/carts/${uuid}`
-      })
+      const [list, stores] = await Promise.all([
+        requestJSONwithCredentials({
+          path: `/carts/${uuid}`
+        }),
+        requestJSONwithCredentials({
+          path: `/stores`
+        })
+      ])
 
-      this.setState({ list, initialPosition: position })
+      this.setState({ list, initialPosition: position, stores })
     } else {
       try {
         await this.updateStatesFromServer()
@@ -782,7 +787,12 @@ class App extends Component {
                 mode="list"
                 carts={[this.state.list]}
                 initialPosition={this.state.initialPosition}
+                onSetCurrentTrack={this.setCurrentTrack.bind(this)}
                 tracks={this.state.list.tracks}
+                heardTracks={this.state.heardTracks}
+                stores={this.state.stores}
+                currentTrack={this.state.currentTrack}
+                isMobile={this.state.isMobile}
               />
             ) : (
               <div className="align-center-container full-screen-popup-container">

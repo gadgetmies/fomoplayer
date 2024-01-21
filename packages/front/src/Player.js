@@ -9,7 +9,7 @@ import { PlayerHelp } from './PlayerHelp'
 class Player extends Component {
   constructor(props) {
     super(props)
-    const allStores = this.props.stores.map(({ storeName }) => storeName)
+    const allStores = this.props.stores?.map(({ storeName }) => storeName)
     const enabledStores = JSON.parse(window.localStorage.getItem('enabledStores')) || allStores
     const enabledStoreSearch = JSON.parse(window.localStorage.getItem('enabledStoreSearch')) || allStores
     this.state = {
@@ -93,7 +93,7 @@ class Player extends Component {
     let tracks
     // TODO: fix this
     if (this.props.mode === 'list') {
-      return this.state.tracksData.tracks
+      return this.props.tracks
     }
 
     if (this.props.listState === 'new') {
@@ -309,9 +309,9 @@ class Player extends Component {
           carts={this.props.carts}
           inCarts={inCarts}
           processingCart={this.props.processingCart}
-          onCartButtonClick={this.props.onHandleCartButtonClick.bind(this)}
-          onCreateCartClick={this.props.onHandleCreateCartClick.bind(this)}
-          onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick.bind(this)}
+          onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
+          onCreateCartClick={this.props.onHandleCreateCartClick?.bind(this)}
+          onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick?.bind(this)}
           onIgnoreClicked={() => {
             return this.props.onOpenIgnorePopup(currentTrack)
           }}
@@ -341,7 +341,7 @@ class Player extends Component {
           onCreateCart={this.props.onCreateCart}
           onUpdateCarts={this.props.onUpdateCarts}
           onRemoveFromCart={this.props.onRemoveFromCart}
-          onMarkPurchased={this.props.onMarkPurchased.bind(this)}
+          onMarkPurchased={this.handleMarkPurchasedButtonClick.bind(this)}
           onIgnoreArtistsByLabels={this.props.onIgnoreArtistsByLabels}
           onPreviewRequested={id => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
@@ -352,16 +352,16 @@ class Player extends Component {
             }
             this.props.onSetCurrentTrack(requestedTrack)
           }}
-          onFollowClicked={this.props.onOpenFollowPopup.bind(this)}
-          onIgnoreClicked={this.props.onOpenIgnorePopup.bind(this)}
-          onSelectCart={this.props.onSelectCart.bind(this)}
+          onFollowClicked={this.props.onOpenFollowPopup?.bind(this)}
+          onIgnoreClicked={this.props.onOpenIgnorePopup?.bind(this)}
+          onSelectCart={this.props.onSelectCart?.bind(this)}
           onRequestNotificationUpdate={this.props.onRequestNotificationUpdate}
           onToggleStoreEnabled={this.toggleStoreEnabled.bind(this)}
           enabledStores={this.state.enabledStores}
           onToggleStoreSearchEnabled={this.toggleStoreSearchEnabled.bind(this)}
           enabledStoreSearch={this.state.enabledStoreSearch}
-          onCartButtonClick={this.props.onHandleCartButtonClick.bind(this)}
-          onCreateCartClick={this.props.onHandleCreateCartClick.bind(this)}
+          onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
+          onCreateCartClick={this.props.onHandleCreateCartClick?.bind(this)}
           onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick.bind(this)}
         />
       </div>

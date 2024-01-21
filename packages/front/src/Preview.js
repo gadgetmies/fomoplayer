@@ -404,29 +404,29 @@ class Preview extends Component {
               />
               {currentTrack ? (
                 <>
-                  {previews.length > 0 && (
-                    <div
-                      className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
-                      style={{ left: 2 }}
+                  <div
+                    className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
+                    style={{ left: 2 }}
+                  >
+                    <input
+                      type="radio"
+                      id="sample_select_state-preview"
+                      name="sample-select-state"
+                      checked={!this.state.preferFullTracks}
+                    />
+                    <label
+                      htmlFor="sample_select_state-preview"
+                      className={`select_button-button state-select_button-button select_button-button__small ${
+                        !this.state.preferFullTracks ? 'select_button-button__active' : ''
+                      }`}
+                      onClick={() => {
+                        localStorage.setItem('preferFullTracks', 'false')
+                        this.setState({ preferFullTracks: false })
+                      }}
                     >
-                      <input
-                        type="radio"
-                        id="sample_select_state-preview"
-                        name="sample-select-state"
-                        checked={!this.state.preferFullTracks}
-                      />
-                      <label
-                        htmlFor="sample_select_state-preview"
-                        className={`select_button-button state-select_button-button select_button-button__small ${
-                          !this.state.preferFullTracks ? 'select_button-button__active' : ''
-                        }`}
-                        onClick={() => {
-                          localStorage.setItem('preferFullTracks', 'false')
-                          this.setState({ preferFullTracks: false })
-                        }}
-                      >
-                        Preview
-                      </label>{' '}
+                      Preview
+                    </label>{' '}
+                    {previews.length > 0 && (
                       <div className="preview-icons-container select-icon--container" style={{ left: 2 }}>
                         {previews
                           ?.reduce(
@@ -448,31 +448,32 @@ class Preview extends Component {
                             </span>
                           ))}
                       </div>
-                    </div>
-                  )}
-                  {fullTracks?.length > 0 && (
-                    <div
-                      className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
-                      style={{ right: 2 }}
+                    )}
+                  </div>
+
+                  <div
+                    className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
+                    style={{ right: 2 }}
+                  >
+                    <input
+                      type="radio"
+                      id="sample_select_state-full_track"
+                      name="sample-select-state"
+                      checked={this.state.preferFullTracks}
+                    />
+                    <label
+                      htmlFor="sample_select_state-full_track"
+                      className={`select_button-button state-select_button-button select_button-button__small ${
+                        this.state.preferFullTracks ? 'select_button-button__active' : ''
+                      }`}
+                      onClick={() => {
+                        localStorage.setItem('preferFullTracks', 'true')
+                        this.setState({ preferFullTracks: true })
+                      }}
                     >
-                      <input
-                        type="radio"
-                        id="sample_select_state-full_track"
-                        name="sample-select-state"
-                        checked={this.state.preferFullTracks}
-                      />
-                      <label
-                        htmlFor="sample_select_state-full_track"
-                        className={`select_button-button state-select_button-button select_button-button__small ${
-                          this.state.preferFullTracks ? 'select_button-button__active' : ''
-                        }`}
-                        onClick={() => {
-                          localStorage.setItem('preferFullTracks', 'true')
-                          this.setState({ preferFullTracks: true })
-                        }}
-                      >
-                        Listen
-                      </label>{' '}
+                      Listen
+                    </label>{' '}
+                    {fullTracks?.length > 0 && (
                       <div className="preview-icons-container select-icon--container">
                         {fullTracks
                           ?.reduce(
@@ -494,8 +495,8 @@ class Preview extends Component {
                             </span>
                           ))}
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </>
               ) : null}
             </div>
@@ -599,32 +600,36 @@ class Preview extends Component {
                     </div>
                   </DropDownButton>
                 )}
-                <button
-                  disabled={!this.props.currentTrack}
-                  onClick={this.props.onFollowClicked}
-                  className={
-                    'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
-                  }
-                >
-                  <span className="button-push_button_icon">
-                    <FontAwesomeIcon icon={'heart'} />
-                  </span>{' '}
-                  <span className="button-push_button_label">Follow</span>
-                </button>
-                <button
-                  disabled={!this.props.currentTrack}
-                  className={
-                    'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
-                  }
-                  onClick={() => {
-                    this.props.onIgnoreClicked(this.props.currentTrack)
-                  }}
-                >
-                  <span className="button-push_button_icon">
-                    <FontAwesomeIcon icon={'ban'} />
-                  </span>{' '}
-                  <span className="button-push_button_label">Ignore</span>
-                </button>
+                {this.props.mode === 'app' && (
+                  <>
+                    <button
+                      disabled={!this.props.currentTrack}
+                      onClick={this.props.onFollowClicked}
+                      className={
+                        'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
+                      }
+                    >
+                      <span className="button-push_button_icon">
+                        <FontAwesomeIcon icon={'heart'} />
+                      </span>{' '}
+                      <span className="button-push_button_label">Follow</span>
+                    </button>
+                    <button
+                      disabled={!this.props.currentTrack}
+                      className={
+                        'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
+                      }
+                      onClick={() => {
+                        this.props.onIgnoreClicked(this.props.currentTrack)
+                      }}
+                    >
+                      <span className="button-push_button_icon">
+                        <FontAwesomeIcon icon={'ban'} />
+                      </span>{' '}
+                      <span className="button-push_button_label">Ignore</span>
+                    </button>
+                  </>
+                )}
                 <div className="popup_container" style={{ display: 'flex' }}>
                   <button className={'pill pill-button button-push_button-small popup-anchor'} style={{ flex: 1 }}>
                     <span className="pill-button-contents">
