@@ -159,6 +159,10 @@
   .preview_details_wrapper {
     flex-wrap: wrap;
   }
+
+  .preview_links_container {
+    display: none;
+  }
 }
 
 @media (min-width: 591px) {
