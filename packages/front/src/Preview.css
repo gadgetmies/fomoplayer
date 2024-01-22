@@ -63,6 +63,7 @@
   padding: 1rem 0.5rem;
   display: flex;
   gap: 8px;
+  flex-direction: column;
 }
 
 .preview_details_wrapper::-webkit-scrollbar {
@@ -142,6 +143,10 @@
   background-color: #b40089;
 }
 
+.preview-wrapper {
+  height: 100%;
+}
+
 @media (max-width: 590px) {
   .button-playback {
     font-size: 150%;
@@ -163,6 +168,10 @@
   .preview_links_container {
     display: none;
   }
+
+  .preview {
+    flex-direction: column;
+  }
 }
 
 @media (min-width: 591px) {
@@ -176,21 +185,13 @@
 }
 
 @media (max-width: 768px) {
-  .preview {
-    flex-direction: column;
-  }
-
-  .preview-wrapper {
-    max-height: 100px;
-  }
-
   .preview-icons-container {
     font-size: 100%;
   }
 
   .player-collection-wrapper {
     display: block;
-    filter: drop-shadow(0 -3px 3px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 -3px 3px rgba(0, 0, 0, 0.3));
   }
 
   .preview-samples_container {
@@ -203,9 +204,8 @@
   }
 
   .preview_details_wrapper {
-    flex-direction: row;
     gap: 16px;
-    max-height: 100px;
+    max-height: 160px;
     overflow-y: auto;
     flex-wrap: wrap;
   }
@@ -219,7 +219,7 @@
   }
 
   .preview_links_container {
-    flex-direction: column;
+    flex-direction: row;
   }
 
   .preview_title {
@@ -228,10 +228,6 @@
 }
 
 @media (min-width: 769px) {
-  .preview-wrapper {
-    height: 100%;
-  }
-
   .preview-icons-container {
     font-size: 75%;
   }
@@ -249,7 +245,6 @@
   }
 
   .preview_details_wrapper {
-    flex-direction: column;
     gap: 16px;
   }
 

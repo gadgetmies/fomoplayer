@@ -273,7 +273,7 @@ class Preview extends Component {
               </div>
               <div className="preview_links_container">
                 <div className="preview_links_wrapper">
-                  <span className="preview_actions_title">Available on</span>
+                  <span className="preview_actions_title">Available&nbsp;on</span>
                   <div className="available_on_list">
                     {this.props.currentTrack?.stores.map(({ name, url, release: { url: releaseUrl } }) => (
                       <a
@@ -281,7 +281,7 @@ class Preview extends Component {
                         href={url || releaseUrl}
                         target="_blank"
                         className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
-                        style={{ display: 'flex' }}
+                        style={{ display: 'flex', padding: '16px 8px' }}
                       >
                         <span className={`store-icon store-icon-${name.toLowerCase()}`} />{' '}
                         <span className="pill-link-text">{name}</span>
@@ -305,7 +305,7 @@ class Preview extends Component {
                             href={`${searchUrl}${searchString}`}
                             target="_blank"
                             className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
-                            style={{ display: 'flex' }}
+                            style={{ display: 'flex', padding: '16px 8px' }}
                           >
                             <span className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
                             <span className="pill-link-text">{storeName}</span>
@@ -317,7 +317,7 @@ class Preview extends Component {
                       href={`https://www.youtube.com/results?search_query=${searchString}`}
                       target="_blank"
                       className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
-                      style={{ display: 'flex' }}
+                      style={{ display: 'flex', padding: '16px 8px' }}
                     >
                       <FontAwesomeIcon icon={['fab', 'youtube']} /> <span className="pill-link-text">Youtube</span>
                       <FontAwesomeIcon icon={'square-arrow-up-right'} />
