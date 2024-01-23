@@ -81,6 +81,7 @@ class Preview extends Component {
     return url
   }
 
+  // TODO: replace componentWillUpdate with something that is supported. componentDidUpdate does not work: E.g. changing track causes the previous track to be played. Maybe getDerivedStateFromProps (suggested by co-pilot)?
   async componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
     if (this.state.playing !== playing) {
       const player = this.getPlayer()
