@@ -204,7 +204,7 @@ audio {
   the 40px is just a safety margin to ensure all the
   content gets displayed */
   height: calc(100vh);
-  padding-bottom: 100px;
+  padding-bottom: 120px;
 }
 
 .followed {

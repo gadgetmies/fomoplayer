@@ -118,7 +118,7 @@ library.add(
 const logoutPath = '/auth/logout'
 const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
-const Root = props => <div className="root" style={{ height: '100%' }} {...props} />
+const Root = props => <div className="root" style={{ height: '100vh' }} {...props} />
 class App extends Component {
   constructor(props) {
     super(props)
