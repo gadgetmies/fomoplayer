@@ -388,7 +388,6 @@ class Preview extends Component {
                 autoPlay={true}
                 ref="player0"
                 onEnded={() => {
-                  this.setPlaying(false)
                   this.props.onNext()
                 }}
                 onPlaying={() => this.setPlaying(true)}
