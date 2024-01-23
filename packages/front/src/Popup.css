@@ -19,6 +19,11 @@
   border-bottom: 1px solid grey;
 }
 
+.popup_content__above {
+  bottom: 100% !important;
+  top: auto !important;
+}
+
 @media (max-width: 590px) {
   .popup_content {
     left: 2rem;
@@ -42,11 +47,6 @@
     transform: translateX(-50%);
     left: 50%;
     max-height: calc(100vh * 0.5);
-  }
-
-  /* TODO: does this work with the top: 100% below? */
-  .popup_content__above {
-    bottom: 100%;
   }
 
   .popup_container-center .popup_content {
