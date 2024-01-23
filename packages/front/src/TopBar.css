@@ -19,6 +19,7 @@
 .text-input-top_bar {
   border-radius: 0.25rem;
   font-size: 1rem;
+  background-color: #050505;
 }
 
 .top_bar {
