@@ -1,4 +1,4 @@
-import "./PillButton.css"
+import './PillButton.css'
 import React, { Component } from 'react'
 
 class PillButton extends Component {
@@ -7,7 +7,7 @@ class PillButton extends Component {
     return (
       <button
         className={`button pill pill-button ${this.props.className || ''}`}
-        onClick={e => this.props.onClick(e)}
+        onClick={e => this.props.onClick && this.props.onClick(e)}
         disabled={this.props.disabled}
         style={this.props.style}
       >
