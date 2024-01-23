@@ -237,7 +237,7 @@ class Track extends Component {
                   icon={processingCart ? null : inCart ? 'minus' : 'cart-plus'}
                   title={inCart ? removeLabel : 'Add to default cart'}
                   buttonClassName="table-cell-button"
-                  popupClassName="popup_content-small"
+                  popupClassName={`popup_content-small ${this.props.popupAbove ? ' popup_content__above' : ''}`}
                   buttonStyle={{ opacity: 1 }}
                   loading={processingCart}
                   onClick={e => {
