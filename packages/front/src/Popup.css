@@ -47,7 +47,14 @@
     border-bottom-right-radius: 0;
     flex-direction: column;
     align-content: flex-end;
+  }
+
+  .mobile .popup_content {
     max-height: calc(100vh - 8rem);
+  }
+
+  :not(.mobile) .popup_content {
+    top: 2rem;
   }
 }
 
