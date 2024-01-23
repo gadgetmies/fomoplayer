@@ -270,10 +270,16 @@ input[type='range']::-webkit-slider-runnable-track {
 }
 
 @media (max-width: 768px) {
+  .mobile .full-screen-popup {
+    bottom: 0;
+    padding-bottom: 128px;
+    overscroll-behavior: auto;
+    overflow: scroll;
+  }
+
   .full-screen-popup {
     left: 2rem;
     right: 2rem;
-    bottom: 0;
     position: absolute;
     padding-bottom: 80px;
   }
