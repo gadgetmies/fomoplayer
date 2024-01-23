@@ -786,7 +786,7 @@ class Settings extends Component {
                     <div key={id}>
                       <h4 style={{ marginTop: index === 0 ? '1rem' : '3rem' }}>{name}</h4>
                       <div>
-                        <p style={{ display: 'flex', alignItems: 'center' }} className="input-layout">
+                        <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
                           <label htmlFor={buttonId} className="noselect">
                             Sharing enabled:
                           </label>
@@ -799,11 +799,8 @@ class Settings extends Component {
                           {this.state.settingCartPublic === id ? <Spinner size="small" /> : null}
                           {this.state.publicCarts.has(id) ? (
                             <>
-                              <ExternalLink className="no-style-link" href={publicLink}>
-                                <FontAwesomeIcon icon="link" />
-                                &nbsp;
-                              </ExternalLink>
-                              <CopyToClipboardButton content={publicLink} />
+                              <ExternalLink href={publicLink}>Open cart&nbsp;</ExternalLink>
+                              <CopyToClipboardButton content={publicLink} label={'Copy link'} />
                             </>
                           ) : null}
                         </p>
