@@ -625,7 +625,11 @@ class App extends Component {
           requestWithCredentials({ url: `/log/error`, method: 'POST', body: { error, errorInfo } })
         }
       >
-        <Root className={this.state.listState === 'search' ? 'search-expanded' : undefined}>
+        <Root
+          className={`${this.state.listState === 'search' ? 'search-expanded' : ''} ${
+            this.state.isMobile ? 'mobile' : ''
+          }`}
+        >
           <Router>
             {this.state.loading ? (
               <div className="loading-overlay">

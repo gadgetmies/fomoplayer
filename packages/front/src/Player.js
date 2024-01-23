@@ -274,7 +274,7 @@ class Player extends Component {
       ? this.props.carts.filter(cart => cart.tracks?.find(R.propEq('id', currentTrack.id)))
       : []
     return (
-      <div className={`page-container ${this.props.isMobile ? 'mobile' : ''}`} style={{ ...this.props.style }}>
+      <div className={`page-container`} style={{ ...this.props.style }}>
         <PlayerHelp active={this.state.helpActive} onActiveChanged={active => this.setState({ helpActive: active })} />
         <MediaSession
           title={currentTrack ? trackTitle(currentTrack) : ''}
