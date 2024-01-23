@@ -629,6 +629,7 @@ class App extends Component {
           className={`${this.state.listState === 'search' ? 'search-expanded' : ''} ${
             this.state.isMobile ? 'mobile' : ''
           }`}
+          style={{ overflow: 'hidden' }}
         >
           <Router>
             {this.state.loading ? (
