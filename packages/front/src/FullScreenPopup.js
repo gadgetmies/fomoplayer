@@ -17,7 +17,7 @@ class FullScreenPopup extends Component {
         }}
         style={{ display: this.props.open ? 'flex' : 'none' }}
       >
-        <div className={`full-screen-popup align-center-item ${this.props.className}`}>
+        <div className={`full-screen-popup align-center-item ${this.props.className || ''}`}>
           <h1 className="full-screen-popup-title">{this.props.title}</h1>
           <div className="full-screen-popup-close">
             <button onClick={this.props.onCloseClicked} title={'Close popup'}>
