@@ -3,9 +3,22 @@
   display: none;
   background: black;
   border-radius: 0.25em;
-  z-index: 1;
   box-shadow: 0px 0px 5px black;
   padding: 4px;
+  z-index: 100;
+}
+
+.mobile .popup-anchor:hover:before {
+  background-color: black;
+  background-color: rgba(0, 0, 0, 0.55);
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 100;
+  position: absolute;
+  content: '';
+  pointer-events: none;
 }
 
 .popup-anchor:hover + .popup_content,
