@@ -412,7 +412,7 @@ class Preview extends Component {
                       type="radio"
                       id="sample_select_state-preview"
                       name="sample-select-state"
-                      checked={!this.state.preferFullTracks}
+                      defaultChecked={!this.state.preferFullTracks}
                     />
                     <label
                       htmlFor="sample_select_state-preview"
@@ -459,7 +459,7 @@ class Preview extends Component {
                       type="radio"
                       id="sample_select_state-full_track"
                       name="sample-select-state"
-                      checked={this.state.preferFullTracks}
+                      defaultChecked={this.state.preferFullTracks}
                     />
                     <label
                       htmlFor="sample_select_state-full_track"
