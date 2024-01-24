@@ -195,7 +195,10 @@ class Track extends Component {
                 style={{ overflow: 'visible', paddingRight: 5, paddingBottom: 0 }}
               >
                 <span className={'popup-anchor'}>
-                  <PillButton className={'table-cell-button'} style={{ display: 'flex', paddingBottom: 7 }}>
+                  <PillButton
+                    className={'table-cell-button'}
+                    style={{ display: 'flex', paddingBottom: 7, justifyContent: 'center' }}
+                  >
                     {isNumber(this.props.score) ? Math.round(this.props.score) : '-'}
                   </PillButton>
                 </span>
