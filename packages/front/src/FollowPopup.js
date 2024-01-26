@@ -57,7 +57,6 @@ class FollowPopup extends Component {
               return artist.stores.map(({ url, id, store: { name: storeName } }) => {
                 const following = this.getFollowingArtist(id)
                 const subscribing = this.state.subscribingToStoreArtist === id
-                console.log('render', { id, following, subscribing })
                 return (
                   <FollowItem
                     key={url}
