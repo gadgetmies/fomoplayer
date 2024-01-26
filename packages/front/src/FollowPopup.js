@@ -1,3 +1,4 @@
+import * as R from 'ramda'
 import FullScreenPopup from './FullScreenPopup'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { Component } from 'react'
@@ -54,7 +55,7 @@ class FollowPopup extends Component {
             </>
           ) : (
             this.state.artistDetails.map(artist => {
-              return artist.stores.map(({ url, id, store: { name: storeName } }) => {
+              return artist.stores.filter(R.prop('url')).map(({ url, id, store: { name: storeName } }) => {
                 const following = this.getFollowingArtist(id)
                 const subscribing = this.state.subscribingToStoreArtist === id
                 return (
@@ -94,7 +95,7 @@ class FollowPopup extends Component {
                 </>
               ) : (
                 this.state.labelDetails.map(label => {
-                  return label.stores.map(({ url, id, store: { name: storeName } }) => {
+                  return label.stores.filter(R.prop('url')).map(({ url, id, store: { name: storeName } }) => {
                     const following = this.getFollowingLabel(id)
                     return (
                       <FollowItem

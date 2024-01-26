@@ -388,8 +388,18 @@ class Preview extends Component {
               <audio
                 autoPlay={true}
                 ref="player0"
-                onEnded={() => {
-                  this.props.onNext()
+                onEnded={async () => {
+                  try {
+                    navigator.mediaSession.playbackState = 'paused'
+                    this.setState({ playing: false })
+                    await this.props.onNext()
+                  } catch (e) {
+                    console.error(e)
+                  }
+                }}
+                onLoadedData={() => {
+                  this.setState({ playing: true })
+                }}
                 onPlaying={() => {
                   this.setPlaying(true)
                   this.getPlayer().play()
