@@ -590,7 +590,8 @@ class App extends Component {
   async setCurrentTrack(track) {
     this.setState({ currentTrack: track })
     document.title = `${trackArtistsAndTitleText(track)} - Fomo Player`
-    await this.markHeard(track)
+    this.markHeard(track)
+      .catch(e => console.error('Error while marking track as heard', e))
   }
 
   async followStoreArtist(storeArtistId, storeArtistUrl, name, follow) {
