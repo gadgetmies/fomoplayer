@@ -390,11 +390,32 @@ class Preview extends Component {
                 ref="player0"
                 onEnded={() => {
                   this.props.onNext()
+                onPlaying={() => {
+                  this.setPlaying(true)
+                  this.getPlayer().play()
+                  navigator.mediaSession.metadata = null
+                  navigator.mediaSession.playbackState = 'playing'
+                  navigator.mediaSession.metadata = new MediaMetadata({
+                    artist: `${namesToString(this.props.currentTrack.artists)}`,
+                    title: this.props.currentTrack.title
+                  })
                 }}
-                onPlaying={() => this.setPlaying(true)}
                 onPause={() => this.setPlaying(false)}
                 onTimeUpdate={({ currentTarget: { currentTime } }) => {
                   this.setState({ position: currentTime * 1000 })
+                  console.log(this.state.mp3Preview.length_ms / 1000, currentTime)
+                  try {
+                    this.state.mp3Preview.length_ms &&
+                      currentTime &&
+                      currentTime < this.state.mp3Preview.length_ms / 1000 &&
+                      navigator.mediaSession.setPositionState({
+                        duration: this.state.mp3Preview.length_ms / 1000,
+                        playbackRate: 1,
+                        position: currentTime
+                      })
+                  } catch (e) {
+                    console.error(e, currentTime, this.state.mp3Preview.length_ms)
+                  }
                 }}
                 onError={e => {
                   requestWithCredentials({ url: '/log/error', method: 'POST', body: e })

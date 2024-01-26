@@ -276,14 +276,6 @@ class Player extends Component {
     return (
       <div className={`page-container`} style={{ ...this.props.style }}>
         <PlayerHelp active={this.state.helpActive} onActiveChanged={active => this.setState({ helpActive: active })} />
-        <MediaSession
-          title={currentTrack ? trackTitle(currentTrack) : ''}
-          artist={currentTrack ? namesToString(currentTrack.artists) : ''}
-          onSeekBackward={() => console.log('seek backward')}
-          onSeekForward={() => console.log('seek forward')}
-          onPreviousTrack={() => this.handlePreviousClick()}
-          onNextTrack={() => this.handleNextClick()}
-        />
         <Preview
           mode={this.props.mode}
           togglingCurrentInCart={this.state.togglingCurrentInCart}
