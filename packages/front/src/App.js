@@ -14,48 +14,11 @@ import config from './config.js'
 
 import 'typeface-lato'
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faChrome, faFacebook, faGithub, faTelegram, faTwitter, faYoutube } from '@fortawesome/free-brands-svg-icons'
-import {
-  faBackward,
-  faBan,
-  faBars,
-  faBell,
-  faBellSlash,
-  faCaretDown,
-  faCircle,
-  faCircleQuestion,
-  faClipboard,
-  faClipboardCheck,
-  faCopy,
-  faExclamationCircle,
-  faLightbulb,
-  faExternalLinkAlt,
-  faForward,
-  faHeart,
-  faHeartBroken,
-  faInfoCircle,
-  faKeyboard,
-  faMinus,
-  faMoneyBills,
-  faPause,
-  faPlay,
-  faPlus,
-  faSearch,
-  faShare,
-  faStar,
-  faStepBackward,
-  faStepForward,
-  faTimesCircle,
-  faCartShopping,
-  faCartPlus,
-  faRightFromBracket,
-  faCog,
-  faLifeRing,
-  faCircleExclamation,
-  faSquareArrowUpRight,
-  faCirclePlus,
-  faLink
-} from '@fortawesome/free-solid-svg-icons'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+import { far } from '@fortawesome/free-regular-svg-icons'
+import { fab } from '@fortawesome/free-brands-svg-icons'
+library.add(fas, far, fab)
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Onboarding from './Onboarding'
 import TopBar from './TopBar'
@@ -63,54 +26,6 @@ import { trackArtistsAndTitleText } from './trackFunctions'
 import FollowPopup from './FollowPopup'
 import IgnorePopup from './IgnorePopup'
 import KeyboardShortcutsPopup from './KeyboardShortcutsPopup'
-
-library.add(
-  faTwitter,
-  faFacebook,
-  faTelegram,
-  faHeart,
-  faHeartBroken,
-  faPlus,
-  faMinus,
-  faTimesCircle,
-  faCopy,
-  faBars,
-  faExternalLinkAlt,
-  faBan,
-  faExclamationCircle,
-  faLightbulb,
-  faForward,
-  faBackward,
-  faPlay,
-  faStepForward,
-  faStepBackward,
-  faPause,
-  faKeyboard,
-  faGithub,
-  faChrome,
-  faYoutube,
-  faCircle,
-  faCircleQuestion,
-  faInfoCircle,
-  faClipboard,
-  faClipboardCheck,
-  faCaretDown,
-  faBell,
-  faBellSlash,
-  faSearch,
-  faShare,
-  faStar,
-  faMoneyBills,
-  faCartShopping,
-  faCartPlus,
-  faRightFromBracket,
-  faCog,
-  faLifeRing,
-  faCircleExclamation,
-  faSquareArrowUpRight,
-  faCirclePlus,
-  faLink
-)
 
 // import injectTapEventPlugin from 'react-tap-event-plugin';
 // injectTapEventPlugin();
