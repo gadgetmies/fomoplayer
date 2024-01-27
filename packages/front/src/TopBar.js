@@ -132,7 +132,12 @@ class TopBar extends Component {
                 </NavLink>
               </div>
             </Popup>
-            <MenuNavButton to={'/carts/'} label="Carts" icon={<FontAwesomeIcon icon="cart-shopping" />} />
+            <MenuNavButton
+              to={'/carts/'}
+              disabled={!this.props.carts}
+              label="Carts"
+              icon={<FontAwesomeIcon icon="cart-shopping" />}
+            />
           </div>
           <div
             style={{ display: 'flex', gap: 8, alignItems: 'center' }}

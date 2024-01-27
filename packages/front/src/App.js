@@ -689,6 +689,7 @@ class App extends Component {
                   search={this.state.search}
                   userSettings={this.state.userSettings}
                   stores={this.state.stores}
+                  carts={this.state.carts}
                   onKeyboardShortcutsClicked={this.openKeyboardShortcutsPopup.bind(this)}
                   onOnboardingButtonClicked={this.onOnboardingButtonClicked.bind(this)}
                 />
