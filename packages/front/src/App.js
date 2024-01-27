@@ -541,7 +541,7 @@ class App extends Component {
       >
         <Root
           className={`${this.state.listState === 'search' ? 'search-expanded' : ''} ${
-            this.state.isMobile ? 'mobile' : ''
+            this.state.isMobile ? 'mobile' : 'desktop'
           }`}
           style={{ overflow: 'hidden', width: '100vw', height: '100vh' }}
         >

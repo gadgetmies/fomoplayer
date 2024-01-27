@@ -48,7 +48,7 @@
     max-height: calc(100vh - 8rem);
   }
 
-  :not(.mobile) .popup_content {
+  .desktop .popup_content {
     top: 2rem;
   }
 }
