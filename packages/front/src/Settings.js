@@ -19,6 +19,7 @@ import ImportPlaylistButton from './ImportPlaylistButton'
 import FollowedItem from './FollowedItem'
 import SearchBar from './SearchBar'
 import CollapseHeader from './CollapseHeader'
+import ConfirmButton from './ConfirmButton'
 
 const spotifyAuthorizationURL = `${apiURL}/auth/spotify?path=/settings/integrations`
 const AuthorizationButtons = props => (
@@ -840,7 +841,7 @@ class Settings extends Component {
                       )}
                       {is_default || is_purchased ? null : (
                         <p>
-                          <SpinnerButton
+                          <ConfirmButton
                             loading={this.state.deletingCart}
                             className={`button button-push_button-small button-push_button-primary`}
                             disabled={this.state.addingCart || this.state.updatingCarts || this.state.deletingCart}
@@ -850,9 +851,10 @@ class Settings extends Component {
                               await this.props.onUpdateCarts()
                               this.setState({ deletingCart: null, updatingCarts: false })
                             }}
-                          >
-                            Delete cart "{name}"
-                          </SpinnerButton>
+                            label="Delete cart"
+                            confirmLabel={`Confirm deletion of "${name}"?`}
+                            processingLabel={'Deleting'}
+                          />
                         </p>
                       )}
                     </div>
