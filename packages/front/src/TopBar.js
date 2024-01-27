@@ -16,13 +16,14 @@ class TopBar extends Component {
     super(props)
 
     const urlSearchParams = new URLSearchParams(window.location.search)
-    const query = urlSearchParams.get('q')
+    const query = urlSearchParams.get('q') || ''
     const sort = urlSearchParams.get('sort')
 
     this.state = {
       requestNotificationSearch: '',
       searchDebounce: undefined,
-      searchActive: query !== null,
+      searchActive: query !== '',
+      search: query,
       sort,
       supportMenuOpen: false,
       emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
