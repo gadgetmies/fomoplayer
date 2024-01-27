@@ -64,14 +64,11 @@
   display: flex;
   gap: 8px;
   flex-direction: column;
+  min-height: 93px;
 }
 
 .preview_details_wrapper::-webkit-scrollbar {
   display: none;
-}
-
-.preview_links_wrapper {
-  display: flex;
 }
 
 .preview_actions_wrapper {
@@ -94,6 +91,7 @@
 .button-playback {
   color: white;
   opacity: 0.5;
+  width: 3ch;
 }
 
 .button-playback:hover {
@@ -206,11 +204,11 @@
     gap: 16px;
     max-height: 160px;
     overflow-y: auto;
-    flex-wrap: wrap;
+    flex-direction: column;
   }
 
   .preview_links_wrapper {
-    flex-direction: column;
+    display: none;
   }
 
   .search_from_list {
@@ -248,6 +246,7 @@
   }
 
   .preview_links_wrapper {
+    display: flex;
     flex-direction: column;
     gap: 4px;
   }
