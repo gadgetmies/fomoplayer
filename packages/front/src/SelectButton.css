@@ -90,6 +90,6 @@ input[type='radio']:disabled + .select_button-button__active {
 
 @media (max-width: 768px) {
   .state-select-button--container {
-    display: flex;
+    display: inline-flex;
   }
 }
