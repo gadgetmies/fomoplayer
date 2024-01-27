@@ -1274,7 +1274,6 @@ class Settings extends Component {
                             img={img}
                             loading={this.state.importingPlaylist === url}
                             disabled={this.state.importingPlaylist !== null}
-                            imported={this.state.importedPlaylists?.includes(url)}
                             onClick={(() => this.onImportPlaylistItemClick(url)).bind(this)}
                             data-onboarding-id="follow-item"
                           />

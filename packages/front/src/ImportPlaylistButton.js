@@ -41,8 +41,7 @@ class ImportPlaylistButton extends Component {
           loading={loading}
           disabled={disabled}
         >
-          <span aria-hidden="true" className={`store-icon store-icon-${storeName}`} />{' '}
-          {this.props.imported ? 'Refresh' : 'Import'}
+          <span aria-hidden="true" className={`store-icon store-icon-${storeName}`} /> Import
         </SpinnerButton>
       </div>
     )

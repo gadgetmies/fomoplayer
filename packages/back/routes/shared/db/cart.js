@@ -42,6 +42,7 @@ module.exports.queryUserCartDetails = async userId =>
          , cart_is_public                                                         AS is_public
          , cart_is_purchased IS NOT NULL                                          AS is_purchased
          , cart_uuid                                                              AS uuid
+         , cart_deleted                                                           AS deleted
          , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS store_details
          , track_count                                                            AS track_count
     FROM
@@ -57,62 +58,68 @@ module.exports.queryUserCartDetailsWithTracks = async userId =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryUserCartDetailsWithTracks
-WITH cart_details AS (SELECT cart_id, cart_name, cart_is_default, cart_is_public, cart_is_purchased, cart_uuid
-                      FROM cart
-                      WHERE meta_account_user_id = ${userId})
-   , cart_tracks AS (
-    SELECT *
-    FROM (
-             SELECT ROW_NUMBER() OVER (PARTITION BY cart_id) AS r, t.*
-             FROM (
-                      SELECT cart_id, track_id, track__cart_added FROM track__cart
-                               NATURAL JOIN cart_details
-                      GROUP BY 1, 2, track__cart_added
-                      ORDER BY track__cart_added DESC
-                  ) t
-         ) x
-    WHERE x.r < 100
-)
-   , td AS (
-    SELECT DISTINCT ON (track_id)*, user__track_heard as heard, track_id AS id
-    FROM track_details
-             NATURAL LEFT JOIN user__track
-    WHERE meta_account_user_id = ${userId} AND track_id IN (cart_tracks)
-)
-   , tracks AS (SELECT cart_id, json_agg(td ORDER BY track__cart_added DESC) AS tracks
-                FROM cart_tracks
-                         NATURAL JOIN td
-                         
-                GROUP BY 1)
-   , cart_store_details AS (SELECT
-                                cart_id
-                              , JSON_AGG(JSON_BUILD_OBJECT(
-                                        'id', cart__store_cart_store_id,
-                                        'url', cart__store_cart_url,
-                                        'store_name', store_name,
-                                        'version_id', cart__store_store_version_id
-                                    )) AS store_details
+    WITH cart_details AS (SELECT cart_id
+                               , cart_name
+                               , cart_is_default
+                               , cart_is_public
+                               , cart_is_purchased
+                               , cart_uuid
+                               , cart_deleted
+                          FROM
+                            cart
+                          WHERE meta_account_user_id = ${userId})
+       , cart_tracks AS (SELECT *
+                         FROM
+                           (SELECT ROW_NUMBER() OVER (PARTITION BY cart_id) AS r, t.*
                             FROM
-                                cart_details
-                                    NATURAL JOIN cart__store
-                                    NATURAL JOIN store
-                            GROUP BY 1)
-SELECT cart_id                                                                AS id
-     , cart_name                                                              AS name
-     , cart_is_default IS NOT NULL                                            AS is_default
-     , cart_is_public                                                         AS is_public
-     , cart_is_purchased IS NOT NULL                                          AS is_purchased
-     , cart_uuid                                                              AS uuid
-     , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
-     , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS store_details
-FROM
-    cart_details
-        NATURAL LEFT JOIN
+                              (SELECT cart_id, track_id, track__cart_added
+                               FROM
+                                 track__cart
+                                 NATURAL JOIN cart_details
+                               GROUP BY 1, 2, track__cart_added
+                               ORDER BY track__cart_added DESC) t) x
+                         WHERE x.r < 100)
+       , td AS (SELECT DISTINCT ON (track_id)*, user__track_heard AS heard, track_id AS id
+                FROM
+                  track_details
+                  NATURAL LEFT JOIN user__track
+                WHERE meta_account_user_id = ${userId}
+                  AND track_id IN (cart_tracks))
+       , tracks AS (SELECT cart_id, JSON_AGG(td ORDER BY track__cart_added DESC) AS tracks
+                    FROM
+                      cart_tracks
+                      NATURAL JOIN td
+
+                    GROUP BY 1)
+       , cart_store_details AS (SELECT cart_id
+                                     , JSON_AGG(JSON_BUILD_OBJECT(
+          'id', cart__store_cart_store_id,
+          'url', cart__store_cart_url,
+          'store_name', store_name,
+          'version_id', cart__store_store_version_id
+                                                )) AS store_details
+                                FROM
+                                  cart_details
+                                  NATURAL JOIN cart__store
+                                  NATURAL JOIN store
+                                GROUP BY 1)
+    SELECT cart_id                                                                AS id
+         , cart_name                                                              AS name
+         , cart_is_default IS NOT NULL                                            AS is_default
+         , cart_is_public                                                         AS is_public
+         , cart_is_purchased IS NOT NULL                                          AS is_purchased
+         , cart_uuid                                                              AS uuid
+         , cart_deleted                                                           AS deleted
+         , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
+         , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS store_details
+    FROM
+      cart_details
+      NATURAL LEFT JOIN
         tracks
-        NATURAL LEFT JOIN
+      NATURAL LEFT JOIN
         cart_store_details
-ORDER BY cart_is_default, cart_is_purchased, cart_name
-`
+    ORDER BY cart_is_default, cart_is_purchased, cart_name
+    `
   )
 
 module.exports.queryCartDetails = async cartId => {
@@ -125,24 +132,27 @@ module.exports.queryCartDetails = async cartId => {
                                , cart_is_public
                                , cart_is_purchased
                                , cart_uuid
+                               , cart_deleted
                                , COUNT(track_id) AS track_count
                           FROM
                             cart
                             NATURAL LEFT JOIN track__cart
                           WHERE cart_id = ${cartId}
-                          GROUP BY 1, 2, 3, 4, 5, 6)
-       , cart_store_details AS (SELECT cart_id
-                                     , JSON_AGG(JSON_BUILD_OBJECT(
-          'id', cart__store_cart_store_id,
-          'url', cart__store_cart_url,
-          'store_name', store_name,
-          'version_id', cart__store_store_version_id
-                                                )) AS store_details
-                                FROM
-                                  cart_details
-                                  NATURAL JOIN cart__store
-                                  NATURAL JOIN store
-                                GROUP BY cart_id)
+                          GROUP BY 1, 2, 3, 4, 5, 6, 7)
+       , cart_store_details AS
+      (SELECT cart_id
+            , JSON_AGG(
+            JSON_BUILD_OBJECT(
+                'id', cart__store_cart_store_id,
+                'url', cart__store_cart_url,
+                'store_name', store_name,
+                'version_id', cart__store_store_version_id
+            )) AS store_details
+       FROM
+         cart_details
+         NATURAL JOIN cart__store
+         NATURAL JOIN store
+       GROUP BY 1)
        , cart_tracks AS (SELECT track_id
                               , track_details
                          FROM
@@ -175,6 +185,7 @@ module.exports.queryCartDetails = async cartId => {
          , cart_is_public                                                         AS is_public
          , cart_is_purchased IS NOT NULL                                          AS is_purchased
          , cart_uuid                                                              AS uuid
+         , cart_deleted                                                           AS deleted
          , track_count                                                            AS track_count
          , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
          , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS store_details
@@ -193,11 +204,10 @@ module.exports.deleteCart = async cartId =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- deleteCart
-DELETE
-FROM cart
-WHERE
-  cart_id = ${cartId}
-`
+    UPDATE cart
+    SET cart_deleted = NOW()
+    WHERE cart_id = ${cartId}
+    `
   )
 
 module.exports.updateCartProperties = async (tx, cartId, { name, is_public }) => {
@@ -237,7 +247,6 @@ INSERT INTO cart
   (cart_name, meta_account_user_id)
 VALUES
   (${name}, ${userId})
-ON CONFLICT ON CONSTRAINT cart_cart_name_meta_account_user_id_key DO NOTHING
 `
   )
 
