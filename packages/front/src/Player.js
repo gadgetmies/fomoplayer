@@ -13,7 +13,6 @@ class Player extends Component {
     const enabledStores = JSON.parse(window.localStorage.getItem('enabledStores')) || allStores
     const enabledStoreSearch = JSON.parse(window.localStorage.getItem('enabledStoreSearch')) || allStores
     this.state = {
-      currentTrack: null,
       listenedTracks: 0,
       togglingCurrentInCart: false,
       nextDoubleClickStarted: false,
