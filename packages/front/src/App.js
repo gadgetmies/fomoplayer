@@ -629,7 +629,7 @@ class App extends Component {
           className={`${this.state.listState === 'search' ? 'search-expanded' : ''} ${
             this.state.isMobile ? 'mobile' : ''
           }`}
-          style={{ overflow: 'hidden' }}
+          style={{ overflow: 'hidden', width: '100vw', height: '100vh' }}
         >
           <Router>
             {this.state.loading ? (
@@ -637,7 +637,86 @@ class App extends Component {
                 🚀 Launching app
                 <Spinner />
               </div>
-            ) : this.state.loggedIn ? (
+            ) : !this.state.loggedIn ? (
+              this.state.list ? (
+                <Player
+                  mode="list"
+                  carts={[this.state.list]}
+                  initialPosition={this.state.initialPosition}
+                  onSetCurrentTrack={this.setCurrentTrack.bind(this)}
+                  tracks={this.state.list.tracks}
+                  heardTracks={this.state.heardTracks}
+                  stores={this.state.stores}
+                  currentTrack={this.state.currentTrack}
+                  isMobile={this.state.isMobile}
+                />
+              ) : (
+                <div style={{ background: '#333', width: '100%', height: '100%' }}>
+                  <div style={{ paddingTop: '3rem', maxWidth: '60ch', margin: 'auto' }}>
+                    <h1 style={{ marginTop: 0, textAlign: 'center' }}>
+                      Fomo Player
+                      <br />
+                      <div style={{ fontSize: '50%', fontWeight: 300 }}>
+                        Never miss a <span style={{ textDecoration: 'line-through' }}>beat</span> release!
+                      </div>
+                    </h1>
+                    <div style={{ padding: '2rem' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <Login
+                          onLoginDone={this.onLoginDone.bind(this)}
+                          onLogoutDone={this.onLogoutDone.bind(this)}
+                          googleLoginPath={`${config.apiURL}/auth/login/google?state=${window.location.pathname}`}
+                          logoutPath={logoutPath}
+                        />
+                      </div>
+                      <br />
+                      {process.env.NODE_ENV !== 'production' && (
+                        <p style={{ margin: '2rem' }}>
+                          <form
+                            onSubmit={e => {
+                              e.preventDefault()
+                              return this.onLoginDone()
+                            }}
+                          >
+                            <label className="text-input">
+                              Username
+                              <input name="username" value={'testuser'} />
+                            </label>
+                            <br />
+                            <label>
+                              Password
+                              <input name="password" value={'testpwd'} />
+                            </label>
+                            <br />
+                            <input
+                              type={'submit'}
+                              value={'Login'}
+                              data-test-id={'form-login-button'}
+                              className="button button-push_button login-button button-push_button-large button-push_button-primary"
+                            />
+                          </form>
+                        </p>
+                      )}
+                      <div className="login-separator">Want to know more?</div>
+                      <p>
+                        Fomo Player is a service for keeping up with new releases from your favorite artists and labels.
+                        The service prioritises releases based on your preferences and keeps track of tracks you have
+                        already listened to, thus improving the efficiency of your music discovery.
+                      </p>
+                      <p style={{ textAlign: 'center', marginTop: '2rem' }}>
+                        <a
+                          href="https://github.com/gadgetmies/fomoplayer/wiki"
+                          className={'button button-push_button button-push_button-large button-push_button-primary'}
+                          target="_blank"
+                        >
+                          Find out more on Github <FontAwesomeIcon icon={['fab', 'github']} />
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            ) : (
               <>
                 <Onboarding
                   newUser={this.state.tracksData.meta.totalTracks === 0}
@@ -787,80 +866,6 @@ class App extends Component {
                   }}
                 />
               </>
-            ) : this.state.list ? (
-              <Player
-                mode="list"
-                carts={[this.state.list]}
-                initialPosition={this.state.initialPosition}
-                onSetCurrentTrack={this.setCurrentTrack.bind(this)}
-                tracks={this.state.list.tracks}
-                heardTracks={this.state.heardTracks}
-                stores={this.state.stores}
-                currentTrack={this.state.currentTrack}
-                isMobile={this.state.isMobile}
-              />
-            ) : (
-              <div className="align-center-container full-screen-popup-container">
-                <div className="full-screen-popup">
-                  <h1 style={{ marginTop: 0, textAlign: 'center' }}>
-                    Fomo Player
-                    <br />
-                    <div style={{ fontSize: '50%', fontWeight: 300 }}>
-                      Never miss a <span style={{ textDecoration: 'line-through' }}>beat</span> release!
-                    </div>
-                  </h1>
-                  <div style={{ textAlign: 'center' }}>
-                    <Login
-                      onLoginDone={this.onLoginDone.bind(this)}
-                      onLogoutDone={this.onLogoutDone.bind(this)}
-                      googleLoginPath={`${config.apiURL}/auth/login/google?state=${window.location.pathname}`}
-                      logoutPath={logoutPath}
-                    />
-                  </div>
-                  {process.env.NODE_ENV !== 'production' && (
-                    <p style={{ margin: '2rem' }}>
-                      <form
-                        onSubmit={e => {
-                          e.preventDefault()
-                          return this.onLoginDone()
-                        }}
-                      >
-                        <label className="text-input">
-                          Username
-                          <input name="username" value={'testuser'} />
-                        </label>
-                        <br />
-                        <label>
-                          Password
-                          <input name="password" value={'testpwd'} />
-                        </label>
-                        <br />
-                        <input
-                          type={'submit'}
-                          value={'Login'}
-                          data-test-id={'form-login-button'}
-                          className="button button-push_button login-button button-push_button-large button-push_button-primary"
-                        />
-                      </form>
-                    </p>
-                  )}
-                  <div className="login-separator">Want to know more?</div>
-                  <p>
-                    Fomo Player is a service for keeping up with new releases from your favorite artists and labels. The
-                    service prioritises releases based on your preferences and keeps track of tracks you have already
-                    listened to, thus improving the efficiency of your music discovery.
-                  </p>
-                  <p style={{ textAlign: 'center', marginTop: '2rem' }}>
-                    <a
-                      href="https://github.com/gadgetmies/fomoplayer/wiki"
-                      className={'button button-push_button button-push_button-large button-push_button-primary'}
-                      target="_blank"
-                    >
-                      Find out more on Github <FontAwesomeIcon icon={['fab', 'github']} />
-                    </a>
-                  </p>
-                </div>
-              </div>
             )}
           </Router>
         </Root>
