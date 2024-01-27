@@ -39,7 +39,6 @@ class App extends Component {
     super(props)
     this.state = {
       addingToCart: false,
-      slideout: null,
       carts: [],
       stores: [],
       scoreWeights: {},
