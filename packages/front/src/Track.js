@@ -204,7 +204,6 @@ class Track extends Component {
                 </span>
                 <div
                   className={`popup_content${this.props.popupAbove ? ' popup_content__above' : ''} score-popup_content`}
-                  style={{ margin: -4 }}
                 >
                   <table className={'score-table'}>
                     <thead>

@@ -347,6 +347,7 @@
 @media (min-width: 591px) {
   .score-popup_content {
     width: 250px;
+    margin-top: -4px;
   }
 }
 
