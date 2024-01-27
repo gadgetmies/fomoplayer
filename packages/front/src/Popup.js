@@ -18,6 +18,7 @@ const Popup = ({
   className,
   popupClassName,
   anchor,
+  disabled,
   onOpenChanged
 }) => {
   const [open, setOpen] = useState(defaultOpen)
@@ -34,9 +35,11 @@ const Popup = ({
         <span className={'popup-anchor'} onClick={clickHandler} onDoubleClick={clickHandler}>
           {anchor}
         </span>
-        <div className={`popup_content ${popupClassName || ''}`} style={popupStyle}>
-          {children}
-        </div>
+        {!disabled && (
+          <div className={`popup_content ${popupClassName || ''}`} style={popupStyle}>
+            {children}
+          </div>
+        )}
       </div>
       <div className="popup_overlay" onClick={clickHandler} onDoubleClick={clickHandler} />
     </>
