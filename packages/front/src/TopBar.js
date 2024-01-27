@@ -99,12 +99,7 @@ class TopBar extends Component {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className="menu_left">
             <Popup
               anchor={
-                <MenuNavButton
-                  disabled={true}
-                  to={'/tracks'}
-                  label="Discover"
-                  icon={<FontAwesomeIcon icon="play" />}
-                />
+                <MenuNavButton disabled={true} to={'/tracks'} label="Discover" icon={<FontAwesomeIcon icon="play" />} />
               }
               open={this.state.discoverMenuOpen}
               onOpenChanged={open => this.setState({ discoverMenuOpen: !open })}
