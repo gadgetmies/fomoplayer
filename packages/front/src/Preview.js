@@ -413,7 +413,6 @@ class Preview extends Component {
                 onPause={() => this.setPlaying(false)}
                 onTimeUpdate={({ currentTarget: { currentTime } }) => {
                   this.setState({ position: currentTime * 1000 })
-                  console.log(this.state.mp3Preview.length_ms / 1000, currentTime)
                   try {
                     this.state.mp3Preview.length_ms &&
                       currentTime &&
