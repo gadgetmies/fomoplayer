@@ -767,7 +767,6 @@ class App extends Component {
                           onSetListState={this.setListState.bind(this)}
                           processingCart={this.state.processingCart}
                           isMobile={this.state.isMobile}
-                          style={{ display: !settingsVisible ? 'block' : 'none' }}
                           onIgnoreArtistsByLabels={this.ignoreArtistsByLabels.bind(this)}
                           onSetCurrentTrack={this.setCurrentTrack.bind(this)}
                           onOpenFollowPopup={this.openFollowPopup.bind(this)}
@@ -780,6 +779,7 @@ class App extends Component {
                           onIgnoreArtist={this.ignoreArtist.bind(this)}
                           onIgnoreLabel={this.ignoreLabel.bind(this)}
                           onIgnoreRelease={this.ignoreRelease.bind(this)}
+                          style={{ display: !settingsVisible ? 'block' : 'none' }}
                         />
                       </>
                     )
