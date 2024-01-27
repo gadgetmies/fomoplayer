@@ -18,6 +18,7 @@ import { SettingsHelp } from './SettingsHelp'
 import ImportPlaylistButton from './ImportPlaylistButton'
 import FollowedItem from './FollowedItem'
 import SearchBar from './SearchBar'
+import CollapseHeader from './CollapseHeader'
 
 const spotifyAuthorizationURL = `${apiURL}/auth/spotify?path=/settings/integrations`
 const AuthorizationButtons = props => (
@@ -617,7 +618,7 @@ class Settings extends Component {
                   </a>
                 </div>
               </label>
-              <h4>Followed artists ({this.state.artistFollows.length})</h4>
+              <CollapseHeader>Followed artists ({this.state.artistFollows.length})</CollapseHeader>
               <ul className="no-style-list follow-list">
                 {this.state.artistFollows.map(
                   ({ name, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
@@ -657,7 +658,7 @@ class Settings extends Component {
                   }
                 )}
               </ul>
-              <h4>Followed labels ({this.state.labelFollows.length})</h4>
+              <CollapseHeader>Followed labels ({this.state.labelFollows.length})</CollapseHeader>
               <ul className="no-style-list follow-list">
                 {this.state.labelFollows.map(
                   ({ name, url, storeLabelId, store: { name: storeName, watchId, starred } }) => (
@@ -686,7 +687,7 @@ class Settings extends Component {
                   )
                 )}
               </ul>
-              <h4>Followed playlists ({this.state.playlistFollows.length})</h4>
+              <CollapseHeader>Followed playlists ({this.state.playlistFollows.length})</CollapseHeader>
               <ul className="no-style-list follow-list">
                 {this.state.playlistFollows.map(({ id, storeName, title }) => (
                   <li key={id}>
