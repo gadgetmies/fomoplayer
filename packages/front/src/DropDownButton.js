@@ -26,7 +26,7 @@ const DropDownButton = props => {
   } = props
 
   return (
-    <span className={`popup_container ${className || ''}`} style={{ display: 'flex', ...style }}>
+    <span className={`${className || ''}`} style={{ display: 'flex', ...style }}>
       <SpinnerButton
         className={`button-drop_down-left ${buttonClassName}`}
         {...{ loading, loadingLabel, disabled, size, style: buttonStyle, onClick }}
@@ -55,7 +55,6 @@ const DropDownButton = props => {
             <FontAwesomeIcon icon="caret-down" />
           </button>
         }
-        style={{ position: 'static' }}
         popupStyle={{ ...popupStyle }}
         popupClassName={popupClassName}
       >

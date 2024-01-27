@@ -9,6 +9,7 @@ import Onboarding from './Onboarding'
 import SearchBar from './SearchBar'
 import DropDownButton from './DropDownButton'
 import { isMobile } from 'react-device-detect'
+import Popup from './Popup'
 
 class TopBar extends Component {
   constructor(props) {
@@ -203,91 +204,93 @@ class TopBar extends Component {
             )}
           </div>
           <div style={{ alignItems: 'center' }} className="menu_right">
-            <div className="popup_container">
-              <div
-                style={{ padding: '0 8px', display: 'flex', alignItems: 'center' }}
-                className={'popup-anchor support_menu_label'}
-                data-onboarding-id="support-button"
-                onMouseEnter={() => {
-                  if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Support)) {
-                    this.setState({ supportMenuOpen: true })
-                    setTimeout(() => Onboarding.helpers.next(), 500)
-                  }
-                }}
-                onMouseLeave={() => {
-                  if (!Onboarding.active) {
-                    this.setState({ supportMenuOpen: false })
-                  }
-                }}
-              >
-                <span className="button-top_bar_button_icon">
-                  <FontAwesomeIcon icon="life-ring" />
-                </span>
-                <span className="button-top_bar_button_label">Support </span>
-                <FontAwesomeIcon icon="caret-down" className="support_menu_label_arrow" />
-              </div>
-              <div className={`popup_content ${this.state.supportMenuOpen ? 'popup_open' : ''}`}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <button
-                    className="button button-push_button button-push_button-small button-push_button-primary"
-                    onClick={() => {
-                      this.props.history.push('/new')
-                      this.props.onOnboardingButtonClicked()
-                    }}
-                  >
-                    <FontAwesomeIcon icon="circle-question" onClick={this.props.onHelpButtonClicked} /> Show Tutorial
-                  </button>
-                  {!isMobile && (
-                    <button
-                      onClick={this.props.onKeyboardShortcutsClicked}
-                      className="button button-push_button button-push_button-small button-push_button-primary"
-                    >
-                      <FontAwesomeIcon icon="keyboard" className="popup-anchor" data-help-id="keyboard-shortcuts" />{' '}
-                      Keyboard Shortcuts
-                    </button>
-                  )}
-                  <ExternalLink
-                    href={'https://github.com/gadgetmies/fomoplayer/wiki/Getting-started'}
-                    className={`pill pill-link pill-link-large`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-onboarding-id="instructions-button"
-                  >
-                    <FontAwesomeIcon icon={['fab', 'github']} />
-                    &nbsp; Instructions
-                  </ExternalLink>
-                  <ExternalLink
-                    href={'https://github.com/gadgetmies/fomoplayer#chrome-extension'}
-                    className={`pill pill-link pill-link-large`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <FontAwesomeIcon icon={['fab', 'chrome']} />
-                    &nbsp; Chrome Extension
-                  </ExternalLink>
-                  <ExternalLink
-                    href={'https://github.com/gadgetmies/fomoplayer/issues'}
-                    className={`pill pill-link pill-link-large`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-onboarding-id="issues-button"
-                  >
-                    <FontAwesomeIcon icon="exclamation-circle" />
-                    &nbsp; Report an issue
-                  </ExternalLink>
-                  <ExternalLink
-                    href={'https://github.com/gadgetmies/fomoplayer/discussions/new?category=ideas'}
-                    className={`pill pill-link pill-link-large`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-onboarding-id="improvements-button"
-                  >
-                    <FontAwesomeIcon icon="lightbulb" />
-                    &nbsp; Share improvement ideas
-                  </ExternalLink>
+            <Popup
+              open={this.state.supportMenuOpen}
+              anchor={
+                <div
+                  style={{ padding: '0 8px', display: 'flex', alignItems: 'center' }}
+                  className={'support_menu_label'}
+                  data-onboarding-id="support-button"
+                  onMouseEnter={() => {
+                    if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Support)) {
+                      this.setState({ supportMenuOpen: true })
+                      setTimeout(() => Onboarding.helpers.next(), 500)
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (!Onboarding.active) {
+                      this.setState({ supportMenuOpen: false })
+                    }
+                  }}
+                >
+                  <span className="button-top_bar_button_icon">
+                    <FontAwesomeIcon icon="life-ring" />
+                  </span>
+                  <span className="button-top_bar_button_label">Support </span>
+                  <FontAwesomeIcon icon="caret-down" className="support_menu_label_arrow" />
                 </div>
+              }
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button
+                  className="button button-push_button button-push_button-small button-push_button-primary"
+                  onClick={() => {
+                    this.props.history.push('/new')
+                    this.props.onOnboardingButtonClicked()
+                  }}
+                >
+                  <FontAwesomeIcon icon="circle-question" onClick={this.props.onHelpButtonClicked} /> Show Tutorial
+                </button>
+                {!isMobile && (
+                  <button
+                    onClick={this.props.onKeyboardShortcutsClicked}
+                    className="button button-push_button button-push_button-small button-push_button-primary"
+                  >
+                    <FontAwesomeIcon icon="keyboard" className="popup-anchor" data-help-id="keyboard-shortcuts" />{' '}
+                    Keyboard Shortcuts
+                  </button>
+                )}
+                <ExternalLink
+                  href={'https://github.com/gadgetmies/fomoplayer/wiki/Getting-started'}
+                  className={`pill pill-link pill-link-large`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-onboarding-id="instructions-button"
+                >
+                  <FontAwesomeIcon icon={['fab', 'github']} />
+                  &nbsp; Instructions
+                </ExternalLink>
+                <ExternalLink
+                  href={'https://github.com/gadgetmies/fomoplayer#chrome-extension'}
+                  className={`pill pill-link pill-link-large`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FontAwesomeIcon icon={['fab', 'chrome']} />
+                  &nbsp; Chrome Extension
+                </ExternalLink>
+                <ExternalLink
+                  href={'https://github.com/gadgetmies/fomoplayer/issues'}
+                  className={`pill pill-link pill-link-large`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-onboarding-id="issues-button"
+                >
+                  <FontAwesomeIcon icon="exclamation-circle" />
+                  &nbsp; Report an issue
+                </ExternalLink>
+                <ExternalLink
+                  href={'https://github.com/gadgetmies/fomoplayer/discussions/new?category=ideas'}
+                  className={`pill pill-link pill-link-large`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-onboarding-id="improvements-button"
+                >
+                  <FontAwesomeIcon icon="lightbulb" />
+                  &nbsp; Share improvement ideas
+                </ExternalLink>
               </div>
-            </div>
+            </Popup>
             <MenuNavButton
               to={'/settings/following'}
               onClick={() => {

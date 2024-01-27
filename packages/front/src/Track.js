@@ -9,6 +9,7 @@ import scoreWeights from './scoreWeights'
 import { followableNameLinks, namesToString } from './trackFunctions'
 import DropDownButton from './DropDownButton'
 import { Link } from 'react-router-dom'
+import Popup from './Popup'
 
 const isNumber = value => typeof value === 'number' && !Number.isNaN(value)
 
@@ -189,47 +190,52 @@ class Track extends Component {
         </td>
         {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'}>
-            {this.props.listState === 'new' && (
-              <div
-                className={'score-cell track-table-cell popup_container'}
-                style={{ overflow: 'visible', paddingRight: 5, paddingBottom: 0 }}
-              >
-                <span className={'popup-anchor'}>
-                  <PillButton
-                    className={'table-cell-button'}
-                    style={{ display: 'flex', paddingBottom: 7, justifyContent: 'center' }}
-                  >
-                    {isNumber(this.props.score) ? Math.round(this.props.score) : '-'}
-                  </PillButton>
-                </span>
-                <div
-                  className={`popup_content${this.props.popupAbove ? ' popup_content__above' : ''} score-popup_content`}
+            <div
+              className={'score-cell track-table-cell'}
+              style={{ overflow: 'visible', paddingRight: 5, paddingBottom: 0 }}
+            >
+              {this.props.listState === 'new' && (
+                <Popup
+                  anchor={
+                    <PillButton
+                      className={'table-cell-button'}
+                      style={{ display: 'flex', paddingBottom: 7, justifyContent: 'center' }}
+                    >
+                      {isNumber(this.props.score) ? Math.round(this.props.score) : '-'}
+                    </PillButton>
+                  }
+                  popupClassName={`score-popup_content`}
+                  popupAbove={this.props.popupAbove}
                 >
-                  <table className={'score-table'}>
-                    <thead>
-                      <tr>
-                        <th>Property</th>
-                        <th>Value</th>
-                        <th>Weight</th>
-                        <th>Score</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(this.props.scoreDetails || {}).map(([key, value]) => (
+                  <div style={{ padding: 8, paddingBottom: 0, width: '100%', boxSizing: 'border-box' }}>
+                    <table className={'score-table'}>
+                      <thead>
                         <tr>
-                          <td>{scoreWeights[key].label}</td>
-                          <td>{value.score}</td>
-                          <td>{value.weight}</td>
-                          <td>{Math.round(value.score * value.weight * 100) / 100}</td>
+                          <th>Property</th>
+                          <th>Value</th>
+                          <th>Weight</th>
+                          <th>Score</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <hr className={'popup-divider'} />
-                  <Link to={'/settings/sorting'}>Adjust weights in settings</Link>
-                </div>
-              </div>
-            )}
+                      </thead>
+                      <tbody>
+                        {Object.entries(this.props.scoreDetails || {}).map(([key, value]) => (
+                          <tr>
+                            <td>{scoreWeights[key].label}</td>
+                            <td>{value.score}</td>
+                            <td>{value.weight}</td>
+                            <td>{Math.round(value.score * value.weight * 100) / 100}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <hr className={'popup-divider'} />
+                    <Link to={'/settings/sorting'} style={{ width: '100%', display: 'block', textAlign: 'center' }}>
+                      Adjust weights in settings
+                    </Link>
+                  </div>
+                </Popup>
+              )}
+            </div>
             <div
               className={'cart-cell track-table-cell'}
               style={{ overflow: 'visible', display: 'flex', alignItems: 'center' }}
@@ -307,7 +313,6 @@ class Track extends Component {
                       </>
                     )}
                   </div>
-                  {/*</div>*/}
                 </DropDownButton>
               </span>
             </div>

@@ -1,14 +1,16 @@
 import React from 'react'
+import Popup from './Popup'
 
 const DropDown = props => (
-  <span className={`popup_container`} style={{ display: 'flex', ...props.style }}>
-    <span className={'popup-anchor'}>{props.anchor}</span>
-    {!props.disabled && (
-      <div className={`popup_content ${props.popupClassName || ''}`} style={{ zIndex: 100, ...props.popupStyle }}>
-        {props.children}
-      </div>
-    )}
-  </span>
+  <Popup
+    className={props.className}
+    style={props.style}
+    anchor={<span className={'popup-anchor'}>{props.anchor}</span>}
+    popupClassName={props.popupClassName}
+    popupStyle={props.popupStyle}
+  >
+    {!props.disabled && props.children}
+  </Popup>
 )
 
 export default DropDown
