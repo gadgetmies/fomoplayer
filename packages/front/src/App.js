@@ -503,7 +503,6 @@ class App extends Component {
     } else {
       updatedCarts[cartIndex] = cartDetails
     }
-    console.log('updatedCarts', cartDetails[cartIndex])
 
     this.setState({
       carts: updatedCarts,
@@ -734,7 +733,6 @@ class App extends Component {
                       listState = props.match.params.path
                     }
 
-                    console.log(this.state.selectedCartUuid, pathParts[1])
                     if (listState === 'carts' && this.state.selectedCartUuid !== pathParts[1]) {
                       const selectedCart = this.state.carts?.find(({ uuid }) => uuid === pathParts[1])
                       this.setState({ selectedCartUuid: pathParts[1], selectedCart })
