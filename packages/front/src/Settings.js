@@ -802,10 +802,7 @@ class Settings extends Component {
                           />
                           {this.state.settingCartPublic === id ? <Spinner size="small" /> : null}
                           {this.state.publicCarts.has(id) ? (
-                            <>
-                              <ExternalLink href={publicLink}>Open cart&nbsp;</ExternalLink>
-                              <CopyToClipboardButton content={publicLink} label={'Copy link'} />
-                            </>
+                            <CopyToClipboardButton content={publicLink} label={'Copy link'} />
                           ) : null}
                         </p>
                       </div>
