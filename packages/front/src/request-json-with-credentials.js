@@ -21,7 +21,9 @@ const requestWithCredentials = async ({ url, path, method = 'GET', body, headers
     return res
   } else {
     console.error('Request failed', res)
-    throw new Error('Request failed')
+    const error = new Error('Request failed')
+    error.response = res
+    throw error
   }
 }
 

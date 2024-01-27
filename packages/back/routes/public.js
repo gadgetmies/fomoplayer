@@ -8,13 +8,15 @@ const logger = require('fomoplayer_shared').logger(__filename)
 router.use(bodyParser.json())
 const { verifyEmail, getCartDetails } = require('./logic.js')
 
-router.get('/carts/:uuid', async ({ params: { uuid } }, res) => {
-  const cart = await getCartDetails(uuid)
+router.get('/carts/:uuid', async ({ params: { uuid }, user }, res) => {
+  const cart = await getCartDetails(uuid, user?.id)
   if (cart === null) {
     return res.status(404).send()
   }
   res.send(cart)
 })
+
+router.use('/stores', require('./stores/index.js').router)
 
 const replaceAppUrl = html => html.replace(/APP_URL/g, config.frontendURL)
 const emailVerificationSuccessPage = replaceAppUrl(

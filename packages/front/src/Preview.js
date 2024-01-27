@@ -180,23 +180,26 @@ class Preview extends Component {
           .replace(/\p{Diacritic}/gu, '')
       : ''
 
-    const cartLink = new URL(`/cart/${this.props.cartUuid}`, window.location).toString()
-    const cartName = this.props.selectedCart?.name
+    const selectedCart = this.props.selectedCart
+    const cartLink = new URL(`/carts/${selectedCart?.uuid}`, window.location).toString()
+    const cartName = selectedCart?.name
 
     const artistsAndRemixers = R.uniq([currentTrack?.artists, currentTrack?.remixers].flat())
     const title = `${currentTrack?.title} ${currentTrack?.version ? `(${currentTrack?.version})` : ''}`
 
     const [shareLabel, shareContent, shareLink] =
-      this.props.listState === 'carts'
+      this.props.listState === 'carts' || this.props.mode === 'list'
         ? [
-            'Copy link to cart',
+            'Copy cart link to clipboard',
             `Listen to "${namesToString(
               artistsAndRemixers
-            )} - ${title}" in "${cartName}" on Fomo Player: ${`${cartLink}#${this.props.index + 1}`}`,
+            )} - ${title}" in "${cartName}" on Fomo Player: ${`${cartLink}#${this.props.selectedCart?.tracks.findIndex(
+              ({ id }) => id === this.props.currentTrack?.id
+            ) + 1}`}`,
             'https://fomoplayer.com'
           ]
         : [
-            'Copy links to clipboard',
+            'Copy store links to clipboard',
             `Listen to "${namesToString(artistsAndRemixers)} - ${title}" on\n${currentTrack?.stores
               .map(store => `${store.name}: ${store.url || store.release.url}`)
               .join('\n')}`,

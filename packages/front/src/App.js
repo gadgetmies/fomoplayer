@@ -46,7 +46,7 @@ class App extends Component {
       loggedIn: false,
       loading: true,
       tracksData: defaultTracksData,
-      initialPosition: NaN,
+      initialPosition: undefined,
       processingCart: false,
       userSettings: {},
       isMobile: this.mobileCheck(),
@@ -57,8 +57,9 @@ class App extends Component {
       searchResults: [],
       listState: 'new',
       heardTracks: defaultTracksData.tracks.heard,
-      selectedCartId: undefined,
-      mode: location.pathname.startsWith('/carts/') ? 'list' : 'app'
+      selectedCartUuid: undefined,
+      selectedCart: undefined,
+      mode: undefined
     }
   }
 
@@ -91,37 +92,44 @@ class App extends Component {
       this.updateScoreWeights(),
       this.updateFollows(),
       this.updateNotifications(),
-      this.updateSettings(),
-      this.updateStores()
+      this.updateSettings()
     ])
   }
 
   async componentDidMount() {
-    let cartString = '/cart/'
-    if (window.location.pathname.startsWith(cartString)) {
-      const uuid = window.location.pathname.substring(cartString.length)
-      const position = parseInt(window.location.hash.substring(1))
-      const [list, stores] = await Promise.all([
-        requestJSONwithCredentials({
-          path: `/carts/${uuid}`
-        }),
-        requestJSONwithCredentials({
-          path: `/stores`
-        })
-      ])
+    const pathParts = location.pathname.slice(1).split('/')
+    const isCartPath = pathParts[0] === 'carts'
+    let sharedStates
+    let cartSelectPromise = Promise.resolve()
 
-      this.setState({ list, initialPosition: position, stores })
-    } else {
-      try {
-        await this.updateStatesFromServer()
-        this.setState({ loggedIn: true })
-      } catch (e) {
-        console.error(e)
-        this.setState({ loggedIn: false })
-      }
+    const storeFetchPromise = requestJSONwithCredentials({
+      path: `/stores`
+    })
+
+    if (isCartPath && pathParts.length > 1 && pathParts[1] !== '') {
+      const cartUuid = pathParts[1]
+      cartSelectPromise = this.selectCart(cartUuid)
+
+      const initialPosition = parseInt(location.hash.substring(1)) || undefined
+      sharedStates = { initialPosition }
     }
 
-    this.setState({ loading: false })
+    try {
+      const [stores] = await Promise.all([storeFetchPromise, cartSelectPromise, this.updateStatesFromServer()])
+      this.setState({ loggedIn: true, mode: 'app', stores, ...sharedStates })
+    } catch (e) {
+      if (e.response?.status === 401 && isCartPath) {
+        const stores = await storeFetchPromise
+        this.setState({ mode: 'list', stores, ...sharedStates })
+      } else {
+        console.error(e)
+      }
+      this.setState({
+        loggedIn: false
+      })
+    } finally {
+      this.setState({ loading: false })
+    }
   }
 
   async onLoginDone() {
@@ -137,17 +145,12 @@ class App extends Component {
     const carts = await requestJSONwithCredentials({
       path: `/me/carts`
     })
-    this.setState({ carts, selectedCartId: this.state.selectedCartId || carts[0].id })
-  }
 
-  async onFetchCart(cartId) {
-    const cartDetails = await requestJSONwithCredentials({
-      path: `/me/carts/${cartId}`
+    this.setState({
+      carts: carts.filter(({ deleted }) => !deleted),
+      selectedCartUuid: this.state.selectedCartUuid || carts[0].uuid,
+      selectedCart: this.state.carts.find(({ uuid }) => uuid === this.state.selectedCartUuid)
     })
-    let updatedCarts = this.state.carts.slice()
-    const cartIndex = updatedCarts.findIndex(({ id }) => id === cartId)
-    updatedCarts[cartIndex] = cartDetails
-    this.setState({ carts: updatedCarts })
   }
 
   async updateDefaultCart() {
@@ -267,7 +270,7 @@ class App extends Component {
   }
 
   async markHeard(track) {
-    if (this.state.listState === 'heard') {
+    if (this.state.listState === 'heard' || this.state.mode === 'list') {
       return
     }
 
@@ -287,14 +290,12 @@ class App extends Component {
     updatedHeardTracks = R.prepend(updatedTrack, updatedHeardTracks)
     this.setState({ heardTracks: updatedHeardTracks })
 
-    if (this.state.mode === 'app') {
-      // TODO: do this in the background? Although this should not block the UI either
-      await requestWithCredentials({
-        path: `/me/tracks/${track.id}`,
-        method: 'POST',
-        body: { heard: true }
-      })
-    }
+    // TODO: do this in the background? Although this should not block the UI either
+    await requestWithCredentials({
+      path: `/me/tracks/${track.id}`,
+      method: 'POST',
+      body: { heard: true }
+    })
   }
 
   async updateEmail(email) {
@@ -319,13 +320,6 @@ class App extends Component {
       path: `/me/settings`
     })
     this.setState({ userSettings })
-  }
-
-  async updateStores() {
-    const stores = await requestJSONwithCredentials({
-      path: `/stores/`
-    })
-    this.setState({ stores })
   }
 
   onOnboardingButtonClicked() {
@@ -496,9 +490,25 @@ class App extends Component {
     })
   }
 
-  async selectCart(selectedCartId) {
-    this.setState({ selectedCartId })
-    await this.onFetchCart(selectedCartId)
+  async selectCart(selectedCartUuid) {
+    this.setState({ selectedCartUuid })
+    const cartDetails = await requestJSONwithCredentials({
+      path: `/carts/${selectedCartUuid}`
+    })
+    let updatedCarts = this.state.carts.slice()
+    let cartIndex = updatedCarts.findIndex(({ uuid }) => uuid === selectedCartUuid)
+    if (cartIndex === -1) {
+      cartIndex = updatedCarts.length
+      updatedCarts.push(cartDetails)
+    } else {
+      updatedCarts[cartIndex] = cartDetails
+    }
+    console.log('updatedCarts', cartDetails[cartIndex])
+
+    this.setState({
+      carts: updatedCarts,
+      selectedCart: updatedCarts[cartIndex]
+    })
   }
 
   async setCurrentTrack(track) {
@@ -552,13 +562,14 @@ class App extends Component {
                 <Spinner />
               </div>
             ) : !this.state.loggedIn ? (
-              this.state.list ? (
+              this.state.mode === 'list' ? (
                 <Player
                   mode="list"
-                  carts={[this.state.list]}
                   initialPosition={this.state.initialPosition}
                   onSetCurrentTrack={this.setCurrentTrack.bind(this)}
-                  tracks={this.state.list.tracks}
+                  carts={this.state.carts}
+                  selectedCart={this.state.selectedCart}
+                  tracks={this.state.carts.find(({ uuid }) => uuid === this.state.selectedCartUuid)?.tracks || []}
                   heardTracks={this.state.heardTracks}
                   stores={this.state.stores}
                   currentTrack={this.state.currentTrack}
@@ -691,6 +702,9 @@ class App extends Component {
                 <Route exact path="/admin">
                   <Admin />
                 </Route>
+                <Route exact path="/carts">
+                  <Redirect to={`/carts/${this.state.carts[0].uuid}`} />
+                </Route>
                 <Route
                   path="/:path"
                   render={props => {
@@ -717,6 +731,12 @@ class App extends Component {
                         listState: props.match.params.path === 'tracks' ? pathParts[1] || 'new' : pathParts[0]
                       })
                       listState = props.match.params.path
+                    }
+
+                    console.log(this.state.selectedCartUuid, pathParts[1])
+                    if (listState === 'carts' && this.state.selectedCartUuid !== pathParts[1]) {
+                      const selectedCart = this.state.carts?.find(({ uuid }) => uuid === pathParts[1])
+                      this.setState({ selectedCartUuid: pathParts[1], selectedCart })
                     }
 
                     return (
@@ -756,12 +776,11 @@ class App extends Component {
                           stores={this.state.stores}
                           newTracks={this.state.tracksData.meta.newTracks}
                           totalTracks={this.state.tracksData.meta.totalTracks}
-                          selectedCartId={this.state.selectedCartId}
+                          selectedCart={this.state.selectedCart}
                           currentTrack={this.state.currentTrack}
                           onAddToCart={this.addToCart.bind(this)}
                           onCreateCart={this.createCart.bind(this)}
                           onUpdateCarts={this.updateCarts.bind(this)}
-                          onFetchCart={this.onFetchCart.bind(this)}
                           onRemoveFromCart={this.removeFromCart.bind(this)}
                           onMarkPurchased={this.onMarkPurchased.bind(this)}
                           onSetListState={this.setListState.bind(this)}

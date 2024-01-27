@@ -10,7 +10,7 @@ import * as R from 'ramda'
 import scoreWeightDetails from './scoreWeights'
 import Tracks from './Tracks'
 import FollowItemButton from './FollowItemButton'
-import { Link, withRouter } from 'react-router-dom'
+import { Link, NavLink, withRouter } from 'react-router-dom'
 import { apiURL } from './config'
 import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
@@ -779,13 +779,16 @@ class Settings extends Component {
               <div>
                 {this.props.carts.map(({ id, is_default, is_public, is_purchased, name, uuid }, index) => {
                   const buttonId = `sharing-${id}`
-                  const publicLink = new URL(`/cart/${uuid}`, window.location).toString()
+                  const cartPath = `/carts/${uuid}`
+                  const publicLink = new URL(cartPath, window.location).toString()
                   const spotifyStoreDetails = this.state.syncedCarts[id]?.find(
                     ({ store_name }) => store_name === 'Spotify'
                   )
                   return (
                     <div key={id}>
-                      <h4 style={{ marginTop: index === 0 ? '1rem' : '3rem' }}>{name}</h4>
+                      <h4 style={{ marginTop: index === 0 ? '1rem' : '3rem' }}>
+                        <NavLink to={cartPath}>{name}</NavLink>
+                      </h4>
                       <div>
                         <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
                           <label htmlFor={buttonId} className="noselect">

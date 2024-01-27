@@ -15,7 +15,6 @@ class Tracks extends Component {
     super(props)
     this.state = {
       selectedTrack: (props.tracks[0] || {}).id,
-      selectedCart: props.selectedCart,
       currentTrack: -1,
       markingHeard: false,
       currentBelowScreen: false,
@@ -68,7 +67,7 @@ class Tracks extends Component {
           : this.props.searchInProgress
           ? 'Searching...'
           : 'No results',
-      cart:
+      carts:
         this.props.carts.length === 0
           ? 'Loading carts...'
           : tracks.length === 0
@@ -249,16 +248,19 @@ class Tracks extends Component {
                       style={{ textAlign: 'left' }}
                       className={'button button-push_button button-push_button-primary button-push_button-small'}
                       id="cart-select"
+                      value={this.props.selectedCart?.uuid}
                       onChange={async e => {
                         this.setState({ fetchingCartDetails: true })
-                        await this.props.onSelectCart(parseInt(e.target.value))
+                        const cartUuid = e.target.value
+                        this.props.history.push(`/carts/${cartUuid}`)
+                        await this.props.onSelectCart(cartUuid)
                         this.setState({ fetchingCartDetails: false })
                       }}
                     >
-                      {this.props.carts.map(cart => (
-                        <option value={cart.id} key={cart.id}>
-                          {cart.is_default || cart.is_purchased ? '⭐️ ' : ''}
-                          {cart.name}
+                      {this.props.carts.map(({ id, is_default, is_purchased, name, uuid }) => (
+                        <option value={uuid} key={id}>
+                          {is_default || is_purchased ? '⭐️ ' : ''}
+                          {name}
                         </option>
                       ))}
                     </select>

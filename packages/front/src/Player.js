@@ -70,9 +70,9 @@ class Player extends Component {
         }
       })
       const carts = this.props.carts
-      if (carts.length !== 0 && !Number.isNaN(this.props.initialPosition)) {
+      if (carts.length !== 0 && this.props.initialPosition !== undefined) {
         const currentTrack = carts[0].tracks[this.props.initialPosition - 1]
-        await this.setCurrentTrack(currentTrack)
+        await this.props.onSetCurrentTrack(currentTrack)
       }
     } catch (e) {
       console.error('Failed to handle key press', e)
@@ -102,8 +102,7 @@ class Player extends Component {
     } else if (this.props.listState === 'recent') {
       tracks = this.props.tracks.recentlyAdded.slice()
     } else if (this.props.listState === 'carts') {
-      const cartId = this.props.selectedCartId || this.props.carts[0]?.id
-      tracks = this.props.carts?.find(R.propEq('id', cartId))?.tracks || []
+      tracks = this.props.selectedCart?.tracks || []
     } else if (this.props.listState === 'search') {
       tracks = this.props.searchResults
     } else {
@@ -295,7 +294,7 @@ class Player extends Component {
           }}
           stores={this.props.stores}
           follows={this.props.follows}
-          selectedCart={this.props.carts?.find(({ id }) => id === this.props.selectedCartId)}
+          selectedCart={this.props.selectedCart}
           listState={this.props.listState}
           carts={this.props.carts}
           inCarts={inCarts}
@@ -314,7 +313,7 @@ class Player extends Component {
           mode={this.props.mode}
           carts={this.props.carts}
           notifications={this.props.notifications}
-          selectedCart={this.props.carts?.find(({ id }) => id === this.props.selectedCartId)}
+          selectedCart={this.props.selectedCart}
           tracks={tracks}
           stores={this.props.stores}
           listState={this.props.listState}

@@ -23,8 +23,6 @@ router.get('/tracks/', async ({ query: { q }, user: { id: userId }, query: optio
   res.send(await searchForTracks(q, { userId, ...options }))
 })
 
-router.use('/stores', require('./stores/index.js').router)
-
 router.get('/artists/:id', async ({ params: { id } }, res) => {
   res.send(await getEntityDetails('artist', id))
 })
