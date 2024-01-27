@@ -203,7 +203,7 @@ class TopBar extends Component {
             )}
           </div>
           <div style={{ alignItems: 'center' }} className="menu_right">
-            <div className="support_menu popup_container popup_container-right">
+            <div className="popup_container">
               <div
                 style={{ padding: '0 8px', display: 'flex', alignItems: 'center' }}
                 className={'popup-anchor support_menu_label'}
