@@ -32,11 +32,6 @@
   border-bottom: 1px solid grey;
 }
 
-.popup_content__above {
-  bottom: 100% !important;
-  top: auto !important;
-}
-
 @media (max-width: 590px) {
   .popup_content {
     left: 2rem;
@@ -82,6 +77,11 @@
     transform: none;
     right: 0;
     left: auto;
+  }
+
+  .popup_content__above {
+    bottom: 100% !important;
+    top: auto !important;
   }
 }
 
