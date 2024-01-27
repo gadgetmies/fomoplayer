@@ -55,13 +55,9 @@ const RevokeWarning = () => (
 )
 
 class Settings extends Component {
-  unlockMarkAllHeard() {
-    this.setState({ markAllHeardUnlocked: true })
-  }
-
   markHeardButton = (label, interval) => (
-    <SpinnerButton
-      disabled={!this.state.markAllHeardUnlocked || this.state.markingHeard !== null}
+    <ConfirmButton
+      disabled={this.state.markingHeard !== null}
       loading={this.state.markingHeard === interval}
       onClick={async () => {
         this.setState({ markingHeard: interval })
@@ -69,7 +65,8 @@ class Settings extends Component {
         this.setState({ markingHeard: null })
       }}
       label={label}
-      loadingLabel={'Marking heard'}
+      confirmLabel={`Confirm marking ${label.toLowerCase()} heard?`}
+      processingLabel={'Marking heard'}
     />
   )
 
@@ -107,7 +104,6 @@ class Settings extends Component {
       followDetails: undefined,
       followDetailsUpdateAborted: false,
       scoreWeightsDebounce: undefined,
-      markAllHeardUnlocked: false,
       markingHeard: null,
       settingCartPublic: null,
       publicCarts: new Set(props.carts.filter(R.prop('is_public')).map(R.prop('id'))),
@@ -1086,23 +1082,12 @@ class Settings extends Component {
                 Danger zone! This action cannot be undone!
                 <br />
               </p>
-              <p>
-                <button
-                  type="submit"
-                  disabled={this.state.markAllHeardUnlocked}
-                  className={`button button-push_button button-push_button-small button-push_button-primary`}
-                  style={this.props.style}
-                  onClick={this.unlockMarkAllHeard.bind(this)}
-                >
-                  Enable buttons
-                </button>
-              </p>
               <p className="input-layout">
-                {this.markHeardButton('Older than a month', '1 months')}
-                {this.markHeardButton('Older than two months', '2 months')}
-                {this.markHeardButton('Older than half a year', '6 months')}
-                {this.markHeardButton('Older than one year', '1 years')}
-                {this.markHeardButton('Older than two years', '2 years')}
+                {this.markHeardButton('Tracks older than a month', '1 months')}
+                {this.markHeardButton('Tracks older than two months', '2 months')}
+                {this.markHeardButton('Tracks older than half a year', '6 months')}
+                {this.markHeardButton('Tracks older than one year', '1 years')}
+                {this.markHeardButton('Tracks older than two years', '2 years')}
               </p>
               <p className="input-layout">{this.markHeardButton('All tracks', '0')}</p>
             </>
