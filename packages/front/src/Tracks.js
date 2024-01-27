@@ -236,10 +236,10 @@ class Tracks extends Component {
 
     return (
       <div style={{ height: this.props.height, borderTop: '1px solid black' }} className="tracks">
-        <div className={'top-bar input-layout'} style={{ width: '100%' }}>
-          <div className="tracks-top_bar_group" style={{ width: '100%', display: 'flex', padding: 4 }}>
-            {this.props.listState === 'carts' ? (
-              this.props.mode === 'app' ? (
+        {this.props.listState === 'carts' && (
+          <div className={'top-bar input-layout'} style={{ width: '100%' }}>
+            <div className="tracks-top_bar_group" style={{ width: '100%', display: 'flex', padding: 4 }}>
+              {this.props.mode === 'app' ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <label className="select_button-button select_button-button" htmlFor="cart-select">
                     Cart:
@@ -276,72 +276,10 @@ class Tracks extends Component {
                 <span className="select_button-button select_button-button select_button-button__active">
                   {this.props.carts[0].name}
                 </span>
-              )
-            ) : this.props.listState !== 'search' && this.props.mode === 'app' ? (
-              <div
-                className="select-button select-button--container state-select-button--container noselect"
-                style={{ width: '100%', display: 'flex' }}
-              >
-                <input
-                  type="radio"
-                  id="tracklist-state-new"
-                  name="tracklist-state"
-                  defaultChecked={this.props.listState === 'new'}
-                />
-                <label
-                  className="select_button-button state-select_button-button select_button-button__large"
-                  htmlFor="tracklist-state-new"
-                  data-help-id="new-tracks"
-                  style={{ flex: 1 }}
-                  onClick={() => this.props.history.push('/new/')}
-                >
-                  New tracks
-                </label>
-                <input
-                  type="radio"
-                  id="tracklist-state-recent"
-                  name="tracklist-state"
-                  defaultChecked={this.props.listState === 'recent'}
-                />
-                <label
-                  className="select_button-button state-select_button-button select_button-button__large"
-                  htmlFor="tracklist-state-recent"
-                  data-help-id="recently-added-tracks"
-                  style={{ flex: 1 }}
-                  onClick={() => this.props.history.push('/recent/')}
-                >
-                  Recently added
-                </label>
-                <input
-                  type="radio"
-                  id="tracklist-state-heard"
-                  name="tracklist-state"
-                  defaultChecked={this.props.listState === 'heard'}
-                />
-                <label
-                  className="select_button-button state-select_button-button select_button-button__large"
-                  htmlFor="tracklist-state-heard"
-                  data-help-id="recently-played-tracks"
-                  style={{ flex: 1 }}
-                  onClick={() => this.props.history.push('/heard/')}
-                >
-                  Recently played
-                </label>
-              </div>
-            ) : null}
+              )}
+            </div>
           </div>
-          {!isMobile && !this.props.mode === 'app' ? (
-            <SpinnerButton
-              style={{ display: 'inline-block', flex: 0 }}
-              className="refresh-tracks"
-              size={'small'}
-              loading={this.state.updatingTracks}
-              onClick={this.refreshTracks.bind(this)}
-              label={'Refresh list'}
-              loadingLabel={'Refreshing'}
-            />
-          ) : null}
-        </div>
+        )}
         {this.props.loading && (
           <div onMouseDown={e => e.stopPropagation()} className="loading-overlay">
             <Spinner size="large" />

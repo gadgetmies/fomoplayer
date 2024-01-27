@@ -1,34 +1,44 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
-const clickHandler = (e, props, open, setOpen) => {
-  console.log('click handler')
-  setOpen(!open)
-  e.stopPropagation()
-  e.preventDefault()
-  props.onClick && props.onClick(e)
+const globalClickHandler = ({ e, open, setOpen, onOpenChanged }) => {
+  if (!onOpenChanged) {
+    setOpen(!open)
+    e.stopPropagation()
+    e.preventDefault()
+  } else {
+    onOpenChanged(open)
+  }
 }
 
-const Popup = props => {
-  const [open, setOpen] = React.useState(props.open)
+const Popup = ({
+  open: defaultOpen,
+  popupStyle,
+  children,
+  style,
+  className,
+  popupClassName,
+  anchor,
+  onOpenChanged
+}) => {
+  const [open, setOpen] = useState(defaultOpen)
+  useEffect(
+    props => {
+      setOpen(defaultOpen)
+    },
+    [defaultOpen]
+  )
+  const clickHandler = e => globalClickHandler({ e, open, setOpen, onOpenChanged })
   return (
     <>
-      <div className={`popup_container ${open ? 'popup--open' : ''} ${props.className || ''}`} style={props.style}>
-        <span
-          className={'popup-anchor'}
-          onClick={e => clickHandler(e, props, open, setOpen)}
-          onDoubleClick={e => clickHandler(e, props, open, setOpen)}
-        >
-          {props.anchor}
+      <div className={`popup_container ${open ? 'popup--open' : ''} ${className || ''}`} style={style}>
+        <span className={'popup-anchor'} onClick={clickHandler} onDoubleClick={clickHandler}>
+          {anchor}
         </span>
-        <div className={`popup_content ${props.popupClassName || ''}`} style={props.popupStyle}>
-          {props.children}
+        <div className={`popup_content ${popupClassName || ''}`} style={popupStyle}>
+          {children}
         </div>
       </div>
-      <div
-        className="popup_overlay"
-        onClick={e => clickHandler(e, props, open, setOpen)}
-        onDoubleClick={e => clickHandler(e, props, open, setOpen)}
-      />
+      <div className="popup_overlay" onClick={clickHandler} onDoubleClick={clickHandler} />
     </>
   )
 }

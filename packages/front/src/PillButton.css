@@ -25,6 +25,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 4px;
+  height: 100%;
 }
 
 .pill-link {

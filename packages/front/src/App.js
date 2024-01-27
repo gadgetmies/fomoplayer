@@ -683,7 +683,10 @@ class App extends Component {
                 />
 
                 <Route exact path="/">
-                  <Redirect to="/new" />
+                  <Redirect to="/tracks/new" />
+                </Route>
+                <Route exact path="/tracks">
+                  <Redirect to="/tracks/new" />
                 </Route>
                 <Route exact path="/admin">
                   <Admin />
@@ -691,6 +694,7 @@ class App extends Component {
                 <Route
                   path="/:path"
                   render={props => {
+                    const pathParts = props.location.pathname.slice(1).split('/')
                     const query = new URLSearchParams(props.location.search).get('q')?.trim()
                     const idSearch = query?.match(/(artist|label|release):(\d?)/)
                     if (
@@ -705,11 +709,13 @@ class App extends Component {
                     let listState = this.state.listState
                     // TODO: this always takes the path from the match, which does not work when the state is changed instead
                     // Perhaps a componentWillChange handling could work?
-                    if (listState !== props.match.params.path) {
+                    if (!pathParts.includes(listState)) {
                       if (props.location.pathname !== '/search') {
                         this.setState({ search: '' })
                       }
-                      this.setState({ listState: props.match.params.path })
+                      this.setState({
+                        listState: props.match.params.path === 'tracks' ? pathParts[1] || 'new' : pathParts[0]
+                      })
                       listState = props.match.params.path
                     }
 

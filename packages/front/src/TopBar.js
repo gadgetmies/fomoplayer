@@ -3,7 +3,7 @@ import React, { Component } from 'react'
 import MenuNavButton from './MenuNavButton'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as R from 'ramda'
-import { Link, withRouter } from 'react-router-dom'
+import { Link, NavLink, withRouter } from 'react-router-dom'
 import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
 import SearchBar from './SearchBar'
@@ -25,7 +25,8 @@ class TopBar extends Component {
       searchActive: query !== null,
       sort,
       supportMenuOpen: false,
-      emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true'
+      emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
+      discoverMenuOpen: false
     }
   }
 
@@ -95,7 +96,46 @@ class TopBar extends Component {
       <div className="top_bar">
         <div className="top_bar_contents">
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className="menu_left">
-            <MenuNavButton to={'/new/'} label="Discover" icon={<FontAwesomeIcon icon="play" />} />
+            <Popup
+              anchor={
+                <MenuNavButton
+                  disabled={true}
+                  to={'/tracks'}
+                  label="Discover"
+                  icon={<FontAwesomeIcon icon="play" />}
+                />
+              }
+              open={this.state.discoverMenuOpen}
+              onOpenChanged={open => this.setState({ discoverMenuOpen: !open })}
+              popupClassName={'popup_content-right'}
+            >
+              <div style={{ flexDirection: 'column', display: 'flex', minWidth: 250 }}>
+                <NavLink
+                  style={isActive => ({ opacity: isActive ? 1 : 0.7 })}
+                  to={'/tracks/new'}
+                  className={'pill pill-button button-push_button-small'}
+                  onClick={() => this.setState({ discoverMenuOpen: false })}
+                >
+                  <span className={'pill-button-contents button-push_button_label'}>New tracks</span>
+                </NavLink>
+                <NavLink
+                  style={isActive => ({ opacity: isActive ? 1 : 0.7 })}
+                  to={'/tracks/recent'}
+                  className={'pill pill-button button-push_button-small'}
+                  onClick={() => this.setState({ discoverMenuOpen: false })}
+                >
+                  <span className={'pill-button-contents button-push_button_label'}>Recently added</span>
+                </NavLink>
+                <NavLink
+                  style={isActive => ({ opacity: isActive ? 1 : 0.7 })}
+                  to={'/tracks/heard'}
+                  className={'pill pill-button button-push_button-small'}
+                  onClick={() => this.setState({ discoverMenuOpen: false })}
+                >
+                  <span className={'pill-button-contents button-push_button_label'}>Recently played</span>
+                </NavLink>
+              </div>
+            </Popup>
             <MenuNavButton to={'/carts/'} label="Carts" icon={<FontAwesomeIcon icon="cart-shopping" />} />
           </div>
           <div
