@@ -956,9 +956,9 @@ class Settings extends Component {
                   <li key={`${id}-${storeName}`}>
                     <span className={'button pill pill-button'}>
                       <span className={'pill-button-contents'}>
-                        <Link to={`/search/?q=${text}`} title={`Search for "${text}"`}>
+                        <NavLink to={`/search/?q=${text}`} title={`Search for "${text}"`}>
                           {text}
-                        </Link>{' '}
+                        </NavLink>{' '}
                         <button
                           disabled={this.state.updatingNotifications}
                           onClick={async e => {
