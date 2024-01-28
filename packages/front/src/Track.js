@@ -8,7 +8,7 @@ import StoreIcon from './StoreIcon'
 import scoreWeights from './scoreWeights'
 import { followableNameLinks, namesToString } from './trackFunctions'
 import DropDownButton from './DropDownButton'
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import Popup from './Popup'
 
 const isNumber = value => typeof value === 'number' && !Number.isNaN(value)
@@ -288,6 +288,7 @@ class Track extends Component {
                       <button
                         className="button button-push_button button-push_button-small button-push_button-primary"
                         onClick={async () => {
+                          this.setState({ newCartName: '' })
                           const { id: cartId } = await this.props.onCreateCartClick(this.state.newCartName)
                           await this.props.onCartButtonClick(cartId, false)
                         }}
@@ -310,6 +311,11 @@ class Track extends Component {
                         >
                           Mark purchased and remove from carts
                         </button>
+                        <div style={{ textAlign: 'center' }}>
+                          <NavLink to={'/settings/carts'} style={{ textAlign: 'center' }}>
+                            Manage carts in settings
+                          </NavLink>
+                        </div>
                       </>
                     )}
                   </div>

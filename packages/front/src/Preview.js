@@ -14,6 +14,7 @@ import CopyToClipboardButton from './CopyToClipboardButton'
 import ShareLink from './ShareLink'
 import DropDownButton from './DropDownButton'
 import PushButton from './PushButton'
+import { NavLink } from 'react-router-dom'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -557,81 +558,87 @@ class Preview extends Component {
                     <Spinner size="large" color="#5A5A5A" />
                   </div>
                 ) : (
-                  <DropDownButton
-                    label={!this.props.inCart ? 'Add to cart' : 'Remove from cart'}
-                    title={!this.props.inCart ? 'Add to default cart' : 'Remove from default cart'}
-                    icon={this.props.inCart ? 'minus' : 'cart-plus'}
-                    loading={this.props.processingCart}
-                    disabled={this.props.inCart === null || this.props.togglingCurrentInCart}
-                    onClick={async () => {
-                      await this.props.onToggleCurrentInCart()
-                    }}
-                    data-help-id="add-to-default-cart"
-                    popupClassName="popup_content-small"
-                    buttonClassName="preview-action_button"
-                  >
-                    <div
-                      className={'carts-list'}
-                      onClick={e => e.stopPropagation()}
-                      onDoubleClick={e => e.stopPropagation()}
+                  <>
+                    <DropDownButton
+                      label={!this.props.inCart ? 'Add to cart' : 'Remove from cart'}
+                      title={!this.props.inCart ? 'Add to default cart' : 'Remove from default cart'}
+                      icon={this.props.inCart ? 'minus' : 'cart-plus'}
+                      loading={this.props.processingCart}
+                      disabled={this.props.inCart === null || this.props.togglingCurrentInCart}
+                      onClick={async () => {
+                        await this.props.onToggleCurrentInCart()
+                      }}
+                      data-help-id="add-to-default-cart"
+                      popupClassName="popup_content-small"
+                      buttonClassName="preview-action_button"
                     >
-                      {this.props.carts?.length === 0
-                        ? 'Loading carts...'
-                        : this.props.carts?.map(({ id, name }) => {
-                            const isInCart = this.props.inCarts.find(R.propEq('id', id)) !== undefined
-                            return (
-                              <PushButton
-                                disabled={this.props.processingCart}
-                                styles="primary small"
-                                className="cart-button "
-                                onClick={e => {
-                                  e.stopPropagation()
-                                  return this.props.onCartButtonClick(currentTrack.id, id, isInCart)
-                                }}
-                                key={`cart-${id}`}
-                                icon={isInCart ? 'minus' : 'cart-plus'}
-                                label={name}
-                              />
-                            )
-                          })}
-                      <hr className={'popup-divider'} />
-                      <div className={'input-layout'}>
-                        <input
-                          placeholder={'New cart'}
-                          style={{ flex: 1 }}
-                          className={'new-cart-input text-input text-input-small text-input-dark'}
-                          value={this.state.newCartName}
-                          onChange={e => this.setState({ newCartName: e.target.value })}
-                        />
-                        <button
-                          className="button button-push_button button-push_button-small button-push_button-primary"
-                          onClick={async () => {
-                            const { id: cartId } = await this.props.onCreateCartClick(this.state.newCartName)
-                            await this.props.onCartButtonClick(cartId, false)
-                          }}
-                          disabled={this.state.newCartName === ''}
-                        >
-                          Create cart
-                        </button>
-                      </div>
-                      {!this.props.selectedCartIsPurchased && (
-                        <>
-                          <hr className={'popup-divider'} />
+                      <div
+                        className={'carts-list'}
+                        onClick={e => e.stopPropagation()}
+                        onDoubleClick={e => e.stopPropagation()}
+                      >
+                        {this.props.carts?.length === 0
+                          ? 'Loading carts...'
+                          : this.props.carts?.map(({ id, name }) => {
+                              const isInCart = this.props.inCarts.find(R.propEq('id', id)) !== undefined
+                              return (
+                                <PushButton
+                                  disabled={this.props.processingCart}
+                                  styles="primary small"
+                                  className="cart-button "
+                                  onClick={e => {
+                                    e.stopPropagation()
+                                    return this.props.onCartButtonClick(currentTrack.id, id, isInCart)
+                                  }}
+                                  key={`cart-${id}`}
+                                  icon={isInCart ? 'minus' : 'cart-plus'}
+                                  label={name}
+                                />
+                              )
+                            })}
+                        <hr className={'popup-divider'} />
+                        <div className={'input-layout'}>
+                          <input
+                            placeholder={'New cart'}
+                            style={{ flex: 1 }}
+                            className={'new-cart-input text-input text-input-small text-input-dark'}
+                            value={this.state.newCartName}
+                            onChange={e => this.setState({ newCartName: e.target.value })}
+                          />
                           <button
-                            disabled={this.props.processingCart}
-                            style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
                             className="button button-push_button button-push_button-small button-push_button-primary"
-                            onClick={e => {
-                              e.stopPropagation()
-                              return this.props.onMarkPurchasedButtonClick()
+                            onClick={async () => {
+                              this.setState({ newCartName: '' })
+                              const { id: cartId } = await this.props.onCreateCartClick(this.state.newCartName)
+                              await this.props.onCartButtonClick(cartId, false)
                             }}
+                            disabled={this.state.newCartName === ''}
                           >
-                            Mark purchased and remove from carts
+                            Create cart
                           </button>
-                        </>
-                      )}
-                    </div>
-                  </DropDownButton>
+                        </div>
+                        {!this.props.selectedCartIsPurchased && (
+                          <>
+                            <hr className={'popup-divider'} />
+                            <button
+                              disabled={this.props.processingCart}
+                              style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
+                              className="button button-push_button button-push_button-small button-push_button-primary"
+                              onClick={e => {
+                                e.stopPropagation()
+                                return this.props.onMarkPurchasedButtonClick()
+                              }}
+                            >
+                              Mark purchased and remove from carts
+                            </button>
+                          </>
+                        )}
+                        <div style={{ textAlign: 'center' }}>
+                          <NavLink to={'/settings/carts'}>Manage carts in settings</NavLink>
+                        </div>
+                      </div>
+                    </DropDownButton>
+                  </>
                 )}
                 {this.props.mode === 'app' && (
                   <>
