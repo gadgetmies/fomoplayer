@@ -194,6 +194,10 @@
   flex: 1;
 }
 
+.mobile .support_menu_label_arrow {
+  display: none;
+}
+
 @media (max-width: 590px) {
   .popup_content-notification {
     bottom: auto;
@@ -293,7 +297,7 @@
   .mobile .button-top_bar_button_label {
     display: none;
   }
-  
+
   .menu_right {
     flex: 1;
   }
