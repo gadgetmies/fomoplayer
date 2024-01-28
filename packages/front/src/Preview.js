@@ -194,7 +194,7 @@ class Preview extends Component {
             'Copy cart link to clipboard',
             `Listen to "${namesToString(
               artistsAndRemixers
-            )} - ${title}" in "${cartName}" on Fomo Player: ${`${cartLink}#${this.props.selectedCart?.tracks.findIndex(
+            )} - ${title}" in "${cartName}" on Fomo Player: ${`${cartLink}#${this.props.selectedCart?.tracks?.findIndex(
               ({ id }) => id === this.props.currentTrack?.id
             ) + 1}`}`,
             'https://fomoplayer.com'
