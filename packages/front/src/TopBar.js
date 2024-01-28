@@ -102,7 +102,7 @@ class TopBar extends Component {
                 <MenuNavButton disabled={true} to={'/tracks'} label="Discover" icon={<FontAwesomeIcon icon="play" />} />
               }
               open={this.state.discoverMenuOpen}
-              onOpenChanged={open => this.setState({ discoverMenuOpen: !open })}
+              onOpenChanged={open => this.setState({ discoverMenuOpen: open })}
               popupClassName={'popup_content-right'}
             >
               <div style={{ flexDirection: 'column', display: 'flex', minWidth: 250 }}>
@@ -247,6 +247,7 @@ class TopBar extends Component {
           <div style={{ alignItems: 'center' }} className="menu_right">
             <Popup
               open={this.state.supportMenuOpen}
+              onOpenChanged={open => this.setState({ supportMenuOpen: open })}
               anchor={
                 <div
                   style={{ padding: '0 8px', display: 'flex', alignItems: 'center' }}

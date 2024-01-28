@@ -6,7 +6,7 @@ const globalClickHandler = ({ e, open, setOpen, onOpenChanged }) => {
     e.stopPropagation()
     e.preventDefault()
   } else {
-    onOpenChanged(open)
+    onOpenChanged(!open)
   }
 }
 
