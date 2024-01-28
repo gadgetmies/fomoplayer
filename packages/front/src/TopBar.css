@@ -290,6 +290,10 @@
 }
 
 @media (max-width: 1029px) {
+  .mobile .button-top_bar_button_label {
+    display: none;
+  }
+  
   .menu_right {
     flex: 1;
   }
