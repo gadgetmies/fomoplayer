@@ -233,10 +233,14 @@ class Preview extends Component {
                       </span>
                       <br />
                       <span className="preview_label">Released:</span>{' '}
-                      <span className="preview_detail">{this.props.currentTrack.released}</span>
+                      <span className="preview_detail" style={{ whiteSpace: 'nowrap' }}>
+                        {this.props.currentTrack.released}
+                      </span>
                       <br />
                       <span className="preview_label">Published:</span>{' '}
-                      <span className="preview_detail">{this.props.currentTrack.published}</span>
+                      <span className="preview_detail" style={{ whiteSpace: 'nowrap' }}>
+                        {this.props.currentTrack.published}
+                      </span>
                       <br />
                       <span className="preview_label">Releases:</span>{' '}
                       <span className="preview_detail">
