@@ -9,7 +9,7 @@ class FullScreenPopup extends Component {
   render() {
     return (
       <div
-        className="full-screen-popup-container align-center-container scroll-container"
+        className="full-screen-popup-container align-center-container"
         onClick={e => {
           if (e.target === e.currentTarget) {
             this.props.onCloseClicked()
@@ -24,7 +24,7 @@ class FullScreenPopup extends Component {
               <FontAwesomeIcon icon="times-circle" />
             </button>
           </div>
-          {this.props.children}
+          <div className={'scroll-container'}>{this.props.children}</div>
         </div>
       </div>
     )
