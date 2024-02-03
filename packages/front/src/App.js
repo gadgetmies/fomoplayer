@@ -759,44 +759,46 @@ class App extends Component {
                           style={{ display: settingsVisible ? 'block' : 'none' }}
                         />
                         <Player
-                          mode="app"
-                          listState={settingsVisible ? 'new' : listState}
-                          search={this.state.search || ''}
-                          searchResults={this.state.searchResults}
-                          searchInProgress={this.state.searchInProgress}
-                          searchError={this.state.searchError}
-                          initialPosition={this.state.initialPosition}
                           addingToCart={this.state.addingToCart}
-                          onUpdateTracksClicked={this.updateTracks.bind(this)}
                           carts={this.state.carts}
-                          follows={this.state.follows}
-                          tracks={this.state.tracksData.tracks}
-                          heardTracks={this.state.heardTracks}
-                          stores={this.state.stores}
-                          newTracks={this.state.tracksData.meta.newTracks}
-                          totalTracks={this.state.tracksData.meta.totalTracks}
-                          selectedCart={this.state.selectedCart}
                           currentTrack={this.state.currentTrack}
-                          onAddToCart={this.addToCart.bind(this)}
-                          onCreateCart={this.createCart.bind(this)}
-                          onUpdateCarts={this.updateCarts.bind(this)}
-                          onRemoveFromCart={this.removeFromCart.bind(this)}
-                          onMarkPurchased={this.onMarkPurchased.bind(this)}
-                          onSetListState={this.setListState.bind(this)}
-                          processingCart={this.state.processingCart}
+                          follows={this.state.follows}
+                          heardTracks={this.state.heardTracks}
+                          initialPosition={this.state.initialPosition}
                           isMobile={this.state.isMobile}
-                          onIgnoreArtistsByLabels={this.ignoreArtistsByLabels.bind(this)}
-                          onSetCurrentTrack={this.setCurrentTrack.bind(this)}
-                          onOpenFollowPopup={this.openFollowPopup.bind(this)}
-                          onOpenIgnorePopup={this.openIgnorePopup.bind(this)}
-                          onSelectCart={this.selectCart.bind(this)}
-                          onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
+                          listState={settingsVisible ? 'new' : listState}
+                          mode="app"
+                          newTracks={this.state.tracksData.meta.newTracks}
+                          processingCart={this.state.processingCart}
+                          search={this.state.search || ''}
+                          searchError={this.state.searchError}
+                          searchInProgress={this.state.searchInProgress}
+                          searchResults={this.state.searchResults}
+                          selectedCart={this.state.selectedCart}
+                          stores={this.state.stores}
+                          totalTracks={this.state.tracksData.meta.totalTracks}
+                          tracks={this.state.tracksData.tracks}
+
+                          onAddToCart={this.addToCart.bind(this)}
+                          onClosePopups={this.closePopups.bind(this)}
+                          onCreateCart={this.createCart.bind(this)}
                           onHandleCartButtonClick={this.handleCartButtonClick.bind(this)}
                           onHandleCreateCartClick={this.handleCreateCartClick.bind(this)}
-                          onClosePopups={this.closePopups.bind(this)}
                           onIgnoreArtist={this.ignoreArtist.bind(this)}
+                          onIgnoreArtistsByLabels={this.ignoreArtistsByLabels.bind(this)}
                           onIgnoreLabel={this.ignoreLabel.bind(this)}
                           onIgnoreRelease={this.ignoreRelease.bind(this)}
+                          onMarkPurchased={this.onMarkPurchased.bind(this)}
+                          onOpenFollowPopup={this.openFollowPopup.bind(this)}
+                          onOpenIgnorePopup={this.openIgnorePopup.bind(this)}
+                          onRemoveFromCart={this.removeFromCart.bind(this)}
+                          onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
+                          onSelectCart={this.selectCart.bind(this)}
+                          onSetCurrentTrack={this.setCurrentTrack.bind(this)}
+                          onSetListState={this.setListState.bind(this)}
+                          onUpdateCarts={this.updateCarts.bind(this)}
+                          onUpdateTracksClicked={this.updateTracks.bind(this)}
+
                           style={{ display: !settingsVisible ? 'block' : 'none' }}
                         />
                       </>

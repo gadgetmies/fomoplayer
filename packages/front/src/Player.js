@@ -275,38 +275,32 @@ class Player extends Component {
       <div className={`page-container`} style={{ ...this.props.style }}>
         <PlayerHelp active={this.state.helpActive} onActiveChanged={active => this.setState({ helpActive: active })} />
         <Preview
-          mode={this.props.mode}
-          togglingCurrentInCart={this.state.togglingCurrentInCart}
-          showHint={this.props.tracks.length === 0}
-          currentTrack={currentTrack}
-          onPrevious={() => this.playPreviousTrack()}
-          onNext={() => this.playNextTrack()}
-          newTracks={this.props.meta ? this.props.meta.newTracks - this.state.listenedTracks : null}
-          totalTracks={this.props.meta ? this.props.meta.totalTracks : null}
-          onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
-          onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
-          onPlayPauseToggle={this.handlePlayPauseToggle.bind(this)}
-          inCart={this.isCurrentInCart()}
-          ref={this.preview}
-          onHelpButtonClicked={() => {
-            this.setState({ helpActive: !this.state.helpActive })
-          }}
-          stores={this.props.stores}
-          follows={this.props.follows}
-          selectedCart={this.props.selectedCart}
-          listState={this.props.listState}
           carts={this.props.carts}
+          currentTrack={currentTrack}
+          follows={this.props.follows}
+          inCart={this.isCurrentInCart()}
           inCarts={inCarts}
+          listState={this.props.listState}
+          mode={this.props.mode}
+          newTracks={this.props.meta ? this.props.meta.newTracks - this.state.listenedTracks : null}
           processingCart={this.props.processingCart}
+          selectedCart={this.props.selectedCart}
+          showHint={this.props.tracks.length === 0}
+          stores={this.props.stores}
+          togglingCurrentInCart={this.state.togglingCurrentInCart}
+          totalTracks={this.props.meta ? this.props.meta.totalTracks : null}
+          ref={this.preview}
           onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
           onCreateCartClick={this.props.onHandleCreateCartClick?.bind(this)}
+          onFollowClicked={() => this.props.onOpenFollowPopup(currentTrack)}
+          onHelpButtonClicked={() => this.setState({ helpActive: !this.state.helpActive })}
+          onIgnoreClicked={() => this.props.onOpenIgnorePopup(currentTrack)}
+          onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
           onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick?.bind(this)}
-          onIgnoreClicked={() => {
-            return this.props.onOpenIgnorePopup(currentTrack)
-          }}
-          onFollowClicked={() => {
-            return this.props.onOpenFollowPopup(currentTrack)
-          }}
+          onNext={() => this.playNextTrack()}
+          onPlayPauseToggle={this.handlePlayPauseToggle.bind(this)}
+          onPrevious={() => this.playPreviousTrack()}
+          onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
         />
         <Tracks
           mode={this.props.mode}
@@ -324,34 +318,31 @@ class Player extends Component {
           searchInProgress={this.props.searchInProgress}
           searchError={this.props.searchError}
           sort={this.props.sort}
-          onFollow={this.props.onFollow}
-          onUpdateTracksClicked={this.props.onUpdateTracksClicked}
+          enabledStores={this.state.enabledStores}
+          enabledStoreSearch={this.state.enabledStoreSearch}
           onAddToCart={this.props.onAddToCart}
+          onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
           onCreateCart={this.props.onCreateCart}
-          onUpdateCarts={this.props.onUpdateCarts}
-          onRemoveFromCart={this.props.onRemoveFromCart}
-          onMarkPurchased={this.handleMarkPurchasedButtonClick.bind(this)}
+          onCreateCartClick={this.props.onHandleCreateCartClick?.bind(this)}
+          onFollowClicked={this.props.onOpenFollowPopup?.bind(this)}
           onIgnoreArtistsByLabels={this.props.onIgnoreArtistsByLabels}
+          onIgnoreClicked={this.props.onOpenIgnorePopup?.bind(this)}
+          onMarkPurchased={this.handleMarkPurchasedButtonClick.bind(this)}
+          onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick.bind(this)}
           onPreviewRequested={id => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
             const requestedTrackIndex = this.getTrackIndex(requestedTrack)
             const trackCount = this.getTracks().length - 1
-            if (requestedTrackIndex === trackCount) {
-              this.props.onUpdateTracksClicked()
-            }
+            if (requestedTrackIndex === trackCount) this.props.onUpdateTracksClicked()
             this.props.onSetCurrentTrack(requestedTrack)
           }}
-          onFollowClicked={this.props.onOpenFollowPopup?.bind(this)}
-          onIgnoreClicked={this.props.onOpenIgnorePopup?.bind(this)}
-          onSelectCart={this.props.onSelectCart?.bind(this)}
+          onRemoveFromCart={this.props.onRemoveFromCart}
           onRequestNotificationUpdate={this.props.onRequestNotificationUpdate}
+          onSelectCart={this.props.onSelectCart?.bind(this)}
           onToggleStoreEnabled={this.toggleStoreEnabled.bind(this)}
-          enabledStores={this.state.enabledStores}
           onToggleStoreSearchEnabled={this.toggleStoreSearchEnabled.bind(this)}
-          enabledStoreSearch={this.state.enabledStoreSearch}
-          onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
-          onCreateCartClick={this.props.onHandleCreateCartClick?.bind(this)}
-          onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick.bind(this)}
+          onUpdateCarts={this.props.onUpdateCarts}
+          onUpdateTracksClicked={this.props.onUpdateTracksClicked}
         />
       </div>
     )
