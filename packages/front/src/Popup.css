@@ -53,7 +53,7 @@
   }
 
   .mobile .popup_content {
-    max-height: calc(100vh - 2rem);
+    max-height: calc(100vh - 8rem);
   }
 
   .desktop .popup_content {
