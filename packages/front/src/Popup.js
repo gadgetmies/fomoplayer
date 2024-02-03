@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
 const globalClickHandler = ({ e, open, setOpen, onOpenChanged }) => {
+  console.log('globalClickHandler', { e, open, setOpen, onOpenChanged })
   if (!onOpenChanged) {
     setOpen(!open)
     e.stopPropagation()
