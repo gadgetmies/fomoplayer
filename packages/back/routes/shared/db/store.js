@@ -367,7 +367,7 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
         .then(getTrackIdFromResult)
       logger.debug(`Inserted new track with id: ${trackId}`)
     } catch (e) {
-      logger.error(`Inserting track failed: ${e.toString()}, ${JSON.stringify(track).substring(0, 400)}`)
+      logger.error(`Inserting track failed: ${e.toString()}, ${JSON.stringify(track).substring(0, 2000)}`)
       throw e
     }
   } else {
