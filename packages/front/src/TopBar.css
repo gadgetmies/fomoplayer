@@ -332,7 +332,7 @@
 
 @media (min-width: 1280px) {
   .top_bar_contents {
-    margin: 0 3rem;
+    margin: 0 auto;
   }
 
   .menu_search {
