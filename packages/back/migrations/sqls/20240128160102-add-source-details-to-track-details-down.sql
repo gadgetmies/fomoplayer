@@ -9,6 +9,7 @@ CREATE FUNCTION track_details(track_ids integer[])
             added    date,
             artists  json,
             version  text,
+            source_details json,
             labels   json,
             remixers json,
             releases json,
@@ -16,8 +17,7 @@ CREATE FUNCTION track_details(track_ids integer[])
             previews json,
             stores   json,
             released date,
-            published date,
-            source_details json
+            published date
           )
   language sql
 as
