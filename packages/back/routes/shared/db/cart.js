@@ -160,7 +160,7 @@ module.exports.queryCartDetails = async cartId => {
                            NATURAL JOIN track_details
                          WHERE cart_id = ${cartId}
                          ORDER BY track__cart_added DESC
-                         LIMIT 200)
+                         LIMIT 400)
        , td AS (SELECT DISTINCT ON (track_id) td.*
                                             , user__track_heard AS heard
                                             , track_id          AS id
