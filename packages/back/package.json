@@ -41,7 +41,7 @@
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
-    "passport-openidconnect": "^0.1.1",
+    "passport-openidconnect": "^0.1.2",
     "pg-using-bluebird": "^4.0.1",
     "ramda": "^0.27.1",
     "request": "^2.88.2",
