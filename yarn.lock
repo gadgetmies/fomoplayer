@@ -4718,11 +4718,6 @@ decimal.js@^10.2.1, decimal.js@^10.3.1, decimal.js@^10.4.3:
   resolved "https://registry.yarnpkg.com/decimal.js/-/decimal.js-10.4.3.tgz#1044092884d245d1b7f65725fa4ad4c6f781cc23"
   integrity sha512-VBBaLc1MgL5XpzgIP7ny5Z6Nx3UrRkIViUkPUdtl9aya5amy3De1gsUUSB1g3+3sExYNjCAsAznmukyxCb1GRA==
 
-decouple@0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/decouple/-/decouple-0.0.2.tgz#cb373640c37f987a5f6866724ccd424a80f9d9a2"
-  integrity sha512-qXqJDCIYRNAVxqPMcJ+/d7CS76P1lJzHZfYs7v+t1ecB2aEqH4fp9Owg9OITYMOPCOmA0WgH9jUNqDbZb+hLuQ==
-
 dedent@^0.7.0:
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/dedent/-/dedent-0.7.0.tgz#2495ddbaf6eb874abb0e1be9df22d2e5a544326c"
@@ -5127,10 +5122,6 @@ emitter-listener@^1.1.1:
   integrity sha512-Bt1sBAGFHY9DKY+4/2cV6izcKJUf5T7/gkdmkxzX/qv9CcGH8xSwVRW5mtX03SWJtRTWSOpzCuWN9rBFYZepZQ==
   dependencies:
     shimmer "^1.2.0"
-
-"emitter@git+https://github.com/Mango/emitter.git#0.0.7":
-  version "0.0.7"
-  resolved "git+https://github.com/Mango/emitter.git#41ab8a3956269c7ed468bde50203e15b3274152f"
 
 emittery@^0.10.2:
   version "0.10.2"
@@ -5984,9 +5975,9 @@ fn.name@1.x.x:
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
 follow-redirects@^1.0.0, follow-redirects@^1.14.0:
-  version "1.15.3"
-  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.3.tgz#fe2f3ef2690afce7e82ed0b44db08165b207123a"
-  integrity sha512-1VzOtuEM8pC9SFU1E+8KfTjZyMztRsgEfwQl44z8A25uy13jSzTj6dyK2Df52iV0vgHCfBwLhDWevLn95w5v6Q==
+  version "1.15.5"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.5.tgz#54d4d6d062c0fa7d9d17feb008461550e3ba8020"
+  integrity sha512-vSFWUON1B+yAw1VN4xMfxgn5fTUiaOzAJCKBwIIgT/+7CuGy9+r+5gITvP62j3RmaD5Ph65UaERdOSRGUzZtgw==
 
 for-each@^0.3.3:
   version "0.3.3"
@@ -6638,7 +6629,7 @@ http-proxy-agent@^7.0.0:
     agent-base "^7.1.0"
     debug "^4.3.4"
 
-http-proxy-middleware@^2.0.3:
+http-proxy-middleware@^2.0.3, http-proxy-middleware@^2.0.6:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/http-proxy-middleware/-/http-proxy-middleware-2.0.6.tgz#e1a4dd6979572c7ab5a4e4b55095d1f32a74963f"
   integrity sha512-ya/UeJ6HVBYxrgYotAZo1KvPWlgB48kUJLDePFeneHsVujFaW5WNj2NgWCAE//B1Dl02BIfYlpNgBy8Kf8Rjmw==
@@ -11667,14 +11658,6 @@ slash@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/slash/-/slash-4.0.0.tgz#2422372176c4c6c5addb5e2ada885af984b396a7"
   integrity sha512-3dOsAHXXUkQTpOYcoAxLIorMTp4gIQr5IW3iVb7A7lFIp0VHhnynm9izx6TssdrIcVIESAlVjtnO2K8bg+Coew==
-
-slideout@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/slideout/-/slideout-1.0.1.tgz#49f2fbd7e4155fe0dbe6d95938f012243565f625"
-  integrity sha512-vbGfQ1A6OaONXycA83BxFiFQy9QVkmOwSX9B8YJdaFBTWe/gzU2Iz5U16dP5yYJmYK0IVXXuEWJyiKB6jNEAHQ==
-  dependencies:
-    decouple "0.0.2"
-    emitter "git+https://github.com/Mango/emitter.git#0.0.7"
 
 smart-buffer@^4.2.0:
   version "4.2.0"
