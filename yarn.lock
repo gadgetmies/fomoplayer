@@ -1715,10 +1715,10 @@
   resolved "https://registry.yarnpkg.com/@mebtte/react-media-session/-/react-media-session-1.1.2.tgz#4058992b8200905420f1962ab3dcf674261e9f0d"
   integrity sha512-cf+E/ZXOvmDG76nRuuNBFgDvQURsAaM4B8w0p+P0ugy6tUGErEE0eHPtz66p/FnXrEtj2F+45iPEKDzW2R0+Bw==
 
-"@mswjs/interceptors@^0.25.13":
-  version "0.25.16"
-  resolved "https://registry.yarnpkg.com/@mswjs/interceptors/-/interceptors-0.25.16.tgz#7955fbb8da479bc691df117dd4c8d889e507ecc2"
-  integrity sha512-8QC8JyKztvoGAdPgyZy49c9vSHHAZjHagwl4RY9E8carULk8ym3iTaiawrT1YoLF/qb449h48f71XDPgkUSOUg==
+"@mswjs/interceptors@^0.26.5":
+  version "0.26.5"
+  resolved "https://registry.yarnpkg.com/@mswjs/interceptors/-/interceptors-0.26.5.tgz#7bb80be4a3e0f61f4d66c30d346fd963b9980a24"
+  integrity sha512-A8Q7XbzFZMCjfgB/QTS1wNdWzVa/SwTQDiSzR9KAgUaS+Mr9jLknXrI5Gvn88w8tFjlZxfwMinYIoFh8RMptig==
   dependencies:
     "@open-draft/deferred-promise" "^2.2.0"
     "@open-draft/logger" "^0.3.0"
