@@ -121,14 +121,6 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
     if (skipOld && Date.now() - new Date(track.published) > 2 * aYear) {
       logger.info(`Track too old, skipping: ${track.id}`)
     } else {
-      if (track.release) {
-        releaseId = await ensureReleaseExists(tx, storeUrl, track.release, sourceId)
-      }
-
-      if (releaseId) {
-        labelId = await queryLabelForRelease(tx, releaseId)
-      }
-
       if (!labelId && track.label) {
         labelId = (await ensureLabelExists(tx, storeUrl, track.label, sourceId)).labelId
       }
@@ -138,6 +130,14 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
         // TODO: match by release / isrc
         const res = await ensureArtistExists(tx, storeUrl, artist, sourceId)
         artists.push(res)
+      }
+
+      if (track.release) {
+        releaseId = await ensureReleaseExists(tx, storeUrl, track.release, artists, sourceId)
+      }
+
+      if (releaseId) {
+        labelId = await queryLabelForRelease(tx, releaseId)
       }
 
       const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, sourceId)

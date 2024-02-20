@@ -126,7 +126,7 @@ module.exports.ensureLabelExists = async (tx, storeUrl, label, sourceId) => {
   return { labelId, storeLabelId }
 }
 
-module.exports.ensureReleaseExists = async (tx, storeUrl, release, sourceId) => {
+module.exports.ensureReleaseExists = async (tx, storeUrl, release, artists, sourceId) => {
   const getReleaseIdFromResult = getFieldFromResult('release_id')
 
   let releaseId = await tx
@@ -145,7 +145,25 @@ module.exports.ensureReleaseExists = async (tx, storeUrl, release, sourceId) => 
     )
     .then(getReleaseIdFromResult)
 
-  // TODO: add heuristics to match e.g. by artists and release name?
+  if (!releaseId) {
+    releaseId = await tx
+      .queryRowsAsync(
+        // language=PostgreSQL
+        sql`-- ensureReleaseExists SELECT release_id by artist and title
+SELECT
+    release_id
+FROM
+    release
+        NATURAL JOIN release__track
+        NATURAL JOIN track__artist
+WHERE
+    release_title = ${release.title}
+HAVING
+    ARRAY_AGG(artist_id) @> ${R.pluck('id', artists)}
+        `
+      )
+      .then(getReleaseIdFromResult)
+  }
 
   if (!releaseId) {
     releaseId = await tx
