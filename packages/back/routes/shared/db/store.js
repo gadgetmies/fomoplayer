@@ -585,7 +585,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
         const [{ trackId: existingTrackId }] = await pg.queryRowsAsync(
           // language=PostgreSQL
           sql`-- addStoreTrack SELECT track_id FROM release__track
-          SELECT track_id
+          SELECT track_id AS "trackId"
           FROM
             release__track
           WHERE release_id = ${releaseId}
