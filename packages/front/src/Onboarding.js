@@ -5,7 +5,6 @@ class Onboarding extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      run: props.active,
       onboardingIndex: 0,
       onboardingHelpers: null
     }
@@ -16,10 +15,7 @@ class Onboarding extends Component {
       content: (
         <>
           <h2>Hi there! Welcome to the Fomo Player!</h2>
-          <p>
-            Seems like you are new here as there are no tracks in your collection. Follow this guide to go through the
-            main features to get started!
-          </p>
+          <p>Follow this guide to go through the main features of the service to get going!</p>
         </>
       ),
       locale: {
@@ -30,22 +26,12 @@ class Onboarding extends Component {
       disableCloseOnEsc: false,
       showSkipButton: true
     },
-    Menu: {
-      target: '[data-onboarding-id=slideout-button]',
-      placement: 'right',
-      content: (
-        <p>
-          As you just logged in, there are no tracks in your collection yet. To fix this, let's head to the setting by
-          first opening the menu.
-        </p>
-      ),
-      disableNext: true,
-      locale: { next: 'Step' }
-    },
     Settings: {
       target: '[data-onboarding-id=settings-button]',
       placement: 'right',
-      content: <p>... and then clicking the Settings button</p>,
+      content: (
+        <p>Let's first click the Settings button to open the Settings and find an artist and label to follow.</p>
+      ),
       disableNext: true,
       locale: { next: 'Step' }
     },
@@ -64,7 +50,7 @@ class Onboarding extends Component {
     },
     FollowItem: {
       target: '[data-onboarding-id=follow-item]',
-      placement: 'right',
+      placement: 'top',
       content: (
         <>
           <p>Here are the artists and labels found from the supported stores for the term you entered.</p>
@@ -77,7 +63,7 @@ class Onboarding extends Component {
     },
     FollowButton: {
       target: '[data-onboarding-id=follow-button]:not([disabled])',
-      placement: 'right-end',
+      placement: 'bottom',
       content: (
         <p>
           Click on the follow button to follow this artist. (Don't worry, you can remove the artist from the followed
@@ -113,16 +99,16 @@ class Onboarding extends Component {
       disableNext: true,
       locale: { next: 'Step' }
     },
-    ReopenMenu: {
-      target: '[data-onboarding-id=slideout-button]',
+    Support: {
+      target: '[data-onboarding-id=support-button]',
       placement: 'top',
-      content: <p>Let's head back to the menu for a few important things</p>,
+      content: <p>Let's head to the Support popup to look at a few more things.</p>,
       disableNext: true,
       locale: { next: 'Step' }
     },
     Instructions: {
       target: '[data-onboarding-id=instructions-button]',
-      placement: 'top',
+      placement: 'bottom',
       content: (
         <p>
           There's a more detailed instructions page on Github that lists many more features, how they work (and in some
@@ -132,7 +118,7 @@ class Onboarding extends Component {
     },
     Issues: {
       target: '[data-onboarding-id=issues-button]',
-      placement: 'top',
+      placement: 'bottom',
       content: (
         <p>
           The site is very much a work in progress, so it is probably not unusual to bump into issue. You can help make
@@ -142,7 +128,7 @@ class Onboarding extends Component {
     },
     Improvements: {
       target: '[data-onboarding-id=improvements-button]',
-      placement: 'top',
+      placement: 'bottom',
       content: (
         <p>
           You can also share your ideas on how to improve the service by clicking the Share improvement ideas button
@@ -169,7 +155,7 @@ class Onboarding extends Component {
   }
 
   static isCurrentStep(step) {
-    return Onboarding.state.step.target === step.target
+    return Onboarding.state?.step.target === step.target
   }
 
   static moveToNextWhenItemVisible(itemSelector) {
@@ -189,7 +175,7 @@ class Onboarding extends Component {
     return (
       <Joyride
         steps={Object.values(Onboarding.steps)}
-        run={this.state.run}
+        run={this.props.active}
         continuous
         scrollToFirstStep
         spotlightClicks={true}

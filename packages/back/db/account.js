@@ -102,10 +102,10 @@ RETURNING meta_account_user_id AS id
 
     await pgrm.queryRowsAsync(
       // language=PostgreSQL
-      sql`-- Add default cart
+      sql`-- Add default carts
       INSERT INTO cart
-          (cart_name, meta_account_user_id, cart_is_default)
-      VALUES ('Default', ${userId}, TRUE)
+          (cart_name, meta_account_user_id, cart_is_default, cart_is_purchased)
+      VALUES ('Default', ${userId}, TRUE, FALSE), ('Purchased', ${userId}, FALSE, TRUE)
       `
     )
   }

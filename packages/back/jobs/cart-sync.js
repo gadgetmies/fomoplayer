@@ -16,18 +16,17 @@ module.exports.syncCarts = async () => {
     const cartsToUpdate = await pg.queryRowsAsync(
       // language=PostgreSQL
       sql`--syncCarts
-SELECT
-    meta_account_user_id
-  , JSON_AGG(JSON_BUILD_OBJECT('storeId', store_id, 'cartId', cart_id, 'cartStoreId', cart__store_cart_store_id,
-                               'cartVersionId', cart__store_store_version_id)) AS cartdetails
-FROM
-    cart__store
+      SELECT meta_account_user_id
+           , JSON_AGG(JSON_BUILD_OBJECT('storeId', store_id, 'cartId', cart_id, 'cartStoreId',
+                                        cart__store_cart_store_id,
+                                        'cartVersionId', cart__store_store_version_id)) AS cartdetails
+      FROM
+        cart__store
         NATURAL JOIN cart
-WHERE
-      cart__store_updated < NOW() - INTERVAL '30 minutes'
-  AND store_id = (SELECT store_id FROM store WHERE store_name = 'Spotify')
-GROUP BY
-    1
+      WHERE cart__store_updated < NOW() - INTERVAL '30 minutes'
+        AND store_id = (SELECT store_id FROM store WHERE store_name = 'Spotify')
+        AND cart_deleted IS NULL
+      GROUP BY 1
       `
     )
 

@@ -367,7 +367,7 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
         .then(getTrackIdFromResult)
       logger.debug(`Inserted new track with id: ${trackId}`)
     } catch (e) {
-      logger.error(`Inserting track failed: ${e.toString()}, ${JSON.stringify(track).substring(0, 400)}`)
+      logger.error(`Inserting track failed: ${e.toString()}, ${JSON.stringify(track).substring(0, 2000)}`)
       throw e
     }
   } else {
@@ -563,7 +563,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
           `
         )
       } catch (e) {
-        const [{ trackId: existingTrackId }] = await tx.queryRowsAsync(
+        const [{ trackId: existingTrackId }] = await pg.queryRowsAsync(
           // language=PostgreSQL
           sql`-- addStoreTrack SELECT track_id FROM release__track
           SELECT track_id
@@ -576,6 +576,8 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
         logger.error(
           `Release ${releaseId} already has track number ${track.track_number} with track ${existingTrackId}! Cannot set release track number for ${trackId}`
         )
+
+        throw e
       }
     } else {
       const { trackNumber } = releaseTrackDetails

@@ -39,8 +39,10 @@ exports.down = function(db) {
   var filePath = path.join(__dirname, 'sqls', '20231219095205-update-bandcamp-playlist-regex-down.sql');
   return new Promise( function( resolve, reject ) {
     fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
-      if (err) return reject(err);
-      console.log('received data: ' + data);
+      if (err) return reject(err)
+      if (db.log.isSilent !== true) {
+        console.log('received data: ' + data)
+      }
 
       resolve(data);
     });

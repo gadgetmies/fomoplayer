@@ -24,7 +24,7 @@ test({
     'track details are mapped correctly': async () => {
       const [{ track_details: actualTrackDetails }] = await pg.queryRowsAsync('SELECT track_details FROM track_details')
 
-      const actual = R.omit(['added', 'released', 'published'], actualTrackDetails)
+      const actual = R.omit(['added', 'released', 'published', 'source_details'], actualTrackDetails)
       return assert.deepEqual(actual, expectedTrackDetails)
     },
     teardown: teardownTracks

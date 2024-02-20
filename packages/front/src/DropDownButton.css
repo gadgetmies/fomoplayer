@@ -1,0 +1,13 @@
+.button-drop_down-right:before {
+  border-bottom-left-radius: 0;
+}
+
+.button-drop_down-left {
+  border-top-right-radius: 0;
+  border-right: 0;
+  white-space: nowrap;
+}
+
+.button-drop_down-left:before {
+  border-bottom-right-radius: 0;
+}

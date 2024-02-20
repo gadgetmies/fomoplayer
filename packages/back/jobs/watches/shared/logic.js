@@ -3,13 +3,17 @@ const { getArtistFollowDetails, getLabelFollowDetails, getPlaylistFollowDetails,
 const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.playlistFetchJob = storeUrl => async jobDetails => {
-  const sourceId = await insertSource({ operation: `${storeUrl}, fetchPlaylists`, jobDetails })
   const errors = []
   const playlistFollowDetails = await getPlaylistFollowDetails(storeUrl)
 
   let count = 1
   for (const details of playlistFollowDetails) {
     try {
+      const sourceId = await insertSource({
+        operation: `${storeUrl}, fetchPlaylists`,
+        jobDetails,
+        followDetails: playlistFollowDetails
+      })
       logger.info(`Fetching tracks for playlist ${count}/${playlistFollowDetails.length}: ${details.playlistStoreId}`)
       count++
       await updatePlaylistTracks(storeUrl, details, sourceId)
@@ -24,13 +28,17 @@ module.exports.playlistFetchJob = storeUrl => async jobDetails => {
 }
 
 module.exports.artistFetchJob = storeUrl => async jobDetails => {
-  const sourceId = await insertSource({ operation: `${storeUrl}, fetchArtists`, jobDetails })
   const errors = []
   const artistFollowDetails = await getArtistFollowDetails(storeUrl)
 
   let count = 1
   for (const details of artistFollowDetails) {
     try {
+      const sourceId = await insertSource({
+        operation: `${storeUrl}, fetchArtists`,
+        jobDetails,
+        followDetails: artistFollowDetails
+      })
       logger.info(
         `Updating tracks for artists ${count}/${artistFollowDetails.length}: ${details.storeArtistId} @ ${storeUrl}`
       )
@@ -48,13 +56,17 @@ module.exports.artistFetchJob = storeUrl => async jobDetails => {
 }
 
 module.exports.labelFetchJob = storeUrl => async jobDetails => {
-  const sourceId = await insertSource({ operation: `${storeUrl}, fetchLabels`, jobDetails })
   const errors = []
   const labelFollowDetails = await getLabelFollowDetails(storeUrl)
 
   let count = 1
   for (const details of labelFollowDetails) {
     try {
+      const sourceId = await insertSource({
+        operation: `${storeUrl}, fetchLabels`,
+        jobDetails,
+        followDetails: labelFollowDetails
+      })
       logger.info(`Fetching tracks for labels ${count}/${labelFollowDetails.length}: ${details.labelStoreId}`)
       count++
 

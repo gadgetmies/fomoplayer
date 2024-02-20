@@ -5,6 +5,11 @@
   vertical-align: top;
 }
 
+.open-cell {
+  width: 100%;
+  text-align: center;
+}
+
 .text-header-cell {
   text-align: left;
 }
@@ -27,197 +32,170 @@
   font-weight: 600;
 }
 
-.carts-list {
-  max-height: 150px;
-  overflow-y: scroll;
-}
-
-.carts-list::-webkit-scrollbar {
-  display: none;
-}
-
 .new-cart-input {
   margin: 2px !important;
   padding: 6px !important;
-}
-
-.cart-button {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 4px;
-  position: relative;
-  padding-left: 20px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
 }
 
 .score-table {
   width: 100%;
 }
 
-.email-not-verified-info {
-  font-size: 60%;
-  order: 5;
+.table-cell-button {
+  flex: 1;
+  vertical-align: middle;
+  margin: 0;
 }
 
-@media (min-width: 900px) {
-  .tracks-table-header {
-    display: block;
+.table-button-cell-header {
+  text-align: center;
+}
+
+.table-cell-button {
+  opacity: 0.75;
+}
+
+.table-cell-button:disabled {
+  opacity: 0.25;
+}
+
+.table-cell-button:hover:not(:disabled) {
+  opacity: 1;
+}
+
+/*.tracks-table tbody tr:hover .table-cell-button:not(:disabled) {*/
+/*  opacity: 1;*/
+/*}*/
+
+.cart-bar {
+  box-sizing: border-box;
+  position: relative;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tracks-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 75%;
+}
+
+.tracks-table > tbody::-webkit-scrollbar {
+  display: none;
+}
+
+.tracks-table > tbody {
+  -ms-overflow-style: none;
+}
+
+.tracks-table > tbody > tr.playing {
+  background-color: #5181bd;
+  color: white;
+}
+
+.tracks-table > tbody > tr {
+  background-color: #666;
+  margin: 0 0 2px 0;
+  color: white;
+  line-height: 2rem;
+  font-weight: 350;
+  cursor: pointer;
+}
+
+.tracks-table > thead > tr {
+  background-color: var(--page-container-background-color);
+  color: white;
+  line-height: 2rem;
+  font-size: 100%;
+}
+
+.tracks-table > thead > th {
+  color: white;
+  border: 1px;
+  text-align: left;
+  font-weight: normal;
+  text-transform: uppercase;
+}
+
+.refresh-tracks {
+  margin-left: auto;
+}
+
+.filter-active {
+  background-color: #b40089;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.top-bar {
+  background-color: #222;
+}
+
+.open-share-cell {
+  display: inline-flex;
+}
+
+.score-popup_content {
+  flex-direction: column;
+  align-items: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tracks-table > tbody > tr:hover {
+    background-color: #767676;
   }
 
-  .new-cell {
-    float: left;
-    width: 3rem;
-    text-align: center;
-  }
-
-  .track-play-button {
-    height: 100%;
-  }
-
-  .new-cell-content {
-    display: block;
-    width: 100%;
-    text-align: center;
-  }
-
-  .track-new-indicator {
-    display: none;
-  }
-
-  .track-table-cell {
-    display: block;
-    float: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .track-details {
-    width: calc(60% - 3rem);
-  }
-
-  .track-details-left {
-    width: 75%;
-  }
-
-  .track-details-center {
-    width: 13%;
-  }
-
-  .track-details-right {
-    width: 12%;
-  }
-
-  .track-details-content {
-    display: block;
-    float: left;
-  }
-
-  .artist-cell {
-    width: 32%;
-  }
-
-  .title-cell {
-    width: 40%;
-  }
-
-  .label-cell {
-    width: 28%;
-  }
-
-  .dates-cell {
-    width: 30%;
-  }
-
-  .released-cell,
-  .added-cell {
-    width: 100%;
-  }
-
-  .key-cell, .bpm-cell {
-    width: 50%;
-    display: inline;
-    text-align: center;
-  }
-
-  .score-cell,
-  .follow-cell,
-  .cart-cell,
-  .ignore-cell {
-    width: 25%;
-    text-align: center;
-  }
-
-  .follow-ignore-cart-cell {
-    width: 16%;
-  }
-
-  .ignore-button-icon {
-    display: none;
-  }
-
-  .cart-button-label {
-    display: none;
-  }
-
-  .open-share-cell {
-    width: 24%;
-  }
-
-  .open-cell {
-    width: 100%;
-    text-align: center;
-    overflow: visible;
-  }
-
-  .share-cell {
-    width: 30%;
-    text-align: center;
-  }
-
-  .cart-popup-content {
-    left: calc(50% - 50px - 6px);
-    width: 100px;
-  }
-
-  .notification-popup-content {
-    right: 0;
-    width: 100%;
-  }
-
-  .share-button-container {
-    display: inline-block;
-    position: relative;
-    margin-left: 4px;
-  }
-
-  .score-popup-content {
-    width: 250px;
-    left: calc(50% - 125px - 6px);
-  }
-
-  .share-popup-content {
-    width: 8rem;
-    left: calc(50% - 125px);
-    display: flex;
-    flex-direction: column;
-  }
-
-  .track-table-cell .pill-link + .pill-link,
-  .track-table-cell .pill-button + .pill-link {
-    margin-left: 2px;
-  }
-
-  .track-table-cell .pill-link + .pill-button {
-    margin-left: 4px;
+  .tracks-table > tbody > tr.playing:hover {
+    background-color: #639be7;
   }
 }
 
-@media (max-width: 899px) {
+.follow-ignore-cart-cell {
+  display: inline-flex;
+}
+
+@media (max-width: 768px) {
+  .table-cell-button-row > .table-cell-button:not(:first-child),
+  .table-cell-button-row__last {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: 1px solid #808080;
+  }
+
+  .table-cell-button-row > .table-cell-button:not(:last-child),
+  .table-cell-button-row__first {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .table-cell-button-row > .table-cell-button {
+    margin: 0;
+  }
+
+  .table-cell-button {
+    width: 100%;
+    line-height: 1.5rem;
+  }
+
+  .refresh-tracks {
+    order: 3;
+  }
+
+  /*Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table*/
+  .tracks-table > tbody {
+    height: calc(100vh - 133px);
+  }
+
+  .cart-bar {
+    order: 3;
+  }
+
+  .tracks-top_bar_group {
+    margin: 0;
+    min-width: calc(100% - 4px);
+  }
+
   .tracks-table-header {
     display: none;
   }
@@ -227,6 +205,10 @@
     margin: 6px;
   }
 
+  .follow-ignore-cart-cell {
+    max-width: 90px;
+  }
+
   .track-play-button {
     display: none;
   }
@@ -236,12 +218,8 @@
     overflow: hidden;
   }
 
-  .table-cell-button {
-    width: 100%;
-  }
-
   .track-details {
-    width: 56%;
+    flex: 1;
     display: flex;
     flex-direction: column;
   }
@@ -252,8 +230,7 @@
   }
 
   .track-details-right {
-    display: flex;
-    flex-direction: column;
+    display: none;
   }
 
   .track-details-content {
@@ -319,6 +296,10 @@
     vertical-align: middle;
   }
 
+  .open-cell {
+    max-width: 150px;
+  }
+
   .follow-button-label::before {
     content: 'Follow...';
   }
@@ -328,7 +309,8 @@
   }
 
   .follow-ignore-cart-cell {
-    width: 18%;
+    width: 120px;
+    flex-direction: column;
   }
 
   .cart-cell-content {
@@ -343,16 +325,6 @@
     width: 100%;
   }
 
-  .open-share-cell {
-    width: 26%;
-    display: flex;
-  }
-
-  .open-cell {
-    width: 100%;
-    text-align: center;
-  }
-
   .email-not-verified-info {
     font-size: 60%;
     order: 5;
@@ -361,33 +333,199 @@
     white-space: pre-wrap;
   }
 
-  .cart-popup-content {
-    width: 8rem;
-    right: calc(50% - 4rem - 6px);
-  }
-
-  .notification-popup-content {
-    right: 0;
-    width: 100px;
-  }
-
   .share-button-container {
     margin-top: 4px;
-  }
-
-  .score-popup-content {
-    width: 14rem;
-    right: calc(50% - 7rem - 6px);
-  }
-
-  .share-popup-content {
-    left: 2px;
-    right: 2px;
   }
 
   .track-table-cell .pill-link + .pill-link,
   .track-table-cell .pill-button + .pill-link,
   .track-table-cell .pill-link + .pill-button {
     margin-top: 4px;
+  }
+}
+
+@media (min-width: 591px) {
+  .score-popup_content {
+    width: 250px;
+    margin-top: -4px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1279px) {
+  .track-details-left {
+    width: 85%;
+  }
+
+  .track-details-center {
+    width: 15%;
+  }
+
+  .track-details-right {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .refresh-tracks {
+    order: 3;
+  }
+
+  .cart-bar {
+    order: 2;
+  }
+
+  /*Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table*/
+  .tracks-table > tbody {
+    height: calc(100vh - 171px);
+  }
+
+  .table-cell-button-row > .table-cell-button:not(:first-child),
+  .table-cell-button-row__last {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: 1px solid #808080;
+  }
+
+  .table-cell-button-row > .table-cell-button:not(:last-child),
+  .table-cell-button-row__first {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .table-cell-button-row > .table-cell-button {
+    margin: 0;
+  }
+
+  .tracks-table-header {
+    display: block;
+  }
+
+  .new-cell {
+    float: left;
+    width: 3rem;
+    text-align: center;
+  }
+
+  .track-play-button {
+    height: 100%;
+  }
+
+  .new-cell-content {
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+  .track-new-indicator {
+    display: none;
+  }
+
+  .track-table-cell {
+    display: block;
+    float: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .track-details {
+    /* 3rem = new-cell width, 183px = space reserved for open-share-cell, 60px = space reserved for score, 64px = cart cell 8px = some margin, padding, \_o_/ */
+    width: calc(100% - 208px - 60px - 64px - 3rem - 8px);
+  }
+
+  .track-details-content {
+    float: left;
+  }
+
+  .artist-cell {
+    width: 32%;
+  }
+
+  .title-cell {
+    width: 40%;
+  }
+
+  .label-cell {
+    width: 28%;
+  }
+
+  .dates-cell {
+    width: 30%;
+  }
+
+  .released-cell,
+  .added-cell {
+    width: 100%;
+  }
+
+  .key-cell,
+  .bpm-cell {
+    width: 50%;
+    display: inline;
+    text-align: center;
+  }
+
+  .score-cell {
+    width: 60px;
+    text-align: center;
+  }
+
+  .cart-cell {
+    width: 64px;
+  }
+
+  .follow-ignore-cart-cell {
+    width: 128px;
+    gap: 4px;
+  }
+
+  .open-share-cell {
+    width: 208px;
+  }
+
+  .ignore-button-icon {
+    display: none;
+  }
+
+  .cart-button-label {
+    display: none;
+  }
+
+  .open-cell {
+    overflow: visible;
+  }
+
+  .share-cell {
+    width: 30%;
+    text-align: center;
+  }
+
+  .share-button-container {
+    display: inline-block;
+    position: relative;
+    margin-left: 4px;
+  }
+
+  .track-table-cell .pill-link + .pill-link,
+  .track-table-cell .pill-button + .pill-link {
+    margin-left: 2px;
+  }
+
+  .track-table-cell .pill-link + .pill-button {
+    margin-left: 4px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .track-details-left {
+    width: 70%;
+  }
+
+  .track-details-center {
+    width: 10%;
+  }
+
+  .track-details-right {
+    width: 20%;
   }
 }

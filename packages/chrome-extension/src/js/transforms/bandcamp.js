@@ -10,20 +10,28 @@ module.exports.bandcampTagTracksTransform = L.collect([
   })
 ])
 
-const isVersionOrRemix = match => {
-  if (!match) return false
-  if (match[4] !== undefined && !match[4].startsWith('(feat.')) {
-    const title = match[4].toLocaleLowerCase()
-    if (title.includes('version') || title.includes('remix')) {
+const isVersionOrRemix = parenthesesContent => {
+  if (!parenthesesContent) return false
+  if (!parenthesesContent.startsWith('(feat.')) {
+    const title = parenthesesContent.toLocaleLowerCase()
+    if (title.includes(' version') || title.includes(' remix')) {
       return true
     }
   }
   return false
 }
 
-const hasFeat = match => {
+const extractFeat = match => {
   if (!match) return false
-  return match[4] !== undefined && (match[4].startsWith('(feat.') || match[4].startsWith('(ft.'))
+  if (match.startsWith('(feat.') || match.startsWith('(ft.')) {
+    return match
+      .replace('(feat. ', '')
+      .replace('(ft. ', '')
+      .replace(')', '')
+      .split(/,&/)
+  } else {
+    return false
+  }
 }
 
 module.exports.bandcampReleasesTransform = L.collect([
@@ -33,67 +41,65 @@ module.exports.bandcampReleasesTransform = L.collect([
     L.filter(R.prop('file')),
     L.elems,
     L.choose(track => {
-      const match = track.title.match(new RegExp(/((.*?) - )?([^(]*)(\(([^)]*)\))?/))
       const releaseArtistId = release.url.substring(8, release.url.indexOf('.bandcamp.com'))
       const releaseArtistUrl = release.url.substring(0, release.url.indexOf('/', 8))
       const artistTemplate = {
         name: track.artist || release.artist,
-        id: releaseArtistId || null,
         role: 'author',
+        id: releaseArtistId || null,
         url: releaseArtistUrl || null
       }
-      const versionOrRemix = isVersionOrRemix(match)
-      const version = versionOrRemix ? match[4].substring(1, match[4].length - 1) : null
-      const featuringArtists =
-        !versionOrRemix && hasFeat(match) ? match[4].replace('(feat. ', '').replace('(ft. ', '').replace(')', '').split(/,&/) : []
+      // 0 = full original title
+      // 1 = artists and '-' if present
+      // 2 = artists if '-' present
+      // 3 = title if no version or remix
+      // 4 = title if remix or version
+      // 5 = parentheses and contents
+      // 6 = parentheses contents e.g. feat. or version
+      // 7 = title after parentheses
+      const match = track.title.match(new RegExp(/((.*?) - )?((([^(]*)(\((.*?)\)))?(([^(]*)(\((.*?)\)))?.*)/))
+      const versionOrRemix = isVersionOrRemix(match[10] || match[6])
+      const version = versionOrRemix ? match[11] || match[7] : null
+      const featuringArtists = extractFeat(match[6]) || []
+      const title = version || featuringArtists.length ? match[5].trim() : match[4]
+
+      const createArtistWithRole = role => artist => {
+        const trimmedArtist = artist.trim()
+        const artistId = trimmedArtist.toLocaleLowerCase()
+        const isReleaseArtist = artistId === releaseArtistId
+        return {
+          name: trimmedArtist || track.artist,
+          role,
+          ...(isReleaseArtist
+            ? {
+                id: releaseArtistId,
+                url: releaseArtistUrl
+              }
+            : { id: null, url: null })
+        }
+      }
+
+      const remixers = versionOrRemix
+        ? (match[11] || match[7])
+            .replace(/version|remix/i, '')
+            .split(/[,&]/)
+            .map(createArtistWithRole('remixer'))
+        : []
+
+      const artists = match[2]
+        ? match[2]
+            .split(/[,&]/)
+            .map(createArtistWithRole('author'))
+            .filter(artist => !remixers.find(({ name }) => name === artist.name))
+        : [artistTemplate]
 
       return [
         L.pick({
           id: 'id',
-          title: match ? R.always(match[3].trim()) : 'title',
+          title: title ? R.always(title) : 'title',
           version: R.always(version),
           artists: match
-            ? R.always(
-                (match[2]
-                  ? match[2].split(/,&/).map(artist => {
-                      const trimmedArtist = artist.trim()
-                      const artistId = trimmedArtist.toLocaleLowerCase()
-                      const isReleaseArtist = artistId === releaseArtistId
-                      return {
-                        ...artistTemplate,
-                        name: track.artist || trimmedArtist,
-                        ...(isReleaseArtist
-                          ? {
-                              id: releaseArtistId,
-                              url: releaseArtistUrl
-                            }
-                          : { id: artistId, url: null })
-                      }
-                    })
-                  : [artistTemplate]
-                )
-                  .concat(
-                    match.length === 6 && match[5] !== undefined
-                      ? match[5]
-                          .replace(/version|remix/i, '')
-                          .split(/[,&]/)
-                          .map(remixer => ({
-                            name: remixer.trim(),
-                            id: null,
-                            role: 'remixer',
-                            url: null
-                          }))
-                      : []
-                  )
-                  .concat(
-                    featuringArtists.map(name => ({
-                      name: name.trim(),
-                      id: null,
-                      role: 'author',
-                      url: null
-                    }))
-                  )
-              )
+            ? R.always(artists.concat(featuringArtists.map(createArtistWithRole('author'))).concat(remixers))
             : R.always([artistTemplate]),
           released: R.always(release.current.release_date || release.current.publish_date),
           published: R.always(release.current.publish_date),

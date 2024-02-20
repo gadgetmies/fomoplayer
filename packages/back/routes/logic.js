@@ -2,10 +2,11 @@ const { apiURL } = require('../config.js')
 const { queryLongestPreviewForTrack, searchForArtistsAndLabels } = require('./db.js')
 const { searchForTracks } = require('./shared/db/search.js')
 const { queryPreviewDetails } = require('./shared/db/preview')
-const { queryCartDetails } = require('./shared/db/cart')
+const { queryCartDetails, queryCartOwner } = require('./shared/db/cart')
 const { queryCartDetailsByUuid, verifyEmail } = require('./db')
 const { getStoreDetailsFromUrl } = require('./stores/logic')
 const { modules: storeModules } = require('./stores/store-modules')
+const { queryEntityDetails } = require('./shared/db/entities')
 
 module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
   const { storeCode, storeTrackId } = await queryLongestPreviewForTrack(id, format, skip)
@@ -42,12 +43,15 @@ module.exports.getPreview = async (id, format, offset) => {
   }
 }
 
-module.exports.getCartDetails = async uuid => {
+module.exports.getCartDetails = async (uuid, userId) => {
   const { isPublic, id } = await queryCartDetailsByUuid(uuid)
-  if (!isPublic) {
+  const [{ ownerUserId }] = await queryCartOwner(id)
+  if (!isPublic && ownerUserId !== userId) {
     return null
   }
   return await queryCartDetails(id)
 }
+
+module.exports.getEntityDetails = queryEntityDetails
 
 module.exports.verifyEmail = verifyEmail

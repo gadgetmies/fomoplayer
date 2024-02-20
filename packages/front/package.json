@@ -30,13 +30,12 @@
     "react-joyride": "^2.7.0",
     "react-router-dom": "^5.3.0",
     "react-scripts": "^5.0.0",
-    "slideout": "^1.0.1",
     "typeface-lato": "^1.1.13",
     "waveform-generator-web": "^0.0.4"
   },
   "scripts": {
-    "start": "REACT_APP_ENV=$NODE_ENV PORT=4004 react-scripts start",
-    "build": "REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL react-scripts build && mkdir -p ../back/public && cp -r build/* ../back/public/",
+    "start": "REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL REACT_APP_FRONTEND_URL=$FRONTEND_URL PORT=4004 react-scripts start",
+    "build": "REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL REACT_APP_FRONTEND_URL=$FRONTEND_URL react-scripts build && mkdir -p ../back/public && cp -r build/* ../back/public/",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
@@ -45,5 +44,8 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ]
+  ],
+  "devDependencies": {
+    "http-proxy-middleware": "^2.0.6"
+  }
 }

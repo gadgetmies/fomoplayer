@@ -1,0 +1,15 @@
+.collapse-header {
+    cursor: pointer;
+}
+
+.collapse-header-icon {
+    margin-left: 4px;
+}
+
+.collapse-header.collapse-header--collapsed .collapse-header-icon {
+    transform: rotate(180deg);
+}
+
+.collapse-header--collapsed + * {
+    display: none;
+}

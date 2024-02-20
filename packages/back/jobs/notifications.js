@@ -5,6 +5,7 @@ const { getTracksWithIds } = require('../routes/users/db')
 const { searchForTracks } = require('../routes/shared/db/search')
 const { using } = require('bluebird')
 const { scheduleEmail } = require('../services/mailer')
+const { queryEntityDetails } = require('../routes/shared/db/entities')
 
 const logger = require('fomoplayer_shared').logger(__filename)
 
@@ -13,6 +14,7 @@ module.exports.updateNotifications = async () => {
   const errors = []
 
   for (const { userId, notificationId, text, email, lastUpdate, storeIds, storeNames } of notificationSearches) {
+    let followText = text
     try {
       const searchResults = await searchForTracks(text, {
         userId,
@@ -21,7 +23,15 @@ module.exports.updateNotifications = async () => {
         addedSince: lastUpdate,
         storeIds
       })
-      const uriEncoded = encodeURIComponent(text)
+
+      const entityDetails = text.match(/(.+):\d+/)
+
+      if (entityDetails) {
+        const [_, entityType, entityId] = entityDetails
+        followText = `${entityType}: "${queryEntityDetails(entityType, entityId).name}"`
+      }
+
+      const uriEncoded = encodeURIComponent(followText)
 
       logger.debug('Found tracks for search', { searchResults })
 
@@ -30,7 +40,7 @@ module.exports.updateNotifications = async () => {
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
           const trackDetails = await getTracksWithIds(searchResults.map(R.prop('track_id')))
           const root = `https://fomoplayer.com`
-          const notificationsUrl = `${root}/settings?page=notifications`
+          const notificationsUrl = `${root}/settings/notifications`
           const newTracksDetails = trackDetails.map(
             ({ artists, title, version }) =>
               `${artists.map(({ name }) => name).join(', ')} - ${title}${version ? ` (${version})` : ''}`
@@ -42,7 +52,7 @@ module.exports.updateNotifications = async () => {
           await scheduleEmail(
             process.env.NOTIFICATION_EMAIL_SENDER,
             email,
-            `New results for your search '${text}'!`,
+            `New results for your search '${followText}'!`,
             `Check out the results at ${searchUrl}
             
             New tracks available ${from}:
@@ -50,7 +60,7 @@ module.exports.updateNotifications = async () => {
             
             Unsubscribe / adjust notification settings at: ${notificationsUrl}
 `,
-            `<h1>New results for your search '${text}'!</h1>
+            `<h1>New results for your search '${followText}'!</h1>
 <a href="${searchUrl}">
   Check out the results at ${searchUrl}
 </a><br/><br/>

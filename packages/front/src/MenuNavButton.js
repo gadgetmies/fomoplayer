@@ -4,9 +4,22 @@ import * as R from 'ramda'
 
 export default props => (
   <NavLink
-    className={`no-style-link button menu-item button-push_button-large button-push_button-menu`}
-    activeClassName="button-push_button-menu-active"
+    className={`no-style-link button button-top_bar_button`}
+    activeClassName="button-top_bar_button--selected"
     to={props.to}
-    {...R.omit(['className'], props)}
-  />
+    onFocus={e => {
+      e.target.blur()
+      props.onFocus && props.onFocus()
+    }}
+    {...R.omit(['className', 'icon', 'onFocus'], props)}
+    style={{ display: 'flex', justifyContent: 'center' }}
+    onClick={e => {
+      if (props.disabled) {
+        e.preventDefault()
+      }
+    }}
+  >
+    <span className="button-top_bar_button_icon">{props.icon}</span>
+    <span className="button-top_bar_button_label">{props.label}</span>
+  </NavLink>
 )

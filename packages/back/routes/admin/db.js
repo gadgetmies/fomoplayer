@@ -29,7 +29,7 @@ module.exports.getQueryResults = async () =>
       -- Query radiator results
       SELECT job_name
            , ARRAY_AGG(JSON_BUILD_OBJECT('started', job_run_started, 'success', job_run_success, 'result',
-                                         job_run_result)) AS results
+                                         job_run_result) ORDER BY job_run_started DESC) AS results
       FROM
         job
         NATURAL JOIN job_run

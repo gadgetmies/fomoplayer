@@ -414,7 +414,7 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = (userId, limits = { new: 80, recent: 50, heard:20 }) => {
+module.exports.queryUserTracks = (userId, limits = { new: 80, recent: 50, heard: 20 }) => {
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC, score DESC NULLS LAST`
 
@@ -1064,19 +1064,20 @@ FROM (SELECT meta_account_email_address AS email, meta_account_email_verified AS
 module.exports.queryAuthorizations = async userId => {
   const [{ authorizations }] = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`WITH
-    authorizations AS (SELECT
-                           JSON_AGG(store_name) AS authorizations
-                       FROM
-                           store
-                               NATURAL JOIN user__store_authorization
-                       WHERE
-                           meta_account_user_id = ${userId})
-SELECT
-    CASE WHEN authorizations IS NULL THEN '[]'::json ELSE authorizations END
-FROM
-    authorizations
-`
+    sql`WITH authorizations AS
+               (SELECT JSON_AGG(
+                           JSON_BUILD_OBJECT(
+                               'store_name', store_name,
+                               'has_write_access', user__store_authorization_scopes @>
+                                                   '{playlist-modify-private,playlist-modify-public,user-follow-modify}')) AS authorizations
+                FROM
+                  store
+                  NATURAL JOIN user__store_authorization
+                WHERE meta_account_user_id = ${userId})
+        SELECT CASE WHEN authorizations IS NULL THEN '[]'::JSON ELSE authorizations END
+        FROM
+          authorizations
+    `
   )
   return authorizations
 }

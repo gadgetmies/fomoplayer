@@ -1,29 +1,20 @@
 import Preview from './Preview.js'
 import Tracks from './Tracks.js'
-import { requestWithCredentials } from './request-json-with-credentials.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import MediaSession from '@mebtte/react-media-session'
-import FollowPopup from './FollowPopup'
-import IgnorePopup from './IgnorePopup'
-import { artistNamesToString, trackArtistsAndTitle, trackTitle } from './trackFunctions'
+import { namesToString, trackTitle } from './trackFunctions'
 import { PlayerHelp } from './PlayerHelp'
 
 class Player extends Component {
   constructor(props) {
     super(props)
-    const allStores = this.props.stores.map(({ storeName }) => storeName)
+    const allStores = this.props.stores?.map(({ storeName }) => storeName)
     const enabledStores = JSON.parse(window.localStorage.getItem('enabledStores')) || allStores
     const enabledStoreSearch = JSON.parse(window.localStorage.getItem('enabledStoreSearch')) || allStores
     this.state = {
-      currentTrack: null,
-      heardTracks: props.tracks?.heard || [],
       listenedTracks: 0,
-      listState: props.listState,
-      searchResults: [],
       togglingCurrentInCart: false,
-      selectedCartId: props.carts[0]?.id,
-      requestNotificationSearch: '',
       nextDoubleClickStarted: false,
       playPauseDoubleClickStarted: false,
       helpActive: false,
@@ -78,59 +69,50 @@ class Player extends Component {
         }
       })
       const carts = this.props.carts
-      if (carts.length !== 0 && !Number.isNaN(this.props.initialPosition)) {
+      if (carts.length !== 0 && this.props.initialPosition !== undefined) {
         const currentTrack = carts[0].tracks[this.props.initialPosition - 1]
-        await this.setCurrentTrack(currentTrack)
+        await this.props.onSetCurrentTrack(currentTrack)
       }
     } catch (e) {
       console.error('Failed to handle key press', e)
     }
   }
 
-  componentDidUpdate(prevProps, prevState, snapshot) {
-    if (
-      prevProps.carts !== this.props.carts &&
-      this.props.carts.length > 0 &&
-      this.state.selectedCartId === undefined
-    ) {
-      this.setState({ selectedCartId: this.props.carts[0].id })
-    }
+  mergeHeardStatus(tracks) {
+    if (!tracks) return
+    this.props.heardTracks.forEach(heardTrack => {
+      const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
+      if (index !== -1) {
+        tracks[index].heard = heardTrack.heard
+      }
+    })
   }
 
-  async setCurrentTrack(track) {
-    this.setState({ currentTrack: track })
-    document.title = `${trackArtistsAndTitle(track)} - Fomo Player`
-
-    if (this.props.mode === 'app') {
-      await requestWithCredentials({
-        path: `/me/tracks/${track.id}`,
-        method: 'POST',
-        body: { heard: true }
-      })
-    }
-    this.markHeard(track)
-  }
-
-  markHeard(track) {
-    if (this.state.listState === 'heard') {
-      return
+  getTracks() {
+    let tracks
+    if (this.props.mode === 'list') {
+      return this.props.tracks
     }
 
-    let updatedHeardTracks = this.state.heardTracks
-    const updatedTrack = R.assoc('heard', true, track)
-    const playedTrackIndex = this.state.heardTracks.findIndex(R.propEq('id', track.id))
-    if (playedTrackIndex !== -1) {
-      updatedHeardTracks.splice(playedTrackIndex, 1)
+    if (this.props.listState === 'new') {
+      tracks = this.props.tracks.new.slice()
+    } else if (this.props.listState === 'heard') {
+      tracks = this.props.heardTracks
+    } else if (this.props.listState === 'recent') {
+      tracks = this.props.tracks.recentlyAdded.slice()
+    } else if (this.props.listState === 'carts') {
+      tracks = this.props.selectedCart?.tracks || []
+    } else if (this.props.listState === 'search') {
+      tracks = this.props.searchResults
     } else {
-      this.setState({ listenedTracks: this.state.listenedTracks + 1 })
+      tracks = []
     }
-
-    updatedHeardTracks = R.prepend(updatedTrack, updatedHeardTracks)
-    this.setState({ heardTracks: updatedHeardTracks })
+    this.mergeHeardStatus(tracks)
+    return tracks
   }
 
   getCurrentTrackIndex() {
-    return this.getTrackIndex(this.state.currentTrack)
+    return this.getTrackIndex(this.props.currentTrack)
   }
 
   getTrackIndex(track) {
@@ -140,11 +122,16 @@ class Player extends Component {
   async jumpTracks(numberOfTracksToJump) {
     const currentTrackIndex = this.getCurrentTrackIndex()
     const trackCount = this.getTracks().length - 1
-    const indexToJumpTo = R.clamp(0, trackCount, currentTrackIndex + numberOfTracksToJump)
-    if (indexToJumpTo === trackCount) {
-      this.props.onUpdateTracksClicked()
+    if (currentTrackIndex === trackCount && this.props.listState !== 'new') {
+      this.setPlaying(false)
+    } else {
+      const indexToJumpTo = R.clamp(0, trackCount, currentTrackIndex + numberOfTracksToJump)
+      if (indexToJumpTo === trackCount && this.props.listState === 'new') {
+        this.props.onUpdateTracksClicked()
+      }
+
+      await this.props.onSetCurrentTrack(this.getTracks()[indexToJumpTo])
     }
-    await this.setCurrentTrack(this.getTracks()[indexToJumpTo])
   }
 
   async playPreviousTrack() {
@@ -160,9 +147,10 @@ class Player extends Component {
   }
 
   getSeekDistance() {
-    const preview = this.state.currentTrack.previews.find(R.propEq('url', this.preview.current.state.previewUrl))
+    if (!this.props.currentTrack) return -1
+    const preview = this.props.currentTrack.previews.find(R.propEq('url', this.preview.current.state.previewUrl))
 
-    return ((preview ? preview.length_ms : this.state.currentTrack.duration) / 5 / 1000) | 7
+    return ((preview ? preview.length_ms : this.props.currentTrack.duration) / 5 / 1000) | 7
   }
 
   async handleNextClick() {
@@ -203,156 +191,17 @@ class Player extends Component {
     this.preview.current.setPlaying(playing)
   }
 
-  async followArtist(artistId, follow) {
-    await requestWithCredentials({
-      path: `/me/follows/artists/${follow ? '' : artistId}`,
-      method: follow ? 'POST' : 'DELETE',
-      body: follow ? [artistId] : undefined,
-      headers: {
-        'content-type': 'application/vnd.multi-store-player.artist-ids+json;ver=1'
-      }
-    })
-
-    await this.props.onFollow()
-  }
-
-  async followLabel(labelId, follow) {
-    await requestWithCredentials({
-      path: `/me/follows/labels/${follow ? '' : labelId}`,
-      method: follow ? 'POST' : 'DELETE',
-      body: follow ? [labelId] : undefined,
-      headers: {
-        'content-type': 'application/vnd.multi-store-player.label-ids+json;ver=1'
-      }
-    })
-
-    await this.props.onFollow()
-  }
-
-  // TODO: change to POST {ignore: true} /me/labels/?
-  async ignoreArtistsByLabels(artistId, labelIds, ignore) {
-    await requestWithCredentials({
-      path: `/me/ignores/artists-on-labels`,
-      method: ignore ? 'POST' : 'DELETE',
-      body: { artistIds: [artistId], labelIds }
-    })
-  }
-
-  async ignoreArtist(artistId) {
-    await requestWithCredentials({
-      path: `/me/ignores/artists`,
-      method: 'POST',
-      body: [artistId]
-    })
-  }
-
-  async ignoreLabel(labelId) {
-    await requestWithCredentials({
-      path: `/me/ignores/labels`,
-      method: 'POST',
-      body: [labelId]
-    })
-  }
-
-  async ignoreRelease(releaseId) {
-    await requestWithCredentials({
-      path: `/me/ignores/releases`,
-      method: 'POST',
-      body: [releaseId]
-    })
-  }
-
-  setListState(listState) {
-    this.setState({ listState })
-    window.history.replaceState(undefined, undefined, `/${listState}`)
-  }
-
-  setSearchResults(searchResults) {
-    this.setState({ searchResults })
-  }
-
-  async selectCart(selectedCartId) {
-    this.setState({ selectedCartId: selectedCartId })
-    await this.props.onFetchCart(selectedCartId)
-  }
-
-  mergeHeardStatus(tracks) {
-    if (!tracks) return
-    this.state.heardTracks.forEach(heardTrack => {
-      const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
-      if (index !== -1) {
-        tracks[index] = heardTrack
-      }
-    })
-  }
-
-  getTracks() {
-    let tracks
-    if (this.props.mode === 'list') {
-      return this.props.tracks
-    }
-
-    if (this.state.listState === 'new') {
-      tracks = this.props.tracks.new.slice()
-    } else if (this.state.listState === 'heard') {
-      tracks = this.state.heardTracks
-    } else if (this.state.listState === 'recent') {
-      tracks = this.props.tracks.recentlyAdded.slice()
-    } else if (this.state.listState === 'cart') {
-      tracks = this.props.carts?.find(R.propEq('id', this.state.selectedCartId))?.tracks || []
-    } else if (this.state.listState === 'search') {
-      tracks = this.state.searchResults
-    } else {
-      tracks = []
-    }
-    this.mergeHeardStatus(tracks)
-
-    return tracks
-  }
-
-  setFollowPopupOpen(open) {
-    this.setState({ followPopupOpen: open })
-  }
-
-  openFollowPopup(track) {
-    this.setState({ followPopupTrack: track })
-    this.setFollowPopupOpen(true)
-  }
-
-  setIgnorePopupOpen(open) {
-    this.setState({ ignorePopupOpen: open })
-  }
-
-  openIgnorePopup(track) {
-    this.setState({ ignorePopupTrack: track })
-    this.setIgnorePopupOpen(true)
-  }
-
-  closePopups() {
-    this.setFollowPopupOpen(false)
-    this.setIgnorePopupOpen(false)
-  }
-
-  async refreshListAndClosePopups() {
-    await this.props.onUpdateTracksClicked()
-    this.closePopups()
-  }
-
-  getCurrentTrack() {
-    return this.state.currentTrack
-  }
-
   async toggleCurrentInCart() {
     this.setState({ togglingCurrentInCart: true })
     await (this.isCurrentInCart() ? this.props.onRemoveFromCart : this.props.onAddToCart)(
       this.getDefaultCart().id,
-      this.state.currentTrack.id
+      this.props.currentTrack.id
     )
     this.setState({ togglingCurrentInCart: false })
   }
 
   isCurrentInCart() {
-    const currentTrack = this.getCurrentTrack()
+    const currentTrack = this.props.currentTrack
     return currentTrack && this.getDefaultCart()
       ? this.getDefaultCart().tracks?.find(R.propEq('id', currentTrack.id))
       : null
@@ -366,7 +215,7 @@ class Player extends Component {
     if (this.props.mode !== 'app') return
     if (playing && this.state.playPauseDoubleClickStarted) {
       this.setState({ playPauseDoubleClickStarted: false })
-      await this.props.onAddToCart(this.getDefaultCart().id, this.state.currentTrack.id)
+      await this.props.onAddToCart(this.getDefaultCart().id, this.props.currentTrack.id)
     } else if (!playing) {
       const that = this
       this.setState({ playPauseDoubleClickStarted: true })
@@ -374,11 +223,6 @@ class Player extends Component {
         that.setState({ playPauseDoubleClickStarted: false })
       }, 200)
     }
-  }
-
-  async markPurchased(trackId) {
-    await this.props.onMarkPurchased(trackId)
-    await this.selectCart(this.state.selectedCartId)
   }
 
   toggleStoreEnabled(storeName) {
@@ -407,101 +251,98 @@ class Player extends Component {
     })
   }
 
+  async handleMarkPurchasedButtonClick() {
+    this.setState({ processingCart: true })
+    try {
+      await this.props.onMarkPurchased(this.props.id)
+    } finally {
+      this.setState({ processingCart: false })
+    }
+  }
+
+  async refreshListAndClosePopups() {
+    await this.props.onUpdateTracksClicked()
+    this.props.onClosePopups()
+  }
+
   render() {
     const tracks = this.getTracks()
-    const currentTrack = this.getCurrentTrack()
+    const currentTrack = this.props.currentTrack
+    const inCarts = currentTrack
+      ? this.props.carts.filter(cart => cart.tracks?.find(R.propEq('id', currentTrack.id)))
+      : []
     return (
-      <div className={`page-container ${this.props.isMobile ? 'mobile' : ''}`} style={{ ...this.props.style }}>
+      <div className={`page-container`} style={{ ...this.props.style }}>
         <PlayerHelp active={this.state.helpActive} onActiveChanged={active => this.setState({ helpActive: active })} />
-        {this.props.follows ? (
-          <FollowPopup
-            open={this.state.followPopupOpen}
-            track={this.state.followPopupTrack}
-            follows={this.props.follows}
-            onCloseClicked={this.closePopups.bind(this)}
-            onFollowArtist={this.followArtist.bind(this)}
-            onFollowLabel={this.followLabel.bind(this)}
-            onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
-          />
-        ) : null}
-        <IgnorePopup
-          open={this.state.ignorePopupOpen}
-          track={this.state.ignorePopupTrack}
-          onCloseClicked={this.closePopups.bind(this)}
-          onIgnoreArtistOnLabels={this.ignoreArtistsByLabels.bind(this)}
-          onIgnoreArtist={this.ignoreArtist.bind(this)}
-          onIgnoreLabel={this.ignoreLabel.bind(this)}
-          onIgnoreRelease={this.ignoreRelease.bind(this)}
-          onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
-        />
-        <MediaSession
-          title={currentTrack ? trackTitle(currentTrack) : ''}
-          artist={currentTrack ? artistNamesToString(currentTrack.artists) : ''}
-          onSeekBackward={() => console.log('seek backward')}
-          onSeekForward={() => console.log('seek forward')}
-          onPreviousTrack={() => this.handlePreviousClick()}
-          onNextTrack={() => this.handleNextClick()}
-        />
         <Preview
-          key={'preview'}
-          mode={this.props.mode}
-          togglingCurrentInCart={this.state.togglingCurrentInCart}
-          showHint={tracks.length === 0}
+          carts={this.props.carts}
           currentTrack={currentTrack}
-          onPrevious={() => this.playPreviousTrack()}
-          onNext={() => this.playNextTrack()}
-          newTracks={this.props.meta ? this.props.meta.newTracks - this.state.listenedTracks : null}
-          totalTracks={this.props.meta ? this.props.meta.totalTracks : null}
-          onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
-          onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
-          onPlayPauseToggle={this.handlePlayPauseToggle.bind(this)}
+          follows={this.props.follows}
           inCart={this.isCurrentInCart()}
+          inCarts={inCarts}
+          listState={this.props.listState}
+          mode={this.props.mode}
+          newTracks={this.props.meta ? this.props.meta.newTracks - this.state.listenedTracks : null}
+          processingCart={this.props.processingCart}
+          selectedCart={this.props.selectedCart}
+          showHint={this.props.tracks.length === 0}
+          stores={this.props.stores}
+          togglingCurrentInCart={this.state.togglingCurrentInCart}
+          totalTracks={this.props.meta ? this.props.meta.totalTracks : null}
           ref={this.preview}
-          onHelpButtonClicked={() => {
-            this.setState({ helpActive: !this.state.helpActive })
-          }}
+          onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
+          onCreateCartClick={this.props.onHandleCreateCartClick?.bind(this)}
+          onFollowClicked={() => this.props.onOpenFollowPopup(currentTrack)}
+          onHelpButtonClicked={() => this.setState({ helpActive: !this.state.helpActive })}
+          onIgnoreClicked={() => this.props.onOpenIgnorePopup(currentTrack)}
+          onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
+          onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick?.bind(this)}
+          onNext={() => this.playNextTrack()}
+          onPlayPauseToggle={this.handlePlayPauseToggle.bind(this)}
+          onPrevious={() => this.playPreviousTrack()}
+          onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
         />
         <Tracks
-          key={'tracks'}
           mode={this.props.mode}
           carts={this.props.carts}
           notifications={this.props.notifications}
-          selectedCart={this.props.carts?.find(({ id }) => id === this.state.selectedCartId)}
+          selectedCart={this.props.selectedCart}
           tracks={tracks}
           stores={this.props.stores}
-          listState={this.state.listState}
+          listState={this.props.listState}
           currentTrack={(currentTrack || {}).id}
           processingCart={this.props.processingCart}
           follows={this.props.follows}
           notificationsEnabled={this.props.notificationsEnabled}
           search={this.props.search}
+          searchInProgress={this.props.searchInProgress}
+          searchError={this.props.searchError}
           sort={this.props.sort}
-          onFollow={this.props.onFollow}
-          onUpdateTracksClicked={this.props.onUpdateTracksClicked}
+          enabledStores={this.state.enabledStores}
+          enabledStoreSearch={this.state.enabledStoreSearch}
           onAddToCart={this.props.onAddToCart}
+          onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
           onCreateCart={this.props.onCreateCart}
-          onUpdateCarts={this.props.onUpdateCarts}
-          onRemoveFromCart={this.props.onRemoveFromCart}
-          onMarkPurchased={this.markPurchased.bind(this)}
-          onIgnoreArtistsByLabels={this.ignoreArtistsByLabels}
+          onCreateCartClick={this.props.onHandleCreateCartClick?.bind(this)}
+          onFollowClicked={this.props.onOpenFollowPopup?.bind(this)}
+          onIgnoreArtistsByLabels={this.props.onIgnoreArtistsByLabels}
+          onIgnoreClicked={this.props.onOpenIgnorePopup?.bind(this)}
+          onMarkPurchased={this.handleMarkPurchasedButtonClick.bind(this)}
+          onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick.bind(this)}
           onPreviewRequested={id => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
-            this.setCurrentTrack(requestedTrack)
+            const requestedTrackIndex = this.getTrackIndex(requestedTrack)
+            const trackCount = this.getTracks().length - 1
+            if (requestedTrackIndex === trackCount) this.props.onUpdateTracksClicked()
+            this.props.onSetCurrentTrack(requestedTrack)
           }}
-          onFollowClicked={this.openFollowPopup.bind(this)}
-          onIgnoreClicked={this.openIgnorePopup.bind(this)}
-          onShowNewClicked={this.setListState.bind(this, 'new')}
-          onShowHeardClicked={this.setListState.bind(this, 'heard')}
-          onShowRecentlyAddedClicked={this.setListState.bind(this, 'recent')}
-          onShowCartClicked={this.setListState.bind(this, 'cart')}
-          onShowSearchClicked={this.setListState.bind(this, 'search')}
-          onSearchResults={this.setSearchResults.bind(this)}
-          onSelectCart={this.selectCart.bind(this)}
+          onRemoveFromCart={this.props.onRemoveFromCart}
           onRequestNotificationUpdate={this.props.onRequestNotificationUpdate}
+          onSelectCart={this.props.onSelectCart?.bind(this)}
           onToggleStoreEnabled={this.toggleStoreEnabled.bind(this)}
-          enabledStores={this.state.enabledStores}
           onToggleStoreSearchEnabled={this.toggleStoreSearchEnabled.bind(this)}
-          enabledStoreSearch={this.state.enabledStoreSearch}
+          onUpdateCarts={this.props.onUpdateCarts}
+          onUpdateTracksClicked={this.props.onUpdateTracksClicked}
         />
       </div>
     )

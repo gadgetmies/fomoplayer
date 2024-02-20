@@ -1,0 +1,20 @@
+.track {
+  /*height: 40px;*/
+  width: 100%;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+@media (max-width: 768px) {
+  .empty-cell {
+    display: none;
+  }
+}
+@media (min-width: 769px) {
+  .cart-popup_content {
+    width: 8rem;
+    right: calc(50% - 4rem - 6px);
+  }
+}

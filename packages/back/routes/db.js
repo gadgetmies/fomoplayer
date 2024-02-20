@@ -116,29 +116,35 @@ module.exports.verifyEmail = async verificationCode => {
   })
 }
 
-module.exports.upsertUserAuthorizationTokens = async (userId, storeName, accessToken, refreshToken, expires) => {
+module.exports.upsertUserAuthorizationTokens = async (
+  userId,
+  storeName,
+  accessToken,
+  refreshToken,
+  expires,
+  scopes
+) => {
   await pg.queryAsync(
     // language=PostgreSQL
     sql`-- setUserAuthorizationTokens
-INSERT
-INTO
-    user__store_authorization ( meta_account_user_id, store_id, user__store_authorization_access_token
-                              , user__store_authorization_refresh_token, user__store_authorization_expires)
-SELECT
-    ${userId}
-  , store_id
-  , pgp_sym_encrypt(${accessToken}, ${cryptoKey})
-  , pgp_sym_encrypt(${refreshToken}, ${cryptoKey})
-  , NOW() + ${`${expires} seconds`}::INTERVAL
-FROM
-    store
-WHERE
-    store_name = ${storeName}
-ON CONFLICT ON CONSTRAINT user__store_authorization_meta_account_user_id_store_id_key
-    DO UPDATE SET
-                  user__store_authorization_access_token  = EXCLUDED.user__store_authorization_access_token
-                , user__store_authorization_refresh_token = EXCLUDED.user__store_authorization_refresh_token
-                , user__store_authorization_expires       = EXCLUDED.user__store_authorization_expires`
+    INSERT
+    INTO user__store_authorization ( meta_account_user_id, store_id, user__store_authorization_access_token
+                                   , user__store_authorization_refresh_token, user__store_authorization_expires
+                                   , user__store_authorization_scopes)
+    SELECT ${userId}
+         , store_id
+         , pgp_sym_encrypt(${accessToken}, ${cryptoKey})
+         , pgp_sym_encrypt(${refreshToken}, ${cryptoKey})
+         , NOW() + ${`${expires} seconds`}::INTERVAL
+         , ${scopes}
+    FROM
+      store
+    WHERE store_name = ${storeName}
+    ON CONFLICT ON CONSTRAINT user__store_authorization_meta_account_user_id_store_id_key
+      DO UPDATE SET user__store_authorization_access_token  = EXCLUDED.user__store_authorization_access_token
+                  , user__store_authorization_refresh_token = EXCLUDED.user__store_authorization_refresh_token
+                  , user__store_authorization_expires       = EXCLUDED.user__store_authorization_expires
+                  , user__store_authorization_scopes        = EXCLUDED.user__store_authorization_scopes`
   )
 }
 
@@ -146,15 +152,14 @@ module.exports.queryAuthorization = async userId => {
   const res = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryAuthorization
-SELECT
-    pgp_sym_decrypt(user__store_authorization_access_token, ${cryptoKey}) AS access_token,
-    pgp_sym_decrypt(user__store_authorization_refresh_token, ${cryptoKey}) AS refresh_token,
-    user__store_authorization_expires as expires
-FROM
-    user__store_authorization
-WHERE
-      meta_account_user_id = ${userId}
-  AND store_id = (SELECT store_id FROM store WHERE store_name = 'Spotify')
+    SELECT pgp_sym_decrypt(user__store_authorization_access_token, ${cryptoKey})  AS access_token
+         , pgp_sym_decrypt(user__store_authorization_refresh_token, ${cryptoKey}) AS refresh_token
+         , user__store_authorization_expires                                      AS expires
+         , user__store_authorization_scopes                                       AS scopes
+    FROM
+      user__store_authorization
+    WHERE meta_account_user_id = ${userId}
+      AND store_id = (SELECT store_id FROM store WHERE store_name = 'Spotify')
     `
   )
 

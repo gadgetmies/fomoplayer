@@ -95,7 +95,8 @@ app.use(
 app.use(express.static('public'))
 
 const indexPath = path.resolve(__dirname, 'public/index.html')
-app.get('/cart/:uuid', ({ params: { uuid } }, res, next) => {
+app.get('/carts/:uuid', ({ params: { uuid }, user }, res, next) => {
+  console.log('foofof')
   fs.readFile(indexPath, async (err, index) => {
     try {
       if (err || !uuid) {
@@ -103,10 +104,10 @@ app.get('/cart/:uuid', ({ params: { uuid } }, res, next) => {
         return res.status(500).end()
       }
 
-      const cartDetails = await getCartDetails(uuid)
+      const cartDetails = await getCartDetails(uuid, user?.id)
 
       if (cartDetails === null) {
-        logger.debug('Cart details not found', { uuid })
+        logger.debug('Cart details not found or cart not public', { uuid })
         return res.status(404).end()
       }
 

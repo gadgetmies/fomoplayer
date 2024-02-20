@@ -4,8 +4,18 @@
     "title": "Anomaly",
     "version": "Annix Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Annix", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Annix",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -16,8 +26,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 178256 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 178256
+      }
+    ],
     "store_details": {
       "id": 2496030081,
       "track_id": 2496030081,
@@ -63,8 +83,18 @@
     "title": "Machine Gun",
     "version": "Icicle Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Icicle", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Icicle",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -75,8 +105,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 293023 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 293023
+      }
+    ],
     "store_details": {
       "id": 1088880770,
       "track_id": 1088880770,
@@ -122,8 +162,24 @@
     "title": "Asteroids",
     "version": "Tsuruda Remix",
     "artists": [
-      { "name": "Noisia, Prolix", "id": "noisia, prolix", "role": "author", "url": null },
-      { "name": "Tsuruda", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Prolix",
+        "role": "author",
+        "id": null,
+        "url": null
+      },
+      {
+        "name": "Tsuruda",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -134,8 +190,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 260571 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 260571
+      }
+    ],
     "store_details": {
       "id": 70267956,
       "track_id": 70267956,
@@ -181,8 +247,18 @@
     "title": "Get Deaded",
     "version": "Fade Black Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Fade Black", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Fade Black",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -193,8 +269,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 209302 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 209302
+      }
+    ],
     "store_details": {
       "id": 1656616157,
       "track_id": 1656616157,
@@ -240,8 +326,18 @@
     "title": "Get Deaded",
     "version": "Euph Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Euph", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Euph",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -252,8 +348,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 229767 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 229767
+      }
+    ],
     "store_details": {
       "id": 2906800482,
       "track_id": 2906800482,
@@ -299,8 +405,18 @@
     "title": "Friendly Intentions",
     "version": "Dez Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Dez", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Dez",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -311,8 +427,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 276279 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 276279
+      }
+    ],
     "store_details": {
       "id": 1249491764,
       "track_id": 1249491764,
@@ -358,8 +484,24 @@
     "title": "Halcyon",
     "version": "Bensley Remix",
     "artists": [
-      { "name": "Noisia, The Upbeats", "id": "noisia, the upbeats", "role": "author", "url": null },
-      { "name": "Bensley", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "The Upbeats",
+        "role": "author",
+        "id": null,
+        "url": null
+      },
+      {
+        "name": "Bensley",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -370,8 +512,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 248372 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 248372
+      }
+    ],
     "store_details": {
       "id": 3276761413,
       "track_id": 3276761413,
@@ -417,8 +569,18 @@
     "title": "Banshee",
     "version": "Skynet Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Skynet", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Skynet",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -429,8 +591,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 432000 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 432000
+      }
+    ],
     "store_details": {
       "id": 1513907907,
       "track_id": 1513907907,
@@ -476,8 +648,18 @@
     "title": "Diplodocus",
     "version": "HØST Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "HØST", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "HØST",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -488,8 +670,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 202500 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 202500
+      }
+    ],
     "store_details": {
       "id": 554662370,
       "track_id": 554662370,
@@ -535,8 +727,18 @@
     "title": "Crank",
     "version": "Kasra Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Kasra", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Kasra",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -547,8 +749,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 248372 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 248372
+      }
+    ],
     "store_details": {
       "id": 2989913984,
       "track_id": 2989913984,
@@ -594,8 +806,18 @@
     "title": "Bad Dreams",
     "version": "Molecular Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Molecular", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Molecular",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -606,8 +828,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 284651 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 284651
+      }
+    ],
     "store_details": {
       "id": 682024450,
       "track_id": 682024450,
@@ -653,8 +885,18 @@
     "title": "Stigma",
     "version": "Billain Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Billain", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Billain",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -665,8 +907,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 362344 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 362344
+      }
+    ],
     "store_details": {
       "id": 1256560839,
       "track_id": 1256560839,
@@ -712,8 +964,18 @@
     "title": "Entangled",
     "version": "Moytra Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Moytra", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Moytra",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -724,8 +986,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 227442 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 227442
+      }
+    ],
     "store_details": {
       "id": 580872190,
       "track_id": 580872190,
@@ -771,8 +1043,18 @@
     "title": "The Tide",
     "version": "Former Tunnel Version",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Former Tunnel", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Former Tunnel",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -783,8 +1065,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 212093 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 212093
+      }
+    ],
     "store_details": {
       "id": 1457247277,
       "track_id": 1457247277,
@@ -830,8 +1122,18 @@
     "title": "Pleasure Mantra",
     "version": "Sorza's Combined Remix",
     "artists": [
-      { "name": "Noisia", "id": "noisia", "role": "author", "url": "https://noisia.bandcamp.com" },
-      { "name": "Sorza's Combined", "id": null, "role": "remixer", "url": null }
+      {
+        "name": "Noisia",
+        "role": "author",
+        "id": "noisia",
+        "url": "https://noisia.bandcamp.com"
+      },
+      {
+        "name": "Sorza's Combined",
+        "role": "remixer",
+        "id": null,
+        "url": null
+      }
     ],
     "released": "17 Feb 2023 09:00:09 GMT",
     "published": "17 Feb 2023 09:00:09 GMT",
@@ -842,8 +1144,18 @@
       "title": "The Resonance V",
       "id": "1144765497"
     },
-    "label": { "id": "96499241", "url": "https://noisia.bandcamp.com", "name": "noisia" },
-    "previews": [{ "format": "mp3", "start_ms": 0, "end_ms": 277338 }],
+    "label": {
+      "id": "96499241",
+      "url": "https://noisia.bandcamp.com",
+      "name": "noisia"
+    },
+    "previews": [
+      {
+        "format": "mp3",
+        "start_ms": 0,
+        "end_ms": 277338
+      }
+    ],
     "store_details": {
       "id": 1198200449,
       "track_id": 1198200449,

@@ -53,7 +53,6 @@ const typeIs = require('type-is')
 
 const { storeName: spotifyStoreName } = require('../shared/spotify')
 const { enableCartSync, removeCartSync, importPlaylistAsCart } = require('../shared/cart')
-const { apiURL } = require('../../config')
 
 const router = require('express-promise-router')()
 

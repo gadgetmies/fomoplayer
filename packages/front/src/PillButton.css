@@ -1,0 +1,104 @@
+.pill {
+  border-radius: 3px;
+  text-align: center;
+  display: inline-block;
+  margin: 1px;
+  padding: 8px;
+}
+
+.pill-small {
+  font-size: 75%;
+}
+
+.pill-button {
+  background: currentColor;
+  border: 1px solid;
+}
+
+.mobile .pill-button {
+}
+
+.pill-button-contents {
+  filter: invert(100%);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.pill-link {
+  border: 0.5px solid currentColor;
+  display: inline-flex;
+  gap: 4px;
+  text-decoration: none;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+.pill-link-text {
+  text-decoration: underline;
+}
+
+@media (max-width: 590px) {
+}
+
+@media (min-width: 591px) {
+}
+
+@media (max-width: 768px) {
+  .pill-link-expand .pill-link-text {
+    display: none;
+    width: 0;
+    height: 0;
+    margin: 0 2px;
+    padding: 0;
+  }
+
+  .pill-button {
+    min-height: 2rem;
+  }
+
+
+  .pill-link-large {
+    padding: 16px;
+    font-size: 100%;
+  }
+}
+
+@media (min-width: 769px) {
+  .pill-link-collapse .pill-link-text,
+  .pill-link-collapse .pill-button-text {
+    display: none;
+  }
+
+
+  .pill-link-large {
+    padding: 8px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1279px) {
+}
+
+@media (max-width: 1028px) {
+  .pill-button-contents {
+    flex-wrap: wrap;
+  }
+}
+
+@media (min-width: 1029px) {
+  .pill-button-contents {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 1279px) {
+}
+
+@media (min-width: 1280px) {
+}

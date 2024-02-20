@@ -1,0 +1,18 @@
+.settings-container {
+  padding: 1rem;
+}
+
+.follow-list {
+  max-height: 185px;
+  overflow-y: scroll;
+  margin: 0.5em 0;
+}
+
+.follow-list::-webkit-scrollbar {
+  width: 0;
+}
+
+.follow-list li {
+  display: inline-block;
+  margin: 1pt;
+}

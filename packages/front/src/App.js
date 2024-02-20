@@ -1,12 +1,10 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
-import { BrowserRouter as Router, Redirect, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Link, Redirect, Route, useHistory } from 'react-router-dom'
 import { ErrorBoundary } from 'react-error-boundary'
 import Login from './UserLogin.js'
-import Menu from './Menu.js'
 import Player from './Player.js'
 import './App.css'
-import SlideoutPanel from './SlideoutPanel.js'
 import Settings from './Settings.js'
 import Spinner from './Spinner.js'
 import Admin from './Admin.js'
@@ -16,94 +14,31 @@ import config from './config.js'
 
 import 'typeface-lato'
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faChrome, faFacebook, faGithub, faTelegram, faTwitter, faYoutube } from '@fortawesome/free-brands-svg-icons'
-import {
-  faBackward,
-  faBan,
-  faBars,
-  faBell,
-  faBellSlash,
-  faCaretDown,
-  faCircle,
-  faCircleQuestion,
-  faClipboard,
-  faClipboardCheck,
-  faCopy,
-  faExclamationCircle,
-  faLightbulb,
-  faExternalLinkAlt,
-  faForward,
-  faHeart,
-  faHeartBroken,
-  faInfoCircle,
-  faKeyboard,
-  faMinus,
-  faMoneyBills,
-  faPause,
-  faPlay,
-  faPlus,
-  faSearch,
-  faShare,
-  faStar,
-  faStepBackward,
-  faStepForward,
-  faTimesCircle
-} from '@fortawesome/free-solid-svg-icons'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+import { far } from '@fortawesome/free-regular-svg-icons'
+import { fab } from '@fortawesome/free-brands-svg-icons'
+library.add(fas, far, fab)
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Onboarding from './Onboarding'
-
-library.add(
-  faTwitter,
-  faFacebook,
-  faTelegram,
-  faHeart,
-  faHeartBroken,
-  faPlus,
-  faMinus,
-  faTimesCircle,
-  faCopy,
-  faBars,
-  faExternalLinkAlt,
-  faBan,
-  faExclamationCircle,
-  faLightbulb,
-  faForward,
-  faBackward,
-  faPlay,
-  faStepForward,
-  faStepBackward,
-  faPause,
-  faKeyboard,
-  faGithub,
-  faChrome,
-  faYoutube,
-  faCircle,
-  faCircleQuestion,
-  faInfoCircle,
-  faClipboard,
-  faClipboardCheck,
-  faCaretDown,
-  faBell,
-  faBellSlash,
-  faSearch,
-  faShare,
-  faStar,
-  faMoneyBills
-)
+import TopBar from './TopBar'
+import { trackArtistsAndTitleText } from './trackFunctions'
+import FollowPopup from './FollowPopup'
+import IgnorePopup from './IgnorePopup'
+import KeyboardShortcutsPopup from './KeyboardShortcutsPopup'
 
 // import injectTapEventPlugin from 'react-tap-event-plugin';
 // injectTapEventPlugin();
 
-const defaultTracksData = { tracks: { new: [], heard: [] }, meta: { totalTracks: 0, newTracks: 0 } }
+const logoutPath = '/auth/logout'
+const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
-const Root = props => <div className="root" style={{ height: '100%', overflow: 'hidden' }} {...props} />
-
+const Root = props => <div className="root" style={{ height: '100vh' }} {...props} />
 class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
       addingToCart: false,
-      slideout: null,
       carts: [],
       stores: [],
       scoreWeights: {},
@@ -111,12 +46,26 @@ class App extends Component {
       loggedIn: false,
       loading: true,
       tracksData: defaultTracksData,
-      initialPosition: NaN,
+      initialPosition: undefined,
       processingCart: false,
       userSettings: {},
       isMobile: this.mobileCheck(),
-      onboarding: false
+      onboarding: false,
+      search: '',
+      searchInProgress: false,
+      searchError: undefined,
+      searchResults: [],
+      listState: 'new',
+      heardTracks: defaultTracksData.tracks.heard,
+      selectedCartUuid: undefined,
+      selectedCart: undefined,
+      mode: undefined
     }
+  }
+
+  setListState(listState) {
+    this.setState({ listState })
+    window.history.replaceState(undefined, undefined, `/${listState}`)
   }
 
   mobileCheck() {
@@ -143,32 +92,44 @@ class App extends Component {
       this.updateScoreWeights(),
       this.updateFollows(),
       this.updateNotifications(),
-      this.updateSettings(),
-      this.updateStores()
+      this.updateSettings()
     ])
   }
 
   async componentDidMount() {
-    let cartString = '/cart/'
-    if (window.location.pathname.startsWith(cartString)) {
-      const uuid = window.location.pathname.substring(cartString.length)
-      const position = parseInt(window.location.hash.substring(1))
-      const list = await requestJSONwithCredentials({
-        path: `/carts/${uuid}`
-      })
+    const pathParts = location.pathname.slice(1).split('/')
+    const isCartPath = pathParts[0] === 'carts'
+    let sharedStates
+    let cartSelectPromise = Promise.resolve()
 
-      this.setState({ list, initialPosition: position })
-    } else {
-      try {
-        await this.updateStatesFromServer()
-        this.setState({ loggedIn: true })
-      } catch (e) {
-        console.error(e)
-        this.setState({ loggedIn: false })
-      }
+    const storeFetchPromise = requestJSONwithCredentials({
+      path: `/stores`
+    })
+
+    if (isCartPath && pathParts.length > 1 && pathParts[1] !== '') {
+      const cartUuid = pathParts[1]
+      cartSelectPromise = this.selectCart(cartUuid)
+
+      const initialPosition = parseInt(location.hash.substring(1)) || undefined
+      sharedStates = { initialPosition }
     }
 
-    this.setState({ loading: false })
+    try {
+      const [stores] = await Promise.all([storeFetchPromise, cartSelectPromise, this.updateStatesFromServer()])
+      this.setState({ loggedIn: true, mode: 'app', stores, ...sharedStates })
+    } catch (e) {
+      if (e.response?.status === 401 && isCartPath) {
+        const stores = await storeFetchPromise
+        this.setState({ mode: 'list', stores, ...sharedStates })
+      } else {
+        console.error(e)
+      }
+      this.setState({
+        loggedIn: false
+      })
+    } finally {
+      this.setState({ loading: false })
+    }
   }
 
   async onLoginDone() {
@@ -184,17 +145,12 @@ class App extends Component {
     const carts = await requestJSONwithCredentials({
       path: `/me/carts`
     })
-    this.setState({ carts })
-  }
 
-  async onFetchCart(cartId) {
-    const cartDetails = await requestJSONwithCredentials({
-      path: `/me/carts/${cartId}`
+    this.setState({
+      carts: carts.filter(({ deleted }) => !deleted),
+      selectedCartUuid: this.state.selectedCartUuid || carts[0].uuid,
+      selectedCart: this.state.carts.find(({ uuid }) => uuid === this.state.selectedCartUuid)
     })
-    let updatedCarts = this.state.carts.slice()
-    const cartIndex = updatedCarts.findIndex(({ id }) => id === cartId)
-    updatedCarts[cartIndex] = cartDetails
-    this.setState({ carts: updatedCarts })
   }
 
   async updateDefaultCart() {
@@ -308,17 +264,38 @@ class App extends Component {
 
     this.setState({
       tracksData: { tracks, meta: { newTracks, totalTracks } },
+      heardTracks: tracks.heard, // TODO: is this correct? Previously this was not updated
       onboarding: tracks.new.length === 0 && tracks.heard.length === 0
     })
   }
 
-  async markHeard(interval) {
+  async markHeard(track) {
+    if (this.state.listState === 'heard' || this.state.mode === 'list') {
+      return
+    }
+
+    // TODO: if the tracks are always updated, the list refreshes -> problem?
+    // await this.updateTracks()
+
+    let updatedHeardTracks = this.state.heardTracks
+    const updatedTrack = R.assoc('heard', true, track)
+    const playedTrackIndex = this.state.heardTracks.findIndex(R.propEq('id', track.id))
+    if (playedTrackIndex !== -1) {
+      updatedHeardTracks.splice(playedTrackIndex, 1)
+    } else {
+      // TODO: Probably safer to not store the count, but instead calculate it from the array length
+      this.setState({ listenedTracks: this.state.listenedTracks + 1 })
+    }
+
+    updatedHeardTracks = R.prepend(updatedTrack, updatedHeardTracks)
+    this.setState({ heardTracks: updatedHeardTracks })
+
+    // TODO: do this in the background? Although this should not block the UI either
     await requestWithCredentials({
-      path: `/me/tracks?interval=${interval}`,
-      method: 'PATCH',
+      path: `/me/tracks/${track.id}`,
+      method: 'POST',
       body: { heard: true }
     })
-    await this.updateTracks()
   }
 
   async updateEmail(email) {
@@ -345,26 +322,223 @@ class App extends Component {
     this.setState({ userSettings })
   }
 
-  async updateStores() {
-    const stores = await requestJSONwithCredentials({
-      path: `/stores/`
-    })
-    this.setState({ stores })
-  }
-
-  async updateLogins() {}
-
   onOnboardingButtonClicked() {
-    this.setState({ onboarding: !this.state.onboarding })
+    this.setState({
+      onboarding: !this.state.onboarding
+    })
   }
 
-  openMenu() {
-    debugger
-    this.refs['slideout'].open()
+  setFollowPopupOpen(open) {
+    this.setState({ followPopupOpen: open })
   }
 
-  toggleMenu() {
-    this.refs['slideout'].toggle()
+  openFollowPopup(track) {
+    this.setState({ followPopupTrack: track })
+    this.setFollowPopupOpen(true)
+  }
+
+  setIgnorePopupOpen(open) {
+    this.setState({ ignorePopupOpen: open })
+  }
+
+  openIgnorePopup(track) {
+    this.setState({ ignorePopupTrack: track })
+    this.setIgnorePopupOpen(true)
+  }
+
+  closePopups() {
+    this.setFollowPopupOpen(false)
+    this.setIgnorePopupOpen(false)
+    this.setKeyboardShortcutsPopupOpen(false)
+  }
+
+  openKeyboardShortcutsPopup() {
+    this.setKeyboardShortcutsPopupOpen(true)
+  }
+
+  setKeyboardShortcutsPopupOpen(open) {
+    this.setState({ keyboardShortcutsPopupOpen: open })
+  }
+
+  async handleCartButtonClick(trackId, cartId, inCart) {
+    if (inCart) {
+      this.setState({ processingCart: true })
+      try {
+        await this.removeFromCart(cartId, trackId)
+      } catch (e) {
+        console.error('Error while removing from cart', e)
+      } finally {
+        this.setState({ processingCart: false })
+      }
+    } else {
+      this.setState({ processingCart: true })
+      try {
+        await this.addToCart(cartId, trackId)
+      } catch (e) {
+        console.error('Error while adding to cart', e)
+      } finally {
+        this.setState({ processingCart: false })
+      }
+    }
+  }
+
+  async handleCreateCartClick(cartName) {
+    try {
+      this.setState({ processingCart: true })
+      const res = await this.createCart(cartName)
+      this.setState({ newCartName: '' })
+      await this.updateCarts()
+      return res
+    } catch (e) {
+      console.error('Error while creating new cart', e)
+    } finally {
+      this.setState({ processingCart: false })
+    }
+  }
+
+  async handleToggleNotificationClick(search, subscribe, storeNames = undefined) {
+    let operations = []
+    try {
+      if (storeNames === undefined) {
+        if (subscribe) {
+          operations = operations.concat(
+            this.state.stores.map(({ storeName }) => ({
+              op: 'add',
+              storeName,
+              text: search
+            }))
+          )
+        } else {
+          operations = operations.concat(
+            this.state.stores.map(({ storeName }) => ({ op: 'remove', storeName, text: search }))
+          )
+        }
+      } else {
+        storeNames.forEach(storeName => {
+          operations.push({ op: subscribe ? 'add' : 'remove', storeName, text: search })
+        })
+      }
+
+      await this.requestNotificationUpdate(operations)
+    } finally {
+      this.setState({ modifyingNotification: false })
+    }
+  }
+
+  async search(search, sort = '-released') {
+    if (search === '') return
+    this.setState({ searchInProgress: true, searchError: undefined })
+    try {
+      const searchResults = await (
+        await requestWithCredentials({ path: `/tracks?q=${search}&sort=${sort || ''}` })
+      ).json()
+      this.setState({ searchResults, searchError: undefined })
+      return undefined
+    } catch (e) {
+      console.error('Search failed', e)
+      this.setState({ searchError: 'Search failed, please try again.' })
+    } finally {
+      this.setState({ searchInProgress: false })
+    }
+  }
+
+  logout = async () => {
+    try {
+      await requestWithCredentials({ path: logoutPath, method: 'POST' })
+    } catch (e) {
+      console.error('Logout failed', e)
+    }
+    this.onLogoutDone()
+  }
+
+  async triggerSearch() {
+    return this.setSearch(this.state.search, true)
+  }
+
+  setSearch(search, triggerSearch = false) {}
+
+  // TODO: change to POST {ignore: true} /me/labels/?
+  async ignoreArtistsByLabels(artistId, labelIds, ignore) {
+    await requestWithCredentials({
+      path: `/me/ignores/artists-on-labels`,
+      method: ignore ? 'POST' : 'DELETE',
+      body: { artistIds: [artistId], labelIds }
+    })
+  }
+
+  async ignoreArtist(artistId) {
+    await requestWithCredentials({
+      path: `/me/ignores/artists`,
+      method: 'POST',
+      body: [artistId]
+    })
+  }
+
+  async ignoreLabel(labelId) {
+    await requestWithCredentials({
+      path: `/me/ignores/labels`,
+      method: 'POST',
+      body: [labelId]
+    })
+  }
+
+  async ignoreRelease(releaseId) {
+    await requestWithCredentials({
+      path: `/me/ignores/releases`,
+      method: 'POST',
+      body: [releaseId]
+    })
+  }
+
+  async selectCart(selectedCartUuid) {
+    this.setState({ selectedCartUuid })
+    const cartDetails = await requestJSONwithCredentials({
+      path: `/carts/${selectedCartUuid}`
+    })
+    let updatedCarts = this.state.carts.slice()
+    let cartIndex = updatedCarts.findIndex(({ uuid }) => uuid === selectedCartUuid)
+    if (cartIndex === -1) {
+      cartIndex = updatedCarts.length
+      updatedCarts.push(cartDetails)
+    } else {
+      updatedCarts[cartIndex] = cartDetails
+    }
+
+    this.setState({
+      carts: updatedCarts,
+      selectedCart: updatedCarts[cartIndex]
+    })
+  }
+
+  async setCurrentTrack(track) {
+    this.setState({ currentTrack: track })
+    document.title = `${trackArtistsAndTitleText(track)} - Fomo Player`
+    this.markHeard(track).catch(e => console.error('Error while marking track as heard', e))
+  }
+
+  async followStoreArtist(storeArtistId, storeArtistUrl, name, follow) {
+    await requestWithCredentials({
+      path: `/me/follows/artists/${follow ? '' : storeArtistId}`,
+      method: follow ? 'POST' : 'DELETE',
+      body: follow ? [{ url: storeArtistUrl, name }] : undefined
+    })
+
+    await this.updateFollows()
+  }
+
+  async followStoreLabel(storeLabelId, storeLabelUrl, name, follow) {
+    await requestWithCredentials({
+      path: `/me/follows/labels/${follow ? '' : storeLabelId}`,
+      method: follow ? 'POST' : 'DELETE',
+      body: follow ? [{ url: storeLabelUrl, name }] : undefined
+    })
+
+    await this.updateFollows()
+  }
+
+  async refreshListAndClosePopups() {
+    await this.updateTracks()
+    this.closePopups()
   }
 
   render() {
@@ -374,164 +548,264 @@ class App extends Component {
           requestWithCredentials({ url: `/log/error`, method: 'POST', body: { error, errorInfo } })
         }
       >
-        <Root>
+        <Root
+          className={`${this.state.listState === 'search' ? 'search-expanded' : ''} ${
+            this.state.isMobile ? 'mobile' : 'desktop'
+          }`}
+          style={{ overflow: 'hidden', width: '100vw', height: '100vh' }}
+        >
           <Router>
             {this.state.loading ? (
               <div className="loading-overlay">
                 🚀 Launching app
                 <Spinner />
               </div>
-            ) : this.state.loggedIn ? (
+            ) : !this.state.loggedIn ? (
+              this.state.mode === 'list' ? (
+                <Player
+                  mode="list"
+                  initialPosition={this.state.initialPosition}
+                  onSetCurrentTrack={this.setCurrentTrack.bind(this)}
+                  carts={this.state.carts}
+                  selectedCart={this.state.selectedCart}
+                  tracks={this.state.carts.find(({ uuid }) => uuid === this.state.selectedCartUuid)?.tracks || []}
+                  heardTracks={this.state.heardTracks}
+                  stores={this.state.stores}
+                  currentTrack={this.state.currentTrack}
+                  isMobile={this.state.isMobile}
+                />
+              ) : (
+                <div style={{ background: '#333', width: '100%', height: '100%' }}>
+                  <div style={{ paddingTop: '3rem', maxWidth: '60ch', margin: 'auto' }}>
+                    <h1 style={{ marginTop: 0, textAlign: 'center' }}>
+                      Fomo Player
+                      <br />
+                      <div style={{ fontSize: '50%', fontWeight: 300 }}>
+                        Never miss a <span style={{ textDecoration: 'line-through' }}>beat</span> release!
+                      </div>
+                    </h1>
+                    <div style={{ padding: '2rem' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <Login
+                          onLoginDone={this.onLoginDone.bind(this)}
+                          onLogoutDone={this.onLogoutDone.bind(this)}
+                          googleLoginPath={`${config.apiURL}/auth/login/google?state=${window.location.pathname}`}
+                          logoutPath={logoutPath}
+                        />
+                      </div>
+                      <br />
+                      {process.env.NODE_ENV !== 'production' && (
+                        <p style={{ margin: '2rem' }}>
+                          <form
+                            onSubmit={e => {
+                              e.preventDefault()
+                              return this.onLoginDone()
+                            }}
+                          >
+                            <label className="text-input">
+                              Username
+                              <input name="username" value={'testuser'} />
+                            </label>
+                            <br />
+                            <label>
+                              Password
+                              <input name="password" value={'testpwd'} />
+                            </label>
+                            <br />
+                            <input
+                              type={'submit'}
+                              value={'Login'}
+                              data-test-id={'form-login-button'}
+                              className="button button-push_button login-button button-push_button-large button-push_button-primary"
+                            />
+                          </form>
+                        </p>
+                      )}
+                      <div className="login-separator">Want to know more?</div>
+                      <p>
+                        Fomo Player is a service for keeping up with new releases from your favorite artists and labels.
+                        The service prioritises releases based on your preferences and keeps track of tracks you have
+                        already listened to, thus improving the efficiency of your music discovery.
+                      </p>
+                      <p style={{ textAlign: 'center', marginTop: '2rem' }}>
+                        <a
+                          href="https://github.com/gadgetmies/fomoplayer/wiki"
+                          className={'button button-push_button button-push_button-large button-push_button-primary'}
+                          target="_blank"
+                        >
+                          Find out more on Github <FontAwesomeIcon icon={['fab', 'github']} />
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            ) : (
               <>
                 <Onboarding
+                  newUser={this.state.tracksData.meta.totalTracks === 0}
                   active={this.state.onboarding}
-                  onOpenMenuRequested={(() => {
-                    this.refs['slideout'].open()
-                  }).bind(this)}
                   onOnboardingEnd={() => {
                     this.setState({ onboarding: false })
                   }}
                 />
-                <Menu
-                  ref="menu"
-                  logoutPath={`/auth/logout`}
-                  loggedIn={this.state.loggedIn}
-                  onNavButtonClicked={this.toggleMenu.bind(this)}
-                  onLogoutDone={this.onLogoutDone.bind(this)}
-                  onStoreLoginDone={() => {}} //this.onStoreLoginDone.bind(this)}
-                  onUpdateTracks={this.updateTracks.bind(this)}
+                {this.state.follows ? (
+                  <FollowPopup
+                    open={this.state.followPopupOpen}
+                    track={this.state.followPopupTrack}
+                    follows={this.state.follows}
+                    onCloseClicked={this.closePopups.bind(this)}
+                    onFollowStoreArtist={this.followStoreArtist.bind(this)}
+                    onFollowStoreLabel={this.followStoreLabel.bind(this)}
+                    onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
+                  />
+                ) : null}
+                <IgnorePopup
+                  open={this.state.ignorePopupOpen}
+                  track={this.state.ignorePopupTrack}
+                  onCloseClicked={this.closePopups.bind(this)}
+                  onIgnoreArtistOnLabels={this.ignoreArtistsByLabels.bind(this)}
+                  onIgnoreStoreArtist={this.ignoreArtist.bind(this)}
+                  onIgnoreLabel={this.ignoreLabel.bind(this)}
+                  onIgnoreRelease={this.ignoreRelease.bind(this)}
+                  onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
                 />
-                <SlideoutPanel ref="slideout" onOpen={this.updateLogins.bind(this)}>
-                  <button
-                    data-onboarding-id="slideout-button"
-                    style={{ position: 'absolute', left: 0, margin: 10, color: 'white', zIndex: 11 }}
-                    onClick={() => {
-                      this.refs['slideout'].toggle()
-                      if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Menu)) {
-                        Onboarding.helpers.next()
+                <KeyboardShortcutsPopup
+                  open={this.state.keyboardShortcutsPopupOpen}
+                  mode={this.state.mode}
+                  onCloseClicked={this.closePopups.bind(this)}
+                />
+                <TopBar
+                  modifyingNotification={this.state.modifyingNotification}
+                  emailVerified={this.state.userSettings.emailVerified}
+                  triggerSearch={this.triggerSearch.bind(this)}
+                  searchInProgress={this.state.searchInProgress}
+                  onSearch={this.search.bind(this)}
+                  onLogoutClicked={this.logout.bind(this)}
+                  handleToggleNotificationClick={this.handleToggleNotificationClick.bind(this)}
+                  listState={this.state.listState}
+                  notifications={this.state.notifications}
+                  search={this.state.search}
+                  userSettings={this.state.userSettings}
+                  stores={this.state.stores}
+                  carts={this.state.carts}
+                  onKeyboardShortcutsClicked={this.openKeyboardShortcutsPopup.bind(this)}
+                  onOnboardingButtonClicked={this.onOnboardingButtonClicked.bind(this)}
+                />
+
+                <Route exact path="/">
+                  <Redirect to="/tracks/new" />
+                </Route>
+                <Route exact path="/tracks">
+                  <Redirect to="/tracks/new" />
+                </Route>
+                <Route exact path="/admin">
+                  <Admin />
+                </Route>
+                <Route exact path="/carts">
+                  <Redirect to={`/carts/${this.state.carts[0].uuid}`} />
+                </Route>
+                <Route
+                  path="/:path"
+                  render={props => {
+                    const pathParts = props.location.pathname.slice(1).split('/')
+                    const query = new URLSearchParams(props.location.search).get('q')?.trim()
+                    const idSearch = query?.match(/(artist|label|release):(\d?)/)
+                    if (
+                      props.location.pathname.match(/^\/search\/?/) &&
+                      idSearch !== null &&
+                      this.state.search !== query
+                    ) {
+                      this.search(query)
+                      this.setState({ search: query })
+                    }
+                    const settingsVisible = props.location.pathname.match(/\/settings\/?/)
+                    let listState = this.state.listState
+                    // TODO: this always takes the path from the match, which does not work when the state is changed instead
+                    // Perhaps a componentWillChange handling could work?
+                    if (!pathParts.includes(listState)) {
+                      if (props.location.pathname !== '/search') {
+                        this.setState({ search: '' })
                       }
-                    }}
-                  >
-                    <FontAwesomeIcon icon="bars" />
-                  </button>
-                  <Route exact path="/">
-                    <Redirect to="/new" />
-                  </Route>
-                  <Route exact path="/admin">
-                    <Admin />
-                  </Route>
-                  <Route
-                    path="/:path"
-                    render={props => {
-                      const query = new URLSearchParams(props.location.search)
-                      const settingsVisible = props.match.params.path === 'settings'
-                      return (
-                        <>
-                          <Settings
-                            carts={this.state.carts}
-                            stores={this.state.stores}
-                            onUpdateCarts={this.updateCarts.bind(this)}
-                            notifications={this.state.notifications}
-                            onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
-                            onSetStarred={this.setStarred.bind(this)}
-                            onMarkHeardClicked={this.markHeard.bind(this)}
-                            onUpdateEmail={this.updateEmail.bind(this)}
-                            onCreateCart={this.createCart.bind(this)}
-                            newTracks={this.state.tracksData.meta.newTracks}
-                            totalTracks={this.state.tracksData.meta.totalTracks}
-                            userSettings={this.state.userSettings}
-                            scoreWeights={this.state.scoreWeights}
-                            tracks={this.state.tracksData.tracks}
-                            follows={this.state.follows}
-                            style={{ display: settingsVisible ? 'block' : 'none' }}
-                          />
-                          <Player
-                            mode="app"
-                            listState={settingsVisible ? 'new' : props.match.params.path}
-                            search={query.get('q') || ''}
-                            sort={query.get('sort') || ''}
-                            initialPosition={NaN}
-                            addingToCart={this.state.addingToCart}
-                            onUpdateTracksClicked={this.updateTracks.bind(this)}
-                            carts={this.state.carts}
-                            notifications={this.state.notifications}
-                            notificationsEnabled={this.state.userSettings.emailVerified}
-                            onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
-                            follows={this.state.follows}
-                            tracks={this.state.tracksData.tracks}
-                            stores={this.state.stores}
-                            newTracks={this.state.tracksData.meta.newTracks}
-                            totalTracks={this.state.tracksData.meta.totalTracks}
-                            onAddToCart={this.addToCart.bind(this)}
-                            onCreateCart={this.createCart.bind(this)}
-                            onUpdateCarts={this.updateCarts.bind(this)}
-                            onFetchCart={this.onFetchCart.bind(this)}
-                            onRemoveFromCart={this.removeFromCart.bind(this)}
-                            onMarkPurchased={this.onMarkPurchased.bind(this)}
-                            onFollow={this.updateFollows.bind(this)}
-                            onOnboardingButtonClicked={this.onOnboardingButtonClicked.bind(this)}
-                            processingCart={this.state.processingCart}
-                            isMobile={this.state.isMobile}
-                            style={{ display: !settingsVisible ? 'block' : 'none' }}
-                          />
-                        </>
-                      )
-                    }}
-                  />
-                </SlideoutPanel>
+                      this.setState({
+                        listState: props.match.params.path === 'tracks' ? pathParts[1] || 'new' : pathParts[0]
+                      })
+                      listState = props.match.params.path
+                    }
+
+                    if (listState === 'carts' && this.state.selectedCartUuid !== pathParts[1]) {
+                      const selectedCart = this.state.carts?.find(({ uuid }) => uuid === pathParts[1])
+                      this.setState({ selectedCartUuid: pathParts[1], selectedCart })
+                    }
+
+                    return (
+                      <>
+                        <Settings
+                          carts={this.state.carts}
+                          stores={this.state.stores}
+                          onUpdateCarts={this.updateCarts.bind(this)}
+                          notifications={this.state.notifications}
+                          onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
+                          onSetStarred={this.setStarred.bind(this)}
+                          onMarkHeardClicked={this.markHeard.bind(this)}
+                          onUpdateEmail={this.updateEmail.bind(this)}
+                          onCreateCart={this.createCart.bind(this)}
+                          newTracks={this.state.tracksData.meta.newTracks}
+                          totalTracks={this.state.tracksData.meta.totalTracks}
+                          userSettings={this.state.userSettings}
+                          scoreWeights={this.state.scoreWeights}
+                          tracks={this.state.tracksData.tracks}
+                          follows={this.state.follows}
+                          style={{ display: settingsVisible ? 'block' : 'none' }}
+                        />
+                        <Player
+                          addingToCart={this.state.addingToCart}
+                          carts={this.state.carts}
+                          currentTrack={this.state.currentTrack}
+                          follows={this.state.follows}
+                          heardTracks={this.state.heardTracks}
+                          initialPosition={this.state.initialPosition}
+                          isMobile={this.state.isMobile}
+                          listState={settingsVisible ? 'new' : listState}
+                          mode="app"
+                          newTracks={this.state.tracksData.meta.newTracks}
+                          processingCart={this.state.processingCart}
+                          search={this.state.search || ''}
+                          searchError={this.state.searchError}
+                          searchInProgress={this.state.searchInProgress}
+                          searchResults={this.state.searchResults}
+                          selectedCart={this.state.selectedCart}
+                          stores={this.state.stores}
+                          totalTracks={this.state.tracksData.meta.totalTracks}
+                          tracks={this.state.tracksData.tracks}
+
+                          onAddToCart={this.addToCart.bind(this)}
+                          onClosePopups={this.closePopups.bind(this)}
+                          onCreateCart={this.createCart.bind(this)}
+                          onHandleCartButtonClick={this.handleCartButtonClick.bind(this)}
+                          onHandleCreateCartClick={this.handleCreateCartClick.bind(this)}
+                          onIgnoreArtist={this.ignoreArtist.bind(this)}
+                          onIgnoreArtistsByLabels={this.ignoreArtistsByLabels.bind(this)}
+                          onIgnoreLabel={this.ignoreLabel.bind(this)}
+                          onIgnoreRelease={this.ignoreRelease.bind(this)}
+                          onMarkPurchased={this.onMarkPurchased.bind(this)}
+                          onOpenFollowPopup={this.openFollowPopup.bind(this)}
+                          onOpenIgnorePopup={this.openIgnorePopup.bind(this)}
+                          onRemoveFromCart={this.removeFromCart.bind(this)}
+                          onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
+                          onSelectCart={this.selectCart.bind(this)}
+                          onSetCurrentTrack={this.setCurrentTrack.bind(this)}
+                          onSetListState={this.setListState.bind(this)}
+                          onUpdateCarts={this.updateCarts.bind(this)}
+                          onUpdateTracksClicked={this.updateTracks.bind(this)}
+
+                          style={{ display: !settingsVisible ? 'block' : 'none' }}
+                        />
+                      </>
+                    )
+                  }}
+                />
               </>
-            ) : this.state.list ? (
-              <Player
-                mode="list"
-                carts={[this.state.list]}
-                initialPosition={this.state.initialPosition}
-                notifications={this.state.notifications}
-                tracks={this.state.list.tracks}
-              />
-            ) : (
-              <div className="align-center-container full-screen-popup-container">
-                <div className="full-screen-popup">
-                  <h1 style={{ marginTop: 0, textAlign: 'center' }}>Fomo Player</h1>
-                  <Login
-                    onLoginDone={this.onLoginDone.bind(this)}
-                    onLogoutDone={this.onLogoutDone.bind(this)}
-                    googleLoginPath={`${config.apiURL}/auth/login/google?state=${window.location.pathname}`}
-                    logoutPath={'/auth/logout'}
-                  />
-                  {process.env.NODE_ENV !== 'production' && (
-                    <p>
-                      <form
-                        onSubmit={e => {
-                          e.preventDefault()
-                          const formData = new FormData(e.target)
-                          console.log(formData)
-                          this.onLoginDone()
-                        }}
-                      >
-                        <label>
-                          Username
-                          <input name="username" value={'testuser'} />
-                        </label>
-                        <br />
-                        <label>
-                          password
-                          <input name="password" value={'testpwd'} />
-                        </label>
-                        <br />
-                        <input type={'submit'} value={'Login'} data-test-id={'form-login-button'} />
-                      </form>
-                    </p>
-                  )}
-                  <div className="login-separator">or</div>
-                  <a
-                    href="https://github.com/gadgetmies/fomoplayer/wiki"
-                    className={'button button-push_button-large button-push_button-primary'}
-                    target="_blank"
-                  >
-                    Find out more on Github <FontAwesomeIcon icon={['fab', 'github']} />
-                  </a>
-                </div>
-              </div>
             )}
           </Router>
         </Root>

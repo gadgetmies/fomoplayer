@@ -1,3 +1,4 @@
+import './Collection.css'
 import React from 'react'
 
 class Collection extends React.Component {

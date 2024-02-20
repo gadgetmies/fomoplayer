@@ -1,0 +1,353 @@
+@keyframes MoveUpDown {
+  0%,
+  100% {
+    bottom: -5px;
+  }
+  50% {
+    bottom: -8px;
+  }
+}
+
+.menu_search {
+  height: 100%;
+}
+
+.top_bar-item_margin {
+  margin: 8px;
+}
+
+.text-input-top_bar {
+  border-radius: 0.25rem;
+  font-size: 1rem;
+  background-color: #050505;
+}
+
+.top_bar {
+  background-color: var(--top-bar-background-color);
+}
+
+.top_bar_contents {
+  align-items: center;
+  color: white;
+  padding: 0 8px;
+  display: flex;
+  max-width: 1440px; /* Ensure this is in sync with page-container */
+  box-sizing: border-box;
+}
+
+.email_not_verified {
+  display: none;
+}
+
+.email-not-verified-info {
+  font-size: 60%;
+  order: 5;
+}
+
+.search_bar:focus-within ~ .subscribe_button:not(.email_not_verified) {
+  display: flex;
+}
+
+.search_bar:focus-within ~ .email_not_verified_container,
+.menu_search:hover .email_not_verified_container {
+  display: block;
+}
+
+.menu_right {
+  display: flex;
+  margin-left: 8px;
+  justify-content: flex-end;
+}
+
+.button-top_bar_button_icon {
+  display: inline;
+}
+
+.button-top_bar_button {
+  height: 100%;
+  position: relative;
+  color: white;
+  overflow: hidden;
+}
+
+.button-top_bar_button--selected {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.button-top_bar_button:after {
+  border: 5px solid var(--page-container-background-color);
+  position: absolute;
+  content: '';
+  transform: translateX(-50%) rotate(45deg);
+  left: 50%;
+  transition: bottom 0.3s ease-in-out;
+  bottom: -50%;
+}
+
+.button-top_bar_button:hover:after {
+  transform: translateX(-50%) rotate(45deg);
+  animation: MoveUpDown 0.5s ease-in-out infinite;
+}
+
+.button-top_bar_button--selected:after,
+.button-top_bar_button--selected:hover:after {
+  transform: translateX(-50%) rotate(45deg);
+  bottom: -5px;
+  animation: none;
+  opacity: 1;
+}
+
+/* TODO: ensure this still works */
+.mobile .keyboard-shortcuts {
+  display: none;
+}
+
+.keyboard-shortcut {
+  text-align: center;
+  width: 1.5em;
+  height: 1.5em;
+  background: rgb(222, 222, 222);
+  background: -moz-linear-gradient(180deg, rgba(222, 222, 222, 1) 0%, rgba(255, 255, 255, 1) 100%);
+  background: -webkit-linear-gradient(180deg, rgba(222, 222, 222, 1) 0%, rgba(255, 255, 255, 1) 100%);
+  background: linear-gradient(180deg, rgba(222, 222, 222, 1) 0%, rgba(255, 255, 255, 1) 100%);
+  display: inline-block;
+  border-radius: 0.25em;
+  border: 1px solid white;
+  color: black;
+}
+
+.menu_search {
+  flex: 1;
+}
+
+.button-push_button-top_bar {
+  font-size: 1rem;
+}
+
+.button-push_button-top_bar:before {
+  height: 5px;
+}
+
+.button-top_bar_button {
+  height: 100%;
+  position: relative;
+  color: white;
+  overflow: hidden;
+}
+
+.button-top_bar_button--selected {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.button-top_bar_button:after {
+  border: 5px solid var(--page-container-background-color);
+  position: absolute;
+  content: '';
+  transform: translateX(-50%) rotate(45deg);
+  left: 50%;
+  transition: bottom 0.3s ease-in-out;
+  bottom: -50%;
+}
+
+.loading-indicator__top_bar {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+@keyframes MoveUpDown {
+  0%,
+  100% {
+    bottom: -5px;
+  }
+  50% {
+    bottom: -8px;
+  }
+}
+
+.button-top_bar_button_icon {
+  display: inline;
+}
+
+.button-top_bar_button:hover:after {
+  transform: translateX(-50%) rotate(45deg);
+  animation: MoveUpDown 0.5s ease-in-out infinite;
+}
+
+.button-top_bar_button--selected:after,
+.button-top_bar_button--selected:hover:after {
+  transform: translateX(-50%) rotate(45deg);
+  bottom: -5px;
+  animation: none;
+  opacity: 1;
+}
+
+.menu_search {
+  margin-left: 16px;
+}
+
+.share-popup_content {
+  flex-direction: column;
+}
+
+.menu_search:focus-within,
+.menu_search:hover {
+  flex: 1;
+}
+
+.mobile .support_menu_label_arrow {
+  display: none;
+}
+
+@media (max-width: 590px) {
+  .popup_content-notification {
+    bottom: auto;
+  }
+
+  .text-input-top_bar:focus {
+    width: 100%;
+  }
+
+  .button-top_bar_button_label {
+    display: none;
+  }
+
+  .button-top_bar_button {
+    width: 50px;
+  }
+
+  .button-push_button-top_bar {
+    padding: 8px;
+  }
+
+  .support_menu_label_arrow {
+    display: none;
+  }
+}
+
+@media (min-width: 591px) {
+  .logout_container {
+    margin-left: 8px;
+  }
+
+  .button-push_button-top_bar {
+    padding: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .button-top_bar_button {
+    padding: 16px 8px;
+  }
+
+  .button-top_bar_button {
+    flex-direction: column;
+  }
+
+  .email_not_verified {
+    display: none;
+  }
+
+  .email_not_verified_icon {
+    display: inline-block;
+  }
+
+  .support_menu_label {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+@media (min-width: 769px) {
+  .top_bar {
+    padding: 0 16px;
+  }
+
+  .button-top_bar_button {
+    padding: 16px 0;
+    gap: 8px;
+    align-content: center;
+  }
+
+  .menu_left .button-top_bar_button {
+    padding: 16px;
+  }
+
+  .menu_right .button-top_bar_button {
+    padding-left: 16px;
+  }
+
+  .menu_right .button-top_bar_button:last-of-type {
+    padding-right: 16px;
+  }
+
+  .support_menu_label {
+    gap: 8px;
+  }
+
+  .email_not_verified {
+    display: none;
+  }
+
+  .email_not_verified_icon {
+    display: none;
+  }
+}
+
+@media (max-width: 1029px) {
+  .mobile .button-top_bar_button_label {
+    display: none;
+  }
+
+  .menu_right {
+    flex: 1;
+  }
+
+  .menu_search:focus-within ~ .menu_right,
+  .menu_search:hover ~ .menu_right {
+    display: none;
+  }
+
+  .email_not_verified_container {
+    display: none;
+  }
+}
+
+@media (max-width: 1279px) {
+  .menu_search:focus-within .email_not_verified_container {
+    display: block;
+  }
+
+  .button-top_bar_button,
+  .support_menu_label {
+    flex-direction: column;
+    gap: 1px;
+    justify-content: center;
+  }
+
+  .support_menu_label_arrow {
+    position: absolute;
+    top: 100%;
+  }
+}
+
+@media (min-width: 1280px) {
+  .top_bar_contents {
+    margin: 0 auto;
+  }
+
+  .menu_search {
+    flex: 1;
+  }
+
+  .email_not_verified {
+    display: block;
+  }
+
+  .top_bar {
+    justify-content: space-between;
+  }
+
+  .menu_right {
+    flex: 1;
+  }
+}

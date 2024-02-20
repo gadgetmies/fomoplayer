@@ -13,13 +13,13 @@ class ExternalLink extends Component {
     return (
       <a
         onClick={e => e.stopPropagation()}
-        className={`${this.props.className || ''} 'external-link' link`}
+        className={`${this.props.className || ''} external-link link`}
         target="_blank"
+        style={{ display: 'inline-flex' }}
         {...R.omit(['children', 'showIcon'], this.props)}
       >
-        {this.props.children}
-        &nbsp;
-        {this.props.showIcon ? <FontAwesomeIcon icon="external-link-alt" /> : null}
+        <span>{this.props.children}</span>
+        <span>{this.props.showIcon ? <FontAwesomeIcon icon="square-arrow-up-right" /> : null}</span>
       </a>
     )
   }
