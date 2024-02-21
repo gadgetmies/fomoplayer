@@ -434,8 +434,13 @@ class Preview extends Component {
                     console.error(e, currentTime, this.state.mp3Preview.length_ms)
                   }
                 }}
-                onError={e => {
-                  requestWithCredentials({ url: '/log/error', method: 'POST', body: e })
+                onError={async e => {
+                  console.error('Audio error', e)
+                  await requestWithCredentials({
+                    url: '/log/error',
+                    method: 'POST',
+                    body: { message: 'Audio playback error', error: e }
+                  })
                 }}
                 controlsList="nodownload"
                 src={this.state.previewUrl}
