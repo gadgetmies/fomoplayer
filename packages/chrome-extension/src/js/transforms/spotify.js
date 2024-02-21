@@ -41,7 +41,7 @@ module.exports.spotifyAlbumTracksTransform = L.collect([
     'tracks',
     'items',
     L.elems,
-    L.choose(({ preview_url }) =>
+    L.choose(({ preview_url }, i) =>
       preview_url
         ? L.pick({
             title: ['name', name => name.replace(/( - original mix)|( - .* remix)/gi, '')],
@@ -56,7 +56,7 @@ module.exports.spotifyAlbumTracksTransform = L.collect([
             published: releaseDateLens(release_date),
             release: R.always({ id, title: name, url: href, isrc }),
             isrc: ['external_ids', 'isrc'],
-            track_number: 'track_number',
+            track_number: L.ifElse(R.propEq('disc_number', 1), 'track_number', R.always(i + 1)),
             // TODO: release, released, published from album
             // TODO: get from properties
             // key: ['key', L.reread(bpKey => spotifyKeysToCamelot[bpKey])],
