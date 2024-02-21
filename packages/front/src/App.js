@@ -108,7 +108,8 @@ class App extends Component {
 
     if (isCartPath && pathParts.length > 1 && pathParts[1] !== '') {
       const cartUuid = pathParts[1]
-      cartSelectPromise = this.selectCart(cartUuid)
+      const filter = location.search
+      cartSelectPromise = this.selectCart(cartUuid, filter)
 
       const initialPosition = parseInt(location.hash.substring(1)) || undefined
       sharedStates = { initialPosition }
@@ -489,10 +490,10 @@ class App extends Component {
     })
   }
 
-  async selectCart(selectedCartUuid) {
+  async selectCart(selectedCartUuid, filter) {
     this.setState({ selectedCartUuid })
     const cartDetails = await requestJSONwithCredentials({
-      path: `/carts/${selectedCartUuid}`
+      path: `/carts/${selectedCartUuid}${filter ? filter : ''}`
     })
     let updatedCarts = this.state.carts.slice()
     let cartIndex = updatedCarts.findIndex(({ uuid }) => uuid === selectedCartUuid)

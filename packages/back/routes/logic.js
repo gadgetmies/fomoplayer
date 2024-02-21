@@ -43,13 +43,13 @@ module.exports.getPreview = async (id, format, offset) => {
   }
 }
 
-module.exports.getCartDetails = async (uuid, userId) => {
+module.exports.getCartDetails = async (uuid, userId, tracksFilter) => {
   const { isPublic, id } = await queryCartDetailsByUuid(uuid)
   const [{ ownerUserId }] = await queryCartOwner(id)
   if (!isPublic && ownerUserId !== userId) {
     return null
   }
-  return await queryCartDetails(id)
+  return await queryCartDetails(id, tracksFilter)
 }
 
 module.exports.getEntityDetails = queryEntityDetails

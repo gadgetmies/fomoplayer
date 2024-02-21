@@ -122,8 +122,8 @@ module.exports.queryUserCartDetailsWithTracks = async userId =>
     `
   )
 
-module.exports.queryCartDetails = async cartId => {
-  const [details] = await pg.queryRowsAsync(
+module.exports.queryCartDetails = async (cartId, tracksFilter) => {
+  const query =
     // language=PostgreSQL
     sql`--queryCartDetails
     WITH cart_details AS (SELECT cart_id
@@ -174,7 +174,17 @@ module.exports.queryCartDetails = async cartId => {
                                                                    , published DATE)
                   NATURAL JOIN track__cart
                   NATURAL LEFT JOIN user__track
-                WHERE cart_id = ${cartId})
+                WHERE cart_id = ${cartId}`
+
+  if (tracksFilter?.since) {
+    query.append(`
+    AND
+      track__cart_added > '${tracksFilter.since}'
+    `)
+  }
+
+  query.append(sql`
+)
        , tracks AS (SELECT JSON_AGG(td ORDER BY track__cart_added DESC) AS tracks
                     FROM
                       td
@@ -194,8 +204,9 @@ module.exports.queryCartDetails = async cartId => {
       NATURAL JOIN tracks
       NATURAL LEFT JOIN cart_store_details
     ORDER BY cart_is_default, cart_is_purchased, cart_name
-    `
-  )
+    `)
+
+  const [details] = await pg.queryRowsAsync(query)
 
   return details
 }
