@@ -6798,7 +6798,7 @@ imurmurhash@^0.1.4:
   resolved "https://registry.yarnpkg.com/imurmurhash/-/imurmurhash-0.1.4.tgz#9218b9b2b928a238b13dc4fb6b6d576f231453ea"
   integrity sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==
 
-infestines@^0.4.10, infestines@^0.4.11, infestines@^0.4.4, infestines@^0.4.5, infestines@^0.4.7, infestines@^0.4.9:
+infestines@^0.4.10, infestines@^0.4.11, infestines@^0.4.4:
   version "0.4.11"
   resolved "https://registry.yarnpkg.com/infestines/-/infestines-0.4.11.tgz#1d0d164ff1831ffcbafbd02f53bc60140dd52197"
   integrity sha512-09nHagZLOYUaXKHqdV+nxEaYaD0hRlKyhQMhgTMwfbvWpMkowXf4XLZzAkLq6Y90wZ7Wqm6aMoL2trBsNNKGeg==
@@ -8089,19 +8089,24 @@ jws@^3.2.2:
     jwa "^1.4.1"
     safe-buffer "^5.0.1"
 
-karet.util@^0.17.1:
-  version "0.17.8"
-  resolved "https://registry.yarnpkg.com/karet.util/-/karet.util-0.17.8.tgz#d8a9f3dcd7e1ed6e267ca8a6cfa9d202218e6093"
-  integrity sha512-tnOoByxYmBc7d8lg2DHDomMhK/i/4rIfUVKjX9VgJ2a93Wfe7gfDNM/TGi8KB77if5XTX52Jfu+l0u70ejDXoQ==
+karet.lift@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/karet.lift/-/karet.lift-2.1.0.tgz#8d2cb23fc8fb76658d6d4c0905eae77dddc5e5ac"
+  integrity sha512-f3WMShAv5My4fnJJebnJEsqtG5L5wUqTLAEHlncphf9Cdy7XhdY4poQWm15pQOWxILF6LQLC4opB6Cbg9D6RWg==
   dependencies:
-    infestines "^0.4.5"
-    karet "^2.0.0"
-    kefir.atom "^5.3.0"
-    kefir.combines "^4.3.0"
-    partial.lenses "^13.0.0"
-    prop-types "^15.5.6"
-    ramda "^0.25.0"
-    react "^16.0.0"
+    infestines "^0.4.10"
+    partial.lenses "^14.0.0"
+
+karet.util@^0.19.2:
+  version "0.19.2"
+  resolved "https://registry.yarnpkg.com/karet.util/-/karet.util-0.19.2.tgz#92a3c1f77bd537c63ddb7d5a4503e0149badadeb"
+  integrity sha512-QGvoYlsn0cRGLW8IecKwUzf8D1XrF+X4oXLyzqaIzkWV+0VwfrykbrO4vNuTvNCCug2Kmx9iRQ+oTCf9xexjvw==
+  dependencies:
+    infestines "^0.4.11"
+    karet "^4.0.0"
+    karet.lift "^2.1.0"
+    kefir.atom "^5.5.1"
+    partial.lenses "^14.0.0"
 
 karet@^2.0.0:
   version "2.1.1"
@@ -8111,20 +8116,21 @@ karet@^2.0.0:
     infestines "^0.4.4"
     react "^16.0.0"
 
-kefir.atom@^5.3.0:
+karet@^4.0.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/karet/-/karet-4.1.0.tgz#c45a5a3069d2aab6237f44a4297952f8434909d8"
+  integrity sha512-cWE3HOKpBK0hx37kjlbKB2h50t3ylAKLPRcCLfciuD63dXFnX6bDKaQV/sbXLWDHOBFh7NOGQZzDh1wOR930Gw==
+  dependencies:
+    infestines "^0.4.10"
+    partial.lenses "^14.0.0"
+
+kefir.atom@^5.5.1:
   version "5.5.2"
   resolved "https://registry.yarnpkg.com/kefir.atom/-/kefir.atom-5.5.2.tgz#808912d7c674162ef7a6c019b85e5e4f7ca55f7f"
   integrity sha512-V1j2KODdsBxMdoW2MGgr6EqXzv36rFGxQ0tpiq9J60f/XprIGeuHrTMEA2LTD6hlbm9J/1+UVgKN329b77moTw==
   dependencies:
     infestines "^0.4.10"
     partial.lenses ">=2.2.0"
-
-kefir.combines@^4.3.0:
-  version "4.5.1"
-  resolved "https://registry.yarnpkg.com/kefir.combines/-/kefir.combines-4.5.1.tgz#40afa59094075430d3bce6dccbb99208df6bf7bf"
-  integrity sha512-tUBKCk3Edxg5qFFpNlEAk5m1jaRLrCXVEutDGt26MxhBUWE5ApnKp0o2QJfWHwBHcegloFX1CeuPfO4Ah0ORBw==
-  dependencies:
-    infestines "^0.4.7"
 
 kefir@^3.8.0:
   version "3.8.8"
@@ -9347,19 +9353,12 @@ parseurl@~1.3.2, parseurl@~1.3.3:
   resolved "https://registry.yarnpkg.com/parseurl/-/parseurl-1.3.3.tgz#9da19e7bee8d12dff0513ed5b76957793bc2e8d4"
   integrity sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ==
 
-partial.lenses@>=2.2.0, partial.lenses@^14.17.0:
+partial.lenses@>=2.2.0, partial.lenses@^14.0.0, partial.lenses@^14.17.0:
   version "14.17.0"
   resolved "https://registry.yarnpkg.com/partial.lenses/-/partial.lenses-14.17.0.tgz#5a57590668d5dfda6d2f7ac550068c1607e00eff"
   integrity sha512-Iq+wDw5b5iwmn7b9MO+//buOqF0YoAC2Hsj+HoeG88BGeT3NkL/YwHNGDrySyX7xZSqj0LFEWwfgGSj4cSFmXQ==
   dependencies:
     infestines "^0.4.11"
-
-partial.lenses@^13.0.0:
-  version "13.16.0"
-  resolved "https://registry.yarnpkg.com/partial.lenses/-/partial.lenses-13.16.0.tgz#e4a0e78988c4014c18abc7a5293a1f8d0cb7b2eb"
-  integrity sha512-SOhz+LPCL8Pa4vvckd7gGkEG5Vlt1ML3bw8n9LDBF0NzXD6jk9PgD9FmFOVydnn8XRvYeea1vpmamEiVEBprow==
-  dependencies:
-    infestines "^0.4.9"
 
 pascal-case@^3.1.2:
   version "3.1.2"
@@ -10443,7 +10442,7 @@ prompts@^2.0.1, prompts@^2.4.2:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
-prop-types@^15.5.6, prop-types@^15.6.1, prop-types@^15.6.2, prop-types@^15.8.1:
+prop-types@^15.6.1, prop-types@^15.6.2, prop-types@^15.8.1:
   version "15.8.1"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.8.1.tgz#67d87bf1a694f48435cf332c24af10214a3140b5"
   integrity sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==
@@ -10539,11 +10538,6 @@ raf@^3.4.1:
   integrity sha512-Sq4CW4QhwOHE8ucn6J34MqtZCeWFP2aQSmrlroYgqAV1PjStIhJXxYuTgUIfkEk7zTLjmIjLmU5q+fbD1NnOJA==
   dependencies:
     performance-now "^2.1.0"
-
-ramda@^0.25.0:
-  version "0.25.0"
-  resolved "https://registry.yarnpkg.com/ramda/-/ramda-0.25.0.tgz#8fdf68231cffa90bc2f9460390a0cb74a29b29a9"
-  integrity sha512-GXpfrYVPwx3K7RQ6aYT8KPS8XViSXUVJT1ONhoKPE9VAleW42YE+U+8VEyGWt41EnEQW7gwecYJriTI0pKoecQ==
 
 ramda@^0.27.1:
   version "0.27.2"
