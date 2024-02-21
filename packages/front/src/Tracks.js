@@ -185,7 +185,6 @@ class Tracks extends Component {
               onCreateCart={this.props.onCreateCart}
               onUpdateCarts={this.props.onUpdateCarts}
               onRemoveFromCart={this.props.onRemoveFromCart}
-              onMarkPurchased={this.props.onMarkPurchased}
               onFollowClicked={() => {
                 this.props.onFollowClicked(track)
               }}

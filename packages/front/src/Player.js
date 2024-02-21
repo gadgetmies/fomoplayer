@@ -251,10 +251,10 @@ class Player extends Component {
     })
   }
 
-  async handleMarkPurchasedButtonClick() {
+  async handleMarkPurchasedButtonClick(trackId) {
     this.setState({ processingCart: true })
     try {
-      await this.props.onMarkPurchased(this.props.id)
+      await this.props.onMarkPurchased(trackId)
     } finally {
       this.setState({ processingCart: false })
     }
@@ -327,7 +327,6 @@ class Player extends Component {
           onFollowClicked={this.props.onOpenFollowPopup?.bind(this)}
           onIgnoreArtistsByLabels={this.props.onIgnoreArtistsByLabels}
           onIgnoreClicked={this.props.onOpenIgnorePopup?.bind(this)}
-          onMarkPurchased={this.handleMarkPurchasedButtonClick.bind(this)}
           onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick.bind(this)}
           onPreviewRequested={id => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())

@@ -204,8 +204,7 @@ class App extends Component {
       method: 'POST',
       body: [{ trackId }]
     })
-    await Promise.all([this.updateTracks()])
-    await Promise.all([this.updateDefaultCart()])
+    await Promise.all([this.updateTracks(), this.updateDefaultCart(), this.selectCart(this.state.selectedCartUuid)])
     this.setState({ processingCart: false })
   }
 

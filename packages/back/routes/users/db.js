@@ -4,14 +4,14 @@ const pg = require('fomoplayer_shared').db.pg
 const logger = require('fomoplayer_shared').logger(__filename)
 const { using } = require('bluebird')
 
-module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {
+module.exports.addPurchasedTracksToUsers = async (userIds, trackIds) => {
   await pg.queryAsync(
     // language=PostgreSQL
-    sql`-- addPurchasedTracksToUser
+    sql`-- addPurchasedTracksToUsers
 INSERT INTO track__cart (cart_id, track_id) 
 SELECT cart_id, track_id
 FROM cart, unnest(${trackIds} :: BIGINT[]) AS tracks(track_id)
-WHERE meta_account_user_id = ${userId} AND cart_is_purchased
+WHERE meta_account_user_id = ANY(${userIds}) AND cart_is_purchased
 ON CONFLICT DO NOTHING
 `
   )

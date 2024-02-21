@@ -46,7 +46,7 @@ const {
   updateUserScoreWeights,
   updateNotifications,
   queryNotifications,
-  addPurchasedTracksToUser,
+  addPurchasedTracksToUsers,
   queryUserSettings,
   upsertEmail,
   getEmailVerificationCode,
@@ -313,7 +313,7 @@ module.exports.setFollowStarred = async (userId, type, followId, starred) => {
 }
 
 module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {
-  await addPurchasedTracksToUser(userId, trackIds)
+  await addPurchasedTracksToUsers([userId], trackIds)
 }
 
 const verifyFollowOwnership = async (userId, type, followId) => {
@@ -372,7 +372,7 @@ module.exports.removeAuthorization = async (userId, storeName) => {
 module.exports.addStoreTracksToUsers = async (storeUrl, tracks, userIds, sourceId, skipOld, type = 'tracks') => {
   let storedTracks = []
   if (!storeUrl) {
-    await addPurchasedTracksToUser(userIds, tracks.map(R.prop('trackId')))
+    await addPurchasedTracksToUsers(userIds, tracks.map(R.prop('trackId')))
   } else {
     const sourceId = await insertSource({
       operation: 'tracksHandler',

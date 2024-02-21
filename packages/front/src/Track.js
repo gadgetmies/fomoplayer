@@ -306,7 +306,7 @@ class Track extends Component {
                           className="button button-push_button button-push_button-small button-push_button-primary"
                           onClick={e => {
                             e.stopPropagation()
-                            return this.props.onMarkPurchasedButtonClick()
+                            return this.props.onMarkPurchasedButtonClick(this.props.id)
                           }}
                         >
                           Mark purchased and remove from carts
