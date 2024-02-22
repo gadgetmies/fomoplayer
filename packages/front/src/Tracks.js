@@ -138,6 +138,7 @@ class Tracks extends Component {
               listState={this.props.listState}
               cartUuid={this.props.selectedCart?.uuid}
               carts={this.props.carts}
+              cartFilter={this.props.cartFilter}
               defaultCartId={this.props.carts.find(R.prop('is_default'))?.id}
               selectedCartId={selectedCartId}
               selectedCartIsPurchased={selectedCartIsPurchased}
@@ -200,6 +201,7 @@ class Tracks extends Component {
               onCartButtonClick={this.props.onCartButtonClick}
               onCreateCartClick={this.props.onCreateCartClick}
               onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
+              onCartFilterChange={this.props.onCartFilterChange}
             />
           )
         })}

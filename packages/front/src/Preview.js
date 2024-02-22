@@ -610,7 +610,7 @@ class Preview extends Component {
                           <input
                             placeholder={'New cart'}
                             style={{ flex: 1 }}
-                            className={'new-cart-input text-input text-input-small text-input-dark'}
+                            className={'cart-popup-input text-input text-input-small text-input-dark'}
                             value={this.state.newCartName}
                             onChange={e => this.setState({ newCartName: e.target.value })}
                           />

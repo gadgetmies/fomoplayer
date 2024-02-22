@@ -5,3 +5,11 @@
 .carts-list::-webkit-scrollbar {
     display: none;
 }
+
+.cart-popup {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+    gap: 4px;
+}

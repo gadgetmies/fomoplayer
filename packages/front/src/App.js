@@ -442,6 +442,10 @@ class App extends Component {
     }
   }
 
+  setCartFilter = cartFilter => {
+    this.setState({ cartFilter })
+  }
+
   logout = async () => {
     try {
       await requestWithCredentials({ path: logoutPath, method: 'POST' })
@@ -761,6 +765,7 @@ class App extends Component {
                         <Player
                           addingToCart={this.state.addingToCart}
                           carts={this.state.carts}
+                          cartFilter={this.state.cartFilter}
                           currentTrack={this.state.currentTrack}
                           follows={this.state.follows}
                           heardTracks={this.state.heardTracks}
@@ -798,7 +803,7 @@ class App extends Component {
                           onSetListState={this.setListState.bind(this)}
                           onUpdateCarts={this.updateCarts.bind(this)}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
-
+                          onCartFilterChange={this.setCartFilter.bind(this)}
                           style={{ display: !settingsVisible ? 'block' : 'none' }}
                         />
                       </>

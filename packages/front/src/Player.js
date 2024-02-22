@@ -305,6 +305,7 @@ class Player extends Component {
         <Tracks
           mode={this.props.mode}
           carts={this.props.carts}
+          cartFilter={this.props.cartFilter}
           notifications={this.props.notifications}
           selectedCart={this.props.selectedCart}
           tracks={tracks}
@@ -342,6 +343,7 @@ class Player extends Component {
           onToggleStoreSearchEnabled={this.toggleStoreSearchEnabled.bind(this)}
           onUpdateCarts={this.props.onUpdateCarts}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
+          onCartFilterChange={this.props.onCartFilterChange}
         />
       </div>
     )
