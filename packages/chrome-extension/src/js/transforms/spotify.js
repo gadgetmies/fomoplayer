@@ -68,6 +68,7 @@ module.exports.spotifyAlbumTracksTransform = L.collect([
 ])
 
 const trackOrRoot = L.choices('track', [])
+
 module.exports.spotifyTracksTransform = L.collect([
   L.elems,
   L.pick({
