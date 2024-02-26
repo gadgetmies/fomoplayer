@@ -456,26 +456,43 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
     `
   )
 
-  if (storeTrackDetails) {
-    try {
-      await tx.queryRowsAsync(
-        // language=PostgreSQL
-        sql`-- addStoreTrack UPDATE store__track
-        UPDATE store__track
-        SET track_id                   = ${trackId}
-          , store__track_url           = ${track.url}
-          , store__track_released      = ${track.released}
-          , store__track_published     = ${track.published}
-          , store__track_bpm           = ${track.bpm}
-          , store__track_store_details = ${track}
-        WHERE store__track_store_id = ${track.id}
-          AND store_id = ${storeId}
+  if (storeTrackDetails && track.track_number) {
+    const res = await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`-- addStoreTrack UPDATE store__track
+      UPDATE store__track
+      SET track_id                   = ${trackId}
+        , store__track_url           = ${track.url}
+        , store__track_released      = ${track.released}
+        , store__track_published     = ${track.published}
+        , store__track_bpm           = ${track.bpm}
+        , store__track_store_details = ${track}
+      WHERE store__track_store_id = ${track.id}
+        AND store_id = ${storeId}
+        AND NOT EXISTS (SELECT 1
+                        FROM
+                          release__track rt
+                        WHERE release_id = ${releaseId}
+                          AND rt.release__track_track_number = ${track.track_number})
+      RETURNING store__track_id
         `
-      )
-    } catch (e) {
-      logger.error(`addStoreTrack UPDATE store__track failed for id: ${trackId}, track: ${JSON.stringify(track)}`)
-      logger.error(e)
-      throw e
+    )
+
+    if (res.length === 0) {
+      const [{ track_id, release_id, store__track_id }] = tx.queryRowsAsync(sql`
+        SELECT track_id, release_id, store__track_id
+        FROM
+          release__track
+        NATURAL JOIN store__track
+        WHERE release_id = ${releaseId}
+          AND release__track_track_number = ${track.track_number}
+`)
+
+      logger.warn(`Unable to set the track number for store__track: store: ${storeId}, store track: ${track.id}`, {
+        track_id,
+        release_id,
+        store__track_id
+      })
     }
   } else {
     try {
