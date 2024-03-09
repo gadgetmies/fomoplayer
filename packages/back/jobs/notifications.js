@@ -24,11 +24,12 @@ module.exports.updateNotifications = async () => {
         storeIds
       })
 
-      const entityDetails = text.match(/(.+):\d+/)
+      const entityDetailsMatch = text.match(/(.+):(\d+)/)
 
-      if (entityDetails) {
-        const [_, entityType, entityId] = entityDetails
-        followText = `${entityType}: "${queryEntityDetails(entityType, entityId).name}"`
+      if (entityDetailsMatch) {
+        const [_, entityType, entityId] = entityDetailsMatch
+        const { name } = queryEntityDetails(entityType, entityId)
+        followText = `${entityType}: "${name}"`
       }
 
       const uriEncoded = encodeURIComponent(followText)
