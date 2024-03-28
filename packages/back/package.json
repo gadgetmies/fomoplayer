@@ -27,7 +27,7 @@
     "db-migrate": "^0.11.13",
     "db-migrate-pg": "^1.2.2",
     "dotenv": "^10.0.0",
-    "express": "^4.17.2",
+    "express": "^4.19.2",
     "express-promise-router": "^4.1.1",
     "express-session": "^1.17.2",
     "fomoplayer_shared": "1.0.0",
