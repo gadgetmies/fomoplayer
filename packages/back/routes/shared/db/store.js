@@ -54,7 +54,7 @@ module.exports.queryStoreRegexes = async () =>
 
 const getFieldFromResult = field => R.path([0, field])
 
-async function getStoreLabelIdForUrl(tx, url) {
+async function queryStoreLabelIdForUrl(tx, url) {
   return await tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- ensureArtistExists SELECT store__label_id AS "storeLabelId" FROM store__label
@@ -97,7 +97,7 @@ module.exports.ensureLabelExists = async (tx, storeUrl, label, sourceId) => {
       .then(getLabelIdFromResult)
   }
 
-  const storeLabelIds = await getStoreLabelIdForUrl(tx, label.url)
+  const storeLabelIds = await queryStoreLabelIdForUrl(tx, label.url)
 
   if (storeLabelIds.length === 0) {
     await tx.queryRowsAsync(
@@ -120,7 +120,7 @@ module.exports.ensureLabelExists = async (tx, storeUrl, label, sourceId) => {
     )
   }
 
-  const res = await getStoreLabelIdForUrl(tx, label.url)
+  const res = await queryStoreLabelIdForUrl(tx, label.url)
   const [{ storeLabelId }] = res
 
   return { labelId, storeLabelId }
