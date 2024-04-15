@@ -1,7 +1,7 @@
 const sql = require('sql-template-strings')
 const { pg } = require('./db')
 
-module.exports.queryReleasesForTracks = async addedReleases =>
+module.exports.queryReleasesForTracks = async addedTracks =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`
@@ -11,7 +11,7 @@ FROM
     track
         NATURAL JOIN release__track
 WHERE
-    track_id = ANY (${addedReleases})
+    track_id = ANY (${addedTracks})
 `
   )
 
