@@ -25,5 +25,5 @@ WHERE
     logger.debug(`Multiple (${labelIds.length}) labels found for release: ${releaseId}`)
   }
 
-  return labelIds[0]
+  return labelIds[0]?.id
 }
