@@ -1,0 +1,1 @@
+ALTER TABLE store__artist ALTER COLUMN store__artist_last_update DROP DEFAULT;
