@@ -18,7 +18,7 @@
     "fomoplayer_shared": "1.0.0",
     "js-beautify": "^1.14.11",
     "karet": "^2.0.0",
-    "karet.util": "^0.17.1",
+    "karet.util": "^0.19.2",
     "kefir": "^3.8.0",
     "partial.lenses": "^14.17.0",
     "ramda": "^0.28.0",
