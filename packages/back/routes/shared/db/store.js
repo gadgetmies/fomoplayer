@@ -678,6 +678,23 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
   }
 
   if (releaseId) {
+    const releaseTrackNumberDetails = await tx.queryRowsAsync(sql`-- addStoreTrack SELECT track_id AS "existingTrackIdWithTrackNumber"
+SELECT track_id AS "existingTrackIdWithTrackNumber"
+FROM
+  release__track rt
+WHERE release_id = ${releaseId}
+  AND rt.release__track_track_number = ${track.track_number}
+  AND track_id <> ${trackId}`)
+
+    if (releaseTrackNumberDetails.length > 0) {
+      const [{ existingTrackIdWithTrackNumber }] = res
+      logger.warn(
+        `Track number ${track.track_number} already exists for release ${releaseId}, track ${existingTrackIdWithTrackNumber}`
+      )
+
+      delete track.track_number
+    }
+
     const [releaseTrackDetails] = await tx.queryRowsAsync(
       // language=PostgreSQL
       sql`-- addStoreTrack SELECT release__track_id FROM release__track
@@ -690,34 +707,19 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
     )
 
     if (!releaseTrackDetails) {
-      try {
-        await tx.queryAsync(
-          // language=PostgreSQL
-          sql`-- addStoreTrack INSERT INTO release__track
-          INSERT
-          INTO release__track
-            (release_id, track_id, release__track_track_number)
-          VALUES (${releaseId}, ${trackId}, ${track.track_number})
-          `
-        )
-      } catch (e) {
-        const [{ trackId: existingTrackId }] = await pg.queryRowsAsync(
-          // language=PostgreSQL
-          sql`-- addStoreTrack SELECT track_id FROM release__track
-          SELECT track_id AS "trackId"
-          FROM
-            release__track
-          WHERE release_id = ${releaseId}
-            AND release__track_track_number = ${track.track_number}
-          `
-        )
-        logger.error(
-          `Release ${releaseId} already has track number ${track.track_number} with track ${existingTrackId}! Cannot set release track number for ${trackId}`
-        )
-
-        throw e
-      }
+      console.log('Inserting release track', { releaseId, trackId, number: track.track_number })
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- addStoreTrack INSERT INTO release__track
+        INSERT
+        INTO release__track
+          (release_id, track_id, release__track_track_number)
+        VALUES (${releaseId}, ${trackId}, ${track.track_number})
+        `
+      )
     } else {
+      console.log('Updating release track', { releaseId, trackId, number: track.track_number })
+
       const { trackNumber } = releaseTrackDetails
       if (track.track_number !== undefined && trackNumber !== track.track_number) {
         logger.warn(
@@ -728,11 +730,11 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
       await tx.queryAsync(
         // language=PostgreSQL
         sql`-- addStoreTrack UPDATE release__track
-        UPDATE release__track
-        SET release__track_track_number = COALESCE(release__track.release__track_track_number, ${track.trackNumber})
-        WHERE track_id = ${trackId}
-          AND release_id = ${releaseId}
-        `
+          UPDATE release__track
+          SET release__track_track_number = COALESCE(${track.track_number}, release__track.release__track_track_number)
+          WHERE track_id = ${trackId}
+            AND release_id = ${releaseId}
+          `
       )
     }
   }
