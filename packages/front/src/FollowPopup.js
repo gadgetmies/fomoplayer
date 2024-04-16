@@ -49,7 +49,7 @@ class FollowPopup extends Component {
       <FullScreenPopup title="Follow / unfollow" {...this.props}>
         <h2>Artists</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          {!this.state.labelDetails ? (
+          {!this.state.artistDetails ? (
             <>
               <Spinner color="#000" size="large" /> Loading...
             </>
