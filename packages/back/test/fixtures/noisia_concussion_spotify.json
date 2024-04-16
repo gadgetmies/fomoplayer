@@ -224,7 +224,13 @@
         "id": "4YWj8sohRDjL9deiuRvEEY",
         "name": "Noisia",
         "type": "artist",
-        "uri": "spotify:artist:4YWj8sohRDjL9deiuRvEEY"
+        "uri": "spotify:artist:4YWj8sohRDjL9deiuRvEEY",
+        "genres": [
+          {
+            "name": "Drum & Bass",
+            "id": "Drum & Bass"
+          }
+        ]
       }
     ]
   },

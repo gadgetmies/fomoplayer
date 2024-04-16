@@ -36,17 +36,7 @@ const trackTransform = L.pick({
       ]
     })
   ),
-  genres: L.partsOf([
-    L.branch({
-      genre: 'name',
-      sub_genre: [
-        'name',
-        L.choose(x => {
-          return x ? [] : L.zero
-        })
-      ]
-    })
-  ]),
+  genres: L.partsOf([L.props('genre', 'subgenre'), L.values, L.pick({ name: 'name', id: 'slug', url: 'url' })]),
   duration_ms: 'length_ms',
   release: [
     L.partsOf(

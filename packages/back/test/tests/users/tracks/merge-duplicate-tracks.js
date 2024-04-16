@@ -12,6 +12,7 @@ const incrementTrackId = L.modify(L.query(['data', 'id']), R.inc)
 const incrementReleaseId = L.modify(L.query(['release', 'id']), R.inc)
 const replaceISRC = isrc => L.modify(L.query('isrc'), R.always(isrc))
 const replaceCatalogNumber = catalogNumber => L.modify(L.query('catalog_number'), R.always(catalogNumber))
+const appendReleaseName = str => L.modify([L.query('release'), 'name'], n => n + str)
 const trackWithSameISRC = R.pipe(incrementTrackId, incrementReleaseId, replaceCatalogNumber('VSN004'))(track)
 const remixedTrack = R.pipe(
   incrementTrackId,
@@ -28,6 +29,7 @@ const remixedTrack = R.pipe(
   ),
   setMixName('Remix'),
   replaceISRC('NLCK40700054'),
+  appendReleaseName(' Remix'),
   replaceCatalogNumber('VSN002')
 )(track)
 
@@ -36,6 +38,7 @@ const editOfRemixedTrack = R.pipe(
   incrementReleaseId,
   setMixName('Edit'),
   replaceISRC('NLCK40700055'),
+  appendReleaseName(' Edit'),
   replaceCatalogNumber('VSN003')
 )(remixedTrack)
 

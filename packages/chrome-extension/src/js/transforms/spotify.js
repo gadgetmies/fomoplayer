@@ -9,7 +9,8 @@ const trackArtistsLens = L.branch({
       name: 'name',
       id: 'id',
       url: urlLens,
-      role: R.always('author')
+      role: R.always('author'),
+      genres: ['genres', L.values, genre => ({ name: genre, id: genre })]
     })
   ]
   // , TODO

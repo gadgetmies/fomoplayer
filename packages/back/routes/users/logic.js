@@ -186,13 +186,7 @@ module.exports.addArtistFollows = async (storeUrl = undefined, artists, userId, 
   for (const { name, url } of artists) {
     const fullUrl = getFullUrl(storeUrl, url)
     const storeModule = await getStoreModuleForArtistByUrl(fullUrl)
-    const { id } = await getStoreDetailsFromUrl(fullUrl, storeModule.logic.storeName)
-    let artistDetails = { url: fullUrl, id, name }
-
-    if (name === undefined) {
-      artistDetails.name = await storeModule.logic.getArtistName(id)
-    }
-
+    const artistDetails = await storeModule.logic.getArtistDetails(fullUrl)
     const { artistId, followId, storeArtistId } = await addStoreArtistToUser(
       storeModule.logic.storeUrl,
       userId,

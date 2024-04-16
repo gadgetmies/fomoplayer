@@ -11,6 +11,7 @@ const {
   spotifyAlbumTracksTransform
 } = require('fomoplayer_chrome_extension/src/js/transforms/spotify')
 const R = require('ramda')
+const L = require('partial.lenses')
 const { processChunks } = require('../../shared/requests')
 const { addArtistsToUserFollowed } = require('../../shared/spotify')
 const { getStoreDetailsFromUrls, getStoreDetailsFromUrl } = require('../logic')
@@ -73,14 +74,24 @@ module.exports.getPlaylistDetailsWithTracks = async playlistUrl => {
   return { ...details, tracks }
 }
 
-const getArtistName = (module.exports.getArtistDetails = async ({ url }) => {
+const getArtistDetails = (module.exports.getArtistDetails = async url => {
   // TODO: get regex from db
   const artistId = url.match('^https://(api|open).spotify.com/(v1/)?artists?/([0-9A-Za-z]+)')[3]
+  const res = await spotifyApi.getArtist(artistId)
   const {
-    body: { name }
-  } = await spotifyApi.getArtist(artistId)
-  return name
+    body: { name, genres }
+  } = res
+  return { name, genres: genres.map(name => ({ name, id: name })), url }
 })
+
+const getArtistsDetails = async artistIds => {
+  const {
+    body: { artists }
+  } = await spotifyApi.getArtists(artistIds)
+  return artists.map(({ genres, ...rest }) => ({ genres: genres.map(name => ({ name, id: name })), ...rest }))
+}
+
+const getArtistName = (module.exports.getArtistName = async url => (await getArtistDetails(url)).name)
 
 const getPlaylistId = (module.exports.getPlaylistId = url => {
   const id = url.match(/^https:\/\/open.spotify.com\/playlist\/([0-9A-Za-z]*)/)[1]
@@ -106,7 +117,7 @@ module.exports.getFollowDetails = async ({ id, type, url }) => {
   let name
 
   if (type === 'artist') {
-    name = await getArtistName({ url })
+    name = await getArtistName(url)
   } else if (type === 'playlist') {
     name = await getPlaylistName({ url, type })
   } else {
@@ -184,6 +195,21 @@ const appendTrackDetails = async tracks => {
   })
 }
 
+const appendArtistDetails = async tracks => {
+  const artistIds = R.uniq(L.collect([L.elems, 'artists', L.elems, 'id'], tracks))
+  const artistDetails = await processChunks(artistIds, 50, getArtistsDetails, { concurrency: 4 })
+  return tracks.map(({ artists, ...rest }) => {
+    return {
+      artists: artists.map(({ id, ...rest }) => ({
+        id,
+        genres: artistDetails.find(({ id: aid }) => aid === id).genres,
+        ...rest
+      })),
+      ...rest
+    }
+  })
+}
+
 const getPlaylistTracks = (module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
   const res = await spotifyApi.getPlaylistTracks(playlistStoreId, { market: 'US' })
   const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
@@ -194,7 +220,7 @@ const getPlaylistTracks = (module.exports.getPlaylistTracks = async function*({ 
     throw new Error(error)
   }
 
-  yield { tracks: await appendTrackDetails(transformed), errors: [] }
+  yield { tracks: await appendArtistDetails(await appendTrackDetails(transformed)), errors: [] }
 })
 
 module.exports.getArtistTracks = async function*({ artistStoreId }) {
@@ -207,7 +233,7 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
     throw new Error(error)
   }
 
-  yield { tracks: await appendTrackDetails(transformed), errors: [] }
+  yield { tracks: await appendArtistDetails(await appendTrackDetails(transformed)), errors: [] }
 }
 
 module.exports.search = async query => {

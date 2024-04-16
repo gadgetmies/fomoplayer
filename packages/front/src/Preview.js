@@ -250,6 +250,16 @@ class Preview extends Component {
                       </span>
                     </div>
                     <div style={{ fontSize: '75%' }}>
+                      <span className="preview_label">Genre:</span>{' '}
+                      <span className="preview_detail">
+                        {this.props.currentTrack.genres?.length
+                          ? this.props.currentTrack.genres
+                            .map(R.prop('name'))
+                            .filter(R.identity)
+                            .join(', ')
+                          : '-'}
+                      </span>
+                      <br />
                       <span className="preview_label">BPM:</span>{' '}
                       <span className="preview_detail">
                         {this.props.currentTrack.stores?.bpms?.length
