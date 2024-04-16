@@ -70,6 +70,7 @@ module.exports.findMatchingTracks = async jobDetails => {
         track_isrc_update_time IS NULL
         OR track_isrc_update_time < NOW() - INTERVAL '1 day'
       )
+      AND store__track_released > NOW() - INTERVAL '1 year'
     GROUP BY track_id, track_isrc, track_isrc_update_time
     HAVING COUNT(store_id) < 2
     ORDER BY track_isrc_update_time DESC
