@@ -31,7 +31,7 @@ class Preview extends Component {
       previewUrl: undefined,
       volume: 100,
       newCartName: '',
-      preferFullTracks: localStorage.getItem('preferFullTracks') === 'true'
+      preferFullTracks: localStorage.getItem('preferFullTracks') === 'true',
     }
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
@@ -59,7 +59,7 @@ class Preview extends Component {
       waveform: undefined,
       totalDuration: undefined,
       mp3Preview: preview,
-      previewUrl: undefined
+      previewUrl: undefined,
     })
 
     let url = preview.url
@@ -115,13 +115,13 @@ class Preview extends Component {
         L.choices(
           [
             L.filter(({ store }) => (preferFullTracks ? store === 'bandcamp' : store !== 'bandcamp')),
-            L.ifElse(R.isEmpty, L.zero, [])
+            L.ifElse(R.isEmpty, L.zero, []),
           ],
-          []
+          [],
         ),
-        L.satisfying(safePropEq('format', 'mp3'))
+        L.satisfying(safePropEq('format', 'mp3')),
       ],
-      track
+      track,
     )
   }
 
@@ -131,13 +131,13 @@ class Preview extends Component {
 
   async updateWaveform(previewUrl) {
     try {
-      const blob = await fetch(previewUrl).then(r => r.blob())
+      const blob = await fetch(previewUrl).then((r) => r.blob())
       const fileArrayBuffer = await blob.arrayBuffer()
       const waveformGenerator = new WaveformGenerator(fileArrayBuffer)
       const pngWaveformURL = await waveformGenerator.getWaveform({
         waveformWidth: 1024,
         waveformHeight: 170,
-        waveformColor: '#cbcbcb'
+        waveformColor: '#cbcbcb',
       })
 
       const audioBuffer = await this.audioContext.decodeAudioData(fileArrayBuffer)
@@ -163,7 +163,7 @@ class Preview extends Component {
     let totalDuration = 0
     let startOffset = 0
     let endPosition = 0
-    const toPositionPercent = currentPosition => ((currentPosition + startOffset) / totalDuration) * 100
+    const toPositionPercent = (currentPosition) => ((currentPosition + startOffset) / totalDuration) * 100
 
     if (currentTrack && mp3Preview) {
       totalDuration = this.state.totalDuration || currentTrack.duration
@@ -175,7 +175,7 @@ class Preview extends Component {
       ? encodeURIComponent(
           `${currentTrack.artists.map(R.prop('name')).join(' ')} ${currentTrack.title}${
             currentTrack.version ? ` ${currentTrack.version}` : ''
-          }`
+          }`,
         )
           .normalize('NFD')
           .replace(/\p{Diacritic}/gu, '')
@@ -193,24 +193,24 @@ class Preview extends Component {
         ? [
             'Copy cart link to clipboard',
             `Listen to "${namesToString(
-              artistsAndRemixers
-            )} - ${title}" in "${cartName}" on Fomo Player: ${`${cartLink}#${this.props.selectedCart?.tracks?.findIndex(
-              ({ id }) => id === this.props.currentTrack?.id
-            ) + 1}`}`,
-            'https://fomoplayer.com'
+              artistsAndRemixers,
+            )} - ${title}" in "${cartName}" on Fomo Player: ${`${cartLink}#${
+              this.props.selectedCart?.tracks?.findIndex(({ id }) => id === this.props.currentTrack?.id) + 1
+            }`}`,
+            'https://fomoplayer.com',
           ]
         : [
             'Copy store links to clipboard',
             `Listen to "${namesToString(artistsAndRemixers)} - ${title}" on\n${currentTrack?.stores
-              .map(store => `${store.name}: ${store.url || store.release.url}`)
+              .map((store) => `${store.name}: ${store.url || store.release.url}`)
               .join('\n')}`,
-            'https://fomoplayer.com'
+            'https://fomoplayer.com',
           ]
 
     const previews = currentTrack?.previews?.filter(({ store }) => store !== 'bandcamp') || []
     const spotifyAuthorization = this.state.authorizations?.find(R.propEq('store_name', 'Spotify'))
     const fullTracks = currentTrack?.previews?.filter(({ store }) =>
-      ['bandcamp', ...[spotifyAuthorization ? ['spotify'] : []]].includes(store)
+      ['bandcamp', ...[spotifyAuthorization ? ['spotify'] : []]].includes(store),
     )
 
     return (
@@ -252,22 +252,12 @@ class Preview extends Component {
                     <div style={{ fontSize: '75%' }}>
                       <span className="preview_label">Genre:</span>{' '}
                       <span className="preview_detail">
-                        {this.props.currentTrack.genres?.length
-                          ? this.props.currentTrack.genres
-                            .map(R.prop('name'))
-                            .filter(R.identity)
-                            .join(', ')
-                          : '-'}
+                        {this.props.currentTrack.genres?.map(R.prop('name')).filter(R.identity).join(', ') || '-'}
                       </span>
                       <br />
                       <span className="preview_label">BPM:</span>{' '}
                       <span className="preview_detail">
-                        {this.props.currentTrack.stores?.bpms?.length
-                          ? this.props.currentTrack.stores
-                              .map(R.prop('bpm'))
-                              .filter(R.identity)
-                              .join(', ')
-                          : '-'}
+                        {this.props.currentTrack.stores.map(R.prop('bpm')).filter(R.identity).join(', ') || '-'}
                       </span>
                       <br />
                       <span className="preview_label">Key:</span>{' '}
@@ -314,7 +304,7 @@ class Preview extends Component {
                   <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
                     {this.props.stores
                       ?.filter(({ storeName }) =>
-                        this.props.currentTrack?.stores.every(({ name }) => storeName !== name)
+                        this.props.currentTrack?.stores.every(({ name }) => storeName !== name),
                       )
                       .map(({ storeName }) => {
                         const searchUrl = this.props.stores.find(R.propEq('storeName', storeName)).searchUrl
@@ -355,7 +345,7 @@ class Preview extends Component {
               <div
                 className="waveform_container"
                 style={{ flex: 5, position: 'relative' }}
-                onMouseDown={e => {
+                onMouseDown={(e) => {
                   if (e.button !== 0) return
                   const boundingRect = e.currentTarget.getBoundingClientRect()
                   const trackPositionPercent = (e.clientX - boundingRect.left) / e.currentTarget.clientWidth
@@ -369,7 +359,7 @@ class Preview extends Component {
                     alt="waveform"
                     src={waveform}
                     className="waveform waveform-background"
-                    onDragStart={e => e.preventDefault()}
+                    onDragStart={(e) => e.preventDefault()}
                   />
                 ) : (
                   <div className="waveform waveform-background" />
@@ -378,27 +368,27 @@ class Preview extends Component {
                   className="waveform waveform-position"
                   style={{
                     WebkitClipPath: `polygon(${toPositionPercent(0)}% 0, ${toPositionPercent(
-                      this.state.position
+                      this.state.position,
                     )}% 0, ${toPositionPercent(this.state.position)}% 100%, ${toPositionPercent(0)}% 100%)`,
-                    WebkitMaskImage: waveform ? `url(${waveform})` : 'none'
+                    WebkitMaskImage: waveform ? `url(${waveform})` : 'none',
                   }}
                 />
                 <div
                   className={'waveform_clip-edge-overlay'}
                   style={{
                     width: `${toPositionPercent(0)}%`,
-                    left: 0
+                    left: 0,
                   }}
                 />
                 <div
                   className={'waveform_clip-edge-overlay'}
                   style={{
                     width: `${100 - (100 * endPosition) / totalDuration}%`,
-                    right: 0
+                    right: 0,
                   }}
                 />
                 {this.state.loading ? (
-                  <div onMouseDown={e => e.stopPropagation()} className="loading-overlay">
+                  <div onMouseDown={(e) => e.stopPropagation()} className="loading-overlay">
                     <Spinner size="large" />
                   </div>
                 ) : null}
@@ -425,7 +415,7 @@ class Preview extends Component {
                   navigator.mediaSession.playbackState = 'playing'
                   navigator.mediaSession.metadata = new MediaMetadata({
                     artist: `${namesToString(this.props.currentTrack.artists)}`,
-                    title: this.props.currentTrack.title
+                    title: this.props.currentTrack.title,
                   })
                 }}
                 onPause={() => this.setPlaying(false)}
@@ -438,18 +428,18 @@ class Preview extends Component {
                       navigator.mediaSession.setPositionState({
                         duration: this.state.mp3Preview.length_ms / 1000,
                         playbackRate: 1,
-                        position: currentTime
+                        position: currentTime,
                       })
                   } catch (e) {
                     console.error(e, currentTime, this.state.mp3Preview.length_ms)
                   }
                 }}
-                onError={async e => {
+                onError={async (e) => {
                   console.error('Audio error', e)
                   await requestWithCredentials({
                     url: '/log/error',
                     method: 'POST',
-                    body: { message: 'Audio playback error', error: e }
+                    body: { message: 'Audio playback error', error: e },
                   })
                 }}
                 controlsList="nodownload"
@@ -484,10 +474,10 @@ class Preview extends Component {
                         {previews
                           ?.reduce(
                             (acc, cur) => (acc.some(({ store }) => store === cur.store) ? acc : [...acc, cur]),
-                            []
+                            [],
                           )
                           .map(({ id, store }) => (
-                            <span key={id} onMouseDown={e => e.stopPropagation()}>
+                            <span key={id} onMouseDown={(e) => e.stopPropagation()}>
                               <input
                                 type="radio"
                                 id={`preview-${id}`}
@@ -531,10 +521,10 @@ class Preview extends Component {
                         {fullTracks
                           ?.reduce(
                             (acc, cur) => (acc.some(({ store }) => store === cur.store) ? acc : [...acc, cur]),
-                            []
+                            [],
                           )
                           .map(({ id, store }) => (
-                            <span key={id} onMouseDown={e => e.stopPropagation()}>
+                            <span key={id} onMouseDown={(e) => e.stopPropagation()}>
                               <input
                                 type="radio"
                                 id={`preview-${id}`}
@@ -571,7 +561,7 @@ class Preview extends Component {
                       display: 'flex',
                       flexDirection: 'row',
                       alignItems: 'center',
-                      padding: '0 9px 0 4px'
+                      padding: '0 9px 0 4px',
                     }}
                   >
                     <Spinner size="large" color="#5A5A5A" />
@@ -593,8 +583,8 @@ class Preview extends Component {
                     >
                       <div
                         className={'carts-list'}
-                        onClick={e => e.stopPropagation()}
-                        onDoubleClick={e => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                        onDoubleClick={(e) => e.stopPropagation()}
                       >
                         {this.props.carts?.length === 0
                           ? 'Loading carts...'
@@ -605,7 +595,7 @@ class Preview extends Component {
                                   disabled={this.props.processingCart}
                                   styles="primary small"
                                   className="cart-button "
-                                  onClick={e => {
+                                  onClick={(e) => {
                                     e.stopPropagation()
                                     return this.props.onCartButtonClick(currentTrack.id, id, isInCart)
                                   }}
@@ -622,7 +612,7 @@ class Preview extends Component {
                             style={{ flex: 1 }}
                             className={'cart-popup-input text-input text-input-small text-input-dark'}
                             value={this.state.newCartName}
-                            onChange={e => this.setState({ newCartName: e.target.value })}
+                            onChange={(e) => this.setState({ newCartName: e.target.value })}
                           />
                           <button
                             className="button button-push_button button-push_button-small button-push_button-primary"
@@ -643,7 +633,7 @@ class Preview extends Component {
                               disabled={this.props.processingCart}
                               style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
                               className="button button-push_button button-push_button-small button-push_button-primary"
-                              onClick={e => {
+                              onClick={(e) => {
                                 e.stopPropagation()
                                 return this.props.onMarkPurchasedButtonClick()
                               }}
@@ -721,21 +711,21 @@ class Preview extends Component {
                       </span>
                       <ShareLink
                         href={`https://telegram.me/share/url?url=${encodeURIComponent(
-                          shareLink
+                          shareLink,
                         )}&text=${encodeURIComponent(shareContent)}`}
                         icon={<FontAwesomeIcon icon={['fab', 'telegram']} />}
                         label={'Share on Telegram'}
                       />
                       <ShareLink
                         href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                          shareLink
+                          shareLink,
                         )}&t=${encodeURIComponent(shareContent)}`}
                         icon={<FontAwesomeIcon icon={['fab', 'facebook']} />}
                         label={'Share on Facebook'}
                       />
                       <ShareLink
                         href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
-                          shareLink
+                          shareLink,
                         )}&text=${encodeURIComponent(shareContent)}`}
                         icon={<FontAwesomeIcon icon={['fab', 'twitter']} />}
                         label={'Share on Twitter'}
@@ -756,7 +746,7 @@ class Preview extends Component {
             bgColor="transparent"
             style={{ padding: '0 8px', boxSizing: 'border-box' }}
             vertical={false}
-            onClick={e => {
+            onClick={(e) => {
               debugger
               this.setVolume(1 - (e.clientY - e.currentTarget.getBoundingClientRect().y) / e.currentTarget.clientHeight)
             }}
