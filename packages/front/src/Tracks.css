@@ -229,10 +229,6 @@
     flex-direction: column;
   }
 
-  .track-details-right {
-    display: none;
-  }
-
   .track-details-content {
     line-height: 1.5em;
   }
