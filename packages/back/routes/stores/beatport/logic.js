@@ -35,7 +35,7 @@ module.exports.getFollowDetails = async ({ id, url, type }) => {
   return [{ id, ...details, type, store: { name: storeName }, url }]
 }
 
-const getTrackInfo = async (url) => {
+const getTrackInfo = async url => {
   const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
   const transformed = beatportTrackTransform(queryData.data.props.pageProps.track)
 
@@ -80,8 +80,13 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
   yield { tracks: await appendTrackNumbers(transformed), errors: [] }
 }
 
-module.exports.getLabelName = module.exports.getArtistName = async ({ url }) => {
-  const { name } = await bpApiStatic.getDetailsAsync(url)
+const getDetails = (module.exports.getArtistDetails = async url => ({
+  url,
+  ...(await bpApiStatic.getDetailsAsync(url))
+}))
+
+module.exports.getLabelName = module.exports.getArtistName = async url => {
+  const { name } = await getDetails(url)
   return name
 }
 

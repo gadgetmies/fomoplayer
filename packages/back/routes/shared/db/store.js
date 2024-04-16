@@ -232,14 +232,44 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
 
   if (!artistId) {
     logger.debug(`Artist ${artist.name} not found with id, trying with name`)
+    const genreIds = artist.genres?.map(R.prop('id')) || []
     artistId = await tx
       .queryRowsAsync(
         // language=PostgreSQL
         sql`-- ensureArtistExists SELECT artist_id
-        SELECT artist_id
-        FROM
-          artist
-        WHERE LOWER(artist_name) = LOWER(${artist.name})
+WITH artist_candidates AS (SELECT artist_id
+                           FROM
+                             artist
+                           WHERE LOWER(artist_name) = LOWER(${artist.name}))
+   , genres AS (SELECT DISTINCT artist_id, store__genre_store_id, genre_parent
+                FROM
+                  artist_candidates
+                  NATURAL LEFT JOIN artist__genre
+                  NATURAL LEFT JOIN genre
+                  NATURAL LEFT JOIN store__genre
+                  NATURAL LEFT JOIN store
+                WHERE store_url = ${storeUrl})
+   -- TODO: this limits the genre hierarchy to two levels
+   , parent_genres AS (SELECT DISTINCT artist_id, sg.store__genre_store_id
+                       FROM
+                         genres gs
+                         JOIN genre g ON (g.genre_id = gs.genre_parent)
+                         JOIN store__genre sg ON (sg.genre_id = g.genre_id)
+                         NATURAL JOIN store
+                       WHERE store_url = ${storeUrl})
+   , all_genres AS (SELECT artist_id, store__genre_store_id
+                    FROM
+                      genres
+                    UNION ALL
+                    SELECT artist_id, store__genre_store_id
+                    FROM
+                      parent_genres)
+SELECT artist_id
+FROM
+  artist_candidates
+  NATURAL LEFT JOIN all_genres
+GROUP BY artist_id
+ORDER BY COUNT(store__genre_store_id = ANY (${genreIds})) DESC
         `
       )
       .then(getArtistIdFromResult)
@@ -287,6 +317,25 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
     `
   )
 
+  const storeId = await queryStoreId(tx, storeUrl)
+
+  if (artist.genres) {
+    for (const genre of artist.genres) {
+      // TODO: enough that the genreIds are queried as they should already be in the db?
+      const { genreId } = await ensureGenreExists(tx, storeId, {
+        storeGenreStoreId: genre.id,
+        storeGenreName: genre.name,
+        storeGenreUrl: genre.url
+      })
+
+      await tx.queryAsync(sql`-- ensureArtistExists INSERT artist__genre
+INSERT INTO artist__genre (artist_id, genre_id)
+VALUES (${artistId}, ${genreId})
+ON CONFLICT DO NOTHING
+      `)
+    }
+  }
+
   const res = await tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- ensureArtistExists SELECT store__artist_id AS "storeArtistId" FROM store__artist
@@ -307,6 +356,69 @@ const getIsrcDebugData = async (isrc, storeTrackStoreId) =>
     -- getIsrcDebugData
     SELECT (isrc_conflict_debug(${isrc}, ${storeTrackStoreId})).*
   `)
+
+const ensureGenreExists = async (
+  tx,
+  storeId,
+  { storeGenreStoreId, storeGenreName, storeGenreUrl, parentGenreId, parentStoreGenreStoreId }
+) => {
+  let genreId, storeGenreId, storeGenreParentId
+  const storeGenreDetails = await tx.queryRowsAsync(sql`-- ensureGenreExists SELECT
+SELECT genre_id AS "genreId", store__genre_id AS "storeGenreId", store__genre_parent_id AS "storeGenreParentId"
+FROM
+  store__genre
+WHERE store_id = ${storeId}
+  AND store__genre_store_id = ${storeGenreStoreId}
+`)
+
+  if (storeGenreDetails.length === 0) {
+    const genreDetails = await tx.queryRowsAsync(sql`-- ensureGenreExists SELECT genre_id
+SELECT genre_id AS "genreId"
+FROM
+  genre
+WHERE genre_name = ${storeGenreName}
+`)
+    console.log({ genreDetails })
+    genreId = genreDetails[0]?.genreId
+
+    if (!genreId) {
+      const insertedGenre = await tx.queryRowsAsync(sql`-- ensureGenreExists INSERT genre
+INSERT INTO genre (genre_name, genre_parent)
+VALUES (${storeGenreName}, ${parentGenreId})
+RETURNING genre_id AS "genreId"
+`)
+      genreId = insertedGenre[0].genreId
+    }
+
+    const insertedStoreGenre = await tx.queryRowsAsync(sql`-- ensureGenreExists INSERT
+INSERT INTO store__genre (store__genre_name, store__genre_store_id, store__genre_url, store__genre_parent_id, genre_id, store_id)
+VALUES (${storeGenreName}, ${storeGenreStoreId}, ${storeGenreUrl}, ${parentStoreGenreStoreId}, ${genreId}, ${storeId})
+RETURNING store__genre_id AS "storeGenreId", store__genre_parent_id AS "storeGenreParentId"
+`)
+
+    storeGenreId = insertedStoreGenre[0].storeGenreId
+    storeGenreParentId = insertedStoreGenre[0].storeGenreParentId
+  } else {
+    genreId = storeGenreDetails[0].genreId
+    storeGenreId = storeGenreDetails[0].storeGenreId
+    storeGenreParentId = storeGenreDetails[0].storeGenreParentId
+  }
+
+  return { genreId, storeGenreId, storeGenreParentId }
+}
+
+const queryStoreId = async (tx, storeUrl) =>
+  await tx
+    .queryRowsAsync(
+      // language=PostgreSQL
+      sql`-- addStoreTrack SELECT store_id
+      SELECT store_id
+      FROM
+        store
+      WHERE store_url = ${storeUrl}
+      `
+    )
+    .then(getFieldFromResult('store_id'))
 
 module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists, track, sourceId) => {
   const getTrackIdFromResult = getFieldFromResult('track_id')
@@ -434,17 +546,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
     )
   }
 
-  const storeId = await tx
-    .queryRowsAsync(
-      // language=PostgreSQL
-      sql`-- addStoreTrack SELECT store_id
-      SELECT store_id
-      FROM
-        store
-      WHERE store_url = ${storeUrl}
-      `
-    )
-    .then(getFieldFromResult('store_id'))
+  const storeId = await queryStoreId(tx, storeUrl)
 
   const [storeTrackDetails] = await tx.queryRowsAsync(
     // language=PostgreSQL
@@ -665,6 +767,33 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
       ON CONFLICT ON CONSTRAINT track__key_track_id_key_id_key DO NOTHING
       `
     )
+  }
+
+  if (track.genres) {
+    let genres = []
+    for (const genre of track.genres) {
+      const { genreId } = await ensureGenreExists(tx, storeId, {
+        storeGenreStoreId: genre.id,
+        storeGenreName: genre.name,
+        storeGenreUrl: genre.url
+      })
+      genres.push(genreId)
+    }
+
+    for (const genreId of genres) {
+      await tx.queryAsync(sql`-- addStoreTrack INSERT INTO track__genre
+INSERT INTO track__genre (track_id, genre_id)
+VALUES (${trackId}, ${genreId})
+ON CONFLICT DO NOTHING
+`)
+      for (const { id: artistId } of artists) {
+        await tx.queryAsync(sql`-- addStoreTrack INSERT INTO artist__genre
+INSERT INTO artist__genre (artist_id, genre_id)
+VALUES (${artistId}, ${genreId})
+ON CONFLICT DO NOTHING
+`)
+      }
+    }
   }
 
   tx.queryAsync(

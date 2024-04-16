@@ -289,6 +289,11 @@
     white-space: pre;
   }
 
+  .genre-cell::before {
+    content: 'Genres: ';
+    white-space: pre;
+  }
+
   .score-cell button::before {
     content: 'Score: ';
     white-space: pre;
@@ -460,7 +465,16 @@
 
   .key-cell,
   .bpm-cell {
+    width: 25%;
+  }
+
+  .genre-cell {
     width: 50%;
+  }
+
+  .key-cell,
+  .bpm-cell,
+  .genre-cell {
     display: inline;
     text-align: center;
   }
@@ -518,7 +532,7 @@
 
 @media (min-width: 1280px) {
   .track-details-left {
-    width: 70%;
+    width: 60%;
   }
 
   .track-details-center {
@@ -526,6 +540,6 @@
   }
 
   .track-details-right {
-    width: 20%;
+    width: 30%;
   }
 }

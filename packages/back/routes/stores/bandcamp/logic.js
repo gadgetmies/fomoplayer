@@ -44,8 +44,10 @@ module.exports.getPreviewDetails = async previewId => {
   }
 }
 
-module.exports.getArtistName = async ({ url }) => {
-  const { name } = await getArtistAsync(url)
+const getArtistDetails = (module.exports.getArtistDetails = async url => ({ url, ...(await getArtistAsync(url)) }))
+
+module.exports.getArtistName = async url => {
+  const { name } = await getArtistDetails(url)
   return name
 }
 

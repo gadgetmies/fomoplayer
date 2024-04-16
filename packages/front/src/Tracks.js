@@ -123,6 +123,7 @@ class Tracks extends Component {
             published,
             added,
             keys,
+            genres,
             score,
             score_details,
             heard,
@@ -155,6 +156,7 @@ class Tracks extends Component {
               added={added}
               keys={keys}
               bpms={stores.map(R.prop('bpm'))}
+              genres={genres}
               score={score}
               scoreDetails={score_details}
               trackStores={stores}
@@ -311,6 +313,7 @@ class Tracks extends Component {
                   )}
                 </div>
                 <div className={'track-details-right track-details-content'}>
+                  <div className={'genre-cell track-table-cell'}>Genre</div>
                   <div className={'bpm-cell track-table-cell'}>BPM</div>
                   <div className={'key-cell track-table-cell'}>Key</div>
                 </div>
