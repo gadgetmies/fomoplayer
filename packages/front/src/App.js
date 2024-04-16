@@ -669,7 +669,7 @@ class App extends Component {
                   track={this.state.ignorePopupTrack}
                   onCloseClicked={this.closePopups.bind(this)}
                   onIgnoreArtistOnLabels={this.ignoreArtistsByLabels.bind(this)}
-                  onIgnoreStoreArtist={this.ignoreArtist.bind(this)}
+                  onIgnoreArtist={this.ignoreArtist.bind(this)}
                   onIgnoreLabel={this.ignoreLabel.bind(this)}
                   onIgnoreRelease={this.ignoreRelease.bind(this)}
                   onRefreshAndCloseClicked={this.refreshListAndClosePopups.bind(this)}
