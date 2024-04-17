@@ -320,7 +320,7 @@ class Tracks extends Component {
               </th>
               {this.props.mode === 'app' && (
                 <th className={'follow-ignore-cart-cell tracks-cell'}>
-                  {this.props.listState === 'new' ? <div className={'score-cell track-table-cell'}>Score</div> : null}
+                  <div className={'score-cell track-table-cell'}>{this.props.listState === 'new' && 'Score'}</div>
                   <div className={'cart-cell track-table-cell'}>Cart</div>
                 </th>
               )}
