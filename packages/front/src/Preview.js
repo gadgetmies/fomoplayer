@@ -257,7 +257,11 @@ class Preview extends Component {
                       <br />
                       <span className="preview_label">BPM:</span>{' '}
                       <span className="preview_detail">
-                        {this.props.currentTrack.stores.map(R.prop('bpm')).filter(R.identity).join(', ') || '-'}
+                        {this.props.currentTrack.stores
+                          .map(R.prop('bpm'))
+                          .filter(R.identity)
+                          .map(Math.round)
+                          .join(', ') || '-'}
                       </span>
                       <br />
                       <span className="preview_label">Key:</span>{' '}
