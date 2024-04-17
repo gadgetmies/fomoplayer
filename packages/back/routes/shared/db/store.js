@@ -4,7 +4,7 @@ const sql = require('sql-template-strings')
 const { apiURL } = require('../../../config')
 const logger = require('fomoplayer_shared').logger(__filename)
 
-module.exports.queryStoreId = storeName =>
+module.exports.queryStoreId = (storeName) =>
   pg
     .queryRowsAsync(
       //language=PostgreSQL
@@ -12,11 +12,11 @@ module.exports.queryStoreId = storeName =>
       SELECT store_id
       FROM
         store
-      WHERE store_name = ${storeName}`
+      WHERE store_name = ${storeName}`,
     )
     .then(([{ store_id }]) => store_id)
 
-module.exports.queryStoreName = async storeId => {
+module.exports.queryStoreName = async (storeId) => {
   const [{ store_name }] = await pg.queryRowsAsync(
     //language=PostgreSQL
     sql`-- queryStoreName
@@ -24,7 +24,7 @@ module.exports.queryStoreName = async storeId => {
     FROM
       store
     WHERE store_id = ${storeId}
-    `
+    `,
   )
   return store_name
 }
@@ -49,10 +49,10 @@ module.exports.queryStoreRegexes = async () =>
     FROM
       store
       NATURAL JOIN store_playlist_type
-    GROUP BY 1, 2, 3, store_artist_regex, store_label_regex`
+    GROUP BY 1, 2, 3, store_artist_regex, store_label_regex`,
   )
 
-const getFieldFromResult = field => R.path([0, field])
+const getFieldFromResult = (field) => R.path([0, field])
 
 async function queryStoreLabelIdForUrl(tx, url) {
   return await tx.queryRowsAsync(
@@ -63,7 +63,7 @@ async function queryStoreLabelIdForUrl(tx, url) {
       store__label
       NATURAL JOIN store
     WHERE store__label_url = ${url}
-    `
+    `,
   )
 }
 
@@ -77,7 +77,7 @@ module.exports.ensureLabelExists = async (tx, storeUrl, label, sourceId) => {
       FROM
         label
       WHERE LOWER(label_name) = LOWER(${label.name}) -- TODO: Use improved heuristic
-      `
+      `,
     )
     .then(getLabelIdFromResult)
 
@@ -92,7 +92,7 @@ module.exports.ensureLabelExists = async (tx, storeUrl, label, sourceId) => {
           (label_name, label_source)
         VALUES (${label.name}, ${sourceId})
         RETURNING label_id
-        `
+        `,
       )
       .then(getLabelIdFromResult)
   }
@@ -116,7 +116,7 @@ module.exports.ensureLabelExists = async (tx, storeUrl, label, sourceId) => {
       WHERE store_url = ${storeUrl}
       ON CONFLICT ON CONSTRAINT store__label_store__label_store_id_store_id_key
         DO UPDATE SET store__label_url = excluded.store__label_url
-      `
+      `,
     )
   }
 
@@ -141,7 +141,7 @@ module.exports.ensureReleaseExists = async (tx, storeUrl, release, artists, sour
       WHERE (store__release_store_id = ${release.id} AND store_url = ${storeUrl})
          OR store__release_url = ${release.url}
          OR release_catalog_number = ${release.catalog_number} -- TODO: is this safe?
-      `
+      `,
     )
     .then(getReleaseIdFromResult)
 
@@ -161,7 +161,7 @@ WHERE
 GROUP BY 1
 HAVING
     ARRAY_AGG(artist_id) @> ${R.pluck('id', artists)}
-        `
+        `,
       )
       .then(getReleaseIdFromResult)
   }
@@ -176,7 +176,7 @@ HAVING
           (release_name, release_source, release_catalog_number)
         VALUES (${release.title}, ${sourceId}, ${release.catalog_number})
         RETURNING release_id
-        `
+        `,
       )
       .then(getReleaseIdFromResult)
   } else {
@@ -186,7 +186,7 @@ HAVING
       UPDATE release
       SET release_catalog_number = COALESCE(release_catalog_number, ${release.catalog_number})
       WHERE release_id = ${releaseId}
-      `
+      `,
     )
   }
 
@@ -207,7 +207,7 @@ HAVING
     ON CONFLICT ON CONSTRAINT store__release_store_id_store__release_store_id_key
       DO UPDATE SET store__release_url = ${release.url}
                   , release_id         = ${releaseId}
-    `
+    `,
   )
 
   return releaseId
@@ -226,7 +226,7 @@ module.exports.ensureArtistExists = async (tx, storeUrl, artist, sourceId) => {
         NATURAL JOIN store
       WHERE store_url = ${storeUrl}
         AND (store__artist_store_id = ${artist.id} OR store__artist_url = ${artist.url}) -- TODO: add name matching for bandcamp support?
-      `
+      `,
     )
     .then(getArtistIdFromResult)
 
@@ -270,7 +270,7 @@ FROM
   NATURAL LEFT JOIN all_genres
 GROUP BY artist_id
 ORDER BY COUNT(store__genre_store_id = ANY (${genreIds})) DESC
-        `
+        `,
       )
       .then(getArtistIdFromResult)
   }
@@ -286,7 +286,7 @@ ORDER BY COUNT(store__genre_store_id = ANY (${genreIds})) DESC
           (artist_name, artist_source)
         VALUES (${artist.name}, ${sourceId})
         RETURNING artist_id
-        `
+        `,
       )
       .then(getArtistIdFromResult)
   }
@@ -336,7 +336,7 @@ WHERE store_url = ${storeUrl}
       const { genreId } = await ensureGenreExists(tx, storeId, {
         storeGenreStoreId: genre.id,
         storeGenreName: genre.name,
-        storeGenreUrl: genre.url
+        storeGenreUrl: genre.url,
       })
 
       await tx.queryAsync(sql`-- ensureArtistExists INSERT artist__genre
@@ -356,7 +356,7 @@ ON CONFLICT DO NOTHING
       NATURAL JOIN store
     WHERE store__artist_store_id = ${artist.id} OR 
           store__artist_url = ${artist.url}
-    `
+    `,
   )
 
   return { id: artistId, storeArtistId: res[0]?.storeArtistId, role: artist.role }
@@ -371,7 +371,7 @@ const getIsrcDebugData = async (isrc, storeTrackStoreId) =>
 const ensureGenreExists = async (
   tx,
   storeId,
-  { storeGenreStoreId, storeGenreName, storeGenreUrl, parentGenreId, parentStoreGenreStoreId }
+  { storeGenreStoreId, storeGenreName, storeGenreUrl, parentGenreId, parentStoreGenreStoreId },
 ) => {
   let genreId, storeGenreId, storeGenreParentId
   const storeGenreDetails = await tx.queryRowsAsync(sql`-- ensureGenreExists SELECT
@@ -427,7 +427,7 @@ const queryStoreId = async (tx, storeUrl) =>
       FROM
         store
       WHERE store_url = ${storeUrl}
-      `
+      `,
     )
     .then(getFieldFromResult('store_id'))
 
@@ -451,14 +451,14 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
           OR release_isrc = ${track.release.isrc})
         AND release__track_track_number = ${track.track_number})
        OR track_isrc = ${track.isrc}
-    `
+    `,
   )
 
   if (res.length > 1) {
     logger.info(
       `Multiple tracks (${res.map(R.prop('track_id')).join(', ')}) found with store id: ${track.id} or ISRC: ${
         track.isrc
-      } or catalog number: ${track.release.catalog_number} and track number: ${track.track_number}`
+      } or catalog number: ${track.release.catalog_number} and track number: ${track.track_number}`,
     )
   }
 
@@ -466,11 +466,11 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
 
   if (trackId) {
     logger.info(
-      `Track ${trackId} found with store id: ${track.id} or ISRC: ${track.isrc} or catalog number: ${track.release.catalog_number} and track number: ${track.track_number}`
+      `Track ${trackId} found with store id: ${track.id} or ISRC: ${track.isrc} or catalog number: ${track.release.catalog_number} and track number: ${track.track_number}`,
     )
   } else {
     logger.info(
-      `Track not found with with ISRC: ${track.isrc}, catalog number: ${track.release.catalog_number} and track number: ${track.track_number}, searching with name`
+      `Track not found with with ISRC: ${track.isrc}, catalog number: ${track.release.catalog_number} and track number: ${track.track_number}, searching with name`,
     )
     trackId = await tx
       .queryRowsAsync(
@@ -487,7 +487,7 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
         GROUP BY track_id
         HAVING ARRAY_AGG(artist_id ORDER BY artist_id) = ${R.pluck('id', sortedArtists)}
            AND ARRAY_AGG(track__artist_role ORDER BY artist_id) = ${R.pluck('role', sortedArtists)}
-        `
+        `,
       )
       .then(getTrackIdFromResult)
   }
@@ -504,7 +504,7 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
           (track_title, track_version, track_duration_ms, track_isrc, track_source)
           VALUES (${track.title}, ${track.version}, ${track.duration_ms}, ${track.isrc}, ${sourceId})
           RETURNING track_id
-          `
+          `,
         )
         .then(getTrackIdFromResult)
       logger.debug(`Inserted new track with id: ${trackId}`)
@@ -521,13 +521,13 @@ module.exports.addStoreTrack = async (tx, storeUrl, labelId, releaseId, artists,
         SET track_duration_ms = COALESCE(track_duration_ms, ${track.duration_ms})
           , track_isrc        = COALESCE(track_isrc, ${track.isrc})
         WHERE track_id = ${trackId}
-        `
+        `,
       )
     } catch (e) {
       const debugData = await getIsrcDebugData(track.isrc, track.id)
       const [
         { track_id: firstId, track_title: firstTitle, track_version: firstVersion },
-        { track_id: secondId, track_title: secondTitle, track_version: secondVersion }
+        { track_id: secondId, track_title: secondTitle, track_version: secondVersion },
       ] = debugData
       logger.error(
         `Updating track details failed: ${e.toString()}, 
@@ -538,7 +538,7 @@ Details: ${JSON.stringify(debugData, null, 2)}
 
 Merge:
 https://${apiURL}/admin/merge-tracks/${firstId}/to/${secondId} (${firstTitle} (${firstVersion}) -> ${secondTitle} (${secondVersion}))
-https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (${secondVersion}) -> ${firstTitle} (${firstVersion}))`
+https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (${secondVersion}) -> ${firstTitle} (${firstVersion}))`,
       )
       throw e
     }
@@ -553,7 +553,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
         (track_id, artist_id, track__artist_role)
       VALUES (${trackId}, ${id}, ${role})
       ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING
-      `
+      `,
     )
   }
 
@@ -566,7 +566,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
     FROM
       store__track
     WHERE store__track_store_id = ${track.id}
-    `
+    `,
   )
 
   if (storeTrackDetails && track.track_number) {
@@ -588,7 +588,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
                         WHERE release_id = ${releaseId}
                           AND rt.release__track_track_number = ${track.track_number})
       RETURNING store__track_id
-        `
+        `,
     )
 
     if (res.length === 0) {
@@ -604,7 +604,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
       logger.warn(`Unable to set the track number for store__track: store: ${storeId}, store track: ${track.id}`, {
         track_id,
         release_id,
-        store__track_id
+        store__track_id,
       })
     }
   } else {
@@ -626,7 +626,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
             , store__track_published     = excluded.store__track_published
             , store__track_bpm           = excluded.store__track_bpm
             , store__track_store_details = excluded.store__track_store_details
-        `
+        `,
       )
     } catch (e) {
       logger.error(`addStoreTrack INSERT INTO store__track failed for track: ${e.toString()}, ${JSON.stringify(track)}`)
@@ -645,7 +645,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
       WHERE store_id = ${storeId}
         AND track_id = ${trackId}
         AND store__track_store_id = ${track.id}
-      `
+      `,
     )
     .then(getFieldFromResult('store__track_id'))
 
@@ -659,7 +659,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
       , store__track_preview_end_ms, store__track_preview_source)
       VALUES (${storeTrackId}, ${preview.url}, ${preview.format}, ${preview.start_ms}, ${preview.end_ms}, ${sourceId})
       ON CONFLICT DO NOTHING
-      `
+      `,
     )
     const previewId = await tx
       .queryRowsAsync(
@@ -670,7 +670,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
           store__track_preview
         WHERE store__track_preview_url = ${preview.url}
           AND store__track_id = ${storeTrackId}
-        `
+        `,
       )
       .then(getFieldFromResult('store__track_preview_id'))
 
@@ -683,13 +683,14 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
         (store__track_preview_id, store__track_preview_waveform_url, store__track_preview_waveform_source)
         VALUES (${previewId}, ${track.waveform.url}, ${sourceId})
         ON CONFLICT ON CONSTRAINT store__track_preview_waveform_store__track_preview_id_url_key DO NOTHING
-        `
+        `,
       )
     }
   }
 
   if (releaseId) {
-    const releaseTrackNumberDetails = await tx.queryRowsAsync(sql`-- addStoreTrack SELECT track_id AS "existingTrackIdWithTrackNumber"
+    const releaseTrackNumberDetails =
+      await tx.queryRowsAsync(sql`-- addStoreTrack SELECT track_id AS "existingTrackIdWithTrackNumber"
 SELECT track_id AS "existingTrackIdWithTrackNumber"
 FROM
   release__track rt
@@ -700,7 +701,7 @@ WHERE release_id = ${releaseId}
     if (releaseTrackNumberDetails.length > 0) {
       const [{ existingTrackIdWithTrackNumber }] = res
       logger.warn(
-        `Track number ${track.track_number} already exists for release ${releaseId}, track ${existingTrackIdWithTrackNumber}`
+        `Track number ${track.track_number} already exists for release ${releaseId}, track ${existingTrackIdWithTrackNumber}`,
       )
 
       delete track.track_number
@@ -714,7 +715,7 @@ WHERE release_id = ${releaseId}
         release__track
       WHERE release_id = ${releaseId}
         AND track_id = ${trackId}
-      `
+      `,
     )
 
     if (!releaseTrackDetails) {
@@ -726,7 +727,7 @@ WHERE release_id = ${releaseId}
         INTO release__track
           (release_id, track_id, release__track_track_number)
         VALUES (${releaseId}, ${trackId}, ${track.track_number})
-        `
+        `,
       )
     } else {
       console.log('Updating release track', { releaseId, trackId, number: track.track_number })
@@ -734,7 +735,7 @@ WHERE release_id = ${releaseId}
       const { trackNumber } = releaseTrackDetails
       if (track.track_number !== undefined && trackNumber !== track.track_number) {
         logger.warn(
-          `Overwriting track number for release (${releaseId}). Previous: ${trackNumber}, new: ${track.track_number}`
+          `Overwriting track number for release (${releaseId}). Previous: ${trackNumber}, new: ${track.track_number}`,
         )
       }
 
@@ -745,7 +746,7 @@ WHERE release_id = ${releaseId}
           SET release__track_track_number = COALESCE(${track.track_number}, release__track.release__track_track_number)
           WHERE track_id = ${trackId}
             AND release_id = ${releaseId}
-          `
+          `,
       )
     }
   }
@@ -760,7 +761,7 @@ WHERE release_id = ${releaseId}
         (track_id, label_id)
       VALUES (${trackId}, ${labelId})
       ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING
-      `
+      `,
     )
   }
 
@@ -778,7 +779,7 @@ WHERE release_id = ${releaseId}
         key_name
       WHERE key_name = ${track.key}
       ON CONFLICT ON CONSTRAINT track__key_track_id_key_id_key DO NOTHING
-      `
+      `,
     )
   }
 
@@ -788,7 +789,7 @@ WHERE release_id = ${releaseId}
       const { genreId } = await ensureGenreExists(tx, storeId, {
         storeGenreStoreId: genre.id,
         storeGenreName: genre.name,
-        storeGenreUrl: genre.url
+        storeGenreUrl: genre.url,
       })
       genres.push(genreId)
     }
@@ -817,7 +818,7 @@ ON CONFLICT DO NOTHING
     ON CONFLICT ON CONSTRAINT track_details_track_id_key DO UPDATE
       SET track_details         = EXCLUDED.track_details
         , track_details_updated = NOW()
-    `
+    `,
   )
 
   return trackId
@@ -844,5 +845,5 @@ module.exports.queryFollowRegexes = (store = undefined) =>
         ORDER BY store_playlist_type_priority)) AS a
     WHERE ${store}::TEXT IS NULL
        OR store_name = ${store}
-    `
+    `,
   )

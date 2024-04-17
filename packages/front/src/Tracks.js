@@ -21,7 +21,7 @@ class Tracks extends Component {
       currentAboveScreen: false,
       createdNotifications: new Set(),
       modifyingNotification: false,
-      fetchingCartDetails: false
+      fetchingCartDetails: false,
     }
     this.handleScroll = this.handleScroll.bind(this)
   }
@@ -65,14 +65,14 @@ class Tracks extends Component {
         this.props.searchError !== undefined
           ? this.props.searchError
           : this.props.searchInProgress
-          ? 'Searching...'
-          : 'No results',
+            ? 'Searching...'
+            : 'No results',
       carts:
         this.props.carts.length === 0
           ? 'Loading carts...'
           : tracks.length === 0
-          ? 'Cart empty'
-          : 'No tracks matching filters',
+            ? 'Cart empty'
+            : 'No tracks matching filters',
       new: (
         <>
           No tracks available. Perhaps you need to{' '}
@@ -83,7 +83,7 @@ class Tracks extends Component {
         </>
       ),
       heard: 'No tracks played',
-      recent: 'No tracks added'
+      recent: 'No tracks added',
     }
     const defaultCart = this.props.carts.find(R.prop('is_default'))
 
@@ -128,9 +128,9 @@ class Tracks extends Component {
             score_details,
             heard,
             stores,
-            version
+            version,
           } = track
-          const inCarts = this.props.carts.filter(cart => cart.tracks?.find(R.propEq('id', id)))
+          const inCarts = this.props.carts.filter((cart) => cart.tracks?.find(R.propEq('id', id)))
           const selectedCartId = this.props.selectedCart?.id
           const selectedCartIsPurchased = this.props.selectedCart?.is_purchased
           return (
@@ -197,7 +197,7 @@ class Tracks extends Component {
               onIgnoreArtistsByLabels={() =>
                 this.props.onIgnoreArtistsByLabels({
                   artistIds: artists.map(R.prop('id')),
-                  labelIds: labels.map(R.prop('id'))
+                  labelIds: labels.map(R.prop('id')),
                 })
               }
               onCartButtonClick={this.props.onCartButtonClick}
@@ -252,7 +252,7 @@ class Tracks extends Component {
                       className={'button button-push_button button-push_button-primary button-push_button-small'}
                       id="cart-select"
                       value={this.props.selectedCart?.uuid}
-                      onChange={async e => {
+                      onChange={async (e) => {
                         this.setState({ fetchingCartDetails: true })
                         const cartUuid = e.target.value
                         this.props.history.push(`/carts/${cartUuid}`)
@@ -286,7 +286,7 @@ class Tracks extends Component {
           </div>
         )}
         {this.props.loading && (
-          <div onMouseDown={e => e.stopPropagation()} className="loading-overlay">
+          <div onMouseDown={(e) => e.stopPropagation()} className="loading-overlay">
             <Spinner size="large" />
           </div>
         )}
@@ -328,10 +328,12 @@ class Tracks extends Component {
                 <div className={'open-cell track-table-cell popup_container'} style={{ padding: 0, margin: 4 }}>
                   <div className={'popup-anchor'}>
                     <span
-                      className={` ${this.props.listState === 'carts' &&
+                      className={` ${
+                        this.props.listState === 'carts' &&
                         this.props.enabledStores &&
                         this.props.enabledStores.length < this.props.stores.length &&
-                        'filter-active'}`}
+                        'filter-active'
+                      }`}
                     >
                       Open {this.props.listState === 'carts' && <FontAwesomeIcon icon="caret-down" />}
                     </span>
@@ -397,7 +399,7 @@ class Tracks extends Component {
                 style={{
                   width: '100%',
                   display: this.state.currentAboveScreen ? 'block' : 'none',
-                  textAlign: 'center'
+                  textAlign: 'center',
                 }}
               >
                 {scrollToCurrentButton}
@@ -406,9 +408,9 @@ class Tracks extends Component {
             {this.renderTracks(
               this.props.listState === 'carts'
                 ? this.props.tracks.filter(({ stores }) =>
-                    this.props.enabledStores?.some(storeName => stores.find(R.propEq('name', storeName)))
+                    this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
                   )
-                : this.props.tracks
+                : this.props.tracks,
             )}
             {['new', 'recent', 'heard'].includes(this.props.listState) ? (
               <tr style={{ display: 'flex' }}>
@@ -430,7 +432,7 @@ class Tracks extends Component {
                 style={{
                   width: '100%',
                   display: this.state.currentBelowScreen ? 'block' : 'none',
-                  textAlign: 'center'
+                  textAlign: 'center',
                 }}
               >
                 {scrollToCurrentButton}
