@@ -8926,10 +8926,10 @@ nightwatch-axe-verbose@^2.3.0:
   dependencies:
     axe-core "^4.8.3"
 
-nightwatch@^3.3.5:
-  version "3.4.1"
-  resolved "https://registry.yarnpkg.com/nightwatch/-/nightwatch-3.4.1.tgz#980c5b490b2acde523ea48024a6567af9a1b8f81"
-  integrity sha512-IbrlmCmid+4qC85c7DHJWdqNDKB2O0qklxrWIDh+32/XXXJSuZ/Da/STFC2x60s5rENGUGk43G/fheULwlT7Hw==
+nightwatch@^3.6.0:
+  version "3.6.0"
+  resolved "https://registry.yarnpkg.com/nightwatch/-/nightwatch-3.6.0.tgz#926c7f3dab0c5a146eb45b63d05d2147d8eb6065"
+  integrity sha512-sKadzS9wRSiYpeAmDRlSZFgI9V0VSVtfwe0knk5pWaiQev0AsKw0RTn53JFdkgaH87tPhqmFZVKerrcZDVS49A==
   dependencies:
     "@nightwatch/chai" "5.0.3"
     "@nightwatch/html-reporter-template" "^0.3.0"
