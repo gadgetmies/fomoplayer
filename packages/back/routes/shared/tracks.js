@@ -12,13 +12,13 @@ const { addStoreTrack, ensureArtistExists, ensureReleaseExists, ensureLabelExist
 const {
   addPurchasedStoreTrackToUser,
   addTrackToUser: addTrackToUserDb,
-  artistOnLabelInIgnore
+  artistOnLabelInIgnore,
 } = require('../users/db.js')
 const { apiURL } = require('../../config.js')
 const { queryTracksForStoreIds, queryTrackDetails, queryStoredTracksForUrls } = require('./db/tracks')
 const { queryLabelForRelease } = require('./db/release')
 
-const getUsersFollowingArtist = async storeArtistId => {
+const getUsersFollowingArtist = async (storeArtistId) => {
   const [{ users }] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--getUsersFollowingArtist
@@ -28,13 +28,13 @@ FROM
   store__artist_watch__user
   NATURAL JOIN store__artist_watch
 WHERE
-  store__artist_id = ${storeArtistId}`
+  store__artist_id = ${storeArtistId}`,
   )
 
   return users
 }
 
-const getUsersFollowingLabel = (module.exports.getUsersFollowingLabel = async storeLabelId => {
+const getUsersFollowingLabel = (module.exports.getUsersFollowingLabel = async (storeLabelId) => {
   const [{ users }] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--getUsersFollowingLabel
@@ -44,13 +44,13 @@ FROM
   store__label_watch__user
   NATURAL JOIN store__label_watch
 WHERE
-  store__label_id = ${storeLabelId}`
+  store__label_id = ${storeLabelId}`,
   )
 
   return users || []
 })
 
-const getUsersFollowingPlaylist = async playlistId => {
+const getUsersFollowingPlaylist = async (playlistId) => {
   const [{ users }] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--getUsersFollowingArtist
@@ -59,14 +59,14 @@ SELECT
 FROM
   user__playlist_watch
 WHERE
-  playlist_id = ${playlistId}`
+  playlist_id = ${playlistId}`,
   )
 
   return users
 }
 
-const getStoreModule = function(storeUrl) {
-  const module = Object.values(storeModules).find(module => module.logic.storeUrl === storeUrl)
+const getStoreModule = function (storeUrl) {
+  const module = Object.values(storeModules).find((module) => module.logic.storeUrl === storeUrl)
   if (!module) {
     throw new Error('Store not found for url')
   }
@@ -80,7 +80,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   userIds,
   sourceId,
   skipOld = true,
-  type = 'tracks'
+  type = 'tracks',
 ) => {
   logger.debug('Start processing received tracks', { userIds, storeUrl, skipOld, type })
 
@@ -111,7 +111,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
     }
   }
 
-  await using(pg.getTransaction(), async tx => {
+  await using(pg.getTransaction(), async (tx) => {
     await updateIgnoresInUserTracks(tx, userIds)
   })
 
@@ -128,7 +128,7 @@ const addTrackToUser = (module.exports.addTrackToUser = async (tx, userId, artis
 
 const aYear = 1000 * 60 * 60 * 24 * 30 * 12
 const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld = true, type = 'tracks') => {
-  return using(pg.getTransaction(), async tx => {
+  return using(pg.getTransaction(), async (tx) => {
     let labelId
     let releaseId
 
@@ -151,7 +151,7 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
       }
 
       if (releaseId) {
-        labelId = (await queryLabelForRelease(tx, releaseId) || labelId)
+        labelId = (await queryLabelForRelease(tx, releaseId)) || labelId
       }
 
       const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, sourceId)
