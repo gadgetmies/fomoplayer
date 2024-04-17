@@ -72,7 +72,8 @@ const getDetails = (uri, callback) =>
           } catch (e) {
             console.error(`Unable to find image for uri: ${uri}`)
           }
-          return callback(null, { name, img })
+          const [_, type, slug, id] = uri.match(/^https:\/\/www\.beatport\.com\/[^/]*\/[^/]*\/([^/]+)/)
+          return callback(null, { name, img, type, id, slug })
         } else {
           const message = `Request returned error status. URL: ${uri}`
           console.error(message)
