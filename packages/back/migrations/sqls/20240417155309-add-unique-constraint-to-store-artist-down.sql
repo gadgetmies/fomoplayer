@@ -1,0 +1,1 @@
+ALTER TABLE store__artist DROP CONSTRAINT store__artist_store_id_artist_id_key;
