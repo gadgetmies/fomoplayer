@@ -291,31 +291,42 @@ ORDER BY COUNT(store__genre_store_id = ANY (${genreIds})) DESC
       .then(getArtistIdFromResult)
   }
 
-  await tx.queryAsync(
-    // language=PostgreSQL
-    sql`-- ensureArtistExists INSERT INTO store__artist
-    INSERT
-    INTO store__artist
-    (store__artist_store_id, store__artist_url, store_id, artist_id, store__artist_source)
-    SELECT ${artist.id}
-         , ${artist.url}
-         , store_id
-         , ${artistId}
-         , ${sourceId}
-    FROM
-      store
-    WHERE NOT EXISTS (SELECT store__artist_id
-                      FROM
-                        store__artist
-                        NATURAL JOIN store
-                      WHERE store__artist_store_id = ${artist.id}
-                        AND store_url = ${storeUrl})
-      AND store_url = ${storeUrl}
-    ON CONFLICT ON CONSTRAINT store__artist_store__artist_url_key DO UPDATE
-      SET store__artist_store_id = COALESCE(store__artist.store__artist_store_id, EXCLUDED.store__artist_store_id)
-        , store__artist_source   = ${sourceId}
-    `
-  )
+  const [previousDetails] = await tx.queryRowsAsync(sql`-- ensureArtistExists query previous id
+SELECT 1
+FROM
+  store__artist
+  NATURAL JOIN store
+WHERE store_url = ${storeUrl}
+  AND artist_id = ${artistId}
+`)
+
+  if (!previousDetails) {
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- ensureArtistExists INSERT INTO store__artist
+      INSERT
+      INTO store__artist
+      (store__artist_store_id, store__artist_url, store_id, artist_id, store__artist_source)
+      SELECT ${artist.id}
+           , ${artist.url}
+           , store_id
+           , ${artistId}
+           , ${sourceId}
+      FROM
+        store
+      WHERE NOT EXISTS (SELECT store__artist_id
+                        FROM
+                          store__artist
+                          NATURAL JOIN store
+                        WHERE store__artist_store_id = ${artist.id}
+                          AND store_url = ${storeUrl})
+        AND store_url = ${storeUrl}
+      ON CONFLICT ON CONSTRAINT store__artist_store__artist_url_key DO UPDATE
+        SET store__artist_store_id = COALESCE(store__artist.store__artist_store_id, EXCLUDED.store__artist_store_id)
+          , store__artist_source   = ${sourceId}
+      `,
+    )
+  }
 
   const storeId = await queryStoreId(tx, storeUrl)
 
