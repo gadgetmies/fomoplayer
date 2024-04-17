@@ -121,7 +121,7 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
     if (skipOld && Date.now() - new Date(track.published) > 2 * aYear) {
       logger.info(`Track too old, skipping: ${track.id}`)
     } else {
-      if (!labelId && track.label) {
+      if (track.label) {
         labelId = (await ensureLabelExists(tx, storeUrl, track.label, sourceId)).labelId
       }
 
