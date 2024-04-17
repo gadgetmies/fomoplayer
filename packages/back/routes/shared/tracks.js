@@ -92,7 +92,6 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   for (const track of filteredTracks) {
     try {
       const trackId = await addStoreTrackToUsers(storeUrl, userIds, track, sourceId, skipOld, type)
-      logger.debug(`Stored track: ${trackId}`)
       if (trackId) {
         storedTracks.push({ id: trackId })
       }
@@ -154,6 +153,7 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
         }
       }
 
+      logger.debug(`Stored track: ${trackId}`)
       return trackId
     }
     // TODO: Update materialized views
