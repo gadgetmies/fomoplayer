@@ -57,7 +57,7 @@ const getFieldFromResult = field => R.path([0, field])
 async function queryStoreLabelIdForUrl(tx, url) {
   return await tx.queryRowsAsync(
     // language=PostgreSQL
-    sql`-- ensureArtistExists SELECT store__label_id AS "storeLabelId" FROM store__label
+    sql`-- queryStoreLableIdForUrl SELECT store__label_id AS "storeLabelId" FROM store__label
     SELECT store__label_id AS "storeLabelId"
     FROM
       store__label
