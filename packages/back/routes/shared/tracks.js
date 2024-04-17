@@ -85,7 +85,11 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   logger.debug('Start processing received tracks', { userIds, storeUrl, skipOld, type })
 
   let storedTracks = await queryStoredTracksForUrls(tracks.map(R.prop('url')))
-  for (const track of tracks.filter(({ url }) => !storedTracks.find(R.propEq('url', url)))) {
+  const filteredTracks = tracks.filter(({ url }) => !storedTracks.find(R.propEq('url', url)))
+  if (filteredTracks.length === 0) {
+    logger.debug(`All tracks already exist in database (stored count: ${storedTracks.length})`)
+  }
+  for (const track of filteredTracks) {
     try {
       const trackId = await addStoreTrackToUsers(storeUrl, userIds, track, sourceId, skipOld, type)
       logger.debug(`Stored track: ${trackId}`)
@@ -195,6 +199,7 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   let users
   try {
     users = await getUsersFollowingLabel(details.storeLabelId)
+    logger.debug(`Found ${users.length} users following label ${details.url}`)
   } catch (e) {
     const error = ['Error fetching user follows for label', { error: e.toString(), sourceId, details }]
     logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
