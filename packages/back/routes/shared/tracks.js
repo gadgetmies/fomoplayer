@@ -89,6 +89,17 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   if (filteredTracks.length === 0) {
     logger.debug(`All tracks already exist in database (stored count: ${storedTracks.length})`)
   }
+
+  for (const track of storedTracks) {
+    logger.debug(`Adding ${storedTracks.length} existing tracks to ${userIds.length} users`)
+    for (const userId of userIds) {
+      await using(pg.getTransaction(), async (tx) => {
+        // TODO: this does not take into account the ignores: does it need to?
+        await addTrackToUserDb(tx, userId, track.id, sourceId)
+      })
+    }
+  }
+
   for (const track of filteredTracks) {
     try {
       const trackId = await addStoreTrackToUsers(storeUrl, userIds, track, sourceId, skipOld, type)
