@@ -137,7 +137,7 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
       }
 
       if (releaseId) {
-        labelId = await queryLabelForRelease(tx, releaseId)
+        labelId = (await queryLabelForRelease(tx, releaseId) || labelId)
       }
 
       const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, sourceId)
