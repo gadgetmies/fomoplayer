@@ -79,9 +79,9 @@ const getArtistDetails = (module.exports.getArtistDetails = async url => {
   const artistId = url.match('^https://(api|open).spotify.com/(v1/)?artists?/([0-9A-Za-z]+)')[3]
   const res = await spotifyApi.getArtist(artistId)
   const {
-    body: { name, genres }
+    body: { name, genres, id }
   } = res
-  return { name, genres: genres.map(name => ({ name, id: name })), url }
+  return { id, name, genres: genres.map(name => ({ name, id: name })), url }
 })
 
 const getArtistsDetails = async artistIds => {
