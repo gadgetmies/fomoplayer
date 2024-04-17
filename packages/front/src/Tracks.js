@@ -410,7 +410,7 @@ class Tracks extends Component {
                   )
                 : this.props.tracks
             )}
-            {this.props.listState === 'new' ? (
+            {['new', 'recent', 'heard'].includes(this.props.listState) ? (
               <tr style={{ display: 'flex' }}>
                 <td style={{ flex: 1 }}>
                   <SpinnerButton
