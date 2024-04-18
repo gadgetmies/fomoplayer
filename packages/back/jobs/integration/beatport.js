@@ -32,7 +32,7 @@ async function getArtistDetails() {
       store__artist
       NATURAL JOIN artist
       NATURAL JOIN store
-    WHERE artist.name = 'Noisia'
+    WHERE artist_name = 'Noisia'
       AND store_name = ${storeName}
   `)
   return details
@@ -46,7 +46,7 @@ async function getLabelDetails() {
       store__label
       NATURAL JOIN label
       NATURAL JOIN store
-    WHERE label.name = 'Vision Recordings'
+    WHERE label_name = 'Vision Recordings'
       AND store_name = ${storeName}
   `)
   return details
