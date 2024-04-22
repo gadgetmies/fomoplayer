@@ -301,6 +301,9 @@ WHERE store_url = ${storeUrl}
 `)
 
   if (!previousDetails) {
+    logger.debug(
+      `Store artist row does not exist for artist id: ${artistId}, store id: ${artist.id}, store url: ${storeUrl} -> inserting`,
+    )
     await tx.queryAsync(
       // language=PostgreSQL
       sql`-- ensureArtistExists INSERT INTO store__artist

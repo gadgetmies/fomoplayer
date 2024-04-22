@@ -28,11 +28,12 @@ module.exports.updateNotifications = async () => {
 
       if (entityDetailsMatch) {
         const [_, entityType, entityId] = entityDetailsMatch
-        const { name } = queryEntityDetails(entityType, entityId)
+        logger.info(`Querying entity details for ${entityType}:${entityId}`)
+        const { name } = await queryEntityDetails(entityType, entityId)
         followText = `${entityType}: "${name}"`
       }
 
-      const uriEncoded = encodeURIComponent(followText)
+      const uriEncoded = encodeURIComponent(text)
 
       logger.debug('Found tracks for search', { searchResults })
 

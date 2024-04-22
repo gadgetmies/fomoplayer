@@ -1,6 +1,7 @@
 const { using } = require('bluebird')
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
+const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.queryEntityDetails = (entityType, entityId) => {
   return using(pg.getTransaction(), async tx => {
@@ -25,7 +26,9 @@ NATURAL JOIN store
 WHERE ${tx.escapeIdentifier(`${entityType}_id`)} = ${entityId}
 GROUP BY 1, 2
 `)
-    const [res] = await tx.queryRowsAsync(query)
-    return res
+    const res = await tx.queryRowsAsync(query)
+    logger.info(`Results for queryNameForEntity: ${res}`)
+    const [details] = res
+    return details
   })
 }
