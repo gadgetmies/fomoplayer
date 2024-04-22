@@ -63,6 +63,11 @@ WHERE artist_id = ${artistId}
 }
 
 module.exports.addStoreArtistWatch = async (tx, userId, storeArtistId) => {
+  if (!storeArtistId) {
+    logger.error('storeArtistId not provided for addStoreArtistWatch')
+    throw new Error('Error in adding follow')
+  }
+
   await tx.queryAsync(
     // language=PostgreSQL
     sql`-- addArtistWatch INSERT INTO store__artist_watch

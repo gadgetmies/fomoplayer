@@ -140,8 +140,9 @@ module.exports.removeLabelWatchesFromUser = deleteLabelWatchesFromUser
 module.exports.removeLabelWatchFromUser = deleteLabelWatchFromUser
 
 const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (storeUrl, userId, artist, sourceId) => {
-  return using(pg.getTransaction(), async tx => {
+  return using(pg.getTransaction(), async (tx) => {
     const { id: artistId, storeArtistId } = await ensureArtistExists(tx, storeUrl, artist, sourceId)
+    logger.debug(`Ensured artist exists: id: ${artistId}, storeid: ${storeArtistId}, store url: ${storeUrl}`)
     const followId = await addStoreArtistWatch(tx, userId, storeArtistId, sourceId)
     return { artistId, followId, storeArtistId }
   })
