@@ -3,7 +3,7 @@ const sql = require('sql-template-strings')
 const R = require('ramda')
 const { getTracksWithIds } = require('../routes/users/db')
 const { searchForTracks } = require('../routes/shared/db/search')
-const { using } = require('bluebird')
+const BPromise = require('bluebird')
 const { scheduleEmail } = require('../services/mailer')
 const { queryEntityDetails } = require('../routes/shared/db/entities')
 
@@ -37,7 +37,7 @@ module.exports.updateNotifications = async () => {
 
       logger.debug('Found tracks for search', { searchResults })
 
-      await using(pg.getTransaction(), async tx => {
+      await BPromise.using(pg.getTransaction(), async tx => {
         if (searchResults.length !== 0) {
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
           const trackDetails = await getTracksWithIds(searchResults.map(R.prop('track_id')))

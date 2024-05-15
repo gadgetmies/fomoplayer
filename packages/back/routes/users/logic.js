@@ -1,4 +1,4 @@
-const { using, map } = require('bluebird')
+const BPromise = require('bluebird')
 const R = require('ramda')
 const pg = require('fomoplayer_shared').db.pg
 const { scheduleEmail } = require('../../services/mailer')
@@ -96,9 +96,9 @@ module.exports.setAllHeard = setAllHeard
 module.exports.addArtistOnLabelToIgnore = addArtistOnLabelToIgnore
 module.exports.artistOnLabelInIgnore = artistOnLabelInIgnore
 module.exports.addArtistsOnLabelsToIgnore = (userId, { artistIds, labelIds }) =>
-  using(pg.getTransaction(), async tx => {
+  BPromise.using(pg.getTransaction(), async tx => {
     const ids = (
-      await map(R.xprod(artistIds, labelIds), ([artistId, labelId]) =>
+      await BPromise.map(R.xprod(artistIds, labelIds), ([artistId, labelId]) =>
         addArtistOnLabelToIgnore(tx, artistId, labelId, userId)
       )
     ).map(([{ user__artist__label_ignore }]) => user__artist__label_ignore)
@@ -112,7 +112,7 @@ module.exports.removeArtistsOnLabelsIgnores = async artistOnLabelIgnoreIds => {
 
 module.exports.addArtistsToIgnore = async (userId, artistIds) => {
   try {
-    using(pg.getTransaction(), async tx => {
+    BPromise.using(pg.getTransaction(), async tx => {
       await addArtistsToIgnore(tx, artistIds, userId)
       await updateIgnoresInUserTracks(tx, [userId])
     })
@@ -122,13 +122,13 @@ module.exports.addArtistsToIgnore = async (userId, artistIds) => {
 }
 
 module.exports.addLabelsToIgnore = async (userId, labelIds) =>
-  using(pg.getTransaction(), async tx => {
+  BPromise.using(pg.getTransaction(), async tx => {
     await addLabelsToIgnore(tx, labelIds, userId)
     await updateIgnoresInUserTracks(tx, [userId])
   })
 
 module.exports.addReleasesToIgnore = async (userId, releaseIds) => {
-  using(pg.getTransaction(), async tx => {
+  BPromise.using(pg.getTransaction(), async tx => {
     await addReleasesToIgnore(tx, releaseIds, userId)
     await updateIgnoresInUserTracks(tx, [userId])
   })
@@ -140,7 +140,7 @@ module.exports.removeLabelWatchesFromUser = deleteLabelWatchesFromUser
 module.exports.removeLabelWatchFromUser = deleteLabelWatchFromUser
 
 const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (storeUrl, userId, artist, sourceId) => {
-  return using(pg.getTransaction(), async (tx) => {
+  return BPromise.using(pg.getTransaction(), async (tx) => {
     const { id: artistId, storeArtistId } = await ensureArtistExists(tx, storeUrl, artist, sourceId)
     logger.debug(`Ensured artist exists: id: ${artistId}, storeid: ${storeArtistId}, store url: ${storeUrl}`)
     const followId = await addStoreArtistWatch(tx, userId, storeArtistId, sourceId)
@@ -149,7 +149,7 @@ const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (store
 })
 
 const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUrl, userId, label, sourceId) => {
-  return using(pg.getTransaction(), async tx => {
+  return BPromise.using(pg.getTransaction(), async tx => {
     const { storeLabelId, labelId } = await ensureLabelExists(tx, storeUrl, label, sourceId)
     const followId = await addStoreLabelWatch(tx, userId, storeLabelId, sourceId)
     return { labelId, followId, storeLabelId }
@@ -162,7 +162,7 @@ module.exports.removePlaylistFollowFromUser = async (userId, playlistId) =>
 module.exports.addArtistFollowsWithIds = async (artistIds, userId) => {
   const addedFollows = []
   for (const artistId of artistIds) {
-    await using(pg.getTransaction(), async tx => {
+    await BPromise.using(pg.getTransaction(), async tx => {
       const storeArtistIds = await queryStoreArtistIds(tx, artistId)
       for (const storeArtistId of storeArtistIds) {
         const followId = addStoreArtistWatch(tx, userId, storeArtistId)
@@ -220,7 +220,7 @@ module.exports.addArtistFollows = async (storeUrl = undefined, artists, userId, 
 module.exports.addLabelFollowsWithIds = async (labelIds, userId) => {
   const addedFollows = []
   for (const labelId of labelIds) {
-    await using(pg.getTransaction(), async tx => {
+    await BPromise.using(pg.getTransaction(), async tx => {
       const storeLabelIds = await queryStoreLabelIds(tx, labelId)
       for (const storeLabelId of storeLabelIds) {
         const followId = addStoreLabelWatch(tx, userId, storeLabelId)
@@ -328,7 +328,7 @@ module.exports.getNotifications = async userId => {
 }
 
 module.exports.updateNotifications = async (userId, operations) => {
-  await using(pg.getTransaction(), async tx => {
+  await BPromise.using(pg.getTransaction(), async tx => {
     await updateNotifications(tx, userId, operations)
   })
 

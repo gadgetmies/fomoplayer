@@ -2,7 +2,7 @@ const sql = require('sql-template-strings')
 const R = require('ramda')
 const pg = require('fomoplayer_shared').db.pg
 const logger = require('fomoplayer_shared').logger(__filename)
-const { using } = require('bluebird')
+const BPromise = require('bluebird')
 
 module.exports.addPurchasedTracksToUsers = async (userIds, trackIds) => {
   await pg.queryAsync(
@@ -423,7 +423,7 @@ module.exports.queryUserTracks = (userId, limits = { new: 80, recent: 50, heard:
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC, score DESC NULLS LAST`
 
-  return using(pg.getTransaction(), async tx => {
+  return BPromise.using(pg.getTransaction(), async tx => {
     // language=PostgreSQL
     return tx
       .queryRowsAsync(
