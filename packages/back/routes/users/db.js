@@ -687,6 +687,7 @@ WITH
                , track_details->>'released' AS released
                , track_details->>'published' AS published
                , track_details->'releases' AS releases
+               , track_details->'source_details' AS source_details
           FROM limited_tracks lt
                    NATURAL JOIN track_details
                    NATURAL LEFT JOIN heard_tracks
