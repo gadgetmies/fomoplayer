@@ -3,7 +3,7 @@ const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const logger = require('fomoplayer_shared').logger(__filename)
 
-module.exports.queryEntityDetails = (entityType, entityId) => {
+module.exports.queryEntityDetails = async (entityType, entityId) => {
   return using(pg.getTransaction(), async tx => {
     let query = sql`
 --queryNameForEntity
