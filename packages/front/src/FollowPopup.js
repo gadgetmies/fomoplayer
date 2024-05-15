@@ -36,7 +36,7 @@ class FollowPopup extends Component {
         )
       ])
 
-      this.setState({ artistDetails: artistDetails || [], labelDetails: labelDetails || [] })
+      this.setState({ artistDetails: R.uniqBy(R.prop('id'), artistDetails) || [], labelDetails: labelDetails || [] })
     }
   }
 
