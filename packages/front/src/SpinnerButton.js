@@ -1,13 +1,15 @@
 import React, { Component } from 'react'
 import Spinner from './Spinner'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 class SpinnerButton extends Component {
   static defaultProps = {
-    size: 'small'
+    size: 'small',
   }
 
   render() {
-    const { className, label, loading, loadingLabel, disabled, children, size, style, onClick, ...rest } = this.props
+    const { className, label, loading, loadingLabel, disabled, icon, children, size, style, onClick, ...rest } =
+      this.props
 
     return (
       <button
@@ -18,18 +20,9 @@ class SpinnerButton extends Component {
         onClick={onClick}
         {...rest}
       >
-        {children !== undefined ? (
-          <>
-            {children} {loading ? <Spinner size={size} /> : null}
-          </>
-        ) : loading ? (
-          <>
-            {loadingLabel}
-            <Spinner />
-          </>
-        ) : (
-          label
-        )}
+        {loading ? <Spinner size={size} /> : icon && <FontAwesomeIcon icon={icon} />}
+        {loading || icon ? ' ' : null}
+        {children !== undefined ? children : loading ? loadingLabel : label}
       </button>
     )
   }

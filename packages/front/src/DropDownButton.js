@@ -29,10 +29,9 @@ const DropDownButton = props => {
     <span className={`${className || ''}`} style={{ display: 'flex', ...style }}>
       <SpinnerButton
         className={`button-drop_down-left ${buttonClassName}`}
-        {...{ loading, loadingLabel, disabled, size, style: buttonStyle, onClick }}
+        {...{ loading, loadingLabel, disabled, size, style: buttonStyle, onClick, icon }}
         {...rest}
       >
-        <span className="button-push_button_icon">{icon && <FontAwesomeIcon icon={icon} />}</span>{' '}
         <span className={'button-push_button_label'}>{label}</span>
       </SpinnerButton>
       <DropDown

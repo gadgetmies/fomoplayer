@@ -65,6 +65,7 @@ class IgnorePopup extends Component {
                     key={`artist-${artist.id}`}
                     title={`Ignore ${artist.name} on ${joinStringList(this.props.track.labels)}`}
                     size={'large'}
+                    icon={'ban'}
                     className={`${isIgnored ? 'ignored' : ''}`}
                     onClick={async () => {
                       this.setState({ ignoringArtistOnLabel: idString })
@@ -81,7 +82,7 @@ class IgnorePopup extends Component {
                       this.setState({ ignoringArtistOnLabel: null })
                     }}
                   >
-                    <FontAwesomeIcon icon="ban" /> {artist.name} on {joinStringList(this.props.track.labels)}
+                    {artist.name} on {joinStringList(this.props.track.labels)}
                   </SpinnerButton>
                 )
               })}
@@ -99,6 +100,7 @@ class IgnorePopup extends Component {
                   title={`Ignore ${release.name}`}
                   key={`artist-${release.id}`}
                   size={'large'}
+                  icon={'ban'}
                   className={`${this.state.ignoredReleases.has(release.id) ? 'ignored' : ''}`}
                   onClick={async () => {
                     this.setState({ ignoringRelease: release.id })
@@ -115,7 +117,7 @@ class IgnorePopup extends Component {
                     this.setState({ ignoringRelease: null })
                   }}
                 >
-                  <FontAwesomeIcon icon="ban" /> {release.name}
+                  {release.name}
                 </SpinnerButton>
               ))}
             </div>
@@ -130,6 +132,7 @@ class IgnorePopup extends Component {
               title={`Ignore ${artist.name}`}
               key={`artist-${artist.id}`}
               size={'large'}
+              icon={'ban'}
               className={`${this.state.ignoredArtists.has(artist.id) ? 'ignored' : ''}`}
               onClick={async () => {
                 this.setState({ ignoringArtist: artist.id })
@@ -144,7 +147,7 @@ class IgnorePopup extends Component {
                 this.setState({ ignoringArtist: null })
               }}
             >
-              <FontAwesomeIcon icon="ban" /> {artist.name}
+              {artist.name}
             </SpinnerButton>
           ))}
         </div>
@@ -159,6 +162,7 @@ class IgnorePopup extends Component {
                   title={`Ignore ${label.name}`}
                   key={`label-${label.id}`}
                   size={'large'}
+                  icon={'ban'}
                   className={`${this.state.ignoredLabels.has(label.id) ? 'ignored' : ''}`}
                   onClick={async () => {
                     this.setState({ ignoringLabel: label.id })
@@ -173,7 +177,7 @@ class IgnorePopup extends Component {
                     this.setState({ ignoringLabel: null })
                   }}
                 >
-                  <FontAwesomeIcon icon="ban" /> {label.name}
+                  {label.name}
                 </SpinnerButton>
               ))}
             </div>

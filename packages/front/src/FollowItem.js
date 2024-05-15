@@ -16,8 +16,8 @@ class FollowItem extends Component {
         onClick={this.props.onClick}
         loading={this.props.loading}
         disabled={this.props.disabled}
+        icon={this.props.following ? 'heart-broken' : 'heart'}
       >
-        <FontAwesomeIcon icon={this.props.following ? 'heart-broken' : 'heart'} />{' '}
         {this.props.following ? 'Unfollow' : 'Follow'}{' '}
         <ExternalLink
           href={this.props.url}

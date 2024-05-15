@@ -935,6 +935,7 @@ class Settings extends Component {
                       !this.props.userSettings.emailVerified
                     }
                     loading={this.state.updatingNotifications}
+                    icon={'bell'}
                     onClick={async () => {
                       await this.props.onRequestNotificationUpdate(
                         this.props.stores.map(({ storeName }) => ({
@@ -946,7 +947,7 @@ class Settings extends Component {
                       this.setState({ notificationSearch: '' })
                     }}
                   >
-                    <FontAwesomeIcon icon="bell" /> Subscribe
+                    Subscribe
                   </SpinnerButton>
                 </div>
               </label>
