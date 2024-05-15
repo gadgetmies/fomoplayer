@@ -27,7 +27,7 @@ WHERE ${tx.escapeIdentifier(`${entityType}_id`)} = ${entityId}
 GROUP BY 1, 2
 `)
     const res = await tx.queryRowsAsync(query)
-    logger.info(`Results for queryNameForEntity: ${res}`)
+    logger.info(`Results for queryNameForEntity`, res)
     const [details] = res
     return details
   })
