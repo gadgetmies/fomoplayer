@@ -517,7 +517,6 @@ class App extends Component {
   async setCurrentTrack(track) {
     this.setState({ currentTrack: track })
     document.title = `${trackArtistsAndTitleText(track)} - Fomo Player`
-    this.markHeard(track).catch(e => console.error('Error while marking track as heard', e))
   }
 
   async followStoreArtist(storeArtistId, storeArtistUrl, name, follow) {
@@ -577,6 +576,7 @@ class App extends Component {
                   stores={this.state.stores}
                   currentTrack={this.state.currentTrack}
                   isMobile={this.state.isMobile}
+                  markHeard={this.markHeard.bind(this)}
                 />
               ) : (
                 <div style={{ background: '#333', width: '100%', height: '100%' }}>
@@ -783,6 +783,7 @@ class App extends Component {
                           stores={this.state.stores}
                           totalTracks={this.state.tracksData.meta.totalTracks}
                           tracks={this.state.tracksData.tracks}
+                          markHeard={this.markHeard.bind(this)}
 
                           onAddToCart={this.addToCart.bind(this)}
                           onClosePopups={this.closePopups.bind(this)}

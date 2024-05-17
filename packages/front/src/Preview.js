@@ -412,6 +412,9 @@ class Preview extends Component {
                 onLoadedData={() => {
                   this.setState({ playing: true })
                 }}
+                onPlay={async () => {
+                  await this.props.markHeard(this.props.currentTrack)
+                }}
                 onPlaying={() => {
                   this.setPlaying(true)
                   this.getPlayer().play()

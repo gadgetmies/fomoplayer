@@ -290,6 +290,7 @@ class Player extends Component {
           togglingCurrentInCart={this.state.togglingCurrentInCart}
           totalTracks={this.props.meta ? this.props.meta.totalTracks : null}
           ref={this.preview}
+          markHeard={this.props.markHeard}
           onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
           onCreateCartClick={this.props.onHandleCreateCartClick?.bind(this)}
           onFollowClicked={() => this.props.onOpenFollowPopup(currentTrack)}
