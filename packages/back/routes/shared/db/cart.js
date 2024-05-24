@@ -38,9 +38,9 @@ module.exports.queryUserCartDetails = async userId =>
                           GROUP BY 1)
     SELECT cart_id                                                                AS id
          , cart_name                                                              AS name
-         , cart_is_default IS NOT NULL                                            AS is_default
+         , COALESCE(cart_is_default, FALSE)                                       AS is_default
          , cart_is_public                                                         AS is_public
-         , cart_is_purchased IS NOT NULL                                          AS is_purchased
+         , COALESCE(cart_is_purchased, FALSE)                                     AS is_purchased
          , cart_uuid                                                              AS uuid
          , cart_deleted                                                           AS deleted
          , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS store_details
