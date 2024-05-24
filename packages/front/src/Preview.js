@@ -32,12 +32,38 @@ class Preview extends Component {
       volume: 100,
       newCartName: '',
       preferFullTracks: localStorage.getItem('preferFullTracks') === 'true',
+      nextDoubleClickStarted: false,
+      previousDoubleClickStarted: false,
     }
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
     }
 
     this.setVolume = this.setVolume.bind(this)
+
+    const actionHandlers = [
+      ['play', this.setPlaying.bind(this, true)],
+      ['pause', this.setPlaying.bind(this, false)],
+      ['previoustrack', this.handlePreviousClick.bind(this)],
+      ['nexttrack', this.handleNextClick.bind(this)],
+      ['stop', this.setPlaying.bind(this, false)],
+      ['seekbackward', ({ seekOffset }) => this.scan.bind(this, -seekOffset)],
+      ['seekforward', ({ seekOffset }) => this.scan.bind(this, seekOffset)],
+      [
+        'seekto',
+        ({ seekTime }) => {
+          this.getPlayer().currentTime = seekTime
+        },
+      ],
+    ]
+
+    for (const [action, handler] of actionHandlers) {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler)
+      } catch (error) {
+        console.log(`The media session action "${action}" is not supported yet.`)
+      }
+    }
   }
 
   setPlaying(playing) {
@@ -156,19 +182,99 @@ class Preview extends Component {
     this.getPlayer().currentTime = this.getPlayer().currentTime + step
   }
 
+  play() {
+    this.setPlaying(true)
+    this.getPlayer().play()
+    navigator.mediaSession.metadata = null
+    navigator.mediaSession.playbackState = 'playing'
+    navigator.mediaSession.metadata = new MediaMetadata({
+      artist: `${namesToString(this.props.currentTrack.artists)}`,
+      title: this.props.currentTrack.title,
+    })
+  }
+
+  seekBackward() {
+    this.scan(-this.getSeekDistance())
+  }
+
+  seekForward() {
+    this.scan(this.getSeekDistance())
+  }
+
+  async handleNextClick() {
+    if (this.state.nextDoubleClickStarted) {
+      this.setState({ nextDoubleClickStarted: false })
+      await this.props.onNext()
+    } else {
+      const that = this
+      this.setState({ nextDoubleClickStarted: true })
+      setTimeout(() => {
+        that.setState({ nextDoubleClickStarted: false })
+      }, 200)
+      this.seekForward()
+    }
+  }
+
+  async handlePreviousClick() {
+    if (this.state.previousDoubleClickStarted) {
+      this.setState({ previousDoubleClickStarted: false })
+      await this.props.onPrevious()
+    } else {
+      const that = this
+      this.setState({ previousDoubleClickStarted: true })
+      setTimeout(() => {
+        that.setState({ previousDoubleClickStarted: false })
+      }, 200)
+      this.seekBackward()
+    }
+  }
+
+  getShouldSkip() {
+    const mp3Preview = this.state.mp3Preview
+    const isLongPreview = mp3Preview && mp3Preview.end_ms - mp3Preview.start_ms > 130000
+    return !this.state.preferFullTracks && isLongPreview
+  }
+
+  getPreviewDetails() {
+    return this.state.mp3Preview
+      ? this.getShouldSkip()
+        ? {
+            length_ms: this.state.mp3Preview.length_ms * 0.4,
+            start_ms: Math.max(this.state.mp3Preview.start_ms, this.state.mp3Preview.length_ms * 0.3),
+            end_ms: Math.min(this.state.mp3Preview.end_ms, this.state.mp3Preview.length_ms * 0.7),
+          }
+        : {
+            length_ms: this.state.mp3Preview.length_ms,
+            start_ms: this.state.mp3Preview.start_ms,
+            end_ms: this.state.mp3Preview.end_ms,
+          }
+      : null
+  }
+
+  getSeekDistance() {
+    if (!this.props.currentTrack) return -1
+    const previewDetails = this.getPreviewDetails()
+
+    return ((previewDetails ? previewDetails.length_ms : this.props.currentTrack.duration) / 5 / 1000) | 7
+  }
+
   render() {
     const currentTrack = this.props.currentTrack
-    let mp3Preview = this.state.mp3Preview
-    let waveform = this.state.waveform
+    const mp3Preview = this.state.mp3Preview
+    const waveform = this.state.waveform
     let totalDuration = 0
     let startOffset = 0
     let endPosition = 0
-    const toPositionPercent = (currentPosition) => ((currentPosition + startOffset) / totalDuration) * 100
+    const previewDetails = this.getPreviewDetails()
+    const shouldSkip = this.getShouldSkip()
+
+    const toPositionPercent = (currentPosition) =>
+      previewDetails ? ((currentPosition + (shouldSkip ? 0 : previewDetails.start_ms)) / totalDuration) * 100 : 0
 
     if (currentTrack && mp3Preview) {
       totalDuration = this.state.totalDuration || currentTrack.duration
-      startOffset = mp3Preview.start_ms || 0
-      endPosition = mp3Preview.end_ms || this.state.totalDuration
+      startOffset = previewDetails?.start_ms || 0
+      endPosition = previewDetails?.end_ms || this.state.totalDuration
     }
 
     const searchString = currentTrack
@@ -213,6 +319,7 @@ class Preview extends Component {
       ['bandcamp', ...[spotifyAuthorization ? ['spotify'] : []]].includes(store),
     )
 
+    const edgeOverlayClass = shouldSkip ? 'waveform_clip-edge-overlay-skip' : 'waveform_clip-edge-overlay'
     return (
       <div className="preview noselect">
         <div className="preview_details_wrapper">
@@ -353,8 +460,15 @@ class Preview extends Component {
                   if (e.button !== 0) return
                   const boundingRect = e.currentTarget.getBoundingClientRect()
                   const trackPositionPercent = (e.clientX - boundingRect.left) / e.currentTarget.clientWidth
-                  if (totalDuration * trackPositionPercent > endPosition) return
-                  const previewPositionInSeconds = (totalDuration * trackPositionPercent - startOffset) / 1000
+                  const clickedPosition = totalDuration * trackPositionPercent
+                  if (clickedPosition > endPosition || clickedPosition < startOffset) {
+                    if (this.getShouldSkip()) {
+                      this.setState({ preferFullTracks: true })
+                    } else {
+                      return
+                    }
+                  }
+                  const previewPositionInSeconds = (clickedPosition - (this.getShouldSkip() ? 0 : startOffset)) / 1000
                   this.getPlayer().currentTime = previewPositionInSeconds
                 }}
               >
@@ -378,14 +492,14 @@ class Preview extends Component {
                   }}
                 />
                 <div
-                  className={'waveform_clip-edge-overlay'}
+                  className={edgeOverlayClass}
                   style={{
-                    width: `${toPositionPercent(0)}%`,
+                    width: `${toPositionPercent(shouldSkip ? startOffset : 0)}%`,
                     left: 0,
                   }}
                 />
                 <div
-                  className={'waveform_clip-edge-overlay'}
+                  className={edgeOverlayClass}
                   style={{
                     width: `${100 - (100 * endPosition) / totalDuration}%`,
                     right: 0,
@@ -398,7 +512,6 @@ class Preview extends Component {
                 ) : null}
               </div>
               <audio
-                autoPlay={true}
                 ref="player0"
                 onEnded={async () => {
                   try {
@@ -416,29 +529,36 @@ class Preview extends Component {
                   await this.props.markHeard(this.props.currentTrack)
                 }}
                 onPlaying={() => {
-                  this.setPlaying(true)
-                  this.getPlayer().play()
-                  navigator.mediaSession.metadata = null
-                  navigator.mediaSession.playbackState = 'playing'
-                  navigator.mediaSession.metadata = new MediaMetadata({
-                    artist: `${namesToString(this.props.currentTrack.artists)}`,
-                    title: this.props.currentTrack.title,
-                  })
+                  if (!shouldSkip && this.state.position === 0) {
+                    this.play()
+                  }
+                }}
+                onCanPlayThrough={() => {
+                  if (shouldSkip && this.state.position === 0) {
+                    this.setState({
+                      position: previewDetails.start_ms,
+                    })
+                    this.getPlayer().currentTime = (previewDetails.start_ms - mp3Preview.start_ms) / 1000
+                  }
+                  this.play()
                 }}
                 onPause={() => this.setPlaying(false)}
                 onTimeUpdate={({ currentTarget: { currentTime } }) => {
                   this.setState({ position: currentTime * 1000 })
                   try {
-                    this.state.mp3Preview.length_ms &&
+                    mp3Preview.length_ms &&
                       currentTime &&
-                      currentTime < this.state.mp3Preview.length_ms / 1000 &&
+                      currentTime < mp3Preview.length_ms / 1000 &&
                       navigator.mediaSession.setPositionState({
-                        duration: this.state.mp3Preview.length_ms / 1000,
+                        duration: mp3Preview.length_ms / 1000,
                         playbackRate: 1,
                         position: currentTime,
                       })
+                    if (this.getShouldSkip() && currentTime * 1000 > previewDetails.end_ms) {
+                      this.props.onNext()
+                    }
                   } catch (e) {
-                    console.error(e, currentTime, this.state.mp3Preview.length_ms)
+                    console.error(e, currentTime, mp3Preview.length_ms)
                   }
                 }}
                 onError={async (e) => {

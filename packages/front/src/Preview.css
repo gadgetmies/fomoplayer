@@ -20,6 +20,13 @@
   position: absolute;
 }
 
+.waveform_clip-edge-overlay-skip {
+  height: 100%;
+  background: #555;
+  opacity: 0.3;
+  position: absolute;
+}
+
 .waveform-position {
   background: linear-gradient(to right, #5996e4 0%, #b69afd 100%);
   width: 100%;

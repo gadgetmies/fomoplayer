@@ -15,7 +15,6 @@ class Player extends Component {
     this.state = {
       listenedTracks: 0,
       togglingCurrentInCart: false,
-      nextDoubleClickStarted: false,
       playPauseDoubleClickStarted: false,
       helpActive: false,
       enabledStores,
@@ -50,16 +49,16 @@ class Player extends Component {
               await this.playPreviousTrack()
               break
             case 'w':
-              that.preview.current.togglePlaying()
+              that.preview.current?.togglePlaying()
               break
             case 'r':
               await this.playNextUnheard()
               break
             case 'd':
-              this.seek(this.getSeekDistance())
+              this.preview.current?.seekForward()
               break
             case 'a':
-              this.seek(-this.getSeekDistance())
+              this.preview.current?.seekBackward()
               break
             case 'p':
               await this.toggleCurrentInCart()
@@ -140,46 +139,6 @@ class Player extends Component {
 
   async playNextTrack() {
     await this.jumpTracks(1)
-  }
-
-  seek(offset) {
-    this.preview.current.scan(offset)
-  }
-
-  getSeekDistance() {
-    if (!this.props.currentTrack) return -1
-    const preview = this.props.currentTrack.previews.find(R.propEq('url', this.preview.current.state.previewUrl))
-
-    return ((preview ? preview.length_ms : this.props.currentTrack.duration) / 5 / 1000) | 7
-  }
-
-  async handleNextClick() {
-    if (this.state.nextDoubleClickStarted) {
-      this.setState({ nextDoubleClickStarted: false })
-      await this.playNextTrack()
-    } else {
-      const that = this
-      this.setState({ nextDoubleClickStarted: true })
-      setTimeout(() => {
-        that.setState({ nextDoubleClickStarted: false })
-      }, 200)
-      this.seek(this.getSeekDistance())
-    }
-  }
-
-  async handlePreviousClick() {
-    if (this.state.previousDoubleClickStarted) {
-      this.setState({ previousDoubleClickStarted: false })
-      await this.playPreviousTrack()
-    } else {
-      this.setState()
-      const that = this
-      this.setState({ previousDoubleClickStarted: true })
-      setTimeout(() => {
-        that.setState({ previousDoubleClickStarted: false })
-      }, 200)
-      this.seek(-this.getSeekDistance())
-    }
   }
 
   async playNextUnheard() {
