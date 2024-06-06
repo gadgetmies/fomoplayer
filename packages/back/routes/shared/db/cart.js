@@ -122,7 +122,7 @@ module.exports.queryUserCartDetailsWithTracks = async userId =>
     `
   )
 
-module.exports.queryCartDetails = async (cartId, tracksFilter) => {
+module.exports.queryCartDetails = async (cartId, tracksFilter = { since: undefined, offset: 0, limit: 400 }) => {
   const query =
     // language=PostgreSQL
     sql`--queryCartDetails
@@ -160,7 +160,7 @@ module.exports.queryCartDetails = async (cartId, tracksFilter) => {
                            NATURAL JOIN track_details
                          WHERE cart_id = ${cartId}
                          ORDER BY track__cart_added DESC
-                         LIMIT 400)
+                         LIMIT ${tracksFilter?.limit} OFFSET ${tracksFilter?.offset})
        , td AS (SELECT DISTINCT ON (track_id) td.*
                                             , user__track_heard AS heard
                                             , track_id          AS id
