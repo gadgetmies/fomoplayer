@@ -248,9 +248,17 @@ router.post('/carts', async ({ user: { id: userId }, body: { name, url } }, res)
   res.send(createdCart)
 })
 
-router.get('/carts/:id', async ({ user: { id: userId }, params: { id: cartId }, res }) => {
-  res.send(await getCartDetails(userId, cartId))
-})
+router.get(
+  '/carts/:id',
+  async ({
+    user: { id: userId },
+    params: { id: cartId },
+    query: { offset: tracksOffset, limit: tracksLimit },
+    res,
+  }) => {
+    res.send(await getCartDetails(userId, cartId, { offset: tracksOffset, limit: tracksLimit }))
+  },
+)
 
 router.delete('/carts/:id', async ({ user: { id: userId }, params: { id } }, res) => {
   await removeCart(userId, id)

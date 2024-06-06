@@ -8,8 +8,8 @@ const logger = require('fomoplayer_shared').logger(__filename)
 router.use(bodyParser.json())
 const { verifyEmail, getCartDetails } = require('./logic.js')
 
-router.get('/carts/:uuid', async ({ params: { uuid }, user, query: { since } }, res) => {
-  const cart = await getCartDetails(uuid, user?.id, { since })
+router.get('/carts/:uuid', async ({ params: { uuid }, user, query: { since, offset, limit } }, res) => {
+  const cart = await getCartDetails(uuid, user?.id, { since, offset, limit })
   if (cart === null) {
     return res.status(404).send()
   }
