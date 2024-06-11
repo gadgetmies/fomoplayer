@@ -16,12 +16,12 @@ test({
     assert.equal(beatportInterceptor.getMockedRequests().length, 2)
     assert.notEqual(
       beatportInterceptor.getMockedRequests().find(({ url }) => new URL(url).pathname === '/search/artists'),
-      undefined
+      undefined,
     )
     assert.notEqual(
       beatportInterceptor.getMockedRequests().find(({ url }) => new URL(url).pathname === '/search/artists'),
-      undefined
+      undefined,
     )
     assert.deepEqual(res, beatportSearch)
-  }
+  },
 })

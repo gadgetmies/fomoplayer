@@ -24,18 +24,18 @@ test({
         bandcampInterceptor
           .getMockedRequests()
           .find(({ url }) => new URL(url).pathname === '/api/bcsearch_public_api/1/autocomplete_elastic'),
-        undefined
+        undefined,
       )
       assert.deepEqual(res, bandcampSearchMapped)
     },
-    teardown: bandcampInterceptor.clearMockedRequests
+    teardown: bandcampInterceptor.clearMockedRequests,
   },
   'artist tracks': {
     'are fetched': async () => {
       const noisiaUrl = 'https://noisia.bandcamp.com'
       const interceptedUrls = [
         'https://noisia.bandcamp.com/album/the-resonance-vi',
-        'https://noisia.bandcamp.com/album/the-resonance-v'
+        'https://noisia.bandcamp.com/album/the-resonance-v',
       ]
 
       const expectedResults = [resonanceVTracks, resonanceVITracks]
@@ -47,24 +47,24 @@ test({
         assert.equal(bandcampInterceptor.getMockedRequests().length, 2 + yields)
         assert.notEqual(
           bandcampInterceptor.getMockedRequests().find(({ url }) => url === interceptedUrls[yields]),
-          undefined
+          undefined,
         )
         assert.deepEqual(tracks, expectedResults[yields])
         yields++
       }
       assert.notEqual(
         bandcampInterceptor.getMockedRequests().find(({ url }) => url === `${noisiaUrl}/music`),
-        undefined
+        undefined,
       )
     },
-    teardown: bandcampInterceptor.clearMockedRequests
+    teardown: bandcampInterceptor.clearMockedRequests,
   },
   'label details': {
     'are fetched': async () => {
       const visionUrl = 'https://visionrecordings.bandcamp.com'
       const interceptedUrls = [
         'https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music',
-        'https://billainaethek.bandcamp.com/album/f4k-y00?label=4289352950&tab=music'
+        'https://billainaethek.bandcamp.com/album/f4k-y00?label=4289352950&tab=music',
       ]
 
       const expectedResults = [differentEyesTracks, f4kY00Tracks]
@@ -76,16 +76,16 @@ test({
         assert.equal(bandcampInterceptor.getMockedRequests().length, 2 + yields)
         assert.notEqual(
           bandcampInterceptor.getMockedRequests().find(({ url }) => url === interceptedUrls[yields]),
-          undefined
+          undefined,
         )
         assert.deepEqual(tracks, expectedResults[yields])
         yields++
       }
       assert.notEqual(
         bandcampInterceptor.getMockedRequests().find(({ url }) => url === `${visionUrl}/music`),
-        undefined
+        undefined,
       )
     },
-    teardown: bandcampInterceptor.clearMockedRequests
-  }
+    teardown: bandcampInterceptor.clearMockedRequests,
+  },
 })

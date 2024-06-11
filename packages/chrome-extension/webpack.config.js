@@ -10,7 +10,7 @@ const nodeEnv = process.env.NODE_ENV || 'development'
 const sharedConfig = require('fomoplayer_shared/config')(nodeEnv).config
 
 const alias = {
-  'react-dom': '@hot-loader/react-dom'
+  'react-dom': '@hot-loader/react-dom',
 }
 
 const fileExtensions = ['jpg', 'jpeg', 'png', 'gif', 'eot', 'otf', 'svg', 'ttf', 'woff', 'woff2']
@@ -20,47 +20,47 @@ let options = {
   entry: {
     popup: path.join(__dirname, 'src', 'js', 'popup.js'),
     options: path.join(__dirname, 'src', 'js', 'options.js'),
-    background: path.join(__dirname, 'src', 'js', 'background.js')
+    background: path.join(__dirname, 'src', 'js', 'background.js'),
   },
   output: {
     path: path.join(__dirname, 'build'),
-    filename: '[name].bundle.js'
+    filename: '[name].bundle.js',
   },
   module: {
     rules: [
       {
         test: /\.(sa|sc|c)ss$/,
-        use: [{ loader: 'style-loader' }, { loader: 'css-loader' }]
+        use: [{ loader: 'style-loader' }, { loader: 'css-loader' }],
       },
       {
         test: new RegExp('.(' + fileExtensions.join('|') + ')$'),
         loader: 'file-loader',
         options: {
-          name: '[name].[ext]'
-        }
+          name: '[name].[ext]',
+        },
       },
       {
         test: /\.html$/,
         loader: 'html-loader',
-        exclude: /node_modules/
+        exclude: /node_modules/,
       },
       {
         test: /\.(js|jsx)$/,
         use: [
           {
-            loader: 'source-map-loader'
+            loader: 'source-map-loader',
           },
           {
-            loader: 'babel-loader'
-          }
+            loader: 'babel-loader',
+          },
         ],
-        exclude: /node_modules/
-      }
-    ]
+        exclude: /node_modules/,
+      },
+    ],
   },
   resolve: {
     alias: alias,
-    extensions: fileExtensions.map(extension => '.' + extension).concat(['.jsx', '.js', '.css'])
+    extensions: fileExtensions.map((extension) => '.' + extension).concat(['.jsx', '.js', '.css']),
   },
   plugins: [
     // clean the build folder
@@ -73,7 +73,7 @@ let options = {
         {
           from: 'src/manifest.json',
           force: true,
-          transform: function(content, path) {
+          transform: function (content, path) {
             // generates the manifest file using the package.json informations
             return Buffer.from(
               JSON.stringify({
@@ -82,33 +82,33 @@ let options = {
                 key: config.EXTENSION_KEY,
                 oauth2: {
                   client_id: config.GOOGLE_OIDC_CLIENT_ID,
-                  scopes: ['']
+                  scopes: [''],
                 },
-                ...JSON.parse(content.toString())
-              })
+                ...JSON.parse(content.toString()),
+              }),
             )
-          }
-        }
-      ]
+          },
+        },
+      ],
     }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'src', 'popup.html'),
       filename: 'popup.html',
       chunks: ['popup'],
-      cache: false
+      cache: false,
     }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'src', 'options.html'),
       filename: 'options.html',
       chunks: ['options'],
-      cache: false
-    })
+      cache: false,
+    }),
     // new HtmlWebpackPlugin({
     //   template: path.join(__dirname, "src", "background.html"),
     //   filename: "background.html",
     //   chunks: ["background"]
     // })
-  ]
+  ],
 }
 
 if (nodeEnv === 'development') {

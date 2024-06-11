@@ -9,13 +9,13 @@ export default class Login extends Component {
       loggingOut: false,
       loginError: false,
       logoutError: false,
-      loggedIn: this.props.loggedIn || false
+      loggedIn: this.props.loggedIn || false,
     }
   }
 
   static get defaultProps() {
     return {
-      size: 'large'
+      size: 'large',
     }
   }
 
@@ -24,7 +24,7 @@ export default class Login extends Component {
     try {
       await requestWithCredentials({
         path: this.props.logoutPath,
-        method: 'POST'
+        method: 'POST',
       })
 
       this.setState({ loggingOut: false, loggedIn: false, logoutError: false })

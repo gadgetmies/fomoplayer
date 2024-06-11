@@ -5,7 +5,7 @@ const { processChunks } = require('../../shared/requests')
 
 const {
   beatportTracksTransform,
-  beatportTrackTransform
+  beatportTrackTransform,
 } = require('fomoplayer_chrome_extension/src/js/transforms/beatport')
 const logger = require('fomoplayer_shared').logger(__filename)
 
@@ -14,7 +14,7 @@ const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
 // TODO: add export?
 const storeName = (module.exports.storeName = 'Beatport')
 module.exports.storeUrl = 'https://www.beatport.com'
-module.exports.getPlaylistId = id => id
+module.exports.getPlaylistId = (id) => id
 
 const getPlaylistName = (module.exports.getPlaylistName = async ({ url }) => {
   const { name } = await bpApiStatic.getDetailsAsync(url)
@@ -35,7 +35,7 @@ module.exports.getFollowDetails = async ({ id, url, type }) => {
   return [{ id, ...details, type, store: { name: storeName }, url }]
 }
 
-const getTrackInfo = async url => {
+const getTrackInfo = async (url) => {
   const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
   const transformed = beatportTrackTransform(queryData.data.props.pageProps.track)
 
@@ -52,7 +52,7 @@ function trackInfo([{ url }]) {
   return getTrackInfo(url)
 }
 
-const appendTrackNumbers = async tracks => {
+const appendTrackNumbers = async (tracks) => {
   try {
     const trackInfos = await processChunks(tracks, 4, trackInfo, { concurrency: 4 })
 
@@ -60,14 +60,14 @@ const appendTrackNumbers = async tracks => {
     return tracks.map(({ id, ...rest }) => ({
       id,
       ...rest,
-      track_number: trackInfos.find(track => id === track?.id)?.track_number
+      track_number: trackInfos.find((track) => id === track?.id)?.track_number,
     }))
   } catch (e) {
     logger.error(`appendTrackNumbers failed: ${e.toString().substring(0, 100)}`)
   }
 }
 
-module.exports.getArtistTracks = async function*({ artistStoreId }) {
+module.exports.getArtistTracks = async function* ({ artistStoreId }) {
   const artistQueryData = await bpApiStatic.getArtistQueryDataAsync(artistStoreId, 1)
   const transformed = beatportTracksTransform(artistQueryData)
 
@@ -80,17 +80,17 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
   yield { tracks: await appendTrackNumbers(transformed), errors: [] }
 }
 
-const getDetails = (module.exports.getArtistDetails = async url => ({
+const getDetails = (module.exports.getArtistDetails = async (url) => ({
   url,
-  ...(await bpApiStatic.getDetailsAsync(url))
+  ...(await bpApiStatic.getDetailsAsync(url)),
 }))
 
-module.exports.getLabelName = module.exports.getArtistName = async url => {
+module.exports.getLabelName = module.exports.getArtistName = async (url) => {
   const { name } = await getDetails(url)
   return name
 }
 
-module.exports.getLabelTracks = async function*({ labelStoreId }) {
+module.exports.getLabelTracks = async function* ({ labelStoreId }) {
   const labelQueryData = await bpApiStatic.getLabelQueryDataAsync(labelStoreId, 1)
   const transformed = beatportTracksTransform(labelQueryData)
 
@@ -103,7 +103,7 @@ module.exports.getLabelTracks = async function*({ labelStoreId }) {
   yield { tracks: await appendTrackNumbers(transformed), errors: [] }
 }
 
-module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
+module.exports.getPlaylistTracks = async function* ({ playlistStoreId: url }) {
   const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
   const transformed = beatportTracksTransform(queryData.data.tracks)
 
@@ -116,14 +116,14 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId: url }) {
   yield { tracks: await appendTrackNumbers(transformed), errors: [] }
 }
 
-module.exports.search = async query => {
+module.exports.search = async (query) => {
   const promises = [bpApiStatic.searchForArtistsAsync(query), bpApiStatic.searchForLabelsAsync(query)]
   return (await Promise.all(promises))
     .reduce((acc, { results }) => acc.concat(results), [])
-    .map(item => ({ ...item, store: { name: storeName.toLowerCase() } }))
+    .map((item) => ({ ...item, store: { name: storeName.toLowerCase() } }))
 }
 
-module.exports.getTracksForISRCs = async isrcs => {
+module.exports.getTracksForISRCs = async (isrcs) => {
   const tracks = (
     await processChunks(
       isrcs,
@@ -134,13 +134,13 @@ module.exports.getTracksForISRCs = async isrcs => {
         // TODO: remove duplicates
         return await bpApiStatic.getTrackQueryDataAsync(results[0].id, buildId)
       },
-      { concurrency: 1 }
+      { concurrency: 1 },
     )
   ).flat()
   return R.uniq(
     tracks
       .map(beatportTracksTransform)
       .flat()
-      .filter(({ isrc }) => isrcs.includes(isrc))
+      .filter(({ isrc }) => isrcs.includes(isrc)),
   )
 }

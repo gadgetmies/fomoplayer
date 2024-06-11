@@ -22,7 +22,7 @@ export class SettingsHelp extends Component {
             <strong>Bandcamp:</strong> Any (public i.e. visible without login) page with releases or tracks should work, such as genre highlights (e.g. https://bandcamp.com/tag/drum-bass) and users' collections (e.g. https://bandcamp.com/elysion)
           </p>*/}
         </>
-      )
+      ),
     },
     Sorting: {
       target: '[data-help-id=sorting-tab]',
@@ -35,7 +35,7 @@ export class SettingsHelp extends Component {
           in the add to cart dropdown) and increasing the related bonuses, you can ensure the new releases from the
           artists and labels appear higher in the list.
         </p>
-      )
+      ),
     },
     Carts: {
       target: '[data-help-id=carts-tab]',
@@ -48,7 +48,7 @@ export class SettingsHelp extends Component {
           Spotify (enabling authorization in the Authorizations tab required) in order to e.g. preview the complete
           tracks before purchasing.
         </p>
-      )
+      ),
     },
     Notifications: {
       target: '[data-help-id=notifications-tab]',
@@ -59,7 +59,7 @@ export class SettingsHelp extends Component {
           notifications tab or in the search, to receive an email notification when there are new tracks matching the
           search. In order to enable this functionality, you need to first confirm your email address.
         </p>
-      )
+      ),
     },
     Ignores: {
       target: '[data-help-id=ignores-tab]',
@@ -72,7 +72,7 @@ export class SettingsHelp extends Component {
           on the same label. To reduce noise, use the ignore button to filter artists by labels you are not interested
           in. Manage these preferences in the Ignores tab.
         </p>
-      )
+      ),
     },
     Collection: {
       target: '[data-help-id=collection-tab]',
@@ -83,7 +83,7 @@ export class SettingsHelp extends Component {
           by default. If however you are only interested in newer tracks, you can use this tab to ignore the older
           tracks. Ignoring the older tracks affects only the list of new tracks, not e.g. the cart contents.
         </p>
-      )
+      ),
     },
     Authorizations: {
       target: '[data-help-id=integrations-tab]',
@@ -95,8 +95,8 @@ export class SettingsHelp extends Component {
           reasons the service will only modify playlists it has created.
         </p>
       ),
-      locale: { last: 'Done' }
-    }
+      locale: { last: 'Done' },
+    },
   }
 
   constructor(props) {

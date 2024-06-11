@@ -4,11 +4,11 @@ const {
   storeName,
   storeCode,
   requestUserFollowedArtists,
-  requestUserPlaylists
+  requestUserPlaylists,
 } = require('../../shared/spotify.js')
 const {
   spotifyTracksTransform,
-  spotifyAlbumTracksTransform
+  spotifyAlbumTracksTransform,
 } = require('fomoplayer_chrome_extension/src/js/transforms/spotify')
 const R = require('ramda')
 const L = require('partial.lenses')
@@ -20,7 +20,7 @@ const logger = require('fomoplayer_shared').logger(__filename)
 module.exports.storeUrl = 'https://www.spotify.com'
 module.exports.storeName = storeName
 
-module.exports.getUserPlaylists = async userId => {
+module.exports.getUserPlaylists = async (userId) => {
   logger.info('Fetching user playlists from Spotify', { userId })
   try {
     return await requestUserPlaylists(userId)
@@ -30,7 +30,7 @@ module.exports.getUserPlaylists = async userId => {
   }
 }
 
-module.exports.getUserFollowedArtists = async userId => {
+module.exports.getUserFollowedArtists = async (userId) => {
   logger.info("Fetching user's followed artists from Spotify", { userId })
   try {
     return await requestUserFollowedArtists(userId)
@@ -51,17 +51,17 @@ module.exports.followArtists = async (userId, artistUrls) => {
   }
 }
 
-const getPlaylistDetails = (module.exports.getPlaylistDetails = async playlistId => {
+const getPlaylistDetails = (module.exports.getPlaylistDetails = async (playlistId) => {
   const details = await spotifyApi.getPlaylist(playlistId)
   const {
     name: title,
-    owner: { display_name: author }
+    owner: { display_name: author },
   } = details.body
 
   return { title, author }
 })
 
-module.exports.getPlaylistDetailsWithTracks = async playlistUrl => {
+module.exports.getPlaylistDetailsWithTracks = async (playlistUrl) => {
   const playlistId = getPlaylistId(playlistUrl)
   const generator = getPlaylistTracks({ playlistStoreId: playlistId })
   let tracks = []
@@ -74,26 +74,26 @@ module.exports.getPlaylistDetailsWithTracks = async playlistUrl => {
   return { ...details, tracks }
 }
 
-const getArtistDetails = (module.exports.getArtistDetails = async url => {
+const getArtistDetails = (module.exports.getArtistDetails = async (url) => {
   // TODO: get regex from db
   const artistId = url.match('^https://(api|open).spotify.com/(v1/)?artists?/([0-9A-Za-z]+)')[3]
   const res = await spotifyApi.getArtist(artistId)
   const {
-    body: { name, genres, id }
+    body: { name, genres, id },
   } = res
-  return { id, name, genres: genres.map(name => ({ name, id: name })), url }
+  return { id, name, genres: genres.map((name) => ({ name, id: name })), url }
 })
 
-const getArtistsDetails = async artistIds => {
+const getArtistsDetails = async (artistIds) => {
   const {
-    body: { artists }
+    body: { artists },
   } = await spotifyApi.getArtists(artistIds)
-  return artists.map(({ genres, ...rest }) => ({ genres: genres.map(name => ({ name, id: name })), ...rest }))
+  return artists.map(({ genres, ...rest }) => ({ genres: genres.map((name) => ({ name, id: name })), ...rest }))
 }
 
-const getArtistName = (module.exports.getArtistName = async url => (await getArtistDetails(url)).name)
+const getArtistName = (module.exports.getArtistName = async (url) => (await getArtistDetails(url)).name)
 
-const getPlaylistId = (module.exports.getPlaylistId = url => {
+const getPlaylistId = (module.exports.getPlaylistId = (url) => {
   const id = url.match(/^https:\/\/open.spotify.com\/playlist\/([0-9A-Za-z]*)/)[1]
   if (!id) {
     throw new BadRequest('Invalid Spotify URL')
@@ -102,7 +102,7 @@ const getPlaylistId = (module.exports.getPlaylistId = url => {
   return id
 })
 
-const getPlaylistName = (module.exports.getPlaylistName = async url => {
+const getPlaylistName = (module.exports.getPlaylistName = async (url) => {
   const id = getPlaylistId(url)
   const { title, author } = await getPlaylistDetails(id)
 
@@ -141,7 +141,7 @@ async function getTracks(trackIds) {
 
   if (trackInfos.length !== trackIds.length) {
     const error = `Returned tracks length does not match the length of the track ids: ${JSON.stringify(
-      trackIds
+      trackIds,
     )}, ${JSON.stringify(trackInfos)}`
     logger.error(error)
     throw new Error(error)
@@ -164,7 +164,7 @@ async function getTrackAudioFeatures(trackIds) {
 
   if (trackAudioFeatures.length !== trackIds.length) {
     const error = `Returned track audio feature length does not match the length of the track ids: ${JSON.stringify(
-      trackIds
+      trackIds,
     )}, ${JSON.stringify(trackAudioFeatures)}`
     logger.error(error)
     throw new Error(error)
@@ -173,15 +173,15 @@ async function getTrackAudioFeatures(trackIds) {
   return trackAudioFeatures
 }
 
-const appendTrackDetails = async tracks => {
+const appendTrackDetails = async (tracks) => {
   const trackIds = tracks.map(({ id }) => id)
   const [trackAudioFeatures, trackInfos] = await Promise.all([
     processChunks(trackIds, 100, getTrackAudioFeatures, { concurrency: 4 }),
-    processChunks(trackIds, 50, getTracks, { concurrency: 4 })
+    processChunks(trackIds, 50, getTracks, { concurrency: 4 }),
   ])
 
   return tracks.map(({ id, ...rest }) => {
-    const idMatch = track => id === track?.id
+    const idMatch = (track) => id === track?.id
     const features = trackAudioFeatures.find(idMatch) || {}
     const info = trackInfos.find(idMatch) || {}
 
@@ -190,12 +190,12 @@ const appendTrackDetails = async tracks => {
       features,
       bpm: features.tempo,
       isrc: info.external_ids?.isrc,
-      ...rest
+      ...rest,
     }
   })
 }
 
-const appendArtistDetails = async tracks => {
+const appendArtistDetails = async (tracks) => {
   const artistIds = R.uniq(L.collect([L.elems, 'artists', L.elems, 'id'], tracks))
   const artistDetails = await processChunks(artistIds, 50, getArtistsDetails, { concurrency: 4 })
   return tracks.map(({ artists, ...rest }) => {
@@ -203,14 +203,14 @@ const appendArtistDetails = async tracks => {
       artists: artists.map(({ id, ...rest }) => ({
         id,
         genres: artistDetails.find(({ id: aid }) => aid === id).genres,
-        ...rest
+        ...rest,
       })),
-      ...rest
+      ...rest,
     }
   })
 }
 
-const getPlaylistTracks = (module.exports.getPlaylistTracks = async function*({ playlistStoreId }) {
+const getPlaylistTracks = (module.exports.getPlaylistTracks = async function* ({ playlistStoreId }) {
   const res = await spotifyApi.getPlaylistTracks(playlistStoreId, { market: 'US' })
   const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
   if (transformed.length === 0) {
@@ -223,7 +223,7 @@ const getPlaylistTracks = (module.exports.getPlaylistTracks = async function*({ 
   yield { tracks: await appendArtistDetails(await appendTrackDetails(transformed)), errors: [] }
 })
 
-module.exports.getArtistTracks = async function*({ artistStoreId }) {
+module.exports.getArtistTracks = async function* ({ artistStoreId }) {
   const albumIds = (await spotifyApi.getArtistAlbums(artistStoreId)).body.items.map(R.prop('id'))
   const albums = (await spotifyApi.getAlbums(albumIds)).body.albums
   const transformed = R.flatten(spotifyAlbumTracksTransform(albums))
@@ -236,7 +236,7 @@ module.exports.getArtistTracks = async function*({ artistStoreId }) {
   yield { tracks: await appendArtistDetails(await appendTrackDetails(transformed)), errors: [] }
 }
 
-module.exports.search = async query => {
+module.exports.search = async (query) => {
   const items = (await spotifyApi.searchArtists(query)).body.artists.items
   return items.map(({ external_urls: { spotify }, id, name, type, images }) => ({
     url: spotify,
@@ -244,7 +244,7 @@ module.exports.search = async query => {
     name,
     store: { name: storeCode },
     type,
-    img: images[0]?.url
+    img: images[0]?.url,
   }))
 }
 
@@ -252,7 +252,7 @@ function processIsrc([isrc]) {
   return spotifyApi.searchTracks(`isrc:${isrc}`)
 }
 
-module.exports.getTracksForISRCs = async isrcs => {
+module.exports.getTracksForISRCs = async (isrcs) => {
   const results = (await processChunks(isrcs, 1, processIsrc, { concurrency: 4 })).flat()
   const tracks = results.map(R.path(['body', 'tracks', 'items'])).flat()
   return spotifyTracksTransform(tracks)

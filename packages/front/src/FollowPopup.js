@@ -16,7 +16,7 @@ class FollowPopup extends Component {
     this.state = {
       subscribingToStoreLabel: null,
       subscribingToStoreArtist: null,
-      refreshingList: false
+      refreshingList: false,
     }
   }
 
@@ -27,13 +27,13 @@ class FollowPopup extends Component {
           this.props.track?.artists
             .concat(this.props.track.remixers)
             .map(({ id }) => id)
-            .map(id => requestJSONwithCredentials({ url: `${apiURL}/artists/${id}` }))
+            .map((id) => requestJSONwithCredentials({ url: `${apiURL}/artists/${id}` })),
         ),
         Promise.all(
           this.props.track?.labels
             .map(({ id }) => id)
-            .map(id => requestJSONwithCredentials({ url: `${apiURL}/labels/${id}` }))
-        )
+            .map((id) => requestJSONwithCredentials({ url: `${apiURL}/labels/${id}` })),
+        ),
       ])
 
       this.setState({ artistDetails: R.uniqBy(R.prop('id'), artistDetails) || [], labelDetails: labelDetails || [] })
@@ -54,7 +54,7 @@ class FollowPopup extends Component {
               <Spinner color="#000" size="large" /> Loading...
             </>
           ) : (
-            this.state.artistDetails.map(artist => {
+            this.state.artistDetails.map((artist) => {
               return artist.stores.filter(R.prop('url')).map(({ url, id, store: { name: storeName } }) => {
                 const following = this.getFollowingArtist(id)
                 const subscribing = this.state.subscribingToStoreArtist === id
@@ -94,7 +94,7 @@ class FollowPopup extends Component {
                   <Spinner color="#000" size="large" /> Loading...
                 </>
               ) : (
-                this.state.labelDetails.map(label => {
+                this.state.labelDetails.map((label) => {
                   return label.stores.filter(R.prop('url')).map(({ url, id, store: { name: storeName } }) => {
                     const following = this.getFollowingLabel(id)
                     return (

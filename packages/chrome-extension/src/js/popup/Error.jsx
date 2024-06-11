@@ -16,7 +16,7 @@ export default class Error extends React.Component {
       body: `Please tell us, what you were trying to do:
 
 ---
-Details: ${this.props.error.stack}`
+Details: ${this.props.error.stack}`,
     })
 
     chrome.tabs.create({ url: issueUrl, active: true })

@@ -33,7 +33,7 @@ module.exports = function passportSetup() {
         clientSecret: config.googleClientSecret,
         authorizationURL: 'https://accounts.google.com/o/oauth2/auth',
         tokenURL: 'https://www.googleapis.com/oauth2/v3/token',
-        callbackURL: `${config.apiURL}/auth/login/google/return`
+        callbackURL: `${config.apiURL}/auth/login/google/return`,
       },
       async (issuer, profile, done) => {
         if (profile.id === undefined) {
@@ -47,14 +47,14 @@ module.exports = function passportSetup() {
             //language=PostgreSQL
             sql` -- open id login
 UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_id = ${user.id} 
-`
+`,
           )
         } catch (e) {
           logger.error('Creating or fetching user for OIDC failed', e)
           done(null)
         }
-      }
-    )
+      },
+    ),
   )
 
   const JwtStrategy = require('passport-jwt').Strategy
@@ -88,12 +88,12 @@ UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_
           cache: true,
           rateLimit: true,
           jwksRequestsPerMinute: 5,
-          jwksUri: `https://www.googleapis.com/oauth2/v3/certs`
+          jwksUri: `https://www.googleapis.com/oauth2/v3/certs`,
         }),
-        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken()
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       },
-      verify
-    )
+      verify,
+    ),
   )
 
   passport.serializeUser(async (userToSerialize, done) => {

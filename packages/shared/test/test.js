@@ -6,7 +6,7 @@ const DefaultAssertionTimeout = 5000
 const DefaultGroupTimeout = 10000
 
 const noop = () => {}
-const timeout = timeout => {
+const timeout = (timeout) => {
   let id
   const promise = new Promise((_, reject) => {
     id = setTimeout(() => {
@@ -15,7 +15,7 @@ const timeout = timeout => {
   })
   return {
     promise,
-    cancel: () => clearTimeout(id)
+    cancel: () => clearTimeout(id),
   }
 }
 
@@ -27,7 +27,7 @@ function getCallerFile() {
     var err = new Error()
     var currentfile
 
-    Error.prepareStackTrace = function(err, stack) {
+    Error.prepareStackTrace = function (err, stack) {
       return stack
     }
 
@@ -45,25 +45,25 @@ function getCallerFile() {
   return callerfile
 }
 
-module.exports.test = async suite => {
-  const extractFnPaths = node =>
+module.exports.test = async (suite) => {
+  const extractFnPaths = (node) =>
     Object.keys(node).reduce(
       (acc, key) => [
         ...acc,
-        ...(R.is(Function, node[key]) ? [[key, node[key]]] : extractFnPaths(node[key]).map(R.prepend(key)))
+        ...(R.is(Function, node[key]) ? [[key, node[key]]] : extractFnPaths(node[key]).map(R.prepend(key))),
       ],
-      []
+      [],
     )
 
-  const collectDescriptions = node =>
+  const collectDescriptions = (node) =>
     Object.keys(node).reduce(
       (acc, key) => [
         ...acc,
         R.allPass([R.is(Object), R.complement(R.is(Function))], node[key])
           ? [key, collectDescriptions(node[key])]
-          : [key]
+          : [key],
       ],
-      []
+      [],
     )
 
   const printFail = (error, style = 'console') =>
@@ -77,23 +77,23 @@ module.exports.test = async suite => {
     style === 'console' ? `• ${name.cyan}:\n` : `<span class="test">${name}:</span>\n`
 
   const printChildren = (children, style = 'console') =>
-    style === 'console' ? children.join('\n') : `<ul>\n${children.map(c => `<li>${c}</li>\n`).join('')}\n</ul>\n`
+    style === 'console' ? children.join('\n') : `<ul>\n${children.map((c) => `<li>${c}</li>\n`).join('')}\n</ul>\n`
 
-  const getIndentString = indent => Array(indent).join(' ')
+  const getIndentString = (indent) => Array(indent).join(' ')
   const printStructure = (node, style = 'console', indent = 2) => {
     const indentString = getIndentString(indent)
     return `\
 ${printName(node[0], style)}${
       R.is(Array, node[1])
         ? printChildren(
-            node[1].map(n => indentString.concat(printStructure(n, style, indent + 2))),
-            style
+            node[1].map((n) => indentString.concat(printStructure(n, style, indent + 2))),
+            style,
           )
         : node[1].error !== null
-        ? indentString.concat(printFail(node[1].error, style))
-        : node[1].skipped
-        ? indentString.concat(printSkip(style))
-        : indentString.concat(printPass(style))
+          ? indentString.concat(printFail(node[1].error, style))
+          : node[1].skipped
+            ? indentString.concat(printSkip(style))
+            : indentString.concat(printPass(style))
     }`
   }
 
@@ -112,7 +112,7 @@ ${printName(node[0], style)}${
         } catch (e) {
           console.error(e)
           return {
-            error: `Setup failed with: '${e.toString()}'`
+            error: `Setup failed with: '${e.toString()}'`,
           }
         }
       }
@@ -122,7 +122,7 @@ ${printName(node[0], style)}${
         console.log(
           `${getIndentString(indent)}• ${key} ${
             skippingReason ? `SKIPPING${skippingReason !== true ? ` (reason: ${skippingReason})` : ''}` : ''
-          }`.blue
+          }`.blue,
         )
         const restElement = rest[key]
 
@@ -133,7 +133,7 @@ ${printName(node[0], style)}${
             if (skippingReason) {
               singleResult = {
                 skipped: skippingReason,
-                error: null
+                error: null,
               }
             } else {
               const assertionTimeout = timeout(setupResult?.timeout || DefaultAssertionTimeout)
@@ -142,7 +142,7 @@ ${printName(node[0], style)}${
               const res = await Promise.race([restElement(setupResult), timeoutPromise])
               singleResult = {
                 skipped: false,
-                error: R.defaultTo(null, res)
+                error: R.defaultTo(null, res),
               }
               cancel()
             }
@@ -156,7 +156,7 @@ ${printName(node[0], style)}${
         } catch (e) {
           console.error(`Test '${key}' failed:`.red, e)
           singleResult = { error: e.toString() }
-          timeouts.forEach(t => t.cancel())
+          timeouts.forEach((t) => t.cancel())
         }
         result.push([key, singleResult])
       }

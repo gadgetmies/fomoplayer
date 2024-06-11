@@ -6,7 +6,7 @@ const config = require('../config')
 
 let options = {
   username: process.env.CLOUDMAILIN_USERNAME,
-  apiKey: process.env.CLOUDMAILIN_API_KEY
+  apiKey: process.env.CLOUDMAILIN_API_KEY,
 }
 
 if (process.env.NODE_ENV !== 'production') {
@@ -21,7 +21,7 @@ module.exports.scheduleEmail = async (sender, recipient, subject, plain, html) =
     sql`INSERT INTO email_queue (email_queue_sender, email_queue_recipient, email_queue_subject, email_queue_plain,
                          email_queue_html)
 VALUES (${sender}, ${recipient}, ${subject}, ${plain}, ${html})
-`
+`,
   )
 }
 
@@ -39,7 +39,7 @@ FROM email_queue
 WHERE email_queue_sent IS NULL
 ORDER BY email_queue_requested
 LIMIT ${process.env.EMAIL_SEND_BATCH}
-  `
+  `,
   )
 
   const errors = []
@@ -51,7 +51,7 @@ LIMIT ${process.env.EMAIL_SEND_BATCH}
         from: `"Fomo Player"<${sender}>`,
         plain,
         html,
-        subject
+        subject,
       })
 
       await pg.queryAsync(
@@ -59,7 +59,7 @@ LIMIT ${process.env.EMAIL_SEND_BATCH}
         sql`UPDATE email_queue
 SET email_queue_sent = NOW()
 WHERE email_queue_id = ${id}
-`
+`,
       )
     } catch (e) {
       logger.error('Email sending failed', e)
@@ -70,7 +70,7 @@ SET email_queue_last_error   = ${e.toString()},
     email_queue_last_attempt = NOW(),
     email_queue_attempt_count = email_queue_attempt_count + 1
 WHERE email_queue_id = ${id}
-        `
+        `,
       )
       errors.push(e.toString())
     }

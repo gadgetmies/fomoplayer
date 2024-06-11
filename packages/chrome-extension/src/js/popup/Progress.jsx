@@ -11,7 +11,7 @@ export default function Progress({ percent, height, barColor, bgColor, ...props 
         background: bgColor,
         borderRadius: '0.25em',
         display: 'block',
-        ...props.style
+        ...props.style,
       }}
     >
       <span
@@ -21,7 +21,7 @@ export default function Progress({ percent, height, barColor, bgColor, ...props 
           borderRadius: '0.25em',
           display: 'block',
           backgroundColor: barColor,
-          transition: 'width 1s'
+          transition: 'width 1s',
         }}
       />
     </span>

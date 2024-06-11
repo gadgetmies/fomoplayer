@@ -5,7 +5,10 @@ body {
   color: white;
 }
 
-@font-face { font-family: StoreIcon; src: url('./stores.woff'); }
+@font-face {
+  font-family: StoreIcon;
+  src: url('./stores.woff');
+}
 
 .store-icon {
   display: inline-block;
@@ -17,13 +20,13 @@ body {
 }
 
 .store-icon-bandcamp::before {
-  content: "\e902";
+  content: '\e902';
 }
 
 .store-icon-beatport::before {
-  content: "\e901";
+  content: '\e901';
 }
 
 .store-icon-spotify::before {
-  content: "\e900";
+  content: '\e900';
 }

@@ -6,7 +6,7 @@ class CopyToClipboardButton extends Component {
     super(props)
 
     this.state = {
-      copied: false
+      copied: false,
     }
   }
 
@@ -14,11 +14,11 @@ class CopyToClipboardButton extends Component {
     return (
       <button
         type="submit"
-        onClick={async e => {
+        onClick={async (e) => {
           e.stopPropagation()
           await navigator.clipboard.writeText(this.props.content)
           this.setState({ copied: true })
-          await new Promise(resolve => setTimeout(resolve, 5000))
+          await new Promise((resolve) => setTimeout(resolve, 5000))
           this.setState({ copied: false })
         }}
         title={this.props.title}

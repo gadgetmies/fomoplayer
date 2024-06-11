@@ -2,6 +2,4 @@ const { playlistFetchJob, labelFetchJob, artistFetchJob, fetchJobs } = require('
 const { storeUrl } = require('../../routes/stores/spotify/logic')
 const { fetchOperation } = require('./shared/fetch-operation')
 
-module.exports = fetchOperation(
-  fetchJobs({ artist: artistFetchJob(storeUrl), playlist: playlistFetchJob(storeUrl) })
-)
+module.exports = fetchOperation(fetchJobs({ artist: artistFetchJob(storeUrl), playlist: playlistFetchJob(storeUrl) }))

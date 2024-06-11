@@ -12,7 +12,7 @@ for (const entryName in webPackConfig.entry) {
   if (excludeEntriesToHotReload.indexOf(entryName) === -1) {
     webPackConfig.entry[entryName] = [
       'webpack-dev-server/client?http://localhost:' + port,
-      'webpack/hot/dev-server'
+      'webpack/hot/dev-server',
     ].concat(webPackConfig.entry[entryName])
   }
 }
@@ -31,18 +31,18 @@ const server = new WebpackDevServer(
     host: 'localhost',
     port: port,
     static: {
-      directory: path.join(__dirname, '../build')
+      directory: path.join(__dirname, '../build'),
     },
     devMiddleware: {
       publicPath: `http://localhost:${port}/`,
-      writeToDisk: true
+      writeToDisk: true,
     },
     headers: {
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*',
     },
-    allowedHosts: 'all'
+    allowedHosts: 'all',
   },
-  compiler
+  compiler,
 )
 
 if (process.env.NODE_ENV === 'development' && module.hot) {

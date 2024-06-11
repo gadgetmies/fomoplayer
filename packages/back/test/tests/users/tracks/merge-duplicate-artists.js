@@ -16,6 +16,6 @@ test({
       const [{ artistCount }] = await pg.queryRowsAsync('select count(*) :: INT as "artistCount" from artist')
       assert.strictEqual(artistCount, 1)
     },
-    teardown: teardownTracks
-  }
+    teardown: teardownTracks,
+  },
 })

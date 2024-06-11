@@ -8,7 +8,7 @@ router.use('/email/*', ({ headers, body }, res) => {
 })
 
 router.post('/job/:jobId', ({ params: { jobName } }, res) => {
-  runJob(jobName).then(result => {
+  runJob(jobName).then((result) => {
     console.debug(`Finished job ${jobName}`, result)
   })
   res.status(204).send()

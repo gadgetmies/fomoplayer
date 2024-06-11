@@ -41,7 +41,7 @@ class FollowedItem extends Component {
               <a
                 href={this.props.url}
                 target="_blank"
-                onClick={e => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 title={'Check details from store'}
               >
                 <FontAwesomeIcon icon="external-link-alt" />

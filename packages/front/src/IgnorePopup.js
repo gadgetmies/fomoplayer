@@ -4,7 +4,7 @@ import React, { Component } from 'react'
 import SpinnerButton from './SpinnerButton'
 import { Link } from 'react-router-dom'
 
-const joinStringList = list =>
+const joinStringList = (list) =>
   list.reduce((acc, { name }, i, array) => {
     return acc + (i === 0 ? '' : i === array.length - 1 ? ' & ' : ', ') + name
   }, '')
@@ -23,7 +23,7 @@ class IgnorePopup extends Component {
       ignoredArtists: new Set(),
       ignoredReleases: new Set(),
       ignoredArtistsOnLabels: new Set(),
-      refreshingList: false
+      refreshingList: false,
     }
   }
 
@@ -54,7 +54,7 @@ class IgnorePopup extends Component {
               view.
             </p>
             <div className="input-layout">
-              {artists.map(artist => {
+              {artists.map((artist) => {
                 const labelIds = this.props.track.labels.map(({ id }) => id)
                 const idString = `${artist.id}-${labelIds.join(',')}`
                 const isIgnored = this.state.ignoredArtistsOnLabels.has(idString)
@@ -73,7 +73,7 @@ class IgnorePopup extends Component {
                       try {
                         await this.props.onIgnoreArtistOnLabels(artist.id, labelIds, true)
                         this.setState({
-                          ignoredArtistsOnLabels: this.state.ignoredArtistsOnLabels.add(idString)
+                          ignoredArtistsOnLabels: this.state.ignoredArtistsOnLabels.add(idString),
                         })
                       } catch (e) {
                         console.error(e)
@@ -93,7 +93,7 @@ class IgnorePopup extends Component {
           <>
             <h2>Release</h2>
             <div className="input-layout">
-              {this.props.track.releases.map(release => (
+              {this.props.track.releases.map((release) => (
                 <SpinnerButton
                   loading={this.state.ignoringRelease === release.id}
                   disabled={this.state.ignoringRelease || this.state.ignoredReleases.has(release.id)}
@@ -108,7 +108,7 @@ class IgnorePopup extends Component {
                     try {
                       await this.props.onIgnoreRelease(release.id, true)
                       this.setState({
-                        ignoredReleases: this.state.ignoredReleases.add(release.id)
+                        ignoredReleases: this.state.ignoredReleases.add(release.id),
                       })
                     } catch (e) {
                       console.error(e)
@@ -125,7 +125,7 @@ class IgnorePopup extends Component {
         )}
         <h2>Artists</h2>
         <div className="input-layout">
-          {this.props.track.artists.map(artist => (
+          {this.props.track.artists.map((artist) => (
             <SpinnerButton
               loading={this.state.ignoringArtist === artist.id}
               disabled={this.state.ignoringArtist || this.state.ignoredArtists.has(artist.id)}
@@ -155,7 +155,7 @@ class IgnorePopup extends Component {
           <>
             <h2>Labels</h2>
             <div className="input-layout">
-              {this.props.track.labels.map(label => (
+              {this.props.track.labels.map((label) => (
                 <SpinnerButton
                   loading={this.state.ignoringLabel === label.id}
                   disabled={this.state.ignoringLabel || this.state.ignoredLabels.has(label.id)}

@@ -233,7 +233,9 @@ input[type='range'] {
   border-radius: 0.25rem;
   background-image: linear-gradient(rgb(180, 0, 137), rgb(180, 0, 137));
   background-repeat: no-repeat;
-  transition: box-shadow 0.25s ease-in-out, width 0.25s ease-in-out;
+  transition:
+    box-shadow 0.25s ease-in-out,
+    width 0.25s ease-in-out;
 }
 
 input[type='range']::-webkit-slider-thumb {

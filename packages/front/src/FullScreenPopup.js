@@ -10,7 +10,7 @@ class FullScreenPopup extends Component {
     return (
       <div
         className="full-screen-popup-container align-center-container"
-        onClick={e => {
+        onClick={(e) => {
           if (e.target === e.currentTarget) {
             this.props.onCloseClicked()
           }

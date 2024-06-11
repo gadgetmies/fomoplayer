@@ -63,7 +63,6 @@
     min-height: 2rem;
   }
 
-
   .pill-link-large {
     padding: 16px;
     font-size: 100%;
@@ -75,7 +74,6 @@
   .pill-link-collapse .pill-button-text {
     display: none;
   }
-
 
   .pill-link-large {
     padding: 8px;

@@ -13,6 +13,6 @@ module.exports = {
   },
   pg: require('pg-using-bluebird')({
     dbUrl: process.env.DATABASE_URL,
-    statementTimeout: process.env.STATEMENT_TIMEOUT
-  })
+    statementTimeout: process.env.STATEMENT_TIMEOUT,
+  }),
 }

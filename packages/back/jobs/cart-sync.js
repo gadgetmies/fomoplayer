@@ -27,7 +27,7 @@ module.exports.syncCarts = async () => {
         AND store_id = (SELECT store_id FROM store WHERE store_name = 'Spotify')
         AND cart_deleted IS NULL
       GROUP BY 1
-      `
+      `,
     )
 
     for (const { userId, cartDetails } of cartsToUpdate) {
@@ -45,13 +45,13 @@ module.exports.syncCarts = async () => {
           const storeTrackUris = playlist.tracks.items.map(({ track: { uri } }) => uri)
           const dbTrackUris = getSpotifyTrackUris(tracks)
           const diff = R.symmetricDifference(storeTrackUris, dbTrackUris)
-          const [removed, added] = R.partition(u => dbTrackUris.includes(u), diff)
+          const [removed, added] = R.partition((u) => dbTrackUris.includes(u), diff)
 
           const removedTracks = await getTracksForStoreIds('Spotify', removed)
           await removeTracksFromCart(userId, cartId, removedTracks)
 
           const newTrackInCart = spotifyTracksTransform(
-            playlist.tracks.items.filter(({ track: { uri } }) => added.includes(uri))
+            playlist.tracks.items.filter(({ track: { uri } }) => added.includes(uri)),
           )
 
           const addedTracks = await addStoreTracksToUsers(storeUrl, newTrackInCart, [userId], null, false)

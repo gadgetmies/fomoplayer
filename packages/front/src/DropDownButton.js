@@ -5,7 +5,7 @@ import * as R from 'ramda'
 import React from 'react'
 import DropDown from './DropDown'
 
-const DropDownButton = props => {
+const DropDownButton = (props) => {
   const {
     className,
     buttonClassName,
@@ -46,7 +46,7 @@ const DropDownButton = props => {
               position: 'relative',
               height: '100%',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
             }}
           >
             <FontAwesomeIcon icon="caret-down" />

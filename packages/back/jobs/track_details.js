@@ -17,7 +17,7 @@ INSERT INTO track_details (track_id, track_details_updated, track_details)
 ON CONFLICT ON CONSTRAINT track_details_track_id_key DO UPDATE
     SET track_details         = EXCLUDED.track_details,
         track_details_updated = NOW()
-    `
+    `,
   )
 
   return { success: true }

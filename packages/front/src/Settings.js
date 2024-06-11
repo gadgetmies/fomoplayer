@@ -22,7 +22,7 @@ import CollapseHeader from './CollapseHeader'
 import ConfirmButton from './ConfirmButton'
 
 const spotifyAuthorizationURL = `${apiURL}/auth/spotify?path=/settings/integrations`
-const AuthorizationButtons = props => (
+const AuthorizationButtons = (props) => (
   <>
     <p>
       <span className={'input-layout'}>
@@ -108,7 +108,7 @@ class Settings extends Component {
       settingCartPublic: null,
       publicCarts: new Set(props.carts.filter(R.prop('is_public')).map(R.prop('id'))),
       syncedCarts: Object.fromEntries(
-        props.carts.filter(R.prop('store_details')).map(({ id, store_details }) => [id, store_details])
+        props.carts.filter(R.prop('store_details')).map(({ id, store_details }) => [id, store_details]),
       ),
       page,
       scoreWeights: this.props.scoreWeights,
@@ -119,7 +119,7 @@ class Settings extends Component {
       importedArtists: [],
       exportingFollowedArtists: false,
       followedArtistsExportSuccess: null,
-      authorizations: []
+      authorizations: [],
     }
 
     this.markHeardButton.bind(this)
@@ -143,7 +143,7 @@ class Settings extends Component {
 
   async updateArtistFollows() {
     const artistFollows = await requestJSONwithCredentials({
-      path: `/me/follows/artists`
+      path: `/me/follows/artists`,
     })
 
     this.setState({ artistFollows })
@@ -151,14 +151,14 @@ class Settings extends Component {
 
   async updateLabelFollows() {
     const labelFollows = await requestJSONwithCredentials({
-      path: `/me/follows/labels`
+      path: `/me/follows/labels`,
     })
     this.setState({ labelFollows })
   }
 
   async updatePlaylistFollows() {
     const playlistFollows = await requestJSONwithCredentials({
-      path: `/me/follows/playlists`
+      path: `/me/follows/playlists`,
     })
     this.setState({ playlistFollows })
   }
@@ -169,28 +169,28 @@ class Settings extends Component {
 
   async updateArtistIgnores() {
     const artistIgnores = await requestJSONwithCredentials({
-      path: `/me/ignores/artists`
+      path: `/me/ignores/artists`,
     })
     this.setState({ artistIgnores })
   }
 
   async updateLabelIgnores() {
     const labelIgnores = await requestJSONwithCredentials({
-      path: `/me/ignores/labels`
+      path: `/me/ignores/labels`,
     })
     this.setState({ labelIgnores })
   }
 
   async updateArtistOnLabelIgnores() {
     const artistOnLabelIgnores = await requestJSONwithCredentials({
-      path: `/me/ignores/artists-on-labels`
+      path: `/me/ignores/artists-on-labels`,
     })
     this.setState({ artistOnLabelIgnores })
   }
 
   async updateAuthorizations() {
     const authorizations = await requestJSONwithCredentials({
-      path: `/me/authorizations`
+      path: `/me/authorizations`,
     })
     this.setState({ authorizations })
   }
@@ -201,8 +201,8 @@ class Settings extends Component {
       path: `/me/carts/${cartId}`,
       method: 'POST',
       body: {
-        is_public: setPublic
-      }
+        is_public: setPublic,
+      },
     })
     const updatedPublicCarts = new Set(this.state.publicCarts)
     setPublic ? updatedPublicCarts.add(cartId) : updatedPublicCarts.delete(cartId)
@@ -215,7 +215,7 @@ class Settings extends Component {
       await requestWithCredentials({
         path: `/me/carts/${cartId}/sync/spotify`,
         method: 'POST',
-        body: { setSync }
+        body: { setSync },
       })
       const updatedSyncedCarts = { ...this.state.syncedCarts }
       setSync ? (updatedSyncedCarts[cartId] = ['spotify']) : delete updatedSyncedCarts[cartId]
@@ -240,7 +240,7 @@ class Settings extends Component {
     if (this.state.scoreWeightsDebounce) {
       clearTimeout(this.state.scoreWeightsDebounce)
       this.setState({
-        scoreWeightsDebounce: undefined
+        scoreWeightsDebounce: undefined,
       })
     }
 
@@ -248,14 +248,14 @@ class Settings extends Component {
       await requestWithCredentials({
         path: `/me/score-weights`,
         method: 'POST',
-        body: newWeights
+        body: newWeights,
       })
 
       try {
         this.setState({ updatingTracks: true })
 
         const { tracks } = await requestJSONwithCredentials({
-          path: `/me/tracks?limit_new=10&limit_recent=0&limit_heard=0`
+          path: `/me/tracks?limit_new=10&limit_recent=0&limit_heard=0`,
         })
 
         this.setState({ tracks, updatingTracks: false })
@@ -273,7 +273,7 @@ class Settings extends Component {
       followQuery: '',
       updatingFollowDetails: null,
       followDetails: undefined,
-      updatingFollowWithUrl: null
+      updatingFollowWithUrl: null,
     })
   }
 
@@ -296,10 +296,10 @@ class Settings extends Component {
             type="range"
             style={{
               display: 'table-cell',
-              backgroundSize: `${(scaledWeight / (numberProps.max - numberProps.min)) * 100}% 100%`
+              backgroundSize: `${(scaledWeight / (numberProps.max - numberProps.min)) * 100}% 100%`,
             }}
             value={scaledWeight}
-            onChange={e => this.setScoreWeight(property, Number(e.target.value) * scaling)}
+            onChange={(e) => this.setScoreWeight(property, Number(e.target.value) * scaling)}
             {...numberProps}
           />
         </div>
@@ -307,7 +307,7 @@ class Settings extends Component {
           <input
             type="number"
             value={scaledWeight}
-            onChange={e => this.setScoreWeight(property, Number(e.target.value) * scaling)}
+            onChange={(e) => this.setScoreWeight(property, Number(e.target.value) * scaling)}
             style={{ display: 'table-cell' }}
             className={'text-input text-input-small text-input-dark '}
             {...numberProps}
@@ -333,7 +333,7 @@ class Settings extends Component {
       <div className="page-container scroll-container" style={{ ...this.props.style }}>
         <SettingsHelp
           active={this.state.helpActive}
-          onActiveChanged={active => this.setState({ helpActive: active })}
+          onActiveChanged={(active) => this.setState({ helpActive: active })}
         />
         <div className="settings-container">
           <h2>
@@ -459,18 +459,18 @@ class Settings extends Component {
                     styles="large dark"
                     value={this.state.followQuery}
                     onClearSearch={this.clearSearch.bind(this)}
-                    onChange={e => {
+                    onChange={(e) => {
                       // TODO: replace aborted and debounce with flatmapLatest
                       this.setState({
                         followQuery: e.target.value,
                         followDetails: undefined,
-                        updatingFollowDetails: null
+                        updatingFollowDetails: null,
                       })
                       if (this.state.followDetailsDebounce) {
                         clearTimeout(this.state.followDetailsDebounce)
                         this.setState({
                           followDetailsDebounce: undefined,
-                          followDetailsUpdateAborted: this.state.followDetailsDebounce !== undefined
+                          followDetailsUpdateAborted: this.state.followDetailsDebounce !== undefined,
                         })
                       }
 
@@ -479,9 +479,9 @@ class Settings extends Component {
                       }
                       this.setState({
                         updatingFollowDetails: Object.fromEntries(
-                          this.props.stores.map(({ storeName }) => [storeName, true])
+                          this.props.stores.map(({ storeName }) => [storeName, true]),
                         ),
-                        followDetailsUpdateAborted: false
+                        followDetailsUpdateAborted: false,
                       })
                       const timeout = setTimeout(async () => {
                         if (this.state.followQuery.match('^https://')) {
@@ -496,16 +496,18 @@ class Settings extends Component {
                             clearTimeout(this.state.followDetailsDebounce)
                             this.setState({
                               updatingFollowDetails: null,
-                              followDetailsDebounce: undefined
+                              followDetailsDebounce: undefined,
                             })
                           }
                         } else {
                           const promises = this.props.stores.map(({ storeName }) =>
                             requestWithCredentials({
-                              path: `/stores/${storeName}/search/?q=${this.state.followQuery}`
+                              path: `/stores/${storeName}/search/?q=${this.state.followQuery}`,
                             })
-                              .then(async res => (await res.json()).map(result => ({ stores: [storeName], ...result })))
-                              .then(json => {
+                              .then(async (res) =>
+                                (await res.json()).map((result) => ({ stores: [storeName], ...result })),
+                              )
+                              .then((json) => {
                                 if (this.state.followDetailsUpdateAborted) return
                                 this.setState({
                                   followDetails:
@@ -513,19 +515,19 @@ class Settings extends Component {
                                       ? json
                                       : R.sortBy(
                                           R.compose(R.toLower, R.prop('name')),
-                                          this.state.followDetails.concat(json)
+                                          this.state.followDetails.concat(json),
                                         ),
-                                  updatingFollowDetails: { ...this.state.updatingFollowDetails, [storeName]: false }
+                                  updatingFollowDetails: { ...this.state.updatingFollowDetails, [storeName]: false },
                                 })
-                              })
+                              }),
                           )
                           Promise.all(promises)
-                            .catch(e => {
+                            .catch((e) => {
                               console.error('Error updating follow details', e)
                               clearTimeout(this.state.followDetailsDebounce)
                               this.setState({
                                 updatingFollowDetails: null,
-                                followDetailsDebounce: undefined
+                                followDetailsDebounce: undefined,
                               })
                             })
                             .finally(() => {
@@ -542,7 +544,7 @@ class Settings extends Component {
                   />
                 </div>
                 {this.state.updatingFollowDetails !== null &&
-                Object.values(this.state.updatingFollowDetails).some(val => val) ? (
+                Object.values(this.state.updatingFollowDetails).some((val) => val) ? (
                   <>
                     <br />
                     Searching <Spinner size="large" />
@@ -565,12 +567,12 @@ class Settings extends Component {
                                 Object.entries(
                                   R.groupBy(
                                     R.propSatisfies(
-                                      name => name.toLocaleLowerCase() !== this.state.followQuery.toLocaleLowerCase(),
-                                      'name'
+                                      (name) => name.toLocaleLowerCase() !== this.state.followQuery.toLocaleLowerCase(),
+                                      'name',
                                     ),
-                                    items
-                                  )
-                                )
+                                    items,
+                                  ),
+                                ),
                               ).map(([isNotExactMatch, grouped]) => (
                                 <>
                                   {type !== 'playlist' && (
@@ -597,7 +599,7 @@ class Settings extends Component {
                                 </>
                               ))}
                             </>
-                          )
+                          ),
                         )}
                       </div>
                     )}
@@ -606,7 +608,7 @@ class Settings extends Component {
                 <div style={{ fontSize: '75%', marginTop: 5 }}>
                   <a
                     href=""
-                    onClick={e => {
+                    onClick={(e) => {
                       e.preventDefault()
                       this.setState({ page: 'integrations' })
                     }}
@@ -623,7 +625,7 @@ class Settings extends Component {
                       <li key={storeArtistId} data-onboarding-id="follow-item">
                         <FollowedItem
                           disabled={this.state.updatingArtistFollows}
-                          onStarClick={async e => {
+                          onStarClick={async (e) => {
                             e.stopPropagation()
                             this.setState({ updatingArtistFollows: true })
                             await this.props.onSetStarred('artists', watchId, !starred)
@@ -637,7 +639,7 @@ class Settings extends Component {
                             this.setState({ updatingArtistFollows: true })
                             await requestWithCredentials({
                               path: `/me/follows/artists/${storeArtistId}`,
-                              method: 'DELETE'
+                              method: 'DELETE',
                             })
                             await this.updateArtistFollows()
                             this.setState({ updatingArtistFollows: false })
@@ -652,7 +654,7 @@ class Settings extends Component {
                         />
                       </li>
                     )
-                  }
+                  },
                 )}
               </ul>
               <CollapseHeader>Followed labels ({this.state.labelFollows.length})</CollapseHeader>
@@ -662,7 +664,7 @@ class Settings extends Component {
                     <li key={storeLabelId}>
                       <FollowedItem
                         disabled={this.state.updatingLabelFollows}
-                        onStarClick={async e => {
+                        onStarClick={async (e) => {
                           e.stopPropagation()
                           this.setState({ updatingLabelFollows: true })
                           await this.props.onSetStarred('labels', watchId, !starred)
@@ -673,7 +675,7 @@ class Settings extends Component {
                           this.setState({ updatingLabelFollows: true })
                           await requestWithCredentials({
                             path: `/me/follows/labels/${storeLabelId}`,
-                            method: 'DELETE'
+                            method: 'DELETE',
                           })
                           await this.updateLabelFollows()
                           this.setState({ updatingLabelFollows: false })
@@ -681,7 +683,7 @@ class Settings extends Component {
                         {...{ storeName, title: name, starred, url }}
                       />
                     </li>
-                  )
+                  ),
                 )}
               </ul>
               <CollapseHeader>Followed playlists ({this.state.playlistFollows.length})</CollapseHeader>
@@ -694,7 +696,7 @@ class Settings extends Component {
                         this.setState({ updatingPlaylistFollows: true })
                         await requestWithCredentials({
                           path: `/me/follows/playlists/${id}`,
-                          method: 'DELETE'
+                          method: 'DELETE',
                         })
                         await this.updatePlaylistFollows()
                         this.setState({ updatingPlaylistFollows: false })
@@ -750,7 +752,7 @@ class Settings extends Component {
                     className="text-input text-input-large text-input-dark"
                     disabled={this.state.updatingCarts}
                     value={this.state.cartName}
-                    onChange={e => this.setState({ cartName: e.target.value })}
+                    onChange={(e) => this.setState({ cartName: e.target.value })}
                   />
                   <SpinnerButton
                     className="button button-push_button-large button-push_button-primary"
@@ -779,7 +781,7 @@ class Settings extends Component {
                   const cartPath = `/carts/${uuid}`
                   const publicLink = new URL(cartPath, window.location).toString()
                   const spotifyStoreDetails = this.state.syncedCarts[id]?.find(
-                    ({ store_name }) => store_name === 'Spotify'
+                    ({ store_name }) => store_name === 'Spotify',
                   )
                   return (
                     <div key={id}>
@@ -795,7 +797,7 @@ class Settings extends Component {
                             id={buttonId}
                             checked={is_public}
                             disabled={this.state.settingCartPublic !== null || this.state.updatingCarts}
-                            onChange={state => this.setCartPublic(id, state)}
+                            onChange={(state) => this.setCartPublic(id, state)}
                           />
                           {this.state.settingCartPublic === id ? <Spinner size="small" /> : null}
                           {this.state.publicCarts.has(id) ? (
@@ -824,7 +826,7 @@ class Settings extends Component {
                               id={`${uuid}-sync`}
                               checked={spotifyStoreDetails}
                               disabled={this.state.updatingCartSync !== null || this.state.updatingCarts}
-                              onChange={state => this.setCartSync(id, state)}
+                              onChange={(state) => this.setCartSync(id, state)}
                             />
                             {this.state.updatingCartSync === id ? <Spinner size="small" /> : null}
                           </p>
@@ -868,7 +870,7 @@ class Settings extends Component {
                     type={'email'}
                     className="text-input text-input-large text-input-dark"
                     value={this.state.email}
-                    onChange={e => this.setState({ email: e.target.value, emailVerificationRequested: false })}
+                    onChange={(e) => this.setState({ email: e.target.value, emailVerificationRequested: false })}
                   />
                   <SpinnerButton
                     className="button button-push_button-large button-push_button-primary"
@@ -882,7 +884,7 @@ class Settings extends Component {
                       this.setState({
                         updatingEmail: true,
                         emailVerificationRequested: true,
-                        emailVerificationFailed: false
+                        emailVerificationFailed: false,
                       })
                       try {
                         await this.props.onUpdateEmail(this.state.email)
@@ -923,7 +925,7 @@ class Settings extends Component {
                       !this.props.userSettings.emailVerified
                     }
                     value={this.state.notificationSearch}
-                    onChange={e => {
+                    onChange={(e) => {
                       this.setState({ notificationSearch: e.target.value })
                     }}
                   />
@@ -941,8 +943,8 @@ class Settings extends Component {
                         this.props.stores.map(({ storeName }) => ({
                           op: 'add',
                           storeName,
-                          text: this.state.notificationSearch
-                        }))
+                          text: this.state.notificationSearch,
+                        })),
                       )
                       this.setState({ notificationSearch: '' })
                     }}
@@ -962,15 +964,15 @@ class Settings extends Component {
                         </NavLink>{' '}
                         <button
                           disabled={this.state.updatingNotifications}
-                          onClick={async e => {
+                          onClick={async (e) => {
                             e.stopPropagation()
                             this.setState({ updatingNotifications: true })
                             await this.props.onRequestNotificationUpdate([
                               {
                                 op: 'remove',
                                 storeName,
-                                text
-                              }
+                                text,
+                              },
                             ])
 
                             this.setState({ updatingNotifications: false })
@@ -1002,7 +1004,7 @@ class Settings extends Component {
                             this.setState({ updatingArtistIgnores: true })
                             await requestWithCredentials({
                               path: `/me/ignores/artists/${id}`,
-                              method: 'DELETE'
+                              method: 'DELETE',
                             })
                             await this.updateArtistIgnores()
                             this.setState({ updatingArtistIgnores: false })
@@ -1028,7 +1030,7 @@ class Settings extends Component {
                             this.setState({ updatingLabelIgnores: true })
                             await requestWithCredentials({
                               path: `/me/ignores/labels/${id}`,
-                              method: 'DELETE'
+                              method: 'DELETE',
                             })
                             await this.updateLabelIgnores()
                             this.setState({ updatingLabelIgnores: false })
@@ -1055,7 +1057,7 @@ class Settings extends Component {
                             await requestWithCredentials({
                               path: `/me/ignores/artists-on-labels/`,
                               method: 'PATCH',
-                              body: { op: 'delete', artistId: artist.id, labelId: label.id }
+                              body: { op: 'delete', artistId: artist.id, labelId: label.id },
                             })
                             await this.updateArtistOnLabelIgnores()
                             this.setState({ updatingArtistOnLabelIgnores: false })
@@ -1140,7 +1142,7 @@ class Settings extends Component {
                         try {
                           const followedArtists = await requestJSONwithCredentials({
                             path: `/me/follows/artists`,
-                            method: 'GET'
+                            method: 'GET',
                           })
 
                           await requestWithCredentials({
@@ -1148,7 +1150,7 @@ class Settings extends Component {
                             method: 'POST',
                             body: followedArtists
                               .filter(({ store: { name } }) => name === 'Spotify')
-                              .map(({ url }) => url)
+                              .map(({ url }) => url),
                           })
                           this.setState({ followedArtistsExportSuccess: true })
                         } catch (e) {
@@ -1178,13 +1180,13 @@ class Settings extends Component {
                         try {
                           const followedArtists = await requestJSONwithCredentials({
                             path: `/stores/spotify/my-followed-artists`,
-                            method: 'GET'
+                            method: 'GET',
                           })
 
                           const importedArtists = await requestJSONwithCredentials({
                             path: `/me/follows/artists`,
                             method: 'POST',
-                            body: followedArtists
+                            body: followedArtists,
                           })
                           await this.updateArtistFollows()
                           this.setState({ importedArtists })
@@ -1214,7 +1216,7 @@ class Settings extends Component {
                             this.setState({ updatingArtistFollows: true })
                             await requestWithCredentials({
                               path: `/me/follows/artists/${storeArtistId}`,
-                              method: 'DELETE'
+                              method: 'DELETE',
                             })
                             await this.updateArtistFollows()
                             this.setState({ updatingArtistFollows: false })
@@ -1232,9 +1234,9 @@ class Settings extends Component {
                         this.setState({ fetchingPlaylists: true, importedPlaylists: null })
                         requestJSONwithCredentials({
                           path: `/stores/spotify/my-playlists`,
-                          method: 'GET'
+                          method: 'GET',
                         })
-                          .then(playlists => {
+                          .then((playlists) => {
                             this.setState({ spotifyPlaylists: playlists })
                           })
                           .finally(() => this.setState({ fetchingPlaylists: false }))
@@ -1290,7 +1292,7 @@ class Settings extends Component {
       this.setState({ deauthorizingSpotify: true })
       await requestWithCredentials({
         method: 'DELETE',
-        path: `/me/authorizations/spotify`
+        path: `/me/authorizations/spotify`,
       })
       this.setState({ authorizations: [] })
     } catch (e) {
@@ -1304,13 +1306,13 @@ class Settings extends Component {
     try {
       this.setState({ updatingFollowWithUrl: url })
       const props = {
-        body: [{ url, name }]
+        body: [{ url, name }],
       }
 
       await requestJSONwithCredentials({
         path: `/me/follows/${type}s`,
         method: 'POST',
-        ...props
+        ...props,
       })
 
       await this.updateFollows()
@@ -1337,7 +1339,7 @@ class Settings extends Component {
       await requestJSONwithCredentials({
         url: `${apiURL}/me/carts`,
         method: 'POST',
-        body: { url }
+        body: { url },
       })
       await this.props.onUpdateCarts()
       this.setState({ importedPlaylists: [...this.state.importedPlaylists, url] })

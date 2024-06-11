@@ -7,7 +7,7 @@ async function makeRequestAndRespond({ request, url = undefined, options = {} })
   options = {
     method: request.method,
     duplex: request.duplex,
-    ...options
+    ...options,
   }
 
   const res = await fetch(url || request.url, options)
@@ -18,8 +18,8 @@ async function makeRequestAndRespond({ request, url = undefined, options = {} })
     new Response(body, {
       status: res.status,
       statusText: res.statusText,
-      headers: R.omit(['content-encoding'], headers) // TODO: should this be omitted for all cases or just Spotify?
-    })
+      headers: R.omit(['content-encoding'], headers), // TODO: should this be omitted for all cases or just Spotify?
+    }),
   )
 }
 
@@ -29,7 +29,7 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
   logger.info(`Enabling development / test http request interceptors for ${name}`)
   const interceptor = new BatchInterceptor({
     name: `${name}Interceptor`,
-    interceptors: nodeInterceptors
+    interceptors: nodeInterceptors,
   })
 
   interceptor.apply()
@@ -56,9 +56,9 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
           url: rewrittenUrl,
           options: {
             headers,
-            body: requestBody
+            body: requestBody,
           },
-          request
+          request,
         })
       } else if (mock !== undefined) {
         logger.info(`Mocking request: ${url}`)
@@ -80,6 +80,6 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
 
   return {
     clearMockedRequests,
-    getMockedRequests
+    getMockedRequests,
   }
 }

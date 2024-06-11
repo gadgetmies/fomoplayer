@@ -10,7 +10,7 @@ class ToggleButton extends Component {
           id={this.props.id}
           disabled={this.props.disabled}
           defaultChecked={this.props.checked}
-          onChange={e => this.props.onChange(e.target.checked)}
+          onChange={(e) => this.props.onChange(e.target.checked)}
         />
         <span className="toggle-button_slider" />
       </label>

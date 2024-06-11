@@ -9,11 +9,11 @@ require('colors')
 
 process.NODE_ENV = 'test'
 
-const runTest = test => {
+const runTest = (test) => {
   // TODO: implement regex filtering
   const child = fork(test)
 
-  return new BPromise(function(resolve, reject) {
+  return new BPromise(function (resolve, reject) {
     child.addListener('error', reject)
     child.addListener('exit', resolve)
   })
@@ -23,7 +23,7 @@ const main = async (path, regex = /\.js/) => {
   const testFiles = recursivelyFindByRegex(require('path').resolve(`${process.cwd()}/${path}`), regex)
 
   const exitStatuses = []
-  await BPromise.mapSeries(testFiles, async test => {
+  await BPromise.mapSeries(testFiles, async (test) => {
     try {
       const code = await runTest(test)
       exitStatuses.push({ test, code })
@@ -51,26 +51,26 @@ const argv = yargs
   .command(
     '$0 <path>',
     'Runs tests in path filtered by regex if given',
-    yargs => {
+    (yargs) => {
       yargs.positional('path', {
         description: 'Path to test files. Searched recursively.',
-        type: 'string'
+        type: 'string',
       })
       yargs.option('regex', {
         description: 'Regex to filter files with',
         alias: 'r',
-        type: 'string'
+        type: 'string',
       })
-      yargs.check(argv => {
+      yargs.check((argv) => {
         if (R.isEmpty(argv.regex)) {
           throw new Error('regex option used, but regex string was empty!')
         }
         return true
       })
     },
-    async argv => {
+    async (argv) => {
       return await main(argv.path, argv.regex)
-    }
+    },
   )
   .help()
   .alias('help', 'h').argv

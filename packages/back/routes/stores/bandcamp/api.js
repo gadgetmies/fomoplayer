@@ -3,9 +3,9 @@ const router = require('express-promise-router')()
 const { getPreviewDetails, search } = require('./logic.js')
 
 router.get('/previews/:previewId', ({ user: { id: userId }, params: { previewId } }, res) => {
-  return getPreviewDetails(previewId).then(url => res.send(url))
+  return getPreviewDetails(previewId).then((url) => res.send(url))
 })
 
-router.get('/search', ({ query: q }, res) => search(q).then(results => res.send(results)))
+router.get('/search', ({ query: q }, res) => search(q).then((results) => res.send(results)))
 
 module.exports = router

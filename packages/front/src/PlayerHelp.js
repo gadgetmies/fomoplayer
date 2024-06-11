@@ -11,7 +11,7 @@ export class PlayerHelp extends Component {
           This is the default and main view in the application listing the new unheard tracks sorted by relevance (i.e.
           using the bonuses and penalties in the settings).
         </p>
-      )
+      ),
     },
     Sorting: {
       target: '[data-help-id=recently-added-tracks]',
@@ -21,7 +21,7 @@ export class PlayerHelp extends Component {
           In case you want to see the latest tracks added to your collection sorted only by the time those tracks were
           added to the collection, you can use the recently added tab.
         </p>
-      )
+      ),
     },
     Carts: {
       target: '[data-help-id=recently-played-tracks]',
@@ -31,12 +31,12 @@ export class PlayerHelp extends Component {
           In case you miss some track for one reason or another (e.g. forget the player to play through tracks in the
           background), you can get back to them using the recently played tab.
         </p>
-      )
+      ),
     },
     Notifications: {
       target: '[data-help-id=carts]',
       placement: 'bottom',
-      content: <p>Manage the tracks you've added to your carts in the carts tab.</p>
+      content: <p>Manage the tracks you've added to your carts in the carts tab.</p>,
     },
     Ignores: {
       target: '[data-help-id=search]',
@@ -46,12 +46,12 @@ export class PlayerHelp extends Component {
           Search for tracks and subscribe to email notifications when new results for the given search term are added,
           using the search tab.
         </p>
-      )
+      ),
     },
     Collection: {
       target: '[data-help-id=add-to-default-cart]',
       placement: 'bottom',
-      content: <p>To quickly add a track to your default cart, you can click the plus button next to the timeline.</p>
+      content: <p>To quickly add a track to your default cart, you can click the plus button next to the timeline.</p>,
     },
     Authorizations: {
       target: '[data-help-id=keyboard-shortcuts]',
@@ -65,8 +65,8 @@ export class PlayerHelp extends Component {
           hovering the keyboard icon in the top bar.
         </p>
       ),
-      locale: { last: 'Done' }
-    }
+      locale: { last: 'Done' },
+    },
   }
 
   constructor(props) {

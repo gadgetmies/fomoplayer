@@ -1,7 +1,7 @@
 const sql = require('sql-template-strings')
 const pg = require('fomoplayer_shared').db.pg
 
-module.exports.queryPreviewDetails = previewId =>
+module.exports.queryPreviewDetails = (previewId) =>
   pg
     .queryRowsAsync(
       //language=PostgreSQL
@@ -16,6 +16,6 @@ FROM
   NATURAL JOIN store__track
 WHERE
   store__track_preview_id = ${previewId}
-`
+`,
     )
     .then(([details]) => details)

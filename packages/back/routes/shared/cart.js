@@ -11,7 +11,7 @@ const {
   queryCartOwner,
   insertCartStoreDetails,
   deleteCartStoreDetails,
-  queryCartStoreDetails
+  queryCartStoreDetails,
 } = require('./db/cart.js')
 const { using } = require('bluebird')
 const pg = require('fomoplayer_shared').db.pg
@@ -21,7 +21,7 @@ const {
   addTracksToSyncedCart,
   removeTracksFromSyncedCart,
   createCart,
-  storeName: spotifyStoreName
+  storeName: spotifyStoreName,
 } = require('./spotify')
 const { getTrackDetails, addStoreTracksToUsers } = require('./tracks')
 const { updateCartStoreVersionId, deleteUserCartStoreDetails } = require('./db/cart')
@@ -39,7 +39,7 @@ module.exports.removeCart = async (userId, cartId) => {
 module.exports.updateCartDetails = async (userId, cartId, properties) => {
   await verifyCartOwnership(userId, cartId)
   const { name, is_public } = properties
-  await using(pg.getTransaction(), async tx => {
+  await using(pg.getTransaction(), async (tx) => {
     if (name !== undefined || is_public !== undefined) {
       try {
         await updateCartProperties(tx, cartId, properties)
@@ -53,7 +53,7 @@ module.exports.updateCartDetails = async (userId, cartId, properties) => {
       logger.error(message)
       throw new Error(message)
     }
-  }).catch(e => {
+  }).catch((e) => {
     logger.error(`Updating cart details failed: ${e.toString()}`)
     throw new Error('Updating cart details failed')
   })
@@ -144,7 +144,7 @@ module.exports.importPlaylistAsCart = async (userId, url) => {
   logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}, tracks: ${tracks.length}`)
   const storedTracks = await addStoreTracksToUsers(storeModule.logic.storeUrl, tracks, [], null, false)
   logger.debug(
-    `Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}, tracks: ${storedTracks.length}`
+    `Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}, tracks: ${storedTracks.length}`,
   )
   const createdCart = await insertCart(userId, `${storeModule.logic.storeName}: ${title}`)
   logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}, cart: ${createdCart.id}`)

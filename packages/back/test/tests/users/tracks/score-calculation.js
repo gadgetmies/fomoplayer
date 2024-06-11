@@ -14,7 +14,7 @@ const {
   updateDateReleasedScore,
   updateDatePublishedScore,
   updateDateAddedScore,
-  updatePurchasedScores
+  updatePurchasedScores,
 } = require('../../../../jobs/scores')
 const { setupBeatportTracks } = require('../../../lib/tracks')
 
@@ -44,6 +44,6 @@ test({
     },
     teardown: async () => {
       // await db.initDb()
-    }
-  }
+    },
+  },
 })

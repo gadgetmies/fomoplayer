@@ -14,8 +14,8 @@ module.exports = {
       wait_ready: true,
       watch: false,
       env: {
-        BLUEBIRD_DEBUG: 1
-      }
+        BLUEBIRD_DEBUG: 1,
+      },
     },
     {
       name: 'prod frontend (4001)',
@@ -26,7 +26,7 @@ module.exports = {
       combine_logs: true,
       restart_delay: 4000,
       wait_ready: true,
-      watch: false
+      watch: false,
     },
     {
       name: 'frontend (5001)',
@@ -37,7 +37,7 @@ module.exports = {
       combine_logs: true,
       restart_delay: 4000,
       wait_ready: true,
-      watch: false
-    }
-  ]
+      watch: false,
+    },
+  ],
 }

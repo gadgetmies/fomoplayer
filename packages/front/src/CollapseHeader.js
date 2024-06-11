@@ -2,7 +2,7 @@ import React from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import './CollapseHeader.css'
 
-const CollapseHeader = props => {
+const CollapseHeader = (props) => {
   const [collapsed, setCollapsed] = React.useState(false)
   return (
     <h4

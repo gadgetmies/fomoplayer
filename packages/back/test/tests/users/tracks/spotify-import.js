@@ -27,6 +27,6 @@ test({
       const actual = R.omit(['added', 'released', 'published', 'source_details'], actualTrackDetails)
       return assert.deepEqual(actual, expectedTrackDetails)
     },
-    teardown: teardownTracks
-  }
+    teardown: teardownTracks,
+  },
 })

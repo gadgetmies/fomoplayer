@@ -1,7 +1,7 @@
 import React from 'react'
 import Popup from './Popup'
 
-const DropDown = props => (
+const DropDown = (props) => (
   <Popup
     disabled={props.disabled}
     className={props.className}

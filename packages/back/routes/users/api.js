@@ -35,7 +35,7 @@ const {
   setFollowStarred,
   getAuthorizations,
   removeAuthorization,
-  addStoreTracksToUsers
+  addStoreTracksToUsers,
 } = require('./logic')
 
 const {
@@ -46,7 +46,7 @@ const {
   updateCartDetails,
   getCartDetails,
   updateCartContents,
-  updateAllCartContents
+  updateAllCartContents,
 } = require('../shared/cart.js')
 
 const typeIs = require('type-is')
@@ -61,17 +61,17 @@ router.get(
   async (
     {
       user: { id: authUserId },
-      query: { limit_new: limitNew = 100, limit_recent: limitRecent = 100, limit_heard: limitHeard = 50 }
+      query: { limit_new: limitNew = 100, limit_recent: limitRecent = 100, limit_heard: limitHeard = 50 },
     },
-    res
+    res,
   ) => {
     const userTracks = await getUserTracks(authUserId, { new: limitNew, recent: limitRecent, heard: limitHeard })
     res.json(userTracks)
-  }
+  },
 )
 
 router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
-  getTracksM3u(userId).tap(m3u => res.send(m3u))
+  getTracksM3u(userId).tap((m3u) => res.send(m3u)),
 )
 
 router.post('/tracks/:id', ({ user: { id: userId }, params: { id }, body: { heard } }, res) => {
@@ -136,13 +136,12 @@ router.post('/ignores/releases', async ({ user: { id: authUserId }, body }, res)
   res.status(204).send()
 })
 
-const tracksHandler = type => async (
-  { body: tracks, headers: { 'x-multi-store-player-store': storeUrl }, user: { id: userId } },
-  res
-) => {
-  const addedTracks = addStoreTracksToUsers(storeUrl, tracks, [userId], null, true, type)
-  res.status(201).send(addedTracks)
-}
+const tracksHandler =
+  (type) =>
+  async ({ body: tracks, headers: { 'x-multi-store-player-store': storeUrl }, user: { id: userId } }, res) => {
+    const addedTracks = addStoreTracksToUsers(storeUrl, tracks, [userId], null, true, type)
+    res.status(201).send(addedTracks)
+  }
 
 router.post('/tracks', tracksHandler('new'))
 router.post('/purchased', tracksHandler('purchased'))
@@ -151,7 +150,7 @@ router.post('/follows/artists', async (req, res) => {
   const {
     user: { id: userId },
     body,
-    headers: { 'x-multi-store-player-store': storeUrl }
+    headers: { 'x-multi-store-player-store': storeUrl },
   } = req
   let addedArtists
 
@@ -168,7 +167,7 @@ router.post('/follows/labels', async (req, res) => {
   const {
     user: { id: userId },
     body,
-    headers: { 'x-multi-store-player-store': storeUrl }
+    headers: { 'x-multi-store-player-store': storeUrl },
   } = req
   let addedLabels = []
 
@@ -328,7 +327,7 @@ router.post(
       await removeCartSync(userId, cartId, spotifyStoreName)
     }
     res.status(204).send()
-  }
+  },
 )
 
 module.exports = router

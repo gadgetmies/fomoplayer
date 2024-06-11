@@ -2,12 +2,12 @@ import * as R from 'ramda'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-export const trackTitle = track => (track ? `${track.title} ${track.version ? `(${track.version})` : ''}` : '')
-export const namesToString = entities => {
+export const trackTitle = (track) => (track ? `${track.title} ${track.version ? `(${track.version})` : ''}` : '')
+export const namesToString = (entities) => {
   const names = entities.map(R.prop('name'))
   if (names.length === 1) return names[0]
   const tail = names.splice(-1)
-  return `${names.join(', ')}${tail.map(name => ` & ${name}`).join('')}`
+  return `${names.join(', ')}${tail.map((name) => ` & ${name}`).join('')}`
 }
 export const followableNameLinks = (followable, follows, type) => {
   const links = followable.map(({ id, name }) => (
@@ -15,7 +15,7 @@ export const followableNameLinks = (followable, follows, type) => {
       className={follows && follows[`${type}s`]?.some(({ id: followableId }) => id === followableId) ? 'followed' : ''}
       key={`${type}-${id}`}
       to={`/search?q=${type}:${id}`}
-      onClick={e => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
       {name}
     </Link>
@@ -37,4 +37,4 @@ export const trackArtistsAndTitle = (track, follows) => (
   </>
 )
 
-export const trackArtistsAndTitleText = track => `${namesToString(track.artists || [])} - ${trackTitle(track)}`
+export const trackArtistsAndTitleText = (track) => `${namesToString(track.artists || [])} - ${trackTitle(track)}`

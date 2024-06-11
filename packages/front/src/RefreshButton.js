@@ -11,7 +11,7 @@ class RefreshButton extends Component {
       refreshError: false,
       refreshDone: false,
       updatingTracks: false,
-      uuid: undefined
+      uuid: undefined,
     }
 
     this.refresh = this.refresh.bind(this)
@@ -21,7 +21,7 @@ class RefreshButton extends Component {
 
   static get defaultProps() {
     return {
-      size: 'large'
+      size: 'large',
     }
   }
 
@@ -31,7 +31,7 @@ class RefreshButton extends Component {
     try {
       const { uuid } = await requestJSONwithCredentials({
         path: `/stores/${this.props.store}/refresh`,
-        method: 'POST'
+        method: 'POST',
       })
 
       this.setState({ uuid })
@@ -46,7 +46,7 @@ class RefreshButton extends Component {
     try {
       const { finished } = await requestJSONwithCredentials({
         path: `/stores/${this.props.store}/refresh/${this.state.uuid}`,
-        method: 'GET'
+        method: 'GET',
       })
       return finished
         ? this.setState({ refreshing: false, uuid: undefined, refreshDone: true })

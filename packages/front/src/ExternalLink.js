@@ -12,7 +12,7 @@ class ExternalLink extends Component {
   render() {
     return (
       <a
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         className={`${this.props.className || ''} external-link link`}
         target="_blank"
         style={{ display: 'inline-flex' }}

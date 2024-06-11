@@ -20,16 +20,16 @@ const Popup = ({
   popupClassName,
   anchor,
   disabled,
-  onOpenChanged
+  onOpenChanged,
 }) => {
   const [open, setOpen] = useState(defaultOpen)
   useEffect(
-    props => {
+    (props) => {
       setOpen(defaultOpen)
     },
-    [defaultOpen]
+    [defaultOpen],
   )
-  const clickHandler = e => globalClickHandler({ e, open, setOpen, onOpenChanged })
+  const clickHandler = (e) => globalClickHandler({ e, open, setOpen, onOpenChanged })
   return (
     <>
       <div className={`popup_container ${open ? 'popup--open' : ''} ${className || ''}`} style={style}>

@@ -8,8 +8,8 @@ import MultiStorePlayerPanel from './MultiStorePlayerPanel.jsx'
 import Error from './Error.jsx'
 import Status from './Status.jsx'
 
-const getCurrentUrl = tabArray => tabArray[0].url
-const getCurrentHostname = tabArray => getCurrentUrl(tabArray)
+const getCurrentUrl = (tabArray) => tabArray[0].url
+const getCurrentHostname = (tabArray) => getCurrentUrl(tabArray)
 
 export default class Root extends React.Component {
   constructor(props) {
@@ -20,11 +20,11 @@ export default class Root extends React.Component {
       currentHostname: '',
       enabledStores: {},
       panels: [],
-      error: null
+      error: null,
     }
 
     const that = this
-    chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+    chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       if (message.type === 'login') {
         that.setState({ loggedIn: message.success })
       } else if (message.type === 'logout') {
@@ -46,27 +46,27 @@ export default class Root extends React.Component {
   refresh() {
     const that = this
 
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabArray) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabArray) {
       chrome.storage.local.get(
         ['running', 'token', 'enabledStores', 'appUrl', 'error', 'operationStatus', 'operationProgress'],
-        function({ running, token, enabledStores, appUrl, error, operationStatus, operationProgress }) {
+        function ({ running, token, enabledStores, appUrl, error, operationStatus, operationProgress }) {
           const currentHostname = getCurrentHostname(tabArray)
 
           const panels = [
             {
               matcher: new RegExp(`^${appUrl}`),
-              component: MultiStorePlayerPanel
+              component: MultiStorePlayerPanel,
             },
             {
               storeName: 'beatport',
               matcher: /^https:\/\/.*\.beatport\.com/,
-              component: BeatportPanel
+              component: BeatportPanel,
             },
             {
               storeName: 'bandcamp',
               matcher: /^https:\/\/.*\.?bandcamp\.com/,
-              component: BandcampPanel
-            }
+              component: BandcampPanel,
+            },
           ]
 
           that.setState({
@@ -78,9 +78,9 @@ export default class Root extends React.Component {
             appUrl,
             error,
             operationStatus,
-            operationProgress
+            operationProgress,
           })
-        }
+        },
       )
     })
   }
@@ -95,15 +95,15 @@ export default class Root extends React.Component {
       running: this.state.running,
       appUrl: this.state.appUrl,
       operationStatus: this.state.operationStatus,
-      operationProgress: this.state.operationProgress
+      operationProgress: this.state.operationProgress,
     }
 
-    const enabledPanels = this.state.panels.filter(panel => {
+    const enabledPanels = this.state.panels.filter((panel) => {
       const enabled = R.path(['enabledStores', panel.storeName], this.state)
       return enabled !== undefined ? enabled : true
     })
 
-    const current = enabledPanels.find(panel => this.state.currentHostname.match(panel.matcher))
+    const current = enabledPanels.find((panel) => this.state.currentHostname.match(panel.matcher))
     const rest = R.without([current], enabledPanels)
     const components = current ? [current, ...rest] : rest
 
@@ -121,8 +121,8 @@ export default class Root extends React.Component {
             {this.state.running ? (
               <Status message={this.state.operationStatus} progress={this.state.operationProgress} />
             ) : null}
-            {components.map(component =>
-              React.createElement(component.component, { isCurrent: component === current, ...panelProps })
+            {components.map((component) =>
+              React.createElement(component.component, { isCurrent: component === current, ...panelProps }),
             )}
           </>
         )}

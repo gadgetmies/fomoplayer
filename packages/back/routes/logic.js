@@ -14,7 +14,7 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
 }
 
 module.exports.searchForTracks = searchForTracks
-module.exports.getFollowDetails = async query => {
+module.exports.getFollowDetails = async (query) => {
   let details
   if (query.match('^https://') !== null) {
     let detailsFromURL

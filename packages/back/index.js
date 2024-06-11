@@ -44,12 +44,12 @@ app.use(
   session({
     store: new pgSession({
       pool: pg.pool,
-      tableName: 'meta_session'
+      tableName: 'meta_session',
     }),
     secret: config.sessionSecret,
     resave: false,
-    cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 days
-  })
+    cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }, // 30 days
+  }),
 )
 
 app.use(timeout('25s'))
@@ -89,7 +89,7 @@ app.use(
       next(e)
     }
   },
-  require('./routes/index.js')
+  require('./routes/index.js'),
 )
 
 app.use(express.static('public'))
@@ -131,7 +131,7 @@ app.get('/carts/:uuid', ({ params: { uuid }, user }, res, next) => {
           `<meta property='og:type' content='music.album'>
 <meta property='og:description' content='${cartDetails.name} · ${cartDetails.tracks.length} songs.'>
 <meta property='og:title' content='${cartDetails.name}'>
-${cartOpenGraphDetails}`
+${cartOpenGraphDetails}`,
         )
       return res.send(patchedIndex)
     } catch (e) {
@@ -148,13 +148,13 @@ const handleErrors = (err, req, res, next) => {
   if (err instanceof HttpError) {
     return res.status(err.getCode()).json({
       status: 'error',
-      message: err.message
+      message: err.message,
     })
   }
 
   return res.status(500).json({
     status: 'error',
-    message: err.message
+    message: err.message,
   })
 }
 

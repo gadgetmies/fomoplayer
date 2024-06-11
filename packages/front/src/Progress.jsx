@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function({ percent, height, barColor, bgColor, vertical, ...props }) {
+export default function ({ percent, height, barColor, bgColor, vertical, ...props }) {
   return (
     <div
       {...props}
@@ -12,7 +12,7 @@ export default function({ percent, height, barColor, bgColor, vertical, ...props
         borderRadius: '1vh',
         display: 'flex',
         flexDirection: vertical ? 'row' : 'column-reverse',
-        ...props.style
+        ...props.style,
       }}
     >
       <div
@@ -21,7 +21,7 @@ export default function({ percent, height, barColor, bgColor, vertical, ...props
           height: vertical ? '100%' : `${percent}%`,
           borderRadius: '1vh',
           backgroundColor: barColor,
-          transition: 'width 0.2s'
+          transition: 'width 0.2s',
         }}
       />
     </div>

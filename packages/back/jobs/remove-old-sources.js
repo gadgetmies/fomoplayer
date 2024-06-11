@@ -1,7 +1,8 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 
-module.exports.removeOldSources = () => pg.queryAsync(sql`-- removeOldSources
+module.exports.removeOldSources = () =>
+  pg.queryAsync(sql`-- removeOldSources
 DELETE
 FROM
   source

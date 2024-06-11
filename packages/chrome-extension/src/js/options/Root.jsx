@@ -6,11 +6,11 @@ export default class Root extends React.Component {
     this.state = { enabledStores: {} }
 
     const that = this
-    chrome.storage.local.get(['appUrl', 'enabledStores'], function({ appUrl, enabledStores }) {
+    chrome.storage.local.get(['appUrl', 'enabledStores'], function ({ appUrl, enabledStores }) {
       that.setState({
         appUrl,
         storedAppUrl: appUrl,
-        enabledStores: enabledStores || { beatport: true, bandcamp: true }
+        enabledStores: enabledStores || { beatport: true, bandcamp: true },
       })
     })
 
@@ -34,7 +34,7 @@ export default class Root extends React.Component {
   }
 
   toggleStore(store) {
-    return function(e) {
+    return function (e) {
       const enabledStores = { ...this.state.enabledStores, [store]: !!e.target.checked }
       this.setState({ enabledStores })
       chrome.storage.local.set({ enabledStores })

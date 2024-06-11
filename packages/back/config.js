@@ -15,5 +15,5 @@ module.exports = {
   googleClientId: process.env.GOOGLE_OIDC_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_OIDC_CLIENT_SECRET,
   sessionSecret: process.env.SESSION_SECRET,
-  cryptoKey: process.env.CRYPTO_KEY
+  cryptoKey: process.env.CRYPTO_KEY,
 }

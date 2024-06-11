@@ -1,7 +1,7 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 
-module.exports.getPlaylistFollowDetails = async storeUrl =>
+module.exports.getPlaylistFollowDetails = async (storeUrl) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- getPlaylistFollowDetails
@@ -20,10 +20,10 @@ AND (playlist_last_update IS NULL OR playlist_last_update + INTERVAL '6 hours' <
 ORDER BY
   playlist_last_update NULLS FIRST
 LIMIT 20
-`
+`,
   )
 
-module.exports.getArtistFollowDetails = async storeUrl =>
+module.exports.getArtistFollowDetails = async (storeUrl) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- getArtistFollowDetails
@@ -44,10 +44,10 @@ AND (store__artist_last_update IS NULL OR store__artist_last_update + INTERVAL '
 ORDER BY
   store__artist_last_update NULLS FIRST
 LIMIT 20
-`
+`,
   )
 
-module.exports.getLabelFollowDetails = async storeUrl =>
+module.exports.getLabelFollowDetails = async (storeUrl) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- getLabelFollowDetails
@@ -67,10 +67,10 @@ AND (store__label_last_update IS NULL OR store__label_last_update + INTERVAL '6 
 ORDER BY
   store__label_last_update NULLS FIRST
 LIMIT 20
-`
+`,
   )
 
-module.exports.insertSource = async details => {
+module.exports.insertSource = async (details) => {
   const [{ source_id }] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- insertSource
@@ -79,7 +79,7 @@ INSERT INTO source
 VALUES
   (${details})
 RETURNING source_id
-`
+`,
   )
   return source_id
 }

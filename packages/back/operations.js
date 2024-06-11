@@ -10,9 +10,9 @@ INSERT INTO meta_operation (meta_operation_name, meta_account_user_id, meta_oper
 SELECT ${name}, meta_account_user_id, ${JSON.stringify(data)} :: JSONB
 FROM meta_account WHERE meta_account_user_id = ${userId}
 RETURNING meta_operation_uuid
-`
+`,
     )
-    .then(data =>
+    .then((data) =>
       pg.queryAsync(
         // language=PostgreSQL
         sql`
@@ -21,10 +21,10 @@ RETURNING meta_operation_uuid
         meta_operation_error = false,
         meta_operation_data = ${JSON.stringify(data)} :: JSONB
     WHERE meta_operation_uuid = ${uuid}
-    `
-      )
+    `,
+      ),
     )
-    .catch(data =>
+    .catch((data) =>
       pg.queryAsync(
         // language=PostgreSQL
         sql`
@@ -33,8 +33,8 @@ RETURNING meta_operation_uuid
         meta_operation_error = true,
         meta_operation_data = ${JSON.stringify(data)} :: JSONB
     WHERE meta_operation_uuid = ${uuid}
-    `
-      )
+    `,
+      ),
     )
 
   return uuid
@@ -54,6 +54,6 @@ SELECT
     meta_operation_error as error
 FROM meta_operation NATURAL JOIN meta_account
 WHERE meta_operation_uuid = ${uuid} AND meta_account_user_id = ${userId}
-`
+`,
     )
     .then(([data]) => data)

@@ -7,7 +7,7 @@ function sendError(errorText) {
 }
 `
 
-const sendBandcampFeedScript = fetchCount => `
+const sendBandcampFeedScript = (fetchCount) => `
 ${sendErrorFunction}
 
 async function sendFeedTracks(firstPage, lastPage, olderThan = Date.now()) {
@@ -41,7 +41,7 @@ async function sendFeedTracks(firstPage, lastPage, olderThan = Date.now()) {
 sendFeedTracks(1, ${fetchCount})
 `
 
-const sendBandcampPageScript = pageUrl => `
+const sendBandcampPageScript = (pageUrl) => `
 ${waitFunction}
 
 ${sendErrorFunction}
@@ -87,7 +87,7 @@ try {
 }
 `
 
-const getCurrentUrl = tabArray => tabArray[0].url
+const getCurrentUrl = (tabArray) => tabArray[0].url
 
 export default class BandcampPanel extends React.Component {
   constructor(props) {
@@ -99,21 +99,21 @@ export default class BandcampPanel extends React.Component {
     const that = this
     chrome.tabs.executeScript(
       {
-        code: `document.querySelector('.userpic') !== null`
+        code: `document.querySelector('.userpic') !== null`,
       },
       ([loggedIn]) => {
         that.setState({ loggedIn })
-      }
+      },
     )
     chrome.tabs.executeScript(
       {
-        code: `document.querySelector('.track_list.track_table') !== null`
+        code: `document.querySelector('.track_list.track_table') !== null`,
       },
       ([hasPlayables]) => {
         that.setState({ hasPlayables })
-      }
+      },
     )
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabArray) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabArray) {
       that.setState({ onSubdomain: new URL(getCurrentUrl(tabArray)).hostname !== 'bandcamp.com' })
     })
   }
@@ -139,16 +139,16 @@ export default class BandcampPanel extends React.Component {
                 disabled={this.props.running || !this.state.hasPlayables}
                 onClick={() => {
                   this.props.setRunning(true)
-                  chrome.tabs.query({ active: true, currentWindow: true }, function(tabArray) {
+                  chrome.tabs.query({ active: true, currentWindow: true }, function (tabArray) {
                     try {
                       chrome.tabs.executeScript({
-                        code: sendBandcampPageScript(getCurrentUrl(tabArray))
+                        code: sendBandcampPageScript(getCurrentUrl(tabArray)),
                       })
                     } catch (e) {
                       chrome.runtime.sendMessage({
                         type: 'error',
                         message: 'Sending tracks from current Bandcamp page failed!',
-                        stack: e.stack
+                        stack: e.stack,
                       })
                     }
                   })
@@ -167,13 +167,13 @@ export default class BandcampPanel extends React.Component {
                   this.props.setRunning(true)
                   try {
                     chrome.tabs.executeScript({
-                      code: sendBandcampFeedScript(5)
+                      code: sendBandcampFeedScript(5),
                     })
                   } catch (e) {
                     chrome.runtime.sendMessage({
                       type: 'error',
                       message: 'Sending tracks from Bandcamp feed failed!',
-                      stack: e.stack
+                      stack: e.stack,
                     })
 
                     this.props.setRunning(false)
