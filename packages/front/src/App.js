@@ -33,7 +33,7 @@ import KeyboardShortcutsPopup from './KeyboardShortcutsPopup'
 const logoutPath = '/auth/logout'
 const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
-const Root = props => <div className="root" style={{ height: '100vh' }} {...props} />
+const Root = (props) => <div className="root" style={{ height: '100vh' }} {...props} />
 class App extends Component {
   constructor(props) {
     super(props)
@@ -59,7 +59,7 @@ class App extends Component {
       heardTracks: defaultTracksData.tracks.heard,
       selectedCartUuid: undefined,
       selectedCart: undefined,
-      mode: undefined
+      mode: undefined,
     }
   }
 
@@ -70,13 +70,13 @@ class App extends Component {
 
   mobileCheck() {
     let check = false
-    ;(function(a) {
+    ;(function (a) {
       if (
         /(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(
-          a
+          a,
         ) ||
         /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(
-          a.substr(0, 4)
+          a.substr(0, 4),
         )
       )
         check = true
@@ -92,7 +92,7 @@ class App extends Component {
       this.updateScoreWeights(),
       this.updateFollows(),
       this.updateNotifications(),
-      this.updateSettings()
+      this.updateSettings(),
     ])
   }
 
@@ -103,7 +103,7 @@ class App extends Component {
     let cartSelectPromise = Promise.resolve()
 
     const storeFetchPromise = requestJSONwithCredentials({
-      path: `/stores`
+      path: `/stores`,
     })
 
     if (isCartPath && pathParts.length > 1 && pathParts[1] !== '') {
@@ -126,7 +126,7 @@ class App extends Component {
         console.error(e)
       }
       this.setState({
-        loggedIn: false
+        loggedIn: false,
       })
     } finally {
       this.setState({ loading: false })
@@ -144,19 +144,19 @@ class App extends Component {
 
   async updateCarts() {
     const carts = await requestJSONwithCredentials({
-      path: `/me/carts`
+      path: `/me/carts`,
     })
 
     this.setState({
       carts: carts.filter(({ deleted }) => !deleted),
       selectedCartUuid: this.state.selectedCartUuid || carts[0].uuid,
-      selectedCart: this.state.carts.find(({ uuid }) => uuid === this.state.selectedCartUuid)
+      selectedCart: this.state.carts.find(({ uuid }) => uuid === this.state.selectedCartUuid),
     })
   }
 
   async updateDefaultCart() {
     const defaultCart = await requestJSONwithCredentials({
-      path: `/me/carts/default`
+      path: `/me/carts/default`,
     })
     let updatedCarts = this.state.carts.slice()
     const defaultCartIndex = updatedCarts.findIndex(({ is_default }) => is_default)
@@ -166,7 +166,7 @@ class App extends Component {
 
   async updateScoreWeights() {
     const scoreWeights = await requestJSONwithCredentials({
-      path: '/me/score-weights'
+      path: '/me/score-weights',
     })
     this.setState({ scoreWeights })
   }
@@ -176,7 +176,7 @@ class App extends Component {
     const cartDetails = await requestJSONwithCredentials({
       path: `/me/carts/${cartId}/tracks`,
       method: 'PATCH',
-      body: [{ op: 'add', trackId }]
+      body: [{ op: 'add', trackId }],
     })
 
     this.updateCart(cartDetails)
@@ -187,7 +187,7 @@ class App extends Component {
     const cartDetails = await requestJSONwithCredentials({
       path: `/me/carts/${cartId}/tracks`,
       method: 'PATCH',
-      body: [{ op: 'remove', trackId }]
+      body: [{ op: 'remove', trackId }],
     })
 
     this.updateCart(cartDetails)
@@ -198,12 +198,12 @@ class App extends Component {
     await requestWithCredentials({
       path: `/me/carts/`,
       method: 'PATCH',
-      body: [{ op: 'remove', trackId }]
+      body: [{ op: 'remove', trackId }],
     })
     await requestJSONwithCredentials({
       path: `/me/purchased/`,
       method: 'POST',
-      body: [{ trackId }]
+      body: [{ trackId }],
     })
     await Promise.all([this.updateTracks(), this.updateDefaultCart(), this.selectCart(this.state.selectedCartUuid)])
     this.setState({ processingCart: false })
@@ -219,11 +219,11 @@ class App extends Component {
   async updateFollows() {
     const [artists, labels] = await Promise.all([
       requestJSONwithCredentials({
-        path: `/me/follows/artists`
+        path: `/me/follows/artists`,
       }),
       await requestJSONwithCredentials({
-        path: `/me/follows/labels`
-      })
+        path: `/me/follows/labels`,
+      }),
     ])
     this.setState({ follows: { artists, labels } })
   }
@@ -232,7 +232,7 @@ class App extends Component {
     const notifications = await requestJSONwithCredentials({
       path: `/me/notifications`,
       method: 'PATCH',
-      body: operations
+      body: operations,
     })
 
     this.setState({ notifications })
@@ -243,8 +243,8 @@ class App extends Component {
       path: `/me/follows/${type}/${followId}`,
       method: 'PUT',
       body: {
-        starred
-      }
+        starred,
+      },
     })
 
     await this.updateNotifications()
@@ -257,15 +257,15 @@ class App extends Component {
   async updateTracks() {
     const {
       meta: { new: newTracks, total: totalTracks },
-      tracks
+      tracks,
     } = await requestJSONwithCredentials({
-      path: `/me/tracks`
+      path: `/me/tracks`,
     })
 
     this.setState({
       tracksData: { tracks, meta: { newTracks, totalTracks } },
       heardTracks: tracks.heard, // TODO: is this correct? Previously this was not updated
-      onboarding: tracks.new.length === 0 && tracks.heard.length === 0
+      onboarding: tracks.new.length === 0 && tracks.heard.length === 0,
     })
   }
 
@@ -294,7 +294,7 @@ class App extends Component {
     await requestWithCredentials({
       path: `/me/tracks/${track.id}`,
       method: 'POST',
-      body: { heard: true }
+      body: { heard: true },
     })
   }
 
@@ -302,7 +302,7 @@ class App extends Component {
     await requestWithCredentials({
       path: `/me/settings`,
       method: 'POST',
-      body: { email }
+      body: { email },
     })
     await this.updateSettings()
   }
@@ -311,20 +311,20 @@ class App extends Component {
     return await requestJSONwithCredentials({
       path: `/me/carts`,
       method: 'POST',
-      body: { name: cartName }
+      body: { name: cartName },
     })
   }
 
   async updateSettings() {
     const userSettings = await requestJSONwithCredentials({
-      path: `/me/settings`
+      path: `/me/settings`,
     })
     this.setState({ userSettings })
   }
 
   onOnboardingButtonClicked() {
     this.setState({
-      onboarding: !this.state.onboarding
+      onboarding: !this.state.onboarding,
     })
   }
 
@@ -405,16 +405,16 @@ class App extends Component {
             this.state.stores.map(({ storeName }) => ({
               op: 'add',
               storeName,
-              text: search
-            }))
+              text: search,
+            })),
           )
         } else {
           operations = operations.concat(
-            this.state.stores.map(({ storeName }) => ({ op: 'remove', storeName, text: search }))
+            this.state.stores.map(({ storeName }) => ({ op: 'remove', storeName, text: search })),
           )
         }
       } else {
-        storeNames.forEach(storeName => {
+        storeNames.forEach((storeName) => {
           operations.push({ op: subscribe ? 'add' : 'remove', storeName, text: search })
         })
       }
@@ -442,7 +442,7 @@ class App extends Component {
     }
   }
 
-  setCartFilter = cartFilter => {
+  setCartFilter = (cartFilter) => {
     this.setState({ cartFilter })
   }
 
@@ -466,7 +466,7 @@ class App extends Component {
     await requestWithCredentials({
       path: `/me/ignores/artists-on-labels`,
       method: ignore ? 'POST' : 'DELETE',
-      body: { artistIds: [artistId], labelIds }
+      body: { artistIds: [artistId], labelIds },
     })
   }
 
@@ -474,7 +474,7 @@ class App extends Component {
     await requestWithCredentials({
       path: `/me/ignores/artists`,
       method: 'POST',
-      body: [artistId]
+      body: [artistId],
     })
   }
 
@@ -482,7 +482,7 @@ class App extends Component {
     await requestWithCredentials({
       path: `/me/ignores/labels`,
       method: 'POST',
-      body: [labelId]
+      body: [labelId],
     })
   }
 
@@ -490,14 +490,14 @@ class App extends Component {
     await requestWithCredentials({
       path: `/me/ignores/releases`,
       method: 'POST',
-      body: [releaseId]
+      body: [releaseId],
     })
   }
 
   async selectCart(selectedCartUuid, filter) {
     this.setState({ selectedCartUuid })
     const cartDetails = await requestJSONwithCredentials({
-      path: `/carts/${selectedCartUuid}${filter ? filter : ''}`
+      path: `/carts/${selectedCartUuid}${filter ? filter : ''}`,
     })
     let updatedCarts = this.state.carts.slice()
     let cartIndex = updatedCarts.findIndex(({ uuid }) => uuid === selectedCartUuid)
@@ -510,7 +510,7 @@ class App extends Component {
 
     this.setState({
       carts: updatedCarts,
-      selectedCart: updatedCarts[cartIndex]
+      selectedCart: updatedCarts[cartIndex],
     })
   }
 
@@ -523,7 +523,7 @@ class App extends Component {
     await requestWithCredentials({
       path: `/me/follows/artists/${follow ? '' : storeArtistId}`,
       method: follow ? 'POST' : 'DELETE',
-      body: follow ? [{ url: storeArtistUrl, name }] : undefined
+      body: follow ? [{ url: storeArtistUrl, name }] : undefined,
     })
 
     await this.updateFollows()
@@ -533,7 +533,7 @@ class App extends Component {
     await requestWithCredentials({
       path: `/me/follows/labels/${follow ? '' : storeLabelId}`,
       method: follow ? 'POST' : 'DELETE',
-      body: follow ? [{ url: storeLabelUrl, name }] : undefined
+      body: follow ? [{ url: storeLabelUrl, name }] : undefined,
     })
 
     await this.updateFollows()
@@ -601,7 +601,7 @@ class App extends Component {
                       {process.env.NODE_ENV !== 'production' && (
                         <p style={{ margin: '2rem' }}>
                           <form
-                            onSubmit={e => {
+                            onSubmit={(e) => {
                               e.preventDefault()
                               return this.onLoginDone()
                             }}
@@ -711,7 +711,7 @@ class App extends Component {
                 </Route>
                 <Route
                   path="/:path"
-                  render={props => {
+                  render={(props) => {
                     const pathParts = props.location.pathname.slice(1).split('/')
                     const query = new URLSearchParams(props.location.search).get('q')?.trim()
                     const idSearch = query?.match(/(artist|label|release):(\d?)/)
@@ -732,7 +732,7 @@ class App extends Component {
                         this.setState({ search: '' })
                       }
                       this.setState({
-                        listState: props.match.params.path === 'tracks' ? pathParts[1] || 'new' : pathParts[0]
+                        listState: props.match.params.path === 'tracks' ? pathParts[1] || 'new' : pathParts[0],
                       })
                       listState = props.match.params.path
                     }
@@ -784,7 +784,6 @@ class App extends Component {
                           totalTracks={this.state.tracksData.meta.totalTracks}
                           tracks={this.state.tracksData.tracks}
                           markHeard={this.markHeard.bind(this)}
-
                           onAddToCart={this.addToCart.bind(this)}
                           onClosePopups={this.closePopups.bind(this)}
                           onCreateCart={this.createCart.bind(this)}

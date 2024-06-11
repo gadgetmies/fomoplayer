@@ -25,11 +25,11 @@ AND store__track_preview_format = ${format}
 ORDER BY
   store__track_preview_end_ms - store__track_preview_start_ms DESC NULLS LAST
 OFFSET ${skip} LIMIT 1;
-`
+`,
     )
     .then(R.head)
 
-module.exports.searchForArtistsAndLabels = query =>
+module.exports.searchForArtistsAndLabels = (query) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- searchForArtistsAndLabels
@@ -79,30 +79,30 @@ UNION ALL
              label_name)) @@ (
        SELECT
          query
-       FROM query))`
+       FROM query))`,
   )
 
-module.exports.queryCartDetailsByUuid = async uuid => {
+module.exports.queryCartDetailsByUuid = async (uuid) => {
   const [details] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryCartDetailsByUuid
 SELECT cart_id AS "id", cart_is_public AS "isPublic"
 FROM cart
-WHERE cart_uuid = ${uuid}`
+WHERE cart_uuid = ${uuid}`,
   )
 
   return details
 }
 
-module.exports.verifyEmail = async verificationCode => {
-  await using(pg.getTransaction(), async tx => {
+module.exports.verifyEmail = async (verificationCode) => {
+  await using(pg.getTransaction(), async (tx) => {
     const { rowCount } = await tx.queryAsync(
       // language=PostgreSQL
       sql`-- verifyEmail
       UPDATE meta_account_email
       SET meta_account_email_verified = TRUE
       WHERE meta_account_email_verification_code = ${verificationCode}
-      `
+      `,
     )
 
     if (rowCount !== 1) {
@@ -122,7 +122,7 @@ module.exports.upsertUserAuthorizationTokens = async (
   accessToken,
   refreshToken,
   expires,
-  scopes
+  scopes,
 ) => {
   await pg.queryAsync(
     // language=PostgreSQL
@@ -144,11 +144,11 @@ module.exports.upsertUserAuthorizationTokens = async (
       DO UPDATE SET user__store_authorization_access_token  = EXCLUDED.user__store_authorization_access_token
                   , user__store_authorization_refresh_token = EXCLUDED.user__store_authorization_refresh_token
                   , user__store_authorization_expires       = EXCLUDED.user__store_authorization_expires
-                  , user__store_authorization_scopes        = EXCLUDED.user__store_authorization_scopes`
+                  , user__store_authorization_scopes        = EXCLUDED.user__store_authorization_scopes`,
   )
 }
 
-module.exports.queryAuthorization = async userId => {
+module.exports.queryAuthorization = async (userId) => {
   const res = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryAuthorization
@@ -160,7 +160,7 @@ module.exports.queryAuthorization = async userId => {
       user__store_authorization
     WHERE meta_account_user_id = ${userId}
       AND store_id = (SELECT store_id FROM store WHERE store_name = 'Spotify')
-    `
+    `,
   )
 
   if (res.length === 0) {

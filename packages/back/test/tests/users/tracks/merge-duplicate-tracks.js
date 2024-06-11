@@ -7,12 +7,12 @@ const { test } = require('fomoplayer_shared').test.test
 const { setupBeatportTracks, teardownTracks } = require('../../../lib/tracks.js')
 const track = require('../../../fixtures/noisia_concussion_beatport.json')
 const repl = require('repl')
-const setMixName = version => L.modify(L.query('mix_name'), R.always(version))
+const setMixName = (version) => L.modify(L.query('mix_name'), R.always(version))
 const incrementTrackId = L.modify(L.query(['data', 'id']), R.inc)
 const incrementReleaseId = L.modify(L.query(['release', 'id']), R.inc)
-const replaceISRC = isrc => L.modify(L.query('isrc'), R.always(isrc))
-const replaceCatalogNumber = catalogNumber => L.modify(L.query('catalog_number'), R.always(catalogNumber))
-const appendReleaseName = str => L.modify([L.query('release'), 'name'], n => n + str)
+const replaceISRC = (isrc) => L.modify(L.query('isrc'), R.always(isrc))
+const replaceCatalogNumber = (catalogNumber) => L.modify(L.query('catalog_number'), R.always(catalogNumber))
+const appendReleaseName = (str) => L.modify([L.query('release'), 'name'], (n) => n + str)
 const trackWithSameISRC = R.pipe(incrementTrackId, incrementReleaseId, replaceCatalogNumber('VSN004'))(track)
 const remixedTrack = R.pipe(
   incrementTrackId,
@@ -23,14 +23,14 @@ const remixedTrack = R.pipe(
       {
         id: 386795,
         name: 'Sigrah',
-        slug: 'sigrah'
-      }
-    ])
+        slug: 'sigrah',
+      },
+    ]),
   ),
   setMixName('Remix'),
   replaceISRC('NLCK40700054'),
   appendReleaseName(' Remix'),
-  replaceCatalogNumber('VSN002')
+  replaceCatalogNumber('VSN002'),
 )(track)
 
 const editOfRemixedTrack = R.pipe(
@@ -39,7 +39,7 @@ const editOfRemixedTrack = R.pipe(
   setMixName('Edit'),
   replaceISRC('NLCK40700055'),
   appendReleaseName(' Edit'),
-  replaceCatalogNumber('VSN003')
+  replaceCatalogNumber('VSN003'),
 )(remixedTrack)
 
 let count = 1
@@ -53,7 +53,7 @@ test({
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from track')
       assert.strictEqual(trackCount, 1)
     },
-    teardown: teardownTracks
+    teardown: teardownTracks,
   },
   'when remixed track is added': {
     setup: async () => setupBeatportTracks([{ tracks: track }, { tracks: remixedTrack }]),
@@ -61,7 +61,7 @@ test({
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from track')
       assert.strictEqual(trackCount, 2)
     },
-    teardown: teardownTracks
+    teardown: teardownTracks,
   },
   'when an edit of remixed track is added': {
     setup: async () => setupBeatportTracks([{ tracks: remixedTrack }, { tracks: editOfRemixedTrack }]),
@@ -69,6 +69,6 @@ test({
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from track')
       assert.strictEqual(trackCount, 2)
     },
-    teardown: teardownTracks
-  }
+    teardown: teardownTracks,
+  },
 })

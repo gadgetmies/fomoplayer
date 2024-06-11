@@ -40,7 +40,7 @@ router.get(
     } else {
       res.status(401).send({ error: 'Access denied' })
     }
-  }
+  },
 )
 
 router.get('/info', async (_, res) => {

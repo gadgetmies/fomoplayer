@@ -6,14 +6,14 @@ module.exports = {
     bandcamp: require('./interceptors/bandcampInterceptor.js'),
     beatport: require('./interceptors/beatportInterceptor.js'),
     googleOAuth: require('./interceptors/googleOAuthInterceptor.js'),
-    spotify: require('./interceptors/spotifyInterceptor.js')
+    spotify: require('./interceptors/spotifyInterceptor.js'),
   },
   test: {
-    test: require('./test/test.js')
+    test: require('./test/test.js'),
   },
   db: {
-    pg: require('./db/pg.js')
+    pg: require('./db/pg.js'),
   },
   logger: require('./logger.js'),
-  resolveServiceURL: require('./resolveServiceURL.js')
+  resolveServiceURL: require('./resolveServiceURL.js'),
 }

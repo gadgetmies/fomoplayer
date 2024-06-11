@@ -37,7 +37,7 @@ const Tracks = ({ tracks, selectedTrack, currentTrack }) => (
       (track, i) => (
         <Track key={U.view('id', track)} i={i} track={track} currentTrack={currentTrack} />
       ),
-      tracks
+      tracks,
     )}
   </div>
 )
@@ -55,7 +55,7 @@ const Preview = ({ preloadTracks, currentTrack }) => (
           data-controls={U.ifte(currentTrack.map(U.equals(i)), 'selected', '')}
           controls="true"
         />
-      ))
+      )),
     )}
     <br />
     <button onClick={() => currentTrack.modify(U.dec)}>Previous</button>
@@ -73,7 +73,7 @@ const App = ({ state }) => {
       <Tracks tracks={tracks} currentTrack={currentTrack} selectedTrack={U.view('selectedTrack', state)} />
       <Preview
         preloadTracks={K.combine([U.view('currentTrack', state), tracks], (current, tracks) =>
-          tracks.slice(current, current + 4)
+          tracks.slice(current, current + 4),
         )}
         currentTrack={currentTrack}
       />

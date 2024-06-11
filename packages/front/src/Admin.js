@@ -43,18 +43,18 @@ class Admin extends Component {
               labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
               plugins: {
                 legend: {
-                  position: 'top'
+                  position: 'top',
                 },
                 title: {
                   display: true,
-                  text: 'Chart.js Line Chart'
-                }
-              }
-            }
+                  text: 'Chart.js Line Chart',
+                },
+              },
+            },
           },
           null,
-          2
-        )
+          2,
+        ),
     }
   }
 
@@ -65,7 +65,7 @@ class Admin extends Component {
     this.setState({
       data: JSON.stringify(data, null, 2),
       configs,
-      loading: false
+      loading: false,
     })
   }
 
@@ -100,8 +100,8 @@ class Admin extends Component {
         datasets: Object.entries(grouped).map(([label, values]) => ({
           type: 'bar',
           label,
-          data: values.map(R.prop('value'))
-        }))
+          data: values.map(R.prop('value')),
+        })),
       }
       this.setState({ dataError: false })
     } catch (e) {
@@ -156,8 +156,8 @@ class Admin extends Component {
       body: {
         name: this.state.name,
         lens: this.state.lens,
-        config: this.state.config
-      }
+        config: this.state.config,
+      },
     })
 
     await this.updateRadiatorData()
@@ -165,7 +165,7 @@ class Admin extends Component {
 
   render() {
     let config = {
-      type: 'line'
+      type: 'line',
     }
     return (
       <div>
@@ -231,7 +231,7 @@ class Admin extends Component {
                       onBlur={this.formatLens.bind(this)}
                     ></textarea>
                     <button
-                      onClick={e => {
+                      onClick={(e) => {
                         e.preventDefault()
                         this.formatLens.bind(this)
                       }}
@@ -249,7 +249,7 @@ class Admin extends Component {
               <h2>Load radiator</h2>
               <select onChange={this.selectConfig.bind(this)}>
                 <option disabled></option>
-                {this.state.configs.map(config => (
+                {this.state.configs.map((config) => (
                   <option value={config.id}>{config.name}</option>
                 ))}
               </select>

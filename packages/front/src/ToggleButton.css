@@ -36,7 +36,7 @@
 }
 
 input:disabled + .toggle-button_slider:before {
-    background-color: #b7b7b7;
+  background-color: #b7b7b7;
 }
 
 input:enabled:checked + .toggle-button_slider {
@@ -48,7 +48,7 @@ input:disabled + .toggle-button_slider {
 }
 
 input:disabled:not(:checked) + .toggle-button_slider {
-    background-color: #4b4b4b;
+  background-color: #4b4b4b;
 }
 
 input:focus + .toggle-button_slider {

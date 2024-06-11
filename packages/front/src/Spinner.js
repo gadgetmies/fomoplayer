@@ -4,7 +4,7 @@ import './SpinnerButton.css'
 class Spinner extends Component {
   static defaultProps = {
     size: 'small',
-    color: '#fff'
+    color: '#fff',
   }
 
   render() {

@@ -11,7 +11,7 @@ const {
   updateDateReleasedScore,
   updateDatePublishedScore,
   updateDateAddedScore,
-  updatePurchasedScores
+  updatePurchasedScores,
 } = require('./jobs/scores')
 const { findMatchingTracks } = require('./jobs/find-matching-tracks')
 const { syncCarts } = require('./jobs/cart-sync')
@@ -31,7 +31,7 @@ SET job_run_ended   = NOW(),
       "message": "Job marked done by initialization"
     }' :: JSON
 WHERE job_run_ended IS NULL
-`
+`,
   )
 
   await jobs.updateJobs()
@@ -39,7 +39,7 @@ WHERE job_run_ended IS NULL
 
 let scheduled = {}
 
-const runJob = async jobName => {
+const runJob = async (jobName) => {
   logger.info(`Running job ${jobName}`)
 
   const [{ running }] = await pg.queryRowsAsync(
@@ -49,7 +49,7 @@ const runJob = async jobName => {
                      NATURAL JOIN job
             WHERE job_name = ${jobName}
               AND job_run_ended IS NULL
-         ) AS running`
+         ) AS running`,
   )
 
   if (running) {
@@ -63,7 +63,7 @@ const runJob = async jobName => {
 SELECT job_id
 FROM job
 WHERE job_name = ${jobName}
-RETURNING job_run_id`
+RETURNING job_run_id`,
   )
 
   let result
@@ -86,7 +86,7 @@ RETURNING job_run_id`
 SET job_run_ended   = NOW(),
   job_run_success = ${success},
   job_run_result  = ${JSON.stringify(res)}
-WHERE job_run_id = ${job_run_id}`
+WHERE job_run_id = ${job_run_id}`,
   )
 
   logger.info(`Job ${jobName} run complete`)
@@ -100,7 +100,7 @@ const jobs = {
       sql`DELETE
 FROM job_run
 WHERE (job_run_started < NOW() - interval '10 days' AND job_run_success = TRUE)
-   OR (job_run_started < NOW() - interval '20 days' AND job_run_success = FALSE)`
+   OR (job_run_started < NOW() - interval '20 days' AND job_run_success = FALSE)`,
     )
 
     const jobSchedules = await pg.queryRowsAsync(sql`
@@ -140,7 +140,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
           }
           return runJob(name)
         }),
-        schedule
+        schedule,
       }
     }
 
@@ -161,10 +161,10 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
   beatportIntegrationTest,
   bandcampIntegrationTest,
   removeOldSources,
-  ...radiator
+  ...radiator,
 }
 
 module.exports = {
   init,
-  runJob
+  runJob,
 }

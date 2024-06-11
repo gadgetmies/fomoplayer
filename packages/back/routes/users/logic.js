@@ -7,7 +7,7 @@ const {
   updateArtistTracks,
   updatePlaylistTracks,
   updateLabelTracks,
-  addStoreTracksToUsers
+  addStoreTracksToUsers,
 } = require('../shared/tracks')
 const { getStoreModuleForArtistByUrl, getStoreModuleForLabelByUrl } = require('../shared/stores')
 const { NotFound, Forbidden } = require('../shared/httpErrors')
@@ -53,7 +53,7 @@ const {
   queryStoreArtistIds,
   queryStoreLabelIds,
   queryAuthorizations,
-  deleteAuthorization
+  deleteAuthorization,
 } = require('./db')
 
 const logger = require('fomoplayer_shared').logger(__filename)
@@ -78,8 +78,8 @@ const { insertSource } = require('../../jobs/watches/shared/db')
 const { getStoreDetailsFromUrl } = require('../stores/logic')
 
 module.exports.queryUserTracks = queryUserTracks
-module.exports.getTracksM3u = userId =>
-  queryUserTracks(userId).then(userTracks => {
+module.exports.getTracksM3u = (userId) =>
+  queryUserTracks(userId).then((userTracks) => {
     return (
       '[playlist]\n\n' +
       userTracks
@@ -96,23 +96,23 @@ module.exports.setAllHeard = setAllHeard
 module.exports.addArtistOnLabelToIgnore = addArtistOnLabelToIgnore
 module.exports.artistOnLabelInIgnore = artistOnLabelInIgnore
 module.exports.addArtistsOnLabelsToIgnore = (userId, { artistIds, labelIds }) =>
-  BPromise.using(pg.getTransaction(), async tx => {
+  BPromise.using(pg.getTransaction(), async (tx) => {
     const ids = (
       await BPromise.map(R.xprod(artistIds, labelIds), ([artistId, labelId]) =>
-        addArtistOnLabelToIgnore(tx, artistId, labelId, userId)
+        addArtistOnLabelToIgnore(tx, artistId, labelId, userId),
       )
     ).map(([{ user__artist__label_ignore }]) => user__artist__label_ignore)
     await updateIgnoresInUserTracks(tx, [userId])
     return ids
   })
 
-module.exports.removeArtistsOnLabelsIgnores = async artistOnLabelIgnoreIds => {
+module.exports.removeArtistsOnLabelsIgnores = async (artistOnLabelIgnoreIds) => {
   await deleteArtistsOnLabelsIgnores(artistOnLabelIgnoreIds)
 }
 
 module.exports.addArtistsToIgnore = async (userId, artistIds) => {
   try {
-    BPromise.using(pg.getTransaction(), async tx => {
+    BPromise.using(pg.getTransaction(), async (tx) => {
       await addArtistsToIgnore(tx, artistIds, userId)
       await updateIgnoresInUserTracks(tx, [userId])
     })
@@ -122,13 +122,13 @@ module.exports.addArtistsToIgnore = async (userId, artistIds) => {
 }
 
 module.exports.addLabelsToIgnore = async (userId, labelIds) =>
-  BPromise.using(pg.getTransaction(), async tx => {
+  BPromise.using(pg.getTransaction(), async (tx) => {
     await addLabelsToIgnore(tx, labelIds, userId)
     await updateIgnoresInUserTracks(tx, [userId])
   })
 
 module.exports.addReleasesToIgnore = async (userId, releaseIds) => {
-  BPromise.using(pg.getTransaction(), async tx => {
+  BPromise.using(pg.getTransaction(), async (tx) => {
     await addReleasesToIgnore(tx, releaseIds, userId)
     await updateIgnoresInUserTracks(tx, [userId])
   })
@@ -149,7 +149,7 @@ const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (store
 })
 
 const addStoreLabelToUser = (module.exports.addStoreLabelToUser = async (storeUrl, userId, label, sourceId) => {
-  return BPromise.using(pg.getTransaction(), async tx => {
+  return BPromise.using(pg.getTransaction(), async (tx) => {
     const { storeLabelId, labelId } = await ensureLabelExists(tx, storeUrl, label, sourceId)
     const followId = await addStoreLabelWatch(tx, userId, storeLabelId, sourceId)
     return { labelId, followId, storeLabelId }
@@ -162,13 +162,13 @@ module.exports.removePlaylistFollowFromUser = async (userId, playlistId) =>
 module.exports.addArtistFollowsWithIds = async (artistIds, userId) => {
   const addedFollows = []
   for (const artistId of artistIds) {
-    await BPromise.using(pg.getTransaction(), async tx => {
+    await BPromise.using(pg.getTransaction(), async (tx) => {
       const storeArtistIds = await queryStoreArtistIds(tx, artistId)
       for (const storeArtistId of storeArtistIds) {
         const followId = addStoreArtistWatch(tx, userId, storeArtistId)
         addedFollows.push({
           artist: `${apiURL}/artists/${artistId}`,
-          follow: `${apiURL}/users/${userId}/follows/artists/${followId}`
+          follow: `${apiURL}/users/${userId}/follows/artists/${followId}`,
         })
       }
     })
@@ -192,13 +192,13 @@ module.exports.addArtistFollows = async (storeUrl = undefined, artists, userId, 
       storeModule.logic.storeUrl,
       userId,
       artistDetails,
-      sourceId
+      sourceId,
     )
     addedFollows.push({
       name,
       artist: `${apiURL}/artists/${artistId}`,
       follow: `${apiURL}/users/${userId}/follows/artists/${followId}`,
-      url: fullUrl
+      url: fullUrl,
     })
 
     process.nextTick(async () => {
@@ -206,7 +206,7 @@ module.exports.addArtistFollows = async (storeUrl = undefined, artists, userId, 
         await updateArtistTracks(
           storeModule.logic.storeUrl,
           { storeArtistId, artistStoreId: artistDetails.id, url },
-          sourceId
+          sourceId,
         )
       } catch (e) {
         logger.error('Failed to update artist tracks', e)
@@ -220,13 +220,13 @@ module.exports.addArtistFollows = async (storeUrl = undefined, artists, userId, 
 module.exports.addLabelFollowsWithIds = async (labelIds, userId) => {
   const addedFollows = []
   for (const labelId of labelIds) {
-    await BPromise.using(pg.getTransaction(), async tx => {
+    await BPromise.using(pg.getTransaction(), async (tx) => {
       const storeLabelIds = await queryStoreLabelIds(tx, labelId)
       for (const storeLabelId of storeLabelIds) {
         const followId = addStoreLabelWatch(tx, userId, storeLabelId)
         addedFollows.push({
           label: `${apiURL}/labels/${labelId}`,
-          follow: `${apiURL}/users/${userId}/follows/labels/${followId}`
+          follow: `${apiURL}/users/${userId}/follows/labels/${followId}`,
         })
       }
     })
@@ -252,12 +252,12 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {
       storeModule.logic.storeUrl,
       userId,
       labelDetails,
-      sourceId
+      sourceId,
     )
 
     addedFollows.push({
       label: `${apiURL}/labels/${labelId}`,
-      follow: `${apiURL}/users/${userId}/follows/labels/${followId}`
+      follow: `${apiURL}/users/${userId}/follows/labels/${followId}`,
     })
 
     process.nextTick(async () => {
@@ -265,7 +265,7 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {
         await updateLabelTracks(
           storeModule.logic.storeUrl,
           { storeLabelId, labelStoreId: labelDetails.id, url },
-          sourceId
+          sourceId,
         )
       } catch (e) {
         logger.error('Failed to update label tracks', e)
@@ -287,7 +287,7 @@ module.exports.addPlaylistFollows = async (playlists, userId, sourceId) => {
 
     addedPlaylists.push({
       playlist: `${apiURL}/playlists/${playlistId}`,
-      follow: `${apiURL}/users/${userId}/follows/playlists/${followId}`
+      follow: `${apiURL}/users/${userId}/follows/playlists/${followId}`,
     })
 
     process.nextTick(async () => {
@@ -323,19 +323,19 @@ const verifyFollowOwnership = async (userId, type, followId) => {
 module.exports.getUserScoreWeights = queryUserScoreWeights
 module.exports.setUserScoreWeights = updateUserScoreWeights
 
-module.exports.getNotifications = async userId => {
+module.exports.getNotifications = async (userId) => {
   return queryNotifications(userId)
 }
 
 module.exports.updateNotifications = async (userId, operations) => {
-  await BPromise.using(pg.getTransaction(), async tx => {
+  await BPromise.using(pg.getTransaction(), async (tx) => {
     await updateNotifications(tx, userId, operations)
   })
 
   return queryNotifications(userId)
 }
 
-module.exports.getUserSettings = async userId => {
+module.exports.getUserSettings = async (userId) => {
   return await queryUserSettings(userId)
 }
 
@@ -354,7 +354,7 @@ ${verificationURL}`,
 messages from the Fomo Player by clicking 
 <a href="${verificationURL}">here</a> or opening the
 following address in your browser: ${verificationURL}.
-</p>`
+</p>`,
   )
 }
 
@@ -372,7 +372,7 @@ module.exports.addStoreTracksToUsers = async (storeUrl, tracks, userIds, sourceI
     const sourceId = await insertSource({
       operation: 'tracksHandler',
       type,
-      storeUrl
+      storeUrl,
     })
 
     storedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], sourceId, skipOld, type)

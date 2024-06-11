@@ -21,7 +21,7 @@ module.exports.updateNotifications = async () => {
         limit: 50,
         sort: '-added',
         addedSince: lastUpdate,
-        storeIds
+        storeIds,
       })
 
       const entityDetailsMatch = text.match(/(.+):(\d+)/)
@@ -37,7 +37,7 @@ module.exports.updateNotifications = async () => {
 
       logger.debug('Found tracks for search', { searchResults })
 
-      await BPromise.using(pg.getTransaction(), async tx => {
+      await BPromise.using(pg.getTransaction(), async (tx) => {
         if (searchResults.length !== 0) {
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
           const trackDetails = await getTracksWithIds(searchResults.map(R.prop('track_id')))
@@ -45,7 +45,7 @@ module.exports.updateNotifications = async () => {
           const notificationsUrl = `${root}/settings/notifications`
           const newTracksDetails = trackDetails.map(
             ({ artists, title, version }) =>
-              `${artists.map(({ name }) => name).join(', ')} - ${title}${version ? ` (${version})` : ''}`
+              `${artists.map(({ name }) => name).join(', ')} - ${title}${version ? ` (${version})` : ''}`,
           )
           const searchUrl = `${root}/search/?q=${uriEncoded}&sort=-added`
           const from = `(from ${R.init(storeNames).join(', ')}${
@@ -71,7 +71,7 @@ ${newTracksDetails.join('<br/>')}
 <br/>
 <br/>
 <a href="${notificationsUrl}">Unsubscribe / adjust notification settings</a> 
-`
+`,
           )
         }
 
@@ -81,7 +81,7 @@ ${newTracksDetails.join('<br/>')}
 UPDATE user_search_notification
 SET user_search_notification_last_update = NOW()
 WHERE user_search_notification_id = ${notificationId}
-          `
+          `,
         )
       })
     } catch (e) {
@@ -118,5 +118,5 @@ WHERE (
 GROUP BY 1, 2, 3, 4, 5
 ORDER BY user_search_notification_last_update DESC NULLS FIRST
 LIMIT 20
-`
+`,
   )

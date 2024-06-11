@@ -1,7 +1,7 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 
-module.exports.queryCartOwner = async cartId => {
+module.exports.queryCartOwner = async (cartId) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryCartOwner
@@ -10,11 +10,11 @@ SELECT
 FROM cart
 WHERE
   cart_id = ${cartId}
-`
+`,
   )
 }
 
-module.exports.queryUserCartDetails = async userId =>
+module.exports.queryUserCartDetails = async (userId) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryUserCartDetails
@@ -51,10 +51,10 @@ module.exports.queryUserCartDetails = async userId =>
       NATURAL LEFT JOIN track_counts
     WHERE meta_account_user_id = ${userId}
     ORDER BY cart_is_default, cart_is_purchased, cart_name
-    `
+    `,
   )
 
-module.exports.queryUserCartDetailsWithTracks = async userId =>
+module.exports.queryUserCartDetailsWithTracks = async (userId) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryUserCartDetailsWithTracks
@@ -119,7 +119,7 @@ module.exports.queryUserCartDetailsWithTracks = async userId =>
       NATURAL LEFT JOIN
         cart_store_details
     ORDER BY cart_is_default, cart_is_purchased, cart_name
-    `
+    `,
   )
 
 module.exports.queryCartDetails = async (cartId, tracksFilter = { since: undefined, offset: 0, limit: 400 }) => {
@@ -211,14 +211,14 @@ module.exports.queryCartDetails = async (cartId, tracksFilter = { since: undefin
   return details
 }
 
-module.exports.deleteCart = async cartId =>
+module.exports.deleteCart = async (cartId) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- deleteCart
     UPDATE cart
     SET cart_deleted = NOW()
     WHERE cart_id = ${cartId}
-    `
+    `,
   )
 
 module.exports.updateCartProperties = async (tx, cartId, { name, is_public }) => {
@@ -231,11 +231,11 @@ module.exports.updateCartProperties = async (tx, cartId, { name, is_public }) =>
       , cart_is_public = COALESCE(${is_public}, cart_is_public)
     WHERE
         cart_id = ${cartId}
-    `
+    `,
   )
 }
 
-module.exports.queryDefaultCartId = async userId => {
+module.exports.queryDefaultCartId = async (userId) => {
   const [{ id }] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryDefaultCartId
@@ -245,7 +245,7 @@ FROM cart
 WHERE
     cart_is_default = TRUE
 AND meta_account_user_id = ${userId}
-`
+`,
   )
   return id
 }
@@ -258,7 +258,7 @@ INSERT INTO cart
   (cart_name, meta_account_user_id)
 VALUES
   (${name}, ${userId})
-`
+`,
   )
 
   const [cart] = await pg.queryRowsAsync(
@@ -270,7 +270,7 @@ FROM
     cart
 WHERE
       cart_name = ${name}
-  AND meta_account_user_id = ${userId}`
+  AND meta_account_user_id = ${userId}`,
   )
 
   return cart
@@ -286,7 +286,7 @@ SELECT
   ${cartId}
 , track_id
 FROM unnest(${trackIds}:: INTEGER[]) AS track_id
-ON CONFLICT ON CONSTRAINT track__cart_cart_id_track_id_key DO NOTHING`
+ON CONFLICT ON CONSTRAINT track__cart_cart_id_track_id_key DO NOTHING`,
   )
 
 module.exports.deleteTracksFromCart = async (cartId, trackIds) =>
@@ -298,10 +298,10 @@ FROM track__cart
 WHERE
     track_id = ANY (${trackIds})
 AND cart_id = ${cartId}
-`
+`,
   )
 
-module.exports.queryCartStoreDetails = async cartId =>
+module.exports.queryCartStoreDetails = async (cartId) =>
   await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryCartStoreDetails
@@ -314,7 +314,7 @@ module.exports.queryCartStoreDetails = async cartId =>
       cart__store NATURAL JOIN store
   WHERE
       cart_id = ${cartId}
-  `
+  `,
   )
 
 module.exports.insertCartStoreDetails = async (cartId, storeName, cartStoreId, cartStoreUrl, cartStoreVersionId) => {
@@ -334,7 +334,7 @@ FROM
     store
 WHERE
     store_name = ${storeName}
-    `
+    `,
   )
 }
 
@@ -348,7 +348,7 @@ FROM
 WHERE
         cart_id IN (SELECT cart_id FROM cart WHERE meta_account_user_id = ${userId})
   AND   store_id = (SELECT store_id FROM store WHERE store_name = ${storeName})
-`
+`,
   )
 }
 
@@ -362,7 +362,7 @@ FROM
 WHERE
       cart_id = ${cartId}
   AND store_id = (SELECT store_id FROM store WHERE store_name = ${storeName}) 
-    `
+    `,
   )
 }
 
@@ -375,6 +375,6 @@ SET
     cart__store_store_version_id = ${versionId}
 WHERE
     cart_id = ${cartId}
-    `
+    `,
   )
 }

@@ -35,10 +35,10 @@ test({
           const res = await pg.queryRowsAsync('select user__track_ignored from user__track')
           assert.strictEqual(res.length, 1)
           assert.notEqual(res[0].user__track_ignored, null)
-        }
-      }
+        },
+      },
       // TODO: when another track from the same artist on the same label is added
     },
-    teardown: teardownTracks
-  }
+    teardown: teardownTracks,
+  },
 })

@@ -51,7 +51,7 @@ async function processMissingSpotifyTracks(missingFromSpotify, sourceId) {
   }
 }
 
-module.exports.findMatchingTracks = async jobDetails => {
+module.exports.findMatchingTracks = async (jobDetails) => {
   logger.debug('findMatchingTracks', { jobDetails })
   const sourceId = await insertSource({ operation: 'findMatchingTracks', jobDetails })
 
@@ -90,7 +90,7 @@ module.exports.findMatchingTracks = async jobDetails => {
 
   const [{ errors: beatportErrors }, { errors: spotifyErrors }] = await Promise.all([
     processMissingBeatportTracks(missingFromBeatport, sourceId),
-    processMissingSpotifyTracks(missingFromSpotify, sourceId)
+    processMissingSpotifyTracks(missingFromSpotify, sourceId),
   ])
 
   const errors = [...beatportErrors, ...spotifyErrors]

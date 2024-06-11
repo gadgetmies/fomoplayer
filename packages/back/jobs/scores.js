@@ -6,7 +6,7 @@ module.exports.updateDateAddedScore = async () => {
     // language=PostgreSQL
     sql`-- updateDateAddedScore
     REFRESH MATERIALIZED VIEW track_date_added_score
-    `
+    `,
   )
 
   return { success: true }
@@ -17,7 +17,7 @@ module.exports.updateDateReleasedScore = async () => {
     // language=PostgreSQL
     sql`--updateDateReleasedScore
     REFRESH MATERIALIZED VIEW track_date_released_score
-    `
+    `,
   )
 
   return { success: true }
@@ -28,7 +28,7 @@ module.exports.updateDatePublishedScore = async () => {
     // language=PostgreSQL
     sql`--updateDateReleasedScore
     REFRESH MATERIALIZED VIEW track_date_published_score
-    `
+    `,
   )
 
   return { success: true }
@@ -39,13 +39,13 @@ module.exports.updatePurchasedScores = async () => {
     // language=PostgreSQL
     sql`--updateDateReleasedScore
     REFRESH MATERIALIZED VIEW user_label_scores;
-    `
+    `,
   )
   await pg.queryAsync(
     // language=PostgreSQL
     sql`--updateDateReleasedScore
     REFRESH MATERIALIZED VIEW user_artist_scores;
-    `
+    `,
   )
 
   return { success: true }

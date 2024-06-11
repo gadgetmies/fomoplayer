@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React from 'react'
 import FullScreenPopup from './FullScreenPopup'
 
-export default props => (
+export default (props) => (
   <FullScreenPopup title="Keyboard shortcuts" {...props}>
     <h2 style={{ marginTop: 0 }}>Shortcuts</h2>
     <table>

@@ -14,7 +14,7 @@ const accountAPI = {
               WHERE authentication_method_code = 'email'
                 AND meta_account__authentication_method_details_details ->> 'username' = lower(${username})
                 AND meta_account__authentication_method_details_details ->> 'password' =
-                    crypt(${password}, meta_account__authentication_method_details_details ->> 'password')`
+                    crypt(${password}, meta_account__authentication_method_details_details ->> 'password')`,
     )
     if (result.rowCount === 1) {
       return result.rows[0]
@@ -22,7 +22,7 @@ const accountAPI = {
       return false
     }
   },
-  findByUserId: async id => {
+  findByUserId: async (id) => {
     const [details] = await pgrm.queryRowsAsync(
       //language=PostgreSQL
       sql`SELECT meta_account_user_id AS id,
@@ -30,7 +30,7 @@ const accountAPI = {
 FROM meta_account
          NATURAL JOIN meta_account__authentication_method_details
          NATURAL JOIN authentication_method
-WHERE meta_account_user_id = ${id}`
+WHERE meta_account_user_id = ${id}`,
     )
     if (!details) {
       throw new Error(`User not found with id: ${id}`)
@@ -48,7 +48,7 @@ FROM meta_account
 WHERE authentication_method_code = 'oidc'
   AND meta_account__authentication_method_details_details ->> 'issuer' = ${issuer}
   AND meta_account__authentication_method_details_details ->> 'subject' = ${subject}
-      `
+      `,
     )
     return details
   },
@@ -75,7 +75,7 @@ FROM account,
      authentication_method
 WHERE authentication_method_code = 'oidc'
 RETURNING meta_account_user_id AS id
-        `
+        `,
       )
 
       const id = newUser.id
@@ -84,7 +84,7 @@ RETURNING meta_account_user_id AS id
       return newUser
     }
   },
-  initializeNewUser: async userId => {
+  initializeNewUser: async (userId) => {
     await pgrm.queryRowsAsync(
       // language=PostgreSQL
       sql`-- insert default weights 
@@ -97,7 +97,7 @@ RETURNING meta_account_user_id AS id
              (-0.1, 'date_published', ${userId}),
              (-0.1, 'date_released', ${userId}),
              (-0.1, 'date_added', ${userId})
-      `
+      `,
     )
 
     await pgrm.queryRowsAsync(
@@ -106,9 +106,9 @@ RETURNING meta_account_user_id AS id
       INSERT INTO cart
           (cart_name, meta_account_user_id, cart_is_default, cart_is_purchased)
       VALUES ('Default', ${userId}, TRUE, FALSE), ('Purchased', ${userId}, FALSE, TRUE)
-      `
+      `,
     )
-  }
+  },
 }
 
 module.exports = accountAPI

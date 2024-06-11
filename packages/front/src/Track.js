@@ -12,7 +12,7 @@ import { Link, NavLink } from 'react-router-dom'
 import Popup from './Popup'
 import SearchBar from './SearchBar'
 
-const isNumber = value => typeof value === 'number' && !Number.isNaN(value)
+const isNumber = (value) => typeof value === 'number' && !Number.isNaN(value)
 
 class Track extends Component {
   constructor(props) {
@@ -23,7 +23,7 @@ class Track extends Component {
       heardHover: false,
       heard: props.heard,
       processingCart: false,
-      newCartName: ''
+      newCartName: '',
     }
   }
 
@@ -51,7 +51,7 @@ class Track extends Component {
     const searchString = encodeURIComponent(
       `${this.props.artists.map(R.prop('name')).join(' ')} ${this.props.title}${
         this.props.version ? ` ${this.props.version}` : ''
-      }`
+      }`,
     )
       .normalize('NFD')
       .replace(/\p{Diacritic}/gu, '')
@@ -80,7 +80,7 @@ class Track extends Component {
               this.props.mode !== 'app' ||
               this.props.enabledStores?.includes(storeName)) && (
               <a
-                onClick={e => {
+                onClick={(e) => {
                   e.stopPropagation()
                 }}
                 href={trackStore.url || trackStore.release.url}
@@ -96,7 +96,7 @@ class Track extends Component {
             )
           : (this.props.listState !== 'carts' || this.props.enabledStoreSearch?.includes(storeName)) && (
               <a
-                onClick={e => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 className="pill pill-link pill-link-collapse table-cell-button"
                 href={`${searchUrl}${searchString}`}
                 title={`Search from ${storeName}`}
@@ -108,7 +108,7 @@ class Track extends Component {
               </a>
             )
       })
-      ?.filter(i => i)
+      ?.filter((i) => i)
 
     return (
       <tr
@@ -181,7 +181,7 @@ class Track extends Component {
                 '-'
               ) : (
                 <ul className="comma-list">
-                  {this.props.bpms.filter(R.identity).map(bpm => (
+                  {this.props.bpms.filter(R.identity).map((bpm) => (
                     <li key={bpm}>{Math.round(bpm)}</li>
                   ))}
                 </ul>
@@ -263,7 +263,7 @@ class Track extends Component {
                   buttonStyle={{ opacity: 1 }}
                   popupStyle={{ overflow: 'hidden' }}
                   loading={processingCart}
-                  onClick={e => {
+                  onClick={(e) => {
                     e.stopPropagation()
                     return this.props.onCartButtonClick(this.props.id, currentCartId, inCart)
                   }}
@@ -272,14 +272,14 @@ class Track extends Component {
                     placeholder={'Search'}
                     styles={'small dark'}
                     value={this.props.cartFilter}
-                    onChange={e => this.props.onCartFilterChange(e.target.value)}
+                    onChange={(e) => this.props.onCartFilterChange(e.target.value)}
                     onClearSearch={() => this.props.onCartFilterChange('')}
                   />
                   <div
                     className={'carts-list'}
                     style={{ flex: 1 }}
-                    onClick={e => e.stopPropagation()}
-                    onDoubleClick={e => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    onDoubleClick={(e) => e.stopPropagation()}
                   >
                     {this.props.carts.length === 0
                       ? 'Loading carts...'
@@ -287,7 +287,7 @@ class Track extends Component {
                           .filter(
                             ({ name }) =>
                               !this.props.cartFilter ||
-                              name.toLocaleLowerCase().includes(this.props.cartFilter.toLowerCase())
+                              name.toLocaleLowerCase().includes(this.props.cartFilter.toLowerCase()),
                           )
                           .map(({ id: cartId, name }) => {
                             const isInCart = this.props.inCarts.find(R.propEq('id', cartId))
@@ -295,7 +295,7 @@ class Track extends Component {
                               <button
                                 disabled={processingCart}
                                 className="button button-push_button button-push_button-small button-push_button-primary cart-button"
-                                onClick={e => {
+                                onClick={(e) => {
                                   e.stopPropagation()
                                   return this.props.onCartButtonClick(this.props.id, cartId, isInCart)
                                 }}
@@ -314,12 +314,12 @@ class Track extends Component {
                         style={{ flex: 1 }}
                         className={'cart-popup-input text-input text-input-small text-input-dark'}
                         value={this.state.newCartName}
-                        onChange={e => this.setState({ newCartName: e.target.value })}
-                        onClick={e => e.stopPropagation()}
+                        onChange={(e) => this.setState({ newCartName: e.target.value })}
+                        onClick={(e) => e.stopPropagation()}
                       />
                       <button
                         className="button button-push_button button-push_button-small button-push_button-primary"
-                        onClick={async e => {
+                        onClick={async (e) => {
                           e.stopPropagation()
                           this.setState({ newCartName: '' })
                           const { id: cartId } = await this.props.onCreateCartClick(this.state.newCartName)
@@ -336,7 +336,7 @@ class Track extends Component {
                         disabled={processingCart}
                         style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
                         className="button button-push_button button-push_button-small button-push_button-primary"
-                        onClick={e => {
+                        onClick={(e) => {
                           e.stopPropagation()
                           return this.props.onMarkPurchasedButtonClick(this.props.id)
                         }}
@@ -365,7 +365,7 @@ class Track extends Component {
                 className="pill pill-link pill-link-collapse table-cell-button"
                 href={`https://www.youtube.com/results?search_query=${searchString}`}
                 title={'Search from Youtube'}
-                onClick={e => {
+                onClick={(e) => {
                   e.stopPropagation()
                 }}
                 target={'_blank'}

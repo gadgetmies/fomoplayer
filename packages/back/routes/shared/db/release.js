@@ -14,7 +14,7 @@ FROM
         NATURAL JOIN track__label
 WHERE
     release_id = ${releaseId}
-      `
+      `,
     )
     .map(({ id }) => id)
 

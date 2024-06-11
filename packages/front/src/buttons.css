@@ -67,7 +67,10 @@ button::-moz-focus-inner {
   background-color: #b40089;
   border-color: #530059;
   color: white;
-  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+  transition:
+    color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
     box-shadow 0.15s ease-in-out;
   position: relative;
 }

@@ -13,13 +13,13 @@ export default class CookieLogin extends Component {
       loginError: false,
       logoutError: false,
       copied: false,
-      cookie: ''
+      cookie: '',
     }
   }
 
   static get defaultProps() {
     return {
-      size: 'large'
+      size: 'large',
     }
   }
 
@@ -30,7 +30,7 @@ export default class CookieLogin extends Component {
       await requestWithCredentials({
         path: this.props.loginPath,
         method: 'POST',
-        body: { cookie: this.state.cookie }
+        body: { cookie: this.state.cookie },
       })
       this.setState({ cookie: '', loginError: false, loggingIn: false })
       this.props.onLoginDone()
@@ -51,7 +51,7 @@ export default class CookieLogin extends Component {
             try {
               await requestWithCredentials({
                 path: this.props.logoutPath,
-                method: 'POST'
+                method: 'POST',
               })
               return this.props.onLogoutDone()
             } catch (e) {
@@ -68,7 +68,7 @@ export default class CookieLogin extends Component {
       <form
         className={this.props.className}
         style={{ height: '100%', overflow: 'hidden' }}
-        onSubmit={e => {
+        onSubmit={(e) => {
           e.preventDefault()
           this.submitLogin()
         }}
@@ -78,7 +78,7 @@ export default class CookieLogin extends Component {
             Cookie
             <br />
             <PillButton
-              onClick={e => {
+              onClick={(e) => {
                 const el = document.createElement('textarea')
                 el.value = 'copy(document.cookie)'
                 document.body.appendChild(el)
@@ -104,10 +104,10 @@ export default class CookieLogin extends Component {
             type="text"
             name="cookie"
             disabled={this.state.loggingIn}
-            onChange={e => this.setState({ cookie: e.target.value })}
+            onChange={(e) => this.setState({ cookie: e.target.value })}
             className={`text-input login-input text-input-${this.props.size} text-input-light`}
             value={this.state.cookie}
-            onKeyPress={e => {
+            onKeyPress={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
                 this.submitLogin(e)

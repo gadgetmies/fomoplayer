@@ -4,7 +4,7 @@ const scoreWeights = {
     min: 0,
     max: 10,
     step: 0.1,
-    unit: 'points added  per purchased tracks by artist'
+    unit: 'points added  per purchased tracks by artist',
   },
   label: { label: 'Label purchases', min: 0, max: 10, step: 0.1, unit: 'points added per purchased tracks by label' },
   artist_follow: { label: 'Artist follow', min: 0, max: 10, step: 0.1, unit: 'points added per followed artists' },
@@ -15,7 +15,7 @@ const scoreWeights = {
     max: 5,
     step: 0.1,
     isPenalty: true,
-    unit: 'points subtracted per day since release'
+    unit: 'points subtracted per day since release',
   },
   date_published: {
     label: 'Date published',
@@ -23,7 +23,7 @@ const scoreWeights = {
     max: 5,
     step: 0.1,
     isPenalty: true,
-    unit: 'points subtracted per day since publish'
+    unit: 'points subtracted per day since publish',
   },
   date_added: {
     label: 'Date added',
@@ -31,7 +31,7 @@ const scoreWeights = {
     max: 5,
     step: 0.1,
     isPenalty: true,
-    unit: 'points subtracted per day since added'
-  }
+    unit: 'points subtracted per day since added',
+  },
 }
 export default scoreWeights

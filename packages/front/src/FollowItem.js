@@ -22,7 +22,7 @@ class FollowItem extends Component {
         <ExternalLink
           href={this.props.url}
           target="_blank"
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           title={'Check details from store'}
         >
           {this.props.title}&nbsp;

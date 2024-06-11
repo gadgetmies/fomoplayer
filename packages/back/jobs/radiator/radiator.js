@@ -9,7 +9,7 @@ const queryFiles = readdirSync(path.resolve(queriesPath))
 
 module.exports = Object.fromEntries(
   queryFiles
-    .map(file => [file, readFileSync(`${queriesPath}/${file}`, 'utf8')])
+    .map((file) => [file, readFileSync(`${queriesPath}/${file}`, 'utf8')])
     .map(([file, query]) => {
       logger.info(`Initialising radiator query job for: ${file}`)
       return [
@@ -20,9 +20,9 @@ module.exports = Object.fromEntries(
           } catch (e) {
             return { result: [e], success: false }
           }
-        }
+        },
       ]
-    })
+    }),
 )
 ;(async () => {
   for (const file of queryFiles) {
@@ -41,7 +41,7 @@ module.exports = Object.fromEntries(
           job
         WHERE job_name = ${file}
         ON CONFLICT DO NOTHING
-      `
+      `,
     )
   }
 })()

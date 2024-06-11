@@ -14,20 +14,20 @@ FROM
 WHERE
       store_name = ${storeName}
   AND store__track_store_id = ANY (${storeTrackIds}) 
-      `
+      `,
   )
   return track_ids
 }
 
-module.exports.queryTrackDetails = async trackIds =>
+module.exports.queryTrackDetails = async (trackIds) =>
   await pg.queryRowsAsync(
     //language=PostgreSQL
     sql`-- queryTrackDetails
 SELECT * FROM track_details(${trackIds})
-    `
+    `,
   )
 
-module.exports.queryStoredTracksForUrls = async urls => {
+module.exports.queryStoredTracksForUrls = async (urls) => {
   const [{ track_details }] = await pg.queryRowsAsync(
     //language=PostgreSQL
     sql`-- queryStoredTracksForUrls
@@ -39,7 +39,7 @@ module.exports.queryStoredTracksForUrls = async urls => {
     SELECT CASE WHEN track_details IS NULL THEN '[]'::JSON ELSE track_details END AS track_details
     FROM
       tracks
-    `
+    `,
   )
   return track_details
 }

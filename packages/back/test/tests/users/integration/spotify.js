@@ -25,8 +25,8 @@ test({
     assert.equal(spotifyInterceptor.getMockedRequests().length, 1)
     assert.notEqual(
       spotifyInterceptor.getMockedRequests().find(({ url }) => new URL(url).pathname === '/v1/search/'),
-      undefined
+      undefined,
     )
     assert.deepEqual(res.body, spotifySearchMock)
-  }
+  },
 })

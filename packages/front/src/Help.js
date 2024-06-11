@@ -6,7 +6,7 @@ class Help extends Component {
     this.state = {
       active: props.active,
       onboardingIndex: 0,
-      onboardingHelpers: null
+      onboardingHelpers: null,
     }
   }
 
@@ -29,15 +29,15 @@ class Help extends Component {
         spotlightClicks={true}
         styles={{
           options: {
-            zIndex: 10000
-          }
+            zIndex: 10000,
+          },
         }}
         showProgress
         continuous
-        getHelpers={helpers => {
+        getHelpers={(helpers) => {
           this.setState({ helpers })
         }}
-        callback={state => {
+        callback={(state) => {
           let active = state.status === STATUS.RUNNING
           if (this.state.run !== active) {
             this.props.onActiveChanged && this.props.onActiveChanged(active)

@@ -11,5 +11,5 @@ module.exports.queryStores = () =>
          , store_search_url AS "searchUrl"
     FROM
       store
-    `
+    `,
   )

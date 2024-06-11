@@ -18,7 +18,7 @@ class ImportPlaylistButton extends Component {
         <a
           href={url}
           target="_blank"
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           title={'Check details from store'}
           style={{ position: 'relative', height: 100, width: 100, display: 'block', margin: 'auto' }}
         >
@@ -31,7 +31,7 @@ class ImportPlaylistButton extends Component {
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
             width: 100,
-            overflow: 'hidden'
+            overflow: 'hidden',
           }}
         >
           {name}

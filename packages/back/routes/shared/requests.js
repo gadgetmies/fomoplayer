@@ -11,19 +11,19 @@ const safeCall = async (fn, ...args) => {
     logger.error(
       `safeCall failed for function: '${fn.name}' with arguments: '${JSON.stringify(args).substring(
         0,
-        100
+        100,
       )}', ${JSON.stringify(e)?.substring(0, 100)}`,
       {
         ...e,
         message: e.message?.substring(0, 100),
-        error: JSON.stringify(e.error)?.substring(0, 100)
-      }
+        error: JSON.stringify(e.error)?.substring(0, 100),
+      },
     )
   }
 }
 
 const processConcurrently = async (arr, fn, bluebirdOptions = { concurrency: 1 }) => {
-  return await BPromise.map(arr, async item => safeCall(fn, item), bluebirdOptions)
+  return await BPromise.map(arr, async (item) => safeCall(fn, item), bluebirdOptions)
 }
 
 module.exports.processChunks = async (arr, chunkSize, fn, bluebirdOptions = { concurrency: 1 }) => {

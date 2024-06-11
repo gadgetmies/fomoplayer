@@ -27,7 +27,7 @@ class TopBar extends Component {
       sort,
       supportMenuOpen: false,
       emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
-      discoverMenuOpen: false
+      discoverMenuOpen: false,
     }
   }
 
@@ -63,7 +63,7 @@ class TopBar extends Component {
         // TODO: cancel this request if new one is requested
         await this.props.onSearch(this.state.search, this.state.sort)
       },
-      skipDebounce ? 0 : 1000
+      skipDebounce ? 0 : 1000,
     )
     this.setState({ searchDebounce: timeout })
   }
@@ -102,12 +102,12 @@ class TopBar extends Component {
                 <MenuNavButton disabled={true} to={'/tracks'} label="Discover" icon={<FontAwesomeIcon icon="play" />} />
               }
               open={this.state.discoverMenuOpen}
-              onOpenChanged={open => this.setState({ discoverMenuOpen: open })}
+              onOpenChanged={(open) => this.setState({ discoverMenuOpen: open })}
               popupClassName={'popup_content-right'}
             >
               <div style={{ flexDirection: 'column', display: 'flex', minWidth: 250 }}>
                 <NavLink
-                  style={isActive => ({ opacity: isActive ? 1 : 0.7 })}
+                  style={(isActive) => ({ opacity: isActive ? 1 : 0.7 })}
                   to={'/tracks/new'}
                   className={'pill pill-button button-push_button-small'}
                   onClick={() => this.setState({ discoverMenuOpen: false })}
@@ -115,7 +115,7 @@ class TopBar extends Component {
                   <span className={'pill-button-contents button-push_button_label'}>New tracks</span>
                 </NavLink>
                 <NavLink
-                  style={isActive => ({ opacity: isActive ? 1 : 0.7 })}
+                  style={(isActive) => ({ opacity: isActive ? 1 : 0.7 })}
                   to={'/tracks/recent'}
                   className={'pill pill-button button-push_button-small'}
                   onClick={() => this.setState({ discoverMenuOpen: false })}
@@ -123,7 +123,7 @@ class TopBar extends Component {
                   <span className={'pill-button-contents button-push_button_label'}>Recently added</span>
                 </NavLink>
                 <NavLink
-                  style={isActive => ({ opacity: isActive ? 1 : 0.7 })}
+                  style={(isActive) => ({ opacity: isActive ? 1 : 0.7 })}
                   to={'/tracks/heard'}
                   className={'pill pill-button button-push_button-small'}
                   onClick={() => this.setState({ discoverMenuOpen: false })}
@@ -144,8 +144,8 @@ class TopBar extends Component {
             className={`menu_search ${this.state.searchActive ? 'menu_search-active' : ''}`}
           >
             <SearchBar
-              onChange={e => this.setSearch(e.target.value)}
-              onKeyDown={e => {
+              onChange={(e) => this.setSearch(e.target.value)}
+              onKeyDown={(e) => {
                 if (e.code === 'Enter') {
                   return this.props.triggerSearch()
                 }
@@ -163,7 +163,7 @@ class TopBar extends Component {
               >
                 <DropDownButton
                   size={'top_bar'}
-                  onClick={async e => {
+                  onClick={async (e) => {
                     e.stopPropagation()
                     this.setState({ modifyingNotification: true })
                     await this.props.handleToggleNotificationClick(this.state.search, !subscribed)
@@ -183,12 +183,12 @@ class TopBar extends Component {
                           disabled={notificationSubscriptionDisabled}
                           style={{ display: 'flex', alignItems: 'center', gap: 4 }}
                           className="button button-push_button button-push_button-small button-push_button-primary"
-                          onClick={async e => {
+                          onClick={async (e) => {
                             e.stopPropagation()
                             try {
                               this.setState({ modifyingNotification: true })
                               await this.props.handleToggleNotificationClick(this.state.search, !isSubscribed, [
-                                storeName
+                                storeName,
                               ])
                             } finally {
                               this.setState({ modifyingNotification: false })
@@ -211,7 +211,7 @@ class TopBar extends Component {
                 style={{
                   padding: '0 8px 0 4px',
                   height: '100%',
-                  flex: 0
+                  flex: 0,
                 }}
                 className="email_not_verified_container popup_container"
               >
@@ -247,7 +247,7 @@ class TopBar extends Component {
           <div style={{ alignItems: 'center' }} className="menu_right">
             <Popup
               open={this.state.supportMenuOpen}
-              onOpenChanged={open => this.setState({ supportMenuOpen: open })}
+              onOpenChanged={(open) => this.setState({ supportMenuOpen: open })}
               anchor={
                 <div
                   style={{ padding: '0 8px', display: 'flex', alignItems: 'center' }}

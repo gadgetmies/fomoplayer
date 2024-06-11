@@ -105,7 +105,7 @@ sendMyLibrary()
 `
 
 const myBeatportUrlFn = 'page => `https://www.beatport.com/my-beatport?page=${page}&per-page=150`'
-const getCurrentUrl = tabArray => tabArray[0].url
+const getCurrentUrl = (tabArray) => tabArray[0].url
 
 export default class BeatportPanel extends React.Component {
   constructor(props) {
@@ -117,7 +117,7 @@ export default class BeatportPanel extends React.Component {
     try {
       this.props.setRunning(true)
       chrome.tabs.executeScript({
-        code: sendBeatportTracksScript(urlTemplate, type, pageCount)
+        code: sendBeatportTracksScript(urlTemplate, type, pageCount),
       })
     } catch (e) {
       chrome.runtime.sendMessage({ type: 'error', message: 'Failed to send My Beatport tracks!', stack: e.stack })
@@ -128,13 +128,13 @@ export default class BeatportPanel extends React.Component {
     try {
       this.props.setRunning(true)
       chrome.tabs.executeScript({
-        code: sendBeatportMyLibraryScript()
+        code: sendBeatportMyLibraryScript(),
       })
     } catch (e) {
       chrome.runtime.sendMessage({
         type: 'error',
         message: 'Failed to send My Library tracks!',
-        stack: e.stack
+        stack: e.stack,
       })
     }
   }
@@ -143,13 +143,13 @@ export default class BeatportPanel extends React.Component {
     try {
       this.props.setRunning(true)
       chrome.tabs.executeScript({
-        code: sendBeatportArtistsAndLabelsScript()
+        code: sendBeatportArtistsAndLabelsScript(),
       })
     } catch (e) {
       chrome.runtime.sendMessage({
         type: 'error',
         message: 'Failed to send My Beatport artists and labels!',
-        stack: e.stack
+        stack: e.stack,
       })
     }
   }
@@ -158,19 +158,19 @@ export default class BeatportPanel extends React.Component {
     const that = this
     chrome.tabs.executeScript(
       {
-        code: `document.querySelector('.head-account-link[data-href="/account/profile"]') !== null`
+        code: `document.querySelector('.head-account-link[data-href="/account/profile"]') !== null`,
       },
       ([loggedIn]) => {
         that.setState({ loggedIn })
-      }
+      },
     )
     chrome.tabs.executeScript(
       {
-        code: `document.querySelector('.playable-play') !== null`
+        code: `document.querySelector('.playable-play') !== null`,
       },
       ([hasPlayables]) => {
         that.setState({ hasPlayables })
-      }
+      },
     )
   }
 
@@ -193,7 +193,7 @@ export default class BeatportPanel extends React.Component {
                 disabled={this.props.running || !this.state.hasPlayables}
                 onClick={() => {
                   const that = this
-                  chrome.tabs.query({ active: true, currentWindow: true }, function(tabArray) {
+                  chrome.tabs.query({ active: true, currentWindow: true }, function (tabArray) {
                     that.sendTracks(`() => "${getCurrentUrl(tabArray)}"`, 'tracks', 1)
                   })
                 }}

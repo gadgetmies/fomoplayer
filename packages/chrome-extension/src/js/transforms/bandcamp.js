@@ -6,11 +6,11 @@ const durationLens = ['duration', L.multiply(1000), parseInt]
 module.exports.bandcampTagTracksTransform = L.collect([
   L.elems,
   L.pick({
-    id: 'item_id'
-  })
+    id: 'item_id',
+  }),
 ])
 
-const isVersionOrRemix = parenthesesContent => {
+const isVersionOrRemix = (parenthesesContent) => {
   if (!parenthesesContent) return false
   if (!parenthesesContent.startsWith('(feat.')) {
     const title = parenthesesContent.toLocaleLowerCase()
@@ -21,14 +21,10 @@ const isVersionOrRemix = parenthesesContent => {
   return false
 }
 
-const extractFeat = match => {
+const extractFeat = (match) => {
   if (!match) return false
   if (match.startsWith('(feat.') || match.startsWith('(ft.')) {
-    return match
-      .replace('(feat. ', '')
-      .replace('(ft. ', '')
-      .replace(')', '')
-      .split(/,&/)
+    return match.replace('(feat. ', '').replace('(ft. ', '').replace(')', '').split(/,&/)
   } else {
     return false
   }
@@ -36,18 +32,18 @@ const extractFeat = match => {
 
 module.exports.bandcampReleasesTransform = L.collect([
   L.elems,
-  L.choose(release => [
+  L.choose((release) => [
     'trackinfo',
     L.filter(R.prop('file')),
     L.elems,
-    L.choose(track => {
+    L.choose((track) => {
       const releaseArtistId = release.url.substring(8, release.url.indexOf('.bandcamp.com'))
       const releaseArtistUrl = release.url.substring(0, release.url.indexOf('/', 8))
       const artistTemplate = {
         name: track.artist || release.artist,
         role: 'author',
         id: releaseArtistId || null,
-        url: releaseArtistUrl || null
+        url: releaseArtistUrl || null,
       }
       // 0 = full original title
       // 1 = artists and '-' if present
@@ -63,7 +59,7 @@ module.exports.bandcampReleasesTransform = L.collect([
       const featuringArtists = extractFeat(match[6]) || []
       const title = version || featuringArtists.length ? match[5].trim() : match[4]
 
-      const createArtistWithRole = role => artist => {
+      const createArtistWithRole = (role) => (artist) => {
         const trimmedArtist = artist.trim()
         const artistId = trimmedArtist.toLocaleLowerCase()
         const isReleaseArtist = artistId === releaseArtistId
@@ -73,9 +69,9 @@ module.exports.bandcampReleasesTransform = L.collect([
           ...(isReleaseArtist
             ? {
                 id: releaseArtistId,
-                url: releaseArtistUrl
+                url: releaseArtistUrl,
               }
-            : { id: null, url: null })
+            : { id: null, url: null }),
         }
       }
 
@@ -90,7 +86,7 @@ module.exports.bandcampReleasesTransform = L.collect([
         ? match[2]
             .split(/[,&]/)
             .map(createArtistWithRole('author'))
-            .filter(artist => !remixers.find(({ name }) => name === artist.name))
+            .filter((artist) => !remixers.find(({ name }) => name === artist.name))
         : [artistTemplate]
 
       return [
@@ -108,24 +104,24 @@ module.exports.bandcampReleasesTransform = L.collect([
             release_date: new Date(release.album_release_date).toISOString(),
             url: release.url,
             title: release.current.title,
-            id: release.id.toString(10)
+            id: release.id.toString(10),
           }),
           label: R.always({
             id: release.current.band_id.toString(10),
             url: release.url.substr(0, release.url.search(/[^/:]\//) + 1),
-            name: release.url.match(/https:\/\/([^.]*)/)[1]
+            name: release.url.match(/https:\/\/([^.]*)/)[1],
           }),
           previews: L.partsOf(
             L.pick({
               // url: ['file', 'mp3-128'], // TODO: do not include the url because it will be fetched separately?
               format: R.always('mp3'),
               start_ms: R.always(0),
-              end_ms: durationLens
-            })
+              end_ms: durationLens,
+            }),
           ),
-          store_details: []
-        })
+          store_details: [],
+        }),
       ]
-    })
-  ])
+    }),
+  ]),
 ])

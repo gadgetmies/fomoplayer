@@ -139,9 +139,7 @@
               "status": "success",
               "fetchStatus": "idle"
             },
-            "queryKey": [
-              "track-6389004"
-            ],
+            "queryKey": ["track-6389004"],
             "queryHash": "[\"track-6389004\"]"
           }
         ]
@@ -918,22 +916,11 @@
           }
         },
         "initialLocale": "en",
-        "ns": [
-          "translation"
-        ],
+        "ns": ["translation"],
         "userConfig": {
           "i18n": {
             "defaultLocale": "en",
-            "locales": [
-              "en",
-              "de",
-              "fr",
-              "es",
-              "it",
-              "ja",
-              "pt",
-              "nl"
-            ]
+            "locales": ["en", "de", "fr", "es", "it", "ja", "pt", "nl"]
           },
           "localePath": "/home/bpnext/beatport-next/public/locales",
           "defaultNS": "translation",
@@ -941,16 +928,7 @@
           "default": {
             "i18n": {
               "defaultLocale": "en",
-              "locales": [
-                "en",
-                "de",
-                "fr",
-                "es",
-                "it",
-                "ja",
-                "pt",
-                "nl"
-              ]
+              "locales": ["en", "de", "fr", "es", "it", "ja", "pt", "nl"]
             },
             "localePath": "/home/bpnext/beatport-next/public/locales",
             "defaultNS": "translation",
@@ -972,16 +950,7 @@
   "customServer": true,
   "appGip": true,
   "locale": "en",
-  "locales": [
-    "en",
-    "de",
-    "fr",
-    "es",
-    "it",
-    "ja",
-    "pt",
-    "nl"
-  ],
+  "locales": ["en", "de", "fr", "es", "it", "ja", "pt", "nl"],
   "defaultLocale": "en",
   "scriptLoader": [
     {

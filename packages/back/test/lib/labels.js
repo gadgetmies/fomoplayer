@@ -1,7 +1,7 @@
 const sql = require('sql-template-strings')
 const { pg } = require('./db')
 
-module.exports.queryLabelsForTracks = async addedTracks =>
+module.exports.queryLabelsForTracks = async (addedTracks) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`
@@ -12,13 +12,13 @@ FROM
         NATURAL JOIN track__label
 WHERE
     track_id = ANY (${addedTracks})
-`
+`,
   )
 
-module.exports.removeLabels = async labelIds =>
+module.exports.removeLabels = async (labelIds) =>
   await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`
 DELETE FROM label WHERE label_id = ANY(${labelIds})
-`
+`,
   )

@@ -16,14 +16,14 @@ module.exports.init = () =>
         test: ({ url }) => spotifyApiRedirect && url.startsWith(ACTUAL_SPOTIFY_API_URL),
         url: ({ url }) => {
           return url.replace(ACTUAL_SPOTIFY_API_URL, spotifyApiRedirect)
-        }
+        },
       },
       {
         test: ({ url }) => spotifyAccountsRedirect && url.startsWith(ACTUAL_SPOTIFY_ACCOUNTS_URL),
         url: ({ url }) => {
           return url.replace(ACTUAL_SPOTIFY_ACCOUNTS_URL, spotifyAccountsRedirect)
-        }
-      }
+        },
+      },
     ],
     mocks: [
       {
@@ -32,10 +32,10 @@ module.exports.init = () =>
           body: spotifySearchMock,
           options: {
             headers: {
-              'content-type': 'application/json'
-            }
-          }
-        })
+              'content-type': 'application/json',
+            },
+          },
+        }),
       },
       {
         test: ({ pathname }) => spotifyMock && pathname === '/api/token',
@@ -43,12 +43,12 @@ module.exports.init = () =>
           body: spotifyTokenMock,
           options: {
             headers: {
-              'content-type': 'application/json'
-            }
-          }
-        })
-      }
+              'content-type': 'application/json',
+            },
+          },
+        }),
+      },
     ],
     name: 'Spotify',
-    regex: SpotifyUrlRegex
+    regex: SpotifyUrlRegex,
   })

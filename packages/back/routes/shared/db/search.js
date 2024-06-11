@@ -9,14 +9,14 @@ const aliasToColumn = {
   released: 'store__track_released',
   added: 'track_added',
   title: 'track_title',
-  heard: 'user__track_heard'
+  heard: 'user__track_heard',
 }
 
 module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince } = {}) => {
   const idFilter = queryString
     .split(' ')
-    .filter(s => s.includes(':'))
-    .map(s => s.split(':'))
+    .filter((s) => s.includes(':'))
+    .map((s) => s.split(':'))
     .filter(([key]) => ['artist', 'label', 'release'].includes(key))[0]
 
   const limit = l || 100
@@ -27,9 +27,9 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
       const column = aliasToColumn[alias]
       return column ? [column, order] : null
     })
-    .filter(i => i)
+    .filter((i) => i)
 
-  return using(pg.getTransaction(), async tx => {
+  return using(pg.getTransaction(), async (tx) => {
     // TODO: this tx is only here for escapeIdentifier -> find out a way to get the function from pg
     let query =
       // language=PostgreSQL
@@ -84,22 +84,14 @@ WHERE track_id IN
 
     query.append(` ORDER BY `)
     sortColumns.forEach(([column, order]) =>
-      query
-        .append(tx.escapeIdentifier(column))
-        .append(' ')
-        .append(order)
-        .append(' NULLS LAST, ')
+      query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
     )
     query.append(` track_id DESC
         LIMIT ${limit})
         ORDER BY `)
 
     sortParameters.forEach(([column, order]) =>
-      query
-        .append(tx.escapeIdentifier(column))
-        .append(' ')
-        .append(order)
-        .append(' NULLS LAST, ')
+      query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
     )
     query.append(' track_id DESC')
 
@@ -107,9 +99,9 @@ WHERE track_id IN
   })
 }
 
-const getSortParameters = (module.exports.getSortParameters = sort => {
+const getSortParameters = (module.exports.getSortParameters = (sort) => {
   return sort
     .split(',')
-    .map(s => s.trim())
-    .map(s => (s[0] === '-' ? [s.slice(1), 'DESC'] : [s, 'ASC']))
+    .map((s) => s.trim())
+    .map((s) => (s[0] === '-' ? [s.slice(1), 'DESC'] : [s, 'ASC']))
 })

@@ -1,9 +1,11 @@
 const winston = require('winston')
 const TelegramLogger = require('winston-telegram')
 
-let transports = [new winston.transports.Console({
-  handleExceptions: true
-})]
+let transports = [
+  new winston.transports.Console({
+    handleExceptions: true,
+  }),
+]
 if (process.env.TELEGRAM_BOT_TOKEN) {
   transports.push(
     new TelegramLogger({
@@ -11,18 +13,18 @@ if (process.env.TELEGRAM_BOT_TOKEN) {
       token: process.env.TELEGRAM_BOT_TOKEN,
       chatId: process.env.TELEGRAM_BOT_CHAT_ID,
       level: 'error',
-      unique: true
-    })
+      unique: true,
+    }),
   )
 }
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: winston.format.json(),
-  transports
+  transports,
 })
 
-module.exports = function(name) {
+module.exports = function (name) {
   // set the default moduleName of the child
   return logger.child({ moduleName: name })
 }

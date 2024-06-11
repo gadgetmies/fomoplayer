@@ -17,7 +17,7 @@ module.exports.queryJobLinks = async () => {
     sql`-- queryJobLinks
 SELECT STRING_AGG(${`<a href="${config.apiURL}/admin/jobs/`} || job_name || '/run">' || job_name || '</a>', '<br/>') AS urls
 FROM job
-      `
+      `,
   )
   return urls
 }
@@ -36,7 +36,7 @@ module.exports.getQueryResults = async () =>
       WHERE job_name LIKE '%.sql'
         AND job_run_started > NOW() - INTERVAL '1 week'
       GROUP BY job_name
-    `
+    `,
   )
 
 module.exports.getConfigs = async () =>
@@ -51,7 +51,7 @@ module.exports.getConfigs = async () =>
           , radiator_config_config AS config
         FROM
             radiator_config
-    `
+    `,
   )
 
 module.exports.storeConfig = async ({ config, lens, name }) => {
@@ -68,7 +68,7 @@ module.exports.storeConfig = async ({ config, lens, name }) => {
             SET
                 radiator_config_lens = ${lens}
               , radiator_config_config = ${config}
-    `
+    `,
   )
 
   const [details] = await pg.queryRowsAsync(
@@ -84,7 +84,7 @@ module.exports.storeConfig = async ({ config, lens, name }) => {
             radiator_config
         WHERE
             radiator_config_name = ${name}
-    `
+    `,
   )
 
   return details

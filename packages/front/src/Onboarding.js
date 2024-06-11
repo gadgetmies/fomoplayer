@@ -6,7 +6,7 @@ class Onboarding extends Component {
     super(props)
     this.state = {
       onboardingIndex: 0,
-      onboardingHelpers: null
+      onboardingHelpers: null,
     }
   }
 
@@ -19,12 +19,12 @@ class Onboarding extends Component {
         </>
       ),
       locale: {
-        skip: <strong aria-label="skip">Thanks, but I'll find my own way around</strong>
+        skip: <strong aria-label="skip">Thanks, but I'll find my own way around</strong>,
       },
       placement: 'center',
       target: 'body',
       disableCloseOnEsc: false,
-      showSkipButton: true
+      showSkipButton: true,
     },
     Settings: {
       target: '[data-onboarding-id=settings-button]',
@@ -33,7 +33,7 @@ class Onboarding extends Component {
         <p>Let's first click the Settings button to open the Settings and find an artist and label to follow.</p>
       ),
       disableNext: true,
-      locale: { next: 'Step' }
+      locale: { next: 'Step' },
     },
     Search: {
       target: '[data-onboarding-id=follow-search]',
@@ -46,7 +46,7 @@ class Onboarding extends Component {
         </p>
       ),
       disableNext: true,
-      locale: { next: 'Step' }
+      locale: { next: 'Step' },
     },
     FollowItem: {
       target: '[data-onboarding-id=follow-item]',
@@ -59,7 +59,7 @@ class Onboarding extends Component {
             label page on the services to confirm you are choosing the correct one.
           </p>
         </>
-      )
+      ),
     },
     FollowButton: {
       target: '[data-onboarding-id=follow-button]:not([disabled])',
@@ -71,14 +71,14 @@ class Onboarding extends Component {
         </p>
       ),
       disableNext: true,
-      locale: { next: 'Step' }
+      locale: { next: 'Step' },
     },
     FollowedItem: {
       target: '[data-onboarding-id=followed-items]',
       placement: 'right-end',
       content: <p>The followed artists are shown here (and the labels below).</p>,
       disableNext: true,
-      locale: { next: 'Step' }
+      locale: { next: 'Step' },
     },
     Star: {
       target: '[data-onboarding-id=star-button]',
@@ -90,21 +90,21 @@ class Onboarding extends Component {
         </p>
       ),
       disableNext: true,
-      locale: { next: 'Step' }
+      locale: { next: 'Step' },
     },
     Unfollow: {
       target: '[data-onboarding-id=unfollow-button]',
       placement: 'right-end',
       content: <p>To remove a follow, click the X.</p>,
       disableNext: true,
-      locale: { next: 'Step' }
+      locale: { next: 'Step' },
     },
     Support: {
       target: '[data-onboarding-id=support-button]',
       placement: 'top',
       content: <p>Let's head to the Support popup to look at a few more things.</p>,
       disableNext: true,
-      locale: { next: 'Step' }
+      locale: { next: 'Step' },
     },
     Instructions: {
       target: '[data-onboarding-id=instructions-button]',
@@ -114,7 +114,7 @@ class Onboarding extends Component {
           There's a more detailed instructions page on Github that lists many more features, how they work (and in some
           cases also why they work the way they do).
         </p>
-      )
+      ),
     },
     Issues: {
       target: '[data-onboarding-id=issues-button]',
@@ -124,7 +124,7 @@ class Onboarding extends Component {
           The site is very much a work in progress, so it is probably not unusual to bump into issue. You can help make
           the site better by reporting an issue using the Report issue button in the menu (requires a GitHub account.).
         </p>
-      )
+      ),
     },
     Improvements: {
       target: '[data-onboarding-id=improvements-button]',
@@ -135,7 +135,7 @@ class Onboarding extends Component {
           (also requires a GitHub account.).
         </p>
       ),
-      disableCloseOnEsc: false
+      disableCloseOnEsc: false,
     },
     Help: {
       target: '[data-onboarding-id=help-button]',
@@ -149,9 +149,9 @@ class Onboarding extends Component {
         </>
       ),
       locale: {
-        last: <strong aria-label="skip">Done</strong>
-      }
-    }
+        last: <strong aria-label="skip">Done</strong>,
+      },
+    },
   }
 
   static isCurrentStep(step) {
@@ -181,18 +181,18 @@ class Onboarding extends Component {
         spotlightClicks={true}
         styles={{
           options: {
-            zIndex: 10000
-          }
+            zIndex: 10000,
+          },
         }}
         disableOverlayClose
         showProgress
         showSkipButton={false}
         disableCloseOnEsc={true}
         hideBackButton={true}
-        getHelpers={helpers => {
+        getHelpers={(helpers) => {
           Onboarding.helpers = helpers
         }}
-        callback={state => {
+        callback={(state) => {
           Onboarding.state = state
           Onboarding.active = state.status === 'running'
           const nextButton = document.querySelector('.react-joyride__tooltip button')

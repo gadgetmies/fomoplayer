@@ -17,17 +17,17 @@ const clientId = process.env.SPOTIFY_CLIENT_ID
 const credentials = {
   clientId,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-  redirectUri: `${apiURL}/auth/spotify/callback`
+  redirectUri: `${apiURL}/auth/spotify/callback`,
 }
 
-const injectRateLimiting = L.modify(L.query(L.when(R.is(Function))), fn => (...args) => {
+const injectRateLimiting = L.modify(L.query(L.when(R.is(Function))), (fn) => (...args) => {
   console.log(fn)
   if (suspendedUntil && suspendedUntil > new Date()) {
     throw new Error(`Too many calls to Spotify API. Waiting for rate limit to expire at ${suspendedUntil}`)
   } else {
     const res = fn.bind(api)(...args)
     if (res instanceof Promise) {
-      return res.catch(e => {
+      return res.catch((e) => {
         if (e.statusCode === 429) {
           const retryAfterMs = e.headers['retry-after'] * 1000
           logger.error(`Spotify API rate limit exceeded (response status code 429), suspending for ${retryAfterMs}ms`)
@@ -58,7 +58,7 @@ const getApiForAuthorization = (module.exports.getApiForAuthorization = (accessT
   return api
 })
 
-const getApiForUser = (module.exports.getApiForUser = async userId => {
+const getApiForUser = (module.exports.getApiForUser = async (userId) => {
   const { access_token, refresh_token, expires } = await queryAuthorization(userId)
   const api = getApiForAuthorization(access_token, refresh_token)
   if (new Date(expires) < new Date()) {
@@ -100,12 +100,12 @@ module.exports.getAuthorizationUrl = (returnPath, write) => {
   return spotifyApi.createAuthorizeURL(scopes, encodeURIComponent(`path=${returnPath}`))
 }
 
-module.exports.requestTokens = code => spotifyApi.authorizationCodeGrant(code)
+module.exports.requestTokens = (code) => spotifyApi.authorizationCodeGrant(code)
 ;(async () => {
   await refreshToken()
 })()
 
-const getSpotifyTrackUris = (module.exports.getSpotifyTrackUris = tracks =>
+const getSpotifyTrackUris = (module.exports.getSpotifyTrackUris = (tracks) =>
   tracks
     .map(({ stores }) => stores.find(({ name }) => storeName === name))
     .filter(R.identity)
@@ -133,14 +133,14 @@ module.exports.createCart = async (userId, cartName, tracks) => {
   const {
     id,
     external_urls: { spotify },
-    snapshot_id
+    snapshot_id,
   } = playlist
   return { id, url: spotify, versionId: snapshot_id }
 }
 
 module.exports.removeTracksFromSyncedCart = async (userId, trackDetails, cartStoreDetails) => {
-  const trackUris = getSpotifyTrackUris(trackDetails).map(uri => ({
-    uri
+  const trackUris = getSpotifyTrackUris(trackDetails).map((uri) => ({
+    uri,
   }))
   if (trackUris.length > 0) {
     const { cartStoreId } = cartStoreDetails
@@ -166,34 +166,34 @@ module.exports.addTracksToSyncedCart = async (userId, trackDetails, cartStoreDet
   }
 }
 
-module.exports.requestUserPlaylists = async userId => {
+module.exports.requestUserPlaylists = async (userId) => {
   const api = await getApiForUser(userId)
   const res = await api.getUserPlaylists()
   const {
-    body: { items }
+    body: { items },
   } = res
   return items.map(({ id, name, external_urls: { spotify }, images }) => ({
     id,
     name,
     url: spotify,
-    img: images[0]?.url
+    img: images[0]?.url,
   }))
 }
 
-module.exports.requestUserFollowedArtists = async userId => {
+module.exports.requestUserFollowedArtists = async (userId) => {
   const api = await getApiForUser(userId)
   const res = await api.getFollowedArtists()
   const {
     body: {
-      artists: { items }
-    }
+      artists: { items },
+    },
   } = res
 
   return items.map(({ id, name, external_urls: { spotify }, images }) => ({
     id,
     name,
     url: spotify,
-    img: images[0]?.url
+    img: images[0]?.url,
   }))
 }
 

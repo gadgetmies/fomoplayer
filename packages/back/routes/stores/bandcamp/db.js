@@ -16,11 +16,11 @@ FROM
 WHERE
     store__track_store_id = ${storeTrackId}::TEXT
 AND store_id = ${storeId}
-    `
+    `,
     )
     .then(([{ store__release_url }]) => store__release_url)
 
-module.exports.queryTrackStoreId = trackId =>
+module.exports.queryTrackStoreId = (trackId) =>
   pg
     .queryRowsAsync(
       // language=PostgreSQL
@@ -30,6 +30,6 @@ SELECT
 FROM store__track
 WHERE
   store__track_id = ${trackId}
-`
+`,
     )
     .then(([{ store__track_store_id }]) => store__track_store_id)

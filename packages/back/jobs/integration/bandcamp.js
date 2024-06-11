@@ -15,7 +15,7 @@ const requiredTrackProperties = [
   'release',
   'label',
   'previews',
-  'store_details'
+  'store_details',
 ]
 
 async function getArtistDetails() {
@@ -54,7 +54,7 @@ module.exports = async () => {
   const detailsAndFunctions = [
     [artistDetails, getArtistTracks],
     [labelDetails, getLabelTracks],
-    [{ playlistStoreId: drumAndBassPlaylist, url: drumAndBassPlaylist }, getPlaylistTracks]
+    [{ playlistStoreId: drumAndBassPlaylist, url: drumAndBassPlaylist }, getPlaylistTracks],
   ]
 
   let combinedErrors = []
@@ -74,12 +74,12 @@ module.exports = async () => {
         }
 
         const missingTrackProperties = requiredTrackProperties.filter(
-          prop => tracks[0].hasOwnProperty(prop) && tracks[0][prop] !== null
+          (prop) => tracks[0].hasOwnProperty(prop) && tracks[0][prop] !== null,
         )
 
         if (missingTrackProperties.length !== 0) {
           const error = `Missing properties in fetched tracks for (${details.url}): ${missingTrackProperties.join(
-            ', '
+            ', ',
           )}`
           logger.error(error)
           combinedErrors.push(error)
@@ -96,7 +96,7 @@ module.exports = async () => {
       process.env.ADMIN_EMAIL_SENDER,
       process.env.ADMIN_EMAIL_RECIPIENT,
       'URGENT! Bandcamp artist track fetching failed!',
-      `Errors: ${JSON.stringify(combinedErrors)}`
+      `Errors: ${JSON.stringify(combinedErrors)}`,
     )
     return { result: combinedErrors, success: false }
   }

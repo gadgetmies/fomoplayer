@@ -13,15 +13,18 @@ SELECT cart_id, track_id
 FROM cart, unnest(${trackIds} :: BIGINT[]) AS tracks(track_id)
 WHERE meta_account_user_id = ANY(${userIds}) AND cart_is_purchased
 ON CONFLICT DO NOTHING
-`
+`,
   )
 }
 
 const composableSql = (parts, ...args) => {
   try {
-    return parts.reduce((query, part, i) => {
-      return query.append(part).append(args[i] === undefined ? '' : args[i])
-    }, sql``)
+    return parts.reduce(
+      (query, part, i) => {
+        return query.append(part).append(args[i] === undefined ? '' : args[i])
+      },
+      sql``,
+    )
   } catch (e) {
     console.error(e)
     throw e
@@ -46,7 +49,7 @@ WHERE store__track_store_id = ${storeTrack.id}
 ON CONFLICT
     ON CONSTRAINT track__cart_cart_id_track_id_key
     DO UPDATE SET track__cart_added = ${storeTrack.purchased}
-`
+`,
   )
 
 module.exports.queryStoreArtistIds = async (tx, artistId) => {
@@ -57,7 +60,7 @@ module.exports.queryStoreArtistIds = async (tx, artistId) => {
 SELECT store__artist_id AS "id"
 FROM store__artist
 WHERE artist_id = ${artistId}
-`
+`,
     )
   ).map(({ id }) => id)
 }
@@ -74,7 +77,7 @@ module.exports.addStoreArtistWatch = async (tx, userId, storeArtistId) => {
 INSERT INTO store__artist_watch (store__artist_id)
 VALUES (${storeArtistId})
 ON CONFLICT DO NOTHING
-  `
+  `,
   )
 
   await tx.queryAsync(
@@ -87,7 +90,7 @@ SELECT store__artist_watch_id
 FROM store__artist_watch
 WHERE store__artist_id = ${storeArtistId}
 ON CONFLICT DO NOTHING
-  `
+  `,
   )
 
   const res = await tx.queryRowsAsync(
@@ -97,7 +100,7 @@ SELECT store__artist_watch_id AS "followId"
 FROM store__artist_watch
          NATURAL JOIN store__artist_watch__user
 WHERE meta_account_user_id = ${userId}
-  AND store__artist_id = ${storeArtistId}`
+  AND store__artist_id = ${storeArtistId}`,
   )
 
   return res[0].followId
@@ -109,7 +112,7 @@ module.exports.queryStoreLabelIds = async (tx, labelId) => {
       // language=PostgreSQL
       sql`-- queryStoreLabelIds
 SELECT store__label_id AS id FROM store__label WHERE label_id = ${labelId} 
-`
+`,
     )
   ).map(({ id }) => id)
 }
@@ -122,7 +125,7 @@ INSERT INTO store__label_watch
     (store__label_id)
 VALUES (${storeLabelId})
 ON CONFLICT DO NOTHING
-`
+`,
   )
 
   await tx.queryRowsAsync(
@@ -135,7 +138,7 @@ SELECT store__label_watch_id
 FROM store__label_watch
 WHERE store__label_id = ${storeLabelId}
 ON CONFLICT DO NOTHING
-`
+`,
   )
 
   return (
@@ -146,7 +149,7 @@ SELECT store__label_watch_id AS "followId"
 FROM store__label_watch
          NATURAL JOIN store__label_watch__user
 WHERE meta_account_user_id = ${userId}
-  AND store__label_id = ${storeLabelId}`
+  AND store__label_id = ${storeLabelId}`,
     )
   )[0].followId
 }
@@ -168,7 +171,7 @@ AND store__artist_watch_id IN
        NATURAL JOIN store
      WHERE
        store_url = ${storeUrl})
-    `
+    `,
   )
 }
 
@@ -188,7 +191,7 @@ AND store__artist_watch_id IN
        store__artist_watch
      WHERE
        store__artist_id = ${storeArtistId})
-`
+`,
   )
 }
 
@@ -209,7 +212,7 @@ AND store__label_watch_id IN
        NATURAL JOIN store
      WHERE
        store_url = ${storeUrl})
-`
+`,
   )
 }
 
@@ -230,11 +233,11 @@ AND store__label_watch_id IN
        NATURAL JOIN store
      WHERE
        store__label_id = ${storeLabelId})
-`
+`,
   )
 }
 
-module.exports.queryUserArtistFollows = async userId => {
+module.exports.queryUserArtistFollows = async (userId) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserArtistFollows
@@ -267,11 +270,11 @@ SELECT artist_name                                           AS name
      ) AS store
 FROM distinct_store_artists
 ORDER BY 1, store_name
-`
+`,
   )
 }
 
-module.exports.queryUserLabelFollows = async userId => {
+module.exports.queryUserLabelFollows = async (userId) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserLabelFollows
@@ -303,11 +306,11 @@ SELECT label_name                                            AS name
      ) AS store
 FROM distinct_store_labels
 ORDER BY 1, store_name
-`
+`,
   )
 }
 
-module.exports.queryUserPlaylistFollows = async userId => {
+module.exports.queryUserPlaylistFollows = async (userId) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserPlaylistFollows
@@ -326,11 +329,11 @@ WHERE
   meta_account_user_id = ${userId}
 ORDER BY
   1
-`
+`,
   )
 }
 
-module.exports.queryUserArtistOnLabelIgnores = async userId => {
+module.exports.queryUserArtistOnLabelIgnores = async (userId) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryArtistOnLabelIgnores
@@ -345,11 +348,11 @@ FROM
   NATURAL JOIN label
 WHERE
   meta_account_user_id = ${userId}
-`
+`,
   )
 }
 
-module.exports.queryUserLabelIgnores = async userId => {
+module.exports.queryUserLabelIgnores = async (userId) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryLabelIgnores
@@ -361,11 +364,11 @@ FROM
   NATURAL JOIN label
 WHERE
   meta_account_user_id = ${userId}
-`
+`,
   )
 }
 
-module.exports.queryUserArtistIgnores = async userId => {
+module.exports.queryUserArtistIgnores = async (userId) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryArtistIgnores
@@ -377,7 +380,7 @@ FROM
   NATURAL JOIN artist
 WHERE
   meta_account_user_id = ${userId}
-`
+`,
   )
 }
 
@@ -391,7 +394,7 @@ WHERE
     meta_account_user_id = ${userId}
 AND artist_id = ${artistId}
 AND label_id = ${labelId}
-`
+`,
   )
 }
 module.exports.deleteLabelIgnoreFromUser = async (userId, labelId) => {
@@ -403,7 +406,7 @@ FROM user__label_ignore
 WHERE
     meta_account_user_id = ${userId}
 AND label_id = ${labelId}
-`
+`,
   )
 }
 module.exports.deleteArtistIgnoreFromUser = async (userId, artistId) => {
@@ -415,7 +418,7 @@ FROM user__artist_ignore
 WHERE
     meta_account_user_id = ${userId}
 AND artist_id = ${artistId}
-`
+`,
   )
 }
 
@@ -423,7 +426,7 @@ module.exports.queryUserTracks = (userId, limits = { new: 80, recent: 50, heard:
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC, score DESC NULLS LAST`
 
-  return BPromise.using(pg.getTransaction(), async tx => {
+  return BPromise.using(pg.getTransaction(), async (tx) => {
     // language=PostgreSQL
     return tx
       .queryRowsAsync(
@@ -729,7 +732,7 @@ WITH
       FROM new_tracks_with_details
          , heard_tracks_with_details
          , recently_added_tracks_with_details
-         , user_tracks_meta`
+         , user_tracks_meta`,
       )
       .then(R.head)
   })
@@ -746,10 +749,10 @@ VALUES ( ${userId}
        , ${labelId})
 ON CONFLICT ON CONSTRAINT user__artist__label_ignore_unique DO NOTHING
 RETURNING user__artist__label_ignore_id
-`
+`,
   )
 
-module.exports.deleteArtistsOnLabelsIgnores = async artistsOnLabelsIgnoreIds =>
+module.exports.deleteArtistsOnLabelsIgnores = async (artistsOnLabelsIgnoreIds) =>
   pg.queryAsync(
     // language=PostgreSQL
     sql`-- removeArtistsOnLabelsIgnores
@@ -758,7 +761,7 @@ FROM
     user__artist__label_ignore
 WHERE
     user__artist__label_ignore_id = ANY (${artistsOnLabelsIgnoreIds})
-`
+`,
   )
 
 module.exports.addArtistsToIgnore = async (tx, artistIds, userId) => {
@@ -771,7 +774,7 @@ INSERT INTO user__artist_ignore
 VALUES ( ${userId}
        , ${artistId})
 ON CONFLICT ON CONSTRAINT user__artist_ignore_artist_id_meta_account_user_id_key DO NOTHING
-`
+`,
     )
   }
 }
@@ -786,7 +789,7 @@ INSERT INTO user__label_ignore
 VALUES ( ${userId}
        , ${labelId})
 ON CONFLICT ON CONSTRAINT user__label_ignore_label_id_meta_account_user_id_key DO NOTHING
-`
+`,
     )
   }
 }
@@ -801,7 +804,7 @@ INSERT INTO user__release_ignore
 VALUES ( ${userId}
        , ${releaseId})
 ON CONFLICT ON CONSTRAINT user__release_ignore_release_id_meta_account_user_id_key DO NOTHING
-`
+`,
     )
   }
 }
@@ -833,7 +836,7 @@ WHERE
     FROM release__track
     WHERE release_id = ANY (${releases})
   )
-`
+`,
   )
 }
 
@@ -848,7 +851,7 @@ SET
 WHERE
     track_id = ${trackId}
 AND meta_account_user_id = (SELECT meta_account_user_id FROM meta_account WHERE meta_account_user_id = ${userId})
-`
+`,
   )
 }
 
@@ -867,7 +870,7 @@ WHERE track_id IN (
       AND user__track_heard IS NULL
       AND store__track_released < NOW() - ${interval}::INTERVAL
 )
-`
+`,
   )
 
 module.exports.addTrackToUser = async (tx, userId, trackId, sourceId) => {
@@ -879,7 +882,7 @@ INSERT INTO user__track
 VALUES
   (${trackId}, ${userId}, ${sourceId})
 ON CONFLICT ON CONSTRAINT user__track_track_id_meta_account_user_id_key DO NOTHING
-`
+`,
   )
 }
 
@@ -891,11 +894,11 @@ DELETE
 FROM user__playlist_watch
 WHERE
     meta_account_user_id = ${userId}
-AND playlist_id = ${playlistId}`
+AND playlist_id = ${playlistId}`,
   )
 }
 
-module.exports.queryUserScoreWeights = async userId => {
+module.exports.queryUserScoreWeights = async (userId) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryUserScoreWeights
@@ -904,7 +907,7 @@ SELECT user_track_score_weight_code       AS property,
 FROM user_track_score_weight
 WHERE meta_account_user_id = ${userId}
 ORDER BY user_track_score_weight_code
-`
+`,
   )
 }
 
@@ -916,11 +919,11 @@ UPDATE user_track_score_weight SET
 user_track_score_weight_multiplier = w.weight
 FROM json_to_recordset(${JSON.stringify(weights)}) AS w(property TEXT, weight FLOAT)
 WHERE user_track_score_weight_code = w.property
-`
+`,
   )
 }
 
-module.exports.queryNotificationOwner = async notificationId => {
+module.exports.queryNotificationOwner = async (notificationId) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryNotificationOwner
@@ -929,14 +932,14 @@ SELECT
 FROM user_search_notification
 WHERE
   user_search_notification_id = ${notificationId}
-`
+`,
   )
 }
 
 const followTypeToTable = {
   artists: 'store__artist_watch__user',
   labels: 'store__label_watch__user',
-  playlists: 'user__playlist_watch'
+  playlists: 'user__playlist_watch',
 }
 module.exports.queryFollowOwner = async (type, followId) => {
   return pg.queryRowsAsync(
@@ -947,11 +950,11 @@ FROM `
       .append(followTypeToTable[type])
       .append(sql` WHERE `)
       .append(`${followTypeToTable[type]}_id`)
-      .append(` = ${followId}`)
+      .append(` = ${followId}`),
   )
 }
 
-module.exports.queryNotifications = async userId =>
+module.exports.queryNotifications = async (userId) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--insertNotification
@@ -962,7 +965,7 @@ SELECT
     store_purchase_available AS "purchaseAvailable"
 FROM user_search_notification NATURAL JOIN user_search_notification__store NATURAL JOIN store
 WHERE meta_account_user_id = ${userId}
-`
+`,
   )
 
 module.exports.updateNotifications = async (tx, userId, operations) => {
@@ -973,7 +976,7 @@ module.exports.updateNotifications = async (tx, userId, operations) => {
       INSERT INTO user_search_notification (meta_account_user_id, user_search_notification_string)
       VALUES (${userId}, LOWER(${text}))
       ON CONFLICT ON CONSTRAINT user_search_notification_meta_account_user_id_user_search_n_key DO NOTHING
-      `
+      `,
     )
 
     const [{ notificationId }] = await tx.queryRowsAsync(
@@ -983,7 +986,7 @@ module.exports.updateNotifications = async (tx, userId, operations) => {
       FROM user_search_notification
       WHERE meta_account_user_id = ${userId}
         AND user_search_notification_string = ${text}
-      `
+      `,
     )
 
     if (op === 'add') {
@@ -994,7 +997,7 @@ INSERT INTO user_search_notification__store (user_search_notification_id, store_
 SELECT ${notificationId}, store_id
 FROM store
 WHERE store_name = ${storeName}
-        `
+        `,
       )
     } else if (op === 'remove') {
       await tx.queryAsync(
@@ -1006,7 +1009,7 @@ WHERE user_search_notification_id = ${notificationId}
   AND store_id = (SELECT store_id
                   FROM store
                   WHERE store_name = ${storeName})
-        `
+        `,
       )
     }
     const [{ subscriptionsExist }] = await tx.queryRowsAsync(
@@ -1015,7 +1018,7 @@ WHERE user_search_notification_id = ${notificationId}
 SELECT EXISTS (SELECT 1
                FROM user_search_notification__store
                WHERE user_search_notification_id = ${notificationId}) AS "subscriptionsExist"
-    `
+    `,
     )
 
     if (!subscriptionsExist) {
@@ -1026,18 +1029,18 @@ SELECT EXISTS (SELECT 1
     DELETE
     FROM user_search_notification
     WHERE user_search_notification_id = ${notificationId}
-    `
+    `,
       )
     }
   }
 }
 
-module.exports.getTracksWithIds = async trackIds =>
+module.exports.getTracksWithIds = async (trackIds) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--getTracksWithIds
 SELECT * FROM track_details(${trackIds})
-`
+`,
   )
 
 module.exports.setFollowStarred = async (type, followId, starred) => {
@@ -1050,11 +1053,11 @@ UPDATE `
       .append(sql` = ${starred}`)
       .append(' WHERE ')
       .append(`${followTypeToTable[type]}_id`)
-      .append(sql` = ${followId}`)
+      .append(sql` = ${followId}`),
   )
 }
 
-module.exports.queryUserSettings = async userId => {
+module.exports.queryUserSettings = async (userId) => {
   const [settings] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`SELECT COALESCE(s.email, d.email) AS email, COALESCE(s.emailVerified, d.emailVerified) AS "emailVerified"
@@ -1062,13 +1065,13 @@ FROM (SELECT meta_account_email_address AS email, meta_account_email_verified AS
       FROM meta_account_email
       WHERE meta_account_user_id = ${userId}) s
          RIGHT JOIN (SELECT NULL AS email, FALSE AS emailVerified, 1 AS query_id) d ON s.query_id = d.query_id
-    `
+    `,
   )
 
   return settings
 }
 
-module.exports.queryAuthorizations = async userId => {
+module.exports.queryAuthorizations = async (userId) => {
   const [{ authorizations }] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`WITH authorizations AS
@@ -1084,7 +1087,7 @@ module.exports.queryAuthorizations = async userId => {
         SELECT CASE WHEN authorizations IS NULL THEN '[]'::JSON ELSE authorizations END
         FROM
           authorizations
-    `
+    `,
   )
   return authorizations
 }
@@ -1098,7 +1101,7 @@ FROM
 WHERE
       meta_account_user_id = ${userId}
   AND store_id = (SELECT store_id FROM store WHERE store_name = ${storeName})
-`
+`,
   )
 }
 
@@ -1113,17 +1116,17 @@ ON CONFLICT ON CONSTRAINT meta_account_email_meta_account_user_id_key
     DO UPDATE SET meta_account_email_address           = EXCLUDED.meta_account_email_address,
                   meta_account_email_verified          = FALSE,
                   meta_account_email_verification_code = uuid_generate_v4()
-    `
+    `,
   )
 
-module.exports.getEmailVerificationCode = async userId => {
+module.exports.getEmailVerificationCode = async (userId) => {
   const [{ verificationCode }] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- getEmailVerificationCode
     SELECT meta_account_email_verification_code AS "verificationCode"
     FROM meta_account_email
     WHERE meta_account_user_id = ${userId}
-    `
+    `,
   )
 
   return verificationCode

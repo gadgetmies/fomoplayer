@@ -2,7 +2,7 @@ import { bandcampReleasesTransform } from './transforms/bandcamp'
 import { beatportTracksTransform, beatportLibraryTransform } from './transforms/beatport'
 import * as R from 'ramda'
 
-const fetchGoogleToken = handler => {
+const fetchGoogleToken = (handler) => {
   var manifest = chrome.runtime.getManifest()
 
   var clientId = encodeURIComponent(manifest.oauth2.client_id)
@@ -23,9 +23,9 @@ const fetchGoogleToken = handler => {
   chrome.identity.launchWebAuthFlow(
     {
       url: url,
-      interactive: true
+      interactive: true,
     },
-    async function(redirectedTo) {
+    async function (redirectedTo) {
       let token = null
       if (chrome.runtime.lastError) {
         // Example: Authorization page could not be loaded.
@@ -38,7 +38,7 @@ const fetchGoogleToken = handler => {
       chrome.storage.local.set({ token }, () => {
         handler(!!token)
       })
-    }
+    },
   )
 }
 
@@ -53,7 +53,7 @@ var wait = (test, success) => {
 }
 `
 
-const sendBandcampItemsScript = type => `
+const sendBandcampItemsScript = (type) => `
 ${waitFunction}
 
 var script = document.createElement('script')
@@ -86,18 +86,18 @@ let beatportTracksCache = []
 
 const fetchInTab = () =>
   chrome.tabs.executeScript(bandcampTabId, {
-    code: sendBandcampItemsScript('tracks')
+    code: sendBandcampItemsScript('tracks'),
   })
 
 const clearStatus = () => {
   chrome.storage.local.set(
     {
       operationStatus: '',
-      operationProgress: 0
+      operationProgress: 0,
     },
     () => {
       chrome.runtime.sendMessage({ type: 'done' })
-    }
+    },
   )
 }
 
@@ -105,11 +105,11 @@ const fetchNextItem = () => {
   chrome.storage.local.set(
     {
       operationStatus: 'Fetcing tracks',
-      operationProgress: parseInt((currentBandcampReleaseIndex / bandcampReleases.length) * 100)
+      operationProgress: parseInt((currentBandcampReleaseIndex / bandcampReleases.length) * 100),
     },
     () => {
       chrome.runtime.sendMessage({ type: 'refresh' })
-    }
+    },
   )
 
   const itemUrl = bandcampReleases[currentBandcampReleaseIndex].item_url
@@ -117,13 +117,13 @@ const fetchNextItem = () => {
     chrome.tabs.remove(bandcampTabId)
     bandcampTabId = undefined
   }
-  chrome.tabs.create({ url: itemUrl, active: false }, tab => {
+  chrome.tabs.create({ url: itemUrl, active: false }, (tab) => {
     bandcampTabId = tab.id
     fetchInTab()
   })
 }
 
-const handleError = error => {
+const handleError = (error) => {
   clearStatus()
   chrome.storage.local.set({ error })
   chrome.runtime.sendMessage({ type: 'error', ...error })
@@ -138,7 +138,7 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
       for (const i of chunkIndexes) {
         chrome.storage.local.set({
           operationStatus: `Sending tracks`,
-          operationProgress: parseInt((i / chunks.length) * 100)
+          operationProgress: parseInt((i / chunks.length) * 100),
         })
         chrome.runtime.sendMessage({ type: 'refresh' })
 
@@ -147,9 +147,9 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
           headers: {
             'Content-Type': 'application/json',
             authorization: `Bearer ${token}`,
-            'x-multi-store-player-store': storeUrl
+            'x-multi-store-player-store': storeUrl,
           },
-          body: JSON.stringify(chunks[i])
+          body: JSON.stringify(chunks[i]),
         })
 
         if (!res.ok) {
@@ -165,8 +165,8 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
           url: `${appUrl}/api/me/${type}`,
           storeUrl,
           stack: e.stack,
-          time: new Date().toUTCString()
-        })
+          time: new Date().toUTCString(),
+        }),
       }
       handleError(message)
     }
@@ -178,7 +178,7 @@ const sendArtists = (storeUrl, artists) => {
     try {
       chrome.storage.local.set({
         operationStatus: `Sending artists`,
-        operationProgress: 0
+        operationProgress: 0,
       })
       chrome.runtime.sendMessage({ type: 'refresh' })
 
@@ -187,9 +187,9 @@ const sendArtists = (storeUrl, artists) => {
         headers: {
           'Content-Type': 'application/json',
           authorization: `Bearer ${token}`,
-          'x-multi-store-player-store': storeUrl
+          'x-multi-store-player-store': storeUrl,
         },
-        body: JSON.stringify(artists)
+        body: JSON.stringify(artists),
       })
 
       if (!res.ok) {
@@ -204,8 +204,8 @@ const sendArtists = (storeUrl, artists) => {
           url: `${appUrl}/api/me/follows/artists`,
           storeUrl,
           stack: e.stack,
-          time: new Date().toUTCString()
-        })
+          time: new Date().toUTCString(),
+        }),
       }
       handleError(message)
     }
@@ -217,7 +217,7 @@ const sendLabels = (storeUrl, labels) => {
     try {
       chrome.storage.local.set({
         operationStatus: `Sending labels`,
-        operationProgress: 0
+        operationProgress: 0,
       })
       chrome.runtime.sendMessage({ type: 'refresh' })
 
@@ -226,9 +226,9 @@ const sendLabels = (storeUrl, labels) => {
         headers: {
           'Content-Type': 'application/json',
           authorization: `Bearer ${token}`,
-          'x-multi-store-player-store': storeUrl
+          'x-multi-store-player-store': storeUrl,
         },
-        body: JSON.stringify(labels)
+        body: JSON.stringify(labels),
       })
 
       if (!res.ok) {
@@ -243,15 +243,15 @@ const sendLabels = (storeUrl, labels) => {
           url: `${appUrl}/api/me/follows/labels`,
           storeUrl,
           stack: e.stack,
-          time: new Date().toUTCString()
-        })
+          time: new Date().toUTCString(),
+        }),
       }
       handleError(message)
     }
   })
 }
 
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.type === 'operationStatus') {
     chrome.storage.local.set({ operationStatus: message.text, operationProgress: message.progress })
     chrome.runtime.sendMessage({ type: 'refresh' })
@@ -305,7 +305,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       chrome.runtime.sendMessage({ type: 'refresh' })
     })
   } else if (message.type === 'oauth-login') {
-    fetchGoogleToken(success => {
+    fetchGoogleToken((success) => {
       if (success) {
         console.log('Got token from Google')
       } else {
@@ -321,6 +321,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 chrome.storage.local.get(['enabledStores', 'appUrl'], ({ appUrl, enabledStores }) => {
   chrome.storage.local.set({
     enabledStores: enabledStores ? enabledStores : { beatport: true, bandcamp: true },
-    appUrl: appUrl ? appUrl : 'https://fomoplayer.com'
+    appUrl: appUrl ? appUrl : 'https://fomoplayer.com',
   })
 })

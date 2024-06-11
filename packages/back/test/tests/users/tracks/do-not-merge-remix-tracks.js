@@ -16,6 +16,6 @@ test({
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) as "trackCount" from track')
       assert.equal(trackCount, 2)
     },
-    teardown: teardownTracks
-  }
+    teardown: teardownTracks,
+  },
 })

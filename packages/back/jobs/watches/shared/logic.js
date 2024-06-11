@@ -2,7 +2,7 @@ const { updatePlaylistTracks, updateLabelTracks, updateArtistTracks } = require(
 const { getArtistFollowDetails, getLabelFollowDetails, getPlaylistFollowDetails, insertSource } = require('./db')
 const logger = require('fomoplayer_shared').logger(__filename)
 
-module.exports.playlistFetchJob = storeUrl => async jobDetails => {
+module.exports.playlistFetchJob = (storeUrl) => async (jobDetails) => {
   const errors = []
   const playlistFollowDetails = await getPlaylistFollowDetails(storeUrl)
 
@@ -12,7 +12,7 @@ module.exports.playlistFetchJob = storeUrl => async jobDetails => {
       const sourceId = await insertSource({
         operation: `${storeUrl}, fetchPlaylists`,
         jobDetails,
-        followDetails: playlistFollowDetails
+        followDetails: playlistFollowDetails,
       })
       logger.info(`Fetching tracks for playlist ${count}/${playlistFollowDetails.length}: ${details.playlistStoreId}`)
       count++
@@ -27,7 +27,7 @@ module.exports.playlistFetchJob = storeUrl => async jobDetails => {
   return errors
 }
 
-module.exports.artistFetchJob = storeUrl => async jobDetails => {
+module.exports.artistFetchJob = (storeUrl) => async (jobDetails) => {
   const errors = []
   const artistFollowDetails = await getArtistFollowDetails(storeUrl)
 
@@ -37,10 +37,10 @@ module.exports.artistFetchJob = storeUrl => async jobDetails => {
       const sourceId = await insertSource({
         operation: `${storeUrl}, fetchArtists`,
         jobDetails,
-        followDetails: artistFollowDetails
+        followDetails: artistFollowDetails,
       })
       logger.info(
-        `Updating tracks for artists ${count}/${artistFollowDetails.length}: ${details.storeArtistId} @ ${storeUrl}`
+        `Updating tracks for artists ${count}/${artistFollowDetails.length}: ${details.storeArtistId} @ ${storeUrl}`,
       )
       count++
 
@@ -55,7 +55,7 @@ module.exports.artistFetchJob = storeUrl => async jobDetails => {
   return errors
 }
 
-module.exports.labelFetchJob = storeUrl => async jobDetails => {
+module.exports.labelFetchJob = (storeUrl) => async (jobDetails) => {
   const errors = []
   const labelFollowDetails = await getLabelFollowDetails(storeUrl)
 
@@ -65,7 +65,7 @@ module.exports.labelFetchJob = storeUrl => async jobDetails => {
       const sourceId = await insertSource({
         operation: `${storeUrl}, fetchLabels`,
         jobDetails,
-        followDetails: labelFollowDetails
+        followDetails: labelFollowDetails,
       })
       logger.info(`Fetching tracks for labels ${count}/${labelFollowDetails.length}: ${details.labelStoreId}`)
       count++
@@ -81,7 +81,7 @@ module.exports.labelFetchJob = storeUrl => async jobDetails => {
   return errors
 }
 
-module.exports.fetchJobs = jobs => async jobId => {
+module.exports.fetchJobs = (jobs) => async (jobId) => {
   let errors = []
 
   for (const [name, fn] of Object.entries(jobs)) {

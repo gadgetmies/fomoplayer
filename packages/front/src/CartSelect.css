@@ -1,15 +1,15 @@
 .carts-list {
-    overflow-y: scroll;
+  overflow-y: scroll;
 }
 
 .carts-list::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .cart-popup {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-sizing: border-box;
-    gap: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  gap: 4px;
 }

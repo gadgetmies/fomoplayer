@@ -1,7 +1,7 @@
 import config from './config.js'
 
 const requestJSONwithCredentials = (...args) =>
-  requestWithCredentials(...args).then(async res => {
+  requestWithCredentials(...args).then(async (res) => {
     return await res.json()
   })
 
@@ -13,8 +13,8 @@ const requestWithCredentials = async ({ url, path, method = 'GET', body, headers
     headers: {
       accept: 'application/json',
       'content-type': 'application/json',
-      ...headers
-    }
+      ...headers,
+    },
   })
 
   if (res.ok) {

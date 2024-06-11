@@ -18,12 +18,12 @@ router.get('/carts/:uuid', async ({ params: { uuid }, user, query: { since } }, 
 
 router.use('/stores', require('./stores/index.js').router)
 
-const replaceAppUrl = html => html.replace(/APP_URL/g, config.frontendURL)
+const replaceAppUrl = (html) => html.replace(/APP_URL/g, config.frontendURL)
 const emailVerificationSuccessPage = replaceAppUrl(
-  fs.readFileSync(path.resolve(__dirname, 'static/email_verification_success.html'), { encoding: 'utf8' })
+  fs.readFileSync(path.resolve(__dirname, 'static/email_verification_success.html'), { encoding: 'utf8' }),
 )
 const emailVerificationFailPage = replaceAppUrl(
-  fs.readFileSync(path.resolve(__dirname, 'static/email_verification_fail.html'), { encoding: 'utf8' })
+  fs.readFileSync(path.resolve(__dirname, 'static/email_verification_fail.html'), { encoding: 'utf8' }),
 )
 router.get('/verify-email/:verificationCode', async ({ params: { verificationCode } }, res) => {
   try {

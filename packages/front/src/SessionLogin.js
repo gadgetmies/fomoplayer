@@ -9,13 +9,13 @@ export default class SessionLogin extends Component {
     this.state = {
       loggingIn: false,
       loggingOut: false,
-      loginError: false
+      loginError: false,
     }
   }
 
   static get defaultProps() {
     return {
-      size: 'large'
+      size: 'large',
     }
   }
 
@@ -26,7 +26,7 @@ export default class SessionLogin extends Component {
       await requestWithCredentials({
         path: this.props.loginPath,
         method: 'POST',
-        body: R.mapObjIndexed((_, key) => this.state[key], this.props.sessionProperties)
+        body: R.mapObjIndexed((_, key) => this.state[key], this.props.sessionProperties),
       })
       this.setState({ loggingIn: false })
       this.props.onLoginDone()
@@ -47,7 +47,7 @@ export default class SessionLogin extends Component {
             try {
               await requestWithCredentials({
                 path: this.props.logoutPath,
-                method: 'POST'
+                method: 'POST',
               })
               return this.props.onLogoutDone()
             } catch (e) {
@@ -64,12 +64,12 @@ export default class SessionLogin extends Component {
       <form
         className={this.props.className}
         style={{ height: '100%', overflow: 'hidden' }}
-        onSubmit={e => {
+        onSubmit={(e) => {
           e.preventDefault()
           this.submitLogin().then(() => this.props.onLoginDone())
         }}
       >
-        {Object.keys(this.props.sessionProperties).map(key => (
+        {Object.keys(this.props.sessionProperties).map((key) => (
           <label className="login-label" key={key}>
             <span className={`login-label-text login-label-text-${this.props.size}`}>
               {this.props.sessionProperties[key]}
@@ -78,7 +78,7 @@ export default class SessionLogin extends Component {
               type="text"
               name={key}
               disabled={this.state.loggingIn}
-              onInput={e => this.setState({ [key]: e.target.value })}
+              onInput={(e) => this.setState({ [key]: e.target.value })}
               className={`text-input login-input text-input-${this.props.size} text-input-light`}
             />
           </label>

@@ -45,7 +45,7 @@ WHERE
       NATURAL JOIN user__release_ignore
       NATURAL JOIN release__track
   )
-`
+`,
   )
 
 module.exports.insertUserPlaylistFollow = async (
@@ -53,9 +53,9 @@ module.exports.insertUserPlaylistFollow = async (
   storeName,
   playlistId,
   playlistTitle,
-  playlistType = undefined
+  playlistType = undefined,
 ) => {
-  return using(pg.getTransaction(), async tx => {
+  return using(pg.getTransaction(), async (tx) => {
     const res = await tx.queryRowsAsync(
       // language=PostgreSQL
       sql`-- insertUserPlaylistFollow SELECT playlist_id
@@ -68,7 +68,7 @@ module.exports.insertUserPlaylistFollow = async (
           ((${playlistType}::TEXT IS NULL OR ${playlistType} = 'playlist') AND store_playlist_type_store_id IS NULL) OR
           store_playlist_type_store_id = ${playlistType})
         AND store_id = (SELECT store_id FROM store WHERE LOWER(store_name) = LOWER(${storeName}))
-      `
+      `,
     )
 
     let id
@@ -90,7 +90,7 @@ module.exports.insertUserPlaylistFollow = async (
              AND (((${playlistType}::TEXT IS NULL OR ${playlistType} = 'playlist') AND
                    store_playlist_type_store_id IS NULL) OR
                   store_playlist_type_store_id = ${playlistType}))
-        RETURNING playlist_id AS id`
+        RETURNING playlist_id AS id`,
       )
 
       id = r[0].id
@@ -103,7 +103,7 @@ INSERT INTO user__playlist_watch
   (playlist_id, meta_account_user_id)
 VALUES
   (${id}, ${userId})
-ON CONFLICT DO NOTHING`
+ON CONFLICT DO NOTHING`,
     )
 
     const [{ followId }] = await tx.queryRowsAsync(
@@ -114,7 +114,7 @@ SELECT
 FROM user__playlist_watch
 WHERE
     playlist_id = ${id}
-AND meta_account_user_id = ${userId}`
+AND meta_account_user_id = ${userId}`,
     )
 
     return { playlistId: id, followId }

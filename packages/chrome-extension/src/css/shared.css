@@ -8,7 +8,10 @@ button {
   background-color: #b40089;
   border: 0;
   color: white;
-  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+  transition:
+    color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
     box-shadow 0.15s ease-in-out;
   border-radius: 0.25rem;
   padding: 0.375rem 0.75rem;
@@ -96,9 +99,9 @@ input[type='checkbox']:focus + label::before {
 progress {
   width: 100%;
   color: #0063a6;
-  font-size: .6em;
+  font-size: 0.6em;
   line-height: 1.5em;
-  text-indent: .5em;
+  text-indent: 0.5em;
   height: 1.8em;
   border: 1px solid #0063a6;
   background: #fff;

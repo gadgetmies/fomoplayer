@@ -10,7 +10,7 @@ const {
   getPageDetailsAsync,
   getTagReleasesAsync,
   getSearchResultsAsync,
-  static: { getTagsFromUrl, getTagName }
+  static: { getTagsFromUrl, getTagName },
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl } = require('./db.js')
@@ -24,14 +24,14 @@ const getStoreDbId = () => {
   if (storeDbId) {
     return BPromise.resolve(storeDbId)
   } else {
-    return queryStoreId(storeName).then(store_id => {
+    return queryStoreId(storeName).then((store_id) => {
       storeDbId = store_id
       return storeDbId
     })
   }
 }
 
-module.exports.getPreviewDetails = async previewId => {
+module.exports.getPreviewDetails = async (previewId) => {
   const storeId = await getStoreDbId()
   const details = await queryPreviewDetails(previewId)
   const storeTrackId = details.store_track_id
@@ -40,13 +40,13 @@ module.exports.getPreviewDetails = async previewId => {
   const url = await albumInfo.trackinfo.find(R.propEq('track_id', parseInt(storeTrackId, 10))).file['mp3-128']
   return {
     ...details,
-    url: url
+    url: url,
   }
 }
 
-const getArtistDetails = (module.exports.getArtistDetails = async url => ({ url, ...(await getArtistAsync(url)) }))
+const getArtistDetails = (module.exports.getArtistDetails = async (url) => ({ url, ...(await getArtistAsync(url)) }))
 
-module.exports.getArtistName = async url => {
+module.exports.getArtistName = async (url) => {
   const { name } = await getArtistDetails(url)
   return name
 }
@@ -77,12 +77,12 @@ module.exports.getFollowDetails = async ({ id, type, url }) => {
   return [{ ...details, store: { name: storeName.toLowerCase() } }]
 }
 
-const releaseTracksWithFiles = releaseDetails => {
+const releaseTracksWithFiles = (releaseDetails) => {
   const tracks = releaseDetails.reduce((acc, { trackinfo }) => acc.concat(trackinfo), [])
   return tracks.filter(R.complement(R.propEq('file', null)))
 }
 
-const getTracksFromReleases = async releaseUrls => {
+const getTracksFromReleases = async (releaseUrls) => {
   const errors = []
 
   let releaseDetails = []
@@ -124,7 +124,7 @@ const getTracksFromReleases = async releaseUrls => {
   return { errors, tracks: transformed }
 }
 
-module.exports.getArtistTracks = async function*({ url }) {
+module.exports.getArtistTracks = async function* ({ url }) {
   const { releaseUrls } = await getArtistAsync(url)
   logger.debug(`Found ${releaseUrls.length} releases for artist ${url}`)
   logger.debug('Processing releases', releaseUrls)
@@ -139,7 +139,7 @@ module.exports.getArtistTracks = async function*({ url }) {
   }
 }
 
-module.exports.getLabelTracks = async function*({ url }) {
+module.exports.getLabelTracks = async function* ({ url }) {
   const { releaseUrls } = await getLabelAsync(url)
   logger.debug(`Found ${releaseUrls.length} releases for label ${url}`)
   logger.debug('Processing releases', releaseUrls)
@@ -153,7 +153,7 @@ module.exports.getLabelTracks = async function*({ url }) {
   }
 }
 
-module.exports.getPlaylistTracks = async function*({ playlistStoreId, type }) {
+module.exports.getPlaylistTracks = async function* ({ playlistStoreId, type }) {
   if (type === 'tag') {
     const { releaseUrls } = await getTagReleasesAsync(getTagsFromUrl(playlistStoreId))
     const uniqueReleaseUrls = R.uniq(releaseUrls)
@@ -170,6 +170,6 @@ module.exports.getPlaylistTracks = async function*({ playlistStoreId, type }) {
   }
 }
 
-module.exports.search = async query => {
-  return (await getSearchResultsAsync(query)).map(item => ({ ...item, store: { name: storeName.toLowerCase() } }))
+module.exports.search = async (query) => {
+  return (await getSearchResultsAsync(query)).map((item) => ({ ...item, store: { name: storeName.toLowerCase() } }))
 }

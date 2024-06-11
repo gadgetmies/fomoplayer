@@ -25,10 +25,10 @@ const scrapeJSON = R.curry((startString, stopString, string) => {
   }
 })
 
-const getQueryData = pageSource =>
+const getQueryData = (pageSource) =>
   scrapeJSON('<script id="__NEXT_DATA__" type="application/json">', '</script>', pageSource)
 
-const getPageTitleFromSource = pageSource => {
+const getPageTitleFromSource = (pageSource) => {
   const startString = '<title>'
   const start = pageSource.indexOf(startString)
   if (start !== -1) {
@@ -50,7 +50,7 @@ const getPageTitleFromSource = pageSource => {
   }
 }
 
-const getImageFromSource = pageSource => {
+const getImageFromSource = (pageSource) => {
   const pageData = getQueryData(pageSource)
   const { artist, label } = pageData.props.pageProps
   if (!artist && !label) {
@@ -62,7 +62,7 @@ const getImageFromSource = pageSource => {
 const getDetails = (uri, callback) =>
   request(
     uri,
-    handleErrorOrCallFn(callback, res => {
+    handleErrorOrCallFn(callback, (res) => {
       try {
         if (Math.floor(res.statusCode / 100) < 4) {
           const name = getPageTitleFromSource(res.body)
@@ -83,13 +83,13 @@ const getDetails = (uri, callback) =>
         console.error(`Failed to fetch details for uri: ${uri}`, e)
         callback(e)
       }
-    })
+    }),
   )
 
 const getTitle = (uri, callback) =>
   request(
     uri,
-    handleErrorOrCallFn(callback, res => {
+    handleErrorOrCallFn(callback, (res) => {
       try {
         if (Math.floor(res.statusCode / 100) < 4) {
           return callback(null, getPageTitleFromSource(res.body))
@@ -102,13 +102,13 @@ const getTitle = (uri, callback) =>
         console.error('Failed to fetch the page title', e)
         callback(e)
       }
-    })
+    }),
   )
 
 const getPageQueryData = (uri, callback) => {
   request(
     uri,
-    handleErrorOrCallFn(callback, res => {
+    handleErrorOrCallFn(callback, (res) => {
       try {
         if (Math.floor(res.statusCode / 100) < 4) {
           let queryData = getQueryData(res.body)
@@ -122,7 +122,7 @@ const getPageQueryData = (uri, callback) => {
         console.error(`Failed fetching details from ${uri}`, e)
         callback(e)
       }
-    })
+    }),
   )
 }
 
@@ -130,7 +130,7 @@ const getTrackQueryData = (trackId, buildId, callback) => {
   const uri = `${beatportUri}/_next/data/${buildId}/en/track/_/${trackId}.json?id=11351675`
   request(
     uri,
-    handleErrorOrCallFn(callback, res => {
+    handleErrorOrCallFn(callback, (res) => {
       try {
         if (Math.floor(res.statusCode / 100) < 4) {
           return callback(null, JSON.parse(res.body))
@@ -143,7 +143,7 @@ const getTrackQueryData = (trackId, buildId, callback) => {
         console.error(`Failed fetching details from ${uri}`, e)
         callback(e)
       }
-    })
+    }),
   )
 }
 
@@ -171,11 +171,11 @@ const getSearchResults = (html, type) => {
           id,
           name,
           img: label_image_uri || artist_image_uri,
-          url: `${beatportUri}/${type}/${encodeURI(name.toLowerCase().replace(' ', '-'))}/${id}`
+          url: `${beatportUri}/${type}/${encodeURI(name.toLowerCase().replace(' ', '-'))}/${id}`,
         }
-      }
+      },
     ),
-    buildId: queryData.buildId
+    buildId: queryData.buildId,
   }
 }
 
@@ -188,7 +188,7 @@ const search = (query, type, callback) => {
   console.log(`Performing Beatport search: ${uri}`)
   request(
     uri,
-    handleErrorOrCallFn(callback, res => {
+    handleErrorOrCallFn(callback, (res) => {
       try {
         if (Math.floor(res.statusCode / 100) < 4) {
           return callback(null, getSearchResults(res.body, type))
@@ -201,8 +201,8 @@ const search = (query, type, callback) => {
         console.error(`Failed fetching search results from ${uri}`, e)
         callback(e)
       }
-    })
-  ).catch(e => {
+    }),
+  ).catch((e) => {
     callback(e)
   })
 }
@@ -214,7 +214,7 @@ const searchForTracks = (query, callback) => search(query, 'track', callback)
 const getQueryDataOnPage = (uri, callback) => {
   request(
     uri,
-    handleErrorOrCallFn(callback, res => {
+    handleErrorOrCallFn(callback, (res) => {
       try {
         const data = getQueryData(res.body)
         const title = getPageTitleFromSource(res.body)
@@ -223,88 +223,88 @@ const getQueryDataOnPage = (uri, callback) => {
         console.error(`Failed fetching details from ${uri}`, e)
         callback(e)
       }
-    })
-  ).catch(e => {
+    }),
+  ).catch((e) => {
     console.error(e)
     callback(e)
   })
 }
 
-const getApi = session => {
+const getApi = (session) => {
   const getJsonAsync = BPromise.promisify(session.getJson)
   const api = {
-    getMyBeatport: callback => session.getJson(`${beatportUri}/api/my-beatport`, callback),
+    getMyBeatport: (callback) => session.getJson(`${beatportUri}/api/my-beatport`, callback),
     getMyBeatportTracks: (page, callback) =>
       session.get(
         `${beatportUri}/my-beatport?page=${page}&_pjax=%23pjax-inner-wrapper`,
-        handleErrorOrCallFn(callback, res => {
+        handleErrorOrCallFn(callback, (res) => {
           return callback(null, getQueryData(res))
-        })
+        }),
       ),
-    getItemsInCarts: callback =>
+    getItemsInCarts: (callback) =>
       session.getJson(
         `${beatportUri}/api/cart/cart`,
-        handleErrorOrCallFn(callback, res => {
-          BPromise.map(res.carts.map(R.prop('id')), cartId => getJsonAsync(`${beatportUri}/api/cart/${cartId}`))
+        handleErrorOrCallFn(callback, (res) => {
+          BPromise.map(res.carts.map(R.prop('id')), (cartId) => getJsonAsync(`${beatportUri}/api/cart/${cartId}`))
             .map(({ items }) => R.pluck('id', items))
             .then(R.flatten)
-            .tap(idsOfItemsInCart => callback(null, idsOfItemsInCart))
-            .catch(err => callback(err))
-        })
+            .tap((idsOfItemsInCart) => callback(null, idsOfItemsInCart))
+            .catch((err) => callback(err))
+        }),
       ),
     getTrack: (trackId, callback) => session.getJson(`https://embed.beatport.com/track?id=${trackId}`, callback),
     getClip: (trackId, callback) =>
       api.getTrack(
         trackId,
-        handleErrorOrCallFn(callback, res => callback(null, res.results.preview))
+        handleErrorOrCallFn(callback, (res) => callback(null, res.results.preview)),
       ),
     addTrackToCart: (trackId, cartId, callback) =>
       session.postJson(
         `${beatportUri}/api/${cartId}`,
         {
-          items: [{ type: 'track', id: trackId }]
+          items: [{ type: 'track', id: trackId }],
         },
-        handleErrorOrCallFn(callback, res => callback(null, res))
+        handleErrorOrCallFn(callback, (res) => callback(null, res)),
       ),
     removeTrackFromCart: (trackId, cartId, callback) =>
       session.deleteJson(
         `${beatportUri}/api/cart/${cartId}`,
         {
-          items: [{ type: 'track', id: trackId }]
+          items: [{ type: 'track', id: trackId }],
         },
-        handleErrorOrCallFn(callback, res => callback(null, res))
+        handleErrorOrCallFn(callback, (res) => callback(null, res)),
       ),
     getAvailableDownloadIds: (page = 1, callback) =>
       session.get(
         `${beatportUri}/downloads/available?page=${page}&per-page=1000`,
-        handleErrorOrCallFn(callback, res => callback(null, getQueryData(res)))
+        handleErrorOrCallFn(callback, (res) => callback(null, getQueryData(res))),
       ),
     getDownloadedTracks: (page = 1, callback) =>
       session.get(
         `${beatportUri}/downloads/downloaded?page=${page}&per-page=1000`,
-        handleErrorOrCallFn(callback, res => callback(null, getQueryData(res)))
+        handleErrorOrCallFn(callback, (res) => callback(null, getQueryData(res))),
       ),
     downloadTrackWithId: (downloadId, callback) =>
       getJsonAsync(`${beatportUri}/api/downloads/purchase?downloadId=${downloadId}`)
         .then(R.prop('download_url'))
-        .then(downloadUrl => session.getBlob(downloadUrl, callback))
-        .catch(err => callback(err)),
+        .then((downloadUrl) => session.getBlob(downloadUrl, callback))
+        .catch((err) => callback(err)),
     getArtistQueryData,
     getLabelQueryData,
     searchForArtists,
-    searchForLabels
+    searchForLabels,
   }
 
   return api
 }
 
-const handleCreateSessionResponse = callback => (err, session) => {
+const handleCreateSessionResponse = (callback) => (err, session) => {
   if (err) {
     return callback(err)
   }
   const api = getApi(session)
   const ensureLoginSuccessful = () =>
-    api.getMyBeatport(err => {
+    api.getMyBeatport((err) => {
       if (err) {
         callback(err)
       } else {
@@ -324,22 +324,22 @@ const initializers = {
       password,
       csrfTokenKey,
       sessionCookieKey,
-      handleCreateSessionResponse(callback)
+      handleCreateSessionResponse(callback),
     )
   },
   initWithSession: (sessionCookieValue, csrfToken, callback) => {
     return initWithSession(
       { [sessionCookieKey]: sessionCookieValue, [csrfTokenKey]: csrfToken },
       cookieUri,
-      handleCreateSessionResponse(callback)
+      handleCreateSessionResponse(callback),
     )
   },
   initAsync: (username, password) =>
-    BPromise.promisify(initializers.init)(username, password).then(api => BPromise.promisifyAll(api)),
+    BPromise.promisify(initializers.init)(username, password).then((api) => BPromise.promisifyAll(api)),
   initWithSessionAsync: (sessionCookieValue, csrfToken) =>
-    BPromise.promisify(initializers.initWithSession)(sessionCookieValue, csrfToken).then(api =>
-      BPromise.promisifyAll(api)
-    )
+    BPromise.promisify(initializers.initWithSession)(sessionCookieValue, csrfToken).then((api) =>
+      BPromise.promisifyAll(api),
+    ),
 }
 
 const staticFns = {
@@ -351,7 +351,7 @@ const staticFns = {
   getDetails,
   searchForArtists,
   searchForLabels,
-  searchForTracks
+  searchForTracks,
 }
 
 module.exports = { ...initializers, staticFns }

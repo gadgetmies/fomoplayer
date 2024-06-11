@@ -43,14 +43,10 @@ router.use(
       throw new Unauthorized('Unauthorized')
     }
   },
-  usersRouter
+  usersRouter,
 )
 
-router.use(
-  '/log',
-  ensureAuthenticated,
-  logRouter
-)
+router.use('/log', ensureAuthenticated, logRouter)
 
 router.use('/me/', usersRouter)
 router.use('/admin/', adminRouter)

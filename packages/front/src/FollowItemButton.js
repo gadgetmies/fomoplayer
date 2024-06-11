@@ -18,7 +18,7 @@ class FollowItemButton extends Component {
         <a
           href={url}
           target="_blank"
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           title={'Check details from store'}
           style={{ position: 'relative', height: 100, width: 100, display: 'block', margin: 'auto' }}
         >
@@ -30,7 +30,7 @@ class FollowItemButton extends Component {
             margin: '2px 4px 6px 4px',
             textOverflow: 'ellipsis',
             width: 100,
-            overflow: 'hidden'
+            overflow: 'hidden',
           }}
         >
           {name}

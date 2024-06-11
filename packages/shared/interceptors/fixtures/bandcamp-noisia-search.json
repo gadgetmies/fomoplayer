@@ -10,11 +10,7 @@
         "item_url_root": "https://noisia.bandcamp.com",
         "location": "Groningen, Netherlands",
         "is_label": false,
-        "tag_names": [
-          "Electronic",
-          "drum and bass",
-          "dnb"
-        ],
+        "tag_names": ["Electronic", "drum and bass", "dnb"],
         "img": "https://f4.bcbits.com/img/0028507596_23.jpg",
         "genre_name": "Electronic",
         "stat_params": "search_item_id=96499241&search_item_type=b&search_match_part=%3F&search_page_id=3043017413&search_page_no=0&search_rank=1"

@@ -5,7 +5,7 @@ const recursivelyFindByRegex = (base, regex, files, result) => {
   files = files || fs.readdirSync(base)
   result = result || []
 
-  files.forEach(function(file) {
+  files.forEach(function (file) {
     var newbase = path.join(base, file)
     if (fs.statSync(newbase).isDirectory()) {
       result = recursivelyFindByRegex(newbase, regex, fs.readdirSync(newbase), result)

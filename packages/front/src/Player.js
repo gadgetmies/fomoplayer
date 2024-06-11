@@ -18,7 +18,7 @@ class Player extends Component {
       playPauseDoubleClickStarted: false,
       helpActive: false,
       enabledStores,
-      enabledStoreSearch
+      enabledStoreSearch,
     }
 
     this.preview = React.createRef()
@@ -27,7 +27,7 @@ class Player extends Component {
   async componentDidMount() {
     const that = this
     try {
-      document.addEventListener('keydown', async event => {
+      document.addEventListener('keydown', async (event) => {
         if (event instanceof KeyboardEvent) {
           if (
             event.target.form ||
@@ -79,7 +79,7 @@ class Player extends Component {
 
   mergeHeardStatus(tracks) {
     if (!tracks) return
-    this.props.heardTracks.forEach(heardTrack => {
+    this.props.heardTracks.forEach((heardTrack) => {
       const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
       if (index !== -1) {
         tracks[index].heard = heardTrack.heard
@@ -154,7 +154,7 @@ class Player extends Component {
     this.setState({ togglingCurrentInCart: true })
     await (this.isCurrentInCart() ? this.props.onRemoveFromCart : this.props.onAddToCart)(
       this.getDefaultCart().id,
-      this.props.currentTrack.id
+      this.props.currentTrack.id,
     )
     this.setState({ togglingCurrentInCart: false })
   }
@@ -187,26 +187,26 @@ class Player extends Component {
   toggleStoreEnabled(storeName) {
     const { enabledStores } = this.state
     const newState = enabledStores.includes(storeName)
-      ? enabledStores.filter(name => name !== storeName)
+      ? enabledStores.filter((name) => name !== storeName)
       : [...enabledStores, storeName]
 
     window.localStorage.setItem('enabledStores', JSON.stringify(newState))
 
     this.setState({
-      enabledStores: newState
+      enabledStores: newState,
     })
   }
 
   toggleStoreSearchEnabled(storeName) {
     const { enabledStoreSearch } = this.state
     const newState = enabledStoreSearch.includes(storeName)
-      ? enabledStoreSearch.filter(name => name !== storeName)
+      ? enabledStoreSearch.filter((name) => name !== storeName)
       : [...enabledStoreSearch, storeName]
 
     window.localStorage.setItem('enabledStoreSearch', JSON.stringify(newState))
 
     this.setState({
-      enabledStoreSearch: newState
+      enabledStoreSearch: newState,
     })
   }
 
@@ -228,11 +228,14 @@ class Player extends Component {
     const tracks = this.getTracks()
     const currentTrack = this.props.currentTrack
     const inCarts = currentTrack
-      ? this.props.carts.filter(cart => cart.tracks?.find(R.propEq('id', currentTrack.id)))
+      ? this.props.carts.filter((cart) => cart.tracks?.find(R.propEq('id', currentTrack.id)))
       : []
     return (
       <div className={`page-container`} style={{ ...this.props.style }}>
-        <PlayerHelp active={this.state.helpActive} onActiveChanged={active => this.setState({ helpActive: active })} />
+        <PlayerHelp
+          active={this.state.helpActive}
+          onActiveChanged={(active) => this.setState({ helpActive: active })}
+        />
         <Preview
           carts={this.props.carts}
           currentTrack={currentTrack}
@@ -289,7 +292,7 @@ class Player extends Component {
           onIgnoreArtistsByLabels={this.props.onIgnoreArtistsByLabels}
           onIgnoreClicked={this.props.onOpenIgnorePopup?.bind(this)}
           onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick.bind(this)}
-          onPreviewRequested={id => {
+          onPreviewRequested={(id) => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
             const requestedTrackIndex = this.getTrackIndex(requestedTrack)
             const trackCount = this.getTracks().length - 1
