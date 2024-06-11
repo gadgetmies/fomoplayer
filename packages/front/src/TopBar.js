@@ -15,7 +15,7 @@ class TopBar extends Component {
   constructor(props) {
     super(props)
 
-    const urlSearchParams = new URLSearchParams(window.location.search)
+    const urlSearchParams = new URLSearchParams(props.location.search)
     const query = urlSearchParams.get('q') || ''
     const sort = urlSearchParams.get('sort')
 
@@ -37,7 +37,7 @@ class TopBar extends Component {
   }
 
   async componentDidMount() {
-    const query = new URLSearchParams(window.location.search)
+    const query = new URLSearchParams(this.props.location.search)
     const searchQuery = query.get('q')
     if (searchQuery) {
       await this.setSearch(searchQuery, true)
