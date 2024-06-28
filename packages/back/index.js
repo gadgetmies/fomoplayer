@@ -31,6 +31,7 @@ const path = require('path')
 const fs = require('fs')
 const R = require('ramda')
 const timeout = require('connect-timeout')
+const rateLimit = require('express-rate-limit')
 
 const { ensureAuthenticated } = require('./routes/shared/auth.js')
 const passportSetup = require('./passport-setup.js')
@@ -53,6 +54,12 @@ app.use(
 )
 
 app.use(timeout('25s'))
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 100,
+  standardHeaders: 'draft-7',
+})
+app.use(limiter)
 
 passportSetup()
 app.use(passport.initialize())

@@ -6014,6 +6014,11 @@ express-promise-router@^4.1.1:
     lodash.flattendeep "^4.0.0"
     methods "^1.0.0"
 
+express-rate-limit@^7.3.1:
+  version "7.3.1"
+  resolved "https://registry.yarnpkg.com/express-rate-limit/-/express-rate-limit-7.3.1.tgz#c0887ba746cdd358d17b8ab63d6eba1bae0f670b"
+  integrity sha512-BbaryvkY4wEgDqLgD18/NSy2lDO2jTuT9Y8c1Mpx0X63Yz0sYd5zN6KPe7UvpuSVvV33T6RaE1o1IVZQjHMYgw==
+
 express-session@^1.17.2:
   version "1.18.0"
   resolved "https://registry.yarnpkg.com/express-session/-/express-session-1.18.0.tgz#a6ae39d9091f2efba5f20fc5c65a3ce7c9ce16a3"
