@@ -102,53 +102,55 @@ app.use(
 app.use(express.static('public'))
 
 const indexPath = path.resolve(__dirname, 'public/index.html')
-app.get('/carts/:uuid', ({ params: { uuid }, user }, res, next) => {
-  fs.readFile(indexPath, async (err, index) => {
-    try {
-      if (err || !uuid) {
-        logger.error('Error during file reading', { uuid, err })
-        return res.status(500).end()
-      }
+app.get(
+  '/carts/:uuid',
+  async ({ params: { uuid }, query: { limit: tracksLimit, offset: tracksOffset }, user }, res, next) => {
+    if (!uuid) {
+      logger.error('Error during file reading', { uuid })
+      return res.status(500).end()
+    }
 
-      const cartDetails = await getCartDetails(uuid, user?.id)
+    const cartDetails = await getCartDetails(uuid, user?.id, {}, tracksOffset, tracksLimit)
 
-      if (cartDetails === null) {
-        logger.debug('Cart details not found or cart not public', { uuid })
-        return res.status(404).end()
-      }
+    if (cartDetails === null) {
+      logger.debug('Cart details not found or cart not public', { uuid })
+      return res.status(404).end()
+    }
 
-      const cartOpenGraphDetails = cartDetails.tracks
-        .map(({ artists, duration, previews, released, title }, index) => {
-          const preview = previews.find(R.prop('url'))
+    const cartOpenGraphDetails = cartDetails.tracks
+      .map(({ artists, duration, previews, released, title }, index) => {
+        const preview = previews.find(R.prop('url'))
 
-          return preview
-            ? `
+        return preview
+          ? `
   <meta property='music:song' content='${preview.url}'>
   <meta property='music:song:disc' content='1'>
   <meta property='music:song:track' content='${index}'>`
-            : ''
-        })
-        .join('\n')
+          : ''
+      })
+      .join('\n')
 
-      const patchedIndex = index
-        .toString()
-        .replace('<title>Player</title>', `<title>Player - ${cartDetails.name}</title>`)
-        .replace(
-          '</head>',
-          `<meta property='og:type' content='music.album'>
+    const patchedIndex = indexFile
+      .replace('<title>Player</title>', `<title>Player - ${cartDetails.name}</title>`)
+      .replace(
+        '</head>',
+        `<meta property='og:type' content='music.album'>
 <meta property='og:description' content='${cartDetails.name} · ${cartDetails.tracks.length} songs.'>
 <meta property='og:title' content='${cartDetails.name}'>
 ${cartOpenGraphDetails}`,
-        )
-      return res.send(patchedIndex)
-    } catch (e) {
-      logger.error('Cart page generation failed', e)
-      next(e)
-    }
-  })
-})
+      )
+    return res.send(patchedIndex)
+  },
+)
 
-app.get('/*', (req, res) => res.sendFile(path.join(indexPath)))
+const indexFile = fs.readFileSync(indexPath, 'utf8')
+const sendIndex = (_, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Length': indexFile.length })
+  res.write(indexFile)
+  res.end()
+}
+
+app.get('/*', sendIndex)
 
 const handleErrors = (err, req, res, next) => {
   logger.error(err instanceof String ? err : err.toString())
