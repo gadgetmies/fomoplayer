@@ -29,6 +29,7 @@
     "dotenv": "^10.0.0",
     "express": "^4.19.2",
     "express-promise-router": "^4.1.1",
+    "express-rate-limit": "^7.3.1",
     "express-session": "^1.17.2",
     "fomoplayer_shared": "1.0.0",
     "html-entities": "^2.3.2",
