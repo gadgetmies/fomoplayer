@@ -272,6 +272,7 @@ class Player extends Component {
           notifications={this.props.notifications}
           selectedCart={this.props.selectedCart}
           tracks={tracks}
+          tracksOffset={this.props.tracksOffset}
           stores={this.props.stores}
           listState={this.props.listState}
           currentTrack={(currentTrack || {}).id}

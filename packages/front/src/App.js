@@ -60,6 +60,7 @@ class App extends Component {
       selectedCartUuid: undefined,
       selectedCart: undefined,
       mode: undefined,
+      tracksOffset: 0,
     }
   }
 
@@ -713,7 +714,8 @@ class App extends Component {
                   path="/:path"
                   render={(props) => {
                     const pathParts = props.location.pathname.slice(1).split('/')
-                    const query = new URLSearchParams(props.location.search).get('q')?.trim()
+                    const searchParams = new URLSearchParams(props.location.search)
+                    const query = searchParams.get('q')?.trim()
                     const idSearch = query?.match(/(artist|label|release):(\d?)/)
                     if (
                       props.location.pathname.match(/^\/search\/?/) &&
@@ -737,9 +739,15 @@ class App extends Component {
                       listState = props.match.params.path
                     }
 
-                    if (listState === 'carts' && this.state.selectedCartUuid !== pathParts[1]) {
-                      const selectedCart = this.state.carts?.find(({ uuid }) => uuid === pathParts[1])
-                      this.setState({ selectedCartUuid: pathParts[1], selectedCart })
+                    if (listState === 'carts') {
+                      if (this.state.selectedCartUuid !== pathParts[1]) {
+                        const selectedCart = this.state.carts?.find(({ uuid }) => uuid === pathParts[1])
+                        this.setState({ selectedCartUuid: pathParts[1], selectedCart })
+                      }
+                      const tracksOffset = parseInt(searchParams.get('offset') || 0)
+                      if (tracksOffset !== this.state.tracksOffset) {
+                        this.setState({ tracksOffset })
+                      }
                     }
 
                     return (
@@ -784,6 +792,7 @@ class App extends Component {
                           totalTracks={this.state.tracksData.meta.totalTracks}
                           tracks={this.state.tracksData.tracks}
                           markHeard={this.markHeard.bind(this)}
+                          tracksOffset={this.state.tracksOffset}
                           onAddToCart={this.addToCart.bind(this)}
                           onClosePopups={this.closePopups.bind(this)}
                           onCreateCart={this.createCart.bind(this)}
