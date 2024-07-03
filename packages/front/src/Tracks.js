@@ -59,6 +59,17 @@ class Tracks extends Component {
     parent.scrollBy(0, currentRect.y - parentRect.y)
   }
 
+  adjustOffset(offset) {
+    const { history } = this.props
+    const {
+      location: { pathname },
+    } = history
+    const updatedOffset = this.props.tracksOffset + offset
+    const filter = `?offset=${updatedOffset}`
+    history.push(pathname + filter)
+    this.props.onSelectCart(this.props.selectedCart.uuid, filter)
+  }
+
   renderTracks(tracks) {
     const emptyListLabels = {
       search:
@@ -274,7 +285,8 @@ class Tracks extends Component {
                   </div>
                   <span className="select_button-button select_button-button">
                     Tracks in cart: {this.props.selectedCart?.track_count}
-                    {this.props.selectedCart?.track_count > 200 && ' (showing first 200)'}
+                    {this.props.selectedCart?.track_count > 200 &&
+                      ` (showing ${this.props.tracksOffset + 1} - ${this.props.tracksOffset + this.props.tracks.length})`}
                   </span>
                 </div>
               ) : (
@@ -422,6 +434,29 @@ class Tracks extends Component {
                     style={{ margin: 'auto', height: '100%', display: 'block' }}
                     label={'Refresh'}
                     loadingLabel={'Loading'}
+                  />
+                </td>
+              </tr>
+            ) : this.props.listState === 'carts' ? (
+              <tr style={{ display: 'flex' }}>
+                <td style={{ flex: 1 }}>
+                  <SpinnerButton
+                    size={'large'}
+                    loading={this.state.updatingTracks}
+                    disabled={this.props.tracksOffset === 0}
+                    onClick={this.adjustOffset.bind(this, -200)}
+                    style={{ margin: 'auto', height: '100%', display: 'block' }}
+                    label={'Previous page'}
+                  />
+                </td>
+                <td style={{ flex: 1 }}>
+                  <SpinnerButton
+                    size={'large'}
+                    loading={this.state.updatingTracks}
+                    disabled={this.props.tracks.length < 200}
+                    onClick={this.adjustOffset.bind(this, 200)}
+                    style={{ margin: 'auto', height: '100%', display: 'block' }}
+                    label={'Next page'}
                   />
                 </td>
               </tr>
