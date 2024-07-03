@@ -54,12 +54,15 @@ app.use(
 )
 
 app.use(timeout('25s'))
-const limiter = rateLimit({
-  windowMs: 10 * 60 * 1000,
-  limit: 100,
-  standardHeaders: 'draft-7',
-})
-app.use(limiter)
+
+if (process.env.USE_RATE_LIMITER) {
+  const limiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    limit: 100,
+    standardHeaders: 'draft-7',
+  })
+  app.use(limiter)
+}
 
 passportSetup()
 app.use(passport.initialize())
