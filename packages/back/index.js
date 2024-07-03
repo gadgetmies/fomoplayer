@@ -105,46 +105,43 @@ app.use(
 app.use(express.static('public'))
 
 const indexPath = path.resolve(__dirname, 'public/index.html')
-app.get(
-  '/carts/:uuid',
-  async ({ params: { uuid }, query: { limit: tracksLimit, offset: tracksOffset }, user }, res, next) => {
-    if (!uuid) {
-      logger.error('Error during file reading', { uuid })
-      return res.status(500).end()
-    }
+app.get('/carts/:uuid', async ({ params: { uuid }, query: { limit, offset }, user }, res, next) => {
+  if (!uuid) {
+    logger.error('Error during file reading', { uuid })
+    return res.status(500).end()
+  }
 
-    const cartDetails = await getCartDetails(uuid, user?.id, {}, tracksOffset, tracksLimit)
+  const cartDetails = await getCartDetails(uuid, user?.id, { offset, limit })
 
-    if (cartDetails === null) {
-      logger.debug('Cart details not found or cart not public', { uuid })
-      return res.status(404).end()
-    }
+  if (cartDetails === null) {
+    logger.debug('Cart details not found or cart not public', { uuid })
+    return res.status(404).end()
+  }
 
-    const cartOpenGraphDetails = cartDetails.tracks
-      .map(({ artists, duration, previews, released, title }, index) => {
-        const preview = previews.find(R.prop('url'))
+  const cartOpenGraphDetails = cartDetails.tracks
+    .map(({ artists, duration, previews, released, title }, index) => {
+      const preview = previews.find(R.prop('url'))
 
-        return preview
-          ? `
+      return preview
+        ? `
   <meta property='music:song' content='${preview.url}'>
   <meta property='music:song:disc' content='1'>
   <meta property='music:song:track' content='${index}'>`
-          : ''
-      })
-      .join('\n')
+        : ''
+    })
+    .join('\n')
 
-    const patchedIndex = indexFile
-      .replace('<title>Player</title>', `<title>Player - ${cartDetails.name}</title>`)
-      .replace(
-        '</head>',
-        `<meta property='og:type' content='music.album'>
+  const patchedIndex = indexFile
+    .replace('<title>Player</title>', `<title>Player - ${cartDetails.name}</title>`)
+    .replace(
+      '</head>',
+      `<meta property='og:type' content='music.album'>
 <meta property='og:description' content='${cartDetails.name} · ${cartDetails.tracks.length} songs.'>
 <meta property='og:title' content='${cartDetails.name}'>
 ${cartOpenGraphDetails}`,
-      )
-    return res.send(patchedIndex)
-  },
-)
+    )
+  return res.send(patchedIndex)
+})
 
 const indexFile = fs.readFileSync(indexPath, 'utf8')
 const sendIndex = (_, res) => {
