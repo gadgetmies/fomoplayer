@@ -254,9 +254,6 @@ class Tracks extends Component {
             <div className="tracks-top_bar_group" style={{ width: '100%', display: 'flex', padding: 4 }}>
               {this.props.mode === 'app' ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <label className="select_button-button select_button-button" htmlFor="cart-select">
-                    Cart:
-                  </label>
                   <div className={'select'} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <select
                       style={{ textAlign: 'left' }}
