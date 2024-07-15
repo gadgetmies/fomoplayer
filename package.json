@@ -42,7 +42,7 @@
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0",
     "pm2": "^5.2.0",
-    "prettier": "^3.2.5"
+    "prettier": "^3.3.3"
   },
   "private": true,
   "workspaces": [
