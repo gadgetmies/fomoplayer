@@ -166,7 +166,7 @@ class Tracks extends Component {
               published={published}
               added={added}
               keys={keys}
-              bpms={stores.map(R.prop('bpm'))}
+              bpms={Array.from(new Set(stores.map(R.prop('bpm'))))}
               genres={genres}
               score={score}
               scoreDetails={score_details}
