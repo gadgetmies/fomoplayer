@@ -8,13 +8,13 @@
 html {
   --page-container-background-color: #333;
   --top-bar-background-color: #222;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 body {
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
   font-family: 'Lato', sans-serif;
   background-color: black;
 }
@@ -203,7 +203,7 @@ audio {
   the 50px is roughly the size of the top bar and
   the 40px is just a safety margin to ensure all the
   content gets displayed */
-  height: calc(100vh);
+  height: calc(100dvh);
   padding-bottom: 120px;
 }
 
@@ -282,7 +282,7 @@ input[type='range']::-webkit-slider-runnable-track {
     border-bottom-right-radius: 0;
     left: 2rem;
     right: 2rem;
-    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
     position: absolute;
     padding-bottom: 80px;
   }
@@ -305,7 +305,7 @@ input[type='range']::-webkit-slider-runnable-track {
 @media (min-width: 769px) {
   .full-screen-popup {
     max-width: 60%;
-    max-height: calc(100vh - 4rem);
+    max-height: calc(100dvh - 4rem);
   }
 
   .full-screen-popup-container {

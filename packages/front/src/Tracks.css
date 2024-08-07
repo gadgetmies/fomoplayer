@@ -186,7 +186,7 @@
 
   /*Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table*/
   .tracks-table > tbody {
-    height: calc(100vh - 133px);
+    height: calc(100dvh - 133px);
   }
 
   .cart-bar {
@@ -379,7 +379,7 @@
 
   /*Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table*/
   .tracks-table > tbody {
-    height: calc(100vh - 171px);
+    height: calc(100dvh - 171px);
   }
 
   .table-cell-button-row > .table-cell-button:not(:first-child),
