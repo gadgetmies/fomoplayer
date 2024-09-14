@@ -34,7 +34,7 @@
   },
   "homepage": "https://github.com/gadgetmies/fomoplayer#readme",
   "devDependencies": {
-    "concurrently": "^8.2.2",
+    "concurrently": "^9.0.0",
     "eslint": "^8.2.0",
     "eslint-config-airbnb": "19.0.4",
     "eslint-plugin-import": "^2.25.3",
@@ -42,7 +42,7 @@
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0",
     "pm2": "^5.2.0",
-    "prettier": "^3.2.5"
+    "prettier": "^3.3.3"
   },
   "private": true,
   "workspaces": [
