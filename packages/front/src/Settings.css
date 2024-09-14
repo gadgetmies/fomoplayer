@@ -16,3 +16,7 @@
   display: inline-block;
   margin: 1pt;
 }
+
+.follow-filter {
+  max-width: 20em;
+}

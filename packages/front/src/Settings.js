@@ -120,6 +120,9 @@ class Settings extends Component {
       exportingFollowedArtists: false,
       followedArtistsExportSuccess: null,
       authorizations: [],
+      followedArtistsFilter: '',
+      followedLabelsFilter: '',
+      followedPlaylistsFilter: '',
     }
 
     this.markHeardButton.bind(this)
@@ -618,9 +621,22 @@ class Settings extends Component {
                 </div>
               </label>
               <CollapseHeader>Followed artists ({this.state.artistFollows.length})</CollapseHeader>
+              <div className={'follow-filter'}>
+                <SearchBar
+                  styles="large dark"
+                  onChange={(e) => this.setState({ followedArtistsFilter: e.target.value.toLocaleLowerCase() })}
+                  value={this.state.followedArtistsFilter}
+                  onClearSearch={() => this.setState({ followedArtistsFilter: '' })}
+                />
+              </div>
               <ul className="no-style-list follow-list">
-                {this.state.artistFollows.map(
-                  ({ name, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
+                {this.state.artistFollows
+                  .filter(
+                    ({ name }) =>
+                      this.state.followedArtistsFilter === '' ||
+                      name.toLocaleLowerCase().includes(this.state.followedArtistsFilter),
+                  )
+                  .map(({ name, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
                     return (
                       <li key={storeArtistId} data-onboarding-id="follow-item">
                         <FollowedItem
@@ -654,13 +670,25 @@ class Settings extends Component {
                         />
                       </li>
                     )
-                  },
-                )}
+                  })}
               </ul>
               <CollapseHeader>Followed labels ({this.state.labelFollows.length})</CollapseHeader>
+              <div className={'follow-filter'}>
+                <SearchBar
+                  styles="large dark"
+                  onChange={(e) => this.setState({ followedLabelsFilter: e.target.value.toLocaleLowerCase() })}
+                  value={this.state.followedLabelsFilter}
+                  onClearSearch={() => this.setState({ followedLabelsFilter: '' })}
+                />
+              </div>
               <ul className="no-style-list follow-list">
-                {this.state.labelFollows.map(
-                  ({ name, url, storeLabelId, store: { name: storeName, watchId, starred } }) => (
+                {this.state.labelFollows
+                  .filter(
+                    ({ name }) =>
+                      this.state.followedLabelsFilter === '' ||
+                      name.toLocaleLowerCase().includes(this.state.followedLabelsFilter),
+                  )
+                  .map(({ name, url, storeLabelId, store: { name: storeName, watchId, starred } }) => (
                     <li key={storeLabelId}>
                       <FollowedItem
                         disabled={this.state.updatingLabelFollows}
@@ -683,28 +711,41 @@ class Settings extends Component {
                         {...{ storeName, title: name, starred, url }}
                       />
                     </li>
-                  ),
-                )}
+                  ))}
               </ul>
               <CollapseHeader>Followed playlists ({this.state.playlistFollows.length})</CollapseHeader>
+              <div className={'follow-filter'}>
+                <SearchBar
+                  styles="large dark"
+                  onChange={(e) => this.setState({ followedPlaylistsFilter: e.target.value.toLocaleLowerCase() })}
+                  value={this.state.followedPlaylistsFilter}
+                  onClearSearch={() => this.setState({ followedPlaylistsFilter: '' })}
+                />
+              </div>
               <ul className="no-style-list follow-list">
-                {this.state.playlistFollows.map(({ id, storeName, title }) => (
-                  <li key={id}>
-                    <FollowedItem
-                      disabled={this.state.updatingPlaylistFollows}
-                      onUnfollowClick={async () => {
-                        this.setState({ updatingPlaylistFollows: true })
-                        await requestWithCredentials({
-                          path: `/me/follows/playlists/${id}`,
-                          method: 'DELETE',
-                        })
-                        await this.updatePlaylistFollows()
-                        this.setState({ updatingPlaylistFollows: false })
-                      }}
-                      {...{ storeName, title }}
-                    />
-                  </li>
-                ))}
+                {this.state.playlistFollows
+                  .filter(
+                    ({ name }) =>
+                      this.state.followedPlaylistsFilter === '' ||
+                      name.toLocaleLowerCase().includes(this.state.followedPlaylistsFilter),
+                  )
+                  .map(({ id, storeName, title }) => (
+                    <li key={id}>
+                      <FollowedItem
+                        disabled={this.state.updatingPlaylistFollows}
+                        onUnfollowClick={async () => {
+                          this.setState({ updatingPlaylistFollows: true })
+                          await requestWithCredentials({
+                            path: `/me/follows/playlists/${id}`,
+                            method: 'DELETE',
+                          })
+                          await this.updatePlaylistFollows()
+                          this.setState({ updatingPlaylistFollows: false })
+                        }}
+                        {...{ storeName, title }}
+                      />
+                    </li>
+                  ))}
               </ul>
             </>
           ) : null}
