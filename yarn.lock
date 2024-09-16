@@ -6749,7 +6749,7 @@ imurmurhash@^0.1.4:
   resolved "https://registry.yarnpkg.com/imurmurhash/-/imurmurhash-0.1.4.tgz#9218b9b2b928a238b13dc4fb6b6d576f231453ea"
   integrity sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==
 
-infestines@^0.4.10, infestines@^0.4.11, infestines@^0.4.4:
+infestines@^0.4.10, infestines@^0.4.11:
   version "0.4.11"
   resolved "https://registry.yarnpkg.com/infestines/-/infestines-0.4.11.tgz#1d0d164ff1831ffcbafbd02f53bc60140dd52197"
   integrity sha512-09nHagZLOYUaXKHqdV+nxEaYaD0hRlKyhQMhgTMwfbvWpMkowXf4XLZzAkLq6Y90wZ7Wqm6aMoL2trBsNNKGeg==
@@ -8080,15 +8080,7 @@ karet.util@^0.19.2:
     kefir.atom "^5.5.1"
     partial.lenses "^14.0.0"
 
-karet@^2.0.0:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/karet/-/karet-2.1.1.tgz#38e60b189a546bd0821ff0f6b2040c06a9658dee"
-  integrity sha512-R61peqiezzt/bjTdbaYuseKRpAPYRul7t0xXOP93TTuwrD8ePtxKsjFIHtx4yoXHu6ttczLmCTa6Iu5U+waWew==
-  dependencies:
-    infestines "^0.4.4"
-    react "^16.0.0"
-
-karet@^4.0.0:
+karet@^4.0.0, karet@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/karet/-/karet-4.1.0.tgz#c45a5a3069d2aab6237f44a4297952f8434909d8"
   integrity sha512-cWE3HOKpBK0hx37kjlbKB2h50t3ylAKLPRcCLfciuD63dXFnX6bDKaQV/sbXLWDHOBFh7NOGQZzDh1wOR930Gw==
@@ -10766,15 +10758,6 @@ react-scripts@^5.0.0:
     workbox-webpack-plugin "^6.4.1"
   optionalDependencies:
     fsevents "^2.3.2"
-
-react@^16.0.0:
-  version "16.14.0"
-  resolved "https://registry.yarnpkg.com/react/-/react-16.14.0.tgz#94d776ddd0aaa37da3eda8fc5b6b18a4c9a3114d"
-  integrity sha512-0X2CImDkJGApiAlcf0ODKIneSwBPhqJawOa5wCtKbu7ZECrmS26NvtSILynQ66cgkT/RJ4LidJOc3bUESwmU8g==
-  dependencies:
-    loose-envify "^1.1.0"
-    object-assign "^4.1.1"
-    prop-types "^15.6.2"
 
 react@^17.0.2:
   version "17.0.2"
