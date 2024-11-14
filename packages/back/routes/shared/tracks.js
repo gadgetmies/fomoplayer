@@ -107,7 +107,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
         storedTracks.push({ id: trackId })
       }
     } catch (e) {
-      logger.error(`Failed to add track to users`, e)
+      logger.error(`Failed to add track to users, error: ${JSON.stringify(e).substring(0, 800)}, stack: ${e.stack}`)
     }
   }
 
