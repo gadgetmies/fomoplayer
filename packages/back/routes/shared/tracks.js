@@ -140,10 +140,15 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
       }
 
       let artists = []
-      for (const artist of track.artists) {
-        // TODO: match by release / isrc
-        const res = await ensureArtistExists(tx, storeUrl, artist, sourceId)
-        artists.push(res)
+      try {
+        for (const artist of track.artists) {
+          // TODO: match by release / isrc
+          const res = await ensureArtistExists(tx, storeUrl, artist, sourceId)
+          artists.push(res)
+        }
+      } catch (e) {
+        logger.error('const artist of track.artists', e)
+        throw e
       }
 
       if (track.release) {
@@ -156,12 +161,17 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
 
       const trackId = await addStoreTrack(tx, storeUrl, labelId, releaseId, artists, track, sourceId)
 
-      for (const userId of userIds) {
-        await addTrackToUser(tx, userId, artists, trackId, labelId, sourceId)
+      try {
+        for (const userId of userIds) {
+          await addTrackToUser(tx, userId, artists, trackId, labelId, sourceId)
 
-        if (type === 'purchased') {
-          await addPurchasedStoreTrackToUser(tx, userId, track)
+          if (type === 'purchased') {
+            await addPurchasedStoreTrackToUser(tx, userId, track)
+          }
         }
+      } catch (e) {
+        logger.error('const userId of userIds', e)
+        throw e
       }
 
       logger.debug(`Stored track: ${trackId}`)

@@ -547,17 +547,22 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
     }
   }
 
-  for (const { id, role } of artists) {
-    await tx.queryAsync(
-      // language=PostgreSQL
-      sql`-- addStoreTrack INSERT INTO track__artist
-      INSERT
-      INTO track__artist
-        (track_id, artist_id, track__artist_role)
-      VALUES (${trackId}, ${id}, ${role})
-      ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING
-      `,
-    )
+  try {
+    for (const { id, role } of artists) {
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- addStoreTrack INSERT INTO track__artist
+        INSERT
+        INTO track__artist
+          (track_id, artist_id, track__artist_role)
+        VALUES (${trackId}, ${id}, ${role})
+        ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING
+        `,
+      )
+    }
+  } catch (e) {
+    logger.error('const { id, role } of artists', e)
+    throw e
   }
 
   const storeId = await queryStoreId(tx, storeUrl)
@@ -652,10 +657,11 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
     )
     .then(getFieldFromResult('store__track_id'))
 
-  for (const preview of track.previews) {
-    await tx.queryAsync(
-      // language=PostgreSQL
-      sql`-- addStoreTrack INSERT INTO store__track_preview
+  try {
+    for (const preview of track.previews) {
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- addStoreTrack INSERT INTO store__track_preview
       INSERT
       INTO store__track_preview
       ( store__track_id, store__track_preview_url, store__track_preview_format, store__track_preview_start_ms
@@ -663,32 +669,36 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
       VALUES (${storeTrackId}, ${preview.url}, ${preview.format}, ${preview.start_ms}, ${preview.end_ms}, ${sourceId})
       ON CONFLICT DO NOTHING
       `,
-    )
-    const previewId = await tx
-      .queryRowsAsync(
-        // language=PostgreSQL
-        sql`-- addStoreTrack SELECT store__track_preview_id
+      )
+      const previewId = await tx
+        .queryRowsAsync(
+          // language=PostgreSQL
+          sql`-- addStoreTrack SELECT store__track_preview_id
         SELECT store__track_preview_id
         FROM
           store__track_preview
         WHERE store__track_preview_url = ${preview.url}
           AND store__track_id = ${storeTrackId}
         `,
-      )
-      .then(getFieldFromResult('store__track_preview_id'))
+        )
+        .then(getFieldFromResult('store__track_preview_id'))
 
-    if (track.waveform) {
-      await tx.queryAsync(
-        // language=PostgreSQL
-        sql`-- addStoreTrack INSERT INTO store__track_preview_waveform
+      if (track.waveform) {
+        await tx.queryAsync(
+          // language=PostgreSQL
+          sql`-- addStoreTrack INSERT INTO store__track_preview_waveform
         INSERT
         INTO store__track_preview_waveform
         (store__track_preview_id, store__track_preview_waveform_url, store__track_preview_waveform_source)
         VALUES (${previewId}, ${track.waveform.url}, ${sourceId})
         ON CONFLICT ON CONSTRAINT store__track_preview_waveform_store__track_preview_id_url_key DO NOTHING
         `,
-      )
+        )
+      }
     }
+  } catch (e) {
+    logger.error('const preview of track.previews', e)
+    throw e
   }
 
   if (releaseId) {
@@ -788,28 +798,33 @@ WHERE release_id = ${releaseId}
 
   if (track.genres) {
     let genres = []
-    for (const genre of track.genres) {
-      const { genreId } = await ensureGenreExists(tx, storeId, {
-        storeGenreStoreId: genre.id,
-        storeGenreName: genre.name,
-        storeGenreUrl: genre.url,
-      })
-      genres.push(genreId)
-    }
+    try {
+      for (const genre of track.genres) {
+        const { genreId } = await ensureGenreExists(tx, storeId, {
+          storeGenreStoreId: genre.id,
+          storeGenreName: genre.name,
+          storeGenreUrl: genre.url,
+        })
+        genres.push(genreId)
+      }
 
-    for (const genreId of genres) {
-      await tx.queryAsync(sql`-- addStoreTrack INSERT INTO track__genre
+      for (const genreId of genres) {
+        await tx.queryAsync(sql`-- addStoreTrack INSERT INTO track__genre
 INSERT INTO track__genre (track_id, genre_id)
 VALUES (${trackId}, ${genreId})
 ON CONFLICT DO NOTHING
 `)
-      for (const { id: artistId } of artists) {
-        await tx.queryAsync(sql`-- addStoreTrack INSERT INTO artist__genre
+        for (const { id: artistId } of artists) {
+          await tx.queryAsync(sql`-- addStoreTrack INSERT INTO artist__genre
 INSERT INTO artist__genre (artist_id, genre_id)
 VALUES (${artistId}, ${genreId})
 ON CONFLICT DO NOTHING
 `)
+        }
       }
+    } catch (e) {
+      logger.error('track.genres', e)
+      throw e
     }
   }
 
