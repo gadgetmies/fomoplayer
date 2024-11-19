@@ -595,7 +595,7 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
     )
 
     if (res.length === 0) {
-      const [{ track_id, release_id, store__track_id }] = tx.queryRowsAsync(sql`
+      const [{ track_id, release_id, store__track_id }] = await tx.queryRowsAsync(sql`
         SELECT track_id, release_id, store__track_id
         FROM
           release__track
