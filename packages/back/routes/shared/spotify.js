@@ -20,10 +20,17 @@ const credentials = {
   redirectUri: `${apiURL}/auth/spotify/callback`,
 }
 
+let suspendedUntil = undefined
+const getSuspendedUntil = () => suspendedUntil
+
+let accessTokenValid = undefined
+const getAccessTokenValid = () => accessTokenValid
+
 const injectRateLimiting = L.modify(L.query(L.when(R.is(Function))), (fn) => (...args) => {
-  console.log(fn)
-  if (suspendedUntil && suspendedUntil > new Date()) {
+  if (getSuspendedUntil() > new Date()) {
     throw new Error(`Too many calls to Spotify API. Waiting for rate limit to expire at ${suspendedUntil}`)
+  } else if (!getAccessTokenValid()) {
+    throw new Error(`Access token not valid. Waiting for refresh.`)
   } else {
     const res = fn.bind(api)(...args)
     if (res instanceof Promise) {
@@ -33,6 +40,10 @@ const injectRateLimiting = L.modify(L.query(L.when(R.is(Function))), (fn) => (..
           logger.error(`Spotify API rate limit exceeded (response status code 429), suspending for ${retryAfterMs}ms`)
           suspendedUntil = new Date(Date.now() + retryAfterMs)
           throw new Error('Too many calls to Spotify API')
+        } else if (e.statusCode === 401 && accessTokenValid !== undefined) {
+          accessTokenValid = undefined
+          refreshToken()
+          throw new Error(`Access token not valid. Scheduling refresh.`)
         } else {
           logger.error('Spotify API error', e)
           throw e
@@ -44,21 +55,25 @@ const injectRateLimiting = L.modify(L.query(L.when(R.is(Function))), (fn) => (..
   }
 })
 
-let suspendedUntil = undefined
 const api = new SpotifyWebApi(credentials)
 const spotifyApi = (module.exports.spotifyApi = injectRateLimiting(api))
 
-const getApiForAuthorization = (module.exports.getApiForAuthorization = (accessToken, refreshToken = undefined) => {
-  if (suspendedUntil && suspendedUntil > new Date()) {
+const checkRatelimit = () => {
+  if (getSuspendedUntil() > new Date()) {
     throw new Error(`Too many calls to Spotify API. Waiting for rate limit to expire at ${suspendedUntil}`)
   }
+}
+
+const getApiForAuthorization = (module.exports.getApiForAuthorization = (accessToken, refreshToken = undefined) => {
+  checkRatelimit()
   const api = new SpotifyWebApi(credentials)
   api.setAccessToken(accessToken)
   api.setRefreshToken(refreshToken)
-  return api
+  return injectRateLimiting(api)
 })
 
 const getApiForUser = (module.exports.getApiForUser = async (userId) => {
+  checkRatelimit()
   const { access_token, refresh_token, expires } = await queryAuthorization(userId)
   const api = getApiForAuthorization(access_token, refresh_token)
   if (new Date(expires) < new Date()) {
@@ -74,20 +89,42 @@ const getApiForUser = (module.exports.getApiForUser = async (userId) => {
       throw new Error(errorMessage)
     }
   }
-  return api
+  return injectRateLimiting(api)
 })
 
 const refreshToken = (module.exports.refreshToken = async () => {
+  if (accessTokenValid !== undefined) {
+    throw new Error('Access token refresh already in progress!')
+  }
+
+  checkRatelimit()
   logger.debug('Refreshing Spotify token')
   try {
-    const data = await spotifyApi.clientCredentialsGrant()
-    spotifyApi.setAccessToken(data.body['access_token'])
+    const data = await api.clientCredentialsGrant()
+    api.setAccessToken(data.body['access_token'])
     const expiresIn = data.body['expires_in']
     logger.debug(`Refreshing token in ${expiresIn / 2} seconds`)
-    setTimeout(refreshToken, (expiresIn / 2) * 1000)
+    setTimeout(
+      () => {
+        accessTokenValid = undefined
+        refreshToken()
+      },
+      (expiresIn / 2) * 1000,
+    )
     logger.debug('Done refreshing Spotify token')
+    accessTokenValid = true
   } catch (e) {
-    logger.error('Spotify token refresh failed', e)
+    accessTokenValid = undefined
+    logger.error(`Spotify token refresh failed`, e)
+    logger.debug(`Retrying refresh in 5 minutes. ${typeof e}`)
+    setTimeout(
+      () => {
+        accessTokenValid = undefined
+        refreshToken()
+      },
+      5 * 60 * 1000,
+    )
+    throw e
   }
 })
 
@@ -97,13 +134,10 @@ const readScopes = ['playlist-read-private', 'playlist-read-collaborative', 'use
 module.exports.getAuthorizationUrl = (returnPath, write) => {
   // Create the authorization URL
   const scopes = [...(write ? writeScopes : []), ...readScopes]
-  return spotifyApi.createAuthorizeURL(scopes, encodeURIComponent(`path=${returnPath}`))
+  return api.createAuthorizeURL(scopes, encodeURIComponent(`path=${returnPath}`))
 }
 
 module.exports.requestTokens = (code) => spotifyApi.authorizationCodeGrant(code)
-;(async () => {
-  await refreshToken()
-})()
 
 const getSpotifyTrackUris = (module.exports.getSpotifyTrackUris = (tracks) =>
   tracks
@@ -201,3 +235,12 @@ module.exports.addArtistsToUserFollowed = async (userId, artistIds) => {
   const api = await getApiForUser(userId)
   await processChunks(artistIds, 50, api.followArtists.bind(api), { concurrency: 4 })
 }
+
+// Initialization
+;(async () => {
+  try {
+    await refreshToken()
+  } catch (e) {
+    logger.error('Initial Spotify token refresh failed')
+  }
+})()
