@@ -14,6 +14,9 @@ export default (props) => (
     {...R.omit(['className', 'icon', 'onFocus'], props)}
     style={{ display: 'flex', justifyContent: 'center' }}
     onClick={(e) => {
+      if (props.onClick) {
+        props.onClick()
+      }
       if (props.disabled) {
         e.preventDefault()
       }
