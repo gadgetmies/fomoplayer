@@ -291,8 +291,8 @@ ORDER BY COUNT(store__genre_store_id = ANY (${genreIds})) DESC
       .then(getArtistIdFromResult)
   }
 
-  const [previousDetails] = await tx.queryRowsAsync(sql`-- ensureArtistExists query previous id
-SELECT 1
+  const previousDetails = await tx.queryRowsAsync(sql`-- ensureArtistExists query previous id
+SELECT store__artist_url as url, store_id as "storeId"
 FROM
   store__artist
   NATURAL JOIN store
@@ -300,7 +300,7 @@ WHERE store_url = ${storeUrl}
   AND artist_id = ${artistId}
 `)
 
-  if (!previousDetails) {
+  if (previousDetails.length === 0) {
     logger.debug(
       `Store artist row does not exist for artist id: ${artistId}, store id: ${artist.id}, store url: ${storeUrl} -> inserting`,
     )
@@ -329,6 +329,20 @@ WHERE store_url = ${storeUrl}
           , store__artist_source   = ${sourceId}
       `,
     )
+  } else if (!previousDetails.url && artist.url) {
+    logger.debug(
+      `Store artist url not set for artist id: ${artistId}, store id: ${artist.id}, store url: ${storeUrl} -> updating`,
+    )
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- ensureArtistExists UPDATE store__artist
+      UPDATE store__artist
+      SET store__artist_url = ${artist.url}
+      WHERE
+        store_id = ${previousDetails[0].storeId} AND
+        artist_id = ${artistId}
+      `,
+    )
   }
 
   const storeId = await queryStoreId(tx, storeUrl)
@@ -350,7 +364,7 @@ ON CONFLICT DO NOTHING
     }
   }
 
-  const res = await tx.queryRowsAsync(
+  const [{ storeArtistId }] = await tx.queryRowsAsync(
     // language=PostgreSQL
     sql`-- ensureArtistExists SELECT store__artist_id AS "storeArtistId" FROM store__artist
     SELECT store__artist_id AS "storeArtistId"
@@ -358,11 +372,15 @@ ON CONFLICT DO NOTHING
       store__artist
       NATURAL JOIN store
     WHERE store__artist_store_id = ${artist.id} OR 
-          store__artist_url = ${artist.url}
+          store__artist_url = ${artist.url} OR
+          (
+            store_url = 'https://bandcamp.com' -- TODO: remove hardcoded value
+            AND artist_id = ${artistId}
+          ) 
     `,
   )
 
-  return { id: artistId, storeArtistId: res[0]?.storeArtistId, role: artist.role }
+  return { id: artistId, storeArtistId, role: artist.role }
 }
 
 const getIsrcDebugData = async (isrc, storeTrackStoreId) =>
