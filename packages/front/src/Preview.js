@@ -566,7 +566,7 @@ class Preview extends Component {
                   await requestWithCredentials({
                     url: '/log/error',
                     method: 'POST',
-                    body: { message: 'Audio playback error', error: e },
+                    body: { message: 'Audio playback error', error: e.toString() },
                   })
                 }}
                 controlsList="nodownload"
