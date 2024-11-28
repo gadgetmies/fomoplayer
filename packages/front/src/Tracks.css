@@ -211,7 +211,7 @@
     max-width: 90px;
   }
 
-  .track-play-button {
+  .track-mark-heard-button {
     display: none;
   }
 
@@ -413,7 +413,7 @@
     text-align: center;
   }
 
-  .track-play-button {
+  .track-mark-heard-button {
     height: 100%;
   }
 

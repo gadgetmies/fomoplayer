@@ -123,13 +123,17 @@ class Track extends Component {
         {this.props.mode === 'app' ? (
           <td className={'new-cell tracks-cell'}>
             <button
-              className="button track-play-button"
-              onClick={this.props.onDoubleClick.bind(this)}
+              className="button track-mark-heard-button"
+              onClick={(e) => {
+                this.props.onMarkHeardButtonClick(this.props.track.id)
+                e.stopPropagation()
+                e.preventDefault()
+              }}
               onMouseEnter={() => this.setHeardHover(true)}
               onMouseLeave={() => this.setHeardHover(false)}
             >
               {this.state.heardHover ? (
-                <FontAwesomeIcon icon="play" />
+                <FontAwesomeIcon icon="times-circle" />
               ) : !!this.props.heard ? null : (
                 <FontAwesomeIcon icon="circle" />
               )}

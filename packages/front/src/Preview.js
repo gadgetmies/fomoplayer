@@ -526,7 +526,7 @@ class Preview extends Component {
                   this.setState({ playing: true })
                 }}
                 onPlay={async () => {
-                  await this.props.markHeard(this.props.currentTrack)
+                  await this.props.markHeard(this.props.currentTrack.id)
                 }}
                 onPlaying={() => {
                   if (!shouldSkip && this.state.position === 0) {

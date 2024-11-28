@@ -16,7 +16,6 @@ class Tracks extends Component {
     this.state = {
       selectedTrack: (props.tracks[0] || {}).id,
       currentTrack: -1,
-      markingHeard: false,
       currentBelowScreen: false,
       currentAboveScreen: false,
       createdNotifications: new Set(),
@@ -215,6 +214,7 @@ class Tracks extends Component {
               onCreateCartClick={this.props.onCreateCartClick}
               onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
               onCartFilterChange={this.props.onCartFilterChange}
+              onMarkHeardButtonClick={this.props.onMarkHeardButtonClick}
             />
           )
         })}

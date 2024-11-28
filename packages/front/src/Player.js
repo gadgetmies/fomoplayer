@@ -224,6 +224,10 @@ class Player extends Component {
     this.props.onClosePopups()
   }
 
+  async markHeard(id) {
+    return this.props.markHeard(this.getTracks().find(R.propEq('id', id)))
+  }
+
   render() {
     const tracks = this.getTracks()
     const currentTrack = this.props.currentTrack
@@ -252,7 +256,7 @@ class Player extends Component {
           togglingCurrentInCart={this.state.togglingCurrentInCart}
           totalTracks={this.props.meta ? this.props.meta.totalTracks : null}
           ref={this.preview}
-          markHeard={this.props.markHeard}
+          markHeard={this.markHeard.bind(this)}
           onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
           onCreateCartClick={this.props.onHandleCreateCartClick?.bind(this)}
           onFollowClicked={() => this.props.onOpenFollowPopup(currentTrack)}
@@ -308,6 +312,7 @@ class Player extends Component {
           onUpdateCarts={this.props.onUpdateCarts}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onCartFilterChange={this.props.onCartFilterChange}
+          onMarkHeardButtonClick={this.markHeard.bind(this)}
         />
       </div>
     )

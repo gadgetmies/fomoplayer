@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
-import { BrowserRouter as Router, Link, Redirect, Route, useHistory } from 'react-router-dom'
+import { BrowserRouter as Router, Redirect, Route } from 'react-router-dom'
 import { ErrorBoundary } from 'react-error-boundary'
 import Login from './UserLogin.js'
 import Player from './Player.js'
@@ -17,8 +17,6 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { fas } from '@fortawesome/free-solid-svg-icons'
 import { far } from '@fortawesome/free-regular-svg-icons'
 import { fab } from '@fortawesome/free-brands-svg-icons'
-library.add(fas, far, fab)
-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Onboarding from './Onboarding'
 import TopBar from './TopBar'
@@ -26,6 +24,8 @@ import { trackArtistsAndTitleText } from './trackFunctions'
 import FollowPopup from './FollowPopup'
 import IgnorePopup from './IgnorePopup'
 import KeyboardShortcutsPopup from './KeyboardShortcutsPopup'
+
+library.add(fas, far, fab)
 
 // import injectTapEventPlugin from 'react-tap-event-plugin';
 // injectTapEventPlugin();
