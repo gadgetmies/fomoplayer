@@ -212,7 +212,7 @@ const appendArtistDetails = async (tracks) => {
 
 const getPlaylistTracks = (module.exports.getPlaylistTracks = async function* ({ playlistStoreId }) {
   const res = await spotifyApi.getPlaylistTracks(playlistStoreId, { market: 'US' })
-  const transformed = spotifyTracksTransform(res.body.items.filter(R.path(['track', 'preview_url'])))
+  const transformed = spotifyTracksTransform(res.body.items)
   if (transformed.length === 0) {
     const error = `No tracks found for playlist at ${playlistStoreId}`
     logger.error(error)
