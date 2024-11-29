@@ -175,20 +175,14 @@ async function getTrackAudioFeatures(trackIds) {
 
 const appendTrackDetails = async (tracks) => {
   const trackIds = tracks.map(({ id }) => id)
-  const [trackAudioFeatures, trackInfos] = await Promise.all([
-    processChunks(trackIds, 100, getTrackAudioFeatures, { concurrency: 4 }),
-    processChunks(trackIds, 50, getTracks, { concurrency: 4 }),
-  ])
+  const trackInfos = await processChunks(trackIds, 50, getTracks, { concurrency: 4 })
 
   return tracks.map(({ id, ...rest }) => {
     const idMatch = (track) => id === track?.id
-    const features = trackAudioFeatures.find(idMatch) || {}
     const info = trackInfos.find(idMatch) || {}
 
     return {
       id,
-      features,
-      bpm: features.tempo,
       isrc: info.external_ids?.isrc,
       ...rest,
     }
