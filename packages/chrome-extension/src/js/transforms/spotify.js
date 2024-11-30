@@ -42,28 +42,26 @@ module.exports.spotifyAlbumTracksTransform = L.collect([
     'tracks',
     'items',
     L.elems,
-    L.choose(({ preview_url }, i) =>
-      preview_url
-        ? L.pick({
-            title: ['name', (name) => name.replace(/( - original mix)|( - .* remix)/gi, '')],
-            version: ['name', (name) => (name.match(/ - (.* remix)/i) || [])[1]],
-            id: ['id'],
-            url: urlLens,
-            artists: L.partsOf(trackArtistsLens),
-            duration_ms: ['duration_ms'],
-            previews: L.partsOf(previewLens),
-            label: L.pick({ name: ['label'] }),
-            released: releaseDateLens(release_date),
-            published: releaseDateLens(release_date),
-            release: R.always({ id, title: name, url: href, isrc }),
-            isrc: ['external_ids', 'isrc'],
-            track_number: L.ifElse(R.propEq('disc_number', 1), 'track_number', R.always(i + 1)),
-            // TODO: release, released, published from album
-            // TODO: get from properties
-            // key: ['key', L.reread(bpKey => spotifyKeysToCamelot[bpKey])],
-            store_details: [],
-          })
-        : L.zero,
+    L.choose((_, i) =>
+      L.pick({
+        title: ['name', (name) => name.replace(/( - original mix)|( - .* remix)/gi, '')],
+        version: ['name', (name) => (name.match(/ - (.* remix)/i) || [])[1]],
+        id: ['id'],
+        url: urlLens,
+        artists: L.partsOf(trackArtistsLens),
+        duration_ms: ['duration_ms'],
+        previews: L.partsOf(previewLens),
+        label: L.pick({ name: ['label'] }),
+        released: releaseDateLens(release_date),
+        published: releaseDateLens(release_date),
+        release: R.always({ id, title: name, url: href, isrc }),
+        isrc: ['external_ids', 'isrc'],
+        track_number: L.ifElse(R.propEq('disc_number', 1), 'track_number', R.always(i + 1)),
+        // TODO: release, released, published from album
+        // TODO: get from properties
+        // key: ['key', L.reread(bpKey => spotifyKeysToCamelot[bpKey])],
+        store_details: [],
+      }),
     ),
   ]),
 ])
