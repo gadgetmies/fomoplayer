@@ -34,7 +34,7 @@
     "fomoplayer_shared": "1.0.0",
     "html-entities": "^2.3.2",
     "jsdom": "^19.0.0",
-    "jwks-rsa": "^2.0.5",
+    "jwks-rsa": "^3.1.0",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.0",
     "node-schedule": "^2.1.1",
