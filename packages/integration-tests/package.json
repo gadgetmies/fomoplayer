@@ -10,7 +10,7 @@
   "devDependencies": {
     "fomoplayer_shared": "1.0.0",
     "nightwatch": "^3.6.0",
-    "@nightwatch/apitesting": "^3.1.3"
+    "@nightwatch/apitesting": "^3.1.4"
   },
   "author": "",
   "license": "ISC"
