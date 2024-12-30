@@ -5,6 +5,7 @@ module.exports.updateTrackDetails = async () => {
   await pg.queryAsync(
     // language=PostgreSQL
     sql`-- updateTrackDetails
+SET STATEMENT_TIMEOUT TO 300000;
 INSERT INTO track_details (track_id, track_details_updated, track_details)
     (SELECT track_id, NOW(), row_to_json(track_details(ARRAY_AGG(track_id)))
      FROM track
