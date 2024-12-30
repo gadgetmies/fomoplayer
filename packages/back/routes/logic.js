@@ -7,6 +7,7 @@ const { queryCartDetailsByUuid, verifyEmail } = require('./db')
 const { getStoreDetailsFromUrl } = require('./stores/logic')
 const { modules: storeModules } = require('./stores/store-modules')
 const { queryEntityDetails } = require('./shared/db/entities')
+const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
   const { storeCode, storeTrackId } = await queryLongestPreviewForTrack(id, format, skip)
@@ -44,8 +45,11 @@ module.exports.getPreview = async (id, format, offset) => {
 }
 
 module.exports.getCartDetails = async (uuid, userId, tracksFilter) => {
+  logger.info(`Getting cart details for user: ${userId}, uuid: ${uuid}`)
   const { isPublic, id } = await queryCartDetailsByUuid(uuid)
+  logger.info(`Cart is public: ${isPublic}, id: ${id}`)
   const [{ ownerUserId }] = await queryCartOwner(id)
+  logger.info(`Cart owner: ${ownerUserId}`)
   if (!isPublic && ownerUserId !== userId) {
     return null
   }

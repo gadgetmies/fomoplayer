@@ -1,5 +1,6 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
+const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.queryCartOwner = async (cartId) => {
   return pg.queryRowsAsync(
@@ -125,6 +126,7 @@ module.exports.queryUserCartDetailsWithTracks = async (userId) =>
 module.exports.queryCartDetails = async (cartId, tracksFilter = { since: undefined, offset: 0, limit: 200 }) => {
   const limit = tracksFilter?.limit || 200
   const offset = tracksFilter?.offset || 0
+  logger.info(`Querying cart details for cartId: ${cartId}, limit: ${limit}, offset: ${offset}`)
   const query =
     // language=PostgreSQL
     sql`--queryCartDetails
@@ -207,8 +209,10 @@ module.exports.queryCartDetails = async (cartId, tracksFilter = { since: undefin
       NATURAL LEFT JOIN cart_store_details
     ORDER BY cart_is_default, cart_is_purchased, cart_name
     `)
+  logger.info(`Querying finished for cartId: ${cartId}, limit: ${limit}, offset: ${offset}`)
 
   const [details] = await pg.queryRowsAsync(query)
+  logger.info('details')
 
   return { limit, offset, ...details }
 }
