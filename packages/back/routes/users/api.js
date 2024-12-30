@@ -270,8 +270,14 @@ router.post('/carts/:id', async ({ user: { id: userId }, params: { id }, body },
 })
 
 router.patch('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: cartId }, body: operations }, res) => {
-  await updateCartContents(userId, cartId, operations)
-  res.send(await getCartDetails(userId, cartId))
+  try {
+    await updateCartContents(userId, cartId, operations)
+    return res.send(await getCartDetails(userId, cartId))
+  } catch (e) {
+    const message = `Failed to update cart contents for cart: ${cartId}`
+    logger.error(message, e)
+    return res.status(500).send(message)
+  }
 })
 
 router.patch('/carts', async ({ user: { id: userId }, body: operations }, res) => {
