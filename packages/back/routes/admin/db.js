@@ -1,9 +1,15 @@
 const sql = require('sql-template-strings')
-const R = require('ramda')
 const pg = require('fomoplayer_shared').db.pg
-const logger = require('fomoplayer_shared').logger(__filename)
-const { using } = require('bluebird')
 const config = require('../../config')
+
+const vectorPg = require('pg-using-bluebird')({
+  dbUrl: process.env.VECTOR_DATABASE_URL,
+  ssl: Boolean(process.env.DATABASE_USE_SSL)
+    ? {
+        rejectUnauthorized: !Boolean(process.env.DATABASE_SELF_SIGNED_CERT),
+      }
+    : false,
+})
 
 module.exports.mergeTracks = async ({ trackToBeDeleted, trackToKeep }) => {
   await pg.queryAsync(sql`
@@ -88,4 +94,43 @@ module.exports.storeConfig = async ({ config, lens, name }) => {
   )
 
   return details
+}
+
+module.exports.queryNextTracksToAnalyse = async ({ key, batch_size }) => {
+  const [{ track_ids }] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- Query next tracks to analyse
+SELECT DISTINCT ON (track_id)
+    track_id
+  , track_isrc
+  , store__track_preview_url
+FROM
+    track
+        NATURAL JOIN track_analysis
+        NATURAL JOIN store__track_preview
+WHERE
+        track_id NOT IN (SELECT track_id FROM track_analysis WHERE track_analysis_key = ${key})
+  AND   store__track_preview_url IS NOT NULL
+LIMIT ${batch_size}
+    `,
+  )
+
+  return track_ids
+}
+
+module.exports.upsertTrackAnalysis = async (trackId, model, embeddings) => {
+  await vectorPg.queryAsync(
+    // language=PostgreSQL
+    sql`-- Upsert track embeddings
+INSERT
+INTO
+    track_embedding (track_id, track_embedding_type, track_embedding_vector)
+VALUES
+    (${trackId}, ${model}, ${embeddings})
+ON CONFLICT (track_id, track_embedding_type) DO UPDATE
+    SET
+        track_embedding_vector      = ${embeddings}
+      , track_analysis_updated_at = NOW()
+    `,
+  )
 }

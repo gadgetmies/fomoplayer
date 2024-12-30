@@ -1,7 +1,15 @@
 const logger = require('fomoplayer_shared').logger(__filename)
 const router = require('express-promise-router')()
 const { runJob } = require('../../job-scheduling')
-const { mergeTracks, queryJobLinks, getQueryResults, storeConfig, getConfigs } = require('./db')
+const {
+  mergeTracks,
+  queryJobLinks,
+  getQueryResults,
+  storeConfig,
+  getConfigs,
+  upsertTrackAnalysis,
+  queryNextTracksToAnalyse,
+} = require('./db')
 
 const ensureIsAdmin = ({ user: { id: userId } }, res, next) => {
   if (process.env.NODE_ENV === 'dev' || userId === 2) {
@@ -58,6 +66,18 @@ router.get('/radiator', async (_, res) => {
 router.post('/radiator/config', async ({ body: { name, lens, config } }, res) => {
   const storedConfig = await storeConfig({ name, lens, config })
   res.status(201).send(storedConfig)
+})
+
+router.get('/analyse', async ({ query }, res) => {
+  res.send(await queryNextTracksToAnalyse(query))
+})
+
+router.post('/analyse', async ({ body }, res) => {
+  const results = []
+  for (const { id, embeddings, model } of body) {
+    results.push(await upsertTrackAnalysis(id, model, embeddings))
+  }
+  res.send(results)
 })
 
 module.exports = router
