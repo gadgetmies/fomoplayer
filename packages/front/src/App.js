@@ -37,6 +37,8 @@ const Root = (props) => <div className="root" style={{ height: '100vh' }} {...pr
 class App extends Component {
   constructor(props) {
     super(props)
+    const { listState, currentTrack } = JSON.parse(window.localStorage.getItem('currentTrack')) || {}
+
     this.state = {
       carts: [],
       stores: [],
@@ -54,7 +56,8 @@ class App extends Component {
       searchInProgress: false,
       searchError: undefined,
       searchResults: [],
-      listState: 'new',
+      listState: listState || 'new',
+      currentTrack,
       heardTracks: defaultTracksData.tracks.heard,
       selectedCartUuid: undefined,
       selectedCart: undefined,
@@ -514,6 +517,10 @@ class App extends Component {
 
   async setCurrentTrack(track) {
     this.setState({ currentTrack: track })
+    window.localStorage.setItem(
+      'currentTrack',
+      JSON.stringify({ listState: this.state.listState, currentTrack: track }),
+    )
     document.title = `${trackArtistsAndTitleText(track)} - Fomo Player`
   }
 
