@@ -9,8 +9,7 @@ INSERT INTO track_details (track_id, track_details_updated, track_details)
     (SELECT track_id, NOW(), row_to_json(track_details(ARRAY_AGG(track_id)))
      FROM track
               NATURAL LEFT JOIN track_details
-     WHERE track_details_updated IS NULL
-        OR track_details_updated < NOW() - INTERVAL '7 days'
+     WHERE track_details_updated < NOW() - INTERVAL '7 days'
      GROUP BY 1, track_added
      ORDER BY track_added DESC
      LIMIT 10)
