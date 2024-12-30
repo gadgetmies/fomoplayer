@@ -1116,13 +1116,12 @@ module.exports.upsertEmail = async (userId, email) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- updateEmail
-INSERT INTO meta_account_email (meta_account_email_address, meta_account_user_id,
-                                meta_account_email_verification_code)
+INSERT INTO meta_account_email (meta_account_email_address, meta_account_user_id, meta_account_email_verification_code)
 VALUES (${email}, ${userId}, uuid_generate_v4())
 ON CONFLICT ON CONSTRAINT meta_account_email_meta_account_user_id_key
-    DO UPDATE SET meta_account_email_address           = EXCLUDED.meta_account_email_address,
-                  meta_account_email_verified          = FALSE,
-                  meta_account_email_verification_code = uuid_generate_v4()
+  DO UPDATE SET meta_account_email_address           = EXCLUDED.meta_account_email_address
+              , meta_account_email_verified          = FALSE
+              , meta_account_email_verification_code = uuid_generate_v4()
     `,
   )
 

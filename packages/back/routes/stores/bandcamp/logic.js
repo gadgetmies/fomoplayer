@@ -34,14 +34,22 @@ const getStoreDbId = () => {
 module.exports.getPreviewDetails = async (previewId) => {
   const storeId = await getStoreDbId()
   const details = await queryPreviewDetails(previewId)
-  const storeTrackId = details.store_track_id
-  const albumUrl = await queryAlbumUrl(storeId, storeTrackId)
-  const albumInfo = await getReleaseAsync(albumUrl)
-  const url = await albumInfo.trackinfo.find(R.propEq('track_id', parseInt(storeTrackId, 10))).file['mp3-128']
-  return {
-    ...details,
-    url: url,
+  for (const detail of details) {
+    const storeTrackId = detail.store_track_id
+    const albumUrl = await queryAlbumUrl(storeId, storeTrackId)
+    const albumInfo = await getReleaseAsync(albumUrl)
+    logger.debug('albuminfo trackinfo', albumInfo.trackinfo)
+    logger.debug('details', details)
+    const url = await albumInfo.trackinfo.find(R.propEq('track_id', parseInt(storeTrackId, 10)))?.file['mp3-128']
+    if (url) {
+      return {
+        ...details,
+        url: url,
+      }
+    }
   }
+  logger.error('Preview url not found for id', { details, previewId })
+  throw new Error('Preview url not found for id')
 }
 
 const getArtistDetails = (module.exports.getArtistDetails = async (url) => ({ url, ...(await getArtistAsync(url)) }))

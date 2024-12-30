@@ -1,0 +1,14 @@
+wavio==0.0.9
+essentia-tensorflow==2.1b6.dev1177
+requests==2.25.0
+python-dotenv==1.0.1
+numpy==1.26.4
+pydub==0.25.1
+pytaglib==3.0.0
+spotipy==2.25.0
+wave==0.0.2
+matplotlib==3.10.0
+scipy==1.14.0
+requests_oauthlib==2.0.0
+minio==7.2.14
+uuid==1.30

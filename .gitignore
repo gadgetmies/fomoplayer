@@ -61,3 +61,5 @@ typings/
 
 .idea
 secrets.*.js
+packages/analyser/venv
+/packages/analyser/.fomo_player_token

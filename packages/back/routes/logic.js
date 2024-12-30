@@ -40,7 +40,7 @@ module.exports.getPreview = async (id, format, offset) => {
   if (url !== null) {
     return url
   } else {
-    return (await queryPreviewDetails(previewId)).url
+    return (await queryPreviewDetails(previewId))[0].url
   }
 }
 

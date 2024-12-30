@@ -18,4 +18,4 @@ WHERE
   store__track_preview_id = ${previewId}
 `,
     )
-    .then(([details]) => details)
+    //.then(([details]) => details) // TODO: this only returns the first match. There might be more.

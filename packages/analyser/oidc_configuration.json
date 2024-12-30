@@ -1,0 +1,9 @@
+{
+  "code_challenge_method":  "S256",
+  "redirect_uris":  [
+    "http://localhost/redirect"
+  ],
+  "grant_types":  [
+    "authorization_code"
+  ]
+}

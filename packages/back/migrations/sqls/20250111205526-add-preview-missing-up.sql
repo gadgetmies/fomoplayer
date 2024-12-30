@@ -1,0 +1,1 @@
+ALTER TABLE store__track_preview ADD COLUMN store__track_preview_missing BOOL NOT NULL DEFAULT FALSE;
