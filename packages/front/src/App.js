@@ -38,7 +38,6 @@ class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      addingToCart: false,
       carts: [],
       stores: [],
       scoreWeights: {},
@@ -173,7 +172,6 @@ class App extends Component {
   }
 
   async addToCart(cartId, trackId) {
-    this.setState({ addingToCart: true })
     const cartDetails = await requestJSONwithCredentials({
       path: `/me/carts/${cartId}/tracks`,
       method: 'PATCH',
@@ -181,7 +179,6 @@ class App extends Component {
     })
 
     this.updateCart(cartDetails)
-    this.setState({ addingToCart: false })
   }
 
   async removeFromCart(cartId, trackId) {
@@ -771,7 +768,6 @@ class App extends Component {
                           style={{ display: settingsVisible ? 'block' : 'none' }}
                         />
                         <Player
-                          addingToCart={this.state.addingToCart}
                           carts={this.state.carts}
                           cartFilter={this.state.cartFilter}
                           currentTrack={this.state.currentTrack}
