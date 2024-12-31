@@ -886,6 +886,21 @@ ON CONFLICT ON CONSTRAINT user__track_track_id_meta_account_user_id_key DO NOTHI
   )
 }
 
+module.exports.addTracksToUser = async (tx, userId, trackIds, sourceId) => {
+  await tx.queryAsync(
+    // language=PostgreSQL
+    sql`--addTracksToUser
+WITH track_ids AS (
+    SELECT UNNEST(${trackIds}::int[]) AS track_id
+)
+INSERT INTO user__track
+  (track_id, meta_account_user_id, user__track_source)
+SELECT track_id, ${userId}, ${sourceId} FROM track_ids
+ON CONFLICT ON CONSTRAINT user__track_track_id_meta_account_user_id_key DO NOTHING
+`,
+  )
+}
+
 module.exports.deletePlaylistFollowFromUser = async (userId, playlistId) => {
   pg.queryAsync(
     // language=PostgreSQL

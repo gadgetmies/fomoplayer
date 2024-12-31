@@ -13,6 +13,7 @@ const {
   addPurchasedStoreTrackToUser,
   addTrackToUser: addTrackToUserDb,
   artistOnLabelInIgnore,
+  addTracksToUser,
 } = require('../users/db.js')
 const { apiURL } = require('../../config.js')
 const { queryTracksForStoreIds, queryTrackDetails, queryStoredTracksForUrls } = require('./db/tracks')
@@ -91,13 +92,11 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   }
 
   logger.debug(`Adding ${storedTracks.length} existing tracks to ${userIds.length} users`)
-  for (const track of storedTracks) {
-    for (const userId of userIds) {
-      await using(pg.getTransaction(), async (tx) => {
-        // TODO: this does not take into account the ignores: does it need to?
-        await addTrackToUserDb(tx, userId, track.id, sourceId)
-      })
-    }
+  for (const userId of userIds) {
+    await using(pg.getTransaction(), async (tx) => {
+      await addTracksToUser(tx, userId, storedTracks.map(R.prop('id')), sourceId)
+      // TODO: this does not take into account the ignores: does it need to?
+    })
   }
 
   logger.debug(`Adding ${filteredTracks.length} new tracks to database`)

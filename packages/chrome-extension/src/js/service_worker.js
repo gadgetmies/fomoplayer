@@ -84,10 +84,11 @@ let bandcampTabId = undefined
 
 let beatportTracksCache = []
 
-const fetchInTab = () =>
-  chrome.tabs.executeScript(bandcampTabId, {
-    code: sendBandcampItemsScript('tracks'),
-  })
+const fetchInTab = () => {}
+// TODO
+// chrome.tabs.executeScript(bandcampTabId, {
+//   code: sendBandcampItemsScript('tracks'),
+// })
 
 const clearStatus = () => {
   chrome.storage.local.set(
@@ -251,10 +252,13 @@ const sendLabels = (storeUrl, labels) => {
   })
 }
 
+console.log('registering')
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+  console.log('message', message)
   if (message.type === 'operationStatus') {
     chrome.storage.local.set({ operationStatus: message.text, operationProgress: message.progress })
     chrome.runtime.sendMessage({ type: 'refresh' })
+    return false
   } else if (message.type === 'clearError') {
     clearStatus()
     chrome.storage.local.remove('error')
@@ -266,8 +270,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   } else if (message.type === 'labels') {
     sendLabels('https://www.beatport.com', message.data)
   } else if (message.type === 'purchased') {
+    console.log('purchased foo')
     if (message.store === 'beatport') {
-      sendTracks('https://www.beatport.com', 'purchased', beatportLibraryTransform(message.data))
+      console.log('beatport', { message, foo: 'bar' })
+      const transformed = beatportLibraryTransform(message.data)
+      console.log({ transformed })
+      sendTracks('https://www.beatport.com', 'purchased', transformed)
     }
   } else if (message.type === 'tracks') {
     if (message.store === 'beatport') {
@@ -315,8 +323,10 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     })
   }
 
-  return true
+  return false
 })
+
+console.log('registered')
 
 chrome.storage.local.get(['enabledStores', 'appUrl'], ({ appUrl, enabledStores }) => {
   chrome.storage.local.set({
