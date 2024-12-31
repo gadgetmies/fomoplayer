@@ -139,6 +139,7 @@ router.post('/ignores/releases', async ({ user: { id: authUserId }, body }, res)
 const tracksHandler =
   (type) =>
   async ({ body: tracks, headers: { 'x-multi-store-player-store': storeUrl }, user: { id: userId } }, res) => {
+    res.connection.setTimeout(120000)
     const addedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], null, true, type)
     res.status(201).send(addedTracks)
   }
