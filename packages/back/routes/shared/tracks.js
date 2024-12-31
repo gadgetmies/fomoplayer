@@ -100,6 +100,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
     }
   }
 
+  logger.debug(`Adding ${filteredTracks.length} new tracks to database`)
   for (const track of filteredTracks) {
     try {
       const trackId = await addStoreTrackToUsers(storeUrl, userIds, track, sourceId, skipOld, type)
@@ -111,10 +112,12 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
     }
   }
 
+  logger.debug('Updating ignored tracks')
   await using(pg.getTransaction(), async (tx) => {
     await updateIgnoresInUserTracks(tx, userIds)
   })
 
+  logger.debug('addStoreTracksToUsers complete')
   return storedTracks.map(R.prop('id'))
 })
 
