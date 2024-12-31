@@ -132,7 +132,7 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
     let labelId
     let releaseId
 
-    if (skipOld && Date.now() - new Date(track.published) > 2 * aYear) {
+    if (skipOld && Date.now() - new Date(track.published) > 2 * aYear && type !== 'purchased') {
       logger.info(`Track too old, skipping: ${track.id}`)
     } else {
       if (track.label) {
