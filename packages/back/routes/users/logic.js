@@ -377,5 +377,5 @@ module.exports.addStoreTracksToUsers = async (storeUrl, tracks, userIds, sourceI
 
     storedTracks = await addStoreTracksToUsers(storeUrl, tracks, userIds, sourceId, skipOld, type)
   }
-  return storedTracks.map(({ trackId }) => `${apiURL}/tracks/${trackId}`)
+  return storedTracks.map((trackId) => `${apiURL}/tracks/${trackId}`)
 }
