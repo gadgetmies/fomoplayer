@@ -281,7 +281,12 @@ router.patch('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: c
 })
 
 router.patch('/carts', async ({ user: { id: userId }, body: operations }, res) => {
-  await updateAllCartContents(userId, operations)
+  try {
+    await updateAllCartContents(userId, operations)
+  } catch (e) {
+    logger.error('Failed to update all cart contents', e)
+    return res.status(500).send('Failed to update all cart contents')
+  }
   res.status(204).send()
 })
 
