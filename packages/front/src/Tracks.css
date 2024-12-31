@@ -379,7 +379,7 @@
 
   /*Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table*/
   .tracks-table > tbody {
-    height: calc(100dvh - 171px);
+    height: calc(100dvh - 250px); /* was 171px */
   }
 
   .table-cell-button-row > .table-cell-button:not(:first-child),
