@@ -196,17 +196,21 @@ class App extends Component {
 
   async onMarkPurchased(trackId) {
     this.setState({ processingCart: true })
-    await requestJSONwithCredentials({
-      path: `/me/purchased/`,
-      method: 'POST',
-      body: [{ trackId }],
-    })
-    await requestWithCredentials({
-      path: `/me/carts/`,
-      method: 'PATCH',
-      body: [{ op: 'remove', trackId }],
-    })
-    await Promise.all([this.updateTracks(), this.updateDefaultCart(), this.selectCart(this.state.selectedCartUuid)])
+    try {
+      await requestJSONwithCredentials({
+        path: `/me/purchased/`,
+        method: 'POST',
+        body: [{ trackId }],
+      })
+      await requestWithCredentials({
+        path: `/me/carts/`,
+        method: 'PATCH',
+        body: [{ op: 'remove', trackId }],
+      })
+      await Promise.all([this.updateTracks(), this.updateDefaultCart(), this.selectCart(this.state.selectedCartUuid)])
+    } catch (e) {
+      console.error(`Marking track as purchased failed: ${e.toString()}`)
+    }
     this.setState({ processingCart: false })
   }
 
