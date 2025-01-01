@@ -124,7 +124,7 @@ module.exports.queryUserCartDetailsWithTracks = async (userId) =>
   )
 
 module.exports.queryCartDetails = async (cartId, tracksFilter = { since: undefined, offset: 0, limit: 200 }) => {
-  const limit = tracksFilter?.limit || 200
+  const limit = tracksFilter?.limit === 0 ? null : tracksFilter?.limit || 200
   const offset = tracksFilter?.offset || 0
   logger.info(`Querying cart details for cartId: ${cartId}, limit: ${limit}, offset: ${offset}`)
   const query =

@@ -256,7 +256,7 @@ router.get(
     query: { offset: tracksOffset, limit: tracksLimit },
     res,
   }) => {
-    res.send(await getCartDetails(userId, cartId, { offset: tracksOffset, limit: tracksLimit }))
+    res.send(await getCartDetails(userId, cartId, { offset: parseInt(tracksOffset), limit: parseInt(tracksLimit) }))
   },
 )
 
