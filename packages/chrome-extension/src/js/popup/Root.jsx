@@ -21,6 +21,9 @@ export default class Root extends React.Component {
       enabledStores: {},
       panels: [],
       error: null,
+      carts: [],
+      selectedCartId: undefined,
+      selectedCartTracks: [],
     }
 
     const that = this
@@ -33,6 +36,13 @@ export default class Root extends React.Component {
         that.setRunning(false)
       } else if (message.type === 'error') {
         that.setState({ error: message })
+      } else if (message.type === 'carts') {
+        const carts = message.data
+        that.setState({ carts: carts, selectedCartId: carts[0].id })
+      } else if (message.type === 'selectedCartTracks') {
+        const selectedCartTracks = message.data.tracks
+        console.log({ selectedCartTracks })
+        that.setState({ selectedCartTracks })
       }
 
       that.refresh()
@@ -41,11 +51,11 @@ export default class Root extends React.Component {
     this.refresh = this.refresh.bind(this)
     this.setRunning = this.setRunning.bind(this)
     this.refresh()
+    chrome.runtime.sendMessage({ type: 'refreshCarts' })
   }
 
   refresh() {
     const that = this
-
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabArray) {
       chrome.storage.local.get(
         ['running', 'token', 'enabledStores', 'appUrl', 'error', 'operationStatus', 'operationProgress'],
@@ -56,15 +66,18 @@ export default class Root extends React.Component {
             {
               matcher: new RegExp(`^${appUrl}`),
               component: MultiStorePlayerPanel,
+              key: 'MultiStorePlayerPanel',
             },
             {
               storeName: 'beatport',
               matcher: /^https:\/\/.*\.beatport\.com/,
               component: BeatportPanel,
+              key: 'BeatportPanel',
             },
             {
               storeName: 'bandcamp',
               matcher: /^https:\/\/.*\.?bandcamp\.com/,
+              key: 'BandcampPanel',
               component: BandcampPanel,
             },
           ]
@@ -96,6 +109,8 @@ export default class Root extends React.Component {
       appUrl: this.state.appUrl,
       operationStatus: this.state.operationStatus,
       operationProgress: this.state.operationProgress,
+      carts: this.state.carts,
+      selectedCartTracks: this.state.selectedCartTracks,
     }
 
     const enabledPanels = this.state.panels.filter((panel) => {
@@ -121,9 +136,13 @@ export default class Root extends React.Component {
             {this.state.running ? (
               <Status message={this.state.operationStatus} progress={this.state.operationProgress} />
             ) : null}
-            {components.map((component) =>
-              React.createElement(component.component, { isCurrent: component === current, ...panelProps }),
-            )}
+            {components.map((component) => {
+              return React.createElement(component.component, {
+                isCurrent: component === current,
+                ...panelProps,
+                key: component.key,
+              })
+            })}
           </>
         )}
       </>

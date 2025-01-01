@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "ecosystem.config.js",
-  "engines": {
-    "node": "18.x"
-  },
   "scripts": {
     "migrate": "yarn workspace fomoplayer_back migrate",
     "db-migrate:prod": "yarn workspace fomoplayer_back db-migrate:prod",

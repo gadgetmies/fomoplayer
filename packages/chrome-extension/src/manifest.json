@@ -1,16 +1,26 @@
 {
-  "manifest_version": 2,
-  "name": "Multi Store Player Beatport extension",
+  "manifest_version": 3,
+  "name": "Fomo Player extension",
+  "description": "Fomo Player Beatport extension",
   "version": "0.0.2",
-  "background": {
-    "scripts": ["background.bundle.js"],
-    "persistent": false
-  },
-  "browser_action": {
-    "default_title": "Sync to Multi Store Player",
-    "default_popup": "popup.html"
-  },
   "options_page": "options.html",
-  "permissions": ["declarativeContent", "activeTab", "tabs", "storage", "identity", "https://*/"],
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
+  "background": {
+    "service_worker": "service_worker.bundle.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Sync to Multi Store Player"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [],
+      "matches": []
+    }
+  ],
+  "permissions": ["declarativeContent", "activeTab", "tabs", "storage", "identity", "scripting"],
+  "host_permissions": ["https://*/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }

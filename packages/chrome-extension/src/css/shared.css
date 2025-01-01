@@ -18,6 +18,10 @@ button {
   font-size: 0.7rem;
 }
 
+button:active {
+  background-color: #79005c;
+}
+
 button:disabled {
   color: #fff;
   background-color: #b5b5b5;

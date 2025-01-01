@@ -11,9 +11,6 @@
     "test": "NODE_ENV=test node -r dotenv/config ../shared/test/run-tests.js ./test/tests dotenv_config_path=.env.test",
     "ci:test": "NODE_ENV=ci node -r dotenv/config ../shared/test/run-tests.js ./test/tests dotenv_config_path=.env.ci"
   },
-  "engines": {
-    "node": "18.x"
-  },
   "dependencies": {
     "@mswjs/interceptors": "^0.26.5",
     "bluebird": "^3.7.2",

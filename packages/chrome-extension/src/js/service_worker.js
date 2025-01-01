@@ -1,6 +1,7 @@
 import { bandcampReleasesTransform } from './transforms/bandcamp'
 import { beatportTracksTransform, beatportLibraryTransform } from './transforms/beatport'
 import * as R from 'ramda'
+import Error from './popup/Error'
 
 const fetchGoogleToken = (handler) => {
   var manifest = chrome.runtime.getManifest()
@@ -130,6 +131,48 @@ const handleError = (error) => {
   chrome.runtime.sendMessage({ type: 'error', ...error })
 }
 
+const requestJSONwithCredentials = (...args) =>
+  requestWithCredentials(...args).then(async (res) => {
+    return await res.json()
+  })
+
+const requestWithCredentials = async ({ url, path, method = 'GET', body, headers }) => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
+      const res = await fetch(url ? url : `${appUrl}${path}`, {
+        method,
+        body: body ? JSON.stringify(body) : undefined,
+        credentials: 'omit', // TODO: why does this not work?
+        headers: {
+          authorization: `Bearer ${token}`,
+          accept: 'application/json',
+          'content-type': 'application/json',
+          ...headers,
+        },
+      })
+
+      if (res.ok) {
+        resolve(res)
+      } else {
+        console.error('Request failed', res)
+        const error = new Error('Request failed')
+        error.response = res
+        reject(error)
+      }
+    })
+  })
+}
+
+const fetchFomoCarts = async () => {
+  const carts = await requestJSONwithCredentials({ path: '/api/me/carts' })
+  chrome.runtime.sendMessage({ type: 'carts', data: carts })
+}
+
+const fetchFomoCartTracks = async (cartId) => {
+  const tracks = await requestJSONwithCredentials({ path: `/api/me/carts/${cartId}?limit=0` })
+  chrome.runtime.sendMessage({ type: 'selectedCartTracks', data: tracks })
+}
+
 const sendTracks = (storeUrl, type = 'tracks', tracks) => {
   chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
     try {
@@ -143,20 +186,14 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
         })
         chrome.runtime.sendMessage({ type: 'refresh' })
 
-        const res = await fetch(`${appUrl}/api/me/${type}`, {
+        await requestJSONwithCredentials({
+          url: `${appUrl}/api/me/${type}`,
+          body: chunks[i],
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            authorization: `Bearer ${token}`,
             'x-multi-store-player-store': storeUrl,
           },
-          body: JSON.stringify(chunks[i]),
         })
-
-        if (!res.ok) {
-          const status = await res.text()
-          throw new Error(`Response not ok, status: ${res.status} ${res.statusText} ${status}`)
-        }
       }
       clearStatus()
     } catch (e) {
@@ -253,8 +290,8 @@ const sendLabels = (storeUrl, labels) => {
 }
 
 console.log('registering')
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  console.log('message', message)
+chrome.runtime.onMessage.addListener(async function (message, sender, sendResponse) {
+  console.log('message', message, message.type === 'refreshCarts', 'foo')
   if (message.type === 'operationStatus') {
     chrome.storage.local.set({ operationStatus: message.text, operationProgress: message.progress })
     chrome.runtime.sendMessage({ type: 'refresh' })
@@ -265,16 +302,20 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     chrome.runtime.sendMessage({ type: 'refresh' })
   } else if (message.type === 'error') {
     handleError(message)
+  } else if (message.type === 'refreshCarts') {
+    console.log('refreshCarts')
+    await fetchFomoCarts()
+  } else if (message.type === 'fetchCartTracks') {
+    console.log('fetchCartTracks')
+    await fetchFomoCartTracks(message.data)
   } else if (message.type === 'artists') {
     sendArtists('https://www.beatport.com', message.data)
   } else if (message.type === 'labels') {
     sendLabels('https://www.beatport.com', message.data)
   } else if (message.type === 'purchased') {
-    console.log('purchased foo')
     if (message.store === 'beatport') {
-      console.log('beatport', { message, foo: 'bar' })
       const transformed = beatportLibraryTransform(message.data)
-      console.log({ transformed })
+      // TODO: Add option for removing purchased tracks from carts
       sendTracks('https://www.beatport.com', 'purchased', transformed)
     }
   } else if (message.type === 'tracks') {

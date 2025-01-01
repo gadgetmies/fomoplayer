@@ -1,8 +1,10 @@
 import '../css/popup.css'
 import '../css/shared.css'
 import React from 'react'
-import { render } from 'react-dom'
 import Root from './popup/Root.jsx'
 import 'typeface-lato'
+import { createRoot } from 'react-dom/client'
 
-render(React.createElement(Root, {}), window.document.getElementById('popup-container'))
+const domNode = document.getElementById('popup-container')
+const root = createRoot(domNode)
+root.render(<Root />)

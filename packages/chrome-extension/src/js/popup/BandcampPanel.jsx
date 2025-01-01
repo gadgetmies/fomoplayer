@@ -1,6 +1,14 @@
 import React from 'react'
 import waitFunction from './wait.js'
 
+function getCurrentTabId(callback) {
+  console.log('getCurrentTabId')
+  chrome.tabs.query({ currentWindow: true, active: true }, function (tabArray) {
+    console.log({ tabArray })
+    return callback(tabArray[0].id)
+  })
+}
+
 const sendErrorFunction = `
 function sendError(errorText) {
   chrome.runtime.sendMessage({type: 'error', message: 'Failed to send Beatport tracks', stack: errorText})
@@ -97,24 +105,29 @@ export default class BandcampPanel extends React.Component {
 
   componentDidMount() {
     const that = this
-    chrome.tabs.executeScript(
-      {
-        code: `document.querySelector('.userpic') !== null`,
-      },
-      ([loggedIn]) => {
-        that.setState({ loggedIn })
-      },
-    )
-    chrome.tabs.executeScript(
-      {
-        code: `document.querySelector('.track_list.track_table') !== null`,
-      },
-      ([hasPlayables]) => {
-        that.setState({ hasPlayables })
-      },
-    )
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabArray) {
-      that.setState({ onSubdomain: new URL(getCurrentUrl(tabArray)).hostname !== 'bandcamp.com' })
+    getCurrentTabId((tabId) => {
+      chrome.scripting.executeScript(
+        {
+          func: () => document.querySelector('.userpic') !== null,
+          target: { tabId },
+        },
+        (result) => {
+          that.setState({ loggedIn: !!result })
+        },
+      )
+      chrome.scripting.executeScript(
+        {
+          func: () => document.querySelector('.track_list.track_table') !== null,
+          target: { tabId },
+        },
+        (result) => {
+          console.log({ result })
+          that.setState({ hasPlayables: result && result[0]?.result })
+        },
+      )
+      // chrome.scripting.query({ active: true, currentWindow: true }, function (tabArray) {
+      //   that.setState({ onSubdomain: new URL(getCurrentUrl(tabArray)).hostname !== 'bandcamp.com' })
+      // })
     })
   }
 

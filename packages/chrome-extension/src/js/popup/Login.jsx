@@ -5,7 +5,13 @@ export default function Login() {
     <div id="login">
       <h2>Sign in</h2>
       <p>
-        <button id="google-login" onClick={() => chrome.runtime.sendMessage({ type: 'oauth-login' })}>
+        <button
+          id="google-login"
+          onClick={() => {
+            console.log('click')
+            return chrome.runtime.sendMessage({ type: 'oauth-login' })
+          }}
+        >
           Continue with Google
         </button>
       </p>
