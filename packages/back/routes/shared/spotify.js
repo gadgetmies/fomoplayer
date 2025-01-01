@@ -81,7 +81,7 @@ const getApiForUser = (module.exports.getApiForUser = async (userId) => {
 
     if (statusCode === 200) {
       const { access_token, expires_in, scope } = body
-      await upsertUserAuthorizationTokens(userId, storeName, access_token, refresh_token, expires_in, scope)
+      await upsertUserAuthorizationTokens(userId, storeName, access_token, refresh_token, expires_in, scope.split(' '))
       api.setAccessToken(access_token)
     } else {
       const errorMessage = `Refreshing access token failed for user: ${userId}`
