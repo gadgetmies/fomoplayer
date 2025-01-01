@@ -200,7 +200,7 @@ module.exports.queryCartDetails = async (cartId, tracksFilter = { since: undefin
          , cart_is_purchased IS NOT NULL                                          AS is_purchased
          , cart_uuid                                                              AS uuid
          , cart_deleted                                                           AS deleted
-         , track_count                                                            AS track_count
+         , track_count :: INT                                                     AS track_count
          , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
          , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS store_details
     FROM
