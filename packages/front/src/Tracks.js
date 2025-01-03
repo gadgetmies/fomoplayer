@@ -35,6 +35,7 @@ class Tracks extends Component {
       createdNotifications: new Set(),
       modifyingNotification: false,
       fetchingCartDetails: false,
+      cartFilter: '',
       trackListFilter: '',
       trackListFilterDebounced: '',
       trackListFilterDebounce: undefined,
