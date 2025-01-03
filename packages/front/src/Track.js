@@ -101,6 +101,7 @@ class Track extends Component {
                 href={`${searchUrl}${searchString}`}
                 title={`Search from ${storeName}`}
                 target="_blank"
+                key={storeName}
               >
                 <StoreIcon code={storeName.toLowerCase()} />
                 <span className={'pill-link-text'}>{storeName}</span>

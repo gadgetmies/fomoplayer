@@ -415,6 +415,7 @@ class Tracks extends Component {
                         const elementId = `${storeName}-enabled`
                         return (
                           <div
+                            key={elementId}
                             className="input-layout"
                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}
                           >
@@ -441,6 +442,7 @@ class Tracks extends Component {
                         if (storeDisabled) return null
                         return (
                           <div
+                            key={elementId}
                             className="input-layout"
                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}
                           >
