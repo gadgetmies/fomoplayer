@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import Spinner from './Spinner'
 
 const SearchBar = (props) => (
-  <div className={'search_container'}>
+  <div className={`search_container ${props.className || ''}`}>
     <label className="search_bar">
       <input
         className={`text-input search ${(props.styles || '')

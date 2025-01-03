@@ -269,9 +269,12 @@ class Tracks extends Component {
       <div style={{ height: this.props.height, borderTop: '1px solid black' }} className="tracks">
         {this.props.listState === 'carts' && (
           <div className={'top-bar input-layout'} style={{ width: '100%' }}>
-            <div className="tracks-top_bar_group" style={{ width: '100%', display: 'flex', padding: 4 }}>
+            <div
+              className="tracks-top_bar_group"
+              style={{ width: '100%', display: 'flex', padding: 4, boxSizing: 'border-box' }}
+            >
               {this.props.mode === 'app' ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', width: '100%' }}>
                   <div className={'select'} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <select
                       style={{ textAlign: 'left' }}
@@ -302,6 +305,7 @@ class Tracks extends Component {
                     placeholder={'Filter'}
                     value={this.state.cartFilter}
                     loading={this.state.trackListFilterDebounce}
+                    className={'cart-filter'}
                     onChange={({ target: { value: filter } }) => {
                       // TODO: replace aborted and debounce with flatmapLatest
                       if (this.state.trackListFilterDebounce) {
@@ -338,7 +342,7 @@ class Tracks extends Component {
                       })
                     }}
                   />
-                  <span className="select_button-button select_button-button">
+                  <span className={'cart-details'}>
                     Tracks in cart: {this.props.selectedCart?.track_count}
                     {this.props.selectedCart?.track_count > 200 &&
                       ` (showing ${this.props.tracksOffset + 1} - ${Math.min(
