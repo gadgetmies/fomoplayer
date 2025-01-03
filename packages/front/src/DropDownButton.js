@@ -1,8 +1,7 @@
 import './DropDownButton.css'
 import SpinnerButton from './SpinnerButton'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import * as R from 'ramda'
-import React from 'react'
+import React, { useState } from 'react'
 import DropDown from './DropDown'
 
 const DropDownButton = (props) => {
@@ -22,8 +21,11 @@ const DropDownButton = (props) => {
     onClick,
     popupClassName,
     popupStyle,
+    openOnHover,
     ...rest
   } = props
+
+  const [open, setOpen] = useState(false)
 
   return (
     <span className={`${className || ''}`} style={{ display: 'flex', ...style }}>
@@ -31,10 +33,16 @@ const DropDownButton = (props) => {
         className={`button-drop_down-left ${buttonClassName}`}
         {...{ loading, loadingLabel, disabled, size, style: buttonStyle, onClick, icon }}
         {...rest}
+        onClick={(e) => {
+          setOpen(!open)
+          this.props.onClick && this.props.onClick(e)
+        }}
       >
         <span className={'button-push_button_label'}>{label}</span>
       </SpinnerButton>
       <DropDown
+        open={open}
+        openOnHover={openOnHover}
         disabled={disabled}
         anchor={
           <button

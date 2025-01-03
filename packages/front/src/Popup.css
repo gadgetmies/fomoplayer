@@ -22,8 +22,9 @@
   cursor: auto;
 }
 
-.popup-anchor:hover + .popup_content,
-.popup_content:hover {
+.popup--open .popup_content,
+.popup_container--open-on-hover .popup-anchor:hover + .popup_content,
+.popup_container--open-on-hover .popup_content:hover {
   display: flex;
 }
 
@@ -32,11 +33,11 @@
   border-bottom: 1px solid grey;
 }
 
-.mobile .popup--open + .popup_overlay {
+.popup--open + .popup_overlay {
   display: flex;
 }
 
-.mobile .popup--open .popup_content {
+.popup--open .popup_content {
   display: flex;
 }
 
