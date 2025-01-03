@@ -49,6 +49,7 @@ class App extends Component {
       tracksData: defaultTracksData,
       initialPosition: undefined,
       processingCart: false,
+      fetchingCartDetails: false,
       userSettings: {},
       isMobile: this.mobileCheck(),
       onboarding: false,
@@ -500,7 +501,7 @@ class App extends Component {
   }
 
   async selectCart(selectedCartUuid, filter) {
-    this.setState({ selectedCartUuid })
+    this.setState({ selectedCartUuid, fetchingCartDetails: true })
     const cartDetails = await requestJSONwithCredentials({
       path: `/carts/${selectedCartUuid}${filter ? filter : ''}`,
     })
@@ -516,6 +517,7 @@ class App extends Component {
     this.setState({
       carts: updatedCarts,
       selectedCart: updatedCarts[cartIndex],
+      fetchingCartDetails: false,
     })
   }
 
@@ -702,6 +704,7 @@ class App extends Component {
                   userSettings={this.state.userSettings}
                   stores={this.state.stores}
                   carts={this.state.carts}
+                  onSelectCart={this.selectCart.bind(this)}
                   onKeyboardShortcutsClicked={this.openKeyboardShortcutsPopup.bind(this)}
                   onOnboardingButtonClicked={this.onOnboardingButtonClicked.bind(this)}
                 />
@@ -781,6 +784,7 @@ class App extends Component {
                         <Player
                           carts={this.state.carts}
                           cartFilter={this.state.cartFilter}
+                          fetchingCartDetails={this.state.fetchingCartDetails}
                           currentTrack={this.state.currentTrack}
                           follows={this.state.follows}
                           heardTracks={this.state.heardTracks}

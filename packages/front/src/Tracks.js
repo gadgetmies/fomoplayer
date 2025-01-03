@@ -34,7 +34,6 @@ class Tracks extends Component {
       currentAboveScreen: false,
       createdNotifications: new Set(),
       modifyingNotification: false,
-      fetchingCartDetails: false,
       cartFilter: '',
       trackListFilter: '',
       trackListFilterDebounced: '',
@@ -123,7 +122,7 @@ class Tracks extends Component {
           Searching <Spinner />
         </td>
       </tr>
-    ) : this.state.fetchingCartDetails ? (
+    ) : this.props.fetchingCartDetails ? (
       <tr style={{ display: 'block' }} key={'search-in-progress'}>
         <td>
           Fetching cart details <Spinner />
@@ -277,32 +276,6 @@ class Tracks extends Component {
             >
               {this.props.mode === 'app' ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', width: '100%' }}>
-                  <div className={'select'} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <select
-                      style={{ textAlign: 'left' }}
-                      className={'button button-push_button button-push_button-primary button-push_button-small'}
-                      id="cart-select"
-                      value={this.props.selectedCart?.uuid}
-                      onChange={async (e) => {
-                        this.setState({ fetchingCartDetails: true })
-                        const cartUuid = e.target.value
-                        this.props.history.push(`/carts/${cartUuid}`)
-                        await this.props.onSelectCart(cartUuid)
-                        this.setState({ fetchingCartDetails: false })
-                      }}
-                    >
-                      {this.props.carts.map(({ id, is_default, is_purchased, name, uuid }) => (
-                        <option value={uuid} key={id}>
-                          {is_default || is_purchased ? '⭐️ ' : ''}
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                    <FontAwesomeIcon
-                      icon={'caret-down'}
-                      style={{ position: 'absolute', right: 8, pointerEvents: 'none' }}
-                    />
-                  </div>
                   <SearchBar
                     placeholder={'Filter'}
                     value={this.state.cartFilter}

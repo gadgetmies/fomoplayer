@@ -4,8 +4,7 @@ import * as R from 'ramda'
 
 export default (props) => (
   <NavLink
-    className={`no-style-link button button-top_bar_button`}
-    activeClassName="button-top_bar_button--selected"
+    className={`no-style-link button button-top_bar_button ${props.selected ? 'button-top_bar_button--selected' : ''}`}
     to={props.to}
     onFocus={(e) => {
       e.target.blur()
@@ -17,7 +16,7 @@ export default (props) => (
       if (props.onClick) {
         props.onClick()
       }
-      if (props.disabled) {
+      if (props.disabled || props.to === '') {
         e.preventDefault()
       }
     }}

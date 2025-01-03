@@ -280,6 +280,7 @@ class Player extends Component {
           mode={this.props.mode}
           carts={this.props.carts}
           cartFilter={this.props.cartFilter}
+          fetchingCartDetails={this.props.fetchingCartDetails}
           notifications={this.props.notifications}
           selectedCart={this.props.selectedCart}
           tracks={tracks}

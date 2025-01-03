@@ -28,6 +28,7 @@ class TopBar extends Component {
       supportMenuOpen: false,
       emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
       discoverMenuOpen: false,
+      cartsMenuOpen: false,
     }
   }
 
@@ -102,7 +103,8 @@ class TopBar extends Component {
                 <MenuNavButton
                   label="Discover"
                   icon={<FontAwesomeIcon icon="play" />}
-                  to={'/tracks/new'}
+                  to={isMobile ? '' : '/tracks/new'}
+                  selected={['recent', 'new', 'heard'].includes(this.props.listState)}
                 />
               }
               open={this.state.discoverMenuOpen}
@@ -136,12 +138,36 @@ class TopBar extends Component {
                 </NavLink>
               </div>
             </Popup>
-            <MenuNavButton
-              to={'/carts/'}
-              disabled={!this.props.carts}
-              label="Carts"
-              icon={<FontAwesomeIcon icon="cart-shopping" />}
-            />
+            <Popup
+              anchor={
+                <MenuNavButton
+                  label="Carts"
+                  icon={<FontAwesomeIcon icon="cart-shopping" />}
+                  selected={this.props.listState === 'carts'}
+                  to={isMobile ? '' : `/carts/${this.props.carts.find(R.prop('is_default')).uuid}`}
+                />
+              }
+              open={this.state.cartsMenuOpen}
+              onOpenChanged={(open) => this.setState({ cartsMenuOpen: open })}
+              popupClassName={'popup_content-right'}
+            >
+              <div style={{ flexDirection: 'column', display: 'flex', minWidth: 250, overflowY: 'auto' }}>
+                {this.props.carts.map(({ name, uuid }) => (
+                  <NavLink
+                    style={(isActive) => ({ opacity: isActive ? 1 : 0.7 })}
+                    to={`/carts/${uuid}`}
+                    className={'pill pill-button button-push_button-small'}
+                    onClick={() => {
+                      this.setState({ cartsMenuOpen: false })
+                      this.props.onSelectCart(uuid)
+                    }}
+                    key={uuid}
+                  >
+                    <span className={'pill-button-contents button-push_button_label'}>{name}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </Popup>
           </div>
           <div
             style={{ display: 'flex', gap: 8, alignItems: 'center' }}
@@ -348,6 +374,7 @@ class TopBar extends Component {
               label={'Settings'}
               icon={<FontAwesomeIcon icon="cog" />}
               className={'settings_button'}
+              selected={this.props.listState === 'settings'}
             />
             <div style={{ display: 'flex', alignItems: 'center' }} className="logout_container">
               <button
