@@ -99,8 +99,10 @@ class Tracks extends Component {
         this.props.carts.length === 0
           ? 'Loading carts...'
           : tracks.length === 0
-            ? 'Cart empty'
-            : 'No tracks matching filters',
+            ? this.state.trackListFilterDebounced === ''
+              ? 'Cart empty'
+              : 'No tracks matching filters'
+            : '',
       new: (
         <>
           No tracks available. Perhaps you need to{' '}
