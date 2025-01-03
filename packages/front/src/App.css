@@ -265,6 +265,12 @@ input[type='range']::-webkit-slider-runnable-track {
   display: none;
 }
 
+.cart-details {
+  font-size: 0.7rem;
+  color: #888;
+  padding: 4px;
+}
+
 @media (max-width: 590px) {
 }
 
@@ -300,6 +306,10 @@ input[type='range']::-webkit-slider-runnable-track {
     font-size: 120%;
     margin: 2px;
   }
+
+  .cart-details {
+    width: 100%;
+  }
 }
 
 @media (min-width: 769px) {
@@ -311,6 +321,10 @@ input[type='range']::-webkit-slider-runnable-track {
   .full-screen-popup-container {
     width: 100%;
     height: 100%;
+  }
+
+  .cart-filter {
+    max-width: 20rem;
   }
 }
 
