@@ -1,6 +1,7 @@
 import './SearchBar.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React from 'react'
+import React, { useState } from 'react'
+import Spinner from './Spinner'
 
 const SearchBar = (props) => (
   <div className={'search_container'}>
@@ -16,7 +17,9 @@ const SearchBar = (props) => (
         placeholder={props.placeholder}
         onClick={(e) => e.stopPropagation()}
       />
-      {props.value !== '' ? (
+      {props.loading ? (
+        <Spinner className={'search-input-icon'} />
+      ) : props.value !== '' ? (
         <FontAwesomeIcon
           onClick={(e) => {
             e.stopPropagation()

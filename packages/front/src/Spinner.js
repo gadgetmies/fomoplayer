@@ -10,7 +10,7 @@ class Spinner extends Component {
   render() {
     const style = { borderColor: `${this.props.color} transparent transparent transparent` }
     return (
-      <div className={`loading-indicator loading-indicator__${this.props.size}`}>
+      <div className={`loading-indicator loading-indicator__${this.props.size} ${this.props.className}`}>
         <div style={style} />
         <div style={style} />
         <div style={style} />

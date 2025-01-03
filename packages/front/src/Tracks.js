@@ -9,6 +9,21 @@ import Track from './Track'
 import Spinner from './Spinner'
 import { Link, withRouter } from 'react-router-dom'
 import ToggleButton from './ToggleButton'
+import SearchBar from './SearchBar'
+
+const filterMatches = (filter, { artists, title, keys, labels, releases }) => {
+  const trackDetailsString = [
+    ...artists.map(R.prop('name')),
+    title,
+    ...keys.map(R.prop('key')),
+    ...releases.map(R.prop('name')),
+    ...labels.map(R.prop('name')),
+  ]
+    .join(' ')
+    .toLowerCase()
+
+  return trackDetailsString.includes(filter)
+}
 
 class Tracks extends Component {
   constructor(props) {
@@ -21,6 +36,9 @@ class Tracks extends Component {
       createdNotifications: new Set(),
       modifyingNotification: false,
       fetchingCartDetails: false,
+      trackListFilter: '',
+      trackListFilterDebounced: '',
+      trackListFilterDebounce: undefined,
     }
     this.handleScroll = this.handleScroll.bind(this)
   }
@@ -280,6 +298,46 @@ class Tracks extends Component {
                       style={{ position: 'absolute', right: 8, pointerEvents: 'none' }}
                     />
                   </div>
+                  <SearchBar
+                    placeholder={'Filter'}
+                    value={this.state.cartFilter}
+                    loading={this.state.trackListFilterDebounce}
+                    onChange={({ target: { value: filter } }) => {
+                      // TODO: replace aborted and debounce with flatmapLatest
+                      if (this.state.trackListFilterDebounce) {
+                        clearTimeout(this.state.trackListFilterDebounce)
+                        this.setState({ trackListFilterDebounce: undefined })
+                      }
+
+                      this.setState({ cartFilter: filter })
+
+                      if (filter === '') {
+                        this.setState({ trackListFilterDebounce: undefined, trackListFilterDebounced: '' })
+                        clearTimeout(this.state.trackListFilterDebounce)
+                        return
+                      }
+
+                      const timeout = setTimeout(
+                        function (filter) {
+                          if (this.state.cartFilter !== filter) {
+                            return
+                          }
+
+                          clearTimeout(this.state.trackListFilterDebounce)
+                          this.setState({ trackListFilterDebounce: undefined, trackListFilterDebounced: filter })
+                        }.bind(this, filter),
+                        500,
+                      )
+                      this.setState({ trackListFilterDebounce: timeout })
+                    }}
+                    onClearSearch={() => {
+                      this.setState({
+                        cartFilter: '',
+                        trackListFilterDebounced: '',
+                        trackListFilterDebounce: undefined,
+                      })
+                    }}
+                  />
                   <span className="select_button-button select_button-button">
                     Tracks in cart: {this.props.selectedCart?.track_count}
                     {this.props.selectedCart?.track_count > 200 &&
@@ -419,8 +477,17 @@ class Tracks extends Component {
             </tr>
             {this.renderTracks(
               this.props.listState === 'carts'
-                ? this.props.tracks.filter(({ stores }) =>
-                    this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+                ? this.props.tracks.filter(
+                    ({ artists, title, labels, keys, releases, stores }) =>
+                      (!this.state.trackListFilterDebounced ||
+                        filterMatches(this.state.trackListFilterDebounced, {
+                          artists,
+                          title,
+                          keys,
+                          labels,
+                          releases,
+                        })) &&
+                      this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
                   )
                 : this.props.tracks,
             )}
