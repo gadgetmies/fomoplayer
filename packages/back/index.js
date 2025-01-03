@@ -56,6 +56,7 @@ app.use(
 app.use(timeout('25s'))
 
 if (process.env.USE_RATE_LIMITER) {
+  logger.debug('Enabling rate limiter')
   const limiter = rateLimit({
     windowMs: 10 * 60 * 1000,
     limit: 100,
