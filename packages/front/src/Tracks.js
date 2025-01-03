@@ -270,7 +270,10 @@ class Tracks extends Component {
       <div style={{ height: this.props.height, borderTop: '1px solid black' }} className="tracks">
         {this.props.listState === 'carts' && (
           <div className={'top-bar input-layout'} style={{ width: '100%' }}>
-            <div className="tracks-top_bar_group" style={{ width: '100%', display: 'flex', padding: 4 }}>
+            <div
+              className="tracks-top_bar_group"
+              style={{ width: '100%', display: 'flex', padding: 4, boxSizing: 'border-box' }}
+            >
               {this.props.mode === 'app' ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', width: '100%' }}>
                   <SearchBar
