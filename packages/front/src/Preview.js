@@ -582,7 +582,7 @@ class Preview extends Component {
                       type="radio"
                       id="sample_select_state-preview"
                       name="sample-select-state"
-                      checked={!this.state.preferFullTracks}
+                      defaultChecked={!this.state.preferFullTracks}
                     />
                     <label
                       htmlFor="sample_select_state-preview"
@@ -609,7 +609,7 @@ class Preview extends Component {
                                 type="radio"
                                 id={`preview-${id}`}
                                 name="preview"
-                                checked={this.state.mp3Preview?.id === id}
+                                defaultChecked={this.state.mp3Preview?.id === id}
                                 onChange={this.onPreviewStoreClicked.bind(this, id)}
                               />
                               <label className="select-icon--icon" htmlFor={`preview-${id}`}>
@@ -629,7 +629,7 @@ class Preview extends Component {
                       type="radio"
                       id="sample_select_state-full_track"
                       name="sample-select-state"
-                      checked={this.state.preferFullTracks}
+                      defaultChecked={this.state.preferFullTracks}
                     />
                     <label
                       htmlFor="sample_select_state-full_track"
@@ -656,7 +656,7 @@ class Preview extends Component {
                                 type="radio"
                                 id={`preview-${id}`}
                                 name="preview"
-                                checked={this.state.mp3Preview?.id === id}
+                                defaultChecked={this.state.mp3Preview?.id === id}
                                 onChange={this.onPreviewStoreClicked.bind(this, id)}
                               />
                               <label className="select-icon--icon" htmlFor={`preview-${id}`}>
