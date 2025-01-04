@@ -9,7 +9,7 @@ const DropDown = (props) => {
       style={props.style}
       open={props.open}
       openOnHover={props.openOnHover}
-      anchor={<span className={'popup-anchor'}>{props.anchor}</span>}
+      anchor={props.anchor}
       popupClassName={props.popupClassName}
       popupStyle={props.popupStyle}
     >
