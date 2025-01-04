@@ -342,10 +342,10 @@ class Preview extends Component {
     return (
       <div className="preview noselect">
         <div className="preview_details_wrapper">
-          {this.props.currentTrack ? (
+          {currentTrack ? (
             <>
               <div style={{ marginTop: '0' }} className="preview_title">
-                {trackArtistsAndTitle(this.props.currentTrack, this.props.follows)}
+                {trackArtistsAndTitle(currentTrack, this.props.follows)}
               </div>
               <div style={{ display: 'flex', gap: 8, flex: 1 }}>
                 <div style={{ flex: 1 }}>
@@ -353,37 +353,37 @@ class Preview extends Component {
                     <div style={{ fontSize: '75%' }}>
                       <span className="preview_label">Labels:</span>{' '}
                       <span className="preview_detail">
-                        {!this.props.currentTrack.labels?.length
+                        {!currentTrack.labels?.length
                           ? null
-                          : followableNameLinks(this.props.currentTrack.labels, this.props.follows, 'label')}
+                          : followableNameLinks(currentTrack.labels, this.props.follows, 'label')}
                       </span>
                       <br />
                       <span className="preview_label">Released:</span>{' '}
                       <span className="preview_detail" style={{ whiteSpace: 'nowrap' }}>
-                        {this.props.currentTrack.released}
+                        {currentTrack.released}
                       </span>
                       <br />
                       <span className="preview_label">Published:</span>{' '}
                       <span className="preview_detail" style={{ whiteSpace: 'nowrap' }}>
-                        {this.props.currentTrack.published}
+                        {currentTrack.published}
                       </span>
                       <br />
                       <span className="preview_label">Releases:</span>{' '}
                       <span className="preview_detail">
-                        {!this.props.currentTrack.releases?.length
+                        {!currentTrack.releases?.length
                           ? null
-                          : followableNameLinks(this.props.currentTrack.releases, [], 'release')}
+                          : followableNameLinks(currentTrack.releases, [], 'release')}
                       </span>
                     </div>
                     <div style={{ fontSize: '75%' }}>
                       <span className="preview_label">Genre:</span>{' '}
                       <span className="preview_detail">
-                        {this.props.currentTrack.genres?.map(R.prop('name')).filter(R.identity).join(', ') || '-'}
+                        {currentTrack.genres?.map(R.prop('name')).filter(R.identity).join(', ') || '-'}
                       </span>
                       <br />
                       <span className="preview_label">BPM:</span>{' '}
                       <span className="preview_detail">
-                        {this.props.currentTrack.stores
+                        {currentTrack.stores
                           .map(R.prop('bpm'))
                           .filter(R.identity)
                           .map(Math.round)
@@ -392,8 +392,8 @@ class Preview extends Component {
                       <br />
                       <span className="preview_label">Key:</span>{' '}
                       <span className="preview_detail">
-                        {this.props.currentTrack.keys?.length
-                          ? Object.entries(R.groupBy(R.prop('id'), this.props.currentTrack.keys))
+                        {currentTrack.keys?.length
+                          ? Object.entries(R.groupBy(R.prop('id'), currentTrack.keys))
                               .map(([_id, keys]) => keys.map(R.prop('key')).join('/'))
                               .join(', ')
                           : '-'}
@@ -401,7 +401,7 @@ class Preview extends Component {
                       <br />
                       <span className="preview_label">Duration:</span>{' '}
                       <span className="preview_detail">
-                        {new Date(Number(this.props.currentTrack.duration))
+                        {new Date(Number(currentTrack.duration))
                           .toISOString()
                           .substring(11, 19)
                           .replace(/^00:/, '')}
@@ -414,7 +414,7 @@ class Preview extends Component {
                 <div className="preview_links_wrapper">
                   <span className="preview_actions_title">Available&nbsp;on</span>
                   <div className="available_on_list">
-                    {this.props.currentTrack?.stores.map(({ name, url, release: { url: releaseUrl } }) => (
+                    {currentTrack?.stores.map(({ name, url, release: { url: releaseUrl } }) => (
                       <a
                         key={url || releaseUrl}
                         href={url || releaseUrl}
@@ -434,7 +434,7 @@ class Preview extends Component {
                   <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
                     {this.props.stores
                       ?.filter(({ storeName }) =>
-                        this.props.currentTrack?.stores.every(({ name }) => storeName !== name),
+                        currentTrack?.stores.every(({ name }) => storeName !== name),
                       )
                       .map(({ storeName }) => {
                         const searchUrl = this.props.stores.find(R.propEq('storeName', storeName)).searchUrl
@@ -545,7 +545,7 @@ class Preview extends Component {
                   this.setState({ playing: true })
                 }}
                 onPlay={async () => {
-                  await this.props.markHeard(this.props.currentTrack.id)
+                  await this.props.markHeard(currentTrack.id)
                 }}
                 onPlaying={() => {
                   if (!shouldSkip && this.state.position === 0) {
@@ -735,7 +735,7 @@ class Preview extends Component {
                 {this.props.mode === 'app' && (
                   <>
                     <button
-                      disabled={!this.props.currentTrack}
+                      disabled={!currentTrack}
                       onClick={this.props.onFollowClicked}
                       className={
                         'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
@@ -747,12 +747,12 @@ class Preview extends Component {
                       <span className="button-push_button_label">Follow</span>
                     </button>
                     <button
-                      disabled={!this.props.currentTrack}
+                      disabled={!currentTrack}
                       className={
                         'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
                       }
                       onClick={() => {
-                        this.props.onIgnoreClicked(this.props.currentTrack)
+                        this.props.onIgnoreClicked(currentTrack)
                       }}
                     >
                       <span className="button-push_button_icon">
