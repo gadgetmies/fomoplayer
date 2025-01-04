@@ -94,7 +94,7 @@
     top: auto !important;
   }
 
-  .desktop .popup_content-right {
+  .popup_content-right {
     transform: none;
     left: 0;
     right: auto;
