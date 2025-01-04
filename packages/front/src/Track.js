@@ -57,8 +57,8 @@ class Track extends Component {
       .replace(/\p{Diacritic}/gu, '')
 
     const title = `${this.props.title} ${this.props.version ? `(${this.props.version})` : ''}`
-
     const artistsAndRemixers = R.uniq(this.props.artists.concat(this.props.remixers))
+    const trackId = this.props.id
     const currentCartId = this.props.listState === 'carts' ? this.props.selectedCartId : this.props.defaultCartId
     const inCurrentCart = this.props.inCurrentCart
     const inDefaultCart = this.props.inDefaultCart
@@ -110,6 +110,10 @@ class Track extends Component {
             )
       })
       ?.filter((i) => i)
+
+    const onCartFilterChange = (e) => this.props.onCartFilterChange(e.target.value)
+    const onClearCartFilter = () => this.props.onCartFilterChange('')
+    const cartFilter = this.props.cartFilter
 
     return (
       <tr
@@ -270,16 +274,18 @@ class Track extends Component {
                   loading={processingCart}
                   onClick={(e) => {
                     e.stopPropagation()
-                    return this.props.onCartButtonClick(this.props.id, currentCartId, inCart)
+                    return this.props.onCartButtonClick(trackId, currentCartId, inCart)
                   }}
                 >
-                  <SearchBar
-                    placeholder={'Search'}
-                    styles={'small dark'}
-                    value={this.props.cartFilter}
-                    onChange={(e) => this.props.onCartFilterChange(e.target.value)}
-                    onClearSearch={() => this.props.onCartFilterChange('')}
-                  />
+                  <div>
+                    <SearchBar
+                      placeholder={'Search'}
+                      styles={'small dark'}
+                      value={cartFilter}
+                      onChange={onCartFilterChange}
+                      onClearSearch={onClearCartFilter}
+                    />
+                  </div>
                   <div
                     className={'carts-list'}
                     style={{ flex: 1 }}
@@ -290,9 +296,7 @@ class Track extends Component {
                       ? 'Loading carts...'
                       : this.props.carts
                           .filter(
-                            ({ name }) =>
-                              !this.props.cartFilter ||
-                              name.toLocaleLowerCase().includes(this.props.cartFilter.toLowerCase()),
+                            ({ name }) => !cartFilter || name.toLocaleLowerCase().includes(cartFilter.toLowerCase()),
                           )
                           .map(({ id: cartId, name }) => {
                             const isInCart = this.props.inCarts.find(R.propEq('id', cartId))
@@ -302,7 +306,7 @@ class Track extends Component {
                                 className="button button-push_button button-push_button-small button-push_button-primary cart-button"
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  return this.props.onCartButtonClick(this.props.id, cartId, isInCart)
+                                  return this.props.onCartButtonClick(trackId, cartId, isInCart)
                                 }}
                                 key={`cart-${cartId}`}
                               >
@@ -343,7 +347,7 @@ class Track extends Component {
                         className="button button-push_button button-push_button-small button-push_button-primary"
                         onClick={(e) => {
                           e.stopPropagation()
-                          return this.props.onMarkPurchasedButtonClick(this.props.id)
+                          return this.props.onMarkPurchasedButtonClick(trackId)
                         }}
                       >
                         Mark purchased and remove from carts

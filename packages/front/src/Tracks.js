@@ -86,6 +86,10 @@ class Tracks extends Component {
     this.props.onSelectCart(this.props.selectedCart.uuid, filter)
   }
 
+  onCartFilterChange(filter) {
+    this.setState({ cartFilter: filter })
+  }
+
   renderTracks(tracks) {
     const emptyListLabels = {
       search:
@@ -161,17 +165,16 @@ class Tracks extends Component {
           } = track
           const inCarts = this.props.carts.filter((cart) => cart.tracks?.find(R.propEq('id', id)))
           const selectedCartId = this.props.selectedCart?.id
-          const selectedCartIsPurchased = this.props.selectedCart?.is_purchased
           return (
             <Track
               mode={this.props.mode}
               listState={this.props.listState}
               cartUuid={this.props.selectedCart?.uuid}
               carts={this.props.carts}
-              cartFilter={this.props.cartFilter}
+              cartFilter={this.state.cartFilter}
               defaultCartId={this.props.carts.find(R.prop('is_default'))?.id}
               selectedCartId={selectedCartId}
-              selectedCartIsPurchased={selectedCartIsPurchased}
+              selectedCartIsPurchased={this.props.selectedCartIsPurchased}
               id={id}
               index={index}
               title={title}
@@ -232,7 +235,7 @@ class Tracks extends Component {
               onCartButtonClick={this.props.onCartButtonClick}
               onCreateCartClick={this.props.onCreateCartClick}
               onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
-              onCartFilterChange={this.props.onCartFilterChange}
+              onCartFilterChange={this.onCartFilterChange.bind(this)}
               onMarkHeardButtonClick={this.props.onMarkHeardButtonClick}
             />
           )
@@ -278,7 +281,7 @@ class Tracks extends Component {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', width: '100%' }}>
                   <SearchBar
                     placeholder={'Filter'}
-                    value={this.state.cartFilter}
+                    value={this.state.trackListFilter}
                     loading={this.state.trackListFilterDebounce}
                     className={'cart-filter'}
                     onChange={({ target: { value: filter } }) => {
@@ -288,7 +291,7 @@ class Tracks extends Component {
                         this.setState({ trackListFilterDebounce: undefined })
                       }
 
-                      this.setState({ cartFilter: filter })
+                      this.setState({ trackListFilter: filter })
 
                       if (filter === '') {
                         this.setState({ trackListFilterDebounce: undefined, trackListFilterDebounced: '' })
@@ -298,7 +301,7 @@ class Tracks extends Component {
 
                       const timeout = setTimeout(
                         function (filter) {
-                          if (this.state.cartFilter !== filter) {
+                          if (this.state.trackListFilter !== filter) {
                             return
                           }
 
@@ -311,7 +314,7 @@ class Tracks extends Component {
                     }}
                     onClearSearch={() => {
                       this.setState({
-                        cartFilter: '',
+                        trackListFilter: '',
                         trackListFilterDebounced: '',
                         trackListFilterDebounce: undefined,
                       })
