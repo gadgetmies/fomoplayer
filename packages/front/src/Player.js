@@ -2,8 +2,6 @@ import Preview from './Preview.js'
 import Tracks from './Tracks.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
-import MediaSession from '@mebtte/react-media-session'
-import { namesToString, trackTitle } from './trackFunctions'
 import { PlayerHelp } from './PlayerHelp'
 
 class Player extends Component {
