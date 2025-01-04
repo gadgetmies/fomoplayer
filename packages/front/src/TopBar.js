@@ -303,6 +303,7 @@ class TopBar extends Component {
                   className="button button-push_button button-push_button-small button-push_button-primary"
                   onClick={() => {
                     this.props.history.push('/new')
+                    this.setState({ supportMenuOpen: false })
                     this.props.onOnboardingButtonClicked()
                   }}
                 >
@@ -310,7 +311,10 @@ class TopBar extends Component {
                 </button>
                 {!isMobile && (
                   <button
-                    onClick={this.props.onKeyboardShortcutsClicked}
+                    onClick={() => {
+                      this.setState({ supportMenuOpen: false })
+                      this.props.onKeyboardShortcutsClicked()
+                    }}
                     className="button button-push_button button-push_button-small button-push_button-primary"
                   >
                     <FontAwesomeIcon icon="keyboard" className="popup-anchor" data-help-id="keyboard-shortcuts" />{' '}
