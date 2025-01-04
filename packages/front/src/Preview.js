@@ -308,7 +308,7 @@ class Preview extends Component {
             `Listen to "${namesToString(
               artistsAndRemixers,
             )} - ${title}" in "${cartName}" on Fomo Player: ${`${cartLink}#${
-              this.props.selectedCart?.tracks?.findIndex(({ id }) => id === this.props.currentTrack?.id) + 1
+              this.props.selectedCart?.tracks?.findIndex(({ id }) => id === currentTrack?.id) + 1
             }`}`,
             'https://fomoplayer.com',
           ]
@@ -327,7 +327,7 @@ class Preview extends Component {
     )
 
     const edgeOverlayClass = shouldSkip ? 'waveform_clip-edge-overlay-skip' : 'waveform_clip-edge-overlay'
-    const trackId = this.props.currentTrack.id
+    const trackId = currentTrack?.id
     const currentCartId = this.props.listState === 'carts' ? this.props.selectedCartId : this.props.defaultCartId
     const inCurrentCart = this.props.inCurrentCart
     const inDefaultCart = this.props.inDefaultCart
