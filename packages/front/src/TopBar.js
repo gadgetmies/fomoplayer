@@ -289,11 +289,6 @@ class TopBar extends Component {
                       setTimeout(() => Onboarding.helpers.next(), 500)
                     }
                   }}
-                  onMouseLeave={() => {
-                    if (!Onboarding.active) {
-                      this.setState({ supportMenuOpen: false })
-                    }
-                  }}
                 >
                   <span className="button-top_bar_button_icon">
                     <FontAwesomeIcon icon="life-ring" />
