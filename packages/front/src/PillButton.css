@@ -1,9 +1,10 @@
 .pill {
   border-radius: 3px;
-  text-align: center;
-  display: inline-block;
   margin: 1px;
   padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pill-small {

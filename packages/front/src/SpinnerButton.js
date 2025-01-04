@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import Spinner from './Spinner'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import './buttons.css'
 
 class SpinnerButton extends Component {
   static defaultProps = {

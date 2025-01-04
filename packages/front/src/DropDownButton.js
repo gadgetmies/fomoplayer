@@ -1,8 +1,9 @@
 import './DropDownButton.css'
 import SpinnerButton from './SpinnerButton'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { useState } from 'react'
+import React from 'react'
 import DropDown from './DropDown'
+import './buttons.css'
 
 const DropDownButton = (props) => {
   const {

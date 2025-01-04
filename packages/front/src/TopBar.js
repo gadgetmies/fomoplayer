@@ -163,7 +163,7 @@ class TopBar extends Component {
                     }}
                     key={uuid}
                   >
-                    <span className={'pill-button-contents button-push_button_label'}>{name}</span>
+                    <span className={'pill-button-contents'}>{name}</span>
                   </NavLink>
                 ))}
               </div>

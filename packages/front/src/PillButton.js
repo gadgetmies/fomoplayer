@@ -1,6 +1,6 @@
 import './PillButton.css'
+import './buttons.css'
 import React, { Component } from 'react'
-
 class PillButton extends Component {
   onClick() {}
   render() {

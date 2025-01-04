@@ -1,6 +1,7 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import * as R from 'ramda'
+import './buttons.css'
 
 export default (props) => (
   <NavLink

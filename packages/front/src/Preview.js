@@ -12,10 +12,7 @@ import StoreIcon from './StoreIcon'
 import { followableNameLinks, namesToString, trackArtistsAndTitle } from './trackFunctions'
 import CopyToClipboardButton from './CopyToClipboardButton'
 import ShareLink from './ShareLink'
-import DropDownButton from './DropDownButton'
-import PushButton from './PushButton'
-import { NavLink } from 'react-router-dom'
-import SearchBar from './SearchBar'
+import { CartDropDownButton } from './CartDropDownButton'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -716,105 +713,24 @@ class Preview extends Component {
                     <Spinner size="large" color="#5A5A5A" />
                   </div>
                 ) : (
-                  <DropDownButton
-                    icon={processingCart ? null : inCart ? 'minus' : 'cart-plus'}
-                    title={inCart ? removeLabel : 'Add to default cart'}
-                    buttonClassName="table-cell-button"
-                    popupClassName={`cart-popup popup_content-small ${
-                      this.props.popupAbove ? ' popup_content__above' : ''
-                    }`}
-                    buttonStyle={{ opacity: 1 }}
-                    popupStyle={{ overflow: 'hidden' }}
-                    loading={processingCart}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      return this.props.onCartButtonClick(trackId, currentCartId, inCart)
+                  <CartDropDownButton
+                    {...{
+                      processingCart,
+                      inCart,
+                      removeLabel,
+                      trackId,
+                      currentCartId,
+                      cartFilter,
+                      onCartFilterChange,
+                      onClearCartFilter,
                     }}
-                  >
-                    <div>
-                      <SearchBar
-                        placeholder={'Search'}
-                        styles={'small dark'}
-                        value={cartFilter}
-                        onChange={onCartFilterChange}
-                        onClearSearch={onClearCartFilter}
-                      />
-                    </div>
-                    <div
-                      className={'carts-list'}
-                      style={{ flex: 1 }}
-                      onClick={(e) => e.stopPropagation()}
-                      onDoubleClick={(e) => e.stopPropagation()}
-                    >
-                      {this.props.carts.length === 0
-                        ? 'Loading carts...'
-                        : this.props.carts
-                            .filter(
-                              ({ name }) => !cartFilter || name.toLocaleLowerCase().includes(cartFilter.toLowerCase()),
-                            )
-                            .map(({ id: cartId, name }) => {
-                              const isInCart = this.props.inCarts.find(R.propEq('id', cartId))
-                              return (
-                                <button
-                                  disabled={processingCart}
-                                  className="button button-push_button button-push_button-small button-push_button-primary cart-button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    return this.props.onCartButtonClick(trackId, cartId, isInCart)
-                                  }}
-                                  key={`cart-${cartId}`}
-                                >
-                                  <FontAwesomeIcon icon={isInCart ? 'minus' : 'plus'} style={{ marginRight: 6 }} />{' '}
-                                  {name}
-                                </button>
-                              )
-                            })}
-                    </div>
-                    <div>
-                      <hr className={'popup-divider'} />
-                      <div className={'input-layout'}>
-                        <input
-                          placeholder={'New cart'}
-                          style={{ flex: 1 }}
-                          className={'cart-popup-input text-input text-input-small text-input-dark'}
-                          value={this.state.newCartName}
-                          onChange={(e) => this.setState({ newCartName: e.target.value })}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <button
-                          className="button button-push_button button-push_button-small button-push_button-primary"
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            this.setState({ newCartName: '' })
-                            const { id: cartId } = await this.props.onCreateCartClick(this.state.newCartName)
-                            await this.props.onCartButtonClick(cartId, false)
-                          }}
-                          disabled={this.state.newCartName === ''}
-                        >
-                          <FontAwesomeIcon icon="plus" />
-                        </button>
-                      </div>
-                      <hr className={'popup-divider'} />
-                      {!this.props.selectedCartIsPurchased && (
-                        <button
-                          disabled={processingCart}
-                          style={{ display: 'block', width: '100%', marginBottom: 4, whiteSpace: 'normal' }}
-                          className="button button-push_button button-push_button-small button-push_button-primary"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            return this.props.onMarkPurchasedButtonClick(trackId)
-                          }}
-                        >
-                          Mark purchased and remove from carts
-                        </button>
-                      )}
-                      <div style={{ textAlign: 'center', width: '100%' }}>
-                        <NavLink to={'/settings/carts'} style={{ textAlign: 'center' }}>
-                          Manage carts in settings
-                        </NavLink>
-                      </div>
-                    </div>
-                  </DropDownButton>
+                    carts={this.props.carts}
+                    inCarts={this.props.inCarts}
+                    selectedCartIsPurchased={this.props.selectedCartIsPurchased}
+                    onCartButtonClick={this.props.onCartButtonClick}
+                    onCreateCartClick={this.props.onCreateCartClick}
+                    onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
+                  />
                 )}
                 {this.props.mode === 'app' && (
                   <>
