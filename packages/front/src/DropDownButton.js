@@ -21,21 +21,19 @@ const DropDownButton = (props) => {
     onClick,
     popupClassName,
     popupStyle,
+    open,
     openOnHover,
     ...rest
   } = props
-
-  const [open, setOpen] = useState(false)
 
   return (
     <span className={`${className || ''}`} style={{ display: 'flex', ...style }}>
       <SpinnerButton
         className={`button-drop_down-left ${buttonClassName}`}
-        {...{ loading, loadingLabel, disabled, size, style: buttonStyle, onClick, icon }}
+        {...{ loading, loadingLabel, disabled, size, style: buttonStyle, icon }}
         {...rest}
         onClick={(e) => {
-          setOpen(!open)
-          this.props.onClick && this.props.onClick(e)
+          onClick && onClick(e)
         }}
       >
         <span className={'button-push_button_label'}>{label}</span>
