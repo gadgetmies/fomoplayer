@@ -239,6 +239,12 @@ class Player extends Component {
     const inCarts = currentTrack
       ? this.props.carts.filter((cart) => cart.tracks?.find(R.propEq('id', currentTrack.id)))
       : []
+    const selectedCartId = this.props.selectedCart?.id
+    const selectedCartIsPurchased = this.props.selectedCart?.is_purchased
+    const defaultCart = this.props.carts.find(R.prop('is_default'))
+    const inDefaultCart = defaultCart ? defaultCart.tracks?.find(R.propEq('id', currentTrack.id)) !== undefined : false
+    const inCurrentCart = inCarts.find(({ id }) => id === selectedCartId)
+
     return (
       <div className={`page-container`} style={{ ...this.props.style }}>
         <PlayerHelp
@@ -249,13 +255,16 @@ class Player extends Component {
           carts={this.props.carts}
           currentTrack={currentTrack}
           follows={this.props.follows}
-          inCart={this.isCurrentInCart()}
           inCarts={inCarts}
+          inDefaultCart={inDefaultCart}
+          inCurrentCart={inCurrentCart}
+          selectedCartId={selectedCartId}
           listState={this.props.listState}
           mode={this.props.mode}
           newTracks={this.props.meta ? this.props.meta.newTracks - this.state.listenedTracks : null}
           processingCart={this.props.processingCart}
           selectedCart={this.props.selectedCart}
+          selectedCartIsPurchased={selectedCartIsPurchased}
           showHint={this.props.tracks.length === 0}
           stores={this.props.stores}
           togglingCurrentInCart={this.state.togglingCurrentInCart}
@@ -277,10 +286,10 @@ class Player extends Component {
         <Tracks
           mode={this.props.mode}
           carts={this.props.carts}
-          cartFilter={this.props.cartFilter}
           fetchingCartDetails={this.props.fetchingCartDetails}
           notifications={this.props.notifications}
           selectedCart={this.props.selectedCart}
+          selectedCartIsPurchased={selectedCartIsPurchased}
           tracks={tracks}
           tracksOffset={this.props.tracksOffset}
           stores={this.props.stores}
@@ -317,7 +326,6 @@ class Player extends Component {
           onToggleStoreSearchEnabled={this.toggleStoreSearchEnabled.bind(this)}
           onUpdateCarts={this.props.onUpdateCarts}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
-          onCartFilterChange={this.props.onCartFilterChange}
           onMarkHeardButtonClick={this.markHeard.bind(this)}
         />
       </div>
