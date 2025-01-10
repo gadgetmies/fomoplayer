@@ -985,22 +985,14 @@ WHERE meta_account_user_id = ${userId}
 
 module.exports.updateNotifications = async (tx, userId, operations) => {
   for (const { op, text, storeName } of operations) {
-    await tx.queryRowsAsync(
+    const [{ notificationId }] = await tx.queryRowsAsync(
       // language=PostgreSQL
       sql`--insertNotification user_search_notification
       INSERT INTO user_search_notification (meta_account_user_id, user_search_notification_string)
       VALUES (${userId}, LOWER(${text}))
-      ON CONFLICT ON CONSTRAINT user_search_notification_meta_account_user_id_user_search_n_key DO NOTHING
-      `,
-    )
-
-    const [{ notificationId }] = await tx.queryRowsAsync(
-      // language=PostgreSQL
-      sql`--selectNotification user_search_notification
-      SELECT user_search_notification_id AS "notificationId"
-      FROM user_search_notification
-      WHERE meta_account_user_id = ${userId}
-        AND user_search_notification_string = ${text}
+      ON CONFLICT ON CONSTRAINT user_search_notification_meta_account_user_id_user_search_n_key DO UPDATE
+      SET meta_account_user_id = ${userId} -- This is here only so that RETURNING always returns a row
+      RETURNING user_search_notification_id AS "notificationId"
       `,
     )
 
