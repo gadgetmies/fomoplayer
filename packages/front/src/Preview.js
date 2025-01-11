@@ -13,6 +13,7 @@ import { followableNameLinks, namesToString, trackArtistsAndTitle } from './trac
 import CopyToClipboardButton from './CopyToClipboardButton'
 import ShareLink from './ShareLink'
 import { CartDropDownButton } from './CartDropDownButton'
+import Popup from './Popup'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -762,23 +763,24 @@ class Preview extends Component {
                     </button>
                   </>
                 )}
-                <div className="popup_container" style={{ display: 'flex' }}>
-                  <button className={'pill pill-button button-push_button-small popup-anchor'} style={{ flex: 1 }}>
-                    <span className="pill-button-contents">
-                      <span className="button-push_button_icon">
-                        <FontAwesomeIcon icon={'share'} />
-                      </span>{' '}
-                      <span className={'button-push_button_label'}>Share</span>
-                      <span className="preview-share_caret">
-                        <FontAwesomeIcon icon={'caret-down'} />
+                <Popup
+                  anchor={
+                    <button className={'pill pill-button button-push_button-small popup-anchor'} style={{ flex: 1 }}>
+                      <span className="pill-button-contents">
+                        <span className="button-push_button_icon">
+                          <FontAwesomeIcon icon={'share'} />
+                        </span>{' '}
+                        <span className={'button-push_button_label'}>Share</span>
+                        <span className="preview-share_caret">
+                          <FontAwesomeIcon icon={'caret-down'} />
+                        </span>
                       </span>
-                    </span>
-                  </button>
+                    </button>
+                  }
+                  popupClassName={'popup_content-left'}
+                >
                   {currentTrack && (
-                    <div
-                      className={`popup_content popup_content-left share-popup_content`}
-                      style={{ zIndex: 100, padding: '0.25rem' }}
-                    >
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span
                         className="pill pill-small pill-button"
                         style={{ display: 'block', width: '100%', margin: 0, marginBottom: 4, padding: 0, border: 0 }}
@@ -815,7 +817,7 @@ class Preview extends Component {
                       />
                     </div>
                   )}
-                </div>
+                </Popup>
               </div>
             </div>
             {this.props.newTracks !== null && this.props.totalTracks !== null ? (
