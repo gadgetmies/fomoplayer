@@ -59,7 +59,7 @@ const Popup = ({
   return (
     <>
       <div
-        className={`popup_container popup_container${openOnHover === true ? '--open-on-hover' : ''} ${open ? 'popup--open' : ''} ${className || ''}`}
+        className={`popup_container ${openOnHover === true ? 'popup_container--open-on-hover' : ''} ${open ? 'popup--open' : ''} ${className || ''}`}
         style={style}
       >
         <span className={'popup-anchor'} onClick={clickHandler} onDoubleClick={clickHandler}>
