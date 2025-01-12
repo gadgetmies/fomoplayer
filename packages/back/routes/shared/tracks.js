@@ -3,7 +3,7 @@ const sql = require('sql-template-strings')
 const R = require('ramda')
 const { setArtistUpdated, setPlaylistUpdated, setLabelUpdated } = require('./db/watch')
 const { modules: storeModules } = require('../stores/store-modules')
-const { using } = require('bluebird')
+const BPromise = require('bluebird')
 const { updateIgnoresInUserTracks } = require('../shared/db/user')
 const logger = require('fomoplayer_shared').logger(__filename)
 
@@ -93,7 +93,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
 
   logger.debug(`Adding ${storedTracks.length} existing tracks to ${userIds.length} users`)
   for (const userId of userIds) {
-    await using(pg.getTransaction(), async (tx) => {
+    await BPromise.using(pg.getTransaction(), async (tx) => {
       await addTracksToUser(tx, userId, storedTracks.map(R.prop('id')), sourceId)
       // TODO: this does not take into account the ignores: does it need to?
     })
@@ -112,7 +112,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   }
 
   logger.debug('Updating ignored tracks')
-  await using(pg.getTransaction(), async (tx) => {
+  await BPromise.using(pg.getTransaction(), async (tx) => {
     await updateIgnoresInUserTracks(tx, userIds)
   })
 
@@ -130,7 +130,7 @@ const addTrackToUser = (module.exports.addTrackToUser = async (tx, userId, artis
 
 const aYear = 1000 * 60 * 60 * 24 * 30 * 12
 const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld = true, type = 'tracks') => {
-  return using(pg.getTransaction(), async (tx) => {
+  return BPromise.using(pg.getTransaction(), async (tx) => {
     let labelId
     let releaseId
 

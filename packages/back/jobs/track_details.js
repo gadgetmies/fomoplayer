@@ -1,9 +1,9 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
-const { using: Busing } = require('bluebird')
+const BPromise = require('bluebird')
 
 module.exports.updateTrackDetails = async () => {
-  await Busing(pg.getTransaction(), async (tx) => {
+  await BPromise.using(pg.getTransaction(), async (tx) => {
     await tx.queryAsync("SET statement_timeout TO '5min'")
     await tx.queryAsync(
       // language=PostgreSQL

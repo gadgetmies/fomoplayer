@@ -3,7 +3,7 @@ const pg = require('fomoplayer_shared').db.pg
 const config = require('../../config')
 const logger = require('fomoplayer_shared').logger(__filename)
 const R = require('ramda')
-const { using } = require('bluebird')
+const BPromise = require('bluebird')
 
 module.exports.mergeTracks = async ({ trackToBeDeleted, trackToKeep }) => {
   await pg.queryAsync(sql`
@@ -208,7 +208,7 @@ WHERE store__track_preview_id = ${storeTrackPreviewId}
 
 module.exports.updateTrackDetailsForPreviewTracks = async (previews) => {
   const previewIds = previews.map(R.prop('id'))
-  await using(pg.getTransaction(), async (tx) => {
+  await BPromise.using(pg.getTransaction(), async (tx) => {
     await tx.queryAsync("SET statement_timeout TO '5min'")
     await tx.queryAsync(
       // language=PostgreSQL

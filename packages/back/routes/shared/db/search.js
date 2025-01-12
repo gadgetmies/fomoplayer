@@ -1,6 +1,6 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
-const { using } = require('bluebird')
+const BPromise = require('bluebird')
 //const logger = require('../../../logger')(__filename)
 
 // TODO: would it be possible to somehow derive these from the track_details function?
@@ -29,7 +29,7 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
     })
     .filter((i) => i)
 
-  return using(pg.getTransaction(), async (tx) => {
+  return BPromise.using(pg.getTransaction(), async (tx) => {
     // TODO: this tx is only here for escapeIdentifier -> find out a way to get the function from pg
     let query =
       // language=PostgreSQL

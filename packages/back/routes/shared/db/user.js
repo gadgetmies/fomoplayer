@@ -1,4 +1,4 @@
-const { using } = require('bluebird')
+const BPromise = require('bluebird')
 const sql = require('sql-template-strings')
 
 const pg = require('fomoplayer_shared').db.pg
@@ -55,7 +55,7 @@ module.exports.insertUserPlaylistFollow = async (
   playlistTitle,
   playlistType = undefined,
 ) => {
-  return using(pg.getTransaction(), async (tx) => {
+  return BPromise.using(pg.getTransaction(), async (tx) => {
     const res = await tx.queryRowsAsync(
       // language=PostgreSQL
       sql`-- insertUserPlaylistFollow SELECT playlist_id

@@ -13,7 +13,7 @@ const {
   deleteCartStoreDetails,
   queryCartStoreDetails,
 } = require('./db/cart.js')
-const { using } = require('bluebird')
+const BPromise = require('bluebird')
 const pg = require('fomoplayer_shared').db.pg
 const R = require('ramda')
 const { NotFound, Forbidden } = require('./httpErrors')
@@ -39,7 +39,7 @@ module.exports.removeCart = async (userId, cartId) => {
 module.exports.updateCartDetails = async (userId, cartId, properties) => {
   await verifyCartOwnership(userId, cartId)
   const { name, is_public } = properties
-  await using(pg.getTransaction(), async (tx) => {
+  await BPromise.using(pg.getTransaction(), async (tx) => {
     if (name !== undefined || is_public !== undefined) {
       try {
         await updateCartProperties(tx, cartId, properties)

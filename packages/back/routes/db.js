@@ -1,7 +1,7 @@
 const sql = require('sql-template-strings')
 const R = require('ramda')
 const pg = require('fomoplayer_shared').db.pg
-const { using } = require('bluebird')
+const BPromise = require('bluebird')
 const { cryptoKey } = require('../config')
 const logger = require('fomoplayer_shared').logger(__filename)
 
@@ -95,7 +95,7 @@ WHERE cart_uuid = ${uuid}`,
 }
 
 module.exports.verifyEmail = async (verificationCode) => {
-  await using(pg.getTransaction(), async (tx) => {
+  await BPromise.using(pg.getTransaction(), async (tx) => {
     const { rowCount } = await tx.queryAsync(
       // language=PostgreSQL
       sql`-- verifyEmail
