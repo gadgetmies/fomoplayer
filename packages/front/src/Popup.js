@@ -3,6 +3,11 @@ import { isMobile } from 'react-device-detect'
 
 let closePreviousFn
 
+/*
+NOTICE: Do not use padding in the style property or in the classes defined in className as those
+will break the open on hover functionality. If you need padding, add that using a wrapping element.
+ */
+
 const globalClickHandler = ({ e, open: isOpen, setOpen, onOpenChanged, closePrevious }) => {
   if (!isOpen) {
     closePreviousFn ? closePreviousFn() : ''

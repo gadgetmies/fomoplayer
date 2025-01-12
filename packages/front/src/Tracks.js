@@ -9,6 +9,7 @@ import Spinner from './Spinner'
 import { Link, withRouter } from 'react-router-dom'
 import ToggleButton from './ToggleButton'
 import SearchBar from './SearchBar'
+import Popup from './Popup'
 
 const filterMatches = (filter, { artists, title, keys, labels, releases }) => {
   const trackDetailsString = [
@@ -377,21 +378,26 @@ class Tracks extends Component {
                 </th>
               )}
               <th className={'open-share-cell tracks-cell'}>
-                <div className={'open-cell track-table-cell popup_container'} style={{ padding: 0, margin: 4 }}>
-                  <div className={'popup-anchor'}>
-                    <span
-                      className={` ${
-                        this.props.listState === 'carts' &&
-                        this.props.enabledStores &&
-                        this.props.enabledStores.length < this.props.stores.length &&
-                        'filter-active'
-                      }`}
-                    >
-                      Open {this.props.listState === 'carts' && <FontAwesomeIcon icon="caret-down" />}
-                    </span>
-                  </div>
-                  {this.props.listState === 'carts' && (
-                    <div className={'popup_content'} style={{ flexDirection: 'column', minWidth: 150, padding: 8 }}>
+                <div className={'open-cell track-table-cell'}>
+                  <Popup
+                    popupStyle={{ flexDirection: 'column', minWidth: 150 }}
+                    disabled={this.props.listState !== 'carts'}
+                    style={{ display: 'block' }}
+                    anchor={
+                      <div
+                        className={` ${
+                          (this.props.listState === 'carts' &&
+                            this.props.enabledStores &&
+                            this.props.enabledStores.length < this.props.stores.length &&
+                            'filter-active') ||
+                          ''
+                        }`}
+                      >
+                        Open {this.props.listState === 'carts' && <FontAwesomeIcon icon="caret-down" />}
+                      </div>
+                    }
+                  >
+                    <>
                       <div>Enabled stores:</div>
                       {this.props.stores.map(({ storeName }) => {
                         const elementId = `${storeName}-enabled`
@@ -441,8 +447,8 @@ class Tracks extends Component {
                           </div>
                         )
                       })}
-                    </div>
-                  )}
+                    </>
+                  </Popup>
                 </div>
               </th>
             </tr>
