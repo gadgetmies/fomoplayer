@@ -1,0 +1,2 @@
+DELETE FROM store__track_preview_waveform WHERE store__track_preview_id IS NULL;
+ALTER TABLE store__track_preview_waveform ALTER COLUMN store__track_preview_id SET NOT NULL;
