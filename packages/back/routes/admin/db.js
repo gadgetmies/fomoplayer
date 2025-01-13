@@ -91,6 +91,7 @@ module.exports.storeConfig = async ({ config, lens, name }) => {
 }
 
 module.exports.queryNextTracksToAnalyse = async ({ model, batch_size, purchased }) => {
+  logger.info(`Searching for ${purchased ? 'purchased' : 'new'}`)
   if (!model) throw new Error('Model not set')
   return pg.queryRowsAsync(
     // language=PostgreSQL
