@@ -14,6 +14,7 @@ import CopyToClipboardButton from './CopyToClipboardButton'
 import ShareLink from './ShareLink'
 import { CartDropDownButton } from './CartDropDownButton'
 import Popup from './Popup'
+import { apiURL } from './config'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
@@ -34,6 +35,7 @@ class Preview extends Component {
       nextDoubleClickStarted: false,
       previousDoubleClickStarted: false,
       cartFilter: '',
+      embeddingMissing: true,
     }
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
@@ -384,11 +386,7 @@ class Preview extends Component {
                       <br />
                       <span className="preview_label">BPM:</span>{' '}
                       <span className="preview_detail">
-                        {currentTrack.stores
-                          .map(R.prop('bpm'))
-                          .filter(R.identity)
-                          .map(Math.round)
-                          .join(', ') || '-'}
+                        {currentTrack.stores.map(R.prop('bpm')).filter(R.identity).map(Math.round).join(', ') || '-'}
                       </span>
                       <br />
                       <span className="preview_label">Key:</span>{' '}
@@ -402,10 +400,7 @@ class Preview extends Component {
                       <br />
                       <span className="preview_label">Duration:</span>{' '}
                       <span className="preview_detail">
-                        {new Date(Number(currentTrack.duration))
-                          .toISOString()
-                          .substring(11, 19)
-                          .replace(/^00:/, '')}
+                        {new Date(Number(currentTrack.duration)).toISOString().substring(11, 19).replace(/^00:/, '')}
                       </span>
                     </div>
                   </div>
@@ -434,9 +429,7 @@ class Preview extends Component {
                   <span className="preview_actions_title">Search</span>
                   <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
                     {this.props.stores
-                      ?.filter(({ storeName }) =>
-                        currentTrack?.stores.every(({ name }) => storeName !== name),
-                      )
+                      ?.filter(({ storeName }) => currentTrack?.stores.every(({ name }) => storeName !== name))
                       .map(({ storeName }) => {
                         const searchUrl = this.props.stores.find(R.propEq('storeName', storeName)).searchUrl
                         return (
@@ -594,6 +587,24 @@ class Preview extends Component {
               />
               {currentTrack ? (
                 <>
+                  <img
+                    style={{
+                      width: '100%',
+                      height: 2,
+                      position: 'absolute',
+                      bottom: -5,
+                      border: '1px solid #000',
+                      display: this.state.embeddingMissing ? 'none' : 'block',
+                    }}
+                    alt={'embedding'}
+                    src={`${apiURL}/tracks/${currentTrack.id}/embedding.png`}
+                    onError={(e) => {
+                      this.setState({ embeddingMissing: true })
+                    }}
+                    onLoad={(e) => {
+                      this.setState({ embeddingMissing: false })
+                    }}
+                  />
                   <div
                     className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
                     style={{ left: 2 }}

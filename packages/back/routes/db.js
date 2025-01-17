@@ -173,3 +173,17 @@ module.exports.queryAuthorization = async (userId) => {
     return res[0]
   }
 }
+
+module.exports.queryEmbedding = async (trackId) => {
+  const res = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`SELECT store__track_preview_embedding as embedding
+FROM
+  store__track_preview_embedding
+  NATURAL JOIN store__track_preview
+  NATURAL JOIN store__track
+WHERE track_id = ${trackId}
+`,
+  )
+  return res[0]?.embedding
+}

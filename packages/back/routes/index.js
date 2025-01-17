@@ -6,12 +6,18 @@ const { Unauthorized } = require('./shared/httpErrors')
 const adminRouter = require('./admin/index.js')
 const { ensureAuthenticated } = require('./shared/auth.js')
 const logRouter = require('./log/index.js')
-const { getEntityDetails } = require('./logic')
+const { getEntityDetails, getEmbeddingImage } = require('./logic')
 
 router.use(bodyParser.json())
 
 router.get('/tracks/:id/preview.:format', async ({ params: { id, format, offset } }, res) => {
   res.redirect(await getPreview(id, format, offset))
+})
+
+router.get('/tracks/:id/embedding.png', async ({ params: { id } }, res) => {
+  const image = await getEmbeddingImage(id)
+  res.status(image ? 200 : 404)
+  image.pipe(res)
 })
 
 router.get('/tracks/:id', ({ user: { id: userId }, params: { id } }, res) => {
