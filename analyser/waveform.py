@@ -21,10 +21,13 @@ import requests
 from oidc_common import OpenIDConfiguration, ClientConfiguration, get_client_state
 import datetime
 
-waveform_storage_url = os.getenv("WAVEFORM_STORAGE_URL")
+waveform_storage_url = os.getenv("WAVEFORM_STORAGE_HOST")
+access_key = os.getenv("WAVEFORM_STORAGE_BUCKET_ACCESS_KEY")
+secret_key = os.getenv("WAVEFORM_STORAGE_BUCKET_SECRET_KEY")
+
 waveform_storage_client = Minio(waveform_storage_url,
-                                access_key=os.getenv("WAVEFORM_BUCKET_ACCESS_KEY"),
-                                secret_key=os.getenv("WAVEFORM_BUCKET_SECRET_KEY"),
+                                access_key=access_key,
+                                secret_key=secret_key,
                                 )
 
 waveform_storage_bucket = os.getenv("WAVEFORM_STORAGE_BUCKET_NAME")

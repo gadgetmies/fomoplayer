@@ -37,8 +37,10 @@ args = ap.parse_args()
 
 # tracks = glob(args.path + '/**/*.mp3', recursive=True)
 
-def get_next_analysis_tracks(id_token, model='discogs_multi_embeddings-effnet-bs64-1', purchased=True, batch_size=5):
+def get_next_analysis_tracks(id_token, model='discogs_multi_embeddings-effnet-bs64-1', purchased=True, batch_size=10):
     print("Getting next tracks to analyse")
+    print(purchased)
+    print(f"https://fomoplayer.com/api/admin/analyse?model={model}&batch_size={batch_size}&purchased={'true' if purchased else ''}")
     res = requests.get(
         f"https://fomoplayer.com/api/admin/analyse?model={model}&batch_size={batch_size}&purchased={'true' if purchased else ''}",
         headers={'Authorization': f"Bearer {id_token}"}
