@@ -125,7 +125,7 @@ class Preview extends Component {
     }
 
     if (this.props.currentTrack !== nextTrack) {
-      this.setState({ loading: true })
+      this.setState({ loading: true, embeddingMissing: true })
       try {
         const preview = this.getFirstMp3Preview(nextTrack, this.state.preferFullTracks)
         await this.updateTrack(nextTrack, preview)

@@ -18,6 +18,9 @@ class TopBar extends Component {
     const urlSearchParams = new URLSearchParams(props.location.search)
     const query = urlSearchParams.get('q') || ''
     const sort = urlSearchParams.get('sort')
+    const onlyNew = urlSearchParams.get('new')
+    const limit = urlSearchParams.get('limit')
+    const addedSince = urlSearchParams.get('addedSince')
 
     this.state = {
       requestNotificationSearch: '',
@@ -25,6 +28,9 @@ class TopBar extends Component {
       searchActive: query !== '',
       search: query,
       sort,
+      onlyNew,
+      limit,
+      addedSince,
       supportMenuOpen: false,
       emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
       discoverMenuOpen: false,
@@ -60,9 +66,16 @@ class TopBar extends Component {
     const timeout = setTimeout(
       async () => {
         this.setState({ searchDebounce: undefined, listState: 'search' })
-        this.props.history.push(`/search/?q=${this.state.search.trim()}&sort=${this.state.sort || ''}`)
+        this.props.history.push(
+          `/search/?q=${this.state.search.trim()}&sort=${this.state.sort || ''}&new=${this.state.onlyNew || ''}&addedSince=${this.state.addedSince || ''}&limit=${this.state.limit || ''}`,
+        )
         // TODO: cancel this request if new one is requested
-        await this.props.onSearch(this.state.search, this.state.sort)
+        await this.props.onSearch(this.state.search, {
+          sort: this.state.sort,
+          onlyNew: this.state.onlyNew,
+          addedSince: this.state.addedSince,
+          limit: this.state.limit,
+        })
       },
       skipDebounce ? 0 : 1000,
     )

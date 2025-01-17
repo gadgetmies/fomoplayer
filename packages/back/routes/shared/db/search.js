@@ -12,16 +12,18 @@ const aliasToColumn = {
   heard: 'user__track_heard',
 }
 
-module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince } = {}) => {
+module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince, new: onlyNew } = {}) => {
+  const addedSinceValue = addedSince || null
   const idFilter = queryString
     .split(' ')
     .filter((s) => s.includes(':'))
     .map((s) => s.split(':'))
     .filter(([key]) => ['artist', 'label', 'release'].includes(key))[0]
 
+  const similaritySearchTrackId = queryString.match(/track:~(\d+)/)?.[1]
+
   const limit = l || 100
-  const sort = s || '-released'
-  const sortParameters = getSortParameters(sort)
+  const sortParameters = getSortParameters(s || '-released')
   const sortColumns = sortParameters
     .map(([alias, order]) => {
       const column = aliasToColumn[alias]
@@ -33,46 +35,82 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
     // TODO: this tx is only here for escapeIdentifier -> find out a way to get the function from pg
     let query =
       // language=PostgreSQL
-      sql`-- searchForTracks
+      similaritySearchTrackId
+        ? sql`-- searchForSimilarTracks
+WITH reference AS
+  (SELECT store__track_preview_embedding
+   FROM
+     store__track_preview_embedding
+     NATURAL JOIN store__track_preview
+     NATURAL JOIN store__track
+   WHERE track_id = ${similaritySearchTrackId})
+   , similar_tracks AS
+  (SELECT track_id
+        , store__track_preview_embedding <->
+          (SELECT store__track_preview_embedding FROM reference) AS similarity
+        , user__track_heard
+   FROM
+     store__track_preview_embedding
+     NATURAL JOIN store__track_preview
+     NATURAL JOIN store__track
+     NATURAL JOIN track
+     NATURAL LEFT JOIN user__track
+   WHERE (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
+     AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL)
+   ORDER BY store__track_preview_embedding <-> (SELECT store__track_preview_embedding FROM reference) NULLS LAST
+   LIMIT ${limit})
+`
+        : sql``
+    query.append(sql`--searchForTracks
 SELECT track_id          AS id
      , td.*
-     , user__track_heard AS heard
+     , user__track_heard AS heard`)
+
+    if (similaritySearchTrackId) {
+      query.append(`, similarity `)
+    }
+
+    query.append(sql`
 FROM
   track_details
   JOIN JSON_TO_RECORD(track_details) AS td ( track_id INT, title TEXT, duration INT, added DATE, artists JSON
                                            , version TEXT, labels JSON, remixers JSON, releases JSON, keys JSON
                                            , previews JSON, stores JSON, released DATE, published DATE)
        USING (track_id)
-  NATURAL LEFT JOIN
-    (SELECT track_id, user__track_heard
-     FROM
-       user__track
-     WHERE meta_account_user_id = ${userId} :: INT) ut
+  NATURAL LEFT JOIN user__track
+`)
 
-WHERE track_id IN
-      (SELECT track_id
+    if (similaritySearchTrackId) {
+      query.append(sql` NATURAL JOIN similar_tracks 
+      ORDER BY similarity NULLS LAST `)
+    } else {
+      query.append(sql`WHERE track_id IN
+      (SELECT track_id, user__track_heard
        FROM
          track
          NATURAL JOIN track__artist
          NATURAL JOIN artist
+         NATURAL JOIN store__track
+         NATURAL LEFT JOIN user__track
          NATURAL LEFT JOIN track__label
          NATURAL LEFT JOIN label
-         LEFT JOIN release__track USING (track_id)
-         LEFT JOIN release USING (release_id)
-         NATURAL JOIN store__track`
+         NATURAL LEFT JOIN release__track
+         NATURAL LEFT JOIN release
+ WHERE 
+(${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
+AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL)
+AND meta_account_user_id = ${userId}::INT
+         `)
+      if (idFilter) {
+        query.append(` AND ${tx.escapeIdentifier(`${idFilter[0]}_id`)} = `)
+        query.append(sql`${idFilter[1]}`)
+      }
 
-    query.append(sql` WHERE (${addedSince}::TIMESTAMPTZ IS NULL
-          OR track_added > ${addedSince}::TIMESTAMPTZ)`)
+      query.append(` GROUP BY track_id, track_title, track_version `)
 
-    if (idFilter) {
-      query.append(` AND ${tx.escapeIdentifier(`${idFilter[0]}_id`)} = `)
-      query.append(sql`${idFilter[1]}`)
-    }
-
-    query.append(` GROUP BY track_id, track_title, track_version `)
-    sortColumns.forEach(([column]) => query.append(`, ${tx.escapeIdentifier(column)}`))
-    !idFilter &&
-      query.append(sql` HAVING
+      sortColumns.forEach(([column]) => query.append(`, ${tx.escapeIdentifier(column)}`))
+      !idFilter &&
+        query.append(sql` HAVING
                                   TO_TSVECTOR(
                                           'simple',
                                           unaccent(track_title || ' ' ||
@@ -82,20 +120,21 @@ WHERE track_id IN
                                                    STRING_AGG(COALESCE(label_name, ''), ' '))) @@
                                   websearch_to_tsquery('simple', unaccent(${queryString}))`)
 
-    query.append(` ORDER BY `)
-    sortColumns.forEach(([column, order]) =>
-      query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
-    )
-    query.append(` track_id DESC
+      query.append(` ORDER BY `)
+      sortColumns.forEach(([column, order]) =>
+        query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
+      )
+      query.append(` track_id DESC
         LIMIT ${limit})
         ORDER BY `)
 
-    sortParameters.forEach(([column, order]) =>
-      query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
-    )
-    query.append(' track_id DESC')
+      sortParameters.forEach(([column, order]) =>
+        query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
+      )
+      query.append(' track_id DESC')
+    }
 
-    return await tx.queryRowsAsync(query)
+    return tx.queryRowsAsync(query)
   })
 }
 

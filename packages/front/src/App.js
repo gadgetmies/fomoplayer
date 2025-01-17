@@ -417,12 +417,16 @@ class App extends Component {
     }
   }
 
-  async search(search, sort = '-released') {
+  async search(search, filters = {}) {
+    const { sort = '-released', limit = 100, addedSince = null, onlyNew = null } = filters
+
     if (search === '') return
     this.setState({ searchInProgress: true, searchError: undefined })
     try {
       const searchResults = await (
-        await requestWithCredentials({ path: `/tracks?q=${search}&sort=${sort || ''}` })
+        await requestWithCredentials({
+          path: `/tracks?q=${search}&sort=${sort || ''}&addedSince=${addedSince || ''}&new=${onlyNew || ''}&limit=${limit || ''}`,
+        })
       ).json()
       this.setState({ searchResults, searchError: undefined })
       return undefined
@@ -715,7 +719,13 @@ class App extends Component {
                       idSearch !== null &&
                       this.state.search !== query
                     ) {
-                      this.search(query)
+                      const filters = {
+                        sort: searchParams.get('sort') || '-released',
+                        limit: searchParams.get('limit') || 100,
+                        addedSince: searchParams.get('addedSince') || '',
+                        onlyNew: searchParams.get('new') || '',
+                      }
+                      this.search(query, filters)
                       this.setState({ search: query })
                     }
                     const settingsVisible = props.location.pathname.match(/\/settings\/?/)
