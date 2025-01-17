@@ -712,6 +712,19 @@ class Preview extends Component {
                 <FontAwesomeIcon icon="step-forward" />
               </button>
               <div className="preview_actions_wrapper" style={{ fontSize: '75%', lineHeight: '2rem', fontWeight: 350 }}>
+                {!this.state.embeddingMissing && (
+                  <a
+                    href={`/search/?q=track:~${currentTrack?.id}`}
+                    className={
+                      'button button-push_button button-push_button-small button-push_button-primary preview-action_button no-style-link'
+                    }
+                    style={{ lineHeight: 'normal' }}
+                  >
+                    {' '}
+                    <FontAwesomeIcon icon="circle-nodes" />
+                    Find similar
+                  </a>
+                )}
                 {this.props.mode !== 'app' ? null : this.props.togglingCurrentInCart ? (
                   <div
                     style={{

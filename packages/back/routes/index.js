@@ -16,8 +16,12 @@ router.get('/tracks/:id/preview.:format', async ({ params: { id, format, offset 
 
 router.get('/tracks/:id/embedding.png', async ({ params: { id } }, res) => {
   const image = await getEmbeddingImage(id)
-  res.status(image ? 200 : 404)
-  image.pipe(res)
+  if (image) {
+    res.status(200)
+    image.pipe(res)
+  } else {
+    res.status(404).send('Not found')
+  }
 })
 
 router.get('/tracks/:id', ({ user: { id: userId }, params: { id } }, res) => {

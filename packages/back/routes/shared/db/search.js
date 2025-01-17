@@ -43,12 +43,12 @@ WITH reference AS
      store__track_preview_embedding
      NATURAL JOIN store__track_preview
      NATURAL JOIN store__track
-   WHERE track_id = ${similaritySearchTrackId})
+   WHERE track_id = ${similaritySearchTrackId} LIMIT 1)
    , similar_tracks AS
   (SELECT track_id
-        , store__track_preview_embedding <->
-          (SELECT store__track_preview_embedding FROM reference) AS similarity
         , user__track_heard
+        , MIN(store__track_preview_embedding <->
+          (SELECT store__track_preview_embedding FROM reference)) AS similarity
    FROM
      store__track_preview_embedding
      NATURAL JOIN store__track_preview
@@ -57,7 +57,8 @@ WITH reference AS
      NATURAL LEFT JOIN user__track
    WHERE (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
      AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL)
-   ORDER BY store__track_preview_embedding <-> (SELECT store__track_preview_embedding FROM reference) NULLS LAST
+   GROUP BY track_id, user__track_heard
+   ORDER BY MIN(store__track_preview_embedding <-> (SELECT store__track_preview_embedding FROM reference)) NULLS LAST
    LIMIT ${limit})
 `
         : sql``
@@ -77,15 +78,14 @@ FROM
                                            , version TEXT, labels JSON, remixers JSON, releases JSON, keys JSON
                                            , previews JSON, stores JSON, released DATE, published DATE)
        USING (track_id)
-  NATURAL LEFT JOIN user__track
 `)
 
     if (similaritySearchTrackId) {
       query.append(sql` NATURAL JOIN similar_tracks 
       ORDER BY similarity NULLS LAST `)
     } else {
-      query.append(sql`WHERE track_id IN
-      (SELECT track_id, user__track_heard
+      query.append(sql`NATURAL LEFT JOIN user__track WHERE track_id IN
+      (SELECT track_id
        FROM
          track
          NATURAL JOIN track__artist
@@ -133,6 +133,8 @@ AND meta_account_user_id = ${userId}::INT
       )
       query.append(' track_id DESC')
     }
+
+    console.log(query.text, query.values)
 
     return tx.queryRowsAsync(query)
   })
