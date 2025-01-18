@@ -82,19 +82,39 @@ def upload_waveform(file_path):
 MAX_AGE = 90 * 60
 TOKEN_PATH = './.fomo_player_token'
 
+client = ClientConfiguration(client_configuration='oidc_configuration.json',
+                             client_secret=os.getenv("GOOGLE_NATIVE_APP_OIDC_CLIENT_SECRET"),
+                             client_id=os.getenv("GOOGLE_NATIVE_APP_OIDC_CLIENT_ID"))
+provider = OpenIDConfiguration('https://accounts.google.com/.well-known/openid-configuration')
 
 def get_oauth2_token():
     if os.path.isfile(TOKEN_PATH):
         with open(TOKEN_PATH, 'r') as file:
             # You might consider a test API call to establish token validity here.
             token = json.load(file)
-            if token["expires_in"] > time.time():
+            if  token["expires_in"] > time.time():
                 return token["id_token"]
+            else:
+                body = {
+                    "client_id": client.client_id,
+                    "client_secret": client.client_secret,
+                    "grant_type": "refresh_token",
+                    "refresh_token": token["refresh_token"],
+                }
 
-    client = ClientConfiguration(client_configuration='oidc_configuration.json',
-                                 client_secret=os.getenv("GOOGLE_NATIVE_APP_OIDC_CLIENT_SECRET"),
-                                 client_id=os.getenv("GOOGLE_NATIVE_APP_OIDC_CLIENT_ID"))
-    provider = OpenIDConfiguration('https://accounts.google.com/.well-known/openid-configuration')
+                r = requests.post(provider.token_endpoint, data=body)
+
+                # handles error from token response
+
+                token_response = r.json()
+                id_token = token_response["id_token"]
+                with open(TOKEN_PATH, 'w') as outfile:
+                    outfile.write(
+                        json.dumps({"id_token": id_token, "expires_in": time.time() + token_response["expires_in"],
+                                    "refresh_token": token["refresh_token"]}))
+
+                return id_token
+
     with LoopbackServer(provider, client) as httpd:
         # launch web browser
         webbrowser.open(httpd.base_uri)

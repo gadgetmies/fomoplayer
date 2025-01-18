@@ -102,6 +102,7 @@ class LoopbackServer(http.server.ThreadingHTTPServer):
             "code_challenge_method": "S256",
             "state": state.state,
             "nonce": state.nonce,
+            "access_type": "offline"
         }
         for i in (
                 "scope",
