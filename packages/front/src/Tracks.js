@@ -206,7 +206,7 @@ class Tracks extends Component {
               inCarts={inCarts}
               popupAbove={tracks.length > 10 && tracks.length - index < 10}
               processingCart={this.props.processingCart}
-              key={id}
+              key={`track-${id}`}
               follows={this.props.follows}
               onClick={() => {
                 this.props.onPreviewRequested(id)
