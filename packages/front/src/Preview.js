@@ -127,14 +127,42 @@ class Preview extends Component {
 
     if (this.props.currentTrack !== nextTrack) {
       this.setState({ loading: true, embeddingMissing: true })
-      try {
-        const preview = this.getFirstMp3Preview(nextTrack, this.state.preferFullTracks)
-        await this.updateTrack(nextTrack, preview)
-      } catch (e) {
-        console.error(e)
+      const previews = this.getMp3Previews(nextTrack, this.state.preferFullTracks)
+
+      let trackUpdated = false
+      for (const preview of previews) {
+        try {
+          await this.updateTrack(nextTrack, preview)
+          trackUpdated = true
+          break
+        } catch (e) {
+          console.error(e)
+        }
       }
-      this.setState({ loading: false, playing: true })
+
+      if (!trackUpdated) {
+        await this.props.onNext()
+      } else {
+        this.setState({ loading: false, playing: true })
+      }
     }
+  }
+
+  getMp3Previews(track, preferFullTracks = false) {
+    return L.collect(
+      [
+        'previews',
+        L.choices(
+          [
+            L.normalize(R.sortBy(L.get(['length_ms', (l) => (preferFullTracks ? -l : l)]))),
+            L.ifElse(R.isEmpty, L.zero, []),
+          ],
+          [],
+        ),
+        L.satisfying(safePropEq('format', 'mp3')),
+      ],
+      track,
+    )
   }
 
   getFirstMp3Preview(track, preferFullTracks = false) {
