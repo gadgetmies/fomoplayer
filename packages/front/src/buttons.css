@@ -28,6 +28,7 @@ button::-moz-focus-inner {
   text-align: center;
   box-sizing: border-box;
   cursor: pointer;
+  padding-block: 0;
 }
 
 .button-push_button {
