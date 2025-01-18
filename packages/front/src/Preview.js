@@ -743,7 +743,7 @@ class Preview extends Component {
               <div className="preview_actions_wrapper" style={{ fontSize: '75%', lineHeight: '2rem', fontWeight: 350 }}>
                 {!this.state.embeddingMissing && (
                   <button
-                    onClick={() => search({ q: `track:~${currentTrack?.id}` })}
+                    onClick={() => search({ q: `track:~${currentTrack?.id}`, new: true })}
                     className={
                       'button button-push_button button-push_button-small button-push_button-primary preview-action_button no-style-link'
                     }
