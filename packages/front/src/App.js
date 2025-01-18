@@ -26,6 +26,7 @@ import IgnorePopup from './IgnorePopup'
 import KeyboardShortcutsPopup from './KeyboardShortcutsPopup'
 
 import { isMobile } from 'react-device-detect'
+import { events, subscribe, unsubscribe } from './events'
 
 library.add(fas, far, fab)
 
@@ -40,6 +41,11 @@ class App extends Component {
   constructor(props) {
     super(props)
     const { listState, currentTrack } = JSON.parse(window.localStorage.getItem('currentTrack')) || {}
+
+    this.searchEventHandler = function (params) {
+      const { q, ...rest } = params.detail
+      this.search(q, rest)
+    }.bind(this)
 
     this.state = {
       carts: [],
@@ -86,7 +92,13 @@ class App extends Component {
     ])
   }
 
+  async componentWillUnmount() {
+    unsubscribe(events.SEARCH, this.searchEventHandler)
+  }
+
   async componentDidMount() {
+    subscribe(events.SEARCH, this.searchEventHandler)
+
     const pathParts = location.pathname.slice(1).split('/')
     const isCartPath = pathParts[0] === 'carts'
     let sharedStates
@@ -421,7 +433,7 @@ class App extends Component {
     const { sort = '-released', limit = 100, addedSince = null, onlyNew = null } = filters
 
     if (search === '') return
-    this.setState({ searchInProgress: true, searchError: undefined })
+    this.setState({ searchInProgress: true, searchError: undefined, search })
     try {
       const searchResults = await (
         await requestWithCredentials({
