@@ -44,6 +44,7 @@ class App extends Component {
 
     this.searchEventHandler = function (params) {
       const { q, ...rest } = params.detail
+      this.setState({ search: q })
       this.search(q, rest)
     }.bind(this)
 
@@ -433,11 +434,11 @@ class App extends Component {
     const { sort = '-released', limit = 100, addedSince = null, onlyNew = null } = filters
 
     if (search === '') return
-    this.setState({ searchInProgress: true, searchError: undefined, search })
+    this.setState({ searchInProgress: true, searchError: undefined })
     try {
       const searchResults = await (
         await requestWithCredentials({
-          path: `/tracks?q=${search}&sort=${sort || ''}&addedSince=${addedSince || ''}&new=${onlyNew || ''}&limit=${limit || ''}`,
+          path: `/tracks?q=${search}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}`,
         })
       ).json()
       this.setState({ searchResults, searchError: undefined })
@@ -735,7 +736,7 @@ class App extends Component {
                         sort: searchParams.get('sort') || '-released',
                         limit: searchParams.get('limit') || 100,
                         addedSince: searchParams.get('addedSince') || '',
-                        onlyNew: searchParams.get('new') || '',
+                        onlyNew: searchParams.get('onlyNew') || '',
                       }
                       this.search(query, filters)
                       this.setState({ search: query })

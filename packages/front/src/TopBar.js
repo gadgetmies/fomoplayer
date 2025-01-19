@@ -67,7 +67,7 @@ class TopBar extends Component {
       async () => {
         this.setState({ searchDebounce: undefined, listState: 'search' })
         this.props.history.push(
-          `/search/?q=${this.state.search.trim()}&sort=${this.state.sort || ''}&new=${this.state.onlyNew || ''}&addedSince=${this.state.addedSince || ''}&limit=${this.state.limit || ''}`,
+          `/search/?q=${this.state.search.trim()}&sort=${this.state.sort || ''}&onlyNew=${this.state.onlyNew || ''}&addedSince=${this.state.addedSince || ''}&limit=${this.state.limit || ''}`,
         )
         // TODO: cancel this request if new one is requested
         await this.props.onSearch(this.state.search, {
