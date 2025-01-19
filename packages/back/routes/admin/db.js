@@ -123,7 +123,10 @@ GROUP BY track_id, track_isrc`
       .append(purchased ? ', cart_is_purchased' : '')
       .append(' ORDER BY ')
       .append(purchased ? 'cart_is_purchased NULLS LAST,' : '')
-      .append(sql` MAX(store__track_published) DESC LIMIT ${batch_size || 20}`),
+      .append(sql`
+BOOL_OR(cart_id IS NULL) DESC, 
+MAX(store__track_published) DESC 
+LIMIT ${batch_size || 20}`),
   )
 }
 
