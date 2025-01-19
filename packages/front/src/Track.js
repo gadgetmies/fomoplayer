@@ -7,10 +7,8 @@ import PillButton from './PillButton'
 import StoreIcon from './StoreIcon'
 import scoreWeights from './scoreWeights'
 import { followableNameLinks, namesToString } from './trackFunctions'
-import DropDownButton from './DropDownButton'
-import { Link, NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Popup from './Popup'
-import SearchBar from './SearchBar'
 import { CartDropDownButton } from './CartDropDownButton'
 
 const isNumber = (value) => typeof value === 'number' && !Number.isNaN(value)
@@ -66,6 +64,7 @@ class Track extends Component {
     const inCart = this.props.listState === 'carts' ? inCurrentCart : inDefaultCart
     const processingCart = this.props.processingCart
     const removeLabel = this.props.listState === 'carts' ? 'Remove from current cart' : 'Remove from default cart'
+    const noPreviews = this.props.noPreviews
 
     const actions = this.props.stores
       ?.map(({ storeName, searchUrl }) => {
@@ -112,8 +111,6 @@ class Track extends Component {
       })
       ?.filter((i) => i)
 
-    const onCartFilterChange = (e) => this.props.onCartFilterChange(e.target.value)
-    const onClearCartFilter = () => this.props.onCartFilterChange('')
     const cartFilter = this.props.cartFilter
 
     return (
@@ -124,21 +121,36 @@ class Track extends Component {
         onDoubleClick={() => {
           this.props.onDoubleClick()
         }}
-        className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''}`}
+        className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''} ${noPreviews ? 'track__no-previews' : ''}`}
       >
         {this.props.mode === 'app' ? (
           <td className={'new-cell tracks-cell'}>
             <button
               className="button track-mark-heard-button"
               onClick={(e) => {
-                this.props.onMarkHeardButtonClick(this.props.track.id)
+                this.props.onMarkHeardButtonClick(this.props.id)
                 e.stopPropagation()
-                e.preventDefault()
               }}
               onMouseEnter={() => this.setHeardHover(true)}
               onMouseLeave={() => this.setHeardHover(false)}
             >
-              {this.state.heardHover ? (
+              {this.props.noPreviews ? (
+                <Popup
+                  anchor={
+                    this.state.heardHover && !this.props.heard ? (
+                      <FontAwesomeIcon icon="times-circle" />
+                    ) : (
+                      <FontAwesomeIcon icon="circle-exclamation" />
+                    )
+                  }
+                  popupClassName={'popup_content-right'}
+                >
+                  <div style={{ padding: 8, width: 100, boxSizing: 'border-box', lineHeight: 'normal' }}>
+                    There are no previews available for this track.{' '}
+                    {!this.props.heard && 'Click here to mark it as heard.'}
+                  </div>
+                </Popup>
+              ) : this.state.heardHover ? (
                 <FontAwesomeIcon icon="times-circle" />
               ) : !!this.props.heard ? null : (
                 <FontAwesomeIcon icon="circle" />
@@ -258,6 +270,22 @@ class Track extends Component {
                 </Popup>
               )}
             </div>
+            {noPreviews && (
+              <div className={'cart-cell track-table-cell preview-missing-actions'} style={{ overflow: 'visible' }}>
+                <Popup
+                  anchor={
+                    <PillButton>
+                      <FontAwesomeIcon icon={'exclamation-circle'} />
+                      No previews
+                    </PillButton>
+                  }
+                >
+                  <div style={{ padding: 8, width: 200, boxSizing: 'border-box', lineHeight: 'normal' }}>
+                    There are no previews available for this track. Click below to mark it as heard.
+                  </div>
+                </Popup>
+              </div>
+            )}
             <div
               className={'cart-cell track-table-cell'}
               style={{ overflow: 'visible', display: 'flex', alignItems: 'center' }}
@@ -283,6 +311,17 @@ class Track extends Component {
                   onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
                 />
               </span>
+            </div>
+            <div className={'cart-cell track-table-cell preview-missing-actions'} style={{ overflow: 'visible' }}>
+              <button
+                className={'button button-push_button button-push_button-small button-push_button-primary'}
+                onClick={(e) => {
+                  this.props.onMarkHeardButtonClick(this.props.id)
+                  e.stopPropagation()
+                }}
+              >
+                Mark as heard
+              </button>
             </div>
           </td>
         ) : null}

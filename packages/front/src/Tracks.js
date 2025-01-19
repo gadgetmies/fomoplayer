@@ -155,6 +155,7 @@ class Tracks extends Component {
             releases,
             released,
             published,
+            previews,
             added,
             keys,
             genres,
@@ -208,6 +209,7 @@ class Tracks extends Component {
               processingCart={this.props.processingCart}
               key={`track-${id}`}
               follows={this.props.follows}
+              noPreviews={previews.every(({ url, store }) => !url && store !== 'bandcamp')}
               onClick={() => {
                 this.props.onPreviewRequested(id)
               }}

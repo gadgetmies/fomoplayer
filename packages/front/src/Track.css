@@ -7,14 +7,23 @@
   user-select: none;
 }
 
+.tracks-table > tbody > tr.track__no-previews:not(.playing) {
+  background: repeating-linear-gradient(45deg, #606060, #606060 10px, #666 10px, #666 20px);
+}
+
 @media (max-width: 768px) {
   .empty-cell {
     display: none;
   }
 }
+
 @media (min-width: 769px) {
   .cart-popup_content {
     width: 8rem;
     right: calc(50% - 4rem - 6px);
+  }
+
+  .preview-missing-actions {
+    display: none;
   }
 }
