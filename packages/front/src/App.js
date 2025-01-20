@@ -42,10 +42,10 @@ class App extends Component {
     super(props)
     const { listState, currentTrack } = JSON.parse(window.localStorage.getItem('currentTrack')) || {}
 
-    this.searchEventHandler = function (params) {
+    this.searchEventHandler = async function (params) {
       const { q, ...rest } = params.detail
       this.setState({ search: q })
-      this.search(q, rest)
+      await this.search(q, rest)
     }.bind(this)
 
     this.state = {
@@ -432,6 +432,7 @@ class App extends Component {
 
   async search(search, filters = {}) {
     const { sort = '-released', limit = 100, addedSince = null, onlyNew = null } = filters
+    console.log({ onlyNew, filters })
 
     if (search === '') return
     this.setState({ searchInProgress: true, searchError: undefined })

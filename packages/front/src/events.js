@@ -15,6 +15,6 @@ const publish = (eventName, data) => {
   document.dispatchEvent(event)
 }
 
-export const search = (query) => {
-  publish(events.SEARCH, query)
+export const search = (details) => {
+  publish(events.SEARCH, details)
 }
