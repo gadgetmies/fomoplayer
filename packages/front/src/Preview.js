@@ -740,7 +740,7 @@ class Preview extends Component {
               <button className="button button-playback" onClick={() => this.props.onNext()}>
                 <FontAwesomeIcon icon="step-forward" />
               </button>
-              <div className="preview_actions_wrapper" style={{ fontSize: '75%', lineHeight: '2rem', fontWeight: 350 }}>
+              <div className="preview_actions_wrapper" style={{ fontSize: '75%', fontWeight: 350 }}>
                 {this.props.mode !== 'app' ? null : this.props.togglingCurrentInCart ? (
                   <div
                     style={{
@@ -819,7 +819,10 @@ class Preview extends Component {
                 )}
                 <Popup
                   anchor={
-                    <button className={'pill pill-button button-push_button-small popup-anchor'} style={{ flex: 1 }}>
+                    <button
+                      className={'pill pill-button button-push_button-small popup-anchor'}
+                      style={{ height: '100%', margin: 0, border: '1px solid #000' }}
+                    >
                       <span className="pill-button-contents">
                         <span className="button-push_button_icon">
                           <FontAwesomeIcon icon={'share'} />
@@ -836,19 +839,24 @@ class Preview extends Component {
                   {currentTrack && (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span
-                        className="pill pill-small pill-button"
-                        style={{ display: 'block', width: '100%', margin: 0, marginBottom: 4, padding: 0, border: 0 }}
+                        className="pill pill-button-large pill-button"
+                        style={{ width: '100%', margin: 0, marginBottom: 4, boxSizing: 'border-box', border: 0 }}
                       >
                         <span className="pill-button-contents">
                           <CopyToClipboardButton
                             title={shareLabel}
                             label={shareLabel}
                             content={shareContent}
-                            style={{ height: '2rem', width: '100%', padding: '0 4px', boxSizing: 'border-box' }}
+                            style={{
+                              width: '100%',
+                              padding: '0 4px',
+                              boxSizing: 'border-box',
+                            }}
                           />
                         </span>
                       </span>
                       <ShareLink
+                        size={'large'}
                         href={`https://telegram.me/share/url?url=${encodeURIComponent(
                           shareLink,
                         )}&text=${encodeURIComponent(shareContent)}`}
@@ -856,6 +864,7 @@ class Preview extends Component {
                         label={'Share on Telegram'}
                       />
                       <ShareLink
+                        size={'large'}
                         href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
                           shareLink,
                         )}&t=${encodeURIComponent(shareContent)}`}
@@ -863,6 +872,7 @@ class Preview extends Component {
                         label={'Share on Facebook'}
                       />
                       <ShareLink
+                        size={'large'}
                         href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
                           shareLink,
                         )}&text=${encodeURIComponent(shareContent)}`}

@@ -11,6 +11,10 @@
   font-size: 75%;
 }
 
+.pill-button-large, .pill-link-large, .pill-large {
+  padding: 16px;
+}
+
 .pill-button {
   background: currentColor;
   border: 1px solid;
@@ -25,14 +29,17 @@
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 4px;
+  align-content: center;
   height: 100%;
+}
+
+.pill-link {
+  gap: 4px;
 }
 
 .pill-link {
   border: 0.5px solid currentColor;
   display: inline-flex;
-  gap: 4px;
   text-decoration: none;
   box-sizing: border-box;
   align-items: center;
@@ -46,6 +53,9 @@
 }
 
 @media (max-width: 590px) {
+  .pill-button-large, .pill-link-large, .pill-large {
+    font-size: 16px;
+  }
 }
 
 @media (min-width: 591px) {
@@ -63,21 +73,12 @@
   .pill-button {
     min-height: 2rem;
   }
-
-  .pill-link-large {
-    padding: 16px;
-    font-size: 100%;
-  }
 }
 
 @media (min-width: 769px) {
   .pill-link-collapse .pill-link-text,
   .pill-link-collapse .pill-button-text {
     display: none;
-  }
-
-  .pill-link-large {
-    padding: 8px;
   }
 }
 
@@ -93,6 +94,7 @@
 @media (min-width: 1029px) {
   .pill-button-contents {
     flex-wrap: nowrap;
+    gap: 4px;
   }
 }
 

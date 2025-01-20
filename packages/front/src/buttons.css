@@ -193,9 +193,6 @@ button::-moz-focus-inner {
 }
 
 @media (min-width: 591px) {
-  .button-push_button-small {
-    font-size: 0.7rem;
-  }
 }
 
 @media (max-width: 768px) {

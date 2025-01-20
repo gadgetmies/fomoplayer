@@ -13,7 +13,7 @@ class ShareLink extends Component {
         href={this.props.href}
         target={'_blank'}
         className={`pill-link pill pill-${this.props.size || 'small'}`}
-        style={{ display: 'block', width: '100%', margin: 0, marginBottom: 4 }}
+        style={{ width: '100%', margin: 0, marginBottom: 4, ...this.props.style }}
         onClick={(e) => {
           e.stopPropagation()
         }}

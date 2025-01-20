@@ -291,7 +291,7 @@ class TopBar extends Component {
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <button
-                  className="button button-push_button button-push_button-small button-push_button-primary"
+                  className="button button-push_button button-push_button-large button-push_button-primary"
                   onClick={() => {
                     this.props.history.push('/new')
                     this.setState({ supportMenuOpen: false })
@@ -306,7 +306,7 @@ class TopBar extends Component {
                       this.setState({ supportMenuOpen: false })
                       this.props.onKeyboardShortcutsClicked()
                     }}
-                    className="button button-push_button button-push_button-small button-push_button-primary"
+                    className="button button-push_button button-push_button-large button-push_button-primary"
                   >
                     <FontAwesomeIcon icon="keyboard" className="popup-anchor" data-help-id="keyboard-shortcuts" />{' '}
                     Keyboard Shortcuts
