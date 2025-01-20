@@ -146,7 +146,8 @@ class Track extends Component {
                   popupClassName={'popup_content-right'}
                 >
                   <div style={{ padding: 8, width: 100, boxSizing: 'border-box', lineHeight: 'normal' }}>
-                    There are no previews available for this track.{' '}
+                    There are no previews available for this track. You can open the track or search for it using the
+                    store links.{' '}
                     {!this.props.heard && 'Click here to mark it as heard.'}
                   </div>
                 </Popup>
