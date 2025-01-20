@@ -120,6 +120,8 @@ audio {
 }
 
 .full-screen-popup {
+  display: flex;
+  flex-direction: column;
   border-radius: 10px;
   padding: 20px;
   background-color: #ccc;
@@ -199,12 +201,6 @@ audio {
 
 .scroll-container {
   overflow-y: auto;
-  /* TODO: Fix this hack with position: sticky etc.
-  the 50px is roughly the size of the top bar and
-  the 40px is just a safety margin to ensure all the
-  content gets displayed */
-  height: calc(100dvh);
-  padding-bottom: 120px;
 }
 
 .followed {
@@ -278,10 +274,6 @@ input[type='range']::-webkit-slider-runnable-track {
 }
 
 @media (max-width: 768px) {
-  .mobile .full-screen-popup {
-    padding-bottom: 128px;
-  }
-
   .full-screen-popup {
     bottom: 0;
     border-bottom-left-radius: 0;
@@ -290,7 +282,6 @@ input[type='range']::-webkit-slider-runnable-track {
     right: 2rem;
     max-height: calc(100dvh - 2rem);
     position: absolute;
-    padding-bottom: 80px;
   }
 
   .full-screen-popup-container {
