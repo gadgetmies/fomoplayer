@@ -773,20 +773,19 @@ class Preview extends Component {
                     onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
                   />
                 )}
-                {!this.state.embeddingMissing && (
-                  <button
-                    onClick={() => search({ q: `track:~${currentTrack?.id}`, onlyNew: true })}
-                    className={
-                      'button button-push_button button-push_button-small button-push_button-primary preview-action_button no-style-link'
-                    }
-                    style={{ lineHeight: 'normal' }}
-                  >
-                    <span className="button-push_button_icon">
-                      <FontAwesomeIcon icon="circle-nodes" />
-                    </span>{' '}
-                    <span className="button-push_button_label">Find similar</span>
-                  </button>
-                )}
+                <button
+                  disabled={this.state.embeddingMissing}
+                  onClick={() => search({ q: `track:~${currentTrack?.id}`, onlyNew: true })}
+                  className={
+                    'button button-push_button button-push_button-small button-push_button-primary preview-action_button no-style-link'
+                  }
+                  style={{ lineHeight: 'normal' }}
+                >
+                  <span className="button-push_button_icon">
+                    <FontAwesomeIcon icon="circle-nodes" />
+                  </span>{' '}
+                  <span className="button-push_button_label">Find similar</span>
+                </button>
                 {this.props.mode === 'app' && (
                   <>
                     <button
