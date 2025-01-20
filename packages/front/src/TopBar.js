@@ -15,22 +15,12 @@ class TopBar extends Component {
   constructor(props) {
     super(props)
 
-    const urlSearchParams = new URLSearchParams(props.location.search)
-    const query = urlSearchParams.get('q') || ''
-    const sort = urlSearchParams.get('sort')
-    const onlyNew = urlSearchParams.get('new')
-    const limit = urlSearchParams.get('limit')
-    const addedSince = urlSearchParams.get('addedSince')
-
+    const query = props.search
     this.state = {
       requestNotificationSearch: '',
       searchDebounce: undefined,
       searchActive: query !== '',
       search: query,
-      sort,
-      onlyNew,
-      limit,
-      addedSince,
       supportMenuOpen: false,
       emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
       discoverMenuOpen: false,
@@ -43,14 +33,6 @@ class TopBar extends Component {
     this.setState({ emailVerificationDismissed: true })
   }
 
-  async componentDidMount() {
-    const query = new URLSearchParams(this.props.location.search)
-    const searchQuery = query.get('q')
-    if (searchQuery) {
-      await this.setSearch(searchQuery, true)
-    }
-  }
-
   async setSearch(search, skipDebounce = false) {
     this.setState({ search, searchActive: true })
 
@@ -59,23 +41,19 @@ class TopBar extends Component {
     }
 
     if (search === '') {
-      this.props.onSearch('', this.state.sort || '')
+      this.props.onSearch('', this.props.searchFilters)
       return
     }
 
     const timeout = setTimeout(
       async () => {
         this.setState({ searchDebounce: undefined, listState: 'search' })
+        const { sort, onlyNew, addedSince, limit } = this.props.searchFilters
         this.props.history.push(
-          `/search/?q=${this.state.search.trim()}&sort=${this.state.sort || ''}&onlyNew=${this.state.onlyNew || ''}&addedSince=${this.state.addedSince || ''}&limit=${this.state.limit || ''}`,
+          `/search/?q=${this.state.search.trim()}&sort=${sort || ''}&onlyNew=${onlyNew || ''}&addedSince=${addedSince || ''}&limit=${limit || ''}`,
         )
         // TODO: cancel this request if new one is requested
-        await this.props.onSearch(this.state.search, {
-          sort: this.state.sort,
-          onlyNew: this.state.onlyNew,
-          addedSince: this.state.addedSince,
-          limit: this.state.limit,
-        })
+        await this.props.onSearch(this.state.search, this.props.searchFilters)
       },
       skipDebounce ? 0 : 1000,
     )

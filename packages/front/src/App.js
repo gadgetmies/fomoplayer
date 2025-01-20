@@ -44,9 +44,17 @@ class App extends Component {
 
     this.searchEventHandler = async function (params) {
       const { q, ...rest } = params.detail
-      this.setState({ search: q })
-      await this.search(q, rest)
+      this.setState({ search: q, searchFilters: rest })
+      await this.search(q, { ...filters, ...rest })
     }.bind(this)
+
+    const searchParams = new URLSearchParams(window.location.search)
+    const filters = {
+      sort: searchParams.get('sort') || '-released',
+      limit: searchParams.get('limit') || 100,
+      addedSince: searchParams.get('addedSince') || '',
+      onlyNew: searchParams.get('onlyNew') || '',
+    }
 
     this.state = {
       carts: [],
@@ -63,6 +71,7 @@ class App extends Component {
       isMobile,
       onboarding: false,
       search: '',
+      searchFilters: filters,
       searchInProgress: false,
       searchError: undefined,
       searchResults: [],
@@ -430,16 +439,16 @@ class App extends Component {
     }
   }
 
-  async search(search, filters = {}) {
+  async search(query, filters = {}) {
     const { sort = '-released', limit = 100, addedSince = null, onlyNew = null } = filters
     console.log({ onlyNew, filters })
 
-    if (search === '') return
+    if (query === '') return
     this.setState({ searchInProgress: true, searchError: undefined })
     try {
       const searchResults = await (
         await requestWithCredentials({
-          path: `/tracks?q=${search}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}`,
+          path: `/tracks?q=${query}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}`,
         })
       ).json()
       this.setState({ searchResults, searchError: undefined })
@@ -701,6 +710,7 @@ class App extends Component {
                   listState={this.state.listState}
                   notifications={this.state.notifications}
                   search={this.state.search}
+                  searchFilters={this.state.searchFilters}
                   userSettings={this.state.userSettings}
                   stores={this.state.stores}
                   carts={this.state.carts}
@@ -739,8 +749,8 @@ class App extends Component {
                         addedSince: searchParams.get('addedSince') || '',
                         onlyNew: searchParams.get('onlyNew') || '',
                       }
+                      this.setState({ search: query, searchFilters: filters })
                       this.search(query, filters)
-                      this.setState({ search: query })
                     }
                     const settingsVisible = props.location.pathname.match(/\/settings\/?/)
                     let listState = this.state.listState

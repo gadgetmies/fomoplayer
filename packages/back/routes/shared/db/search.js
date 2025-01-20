@@ -12,7 +12,7 @@ const aliasToColumn = {
   heard: 'user__track_heard',
 }
 
-module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince, new: onlyNew } = {}) => {
+module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince, onlyNew } = {}) => {
   const addedSinceValue = addedSince || null
   const idFilter = queryString
     .split(' ')
