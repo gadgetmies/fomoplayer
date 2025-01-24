@@ -126,6 +126,7 @@ class App extends Component {
     if (isCartPath && pathParts.length > 1 && pathParts[1] !== '') {
       const cartUuid = pathParts[1]
       const filter = location.search
+      // TODO: this causes a race condition with the initial cart fetch causing only the selected cart to be visible in the UI
       cartSelectPromise = this.selectCart(cartUuid, filter)
 
       const initialPosition = parseInt(location.hash.substring(1)) || undefined
