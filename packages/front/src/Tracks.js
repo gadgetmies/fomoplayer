@@ -92,157 +92,111 @@ class Tracks extends Component {
   }
 
   renderTracks(tracks) {
-    const emptyListLabels = {
-      search:
-        this.props.searchError !== undefined
-          ? this.props.searchError
-          : this.props.searchInProgress
-            ? 'Searching...'
-            : 'No results',
-      carts:
-        this.props.carts.length === 0
-          ? 'Loading carts...'
-          : tracks.length === 0
-            ? this.state.trackListFilterDebounced === ''
-              ? 'Cart empty'
-              : 'No tracks matching filters'
-            : '',
-      new: (
-        <>
-          No tracks available. Perhaps you need to{' '}
-          <Link to={'/settings'}>
-            <strong>follow more artists and labels</strong>
-          </Link>
-          ?
-        </>
-      ),
-      heard: 'No tracks played',
-      recent: 'No tracks added',
-    }
     const defaultCart = this.props.carts.find(R.prop('is_default'))
 
-    return this.props.searchInProgress ? (
-      <tr style={{ display: 'block' }} key={'search-in-progress'}>
-        <td>
-          Searching <Spinner />
-        </td>
-      </tr>
-    ) : this.props.fetchingCartDetails ? (
-      <tr style={{ display: 'block' }} key={'search-in-progress'}>
-        <td>
-          Fetching cart details <Spinner />
-        </td>
-      </tr>
-    ) : tracks.length === 0 ? (
-      <tr style={{ display: 'block' }} key={'no-results'}>
-        <td>{emptyListLabels[this.props.listState]}</td>
-      </tr>
-    ) : (
+    return (
       <>
-        {this.props.listState === 'search' ? (
-          <tr style={{ display: 'block' }} key={'result-count'}>
-            <td>{tracks.length} results</td>
-          </tr>
-        ) : null}
-        {tracks.map((track, index) => {
-          const {
-            id,
-            title,
-            mix,
-            artists,
-            remixers,
-            labels,
-            releases,
-            released,
-            published,
-            previews,
-            added,
-            keys,
-            genres,
-            score,
-            score_details,
-            heard,
-            stores,
-            version,
-          } = track
-          const inCarts = this.props.carts.filter((cart) => cart.tracks?.find(R.propEq('id', id)))
-          const selectedCartId = this.props.selectedCart?.id
-          return (
-            <Track
-              mode={this.props.mode}
-              listState={this.props.listState}
-              cartUuid={this.props.selectedCart?.uuid}
-              carts={this.props.carts}
-              cartFilter={this.state.cartFilter}
-              defaultCartId={this.props.carts.find(R.prop('is_default'))?.id}
-              selectedCartId={selectedCartId}
-              selectedCartIsPurchased={this.props.selectedCartIsPurchased}
-              id={id}
-              index={index}
-              title={title}
-              artists={artists}
-              mix={mix}
-              remixers={remixers}
-              labels={labels}
-              released={released}
-              releases={releases}
-              published={published}
-              added={added}
-              keys={keys}
-              bpms={Array.from(new Set(stores.map(R.prop('bpm'))))}
-              genres={genres}
-              score={score}
-              scoreDetails={score_details}
-              trackStores={stores}
-              stores={this.props.stores}
-              selected={this.state.selectedTrack === id}
-              playing={this.props.currentTrack === id}
-              version={version}
-              heard={heard}
-              enabledStores={this.props.enabledStores}
-              enabledStoreSearch={this.props.enabledStoreSearch}
-              selectedCart={this.props.selectedCart}
-              inDefaultCart={defaultCart ? defaultCart.tracks?.find(R.propEq('id', id)) !== undefined : false}
-              inCurrentCart={inCarts.find(({ id }) => id === selectedCartId) !== undefined}
-              inCarts={inCarts}
-              popupAbove={tracks.length > 10 && tracks.length - index < 10}
-              processingCart={this.props.processingCart}
-              key={`track-${id}`}
-              follows={this.props.follows}
-              noPreviews={previews.every(({ url, store }) => !url && store !== 'bandcamp')}
-              onClick={() => {
-                this.props.onPreviewRequested(id)
-              }}
-              onDoubleClick={() => {
-                this.props.onPreviewRequested(id)
-              }}
-              onTouchTap={() => {
-                this.props.onPreviewRequested(id)
-              }}
-              onAddToCart={this.props.onAddToCart}
-              onCreateCart={this.props.onCreateCart}
-              onUpdateCarts={this.props.onUpdateCarts}
-              onRemoveFromCart={this.props.onRemoveFromCart}
-              onFollowClicked={() => {
-                this.props.onFollowClicked(track)
-              }}
-              onIgnoreClicked={() => {
-                this.props.onIgnoreClicked(track)
-              }}
-              onIgnoreArtistsByLabels={() =>
-                this.props.onIgnoreArtistsByLabels({
-                  artistIds: artists.map(R.prop('id')),
-                  labelIds: labels.map(R.prop('id')),
-                })
-              }
-              onCartButtonClick={this.props.onCartButtonClick}
-              onCreateCartClick={this.props.onCreateCartClick}
-              onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
-              onCartFilterChange={this.onCartFilterChange.bind(this)}
-              onMarkHeardButtonClick={this.props.onMarkHeardButtonClick}
-            />
-          )
-        })}
+        {tracks.length !== 0 &&
+          !this.props.searchInProgress &&
+          tracks.map((track, index) => {
+            const {
+              id,
+              title,
+              mix,
+              artists,
+              remixers,
+              labels,
+              releases,
+              released,
+              published,
+              previews,
+              added,
+              keys,
+              genres,
+              score,
+              score_details,
+              heard,
+              stores,
+              version,
+            } = track
+            const inCarts = this.props.carts.filter((cart) => cart.tracks?.find(R.propEq('id', id)))
+            const selectedCartId = this.props.selectedCart?.id
+            return (
+              <Track
+                mode={this.props.mode}
+                listState={this.props.listState}
+                cartUuid={this.props.selectedCart?.uuid}
+                carts={this.props.carts}
+                cartFilter={this.state.cartFilter}
+                defaultCartId={this.props.carts.find(R.prop('is_default'))?.id}
+                selectedCartId={selectedCartId}
+                selectedCartIsPurchased={this.props.selectedCartIsPurchased}
+                id={id}
+                index={index}
+                title={title}
+                artists={artists}
+                mix={mix}
+                remixers={remixers}
+                labels={labels}
+                released={released}
+                releases={releases}
+                published={published}
+                added={added}
+                keys={keys}
+                bpms={Array.from(new Set(stores.map(R.prop('bpm'))))}
+                genres={genres}
+                score={score}
+                scoreDetails={score_details}
+                trackStores={stores}
+                stores={this.props.stores}
+                selected={this.state.selectedTrack === id}
+                playing={this.props.currentTrack === id}
+                version={version}
+                heard={heard}
+                enabledStores={this.props.enabledStores}
+                enabledStoreSearch={this.props.enabledStoreSearch}
+                selectedCart={this.props.selectedCart}
+                inDefaultCart={defaultCart ? defaultCart.tracks?.find(R.propEq('id', id)) !== undefined : false}
+                inCurrentCart={inCarts.find(({ id }) => id === selectedCartId) !== undefined}
+                inCarts={inCarts}
+                popupAbove={tracks.length > 10 && tracks.length - index < 10}
+                processingCart={this.props.processingCart}
+                key={`track-${id}`}
+                follows={this.props.follows}
+                noPreviews={previews.every(({ url, store }) => !url && store !== 'bandcamp')}
+                onClick={() => {
+                  this.props.onPreviewRequested(id)
+                }}
+                onDoubleClick={() => {
+                  this.props.onPreviewRequested(id)
+                }}
+                onTouchTap={() => {
+                  this.props.onPreviewRequested(id)
+                }}
+                onAddToCart={this.props.onAddToCart}
+                onCreateCart={this.props.onCreateCart}
+                onUpdateCarts={this.props.onUpdateCarts}
+                onRemoveFromCart={this.props.onRemoveFromCart}
+                onFollowClicked={() => {
+                  this.props.onFollowClicked(track)
+                }}
+                onIgnoreClicked={() => {
+                  this.props.onIgnoreClicked(track)
+                }}
+                onIgnoreArtistsByLabels={() =>
+                  this.props.onIgnoreArtistsByLabels({
+                    artistIds: artists.map(R.prop('id')),
+                    labelIds: labels.map(R.prop('id')),
+                  })
+                }
+                onCartButtonClick={this.props.onCartButtonClick}
+                onCreateCartClick={this.props.onCreateCartClick}
+                onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
+                onCartFilterChange={this.onCartFilterChange.bind(this)}
+                onMarkHeardButtonClick={this.props.onMarkHeardButtonClick}
+              />
+            )
+          })}
       </>
     )
   }
@@ -272,16 +226,71 @@ class Tracks extends Component {
       </button>
     )
 
+    const tracks = this.props.tracks
+
+    const emptyListLabels = {
+      search:
+        this.props.searchError !== undefined
+          ? this.props.searchError
+          : this.props.searchInProgress
+            ? 'Searching...'
+            : 'No results',
+      new: (
+        <>
+          No tracks available. Perhaps you need to{' '}
+          <Link to={'/settings'}>
+            <strong>follow more artists and labels</strong>
+          </Link>
+          ?
+        </>
+      ),
+      heard: 'No tracks played',
+      recent: 'No tracks added',
+    }
+
+    const listInfo =
+      this.props.listState === 'carts' && this.props.carts.length === 0 ? (
+        <th>
+          <Spinner />
+          Loading carts...
+        </th>
+      ) : tracks.length === 0 ? (
+        <th>{emptyListLabels[this.props.listState]}</th>
+      ) : this.props.searchInProgress ? (
+        <th>
+          Searching <Spinner />
+        </th>
+      ) : this.props.fetchingCartDetails ? (
+        <th>
+          Fetching cart details <Spinner />
+        </th>
+      ) : this.props.listState === 'search' ? (
+        <th>{tracks.length} results</th>
+      ) : null
     return (
       <div style={{ height: this.props.height, borderTop: '1px solid black' }} className="tracks">
         {this.props.listState === 'carts' && (
           <div className={'top-bar input-layout'} style={{ width: '100%' }}>
             <div
               className="tracks-top_bar_group"
-              style={{ width: '100%', display: 'flex', padding: 4, boxSizing: 'border-box' }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                padding: 4,
+                boxSizing: 'border-box',
+              }}
             >
               {this.props.mode === 'app' ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', width: '100%' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    flexWrap: 'wrap',
+                    width: '100%',
+                    justifyContent: 'space-between',
+                  }}
+                >
                   <SearchBar
                     placeholder={'Filter'}
                     value={this.state.trackListFilter}
@@ -327,7 +336,7 @@ class Tracks extends Component {
                     Tracks in cart: {this.props.selectedCart?.track_count}
                     {this.props.selectedCart?.track_count > 200 &&
                       ` (showing ${this.props.tracksOffset + 1} - ${Math.min(
-                        this.props.tracksOffset + this.props.tracks.length,
+                        this.props.tracksOffset + tracks.length,
                         this.props.selectedCart?.track_count,
                       )})`}
                   </span>
@@ -347,6 +356,12 @@ class Tracks extends Component {
         )}
         <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
           <thead className={'noselect tracks-table-header'}>
+            {listInfo && (
+              <tr style={{ display: 'block', borderBottom: '1px solid black', padding: '0 8px', background: '#222' }}>
+                {listInfo}
+              </tr>
+            )}
+
             <tr style={{ display: 'block' }} className={'noselect'}>
               {this.props.mode === 'app' ? (
                 <th className={'new-cell tracks-cell'}>
@@ -469,7 +484,7 @@ class Tracks extends Component {
             </tr>
             {this.renderTracks(
               this.props.listState === 'carts'
-                ? this.props.tracks.filter(
+                ? tracks.filter(
                     ({ artists, title, labels, keys, releases, stores }) =>
                       (!this.state.trackListFilterDebounced ||
                         filterMatches(this.state.trackListFilterDebounced, {
@@ -481,7 +496,7 @@ class Tracks extends Component {
                         })) &&
                       this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
                   )
-                : this.props.tracks,
+                : tracks,
             )}
             {['new', 'recent', 'heard'].includes(this.props.listState) ? (
               <tr style={{ display: 'flex' }}>
@@ -512,7 +527,7 @@ class Tracks extends Component {
                   <SpinnerButton
                     size={'large'}
                     loading={this.state.updatingTracks}
-                    disabled={this.props.tracks.length < 200}
+                    disabled={tracks.length < 200}
                     onClick={this.adjustOffset.bind(this, 200)}
                     style={{ margin: 'auto', height: '100%', display: 'block' }}
                     label={'Next page'}
