@@ -15,6 +15,7 @@ const SearchBar = (props) => (
         value={props.value}
         onChange={props.onChange}
         placeholder={props.placeholder}
+        onKeyDown={props.onKeyDown}
         onClick={(e) => e.stopPropagation()}
       />
       {props.loading ? (
