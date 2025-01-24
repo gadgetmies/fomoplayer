@@ -34,6 +34,19 @@
   width: 100%;
 }
 
+.search__inactive .text-input {
+  color: #0000;
+}
+.search__inactive .text-input:focus {
+  color: inherit;
+}
+.search__inactive .search-input-icon {
+  display: none;
+}
+.search__inactive .text-input:focus + .search-input-icon {
+  display: block;
+}
+
 .search_container {
   display: flex;
   flex: 1;

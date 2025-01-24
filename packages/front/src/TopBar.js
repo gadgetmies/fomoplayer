@@ -19,7 +19,6 @@ class TopBar extends Component {
     this.state = {
       requestNotificationSearch: '',
       searchDebounce: undefined,
-      searchActive: query !== '',
       search: query,
       supportMenuOpen: false,
       emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
@@ -34,7 +33,7 @@ class TopBar extends Component {
   }
 
   async setSearch(search, skipDebounce = false) {
-    this.setState({ search, searchActive: true })
+    this.setState({ search })
 
     if (this.state.searchDebounce) {
       clearTimeout(this.state.searchDebounce)
@@ -59,21 +58,7 @@ class TopBar extends Component {
     )
     this.setState({ searchDebounce: timeout })
   }
-
-  componentDidUpdate({ search: prevSearch, location: { pathname: prevPath } }, { search: prevStateSearch }) {
-    const newPath = this.props.location.pathname
-    if (prevPath !== newPath && !newPath.startsWith('/search')) {
-      this.setState({ searchActive: false, search: '' })
-    }
-
-    if (this.props.search !== prevSearch && this.props.search !== this.state.search) {
-      this.setState({ searchActive: true, search: this.props.search })
-    }
-    if (prevStateSearch !== this.state.search) {
-      this.setSearch(this.state.search)
-    }
-  }
-
+  
   getNotificationSubscriptions() {
     return this.props.notifications.filter(R.propEq('text', this.state.search?.toLocaleLowerCase()))
   }
@@ -160,109 +145,110 @@ class TopBar extends Component {
               </div>
             </Popup>
           </div>
-          <div
-            style={{ display: 'flex', gap: 8, alignItems: 'center' }}
-            className={`menu_search ${this.state.searchActive ? 'menu_search-active' : ''}`}
-          >
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className={`menu_search`}>
             <SearchBar
               onChange={(e) => this.setSearch(e.target.value)}
               onKeyDown={(e) => {
+                console.log('keyDown', e.code)
                 if (e.code === 'Enter') {
-                  return this.props.triggerSearch()
+                  return this.props.onSearch(this.state.search)
                 }
               }}
-              value={this.state.searchActive ? this.state.search : ''}
+              value={this.state.search}
               onClearSearch={() => this.setSearch('')}
-              styles="top_bar"
+              styles={`top_bar`}
+              className={`${this.props.searchActive ? '' : 'search__inactive'}`}
             />
-            {this.state.searchActive && (
-              <span
-                className={`subscribe_button popup_container ${
-                  !this.props.userSettings.emailVerified ? 'email_not_verified' : ''
-                }`}
-                style={{ whiteSpace: 'nowrap' }}
-              >
-                <DropDownButton
-                  size={'top_bar'}
-                  onClick={async (e) => {
-                    e.stopPropagation()
-                    this.setState({ modifyingNotification: true })
-                    await this.props.handleToggleNotificationClick(this.state.search, !subscribed)
-                    this.setState({ modifyingNotification: false })
-                  }}
-                  disabled={notificationSubscriptionDisabled}
-                  loading={notificationSubscriptionLoading}
-                  icon={subscribed ? 'bell-slash' : 'bell'}
-                  label={subscribed ? 'Unsubscribe' : 'Subscribe'}
-                  popupClassName={'popup_content-left'}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {this.props.stores?.map(({ storeName, purchaseAvailable }) => {
-                      const isSubscribed = notificationSubscriptions.some(R.propEq('storeName', storeName))
-                      return (
-                        <button
-                          disabled={notificationSubscriptionDisabled}
-                          style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                          className="button button-push_button button-push_button-small button-push_button-primary"
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            try {
-                              this.setState({ modifyingNotification: true })
-                              await this.props.handleToggleNotificationClick(this.state.search, !isSubscribed, [
-                                storeName,
-                              ])
-                            } finally {
-                              this.setState({ modifyingNotification: false })
-                            }
-                          }}
-                          key={`store-${storeName}`}
-                        >
-                          <FontAwesomeIcon icon={isSubscribed ? 'bell-slash' : 'bell'} />
-                          <span style={{ flex: 1, textAlign: 'left' }}>{storeName}</span>
-                          {purchaseAvailable && <FontAwesomeIcon icon="money-bills" />}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </DropDownButton>
-              </span>
-            )}
-            {!this.props.userSettings.emailVerified && !this.state.emailVerificationDismissed && (
-              <div
-                style={{
-                  padding: '0 8px 0 4px',
-                  height: '100%',
-                  flex: 0,
-                }}
-                className="email_not_verified_container popup_container"
-              >
+            {this.props.searchActive && (
+              <>
                 <span
-                  className={'popup-anchor'}
-                  style={{ height: '100%', display: 'flex', gap: 8, alignItems: 'center' }}
+                  className={`subscribe_button popup_container ${
+                    !this.props.userSettings.emailVerified ? 'email_not_verified' : ''
+                  }`}
+                  style={{ whiteSpace: 'nowrap' }}
                 >
-                  <FontAwesomeIcon icon={'circle-exclamation'} />{' '}
-                  <span className="button-top_bar_button_label" style={{ fontSize: '75%' }}>
-                    Subscription unavailable
-                  </span>
-                </span>
-                <div
-                  className={'popup_content popup_content-notification popup_content-left'}
-                  style={{ minWidth: 250, flexDirection: 'column' }}
-                >
-                  <span style={{ padding: '1rem' }}>
-                    E-mail is not set or verified.{' '}
-                    <Link to={'/settings/following'}>
-                      <strong>Please update details in the settings</strong>.
-                    </Link>
-                  </span>
-                  <button
-                    className={'button button-push_button button-push_button-primary button-push_button-small'}
-                    onClick={this.dismissEmailVerification.bind(this)}
+                  <DropDownButton
+                    size={'top_bar'}
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      this.setState({ modifyingNotification: true })
+                      await this.props.handleToggleNotificationClick(this.state.search, !subscribed)
+                      this.setState({ modifyingNotification: false })
+                    }}
+                    disabled={notificationSubscriptionDisabled}
+                    loading={notificationSubscriptionLoading}
+                    icon={subscribed ? 'bell-slash' : 'bell'}
+                    label={subscribed ? 'Unsubscribe' : 'Subscribe'}
+                    popupClassName={'popup_content-left'}
                   >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {this.props.stores?.map(({ storeName, purchaseAvailable }) => {
+                        const isSubscribed = notificationSubscriptions.some(R.propEq('storeName', storeName))
+                        return (
+                          <button
+                            disabled={notificationSubscriptionDisabled}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                            className="button button-push_button button-push_button-small button-push_button-primary"
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              try {
+                                this.setState({ modifyingNotification: true })
+                                await this.props.handleToggleNotificationClick(this.state.search, !isSubscribed, [
+                                  storeName,
+                                ])
+                              } finally {
+                                this.setState({ modifyingNotification: false })
+                              }
+                            }}
+                            key={`store-${storeName}`}
+                          >
+                            <FontAwesomeIcon icon={isSubscribed ? 'bell-slash' : 'bell'} />
+                            <span style={{ flex: 1, textAlign: 'left' }}>{storeName}</span>
+                            {purchaseAvailable && <FontAwesomeIcon icon="money-bills" />}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </DropDownButton>
+                </span>
+                {!this.props.userSettings.emailVerified && !this.state.emailVerificationDismissed && (
+                  <div
+                    style={{
+                      padding: '0 8px 0 4px',
+                      height: '100%',
+                      flex: 0,
+                    }}
+                    className="email_not_verified_container popup_container"
+                  >
+                    <span
+                      className={'popup-anchor'}
+                      style={{ height: '100%', display: 'flex', gap: 8, alignItems: 'center' }}
+                    >
+                      <FontAwesomeIcon icon={'circle-exclamation'} />{' '}
+                      <span className="button-top_bar_button_label" style={{ fontSize: '75%' }}>
+                        Subscription unavailable
+                      </span>
+                    </span>
+                    <div
+                      className={'popup_content popup_content-notification popup_content-left'}
+                      style={{ minWidth: 250, flexDirection: 'column' }}
+                    >
+                      <span style={{ padding: '1rem' }}>
+                        E-mail is not set or verified.{' '}
+                        <Link to={'/settings/following'}>
+                          <strong>Please update details in the settings</strong>.
+                        </Link>
+                      </span>
+                      <button
+                        className={'button button-push_button button-push_button-primary button-push_button-small'}
+                        onClick={this.dismissEmailVerification.bind(this)}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
           <div style={{ alignItems: 'center' }} className="menu_right">

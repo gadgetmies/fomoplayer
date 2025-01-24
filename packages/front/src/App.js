@@ -56,6 +56,11 @@ class App extends Component {
       onlyNew: searchParams.get('onlyNew') || '',
     }
 
+    const search = searchParams.get('q') || ''
+    if (search) {
+      this.search(search, filters)
+    }
+
     this.state = {
       carts: [],
       stores: [],
@@ -70,7 +75,7 @@ class App extends Component {
       userSettings: {},
       isMobile,
       onboarding: false,
-      search: '',
+      search,
       searchFilters: filters,
       searchInProgress: false,
       searchError: undefined,
@@ -444,7 +449,8 @@ class App extends Component {
     console.log({ onlyNew, filters })
 
     if (query === '') return
-    this.setState({ searchInProgress: true, searchError: undefined })
+    this.setState({ listState: 'search', searchInProgress: true, searchError: undefined })
+    window.history.pushState(undefined, undefined, `/search?q=${query}&sort=${sort}&limit=${limit}&onlyNew=${onlyNew}`)
     try {
       const searchResults = await (
         await requestWithCredentials({
@@ -704,6 +710,7 @@ class App extends Component {
                   emailVerified={this.state.userSettings.emailVerified}
                   triggerSearch={this.triggerSearch.bind(this)}
                   searchInProgress={this.state.searchInProgress}
+                  searchActive={this.state.listState === 'search'}
                   onSearch={this.search.bind(this)}
                   onLogoutClicked={this.logout.bind(this)}
                   handleToggleNotificationClick={this.handleToggleNotificationClick.bind(this)}
@@ -734,15 +741,14 @@ class App extends Component {
                 <Route
                   path="/:path"
                   render={(props) => {
-                    const pathParts = props.location.pathname.slice(1).split('/')
-                    const searchParams = new URLSearchParams(props.location.search)
+                    const {
+                      location: { pathname, search },
+                    } = window
+                    const pathParts = pathname.slice(1).split('/')
+                    const searchParams = new URLSearchParams(search)
                     const query = searchParams.get('q')?.trim()
                     const idSearch = query?.match(/(artist|label|release):(\d?)/)
-                    if (
-                      props.location.pathname.match(/^\/search\/?/) &&
-                      idSearch !== null &&
-                      this.state.search !== query
-                    ) {
+                    if (pathname.match(/^\/search\/?/) && idSearch !== null && this.state.search !== query) {
                       const filters = {
                         sort: searchParams.get('sort') || '-released',
                         limit: searchParams.get('limit') || 100,
@@ -752,12 +758,12 @@ class App extends Component {
                       this.setState({ search: query, searchFilters: filters })
                       this.search(query, filters)
                     }
-                    const settingsVisible = props.location.pathname.match(/\/settings\/?/)
+                    const settingsVisible = pathname.match(/\/settings\/?/)
                     let listState = this.state.listState
                     // TODO: this always takes the path from the match, which does not work when the state is changed instead
                     // Perhaps a componentWillChange handling could work?
                     if (!pathParts.includes(listState)) {
-                      if (props.location.pathname !== '/search') {
+                      if (pathname !== '/search') {
                         this.setState({ search: '' })
                       }
                       this.setState({
