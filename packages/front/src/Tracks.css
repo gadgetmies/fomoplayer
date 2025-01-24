@@ -401,10 +401,7 @@
 
   .tracks-table-header {
     display: block;
-    filter: drop-shadow(0px 1px 5px rgba(0,0,0,1));
     border-bottom: 1px solid black;
-    position: relative; /* this and the z-index ensure the drop shadow is on top of the buttons in the table */
-    z-index: 1;
   }
 
   .new-cell {
