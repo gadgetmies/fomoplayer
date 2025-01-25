@@ -10,6 +10,7 @@ import { Link, withRouter } from 'react-router-dom'
 import ToggleButton from './ToggleButton'
 import SearchBar from './SearchBar'
 import Popup from './Popup'
+import { isMobile } from 'react-device-detect'
 
 const filterMatches = (filter, { artists, title, keys, labels, releases }) => {
   const trackDetailsString = [
@@ -531,24 +532,20 @@ class Tracks extends Component {
                 </td>
               </tr>
             ) : this.props.listState === 'carts' ? (
-              <tr style={{ display: 'flex' }}>
-                <td style={{ flex: 1, margin: 8 }}>
+              <tr style={{ display: 'flex', justifyContent: 'center', background: 'rgb(34, 34, 34)' }}>
+                <td style={{ display: 'flex', gap: 16, margin: 8 }}>
                   <SpinnerButton
-                    size={'large'}
+                    size={isMobile ? 'small' : 'large'}
                     loading={this.state.updatingTracks}
                     disabled={this.props.tracksOffset === 0}
                     onClick={this.adjustOffset.bind(this, -200)}
-                    style={{ margin: 'auto', height: '100%', display: 'block' }}
                     label={'Previous page'}
                   />
-                </td>
-                <td style={{ flex: 1, margin: 8 }}>
                   <SpinnerButton
-                    size={'large'}
+                    size={isMobile ? 'small' : 'large'}
                     loading={this.state.updatingTracks}
                     disabled={tracks.length < 200}
                     onClick={this.adjustOffset.bind(this, 200)}
-                    style={{ margin: 'auto', height: '100%', display: 'block' }}
                     label={'Next page'}
                   />
                 </td>
@@ -556,7 +553,11 @@ class Tracks extends Component {
             ) : (
               <tr style={{ display: 'flex' }}>
                 <td style={{ flex: 1, margin: 8 }}>
-                  <SpinnerButton size={'large'} style={{ visibility: 'hidden' }} label={'\u00A0'} />
+                  <SpinnerButton
+                    size={isMobile ? 'small' : 'large'}
+                    style={{ visibility: 'hidden' }}
+                    label={'\u00A0'}
+                  />
                 </td>
               </tr>
             )}
