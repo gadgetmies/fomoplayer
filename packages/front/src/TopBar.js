@@ -48,7 +48,7 @@ class TopBar extends Component {
       async () => {
         this.setState({ searchDebounce: undefined, listState: 'search' })
         // TODO: cancel this request if new one is requested
-        await this.props.onSearch(this.state.search, this.props.searchFilters)
+        await this.props.onSearch(this.state.search, { onlyNew: false })
       },
       skipDebounce ? 0 : 1000,
     )
