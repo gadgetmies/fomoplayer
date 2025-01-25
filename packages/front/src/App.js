@@ -450,12 +450,13 @@ class App extends Component {
     console.log({ onlyNew, filters })
 
     if (query === '') return
-    this.setState({ listState: 'search', searchInProgress: true, searchError: undefined })
-    window.history.pushState(undefined, undefined, `/search?q=${query}&sort=${sort}&limit=${limit}&onlyNew=${onlyNew}`)
+    this.setState({ listState: 'search', searchInProgress: true, searchError: undefined, search: query })
+    const parameters = `q=${query}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}`
+    window.history.pushState(undefined, undefined, `/search?${parameters}`)
     try {
       const searchResults = await (
         await requestWithCredentials({
-          path: `/tracks?q=${query}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}`,
+          path: `/tracks?${parameters}`,
         })
       ).json()
       this.setState({ searchResults, searchError: undefined })
