@@ -277,7 +277,7 @@ class Tracks extends Component {
         )}
         <table className="tracks-table" style={{ display: 'flex', flexDirection: 'column' }}>
           <thead className={'noselect tracks-table-header'}>
-            {this.props.listState === 'carts' && (
+            {this.props.listState === 'carts' && !listInfo && (
               <tr
                 className={'top-bar input-layout'}
                 style={{ width: '100%', borderBottom: '1px solid black', background: 'rgb(34, 34, 34)' }}
