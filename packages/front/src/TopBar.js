@@ -47,10 +47,6 @@ class TopBar extends Component {
     const timeout = setTimeout(
       async () => {
         this.setState({ searchDebounce: undefined, listState: 'search' })
-        const { sort, onlyNew, addedSince, limit } = this.props.searchFilters
-        this.props.history.push(
-          `/search/?q=${this.state.search.trim()}&sort=${sort || ''}&onlyNew=${onlyNew || ''}&addedSince=${addedSince || ''}&limit=${limit || ''}`,
-        )
         // TODO: cancel this request if new one is requested
         await this.props.onSearch(this.state.search, this.props.searchFilters)
       },
@@ -156,7 +152,7 @@ class TopBar extends Component {
               onChange={(e) => this.setSearch(e.target.value)}
               onKeyDown={(e) => {
                 if (e.code === 'Enter') {
-                  return this.props.onSearch(this.state.search)
+                  return this.props.onSearch(this.state.search, { onlyNew: false })
                 }
               }}
               value={this.state.search}
