@@ -11,6 +11,14 @@
   cursor: pointer;
 }
 
+.search + .clear-search {
+  display: none;
+}
+
+.search_bar:focus-within .clear-search, .search_bar:hover .clear-search {
+  display: block;
+}
+
 .search-input {
   background: black;
   color: #ffffffb3;
