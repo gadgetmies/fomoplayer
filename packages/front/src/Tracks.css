@@ -1,3 +1,7 @@
+.tracks {
+  position: relative;
+}
+
 .tracks-cell {
   display: inline-block;
   padding: 0;
@@ -79,8 +83,12 @@
 
 .tracks-table {
   border-collapse: collapse;
-  width: 100%;
   font-size: 75%;
+  overflow: scroll;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
 }
 
 .tracks-table > tbody::-webkit-scrollbar {
@@ -118,6 +126,14 @@
   text-align: left;
   font-weight: normal;
   text-transform: uppercase;
+}
+
+.tracks-table > tfoot > tr {
+  border-top: 1px solid black;
+}
+
+.tracks-table .track:last-child {
+  margin: 0;
 }
 
 .refresh-tracks {
@@ -182,11 +198,6 @@
 
   .refresh-tracks {
     order: 3;
-  }
-
-  /*Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table*/
-  .tracks-table > tbody {
-    height: calc(100dvh - 133px);
   }
 
   .cart-bar {
@@ -375,11 +386,6 @@
 
   .cart-bar {
     order: 2;
-  }
-
-  /*Replace the calc below. Currently it is calculated as height of preview + height of status bar + height of table header + height of the button row at the end of the table*/
-  .tracks-table > tbody {
-    height: calc(100dvh - 250px); /* was 171px */
   }
 
   .table-cell-button-row > .table-cell-button:not(:first-child),

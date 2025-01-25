@@ -582,7 +582,7 @@ class App extends Component {
           className={`${this.state.listState === 'search' ? 'search-expanded' : ''} ${
             this.state.isMobile ? 'mobile' : 'desktop'
           }`}
-          style={{ overflow: 'hidden', width: '100vw', height: '100vh' }}
+          style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}
         >
           <Router>
             {this.state.loading ? (
@@ -802,7 +802,7 @@ class App extends Component {
                           scoreWeights={this.state.scoreWeights}
                           tracks={this.state.tracksData.tracks}
                           follows={this.state.follows}
-                          style={{ display: settingsVisible ? 'block' : 'none' }}
+                          style={{ display: settingsVisible ? 'flex' : 'none', flexDirection: 'column' }}
                         />
                         <Player
                           carts={this.state.carts}
@@ -845,7 +845,7 @@ class App extends Component {
                           onSetListState={this.setListState.bind(this)}
                           onUpdateCarts={this.updateCarts.bind(this)}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
-                          style={{ display: !settingsVisible ? 'block' : 'none' }}
+                          style={{ display: !settingsVisible ? 'flex' : 'none', flexDirection: 'column' }}
                         />
                       </>
                     )

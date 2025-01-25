@@ -21,7 +21,7 @@ class SpinnerButton extends Component {
         onClick={onClick}
         {...rest}
       >
-        {loading ? <Spinner size={size} /> : icon && <FontAwesomeIcon icon={icon} />}
+        {loading ? <Spinner size={'small'} /> : icon && <FontAwesomeIcon icon={icon} />}
         {loading || icon ? ' ' : null}
         {children !== undefined ? children : loading ? loadingLabel : label}
       </button>

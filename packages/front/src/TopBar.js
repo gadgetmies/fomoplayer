@@ -58,7 +58,7 @@ class TopBar extends Component {
     )
     this.setState({ searchDebounce: timeout })
   }
-  
+
   getNotificationSubscriptions() {
     return this.props.notifications.filter(R.propEq('text', this.state.search?.toLocaleLowerCase()))
   }

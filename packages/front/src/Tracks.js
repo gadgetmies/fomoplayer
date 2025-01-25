@@ -73,7 +73,7 @@ class Tracks extends Component {
     const currentRect = current.getBoundingClientRect()
     const parent = current.parentElement
     const parentRect = parent.getBoundingClientRect()
-    parent.scrollBy(0, currentRect.y - parentRect.y)
+    parent.scrollBy({ top: currentRect.y - parentRect.y, behavior: 'smooth' })
   }
 
   adjustOffset(offset) {
@@ -220,7 +220,7 @@ class Tracks extends Component {
       <button
         className={'pill pill-button pill-button-glow'}
         onClick={this.scrollCurrentIntoView}
-        style={{ padding: '4px 8px', minHeight: 'initial' }}
+        style={{ padding: '4px 8px' }}
       >
         <span className="pill-button-contents">Scroll to current</span>
       </button>
@@ -248,14 +248,15 @@ class Tracks extends Component {
       recent: 'No tracks added',
     }
 
+    const emptyLabel = emptyListLabels[this.props.listState]
     const listInfo =
       this.props.listState === 'carts' && this.props.carts.length === 0 ? (
         <th>
           <Spinner />
           Loading carts...
         </th>
-      ) : tracks.length === 0 ? (
-        <th>{emptyListLabels[this.props.listState]}</th>
+      ) : tracks.length === 0 && emptyLabel ? (
+        <th>{emptyLabel}</th>
       ) : this.props.searchInProgress ? (
         <th>
           Searching <Spinner />
@@ -268,94 +269,98 @@ class Tracks extends Component {
         <th>{tracks.length} results</th>
       ) : null
     return (
-      <div style={{ height: this.props.height, borderTop: '1px solid black' }} className="tracks">
-        {this.props.listState === 'carts' && (
-          <div className={'top-bar input-layout'} style={{ width: '100%' }}>
-            <div
-              className="tracks-top_bar_group"
-              style={{
-                width: '100%',
-                display: 'flex',
-                padding: 4,
-                boxSizing: 'border-box',
-              }}
-            >
-              {this.props.mode === 'app' ? (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    flexWrap: 'wrap',
-                    width: '100%',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <SearchBar
-                    placeholder={'Filter'}
-                    value={this.state.trackListFilter}
-                    loading={this.state.trackListFilterDebounce}
-                    className={'cart-filter'}
-                    onChange={({ target: { value: filter } }) => {
-                      // TODO: replace aborted and debounce with flatmapLatest
-                      if (this.state.trackListFilterDebounce) {
-                        clearTimeout(this.state.trackListFilterDebounce)
-                        this.setState({ trackListFilterDebounce: undefined })
-                      }
-
-                      this.setState({ trackListFilter: filter })
-
-                      if (filter === '') {
-                        this.setState({ trackListFilterDebounce: undefined, trackListFilterDebounced: '' })
-                        clearTimeout(this.state.trackListFilterDebounce)
-                        return
-                      }
-
-                      const timeout = setTimeout(
-                        function (filter) {
-                          if (this.state.trackListFilter !== filter) {
-                            return
-                          }
-
-                          clearTimeout(this.state.trackListFilterDebounce)
-                          this.setState({ trackListFilterDebounce: undefined, trackListFilterDebounced: filter })
-                        }.bind(this, filter),
-                        500,
-                      )
-                      this.setState({ trackListFilterDebounce: timeout })
-                    }}
-                    onClearSearch={() => {
-                      this.setState({
-                        trackListFilter: '',
-                        trackListFilterDebounced: '',
-                        trackListFilterDebounce: undefined,
-                      })
-                    }}
-                  />
-                  <span className={'cart-details'}>
-                    Tracks in cart: {this.props.selectedCart?.track_count}
-                    {this.props.selectedCart?.track_count > 200 &&
-                      ` (showing ${this.props.tracksOffset + 1} - ${Math.min(
-                        this.props.tracksOffset + tracks.length,
-                        this.props.selectedCart?.track_count,
-                      )})`}
-                  </span>
-                </div>
-              ) : (
-                <span className="select_button-button select_button-button select_button-button__active">
-                  {this.props.carts[0].name}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
+      <div style={{ height: this.props.height, borderTop: '1px solid black', flex: 1 }} className="tracks">
         {this.props.loading && (
           <div onMouseDown={(e) => e.stopPropagation()} className="loading-overlay">
             <Spinner size="large" />
           </div>
         )}
-        <table className="tracks-table" style={{ height: '100%', overflow: 'hidden', display: 'block' }}>
+        <table className="tracks-table" style={{ display: 'flex', flexDirection: 'column' }}>
           <thead className={'noselect tracks-table-header'}>
+            {this.props.listState === 'carts' && (
+              <tr
+                className={'top-bar input-layout'}
+                style={{ width: '100%', borderBottom: '1px solid black', background: 'rgb(34, 34, 34)' }}
+              >
+                <td
+                  className="tracks-top_bar_group"
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    padding: 4,
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {this.props.mode === 'app' ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        flexWrap: 'wrap',
+                        width: '100%',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <SearchBar
+                        placeholder={'Filter'}
+                        value={this.state.trackListFilter}
+                        loading={this.state.trackListFilterDebounce}
+                        className={'cart-filter'}
+                        onChange={({ target: { value: filter } }) => {
+                          // TODO: replace aborted and debounce with flatmapLatest
+                          if (this.state.trackListFilterDebounce) {
+                            clearTimeout(this.state.trackListFilterDebounce)
+                            this.setState({ trackListFilterDebounce: undefined })
+                          }
+
+                          this.setState({ trackListFilter: filter })
+
+                          if (filter === '') {
+                            this.setState({ trackListFilterDebounce: undefined, trackListFilterDebounced: '' })
+                            clearTimeout(this.state.trackListFilterDebounce)
+                            return
+                          }
+
+                          const timeout = setTimeout(
+                            function (filter) {
+                              if (this.state.trackListFilter !== filter) {
+                                return
+                              }
+
+                              clearTimeout(this.state.trackListFilterDebounce)
+                              this.setState({ trackListFilterDebounce: undefined, trackListFilterDebounced: filter })
+                            }.bind(this, filter),
+                            500,
+                          )
+                          this.setState({ trackListFilterDebounce: timeout })
+                        }}
+                        onClearSearch={() => {
+                          this.setState({
+                            trackListFilter: '',
+                            trackListFilterDebounced: '',
+                            trackListFilterDebounce: undefined,
+                          })
+                        }}
+                      />
+                      <span className={'cart-details'}>
+                        Tracks in cart: {this.props.selectedCart?.track_count}
+                        {this.props.selectedCart?.track_count > 200 &&
+                          ` (showing ${this.props.tracksOffset + 1} - ${Math.min(
+                            this.props.tracksOffset + tracks.length,
+                            this.props.selectedCart?.track_count,
+                          )})`}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="select_button-button select_button-button select_button-button__active">
+                      {this.props.carts[0].name}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            )}
+
             {listInfo && (
               <tr style={{ display: 'block', borderBottom: '1px solid black', padding: '0 8px', background: '#222' }}>
                 {listInfo}
@@ -470,13 +475,25 @@ class Tracks extends Component {
               </th>
             </tr>
           </thead>
-          <tbody style={{ overflow: 'scroll', display: 'block' }} onScroll={this.handleScroll}>
-            <tr style={{ width: '100%', background: 'none', position: 'absolute', zIndex: 1 }}>
+          <tbody style={{ overflow: 'scroll', display: 'block', flex: 1 }} onScroll={this.handleScroll}>
+            <tr style={{ width: '100%', background: 'none', position: 'fixed', zIndex: 1, marginTop: 3 }}>
               <td
                 style={{
                   width: '100%',
-                  display: this.state.currentAboveScreen ? 'block' : 'none',
-                  textAlign: 'center',
+                  display: this.state.currentAboveScreen ? 'flex' : 'none',
+                  justifyContent: 'center',
+                }}
+              >
+                {scrollToCurrentButton}
+              </td>
+            </tr>
+
+            <tr style={{ width: '100%', background: 'none', position: 'fixed', bottom: 67, zIndex: 1 }}>
+              <td
+                style={{
+                  width: '100%',
+                  display: this.state.currentBelowScreen ? 'flex' : 'none',
+                  justifyContent: 'center',
                 }}
               >
                 {scrollToCurrentButton}
@@ -498,9 +515,11 @@ class Tracks extends Component {
                   )
                 : tracks,
             )}
+          </tbody>
+          <tfoot>
             {['new', 'recent', 'heard'].includes(this.props.listState) ? (
               <tr style={{ display: 'flex' }}>
-                <td style={{ flex: 1 }}>
+                <td style={{ flex: 1, margin: 8 }}>
                   <SpinnerButton
                     size={'large'}
                     loading={this.state.updatingTracks}
@@ -513,7 +532,7 @@ class Tracks extends Component {
               </tr>
             ) : this.props.listState === 'carts' ? (
               <tr style={{ display: 'flex' }}>
-                <td style={{ flex: 1 }}>
+                <td style={{ flex: 1, margin: 8 }}>
                   <SpinnerButton
                     size={'large'}
                     loading={this.state.updatingTracks}
@@ -523,7 +542,7 @@ class Tracks extends Component {
                     label={'Previous page'}
                   />
                 </td>
-                <td style={{ flex: 1 }}>
+                <td style={{ flex: 1, margin: 8 }}>
                   <SpinnerButton
                     size={'large'}
                     loading={this.state.updatingTracks}
@@ -534,20 +553,14 @@ class Tracks extends Component {
                   />
                 </td>
               </tr>
-            ) : null}
-            <tr style={{ height: 120 }} />
-            <tr style={{ width: '100%', background: 'none', position: 'absolute', bottom: 0, zIndex: 1 }}>
-              <td
-                style={{
-                  width: '100%',
-                  display: this.state.currentBelowScreen ? 'block' : 'none',
-                  textAlign: 'center',
-                }}
-              >
-                {scrollToCurrentButton}
-              </td>
-            </tr>
-          </tbody>
+            ) : (
+              <tr style={{ display: 'flex' }}>
+                <td style={{ flex: 1, margin: 8 }}>
+                  <SpinnerButton size={'large'} style={{ visibility: 'hidden' }} label={'\u00A0'} />
+                </td>
+              </tr>
+            )}
+          </tfoot>
         </table>
       </div>
     )
