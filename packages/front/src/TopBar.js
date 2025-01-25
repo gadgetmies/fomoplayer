@@ -63,6 +63,12 @@ class TopBar extends Component {
     return this.props.notifications.filter(R.propEq('text', this.state.search?.toLocaleLowerCase()))
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.search !== this.props.search) {
+      this.setState({ search: this.props.search })
+    }
+  }
+
   render() {
     const notificationSubscriptions = this.getNotificationSubscriptions()
     const subscribed = notificationSubscriptions.length > 0
@@ -149,7 +155,6 @@ class TopBar extends Component {
             <SearchBar
               onChange={(e) => this.setSearch(e.target.value)}
               onKeyDown={(e) => {
-                console.log('keyDown', e.code)
                 if (e.code === 'Enter') {
                   return this.props.onSearch(this.state.search)
                 }
