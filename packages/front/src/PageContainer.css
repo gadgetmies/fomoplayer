@@ -20,8 +20,9 @@
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1480px) {
   .page-container {
+    width: 100%;
     margin: 0 auto;
   }
 }

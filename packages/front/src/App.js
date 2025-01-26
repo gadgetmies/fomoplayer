@@ -583,7 +583,13 @@ class App extends Component {
           className={`${this.state.listState === 'search' ? 'search-expanded' : ''} ${
             this.state.isMobile ? 'mobile' : 'desktop'
           }`}
-          style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}
+          style={{
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            alignItems: 'stretch',
+          }}
         >
           <Router>
             {this.state.loading ? (
