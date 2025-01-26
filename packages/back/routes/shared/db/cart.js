@@ -43,14 +43,13 @@ module.exports.queryUserCartDetails = async (userId) =>
          , cart_is_public                                                         AS is_public
          , COALESCE(cart_is_purchased, FALSE)                                     AS is_purchased
          , cart_uuid                                                              AS uuid
-         , cart_deleted                                                           AS deleted
          , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS store_details
          , track_count                                                            AS track_count
     FROM
       cart
       NATURAL LEFT JOIN cart_store_details
       NATURAL LEFT JOIN track_counts
-    WHERE meta_account_user_id = ${userId}
+    WHERE meta_account_user_id = ${userId} AND cart_deleted IS NULL
     ORDER BY cart_is_default, cart_is_purchased, cart_name
     `,
   )
