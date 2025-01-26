@@ -611,6 +611,7 @@ class App extends Component {
                   currentTrack={this.state.currentTrack}
                   isMobile={this.state.isMobile}
                   markHeard={this.markHeard.bind(this)}
+                  style={{ display: 'flex', flexDirection: 'column' }}
                 />
               ) : (
                 <div style={{ background: '#333', width: '100%', height: '100%' }}>
