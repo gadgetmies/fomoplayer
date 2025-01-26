@@ -21,6 +21,20 @@ import SearchBar from './SearchBar'
 import CollapseHeader from './CollapseHeader'
 import ConfirmButton from './ConfirmButton'
 
+const waitUntil = async (predicate, retryMs = 50) =>
+  predicate()
+    ? null
+    : new Promise((resolve, reject) =>
+        setTimeout(async () => {
+          try {
+            const result = await waitUntil(predicate, retryMs)
+            resolve(result)
+          } catch (e) {
+            reject(e)
+          }
+        }, retryMs),
+      )
+
 const spotifyAuthorizationURL = `${apiURL}/auth/spotify?path=/settings/integrations`
 const AuthorizationButtons = (props) => (
   <>
@@ -123,6 +137,9 @@ class Settings extends Component {
       followedArtistsFilter: '',
       followedLabelsFilter: '',
       followedPlaylistsFilter: '',
+      editingCartNameId: null,
+      cartNameEditorValue: '',
+      cloningCartId: null,
     }
 
     this.markHeardButton.bind(this)
@@ -328,6 +345,41 @@ class Settings extends Component {
     if (prevPath !== newPath && this.props.location.pathname.startsWith('/settings')) {
       this.setState({ page: newPath.split('/').pop() || 'following' })
     }
+  }
+
+  async renameCart(id, name) {
+    this.setState({ updatingCartNameId: id })
+    await requestWithCredentials({ path: `/me/carts/${id}`, method: 'POST', body: { name } })
+    await this.props.onUpdateCarts()
+    this.setState({ updatingCartNameId: null, editingCartNameId: null })
+  }
+
+  async cloneCart(id) {
+    this.setState({ cloningCartId: id })
+
+    try {
+      const cart = await requestJSONwithCredentials({ path: `/me/carts/${id}` })
+      delete cart.id
+      const createdCart = await requestJSONwithCredentials({
+        path: `/me/carts`,
+        method: 'POST',
+        body: { ...cart, name: `${cart.name} - Copy` },
+      })
+      await this.props.onUpdateCarts()
+      if (createdCart) {
+        const cartId = `cart-${createdCart.uuid}`
+
+        await waitUntil(() => {
+          const cartElement = document.getElementById(cartId)
+          if (!cartElement) return false
+          cartElement.scrollIntoView({ behavior: 'smooth' })
+          return true
+        })
+      }
+    } catch (e) {
+      console.error('Cloning cart failed', e)
+    }
+    this.setState({ cloningCartId: null })
   }
 
   render() {
@@ -825,9 +877,80 @@ class Settings extends Component {
                     ({ store_name }) => store_name === 'Spotify',
                   )
                   return (
-                    <div key={id}>
-                      <h4 style={{ marginTop: index === 0 ? '1rem' : '3rem' }}>
-                        <NavLink to={cartPath}>{name}</NavLink>
+                    <div key={id} id={`cart-${uuid}`}>
+                      <h4
+                        style={{
+                          marginTop: index === 0 ? '1rem' : '3rem',
+                          display: 'flex',
+                          gap: 8,
+                          alignItems: 'center',
+                        }}
+                      >
+                        {this.state.editingCartNameId === id ? (
+                          <>
+                            <input
+                              style={{ fontSize: '1rem', padding: 9 }}
+                              disabled={this.state.updatingCartNameId}
+                              value={this.state.cartNameEditorValue}
+                              className={'text-input text-input-small text-input-dark'}
+                              onChange={(e) => this.setState({ cartNameEditorValue: e.target.value })}
+                            />{' '}
+                            <SpinnerButton
+                              loading={this.state.updatingCartNameId}
+                              size={'small'}
+                              onClick={() => this.renameCart(id, this.state.cartNameEditorValue)}
+                            >
+                              <FontAwesomeIcon icon={'save'} /> Save
+                            </SpinnerButton>{' '}
+                            <SpinnerButton
+                              disabled={this.state.updatingCartNameId}
+                              size={'small'}
+                              onClick={() => this.setState({ editingCartNameId: null })}
+                            >
+                              <FontAwesomeIcon icon={'cancel'} /> Cancel
+                            </SpinnerButton>
+                          </>
+                        ) : (
+                          <>
+                            <NavLink to={cartPath}>{name}</NavLink>{' '}
+                            {!is_default && !is_purchased && (
+                              <>
+                                <button
+                                  className={
+                                    'button button-push_button button-push_button-small button-push_button-primary'
+                                  }
+                                  onClick={() => this.setState({ editingCartNameId: id, cartNameEditorValue: name })}
+                                >
+                                  <FontAwesomeIcon icon={'pen'} /> Rename
+                                </button>{' '}
+                                <ConfirmButton
+                                  icon={'trash'}
+                                  loading={this.state.deletingCart === id}
+                                  disabled={
+                                    this.state.addingCart || this.state.updatingCarts || this.state.deletingCart
+                                  }
+                                  onClick={async () => {
+                                    this.setState({ deletingCart: id, updatingCarts: true })
+                                    await requestWithCredentials({ path: `/me/carts/${id}`, method: 'DELETE' })
+                                    await this.props.onUpdateCarts()
+                                    this.setState({ deletingCart: null, updatingCarts: false })
+                                  }}
+                                  label="Delete"
+                                  confirmLabel={`Confirm deletion of "${name}"?`}
+                                  processingLabel={'Deleting'}
+                                />
+                              </>
+                            )}
+                            <SpinnerButton
+                              disabled={this.state.cloningCartId}
+                              loading={this.state.cloningCartId === id}
+                              icon={'clone'}
+                              onClick={() => this.cloneCart(id)}
+                            >
+                              Clone
+                            </SpinnerButton>
+                          </>
+                        )}
                       </h4>
                       <div>
                         <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
@@ -877,24 +1000,6 @@ class Settings extends Component {
                             </p>
                           )}
                         </>
-                      )}
-                      {is_default || is_purchased ? null : (
-                        <p>
-                          <ConfirmButton
-                            loading={this.state.deletingCart}
-                            className={`button button-push_button-small button-push_button-primary`}
-                            disabled={this.state.addingCart || this.state.updatingCarts || this.state.deletingCart}
-                            onClick={async () => {
-                              this.setState({ deletingCart: id, updatingCarts: true })
-                              await requestWithCredentials({ path: `/me/carts/${id}`, method: 'DELETE' })
-                              await this.props.onUpdateCarts()
-                              this.setState({ deletingCart: null, updatingCarts: false })
-                            }}
-                            label="Delete cart"
-                            confirmLabel={`Confirm deletion of "${name}"?`}
-                            processingLabel={'Deleting'}
-                          />
-                        </p>
                       )}
                     </div>
                   )

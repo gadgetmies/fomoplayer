@@ -255,30 +255,31 @@ AND meta_account_user_id = ${userId}
   return id
 }
 
-module.exports.insertCart = async (userId, name) => {
-  await pg.queryRowsAsync(
+module.exports.insertCart = async (userId, cart) => {
+  const [createdCart] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--insertCart
 INSERT INTO cart
   (cart_name, meta_account_user_id)
 VALUES
-  (${name}, ${userId})
+  (${cart.name}, ${userId})
+RETURNING cart_id AS id, cart_uuid AS uuid, cart_name AS name
 `,
   )
 
-  const [cart] = await pg.queryRowsAsync(
-    // language=PostgreSQL
-    sql`SELECT
-    cart_id   AS id
-  , cart_name AS name
-FROM
-    cart
-WHERE
-      cart_name = ${name}
-  AND meta_account_user_id = ${userId}`,
-  )
+  if (cart.tracks) {
+    await pg.queryAsync(
+      // language=PostgreSQL
+      sql`--insertCart
+INSERT INTO track__cart
+  (cart_id, track_id)
+SELECT ${createdCart.id}, track_id FROM json_to_recordset(${JSON.stringify(cart.tracks)}) AS w(track_id BIGINT)
+ON CONFLICT DO NOTHING
+`,
+    )
+  }
 
-  return cart
+  return createdCart
 }
 
 module.exports.insertTracksToCart = async (cartId, trackIds) =>

@@ -231,19 +231,22 @@ router.get('/carts?fetch=tracks', async ({ user: { id: userId } }, res) => {
   res.send(await getUserCartsWithTracks(userId))
 })
 
-router.post('/carts', async ({ user: { id: userId }, body: { name, url } }, res) => {
+router.post('/carts', async ({ user: { id: userId }, body }, res) => {
   let createdCart
-  if (name) {
-    createdCart = await createCart(userId, name)
-  } else if (url) {
-    try {
-      createdCart = await importPlaylistAsCart(userId, url)
-    } catch (e) {
-      logger.error(`Failed to import playlist from url: ${url}`, e)
-      return res.status(500).send({ error: `Failed to import playlist from url: ${url}` })
-    }
+  const url = body.url
+  if (body.name) {
+    createdCart = await createCart(userId, body)
   } else {
-    throw new Error('Either name or url must be provided!')
+    if (url) {
+      try {
+        createdCart = await importPlaylistAsCart(userId, url)
+      } catch (e) {
+        logger.error(`Failed to import playlist from url: ${url}`, e)
+        return res.status(500).send({ error: `Failed to import playlist from url: ${url}` })
+      }
+    } else {
+      throw new Error('Either name or url must be provided!')
+    }
   }
   res.send(createdCart)
 })
