@@ -835,6 +835,7 @@ class Settings extends Component {
                   onPreviewRequested={() => {}}
                   follows={this.props.follows}
                   stores={this.props.stores}
+                  preview={true}
                 />
               </div>
             </>

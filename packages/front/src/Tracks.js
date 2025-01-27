@@ -512,51 +512,53 @@ class Tracks extends Component {
                   : tracks,
               )}
           </tbody>
-          <tfoot>
-            {['new', 'recent', 'heard'].includes(this.props.listState) ? (
-              <tr style={{ display: 'flex' }}>
-                <td style={{ flex: 1, margin: 4 }}>
-                  <SpinnerButton
-                    size={isMobile ? 'small' : 'large'}
-                    loading={this.state.updatingTracks}
-                    onClick={this.refreshTracks.bind(this)}
-                    style={{ margin: 'auto', height: '100%', display: 'block' }}
-                    label={'Refresh'}
-                    loadingLabel={'Loading'}
-                  />
-                </td>
-              </tr>
-            ) : this.props.listState === 'carts' ? (
-              <tr style={{ display: 'flex', justifyContent: 'center', background: 'rgb(34, 34, 34)' }}>
-                <td style={{ display: 'flex', gap: 16, margin: 4 }}>
-                  <SpinnerButton
-                    size={isMobile ? 'small' : 'large'}
-                    loading={this.state.updatingTracks}
-                    disabled={this.props.tracksOffset === 0}
-                    onClick={this.adjustOffset.bind(this, -200)}
-                    label={'Previous page'}
-                  />
-                  <SpinnerButton
-                    size={isMobile ? 'small' : 'large'}
-                    loading={this.state.updatingTracks}
-                    disabled={tracks.length < 200}
-                    onClick={this.adjustOffset.bind(this, 200)}
-                    label={'Next page'}
-                  />
-                </td>
-              </tr>
-            ) : (
-              <tr style={{ display: 'flex' }}>
-                <td style={{ flex: 1, margin: 8 }}>
-                  <SpinnerButton
-                    size={isMobile ? 'small' : 'large'}
-                    style={{ visibility: 'hidden' }}
-                    label={'\u00A0'}
-                  />
-                </td>
-              </tr>
-            )}
-          </tfoot>
+          {!this.props.preview && (
+            <tfoot>
+              {['new', 'recent', 'heard'].includes(this.props.listState) ? (
+                <tr style={{ display: 'flex' }}>
+                  <td style={{ flex: 1, margin: 4 }}>
+                    <SpinnerButton
+                      size={isMobile ? 'small' : 'large'}
+                      loading={this.state.updatingTracks}
+                      onClick={this.refreshTracks.bind(this)}
+                      style={{ margin: 'auto', height: '100%', display: 'block' }}
+                      label={'Refresh'}
+                      loadingLabel={'Loading'}
+                    />
+                  </td>
+                </tr>
+              ) : this.props.listState === 'carts' ? (
+                <tr style={{ display: 'flex', justifyContent: 'center', background: 'rgb(34, 34, 34)' }}>
+                  <td style={{ display: 'flex', gap: 16, margin: 4 }}>
+                    <SpinnerButton
+                      size={isMobile ? 'small' : 'large'}
+                      loading={this.state.updatingTracks}
+                      disabled={this.props.tracksOffset === 0}
+                      onClick={this.adjustOffset.bind(this, -200)}
+                      label={'Previous page'}
+                    />
+                    <SpinnerButton
+                      size={isMobile ? 'small' : 'large'}
+                      loading={this.state.updatingTracks}
+                      disabled={tracks.length < 200}
+                      onClick={this.adjustOffset.bind(this, 200)}
+                      label={'Next page'}
+                    />
+                  </td>
+                </tr>
+              ) : (
+                <tr style={{ display: 'flex' }}>
+                  <td style={{ flex: 1, margin: 8 }}>
+                    <SpinnerButton
+                      size={isMobile ? 'small' : 'large'}
+                      style={{ visibility: 'hidden' }}
+                      label={'\u00A0'}
+                    />
+                  </td>
+                </tr>
+              )}
+            </tfoot>
+          )}
         </table>
       </div>
     )
