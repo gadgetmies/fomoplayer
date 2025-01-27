@@ -498,22 +498,23 @@ class Tracks extends Component {
                 {scrollToCurrentButton}
               </td>
             </tr>
-            {this.renderTracks(
-              this.props.listState === 'carts'
-                ? tracks.filter(
-                    ({ artists, title, labels, keys, releases, stores }) =>
-                      (!this.state.trackListFilterDebounced ||
-                        filterMatches(this.state.trackListFilterDebounced, {
-                          artists,
-                          title,
-                          keys,
-                          labels,
-                          releases,
-                        })) &&
-                      this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
-                  )
-                : tracks,
-            )}
+            {!this.props.fetchingCartDetails &&
+              this.renderTracks(
+                this.props.listState === 'carts'
+                  ? tracks.filter(
+                      ({ artists, title, labels, keys, releases, stores }) =>
+                        (!this.state.trackListFilterDebounced ||
+                          filterMatches(this.state.trackListFilterDebounced, {
+                            artists,
+                            title,
+                            keys,
+                            labels,
+                            releases,
+                          })) &&
+                        this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+                    )
+                  : tracks,
+              )}
           </tbody>
           <tfoot>
             {['new', 'recent', 'heard'].includes(this.props.listState) ? (
