@@ -102,6 +102,9 @@
 }
 
 @media (max-width: 768px) {
+  .popup_content {
+    font-size: 1rem;
+  }
 }
 
 @media (min-width: 769px) {
