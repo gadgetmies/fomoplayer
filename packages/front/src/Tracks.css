@@ -394,6 +394,10 @@
     order: 2;
   }
 
+  .top-bar {
+    border-bottom: 1px solid black;
+  }
+
   .tracks-table-header-columns {
     display: flex;
   }
