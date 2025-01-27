@@ -385,7 +385,7 @@ class Settings extends Component {
   render() {
     const spotifyAuthorization = this.state.authorizations?.find(R.propEq('store_name', 'Spotify'))
     return (
-      <div className="page-container scroll-container" style={{ ...this.props.style }}>
+      <div className="page-container scroll-container" style={{ paddingBottom: 16, ...this.props.style }}>
         <SettingsHelp
           active={this.state.helpActive}
           onActiveChanged={(active) => this.setState({ helpActive: active })}

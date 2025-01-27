@@ -810,7 +810,7 @@ class App extends Component {
                           scoreWeights={this.state.scoreWeights}
                           tracks={this.state.tracksData.tracks}
                           follows={this.state.follows}
-                          style={{ display: settingsVisible ? 'flex' : 'none' }}
+                          style={{ display: settingsVisible ? 'block' : 'none' }}
                         />
                         <Player
                           carts={this.state.carts}
