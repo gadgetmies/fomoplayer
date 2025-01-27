@@ -60,7 +60,8 @@ const DropDownButton = (props) => {
           </button>
         }
         popupStyle={{ ...popupStyle }}
-        popupClassName={popupClassName}
+        popupClassName={`${popupClassName}`}
+        popupAbove={popupAbove}
       >
         {children}
       </DropDown>

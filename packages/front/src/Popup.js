@@ -34,6 +34,7 @@ const Popup = ({
   disabled,
   onOpenChanged,
   openOnHover: openOnHoverProp,
+  popupAbove
 }) => {
   const openOnHover = openOnHoverProp || !isMobile
   const [open, setOpen] = useState(defaultOpen)
@@ -66,7 +67,7 @@ const Popup = ({
           {anchor}
         </span>
         {!disabled && (
-          <div className={`popup_content ${popupClassName || ''}`} style={popupStyle}>
+          <div className={`popup_content ${popupClassName || ''} ${popupAbove ? 'popup_content__above' : ''}`} style={popupStyle}>
             {children}
           </div>
         )}

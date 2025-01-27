@@ -12,6 +12,7 @@ const DropDown = (props) => {
       anchor={props.anchor}
       popupClassName={props.popupClassName}
       popupStyle={props.popupStyle}
+      popupAbove={props.popupAbove}
     >
       {!props.disabled && props.children}
     </Popup>

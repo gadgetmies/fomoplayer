@@ -149,6 +149,7 @@ class Track extends Component {
                       <FontAwesomeIcon icon="circle-exclamation" />
                     )
                   }
+                  popupAbove={this.props.popupAbove}
                   popupClassName={'popup_content-right'}
                 >
                   <div
@@ -291,6 +292,7 @@ class Track extends Component {
             {noPreviews && (
               <div className={'cart-cell track-table-cell preview-missing-actions'} style={{ overflow: 'visible' }}>
                 <Popup
+                  popupAbove={this.props.popupAbove}
                   anchor={
                     <PillButton>
                       <FontAwesomeIcon icon={'exclamation-circle'} />
@@ -332,7 +334,7 @@ class Track extends Component {
                   inCarts={this.props.inCarts}
                   selectedCartIsPurchased={this.props.selectedCartIsPurchased}
                   buttonClassName="table-cell-button"
-                  popupClassName={this.props.popupAbove ? ' popup_content__above' : ''}
+                  popupAbove={this.props.popupAbove}
                   onCartFilterChange={this.props.onCartFilterChange}
                   onClearCartFilter={this.props.onClearCartFilter}
                   onCartButtonClick={this.props.onCartButtonClick}
