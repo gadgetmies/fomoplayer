@@ -270,7 +270,16 @@ class Tracks extends Component {
         <th>{tracks.length} results</th>
       ) : null
     return (
-      <div style={{ height: this.props.height, borderTop: '1px solid black', flex: 1 }} className="tracks">
+      <div
+        style={{
+          height: this.props.height,
+          borderTop: '1px solid black',
+          flex: 1,
+          overflow: 'hidden',
+          display: 'flex',
+        }}
+        className="tracks"
+      >
         {this.props.loading && (
           <div onMouseDown={(e) => e.stopPropagation()} className="loading-overlay">
             <Spinner size="large" />

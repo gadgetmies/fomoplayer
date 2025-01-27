@@ -247,7 +247,10 @@ class Player extends Component {
     const inCurrentCart = inCarts.find(({ id }) => id === selectedCartId)
 
     return (
-      <div className={`page-container`} style={{ ...this.props.style }}>
+      <div
+        className={`page-container`}
+        style={{ flexDirection: 'column', overflow: 'hidden', ...this.props.style }}
+      >
         <PlayerHelp
           active={this.state.helpActive}
           onActiveChanged={(active) => this.setState({ helpActive: active })}

@@ -1,7 +1,3 @@
-.tracks {
-  position: relative;
-}
-
 .tracks-cell {
   display: inline-block;
   padding: 0;
@@ -84,9 +80,6 @@
 .tracks-table {
   border-collapse: collapse;
   font-size: 75%;
-  position: absolute;
-  top: 0;
-  bottom: 0;
   width: 100%;
 }
 

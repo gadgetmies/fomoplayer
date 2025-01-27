@@ -611,7 +611,7 @@ class App extends Component {
                   currentTrack={this.state.currentTrack}
                   isMobile={this.state.isMobile}
                   markHeard={this.markHeard.bind(this)}
-                  style={{ display: 'flex', flexDirection: 'column' }}
+                  style={{ display: 'flex' }}
                 />
               ) : (
                 <div style={{ background: '#333', width: '100%', height: '100%' }}>
@@ -810,7 +810,7 @@ class App extends Component {
                           scoreWeights={this.state.scoreWeights}
                           tracks={this.state.tracksData.tracks}
                           follows={this.state.follows}
-                          style={{ display: settingsVisible ? 'flex' : 'none', flexDirection: 'column' }}
+                          style={{ display: settingsVisible ? 'flex' : 'none' }}
                         />
                         <Player
                           carts={this.state.carts}
@@ -853,7 +853,7 @@ class App extends Component {
                           onSetListState={this.setListState.bind(this)}
                           onUpdateCarts={this.updateCarts.bind(this)}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
-                          style={{ display: !settingsVisible ? 'flex' : 'none', flexDirection: 'column' }}
+                          style={{ display: !settingsVisible ? 'flex' : 'none' }}
                         />
                       </>
                     )

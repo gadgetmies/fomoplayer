@@ -1,5 +1,5 @@
 .page-container {
-  height: 100%;
+  flex: 1;
   max-width: 1440px; /* Ensure this is in sync with top_bar_contents */
   background-color: var(--page-container-background-color);
   box-sizing: border-box;
