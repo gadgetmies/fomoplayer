@@ -155,7 +155,7 @@
 @media (max-width: 590px) {
   .button-playback {
     font-size: 150%;
-    padding: 8px 16px;
+    padding: 8px;
   }
 
   .preview-action_button .button-push_button_icon {
