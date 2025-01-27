@@ -66,7 +66,7 @@ const Popup = ({
         <span className={'popup-anchor'} onClick={clickHandler} onDoubleClick={clickHandler}>
           {anchor}
         </span>
-        {!disabled && (
+        {!disabled && (openOnHover || open) && (
           <div className={`popup_content ${popupClassName || ''} ${popupAbove ? 'popup_content__above' : ''}`} style={popupStyle}>
             {children}
           </div>
