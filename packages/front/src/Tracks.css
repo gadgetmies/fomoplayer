@@ -84,7 +84,6 @@
 .tracks-table {
   border-collapse: collapse;
   font-size: 75%;
-  overflow: scroll;
   position: absolute;
   top: 0;
   bottom: 0;
