@@ -519,9 +519,9 @@ class Tracks extends Component {
           <tfoot>
             {['new', 'recent', 'heard'].includes(this.props.listState) ? (
               <tr style={{ display: 'flex' }}>
-                <td style={{ flex: 1, margin: 8 }}>
+                <td style={{ flex: 1, margin: 4 }}>
                   <SpinnerButton
-                    size={'large'}
+                    size={isMobile ? 'small' : 'large'}
                     loading={this.state.updatingTracks}
                     onClick={this.refreshTracks.bind(this)}
                     style={{ margin: 'auto', height: '100%', display: 'block' }}
@@ -532,7 +532,7 @@ class Tracks extends Component {
               </tr>
             ) : this.props.listState === 'carts' ? (
               <tr style={{ display: 'flex', justifyContent: 'center', background: 'rgb(34, 34, 34)' }}>
-                <td style={{ display: 'flex', gap: 16, margin: 8 }}>
+                <td style={{ display: 'flex', gap: 16, margin: 4 }}>
                   <SpinnerButton
                     size={isMobile ? 'small' : 'large'}
                     loading={this.state.updatingTracks}
