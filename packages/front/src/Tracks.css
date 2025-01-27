@@ -130,7 +130,6 @@
 
 .tracks-table-header {
   display: block;
-  border-bottom: 1px solid black;
 }
 
 .tracks-top_bar_group {
@@ -400,6 +399,7 @@
 
   .tracks-table-header-columns {
     display: flex;
+    border-bottom: 1px solid black;
   }
 
   .table-cell-button-row > .table-cell-button:not(:first-child),

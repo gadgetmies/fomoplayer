@@ -823,17 +823,20 @@ class Settings extends Component {
                 </div>
               </label>
               <h5>Preview:</h5>
-              <Tracks
-                mode={'list'}
-                tracks={this.state.tracks.new.slice(0, 10) || []}
-                listState={'new'}
-                notifications={[]}
-                carts={[]}
-                height={380}
-                loading={this.state.updatingTracks}
-                onPreviewRequested={() => {}}
-                follows={this.props.follows}
-              />
+              <div style={{ border: '1px solid black' }}>
+                <Tracks
+                  mode={'list'}
+                  tracks={this.state.tracks.new.slice(0, 10) || []}
+                  listState={'new'}
+                  notifications={[]}
+                  carts={[]}
+                  height={380}
+                  loading={this.state.updatingTracks}
+                  onPreviewRequested={() => {}}
+                  follows={this.props.follows}
+                  stores={this.props.stores}
+                />
+              </div>
             </>
           ) : null}
           {this.state.page === 'carts' ? (

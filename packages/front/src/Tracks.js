@@ -273,7 +273,6 @@ class Tracks extends Component {
       <div
         style={{
           height: this.props.height,
-          borderTop: '1px solid black',
           flex: 1,
           overflow: 'hidden',
           display: 'flex',

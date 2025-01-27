@@ -372,7 +372,7 @@ class Preview extends Component {
     const cartFilter = this.state.cartFilter
 
     return (
-      <div className="preview noselect">
+      <div className="preview noselect" style={{ borderBottom: '1px solid black' }}>
         <div className="preview_details_wrapper">
           {currentTrack ? (
             <>
