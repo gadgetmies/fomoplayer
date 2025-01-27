@@ -315,6 +315,7 @@ class Track extends Component {
             </div>
             <div className={'cart-cell track-table-cell preview-missing-actions'} style={{ overflow: 'visible' }}>
               <button
+                disabled={this.props.heard}
                 className={'button button-push_button button-push_button-small button-push_button-primary'}
                 onClick={(e) => {
                   this.props.onMarkHeardButtonClick(this.props.id)
