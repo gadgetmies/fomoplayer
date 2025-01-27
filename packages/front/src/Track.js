@@ -113,6 +113,12 @@ class Track extends Component {
 
     const cartFilter = this.props.cartFilter
 
+    const noPreviewsTexts = (
+      <>
+        <p>There are no previews available for this track.</p>
+        <p>You can open the track or search for it using the store links on the right.</p>
+      </>
+    )
     return (
       <tr
         ref={'row'}
@@ -145,10 +151,21 @@ class Track extends Component {
                   }
                   popupClassName={'popup_content-right'}
                 >
-                  <div style={{ padding: 8, width: 100, boxSizing: 'border-box', lineHeight: 'normal' }}>
-                    There are no previews available for this track. You can open the track or search for it using the
-                    store links.{' '}
-                    {!this.props.heard && 'Click here to mark it as heard.'}
+                  <div
+                    style={{
+                      padding: 8,
+                      minWidth: 200,
+                      boxSizing: 'border-box',
+                      lineHeight: 'normal',
+                      textAlign: 'left',
+                    }}
+                  >
+                    {noPreviewsTexts}
+                    {!this.props.heard && (
+                      <>
+                        <p>Click the cross to mark the track heard.</p>
+                      </>
+                    )}
                   </div>
                 </Popup>
               ) : this.state.heardHover ? (
@@ -281,8 +298,18 @@ class Track extends Component {
                     </PillButton>
                   }
                 >
-                  <div style={{ padding: 8, width: 200, boxSizing: 'border-box', lineHeight: 'normal' }}>
-                    There are no previews available for this track. Click below to mark it as heard.
+                  <div
+                    style={{
+                      padding: '8px 8px 32px 8px',
+                      boxSizing: 'border-box',
+                      lineHeight: 'normal',
+                      minWidth: 200,
+                    }}
+                  >
+                    {noPreviewsTexts}{' '}
+                    {!this.props.heard && this.props.listState === 'new' && (
+                      <p>Click the Mark heard button to remove the track from the list.</p>
+                    )}
                   </div>
                 </Popup>
               </div>
