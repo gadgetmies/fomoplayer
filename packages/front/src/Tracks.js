@@ -295,28 +295,17 @@ class Tracks extends Component {
                 <td
                   className="tracks-top_bar_group"
                   style={{
-                    width: '100%',
-                    display: 'flex',
                     padding: 4,
-                    boxSizing: 'border-box',
                   }}
                 >
                   {this.props.mode === 'app' ? (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        flexWrap: 'wrap',
-                        width: '100%',
-                        justifyContent: 'space-between',
-                      }}
-                    >
+                    <>
                       <SearchBar
                         placeholder={'Filter'}
                         value={this.state.trackListFilter}
                         loading={this.state.trackListFilterDebounce}
                         className={'cart-filter'}
+                        style={{ maxWidth: '50ch' }}
                         onChange={({ target: { value: filter } }) => {
                           // TODO: replace aborted and debounce with flatmapLatest
                           if (this.state.trackListFilterDebounce) {
@@ -361,7 +350,7 @@ class Tracks extends Component {
                             this.props.selectedCart?.track_count,
                           )})`}
                       </span>
-                    </div>
+                    </>
                   ) : (
                     <span className="select_button-button select_button-button select_button-button__active">
                       {this.props.carts[0].name}
@@ -377,7 +366,7 @@ class Tracks extends Component {
               </tr>
             )}
 
-            <tr style={{ display: 'block' }} className={'noselect'}>
+            <tr className={'noselect tracks-table-header-columns'}>
               {this.props.mode === 'app' ? (
                 <th className={'new-cell tracks-cell'}>
                   <div className={'new-cell-content track-table-cell'}>New</div>

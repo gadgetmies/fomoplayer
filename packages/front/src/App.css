@@ -297,10 +297,6 @@ input[type='range']::-webkit-slider-runnable-track {
     font-size: 120%;
     margin: 2px;
   }
-
-  .cart-details {
-    width: 100%;
-  }
 }
 
 @media (min-width: 769px) {
