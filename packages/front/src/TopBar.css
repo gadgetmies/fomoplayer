@@ -133,6 +133,7 @@
   position: relative;
   color: white;
   overflow: hidden;
+  min-width: 50px;
 }
 
 .button-top_bar_button--selected {
@@ -209,10 +210,6 @@
 
   .button-top_bar_button_label {
     display: none;
-  }
-
-  .button-top_bar_button {
-    width: 50px;
   }
 
   .button-push_button-top_bar {
