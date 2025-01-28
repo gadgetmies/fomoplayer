@@ -303,6 +303,7 @@ class Tracks extends Component {
                         loading={this.state.trackListFilterDebounce}
                         className={'cart-filter'}
                         style={{ maxWidth: '50ch' }}
+                        styles={'large'}
                         onChange={({ target: { value: filter } }) => {
                           // TODO: replace aborted and debounce with flatmapLatest
                           if (this.state.trackListFilterDebounce) {

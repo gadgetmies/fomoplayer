@@ -43,7 +43,7 @@ export const CartDropDownButton = ({
       <div>
         <SearchBar
           placeholder={'Search'}
-          styles={'small dark'}
+          styles={'large dark'}
           value={cartFilter}
           onChange={onCartFilterChange}
           onClearSearch={onClearCartFilter}
@@ -82,7 +82,7 @@ export const CartDropDownButton = ({
           <input
             placeholder={'New cart'}
             style={{ flex: 1 }}
-            className={'cart-popup-input text-input text-input-small text-input-dark'}
+            className={'cart-popup-input text-input text-input-large text-input-dark'}
             value={newCartName}
             onChange={(e) => setNewCartName(e.target.value)}
             onClick={(e) => e.stopPropagation()}
