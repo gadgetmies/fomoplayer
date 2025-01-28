@@ -76,7 +76,7 @@ export const CartDropDownButton = ({
                 )
               })}
       </div>
-      <div>
+      <div style={{ paddingBottom: 24 }}>
         <hr className={'popup-divider'} />
         <div className={'input-layout'}>
           <input
