@@ -162,6 +162,7 @@ class Tracks extends Component {
                 inCarts={inCarts}
                 popupAbove={tracks.length > 10 && tracks.length - index < 10}
                 processingCart={this.props.processingCart}
+                processingTrack={this.props.processingTrack}
                 key={`track-${id}`}
                 follows={this.props.follows}
                 noPreviews={previews.every(({ url, store }) => !url && store !== 'bandcamp')}

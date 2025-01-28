@@ -6,6 +6,7 @@ import { NavLink } from 'react-router-dom'
 import React, { useState } from 'react'
 
 export const CartDropDownButton = ({
+  processingTrack,
   processingCart,
   inCart,
   removeLabel,
@@ -32,7 +33,8 @@ export const CartDropDownButton = ({
       popupClassName={`cart-popup popup_content-small ${popupClassName || ''}`}
       buttonStyle={{ opacity: 1 }}
       popupStyle={{ overflow: 'hidden' }}
-      loading={processingCart}
+      loading={processingTrack}
+      disabled={processingCart}
       onClick={(e) => {
         e.stopPropagation()
         return onCartButtonClick(trackId, currentCartId, inCart)

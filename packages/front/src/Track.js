@@ -63,6 +63,7 @@ class Track extends Component {
     const inDefaultCart = this.props.inDefaultCart
     const inCart = this.props.listState === 'carts' ? inCurrentCart : inDefaultCart
     const processingCart = this.props.processingCart
+    const processingTrack = this.props.processingTrack
     const removeLabel = this.props.listState === 'carts' ? 'Remove from current cart' : 'Remove from default cart'
     const noPreviews = this.props.noPreviews
 
@@ -323,6 +324,7 @@ class Track extends Component {
               <span className={'table-cell-button-row'} style={{ width: '100%' }}>
                 <CartDropDownButton
                   {...{
+                    processingTrack: processingTrack === trackId,
                     processingCart,
                     inCart,
                     removeLabel,

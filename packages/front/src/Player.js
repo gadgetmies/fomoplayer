@@ -267,6 +267,7 @@ class Player extends Component {
           mode={this.props.mode}
           newTracks={this.props.meta ? this.props.meta.newTracks - this.state.listenedTracks : null}
           processingCart={this.props.processingCart}
+          processingTrack={this.props.processingTrack}
           selectedCart={this.props.selectedCart}
           selectedCartIsPurchased={selectedCartIsPurchased}
           showHint={this.props.tracks.length === 0}
@@ -300,6 +301,7 @@ class Player extends Component {
           listState={this.props.listState}
           currentTrack={(currentTrack || {}).id}
           processingCart={this.props.processingCart}
+          processingTrack={this.props.processingTrack}
           follows={this.props.follows}
           notificationsEnabled={this.props.notificationsEnabled}
           search={this.props.search}

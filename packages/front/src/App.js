@@ -71,6 +71,7 @@ class App extends Component {
       tracksData: defaultTracksData,
       initialPosition: undefined,
       processingCart: false,
+      processingTrack: null,
       fetchingCartDetails: false,
       userSettings: {},
       isMobile,
@@ -210,7 +211,7 @@ class App extends Component {
   }
 
   async onMarkPurchased(trackId) {
-    this.setState({ processingCart: true })
+    this.setState({ processingCart: true, processingTrack: trackId })
     try {
       await requestJSONwithCredentials({
         path: `/me/purchased/`,
@@ -222,11 +223,11 @@ class App extends Component {
         method: 'PATCH',
         body: [{ op: 'remove', trackId }],
       })
-      await Promise.all([this.updateTracks(), this.updateDefaultCart(), this.selectCart(this.state.selectedCartUuid)])
+      await Promise.all([this.updateTracks(), this.selectCart(this.state.selectedCartUuid)])
     } catch (e) {
       console.error(`Marking track as purchased failed: ${e.toString()}`)
     }
-    this.setState({ processingCart: false })
+    this.setState({ processingCart: false, processingTrack: null })
   }
 
   updateCart(cartDetails) {
@@ -382,22 +383,22 @@ class App extends Component {
 
   async handleCartButtonClick(trackId, cartId, inCart) {
     if (inCart) {
-      this.setState({ processingCart: true })
+      this.setState({ processingCart: true, processingTrack: trackId })
       try {
         await this.removeFromCart(cartId, trackId)
       } catch (e) {
         console.error('Error while removing from cart', e)
       } finally {
-        this.setState({ processingCart: false })
+        this.setState({ processingCart: false, processingTrack: null })
       }
     } else {
-      this.setState({ processingCart: true })
+      this.setState({ processingCart: true, processingTrack: trackId })
       try {
         await this.addToCart(cartId, trackId)
       } catch (e) {
         console.error('Error while adding to cart', e)
       } finally {
-        this.setState({ processingCart: false })
+        this.setState({ processingCart: false, processingTrack: null })
       }
     }
   }
@@ -824,6 +825,7 @@ class App extends Component {
                           mode="app"
                           newTracks={this.state.tracksData.meta.newTracks}
                           processingCart={this.state.processingCart}
+                          processingTrack={this.state.processingTrack}
                           search={this.state.search || ''}
                           searchError={this.state.searchError}
                           searchInProgress={this.state.searchInProgress}
