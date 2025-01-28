@@ -215,15 +215,6 @@ class Player extends Component {
     })
   }
 
-  async handleMarkPurchasedButtonClick(trackId) {
-    this.setState({ processingCart: true })
-    try {
-      await this.props.onMarkPurchased(trackId)
-    } finally {
-      this.setState({ processingCart: false })
-    }
-  }
-
   async refreshListAndClosePopups() {
     await this.props.onUpdateTracksClicked()
     this.props.onClosePopups()
@@ -282,7 +273,7 @@ class Player extends Component {
           onHelpButtonClicked={() => this.setState({ helpActive: !this.state.helpActive })}
           onIgnoreClicked={() => this.props.onOpenIgnorePopup(currentTrack)}
           onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
-          onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick?.bind(this)}
+          onMarkPurchasedButtonClick={this.props.onMarkPurchased}
           onNext={() => this.playNextTrack()}
           onPlayPauseToggle={this.handlePlayPauseToggle.bind(this)}
           onPrevious={() => this.playPreviousTrack()}
@@ -317,7 +308,7 @@ class Player extends Component {
           onFollowClicked={this.props.onOpenFollowPopup?.bind(this)}
           onIgnoreArtistsByLabels={this.props.onIgnoreArtistsByLabels}
           onIgnoreClicked={this.props.onOpenIgnorePopup?.bind(this)}
-          onMarkPurchasedButtonClick={this.handleMarkPurchasedButtonClick.bind(this)}
+          onMarkPurchasedButtonClick={this.props.onMarkPurchased}
           onPreviewRequested={(id) => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
             const requestedTrackIndex = this.getTrackIndex(requestedTrack)

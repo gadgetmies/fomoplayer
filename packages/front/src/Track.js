@@ -341,6 +341,7 @@ class Track extends Component {
                   onClearCartFilter={this.props.onClearCartFilter}
                   onCartButtonClick={this.props.onCartButtonClick}
                   onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
+                  onCreateCartClick={this.props.onCreateCartClick}
                 />
               </span>
             </div>
