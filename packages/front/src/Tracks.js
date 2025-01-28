@@ -270,6 +270,9 @@ class Tracks extends Component {
       ) : this.props.listState === 'search' ? (
         <th>{tracks.length} results</th>
       ) : null
+
+    const multiplePages = this.props.selectedCart?.track_count > 200
+
     return (
       <div
         style={{
@@ -342,7 +345,7 @@ class Tracks extends Component {
                       />
                       <span className={'cart-details'}>
                         Tracks in cart: {this.props.selectedCart?.track_count}
-                        {this.props.selectedCart?.track_count > 200 &&
+                        {multiplePages &&
                           ` (showing ${this.props.tracksOffset + 1} - ${Math.min(
                             this.props.tracksOffset + tracks.length,
                             this.props.selectedCart?.track_count,
@@ -514,7 +517,7 @@ class Tracks extends Component {
                   : tracks,
               )}
           </tbody>
-          {!this.props.preview && (
+          {!this.props.preview && (this.props.listState !== 'carts' || multiplePages) && (
             <tfoot>
               {['new', 'recent', 'heard'].includes(this.props.listState) ? (
                 <tr style={{ display: 'flex' }}>
@@ -529,7 +532,7 @@ class Tracks extends Component {
                     />
                   </td>
                 </tr>
-              ) : this.props.listState === 'carts' ? (
+              ) : this.props.listState === 'carts' && multiplePages ? (
                 <tr style={{ display: 'flex', justifyContent: 'center', background: 'rgb(34, 34, 34)' }}>
                   <td style={{ display: 'flex', gap: 16, margin: 4 }}>
                     <SpinnerButton
