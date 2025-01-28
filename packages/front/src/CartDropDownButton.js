@@ -27,7 +27,7 @@ export const CartDropDownButton = ({
   const [newCartName, setNewCartName] = useState('')
   return (
     <DropDownButton
-      icon={processingCart ? null : inCart ? 'minus' : 'cart-plus'}
+      icon={inCart ? 'minus' : 'cart-plus'}
       title={inCart ? removeLabel : 'Add to default cart'}
       buttonClassName={buttonClassName || ''}
       popupClassName={`cart-popup popup_content-small ${popupClassName || ''}`}
