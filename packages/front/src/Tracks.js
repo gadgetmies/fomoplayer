@@ -487,18 +487,6 @@ class Tracks extends Component {
                 {scrollToCurrentButton}
               </td>
             </tr>
-
-            <tr style={{ width: '100%', background: 'none', position: 'fixed', bottom: 67, zIndex: 1 }}>
-              <td
-                style={{
-                  width: '100%',
-                  display: this.state.currentBelowScreen ? 'flex' : 'none',
-                  justifyContent: 'center',
-                }}
-              >
-                {scrollToCurrentButton}
-              </td>
-            </tr>
             {!this.props.fetchingCartDetails &&
               this.renderTracks(
                 this.props.listState === 'carts'
@@ -516,6 +504,28 @@ class Tracks extends Component {
                     )
                   : tracks,
               )}
+            <tr
+              style={{
+                margin: 0,
+                display: 'flex',
+                width: '100%',
+                background: 'none',
+                position: 'sticky',
+                zIndex: 100,
+                bottom: 0,
+              }}
+            >
+              <td
+                style={{
+                  width: '100%',
+                  display: this.state.currentBelowScreen ? 'flex' : 'none',
+                  justifyContent: 'center',
+                  position: 'relative',
+                }}
+              >
+                <div style={{ display: 'flex', position: 'absolute', bottom: '100%' }}>{scrollToCurrentButton}</div>
+              </td>
+            </tr>
           </tbody>
           {!this.props.preview && (this.props.listState !== 'carts' || multiplePages) && (
             <tfoot>
