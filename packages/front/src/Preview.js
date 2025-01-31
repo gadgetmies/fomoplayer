@@ -771,6 +771,7 @@ class Preview extends Component {
                     onCartButtonClick={this.props.onCartButtonClick}
                     onCreateCartClick={this.props.onCreateCartClick}
                     onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
+                    disabled={!this.props.currentTrack}
                   />
                 )}
                 <button
@@ -827,9 +828,11 @@ class Preview extends Component {
                           <FontAwesomeIcon icon={'share'} />
                         </span>{' '}
                         <span className={'button-push_button_label'}>Share</span>
-                        <span className="preview-share_caret">
-                          <FontAwesomeIcon icon={'caret-down'} />
-                        </span>
+                        {this.props.currentTrack && (
+                          <span className="preview-share_caret">
+                            <FontAwesomeIcon icon={'caret-down'} />
+                          </span>
+                        )}
                       </span>
                     </button>
                   }

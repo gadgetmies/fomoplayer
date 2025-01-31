@@ -33,6 +33,7 @@ const DropDownButton = (props) => {
         className={`button-drop_down-left ${buttonClassName}`}
         {...{ loading, loadingLabel, disabled, size, style: buttonStyle, icon }}
         {...rest}
+        disabled={disabled}
         onClick={(e) => {
           onClick && onClick(e)
         }}

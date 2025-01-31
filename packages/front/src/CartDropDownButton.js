@@ -23,6 +23,7 @@ export const CartDropDownButton = ({
   onCreateCartClick,
   selectedCartIsPurchased,
   onMarkPurchasedButtonClick,
+  disabled,
 }) => {
   const [newCartName, setNewCartName] = useState('')
   return (
@@ -34,7 +35,7 @@ export const CartDropDownButton = ({
       buttonStyle={{ opacity: 1 }}
       popupStyle={{ overflow: 'hidden' }}
       loading={processingTrack}
-      disabled={processingCart}
+      disabled={processingCart || disabled}
       onClick={(e) => {
         e.stopPropagation()
         return onCartButtonClick(trackId, currentCartId, inCart)
