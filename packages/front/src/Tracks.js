@@ -561,17 +561,7 @@ class Tracks extends Component {
                     />
                   </td>
                 </tr>
-              ) : (
-                <tr style={{ display: 'flex' }}>
-                  <td style={{ flex: 1, margin: 8 }}>
-                    <SpinnerButton
-                      size={isMobile ? 'small' : 'large'}
-                      style={{ visibility: 'hidden' }}
-                      label={'\u00A0'}
-                    />
-                  </td>
-                </tr>
-              )}
+              ) : null}
             </tfoot>
           )}
         </table>
