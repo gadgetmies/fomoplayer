@@ -176,10 +176,12 @@ FROM
   `,
   )
 
-module.exports.queryTracksWithoutWaveform = ({ limit, store }) =>
-  pg.queryRowsAsync(
-    // language=PostgreSQL
-    sql`-- Query previews without waveform
+module.exports.queryTracksWithoutWaveform = ({ limit, store }) => {
+  return BPromise.using(pg.getTransaction(), async (tx) => {
+    await tx.queryAsync("SET statement_timeout TO '5min'")
+    return tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- Query previews without waveform
 SELECT store__track_id               AS id
      , store_name
      , store__track_preview_id       AS preview_id
@@ -199,7 +201,9 @@ WHERE store__track_preview_waveform_url IS NULL
 ORDER BY store__track_published DESC NULLS LAST
 LIMIT ${limit}
     `,
-  )
+    )
+  })
+}
 
 module.exports.setPreviewMissing = async (storeTrackPreviewId) =>
   pg.queryAsync(
