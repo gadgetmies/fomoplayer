@@ -1,0 +1,6 @@
+DROP INDEX idx_store__track_track_id;
+DROP INDEX idx_store__track_store_id;
+DROP INDEX idx_store__track_preview_store__track_id;
+DROP INDEX idx_store__track_preview_embedding_preview_id;
+DROP INDEX idx_track__cart_track_id;
+DROP INDEX idx_track__cart_cart_id;
