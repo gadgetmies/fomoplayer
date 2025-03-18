@@ -154,7 +154,12 @@ const sendIndex = (_, res) => {
 app.get('/*', sendIndex)
 
 const handleErrors = (err, req, res, next) => {
-  logger.error(err instanceof String ? err : err.toString())
+  logger.error(err instanceof String ? err : err.toString(), {
+    url: req.url,
+    method: req.method,
+    body: req.body,
+    stack: err.stack,
+  })
   if (err instanceof HttpError) {
     return res.status(err.getCode()).json({
       status: 'error',
