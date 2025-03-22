@@ -9,6 +9,18 @@ const logger = require('fomoplayer_shared').logger(__filename)
 
 const pgrm = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
+const { queryAccountCount } = require('./routes/db')
+const { deleteInviteCode } = require('./db/account')
+
+const consumeInviteCode = async (inviteCode) => {
+  const deleteCount = await deleteInviteCode(inviteCode)
+  if (deleteCount === 1) {
+    return true
+  } else if (deleteCount === 0) {
+    return false
+  }
+  throw new Error('Consumed more than one invite code')
+}
 
 module.exports = function passportSetup() {
   if (process.env.NODE_ENV !== 'production') {
@@ -34,14 +46,29 @@ module.exports = function passportSetup() {
         authorizationURL: 'https://accounts.google.com/o/oauth2/auth',
         tokenURL: 'https://www.googleapis.com/oauth2/v3/token',
         callbackURL: `${config.apiURL}/auth/login/google/return`,
+        passReqToCallback: true,
       },
-      async (issuer, profile, done) => {
+      async (req, issuer, profile, done) => {
         if (profile.id === undefined) {
           throw new Error('OIDC profile id not returned!')
         }
 
         try {
-          const user = await account.findOrCreateByIdentifier(issuer, profile.id)
+          const inviteCode = req.session.inviteCode
+          const signUpAvailable = (await queryAccountCount()) <= config.maxAccountCount
+          let user = await account.findByIdentifier(issuer, profile.id)
+
+          if (!signUpAvailable && !user) {
+            if (!inviteCode) {
+              return done(null, false, { message: 'Sign up is not available' })
+            }
+            const inviteCodeConsumed = await consumeInviteCode(inviteCode)
+            if (!inviteCodeConsumed) {
+              return done(null, false, { message: 'Invalid invite code' })
+            }
+            user = await account.findOrCreateByIdentifier(issuer, profile.id)
+          }
+
           done(null, user)
           await pgrm.queryAsync(
             //language=PostgreSQL

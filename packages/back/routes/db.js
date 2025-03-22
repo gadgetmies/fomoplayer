@@ -187,3 +187,19 @@ WHERE track_id = ${trackId}
   )
   return res[0]?.embedding
 }
+
+module.exports.queryAccountCount = async () => {
+  const res = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`SELECT COUNT(*) AS count FROM meta_account`,
+  )
+
+  return Number(res[0].count)
+}
+
+module.exports.addEmailToWaitingList = async (email) => {
+  await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`INSERT INTO waiting_list (waiting_list_email) VALUES (${email}) ON CONFLICT DO NOTHING`,
+  )
+}

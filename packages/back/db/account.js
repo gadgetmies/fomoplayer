@@ -109,6 +109,25 @@ RETURNING meta_account_user_id AS id
       `,
     )
   },
+  queryInviteExists: async (inviteCode) => {
+    const [details] = await pgrm.queryRowsAsync(
+      //language=PostgreSQL
+      sql`SELECT TRUE AS exists
+FROM
+  waiting_list
+WHERE waiting_list_invite_code = ${inviteCode}`,
+    )
+
+    return details?.exists
+  },
+  deleteInviteCode: async (inviteCode) => {
+    const res = await pgrm.queryAsync(
+      //language=PostgreSQL
+      sql`DELETE FROM waiting_list WHERE waiting_list_invite_code = ${inviteCode}`,
+    )
+
+    return res.rowCount
+  },
 }
 
 module.exports = accountAPI

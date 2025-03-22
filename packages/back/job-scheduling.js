@@ -20,6 +20,7 @@ const bandcampIntegrationTest = require('./jobs/integration/bandcamp')
 const logger = require('fomoplayer_shared').logger(__filename)
 const radiator = require('./jobs/radiator/radiator')
 const { removeOldSources } = require('./jobs/remove-old-sources')
+const { sendInvites } = require('./jobs/send-invites')
 
 const init = async () => {
   await pg.queryAsync(
@@ -161,6 +162,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
   beatportIntegrationTest,
   bandcampIntegrationTest,
   removeOldSources,
+  sendInvites,
   ...radiator,
 }
 

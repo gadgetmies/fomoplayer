@@ -7,6 +7,7 @@ const logger = require('fomoplayer_shared').logger(__filename)
 
 router.use(bodyParser.json())
 const { verifyEmail, getCartDetails } = require('./logic.js')
+const { queryAccountCount, addEmailToWaitingList } = require('./db')
 
 router.get('/carts/:uuid', async ({ params: { uuid }, user, query: { since, offset, limit } }, res) => {
   const cart = await getCartDetails(uuid, user?.id, { since, offset, limit })
@@ -33,6 +34,16 @@ router.get('/verify-email/:verificationCode', async ({ params: { verificationCod
     logger.error('Email verification failed', e)
     res.send(emailVerificationFailPage)
   }
+})
+
+router.get('/sign-up-available', async (req, res) => {
+  const accountCount = await queryAccountCount()
+  res.send({ available: config.maxAccountCount >= accountCount })
+})
+
+router.post('/join-waiting-list', async ({ body: { email } }, res) => {
+  await addEmailToWaitingList(email)
+  res.status(204).send()
 })
 
 module.exports = router
