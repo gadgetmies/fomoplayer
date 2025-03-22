@@ -3,7 +3,6 @@
   background-clip: padding-box;
   border-radius: 0.25rem;
   border: none;
-  padding: 0.375rem 0.75rem;
   transition:
     box-shadow 0.25s ease-in-out,
     width 0.25s ease-in-out;
