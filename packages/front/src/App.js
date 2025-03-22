@@ -621,7 +621,7 @@ class App extends Component {
                       Fomo Player
                       <br />
                       <div style={{ fontSize: '50%', fontWeight: 300 }}>
-                        Never miss a <span style={{ textDecoration: 'line-through' }}>beat</span> release!
+                        Never miss a beat!
                       </div>
                     </h1>
                     <div style={{ padding: '2rem' }}>
