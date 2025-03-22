@@ -219,7 +219,9 @@ const getPlaylistTracks = (module.exports.getPlaylistTracks = async function* ({
 
 module.exports.getArtistTracks = async function* ({ artistStoreId }) {
   const albumIds = (await spotifyApi.getArtistAlbums(artistStoreId)).body.items.map(R.prop('id'))
+  logger.info('Got albums for artist', { artistStoreId, albumIds })
   const albums = (await spotifyApi.getAlbums(albumIds)).body.albums
+  logger.info('Got album details for artist', { artistStoreId, albums })
   const transformed = R.flatten(spotifyAlbumTracksTransform(albums))
   if (transformed.length === 0) {
     const error = `No tracks found for artist ${artistStoreId}`
