@@ -1023,7 +1023,7 @@ class Settings extends Component {
                     onChange={(e) => this.setState({ email: e.target.value, emailVerificationRequested: false })}
                   />
                   <SpinnerButton
-                    className="button button-push_button-large button-push_button-primary"
+                    size={'large'}
                     disabled={
                       this.state.updatingEmail ||
                       (this.props.userSettings.email === this.state.email && this.props.userSettings.emailVerified) ||
@@ -1080,7 +1080,7 @@ class Settings extends Component {
                     }}
                   />
                   <SpinnerButton
-                    className="button button-push_button-large button-push_button-primary"
+                    size={'large'}
                     disabled={
                       this.state.updatingNotifications ||
                       this.state.updatingEmail ||
