@@ -101,15 +101,15 @@ export default class Login extends Component {
               this.state.signUpAvailable === false && (
                 <>
                   <br />
-                  <div className="login-separator">Join Waiting List</div>
+                  <div className="login-separator">Sign up</div>
                   <p>
-                    Sadly, the sign up is currently not available. Please join the waiting list to be notified when
-                    registration is again available.
+                    Sadly, the sign up is currently not available. Please <strong>join the waiting list</strong> to be
+                    notified when registration is again available.
                   </p>
                   {this.state.joinedWaitingList ? (
                     <p>
                       Thank you for joining the waiting list! A sign up link will be sent to your email when sign up is
-                      again available.
+                      available.
                     </p>
                   ) : (
                     <>
@@ -137,7 +137,7 @@ export default class Login extends Component {
                             disabled={this.state.joiningWaitingList || this.state.waitingListEmail === ''}
                             loading={this.state.joiningWaitingList}
                           >
-                            Join
+                            Join Waiting List
                           </SpinnerButton>
                         </div>
                       </label>
