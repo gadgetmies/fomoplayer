@@ -153,7 +153,7 @@ const sendIndex = (_, res) => {
 
 app.get('/*', sendIndex)
 
-const handleErrors = (err, req, res, next) => {
+const handleErrors = (err, req, res, _) => {
   logger.error(err instanceof String ? err : err.toString(), {
     url: req.url,
     method: req.method,
