@@ -364,21 +364,22 @@ class Track extends Component {
             {R.intersperse(' ', actions || [])}{' '}
             {(this.props.listState !== 'carts' ||
               this.props.mode !== 'app' ||
-              this.props.enabledStoreSearch?.includes('Youtube')) && (
-              <a
-                className="pill pill-link pill-link-collapse table-cell-button"
-                href={`https://www.youtube.com/results?search_query=${searchString}`}
-                title={'Search from Youtube'}
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
-                target={'_blank'}
-              >
-                <FontAwesomeIcon icon={['fab', 'youtube']} />
-                <span className={'pill-link-text'}>Youtube</span>
-                <FontAwesomeIcon icon={'search'} />
-              </a>
-            )}
+              this.props.enabledStoreSearch?.includes('Youtube')) &&
+              this.props.stores.length !== 1 && (
+                <a
+                  className="pill pill-link pill-link-collapse table-cell-button"
+                  href={`https://www.youtube.com/results?search_query=${searchString}`}
+                  title={'Search from Youtube'}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                  }}
+                  target={'_blank'}
+                >
+                  <FontAwesomeIcon icon={['fab', 'youtube']} />
+                  <span className={'pill-link-text'}>Youtube</span>
+                  <FontAwesomeIcon icon={'search'} />
+                </a>
+              )}
           </div>
         </td>
       </tr>

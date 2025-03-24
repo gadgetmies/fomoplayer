@@ -437,7 +437,9 @@ class Preview extends Component {
               </div>
               <div className="preview_links_container">
                 <div className="preview_links_wrapper">
-                  <span className="preview_actions_title">Available&nbsp;on</span>
+                  <span className="preview_actions_title" style={{ whiteSpace: 'nowrap' }}>
+                    {this.props.stores.length === 1 ? 'Open in store' : 'Available on'}
+                  </span>
                   <div className="available_on_list">
                     {currentTrack?.stores.map(({ name, url, release: { url: releaseUrl } }) => (
                       <a
@@ -454,38 +456,40 @@ class Preview extends Component {
                     ))}
                   </div>
                 </div>
-                <div className="preview_links_wrapper" style={{ paddingBottom: 8 }}>
-                  <span className="preview_actions_title">Search</span>
-                  <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
-                    {this.props.stores
-                      ?.filter(({ storeName }) => currentTrack?.stores.every(({ name }) => storeName !== name))
-                      .map(({ storeName }) => {
-                        const searchUrl = this.props.stores.find(R.propEq('storeName', storeName)).searchUrl
-                        return (
-                          <a
-                            key={`${searchUrl}${searchString}`}
-                            href={`${searchUrl}${searchString}`}
-                            target="_blank"
-                            className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
-                            style={{ display: 'flex', padding: '16px 8px' }}
-                          >
-                            <span className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
-                            <span className="pill-link-text">{storeName}</span>
-                            <FontAwesomeIcon icon={'square-arrow-up-right'} />
-                          </a>
-                        )
-                      })}
-                    <a
-                      href={`https://www.youtube.com/results?search_query=${searchString}`}
-                      target="_blank"
-                      className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
-                      style={{ display: 'flex', padding: '16px 8px' }}
-                    >
-                      <FontAwesomeIcon icon={['fab', 'youtube']} /> <span className="pill-link-text">Youtube</span>
-                      <FontAwesomeIcon icon={'square-arrow-up-right'} />
-                    </a>
+                {this.props.stores.length !== 1 && (
+                  <div className="preview_links_wrapper" style={{ paddingBottom: 8 }}>
+                    <span className="preview_actions_title">Search</span>
+                    <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
+                      {this.props.stores
+                        ?.filter(({ storeName }) => currentTrack?.stores.every(({ name }) => storeName !== name))
+                        .map(({ storeName }) => {
+                          const searchUrl = this.props.stores.find(R.propEq('storeName', storeName)).searchUrl
+                          return (
+                            <a
+                              key={`${searchUrl}${searchString}`}
+                              href={`${searchUrl}${searchString}`}
+                              target="_blank"
+                              className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
+                              style={{ display: 'flex', padding: '16px 8px' }}
+                            >
+                              <span className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
+                              <span className="pill-link-text">{storeName}</span>
+                              <FontAwesomeIcon icon={'square-arrow-up-right'} />
+                            </a>
+                          )
+                        })}
+                      <a
+                        href={`https://www.youtube.com/results?search_query=${searchString}`}
+                        target="_blank"
+                        className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
+                        style={{ display: 'flex', padding: '16px 8px' }}
+                      >
+                        <FontAwesomeIcon icon={['fab', 'youtube']} /> <span className="pill-link-text">Youtube</span>
+                        <FontAwesomeIcon icon={'square-arrow-up-right'} />
+                      </a>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </>
           ) : (
