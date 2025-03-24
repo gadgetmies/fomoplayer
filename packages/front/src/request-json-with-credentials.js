@@ -1,12 +1,23 @@
 import config from './config.js'
 
+const searchParams = new URLSearchParams(window.location.search)
+let store = searchParams.get('store') || window.location.hostname.split('.').slice(0, -2).join('.')
+
 const requestJSONwithCredentials = (...args) =>
   requestWithCredentials(...args).then(async (res) => {
     return await res.json()
   })
 
-const requestWithCredentials = async ({ url, path, method = 'GET', body, headers }) => {
-  const res = await fetch(url ? url : `${config.apiURL}${path}`, {
+const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET', body, headers }) => {
+  let url = new URL(requestedUrl ? requestedUrl : `${config.apiURL}${path}`)
+
+  if (store) {
+    const urlSearchParams = new URLSearchParams(url.search)
+    urlSearchParams.set('store', store)
+    url.search = urlSearchParams.toString()
+  }
+
+  const res = await fetch(url, {
     method,
     body: body ? JSON.stringify(body) : undefined,
     credentials: 'include',

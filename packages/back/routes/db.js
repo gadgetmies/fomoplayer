@@ -5,7 +5,7 @@ const BPromise = require('bluebird')
 const { cryptoKey } = require('../config')
 const logger = require('fomoplayer_shared').logger(__filename)
 
-module.exports.queryLongestPreviewForTrack = (id, format, skip) =>
+module.exports.queryLongestPreviewForTrack = (id, store, format, skip) =>
   pg
     .queryRowsAsync(
       // language=PostgreSQL
@@ -20,8 +20,9 @@ FROM
   NATURAL JOIN
     store
 WHERE
-    track_id = ${id}
-AND store__track_preview_format = ${format}
+    track_id = ${id} AND 
+    store__track_preview_format = ${format} AND
+    ${store} :: TEXT IS NULL OR LOWER(store_name) = ${store}
 ORDER BY
   store__track_preview_end_ms - store__track_preview_start_ms DESC NULLS LAST
 OFFSET ${skip} LIMIT 1;
@@ -29,7 +30,7 @@ OFFSET ${skip} LIMIT 1;
     )
     .then(R.head)
 
-module.exports.searchForArtistsAndLabels = (query) =>
+module.exports.searchForArtistsAndLabels = (query, store) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- searchForArtistsAndLabels
@@ -50,6 +51,7 @@ FROM
      artist
      NATURAL JOIN store__artist
      NATURAL JOIN store
+   WHERE ${store} :: TEXT IS NULL OR LOWER(store_name) = ${store}
    GROUP BY
      artist_id, artist_name
    HAVING
@@ -70,6 +72,7 @@ UNION ALL
    label
    NATURAL JOIN store__label
    NATURAL JOIN store
+ WHERE ${store} :: TEXT IS NULL OR LOWER(store_name) = ${store}
  GROUP BY
    label_id, label_name
  HAVING

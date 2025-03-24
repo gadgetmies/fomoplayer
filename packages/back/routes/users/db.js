@@ -237,7 +237,7 @@ AND store__label_watch_id IN
   )
 }
 
-module.exports.queryUserArtistFollows = async (userId) => {
+module.exports.queryUserArtistFollows = async (userId, store = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserArtistFollows
@@ -257,6 +257,7 @@ WITH distinct_store_artists AS (
              NATURAL JOIN store
     WHERE meta_account_user_id = ${userId}
       AND (store_name <> 'Bandcamp' OR store__artist_url IS NOT NULL)
+      AND ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
 )
 SELECT artist_name                                           AS name
      , artist_id                                             AS id
@@ -274,7 +275,7 @@ ORDER BY 1, store_name
   )
 }
 
-module.exports.queryUserLabelFollows = async (userId) => {
+module.exports.queryUserLabelFollows = async (userId, store = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserLabelFollows
@@ -292,7 +293,8 @@ WITH distinct_store_labels AS (
              NATURAL JOIN store__label_watch
              NATURAL JOIN store__label_watch__user
              NATURAL JOIN store
-    WHERE meta_account_user_id = ${userId}
+    WHERE meta_account_user_id = ${userId} AND
+          ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
 )
 SELECT label_name                                            AS name
      , label_id                                              AS id
@@ -310,7 +312,7 @@ ORDER BY 1, store_name
   )
 }
 
-module.exports.queryUserPlaylistFollows = async (userId) => {
+module.exports.queryUserPlaylistFollows = async (userId, store = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserPlaylistFollows
@@ -326,14 +328,15 @@ FROM
   NATURAL JOIN store_playlist_type
   NATURAL JOIN store
 WHERE
-  meta_account_user_id = ${userId}
+  meta_account_user_id = ${userId} AND
+  ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
 ORDER BY
   1
 `,
   )
 }
 
-module.exports.queryUserArtistOnLabelIgnores = async (userId) => {
+module.exports.queryUserArtistOnLabelIgnores = async (userId, store = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryArtistOnLabelIgnores
@@ -346,13 +349,16 @@ FROM
   user__artist__label_ignore
   NATURAL JOIN artist
   NATURAL JOIN label
+  NATURAL JOIN store__artist
+  NATURAL JOIN store
 WHERE
-  meta_account_user_id = ${userId}
+  meta_account_user_id = ${userId} AND
+  ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
 `,
   )
 }
 
-module.exports.queryUserLabelIgnores = async (userId) => {
+module.exports.queryUserLabelIgnores = async (userId, store = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryLabelIgnores
@@ -362,13 +368,16 @@ SELECT
 FROM
   user__label_ignore
   NATURAL JOIN label
+  NATURAL JOIN store__label
+  NATURAL JOIN store 
 WHERE
-  meta_account_user_id = ${userId}
+  meta_account_user_id = ${userId} AND
+  ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
 `,
   )
 }
 
-module.exports.queryUserArtistIgnores = async (userId) => {
+module.exports.queryUserArtistIgnores = async (userId, store = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryArtistIgnores
@@ -378,8 +387,11 @@ SELECT
 FROM
   user__artist_ignore
   NATURAL JOIN artist
+  NATURAL JOIN store__artist
+  NATURAL JOIN store
 WHERE
-  meta_account_user_id = ${userId}
+  meta_account_user_id = ${userId} AND
+  ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
 `,
   )
 }
@@ -422,7 +434,7 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = (userId, limits = { new: 80, recent: 50, heard: 20 }) => {
+module.exports.queryUserTracks = (userId, store = undefined, limits = { new: 80, recent: 50, heard: 20 }) => {
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC, score DESC NULLS LAST`
 
@@ -433,8 +445,12 @@ module.exports.queryUserTracks = (userId, limits = { new: 80, recent: 50, heard:
         composableSql`-- queryUserTracks
 WITH
     logged_user AS (
-        SELECT ${userId} :: INT AS meta_account_user_id
-    )
+        SELECT ${sql`${userId}`} :: INT AS meta_account_user_id
+    ),
+   stores AS (
+    SELECT store_id FROM store
+    WHERE ${sql`${store}`} :: TEXT IS NULL OR LOWER(store_name) = ${sql`${store}`}
+  )
   , user_purchased_tracks AS (
     SELECT
         track_id
@@ -452,23 +468,27 @@ WITH
     FROM
         user__track
             NATURAL JOIN logged_user
+            NATURAL JOIN store__track
+            NATURAL JOIN stores
     WHERE
         track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
 )
   , new_tracks AS (
     SELECT
         track_id
-      , track_added
-      , user__track_heard
+      , NULL AS user__track_heard
+      , MIN(track_added) AS track_added
     FROM
         logged_user
             NATURAL JOIN user__track
             NATURAL JOIN track
+            NATURAL JOIN store__track
+            NATURAL JOIN stores
     WHERE
           user__track_heard IS NULL
       AND user__track_ignored IS NULL
       AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
-    ORDER BY track_added DESC
+    GROUP BY track_id
 )
   , tracks_to_score AS (
     SELECT track_id
@@ -638,29 +658,34 @@ WITH
             LEFT JOIN track_date_released_score AS released_score USING (track_id)
             LEFT JOIN track_date_published_score AS published_score USING (track_id)
           ${sort}
-          LIMIT ${limits.new}
+          LIMIT ${sql`${limits.new}`}
       )
         , heard_tracks AS (
           SELECT track_id, user__track_heard
           FROM user__track
-                   NATURAL JOIN logged_user
+            NATURAL JOIN logged_user
+            NATURAL JOIN store__track
+            NATURAL JOIN store
           WHERE user__track_heard IS NOT NULL
+            AND ${sql`${store}`} :: TEXT IS NULL OR LOWER(store_name) = ${sql`${store}`}
       )
         , recently_heard AS (
           SELECT *
-          FROM heard_tracks
+          FROM heard_tracks 
           ORDER BY user__track_heard DESC
-          LIMIT ${limits.heard}
+          LIMIT ${sql`${limits.heard}`}
       )
         , recently_added AS (
           SELECT track_id
                , track_added
           FROM logged_user
-                   NATURAL JOIN user__track
-                   NATURAL JOIN track
+            NATURAL JOIN user__track
+            NATURAL JOIN track
+            NATURAL JOIN store__track
+            NATURAL JOIN stores
           WHERE user__track_heard IS NULL
           ORDER BY track_added DESC
-          LIMIT ${limits.recent}
+          LIMIT ${sql`${limits.recent}`}
       )
          , limited_tracks AS (
           SELECT DISTINCT track_id

@@ -195,7 +195,7 @@ FROM
   NATURAL LEFT JOIN store__track_preview
   NATURAL LEFT JOIN store__track_preview_waveform
 WHERE store__track_preview_waveform_url IS NULL
-  AND (${store}::TEXT IS NULL OR store_name = ${store})
+  AND (${store}::TEXT IS NULL OR LOWER(store_name) = ${store})
   AND store__track_preview_missing IS NOT TRUE
   AND (store_name = 'Bandcamp' OR store__track_preview_url IS NOT NULL)
 ORDER BY store__track_published DESC NULLS LAST

@@ -10,8 +10,8 @@ const { getEntityDetails, getEmbeddingImage } = require('./logic')
 
 router.use(bodyParser.json())
 
-router.get('/tracks/:id/preview.:format', async ({ params: { id, format, offset } }, res) => {
-  res.redirect(await getPreview(id, format, offset))
+router.get('/tracks/:id/preview.:format', async ({ params: { id, format, offset }, query: { store } }, res) => {
+  res.redirect(await getPreview(id, store, format, offset))
 })
 
 router.get('/tracks/:id/embedding.png', async ({ params: { id } }, res) => {
@@ -29,8 +29,8 @@ router.get('/tracks/:id', ({ user: { id: userId }, params: { id } }, res) => {
   res.send(JSON.stringify({}))
 })
 
-router.get('/tracks/', async ({ query: { q }, user: { id: userId }, query: options }, res) => {
-  res.send(await searchForTracks(q, { userId, ...options }))
+router.get('/tracks/', async ({ query: { q, store }, user: { id: userId }, query: options }, res) => {
+  res.send(await searchForTracks(q, { store, userId, ...options }))
 })
 
 router.get('/artists/:id', async ({ params: { id } }, res) => {
@@ -41,8 +41,8 @@ router.get('/labels/:id', async ({ params: { id } }, res) => {
   res.send(await getEntityDetails('label', id))
 })
 
-router.get('/followDetails', async ({ query: { q } }, res) => {
-  res.send(await getFollowDetails(q))
+router.get('/followDetails', async ({ query: { q, store } }, res) => {
+  res.send(await getFollowDetails(q, store))
 })
 
 const usersRouter = require('./users/index.js')

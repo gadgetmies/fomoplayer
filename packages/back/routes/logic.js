@@ -16,7 +16,7 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
 }
 
 module.exports.searchForTracks = searchForTracks
-module.exports.getFollowDetails = async (query) => {
+module.exports.getFollowDetails = async (query, store) => {
   let details
   if (query.match('^https://') !== null) {
     let detailsFromURL
@@ -25,9 +25,9 @@ module.exports.getFollowDetails = async (query) => {
     } catch (e) {
       return []
     }
-    details = await storeModules[detailsFromURL.storeName].logic.getFollowDetails(detailsFromURL)
+    details = await storeModules[store || detailsFromURL.storeName].logic.getFollowDetails(detailsFromURL)
   } else {
-    details = await searchForArtistsAndLabels(query)
+    details = await searchForArtistsAndLabels(query, store)
   }
   if (details.length > 0) {
     return details
@@ -36,8 +36,8 @@ module.exports.getFollowDetails = async (query) => {
   return []
 }
 
-module.exports.getPreview = async (id, format, offset) => {
-  const { url, previewId } = await queryLongestPreviewForTrack(id, format, offset)
+module.exports.getPreview = async (id, store, format, offset) => {
+  const { url, previewId } = await queryLongestPreviewForTrack(id, store, format, offset)
   if (url !== null) {
     return url
   } else {
@@ -45,7 +45,7 @@ module.exports.getPreview = async (id, format, offset) => {
   }
 }
 
-module.exports.getCartDetails = async (uuid, userId, tracksFilter) => {
+module.exports.getCartDetails = async (uuid, userId, store = undefined, tracksFilter) => {
   logger.info(`Getting cart details for user: ${userId}, uuid: ${uuid}`)
   const { isPublic, id } = await queryCartDetailsByUuid(uuid)
   logger.info(`Cart is public: ${isPublic}, id: ${id}`)
@@ -54,7 +54,7 @@ module.exports.getCartDetails = async (uuid, userId, tracksFilter) => {
   if (!isPublic && ownerUserId !== userId) {
     return null
   }
-  return await queryCartDetails(id, tracksFilter)
+  return await queryCartDetails(id, store, tracksFilter)
 }
 
 module.exports.getEntityDetails = queryEntityDetails

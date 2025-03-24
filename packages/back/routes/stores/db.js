@@ -1,7 +1,7 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 
-module.exports.queryStores = () =>
+module.exports.queryStores = (store = null) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryStores
@@ -11,5 +11,6 @@ module.exports.queryStores = () =>
          , store_search_url AS "searchUrl"
     FROM
       store
+    WHERE ${store} :: TEXT IS NULL OR LOWER(store_name) = ${store}
     `,
   )

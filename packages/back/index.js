@@ -106,13 +106,13 @@ app.use(
 app.use(express.static('public'))
 
 const indexPath = path.resolve(__dirname, 'public/index.html')
-app.get('/carts/:uuid', async ({ params: { uuid }, query: { limit, offset }, user }, res, next) => {
+app.get('/carts/:uuid', async ({ params: { uuid }, query: { limit, offset, store }, user }, res, next) => {
   if (!uuid) {
     logger.error('Error during file reading', { uuid })
     return res.status(500).end()
   }
 
-  const cartDetails = await getCartDetails(uuid, user?.id, { offset, limit })
+  const cartDetails = await getCartDetails(uuid, user?.id, store,{ offset, limit })
 
   if (cartDetails === null) {
     logger.debug('Cart details not found or cart not public', { uuid })

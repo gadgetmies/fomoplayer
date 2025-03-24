@@ -15,7 +15,7 @@ WHERE
   )
 }
 
-module.exports.queryUserCartDetails = async (userId) =>
+module.exports.queryUserCartDetails = async (userId, store) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryUserCartDetails
@@ -30,7 +30,8 @@ module.exports.queryUserCartDetails = async (userId) =>
                                   cart
                                   NATURAL JOIN cart__store
                                   NATURAL JOIN store
-                                WHERE meta_account_user_id = ${userId}
+                                WHERE meta_account_user_id = ${userId} AND
+                                      ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
                                 GROUP BY 1)
        , track_counts AS (SELECT cart_id, COUNT(track_id) AS track_count
                           FROM
@@ -54,7 +55,7 @@ module.exports.queryUserCartDetails = async (userId) =>
     `,
   )
 
-module.exports.queryUserCartDetailsWithTracks = async (userId) =>
+module.exports.queryUserCartDetailsWithTracks = async (userId, store) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryUserCartDetailsWithTracks
@@ -76,6 +77,9 @@ module.exports.queryUserCartDetailsWithTracks = async (userId) =>
                                FROM
                                  track__cart
                                  NATURAL JOIN cart_details
+                                 NATURAL JOIN store__track
+                                 NATURAL JOIN store
+                               WHERE ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
                                GROUP BY 1, 2, track__cart_added
                                ORDER BY track__cart_added DESC) t) x
                          WHERE x.r < 100)
@@ -122,7 +126,7 @@ module.exports.queryUserCartDetailsWithTracks = async (userId) =>
     `,
   )
 
-module.exports.queryCartDetails = async (cartId, tracksFilter = { since: undefined, offset: 0, limit: 200 }) => {
+module.exports.queryCartDetails = async (cartId, store = undefined, tracksFilter = { since: undefined, offset: 0, limit: 200 }) => {
   const limit = tracksFilter?.limit === 0 ? null : tracksFilter?.limit || 200
   const offset = tracksFilter?.offset || 0
   logger.info(`Querying cart details for cartId: ${cartId}, limit: ${limit}, offset: ${offset}`)
@@ -161,7 +165,10 @@ module.exports.queryCartDetails = async (cartId, tracksFilter = { since: undefin
                          FROM
                            track__cart
                            NATURAL JOIN track_details
-                         WHERE cart_id = ${cartId}
+                           NATURAL JOIN store__track
+                           NATURAL JOIN store
+                         WHERE cart_id = ${cartId} AND 
+                               ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
                          ORDER BY track__cart_added DESC
                          LIMIT ${limit} OFFSET ${offset})
        , td AS (SELECT DISTINCT ON (track_id) td.*

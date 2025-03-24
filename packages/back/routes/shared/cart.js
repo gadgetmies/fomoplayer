@@ -122,14 +122,14 @@ const verifyCartOwnership = async (userId, cartId) => {
   }
 }
 
-module.exports.getCartDetails = async (userId, cartId, tracksFilter) => {
+module.exports.getCartDetails = async (userId, cartId, store, tracksFilter) => {
   let realCartId = cartId
   if (cartId === 'default') {
     realCartId = await queryDefaultCartId(userId)
   } else {
     await verifyCartOwnership(userId, realCartId)
   }
-  return await queryCartDetails(realCartId, tracksFilter)
+  return await queryCartDetails(realCartId, store, tracksFilter)
 }
 
 module.exports.insertCartStoreDetails = insertCartStoreDetails
@@ -154,7 +154,7 @@ module.exports.importPlaylistAsCart = async (userId, url) => {
 
 module.exports.enableCartSync = async (userId, cartId, storeName) => {
   try {
-    const { name, tracks } = await queryCartDetails(cartId)
+    const { name, tracks } = await queryCartDetails(cartId, storeName)
     const { id: spotifyPlaylistId, url, versionId } = await createCart(userId, `Fomo Player: ${name}`, tracks)
     await insertCartStoreDetails(cartId, storeName, spotifyPlaylistId, url, versionId)
   } catch (e) {

@@ -865,6 +865,6 @@ module.exports.queryFollowRegexes = (store = undefined) =>
           NATURAL JOIN store_playlist_type
         ORDER BY store_playlist_type_priority)) AS a
     WHERE ${store}::TEXT IS NULL
-       OR store_name = ${store}
+       OR LOWER(store_name) = ${store}
     `,
   )
