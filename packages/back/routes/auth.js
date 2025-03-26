@@ -29,7 +29,7 @@ router.get('/login/google', (req, res, next) => {
 router.get(
   '/login/google/return',
   passport.authenticate('openidconnect', { failureRedirect: `${frontendURL}/?loginFailed=true` }),
-  (req, res) => res.redirect(`${frontendURL}${req.authInfo.state.returnURL}`),
+  (req, res) => res.redirect(req.authInfo.state.returnURL),
 )
 
 router.get('/spotify', async ({ user: { id: userId }, query }, res) => {
