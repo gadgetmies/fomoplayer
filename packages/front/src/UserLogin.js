@@ -116,17 +116,19 @@ export default class Login extends Component {
                       <label>
                         <h4>Email address:</h4>
                         <div
-                          className="input-layout"
                           style={{
                             display: 'flex',
                             justifyContent: 'center',
+                            gap: 8,
                             boxSizing: 'border-box',
+                            margin: 'auto',
+                            flexDirection: 'column',
+                            maxWidth: '15rem',
                           }}
                         >
                           <input
                             type={'email'}
                             className="text-input text-input-large text-input-dark"
-                            style={{ width: '15rem' }}
                             disabled={this.state.joiningWaitingList}
                             value={this.state.waitingListEmail}
                             onChange={(e) => this.setState({ waitingListEmail: e.target.value })}
