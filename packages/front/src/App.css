@@ -210,14 +210,7 @@ audio {
 .input-layout {
   display: flex;
   box-sizing: border-box;
-}
-
-.input-layout > * {
-  margin-left: 4px;
-}
-
-.input-layout > *:first-child {
-  margin-left: 0;
+  gap: 4px;
 }
 
 input[type='range'] {
