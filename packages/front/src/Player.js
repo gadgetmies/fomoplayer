@@ -125,10 +125,14 @@ class Player extends Component {
       let indexToJumpTo = R.clamp(0, lastTrackIndex, currentTrackIndex + numberOfTracksToJump)
       let nextTrack
 
+      const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
       do {
         nextTrack = this.getTracks()[indexToJumpTo]
         indexToJumpTo++
-      } while (nextTrack.previews.length === 0 && indexToJumpTo <= lastTrackIndex)
+      } while (
+        nextTrack.previews.filter(({ store }) => storeSlugs.includes(store)).length === 0 &&
+        indexToJumpTo <= lastTrackIndex
+      )
 
       if (indexToJumpTo === lastTrackIndex && this.props.listState === 'new') {
         this.props.onUpdateTracksClicked()
@@ -238,10 +242,7 @@ class Player extends Component {
     const inCurrentCart = inCarts.find(({ id }) => id === selectedCartId)
 
     return (
-      <div
-        className={`page-container`}
-        style={{ flexDirection: 'column', overflow: 'hidden', ...this.props.style }}
-      >
+      <div className={`page-container`} style={{ flexDirection: 'column', overflow: 'hidden', ...this.props.style }}>
         <PlayerHelp
           active={this.state.helpActive}
           onActiveChanged={(active) => this.setState({ helpActive: active })}

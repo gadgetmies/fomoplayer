@@ -709,11 +709,9 @@ WITH
                , track_details->'labels' AS labels
                , track_details->'remixers' AS remixers
                , track_details->'keys' AS keys
-               , track_details->'genres' AS genres
-               , track_details->'previews' AS previews
-               , (CASE WHEN ${sql`${store}`}::TEXT IS NULL 
-                    THEN track_details->'stores' 
-                    ELSE array_to_json(ARRAY[${sql`${store}`}]) END) AS stores
+               , track_details -> 'genres' AS genres
+               , track_details->'previews' AS previews 
+               , track_details->'stores' AS stores
                , track_details->>'released' AS released
                , track_details->>'published' AS published
                , track_details->'releases' AS releases

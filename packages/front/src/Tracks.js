@@ -120,6 +120,9 @@ class Tracks extends Component {
               stores,
               version,
             } = track
+
+            const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
+            const storePreviews = previews.filter(({ store }) => storeSlugs.includes(store))
             const inCarts = this.props.carts.filter((cart) => cart.tracks?.find(R.propEq('id', id)))
             const selectedCartId = this.props.selectedCart?.id
             return (
@@ -165,7 +168,7 @@ class Tracks extends Component {
                 processingTrack={this.props.processingTrack}
                 key={`track-${id}`}
                 follows={this.props.follows}
-                noPreviews={previews.every(({ url, store }) => !url && store !== 'bandcamp')}
+                noPreviews={storePreviews.every(({ url, store }) => !url && store !== 'bandcamp')}
                 onClick={() => {
                   this.props.onPreviewRequested(id)
                 }}

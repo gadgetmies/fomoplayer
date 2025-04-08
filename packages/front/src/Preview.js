@@ -149,6 +149,7 @@ class Preview extends Component {
   }
 
   getMp3Previews(track, preferFullTracks = false) {
+    const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
     return L.collect(
       [
         'previews',
@@ -160,12 +161,14 @@ class Preview extends Component {
           [],
         ),
         L.satisfying(safePropEq('format', 'mp3')),
+        L.satisfying((preview) => preview && storeSlugs.includes(preview.store)),
       ],
       track,
     )
   }
 
   getFirstMp3Preview(track, preferFullTracks = false) {
+    const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
     return L.get(
       [
         'previews',
@@ -177,6 +180,7 @@ class Preview extends Component {
           [],
         ),
         L.satisfying(safePropEq('format', 'mp3')),
+        L.satisfying((preview) => preview && storeSlugs.includes(preview.store)),
       ],
       track,
     )
@@ -347,15 +351,17 @@ class Preview extends Component {
         : [
             'Copy store links to clipboard',
             `Listen to "${namesToString(artistsAndRemixers)} - ${title}" on\n${currentTrack?.stores
-              .map((store) => `${store.name}: ${store.url || store.release.url}`)
+              .map((store) => `${store.name}: ${store.url || store.release?.url}`)
               .join('\n')}`,
             'https://fomoplayer.com',
           ]
 
-    const previews = currentTrack?.previews?.filter(({ store }) => store !== 'bandcamp') || []
+    const previews =
+      currentTrack?.previews?.filter(({ store }) => store !== 'bandcamp' && this.props.stores.includes(store)) || []
     const spotifyAuthorization = this.state.authorizations?.find(R.propEq('store_name', 'Spotify'))
-    const fullTracks = currentTrack?.previews?.filter(({ store }) =>
-      ['bandcamp', ...[spotifyAuthorization ? ['spotify'] : []]].includes(store),
+    const fullTracks = currentTrack?.previews?.filter(
+      ({ store }) =>
+        ['bandcamp', ...[spotifyAuthorization ? ['spotify'] : []]].includes(store) && this.props.stores.includes(store),
     )
 
     const edgeOverlayClass = shouldSkip ? 'waveform_clip-edge-overlay-skip' : 'waveform_clip-edge-overlay'
@@ -371,6 +377,8 @@ class Preview extends Component {
     const onClearCartFilter = this.onClearCartFilter.bind(this)
     const cartFilter = this.state.cartFilter
 
+    const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
+    const currentTrackStores = currentTrack?.stores.filter(({ name }) => storeSlugs.includes(name))
     return (
       <div className="preview noselect" style={{ borderBottom: '1px solid black' }}>
         <div className="preview_details_wrapper">
@@ -415,7 +423,7 @@ class Preview extends Component {
                       <br />
                       <span className="preview_label">BPM:</span>{' '}
                       <span className="preview_detail">
-                        {currentTrack.stores.map(R.prop('bpm')).filter(R.identity).map(Math.round).join(', ') || '-'}
+                        {currentTrackStores.map(R.prop('bpm')).filter(R.identity).map(Math.round).join(', ') || '-'}
                       </span>
                       <br />
                       <span className="preview_label">Key:</span>{' '}
@@ -441,7 +449,7 @@ class Preview extends Component {
                     {this.props.stores.length === 1 ? 'Open in store' : 'Available on'}
                   </span>
                   <div className="available_on_list">
-                    {currentTrack?.stores.map(({ name, url, release: { url: releaseUrl } }) => (
+                    {currentTrackStores?.map(({ name, url, release: { url: releaseUrl } }) => (
                       <a
                         key={url || releaseUrl}
                         href={url || releaseUrl}
@@ -461,7 +469,7 @@ class Preview extends Component {
                     <span className="preview_actions_title">Search</span>
                     <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
                       {this.props.stores
-                        ?.filter(({ storeName }) => currentTrack?.stores.every(({ name }) => storeName !== name))
+                        ?.filter(({ storeName }) => currentTrackStores.every(({ name }) => storeName !== name))
                         .map(({ storeName }) => {
                           const searchUrl = this.props.stores.find(R.propEq('storeName', storeName)).searchUrl
                           return (
