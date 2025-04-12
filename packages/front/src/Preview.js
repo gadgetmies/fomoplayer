@@ -380,7 +380,7 @@ class Preview extends Component {
     const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
     const currentTrackStores = currentTrack?.stores.filter(({ name }) => storeSlugs.includes(name))
     return (
-      <div className="preview noselect" style={{ borderBottom: '1px solid black' }}>
+      <div className="preview" style={{ borderBottom: '1px solid black' }}>
         <div className="preview_details_wrapper">
           {currentTrack ? (
             <>
@@ -504,7 +504,7 @@ class Preview extends Component {
             <div>&nbsp;</div>
           )}
         </div>
-        <div className="player-collection-wrapper" style={{ flex: 1, display: 'flex' }}>
+        <div className="player-collection-wrapper noselect" style={{ flex: 1, display: 'flex' }}>
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 8, marginBottom: 8 }}>
             <div className="preview-wrapper" style={{ position: 'relative' }}>
               <div
