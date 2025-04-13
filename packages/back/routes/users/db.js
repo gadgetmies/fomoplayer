@@ -712,7 +712,7 @@ WITH
                , track_details->'labels' AS labels
                , track_details->'remixers' AS remixers
                , track_details->'keys' AS keys
-               , track_details -> 'genres' AS genres
+               , track_details->'genres' AS genres
                , track_details->'previews' AS previews 
                , track_details->'stores' AS stores
                , cast(track_details->>'released' AS DATE) AS released
