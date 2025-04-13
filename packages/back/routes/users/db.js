@@ -527,7 +527,7 @@ WITH
         track_id
       , SUM(COALESCE(user_artist_scores_score, 0)) AS artist_score
     FROM
-        new_tracks
+        tracks_to_score
             NATURAL JOIN track__artist
             NATURAL LEFT JOIN user_artist_scores
     GROUP BY 1
