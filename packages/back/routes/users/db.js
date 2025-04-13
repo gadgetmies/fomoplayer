@@ -492,11 +492,12 @@ WITH
       AND user__track_ignored IS NULL
       AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
     GROUP BY track_id
+    ORDER BY MIN(track_added) DESC
 )
   , tracks_to_score AS (
     SELECT track_id
     FROM new_tracks
-    LIMIT 500
+    LIMIT 1000
 )
   , label_scores AS (
     SELECT
