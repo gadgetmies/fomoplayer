@@ -434,11 +434,11 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = (userId, store = undefined, limits = { new: 80, recent: 50, heard: 20 }) => {
+module.exports.queryUserTracks = async (userId, store = undefined, limits = { new: 80, recent: 50, heard: 20 }) => {
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC, score DESC NULLS LAST`
 
-  return BPromise.using(pg.getTransaction(), async (tx) => {
+  const res = await BPromise.using(pg.getTransaction(), async (tx) => {
     // language=PostgreSQL
     return tx
       .queryRowsAsync(
@@ -764,6 +764,31 @@ WITH
       )
       .then(R.head)
   })
+
+  const uniqueNewTracks = R.uniqBy(R.prop('track_id'), res.tracks.new)
+  const uniqueHeardTracks = R.uniqBy(R.prop('track_id'), res.tracks.heard)
+  const uniqueAddedTracks = R.uniqBy(R.prop('track_id'), res.tracks.recentlyAdded)
+
+  const duplicateNewTracks = R.difference(res.tracks.new, uniqueNewTracks)
+  const duplicateHeardTracks = R.difference(res.tracks.heard, uniqueHeardTracks)
+  const duplicateAddedTracks = R.difference(res.tracks.recentlyAdded, uniqueAddedTracks)
+
+  if (duplicateNewTracks.length > 0 || duplicateHeardTracks.length > 0 || duplicateAddedTracks.length > 0) {
+    logger.error('Duplicate tracks found in user tracks', {
+      duplicateNewTracks,
+      duplicateHeardTracks,
+      duplicateAddedTracks,
+    })
+  }
+
+  return {
+    ...res,
+    tracks: {
+      new: uniqueNewTracks,
+      heard: uniqueHeardTracks,
+      recentlyAdded: uniqueAddedTracks,
+    },
+  }
 }
 
 module.exports.addArtistOnLabelToIgnore = (tx, artistId, labelId, userId) =>
