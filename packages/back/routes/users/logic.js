@@ -77,7 +77,6 @@ const { deleteUserCartStoreDetails } = require('../shared/cart')
 const { insertSource } = require('../../jobs/watches/shared/db')
 const { getStoreDetailsFromUrl } = require('../stores/logic')
 
-module.exports.queryUserTracks = queryUserTracks
 module.exports.getTracksM3u = (userId) =>
   queryUserTracks(userId).then((userTracks) => {
     return (
