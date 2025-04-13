@@ -448,7 +448,9 @@ WITH
         SELECT ${sql`${userId}`} :: INT AS meta_account_user_id
     ),
    stores AS (
-    SELECT store_id FROM store
+    SELECT store_id, 
+           store_name 
+    FROM store
     WHERE ${sql`${store}`} :: TEXT IS NULL OR LOWER(store_name) = ${sql`${store}`}
   )
   , user_purchased_tracks AS (
@@ -471,7 +473,8 @@ WITH
             NATURAL JOIN store__track
             NATURAL JOIN stores
     WHERE
-        track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
+        track_id NOT IN (SELECT track_id FROM user_purchased_tracks) AND
+        ${sql`${store}`} :: TEXT IS NULL OR LOWER(store_name) = ${sql`${store}`}
 )
   , new_tracks AS (
     SELECT
