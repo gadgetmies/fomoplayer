@@ -715,8 +715,8 @@ WITH
                , track_details -> 'genres' AS genres
                , track_details->'previews' AS previews 
                , track_details->'stores' AS stores
-               , track_details->>'released' AS released
-               , track_details->>'published' AS published
+               , cast(track_details->>'released' AS DATE) AS released
+               , cast(track_details->>'published' AS DATE) AS published
                , track_details->'releases' AS releases
                , track_details->'source_details' AS source_details
           FROM limited_tracks lt
