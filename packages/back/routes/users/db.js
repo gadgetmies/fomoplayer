@@ -680,14 +680,14 @@ WITH
       )
         , recently_added AS (
           SELECT track_id
-               , track_added
+               , MAX(track_added)
           FROM logged_user
             NATURAL JOIN user__track
             NATURAL JOIN track
             NATURAL JOIN store__track
             NATURAL JOIN stores
           WHERE user__track_heard IS NULL
-          ORDER BY track_added DESC
+          GROUP BY 1
           LIMIT ${sql`${limits.recent}`}
       )
          , limited_tracks AS (
