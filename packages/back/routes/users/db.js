@@ -675,7 +675,7 @@ WITH
         , recently_heard AS (
           SELECT *
           FROM heard_tracks 
-          ORDER BY user__track_heard DESC
+          ORDER BY user__track_heard DESC NULLS LAST
           LIMIT ${sql`${limits.heard}`}
       )
         , recently_added AS (
