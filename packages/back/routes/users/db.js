@@ -574,7 +574,7 @@ WITH
       , COALESCE(label_score, 0) * COALESCE(label_multiplier, 0) +
         COALESCE(artist_score, 0) * COALESCE(artist_multiplier, 0) +
         COALESCE(artist_follow_score, 0) * COALESCE(artist_follow_multiplier, 0) +
-        label_follow_score * COALESCE(label_follow_multiplier, 0) +
+        COALESCE(label_follow_score, 0) * COALESCE(label_follow_multiplier, 0) +
         COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
         COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) +
         COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) 
