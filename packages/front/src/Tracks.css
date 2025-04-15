@@ -264,6 +264,10 @@
     font-size: 130%;
   }
 
+  .heard-cell:before {
+    content: 'Played: ';
+  }
+
   .released-cell:before {
     content: 'Released: ';
   }
@@ -284,6 +288,7 @@
     content: '';
   }
 
+  .heard-cell,
   .released-cell,
   .published-cell,
   .added-cell {
@@ -472,6 +477,7 @@
     width: 30%;
   }
 
+  .heard-cell,
   .released-cell,
   .added-cell {
     width: 100%;

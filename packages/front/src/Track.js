@@ -120,6 +120,8 @@ class Track extends Component {
         <p>You can open the track or search for it using the store links on the right.</p>
       </>
     )
+    const [_, heardDate, heardTime] =
+      !this.props.heard ? [] : new Date(Date.parse(this.props.heard)).toISOString().match(/(.*)T(.*):/)
     return (
       <tr
         ref={'row'}
@@ -200,10 +202,16 @@ class Track extends Component {
                 {this.props.added}
               </div>
             )}
-            {this.props.listState !== 'recent' && (
-              <div className={`released-cell track-table-cell ${this.props.released ? '' : 'empty-cell'}`}>
-                {this.props.released}
+            {this.props.listState === 'heard' ? (
+              <div className={`heard-cell track-table-cell ${this.props.heard ? '' : 'empty-cell'}`}>
+                {heardDate} {heardTime}
               </div>
+            ) : (
+              this.props.listState !== 'recent' && (
+                <div className={`released-cell track-table-cell ${this.props.released ? '' : 'empty-cell'}`}>
+                  {this.props.released}
+                </div>
+              )
             )}
           </div>
           <div className={'track-details-right track-details-content'}>

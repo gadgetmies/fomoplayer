@@ -299,7 +299,7 @@ class App extends Component {
     // await this.updateTracks()
 
     let updatedHeardTracks = this.state.heardTracks
-    const updatedTrack = R.assoc('heard', true, track)
+    const updatedTrack = R.assoc('heard', (new Date()).toISOString(), track)
     const playedTrackIndex = this.state.heardTracks.findIndex(R.propEq('id', track.id))
     if (playedTrackIndex !== -1) {
       updatedHeardTracks.splice(playedTrackIndex, 1)
