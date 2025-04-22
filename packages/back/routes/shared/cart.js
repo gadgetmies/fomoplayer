@@ -67,14 +67,17 @@ const getCartStoreDetails = async (cartId, storeName) => {
 const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId, trackIds) => {
   await verifyCartOwnership(userId, cartId)
   await insertTracksToCart(cartId, trackIds)
-  const spotifyCartDetails = await getCartStoreDetails(cartId, spotifyStoreName)
-  if (spotifyCartDetails) {
-    const trackDetails = await getTrackDetails(trackIds)
-    const updatedVersionId = await addTracksToSyncedCart(userId, trackDetails, spotifyCartDetails)
-    if (updatedVersionId) {
-      await updateCartStoreVersionId(cartId, updatedVersionId)
+
+  setImmediate(async () => {
+    const spotifyCartDetails = await getCartStoreDetails(cartId, spotifyStoreName)
+    if (spotifyCartDetails) {
+      const trackDetails = await getTrackDetails(trackIds)
+      const updatedVersionId = await addTracksToSyncedCart(userId, trackDetails, spotifyCartDetails)
+      if (updatedVersionId) {
+        await updateCartStoreVersionId(cartId, updatedVersionId)
+      }
     }
-  }
+  })
 })
 
 const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userId, cartId, trackIds) => {
