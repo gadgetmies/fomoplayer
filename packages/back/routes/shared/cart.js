@@ -102,12 +102,15 @@ module.exports.updateCartContents = async (userId, cartId, operations) => {
   }
 }
 
-module.exports.updateAllCartContents = async (userId, operations) => {
+module.exports.updateAllCartContents = async (userId, operations, excludePurchased = true) => {
   const tracksToBeRemoved = operations.filter(R.propEq('op', 'remove')).map(R.prop('trackId'))
   const tracksToBeAdded = operations.filter(R.propEq('op', 'add')).map(R.prop('trackId'))
 
   const carts = await queryUserCartDetails(userId)
-  for (const { id } of carts) {
+  for (const { id, is_purchased } of carts) {
+    if (excludePurchased && is_purchased) {
+      continue
+    }
     await removeTracksFromCart(userId, id, tracksToBeRemoved)
     await addTracksToCart(userId, id, tracksToBeAdded)
   }
