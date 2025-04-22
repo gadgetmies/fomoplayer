@@ -15,8 +15,9 @@ WHERE
   )
 }
 
-module.exports.queryUserCartDetails = async (userId, store) =>
-  pg.queryRowsAsync(
+module.exports.queryUserCartDetails = async (userId, store) => {
+  logger.info('start queryUserCartDetails', {userId, store})
+  const res = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryUserCartDetails
     WITH cart_store_details AS (SELECT cart_id
@@ -52,8 +53,13 @@ module.exports.queryUserCartDetails = async (userId, store) =>
       NATURAL LEFT JOIN track_counts
     WHERE meta_account_user_id = ${userId} AND cart_deleted IS NULL
     ORDER BY cart_is_default, cart_is_purchased, cart_name
-    `,
+    `
   )
+
+  logger.info('done queryUserCartDetails', {userId, store})
+
+  return res
+}
 
 module.exports.queryUserCartDetailsWithTracks = async (userId, store) =>
   pg.queryRowsAsync(
