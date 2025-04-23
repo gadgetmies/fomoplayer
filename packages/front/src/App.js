@@ -136,6 +136,10 @@ class App extends Component {
 
     try {
       const [stores] = await Promise.all([storeFetchPromise, cartSelectPromise, this.updateStatesFromServer()])
+      if (stores.length === 1) {
+        document.title = `Fomo Player - ${stores[0].storeName}`
+      }
+
       this.setState({ loggedIn: true, mode: 'app', stores, ...sharedStates })
     } catch (e) {
       if (e.response?.status === 401 && isCartPath) {
@@ -545,7 +549,8 @@ class App extends Component {
       'currentTrack',
       JSON.stringify({ listState: this.state.listState, currentTrack: track }),
     )
-    document.title = `${trackArtistsAndTitleText(track)} - Fomo Player`
+    console.log(this.state.stores.length)
+    document.title = `${trackArtistsAndTitleText(track)} - Fomo Player ${this.state.stores.length === 1 ? ` - ${this.state.stores[0].storeName}` : ''}`
   }
 
   async followStoreArtist(storeArtistId, storeArtistUrl, name, follow) {
