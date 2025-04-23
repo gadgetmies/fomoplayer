@@ -33,11 +33,13 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
 
   return BPromise.using(pg.getTransaction(), async (tx) => {
     // TODO: this tx is only here for escapeIdentifier -> find out a way to get the function from pg
-    let query =
-      // language=PostgreSQL
-      similaritySearchTrackId
-        ? sql`-- searchForSimilarTracks
-WITH reference AS
+    // language=PostgreSQL
+    let query = sql`
+WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
+`
+    if (similaritySearchTrackId) {
+      query.append(sql`-- searchForSimilarTracks
+, reference AS
   (SELECT store__track_preview_embedding
    FROM
      store__track_preview_embedding
@@ -54,14 +56,16 @@ WITH reference AS
      NATURAL JOIN store__track_preview
      NATURAL JOIN store__track
      NATURAL JOIN track
-     NATURAL LEFT JOIN user__track
+     NATURAL LEFT JOIN (user__track NATURAL JOIN logged_user)
    WHERE (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
      AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL OR track_id = ${similaritySearchTrackId})
+     AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
    GROUP BY track_id, user__track_heard
    ORDER BY MIN(store__track_preview_embedding <-> (SELECT store__track_preview_embedding FROM reference)) NULLS LAST
    LIMIT ${limit})
-`
-        : sql``
+`)
+    }
+
     query.append(sql`--searchForTracks
 SELECT track_id          AS id
      , td.*
@@ -78,28 +82,32 @@ FROM
                                            , version TEXT, labels JSON, remixers JSON, releases JSON, keys JSON
                                            , previews JSON, stores JSON, released DATE, published DATE)
        USING (track_id)
+  NATURAL LEFT JOIN (
+    user__track NATURAL JOIN logged_user 
+  )
 `)
 
     if (similaritySearchTrackId) {
       query.append(sql` NATURAL JOIN similar_tracks 
       ORDER BY similarity NULLS LAST `)
     } else {
-      query.append(sql`NATURAL LEFT JOIN user__track WHERE track_id IN
+      query.append(sql`
+ WHERE track_id IN
       (SELECT track_id
        FROM
          track
          NATURAL JOIN track__artist
          NATURAL JOIN artist
          NATURAL JOIN store__track
-         NATURAL LEFT JOIN user__track
          NATURAL LEFT JOIN track__label
          NATURAL LEFT JOIN label
          NATURAL LEFT JOIN release__track
          NATURAL LEFT JOIN release
+         NATURAL LEFT JOIN (user__track NATURAL JOIN logged_user)
  WHERE 
 (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
 AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL)
-AND meta_account_user_id = ${userId}::INT
+AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
          `)
       if (idFilter) {
         query.append(` AND ${tx.escapeIdentifier(`${idFilter[0]}_id`)} = `)
