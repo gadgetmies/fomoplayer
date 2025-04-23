@@ -488,20 +488,24 @@ class Settings extends Component {
               >
                 Collection
               </label>
-              <input
-                type="radio"
-                id="settings-state-integrations"
-                name="settings-state"
-                checked={this.state.page === 'integrations'}
-                onChange={() => this.onShowPage('integrations')}
-              />
-              <label
-                className="select_button-button select_button-button__large"
-                htmlFor="settings-state-integrations"
-                data-help-id="integrations-tab"
-              >
-                Integrations
-              </label>
+              {this.props.stores.includes('spotify') && (
+                <>
+                  <input
+                    type="radio"
+                    id="settings-state-integrations"
+                    name="settings-state"
+                    checked={this.state.page === 'integrations'}
+                    onChange={() => this.onShowPage('integrations')}
+                  />
+                  <label
+                    className="select_button-button select_button-button__large"
+                    htmlFor="settings-state-integrations"
+                    data-help-id="integrations-tab"
+                  >
+                    Integrations
+                  </label>
+                </>
+              )}
             </div>
           </div>
           {this.state.page === 'following' ? (
@@ -660,17 +664,19 @@ class Settings extends Component {
                     )}
                   </>
                 )}
-                <div style={{ fontSize: '75%', marginTop: 5 }}>
-                  <a
-                    href=""
-                    onClick={(e) => {
-                      e.preventDefault()
-                      this.setState({ page: 'integrations' })
-                    }}
-                  >
-                    To import followed artists from Spotify use the integrations tab
-                  </a>
-                </div>
+                {this.props.stores.includes('spotify') && (
+                  <div style={{ fontSize: '75%', marginTop: 5 }}>
+                    <a
+                      href=""
+                      onClick={(e) => {
+                        e.preventDefault()
+                        this.setState({ page: 'integrations' })
+                      }}
+                    >
+                      To import followed artists from Spotify use the integrations tab
+                    </a>
+                  </div>
+                )}
               </label>
               <CollapseHeader>Followed artists ({this.state.artistFollows.length})</CollapseHeader>
               <div className={'follow-filter'}>
@@ -973,38 +979,39 @@ class Settings extends Component {
                           ) : null}
                         </p>
                       </div>
-                      {!spotifyAuthorization ? (
-                        <p>
-                          Grant Fomo Player access to Spotify from the{' '}
-                          <a
-                            style={{ textDecoration: 'underline' }}
-                            onClick={this.onShowPage.bind(this, 'integrations')}
-                          >
-                            Integrations tab
-                          </a>{' '}
-                          to enable synchronization
-                        </p>
-                      ) : (
-                        <>
-                          <p className="input-layout" style={{ display: 'flex', alignItems: 'center' }}>
-                            <label htmlFor={`${uuid}-sync`} className="noselect">
-                              Spotify sync enabled:
-                            </label>
-                            <ToggleButton
-                              id={`${uuid}-sync`}
-                              checked={spotifyStoreDetails}
-                              disabled={this.state.updatingCartSync !== null || this.state.updatingCarts}
-                              onChange={(state) => this.setCartSync(id, state)}
-                            />
-                            {this.state.updatingCartSync === id ? <Spinner size="small" /> : null}
+                      {this.props.stores.includes('spotify') &&
+                        (!spotifyAuthorization ? (
+                          <p>
+                            Grant Fomo Player access to Spotify from the{' '}
+                            <a
+                              style={{ textDecoration: 'underline' }}
+                              onClick={this.onShowPage.bind(this, 'integrations')}
+                            >
+                              Integrations tab
+                            </a>{' '}
+                            to enable synchronization
                           </p>
-                          {spotifyStoreDetails && (
-                            <p>
-                              <ExternalLink href={spotifyStoreDetails.url}>Open Spotify playlist</ExternalLink>
+                        ) : (
+                          <>
+                            <p className="input-layout" style={{ display: 'flex', alignItems: 'center' }}>
+                              <label htmlFor={`${uuid}-sync`} className="noselect">
+                                Spotify sync enabled:
+                              </label>
+                              <ToggleButton
+                                id={`${uuid}-sync`}
+                                checked={spotifyStoreDetails}
+                                disabled={this.state.updatingCartSync !== null || this.state.updatingCarts}
+                                onChange={(state) => this.setCartSync(id, state)}
+                              />
+                              {this.state.updatingCartSync === id ? <Spinner size="small" /> : null}
                             </p>
-                          )}
-                        </>
-                      )}
+                            {spotifyStoreDetails && (
+                              <p>
+                                <ExternalLink href={spotifyStoreDetails.url}>Open Spotify playlist</ExternalLink>
+                              </p>
+                            )}
+                          </>
+                        ))}
                     </div>
                   )
                 })}
