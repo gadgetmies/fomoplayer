@@ -15,7 +15,7 @@ INSERT INTO track_details (track_id, track_details_updated, track_details)
      WHERE track_details_updated < NOW() - INTERVAL '7 days'
      GROUP BY 1, track_added
      ORDER BY track_added DESC
-     LIMIT 1)
+     LIMIT 1000)
 ON CONFLICT ON CONSTRAINT track_details_track_id_key DO UPDATE
     SET track_details         = EXCLUDED.track_details,
         track_details_updated = NOW()
