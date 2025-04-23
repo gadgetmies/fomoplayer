@@ -181,12 +181,15 @@ function getFullUrl(storeUrl, url) {
 }
 
 module.exports.addArtistFollows = async (storeUrl = undefined, artists, userId, sourceId) => {
+  logger.info('addArtistFollows', { artists, userId })
   // TODO: try first to find from db
   let addedFollows = []
   for (const { name, url } of artists) {
     const fullUrl = getFullUrl(storeUrl, url)
     const storeModule = await getStoreModuleForArtistByUrl(fullUrl)
+    logger.info('artist', { name, url, fullUrl, storeName: storeModule.storeName })
     const artistDetails = await storeModule.logic.getArtistDetails(fullUrl)
+    logger.info('artistDetails', artistDetails)
     const { artistId, followId, storeArtistId } = await addStoreArtistToUser(
       storeModule.logic.storeUrl,
       userId,
