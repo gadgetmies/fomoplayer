@@ -257,7 +257,7 @@ WITH distinct_store_artists AS (
              NATURAL JOIN store
     WHERE meta_account_user_id = ${userId}
       AND (store_name <> 'Bandcamp' OR store__artist_url IS NOT NULL)
-      AND ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
+      AND (${store}::TEXT IS NULL OR LOWER(store_name) = ${store})
 )
 SELECT artist_name                                           AS name
      , artist_id                                             AS id
