@@ -436,7 +436,7 @@ AND artist_id = ${artistId}
 
 module.exports.queryUserTracks = async (userId, store = undefined, limits = { new: 80, recent: 50, heard: 20 }) => {
   // language=PostgreSQL
-  const sort = sql`ORDER BY artists_starred + label_starred :: int DESC, score DESC NULLS LAST`
+  const sort = sql`ORDER BY artists_starred + label_starred :: int DESC NULLS LAST, score DESC NULLS LAST`
 
   const res = await BPromise.using(pg.getTransaction(), async (tx) => {
     // language=PostgreSQL
@@ -594,12 +594,11 @@ WITH
     FROM
         (SELECT
              track_id
-           , user__track_heard
+           , NULL AS user__track_heard
            , label_score
            , artist_score
            , label_follow_score
            , artist_follow_score
-           , track_added
            , artists_starred
            , label_starred
            , (SELECT
@@ -652,7 +651,7 @@ WITH
                   user_track_score_weight_code = 'date_published'
              ) AS date_published_multiplier
          FROM
-             new_tracks
+            tracks_to_score
                  NATURAL LEFT JOIN label_scores
                  NATURAL LEFT JOIN artist_scores
                  NATURAL LEFT JOIN label_follow_scores
