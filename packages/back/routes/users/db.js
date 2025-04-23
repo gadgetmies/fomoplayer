@@ -1023,7 +1023,7 @@ FROM `
   )
 }
 
-module.exports.queryNotifications = async (userId) =>
+module.exports.queryNotifications = async (userId, store) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--insertNotification
@@ -1033,7 +1033,8 @@ SELECT
     store_name AS "storeName",
     store_purchase_available AS "purchaseAvailable"
 FROM user_search_notification NATURAL JOIN user_search_notification__store NATURAL JOIN store
-WHERE meta_account_user_id = ${userId}
+WHERE meta_account_user_id = ${userId} AND
+      (${store} :: TEXT IS NULL OR ${store} = store_name) 
 `,
   )
 

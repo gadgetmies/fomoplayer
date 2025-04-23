@@ -322,8 +322,8 @@ const verifyFollowOwnership = async (userId, type, followId) => {
 module.exports.getUserScoreWeights = queryUserScoreWeights
 module.exports.setUserScoreWeights = updateUserScoreWeights
 
-module.exports.getNotifications = async (userId) => {
-  return queryNotifications(userId)
+module.exports.getNotifications = async (userId, store) => {
+  return queryNotifications(userId, store)
 }
 
 module.exports.updateNotifications = async (userId, operations) => {
