@@ -107,15 +107,12 @@ SELECT track_id
 FROM
   track
   NATURAL JOIN store__track
-  NATURAL JOIN store__track_preview
+  NATURAL JOIN store__track_preview p 
   NATURAL LEFT JOIN track__cart
   NATURAL LEFT JOIN cart
-WHERE track_id NOT IN (SELECT track_id
-                       FROM
-                         store__track
-                         NATURAL JOIN store__track_preview
-                         NATURAL JOIN store__track_preview_embedding
-                       WHERE store__track_preview_embedding_type = ${model})
+WHERE NOT EXISTS (SELECT 1 FROM store__track_preview_embedding e
+                       WHERE p.store__track_preview_id = e.store__track_preview_id 
+                         AND store__track_preview_embedding_type = ${model})
   AND store__track_preview_url IS NOT NULL
   AND NOT store__track_preview_missing
 GROUP BY track_id, track_isrc`
