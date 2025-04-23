@@ -184,7 +184,7 @@ class FollowPopup extends Component {
                   this.setState({ subscribingToAllStoreLabels: false })
                 }}
               >
-                Follow all artists on all stores
+                Follow all labels on all stores
               </SpinnerButton>
             </div>
           </>
