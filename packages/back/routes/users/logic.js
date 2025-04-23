@@ -142,7 +142,7 @@ const addStoreArtistToUser = (module.exports.addStoreArtistToUser = async (store
   return BPromise.using(pg.getTransaction(), async (tx) => {
     const { id: artistId, storeArtistId } = await ensureArtistExists(tx, storeUrl, artist, sourceId)
     logger.debug(`Ensured artist exists: id: ${artistId}, storeid: ${storeArtistId}, store url: ${storeUrl}`)
-    const followId = await addStoreArtistWatch(tx, userId, storeArtistId, sourceId)
+    const followId = await addStoreArtistWatch(tx, userId, storeArtistId)
     return { artistId, followId, storeArtistId }
   })
 })
