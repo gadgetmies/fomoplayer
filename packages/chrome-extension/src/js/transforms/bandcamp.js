@@ -46,8 +46,8 @@ module.exports.bandcampReleasesTransform = L.collect([
         url: releaseArtistUrl || null,
       }
       // 0 = full original title
-      // 1 = artists and '-' if present
-      // 2 = artists if '-' present
+      // 1 = `${artists} -` if present
+      // 2 = `${artists} if '-' present
       // 3 = title if no version or remix
       // 4 = title if remix or version
       // 5 = parentheses and contents
@@ -57,7 +57,7 @@ module.exports.bandcampReleasesTransform = L.collect([
       const versionOrRemix = isVersionOrRemix(match[10] || match[6])
       const version = versionOrRemix ? match[11] || match[7] : null
       const featuringArtists = extractFeat(match[6]) || []
-      const title = version || featuringArtists.length ? match[5].trim() : match[4]
+      const title = version || featuringArtists.length ? match[5].trim() : match[4] || match[3]?.trim()
 
       const createArtistWithRole = (role) => (artist) => {
         const trimmedArtist = artist.trim()
