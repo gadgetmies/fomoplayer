@@ -12,7 +12,7 @@ const aliasToColumn = {
   heard: 'user__track_heard',
 }
 
-module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince, onlyNew } = {}) => {
+module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince, onlyNew, store = undefined } = {}) => {
   const addedSinceValue = addedSince || null
   const idFilter = queryString
     .split(' ')
@@ -37,6 +37,7 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
     let query = sql`
 WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
 `
+
     if (similaritySearchTrackId) {
       query.append(sql`-- searchForSimilarTracks
 , reference AS
@@ -55,10 +56,12 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
      NATURAL JOIN store__track_preview
      NATURAL JOIN store__track
      NATURAL JOIN track
+     NATURAL JOIN store
      NATURAL LEFT JOIN (user__track NATURAL JOIN logged_user)
    WHERE (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
      AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL OR track_id = ${similaritySearchTrackId})
      AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
+     AND (${store} :: TEXT IS NULL OR LOWER(store_name) = ${store})
    GROUP BY track_id, user__track_heard
    ORDER BY MIN(store__track_preview_embedding <-> (SELECT store__track_preview_embedding FROM reference)) NULLS LAST
    LIMIT ${limit})
@@ -107,7 +110,9 @@ FROM
 (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
 AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL)
 AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
+AND (${store} :: TEXT IS NULL OR LOWER(store_name) = ${store})
          `)
+      
       if (idFilter) {
         query.append(` AND ${tx.escapeIdentifier(`${idFilter[0]}_id`)} = `)
         query.append(sql`${idFilter[1]}`)
