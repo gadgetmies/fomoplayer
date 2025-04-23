@@ -48,7 +48,6 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
    WHERE track_id = ${similaritySearchTrackId} LIMIT 1)
    , similar_tracks AS
   (SELECT track_id
-        , user__track_heard
         , MIN(store__track_preview_embedding <->
           (SELECT store__track_preview_embedding FROM reference)) AS similarity
    FROM
