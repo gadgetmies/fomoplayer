@@ -1,7 +1,8 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const BPromise = require('bluebird')
-//const logger = require('../../../logger')(__filename)
+const R = require('ramda')
+const logger = require('fomoplayer_shared').logger(__filename)
 
 // TODO: would it be possible to somehow derive these from the track_details function?
 const aliasToColumn = {
@@ -12,15 +13,32 @@ const aliasToColumn = {
   heard: 'user__track_heard',
 }
 
-module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId, addedSince, onlyNew, store = undefined } = {}) => {
+module.exports.searchForTracks = async (
+  originalQueryString,
+  { limit: l, sort: s, userId, addedSince, onlyNew, store = undefined } = {},
+) => {
   const addedSinceValue = addedSince || null
-  const idFilter = queryString
-    .split(' ')
-    .filter((s) => s.includes(':'))
-    .map((s) => s.split(':'))
-    .filter(([key]) => ['artist', 'label', 'release'].includes(key))[0]
+  const fieldFilters = originalQueryString.match(/(\S+:\S+)+?/g)?.map((s) => s.split(':')) || []
+  const similaritySearchTrackId = originalQueryString.match(/track:~(\d+)/)?.[1]
 
-  const similaritySearchTrackId = queryString.match(/track:~(\d+)/)?.[1]
+  const queryString = originalQueryString.replace(/(\S+:\S+)\s*/g, '').trim()
+
+  const idFilter = fieldFilters.filter(([key]) => ['artist', 'label', 'release'].includes(key))[0]
+
+  const keyToQueryFnLookup = {
+    bpm: (value) =>
+      sql`LEAST(ABS(store__track_bpm - ${value}), ABS(store__track_bpm * 2 - ${value}), ABS(store__track_bpm - ${value} * 2)) < 5`,
+    key: (value) => sql`LOWER(key_name) = LOWER(${value})`,
+  }
+
+  const keyToJoinsLookup = {
+    bpm: sql``,
+    key: sql`NATURAL JOIN track__key NATURAL JOIN key_name`,
+  }
+
+  const valueFilters = fieldFilters.filter(([key]) => ['bpm', 'key'].includes(key))
+  const valueFilterQueries = valueFilters.map(([key, value]) => keyToQueryFnLookup[key](value))
+  const valueFilterJoins = valueFilters.map(([key]) => keyToJoinsLookup[key])
 
   const limit = l || 100
   const sortParameters = getSortParameters(s || '-released')
@@ -35,11 +53,12 @@ module.exports.searchForTracks = async (queryString, { limit: l, sort: s, userId
     // TODO: this tx is only here for escapeIdentifier -> find out a way to get the function from pg
     // language=PostgreSQL
     let query = sql`
+      -- searchForSimilarTracks
 WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
 `
 
     if (similaritySearchTrackId) {
-      query.append(sql`-- searchForSimilarTracks
+      query.append(sql`
 , reference AS
   (SELECT store__track_preview_embedding
    FROM
@@ -57,11 +76,25 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
      NATURAL JOIN store__track
      NATURAL JOIN track
      NATURAL JOIN store
+     `)
+
+      R.intersperse(' ', valueFilterJoins).forEach((join) => query.append(join))
+
+      // language=PostgreSQL
+      query.append(sql`
      NATURAL LEFT JOIN (user__track NATURAL JOIN logged_user)
    WHERE (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
      AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL OR track_id = ${similaritySearchTrackId})
      AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
-     AND (${store} :: TEXT IS NULL OR LOWER(store_name) = ${store})
+     AND (${store} :: TEXT IS NULL OR LOWER(store_name) = ${store})`)
+
+      if (valueFilterQueries.length > 0) {
+        query.append(' AND ')
+        R.intersperse(' AND ', valueFilterQueries).forEach((q) => query.append(q))
+      }
+
+      // language=PostgreSQL
+      query.append(sql`
    GROUP BY track_id, user__track_heard
    ORDER BY MIN(store__track_preview_embedding <-> (SELECT store__track_preview_embedding FROM reference)) NULLS LAST
    LIMIT ${limit})
@@ -74,7 +107,7 @@ SELECT track_id          AS id
      , user__track_heard AS heard`)
 
     if (similaritySearchTrackId) {
-      query.append(`, similarity `)
+      query.append(sql`, similarity `)
     }
 
     query.append(sql`
@@ -101,24 +134,35 @@ FROM
          NATURAL JOIN track__artist
          NATURAL JOIN artist
          NATURAL JOIN store__track
+         NATURAL JOIN store
          NATURAL LEFT JOIN track__label
          NATURAL LEFT JOIN label
          NATURAL LEFT JOIN release__track
          NATURAL LEFT JOIN release
          NATURAL LEFT JOIN (user__track NATURAL JOIN logged_user)
+ `)
+
+      R.intersperse(' ', valueFilterJoins).forEach((join) => query.append(join))
+
+      // language=PostgreSQL
+      query.append(sql`
  WHERE 
 (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
 AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL)
 AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
 AND (${store} :: TEXT IS NULL OR LOWER(store_name) = ${store})
          `)
-      
+
       if (idFilter) {
         query.append(` AND ${tx.escapeIdentifier(`${idFilter[0]}_id`)} = `)
         query.append(sql`${idFilter[1]}`)
+      } else if (valueFilters.length > 0) {
+        query.append(' AND ')
+        R.intersperse(' AND ', valueFilterQueries).forEach((q) => query.append(q))
+        query.append(' ')
       }
 
-      query.append(` GROUP BY track_id, track_title, track_version `)
+      query.append(sql` GROUP BY track_id, track_title, track_version `)
 
       sortColumns.forEach(([column]) => query.append(`, ${tx.escapeIdentifier(column)}`))
       !idFilter &&
