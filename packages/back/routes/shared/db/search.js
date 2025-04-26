@@ -115,7 +115,8 @@ FROM
   track_details
   JOIN JSON_TO_RECORD(track_details) AS td ( track_id INT, title TEXT, duration INT, added DATE, artists JSON
                                            , version TEXT, labels JSON, remixers JSON, releases JSON, keys JSON
-                                           , previews JSON, stores JSON, released DATE, published DATE)
+                                           , genres JSON, previews JSON, stores JSON, released DATE, published DATE
+                                           , source_details JSON)
        USING (track_id)
   NATURAL LEFT JOIN (
     user__track NATURAL JOIN logged_user 
