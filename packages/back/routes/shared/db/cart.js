@@ -174,7 +174,7 @@ module.exports.queryCartDetails = async (cartId, store = undefined, tracksFilter
                            NATURAL JOIN store__track
                            NATURAL JOIN store
                          WHERE cart_id = ${cartId} AND 
-                               ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
+                               (${store}::TEXT IS NULL OR LOWER(store_name) = ${store})
                          ORDER BY track__cart_added DESC
                          LIMIT ${limit} OFFSET ${offset})
        , td AS (SELECT DISTINCT ON (track_id) td.*
