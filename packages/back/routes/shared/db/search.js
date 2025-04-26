@@ -173,7 +173,7 @@ AND (${store} :: TEXT IS NULL OR LOWER(store_name) = ${store})
       query.append(sql` GROUP BY track_id, track_title, track_version `)
 
       sortColumns.forEach(([column]) => query.append(`, ${tx.escapeIdentifier(column)}`))
-      !idFilter &&
+      !idFilter && queryString !== '' &&
         query.append(sql` HAVING
                                   TO_TSVECTOR(
                                           'simple',
