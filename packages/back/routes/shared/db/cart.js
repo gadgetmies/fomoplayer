@@ -221,6 +221,9 @@ module.exports.queryCartDetails = async (cartId, store = undefined, tracksFilter
       NATURAL LEFT JOIN cart_store_details
     ORDER BY cart_is_default, cart_is_purchased, cart_name
     `)
+
+  logger.info('Cart query', query)
+
   logger.info(`Querying finished for cartId: ${cartId}, limit: ${limit}, offset: ${offset}`)
 
   const [details] = await pg.queryRowsAsync(query)
