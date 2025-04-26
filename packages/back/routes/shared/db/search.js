@@ -25,20 +25,27 @@ module.exports.searchForTracks = async (
 
   const idFilter = fieldFilters.filter(([key]) => ['artist', 'label', 'release'].includes(key))[0]
 
+  const keyToJoinsLookup = {
+    bpm: sql``,
+    key: sql`NATURAL JOIN track__key NATURAL JOIN key NATURAL JOIN key_name`,
+  }
+
   const keyToQueryFnLookup = {
     bpm: (value) =>
       sql`LEAST(ABS(store__track_bpm - ${value}), ABS(store__track_bpm * 2 - ${value}), ABS(store__track_bpm - ${value} * 2)) < 5`,
-    key: (value) => sql`LOWER(key_name) = LOWER(${value})`,
+    key: (value) =>
+      sql`key_id IN (
+        SELECT k.key_id FROM KEY k, (
+          SELECT key.key_id, key_key FROM key NATURAL JOIN key_name WHERE LOWER(key_name) = LOWER(${value})
+        ) sk WHERE ABS((k.key_key).chord_number - (sk.key_key).chord_number) <= 1
+      )`,
   }
 
-  const keyToJoinsLookup = {
-    bpm: sql``,
-    key: sql`NATURAL JOIN track__key NATURAL JOIN key_name`,
-  }
-
-  const valueFilters = fieldFilters.filter(([key]) => ['bpm', 'key'].includes(key))
-  const valueFilterQueries = valueFilters.map(([key, value]) => keyToQueryFnLookup[key](value))
-  const valueFilterJoins = valueFilters.map(([key]) => keyToJoinsLookup[key])
+  const fuzzyFilters = fieldFilters
+    .filter(([key, value]) => ['bpm', 'key'].includes(key) && value.startsWith('~'))
+    .map(([key, value]) => [key, value.substring(1)])
+  const fuzzyFilterQueries = fuzzyFilters.map(([key, value]) => keyToQueryFnLookup[key](value))
+  const fuzzyFilterJoins = fuzzyFilters.map(([key]) => keyToJoinsLookup[key])
 
   const limit = l || 100
   const sortParameters = getSortParameters(s || '-released')
@@ -78,7 +85,7 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
      NATURAL JOIN store
      `)
 
-      R.intersperse(' ', valueFilterJoins).forEach((join) => query.append(join))
+      R.intersperse(' ', fuzzyFilterJoins).forEach((join) => query.append(join))
 
       // language=PostgreSQL
       query.append(sql`
@@ -88,9 +95,9 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
      AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
      AND (${store} :: TEXT IS NULL OR LOWER(store_name) = ${store})`)
 
-      if (valueFilterQueries.length > 0) {
+      if (fuzzyFilterQueries.length > 0) {
         query.append(' AND ')
-        R.intersperse(' AND ', valueFilterQueries).forEach((q) => query.append(q))
+        R.intersperse(' AND ', fuzzyFilterQueries).forEach((q) => query.append(q))
       }
 
       // language=PostgreSQL
@@ -143,7 +150,7 @@ FROM
          NATURAL LEFT JOIN (user__track NATURAL JOIN logged_user)
  `)
 
-      R.intersperse(' ', valueFilterJoins).forEach((join) => query.append(join))
+      R.intersperse(' ', fuzzyFilterJoins).forEach((join) => query.append(join))
 
       // language=PostgreSQL
       query.append(sql`
@@ -157,9 +164,9 @@ AND (${store} :: TEXT IS NULL OR LOWER(store_name) = ${store})
       if (idFilter) {
         query.append(` AND ${tx.escapeIdentifier(`${idFilter[0]}_id`)} = `)
         query.append(sql`${idFilter[1]}`)
-      } else if (valueFilters.length > 0) {
+      } else if (fuzzyFilters.length > 0) {
         query.append(' AND ')
-        R.intersperse(' AND ', valueFilterQueries).forEach((q) => query.append(q))
+        R.intersperse(' AND ', fuzzyFilterQueries).forEach((q) => query.append(q))
         query.append(' ')
       }
 
