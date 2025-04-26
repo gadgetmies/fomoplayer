@@ -120,8 +120,9 @@ class Track extends Component {
         <p>You can open the track or search for it using the store links on the right.</p>
       </>
     )
-    const [_, heardDate, heardTime] =
-      !this.props.heard ? [] : new Date(Date.parse(this.props.heard)).toISOString().match(/(.*)T(.*):/)
+    const [_, heardDate, heardTime] = !this.props.heard
+      ? []
+      : new Date(Date.parse(this.props.heard)).toISOString().match(/(.*)T(.*):/)
     return (
       <tr
         ref={'row'}
@@ -253,9 +254,17 @@ class Track extends Component {
         {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'}>
             <div
-              className={'score-cell track-table-cell'}
+              className={`${this.props.similarity !== undefined ? 'similarity-cell' : 'score-cell'} track-table-cell`}
               style={{ overflow: 'visible', paddingRight: 5, paddingBottom: 0 }}
             >
+              {this.props.similarity !== undefined && (
+                <PillButton
+                  className={'table-cell-button'}
+                  style={{ display: 'flex', paddingBottom: 7, justifyContent: 'center' }}
+                >
+                  {isNumber(this.props.similarity) ? Math.round(this.props.similarity) : '-'}
+                </PillButton>
+              )}
               {this.props.listState === 'new' && (
                 <Popup
                   anchor={

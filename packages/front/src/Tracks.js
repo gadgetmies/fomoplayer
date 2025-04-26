@@ -116,6 +116,7 @@ class Tracks extends Component {
               genres,
               score,
               score_details,
+              similarity,
               heard,
               stores,
               version,
@@ -151,6 +152,7 @@ class Tracks extends Component {
                 genres={genres}
                 score={score}
                 scoreDetails={score_details}
+                similarity={similarity}
                 trackStores={stores}
                 stores={this.props.stores}
                 selected={this.state.selectedTrack === id}
@@ -398,7 +400,13 @@ class Tracks extends Component {
               </th>
               {this.props.mode === 'app' && (
                 <th className={'follow-ignore-cart-cell tracks-cell'}>
-                  <div className={'score-cell track-table-cell'}>{this.props.listState === 'new' && 'Score'}</div>
+                  <div className={'score-cell track-table-cell'}>
+                    {this.props.listState === 'new'
+                      ? 'Score'
+                      : this.props.listState === 'search' && tracks[0]?.similarity !== undefined
+                        ? 'Diff'
+                        : ''}
+                  </div>
                   <div className={'cart-cell track-table-cell'}>Cart</div>
                 </th>
               )}

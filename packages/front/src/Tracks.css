@@ -320,6 +320,13 @@
     vertical-align: middle;
   }
 
+  .similarity-cell button::before {
+    content: 'Diff: ';
+    white-space: pre;
+    filter: invert(100%);
+    vertical-align: middle;
+  }
+
   .open-cell {
     max-width: 150px;
   }
@@ -499,7 +506,7 @@
     text-align: center;
   }
 
-  .score-cell {
+  .score-cell, .similarity-cell {
     width: 60px;
     text-align: center;
   }
