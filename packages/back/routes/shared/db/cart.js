@@ -135,7 +135,7 @@ module.exports.queryUserCartDetailsWithTracks = async (userId, store) =>
 module.exports.queryCartDetails = async (cartId, store = undefined, tracksFilter = { since: undefined, offset: 0, limit: 200 }) => {
   const limit = tracksFilter?.limit === 0 ? null : tracksFilter?.limit || 200
   const offset = tracksFilter?.offset || 0
-  logger.info(`Querying cart details for cartId: ${cartId}, limit: ${limit}, offset: ${offset}`)
+  logger.info(`Querying cart details for cartId: ${cartId}, limit: ${limit}, offset: ${offset}, since: ${tracksFilter?.since}`)
   const query =
     // language=PostgreSQL
     sql`--queryCartDetails
