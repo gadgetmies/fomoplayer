@@ -166,7 +166,7 @@ module.exports.queryCartDetails = async (cartId, store = undefined, tracksFilter
          NATURAL JOIN cart__store
          NATURAL JOIN store
        GROUP BY 1)
-       , cart_tracks AS (SELECT track_id
+       , cart_tracks AS (SELECT DISTINCT ON (track__cart_added, track_id) track_id
                               , track_details
                          FROM
                            track__cart
@@ -189,8 +189,7 @@ module.exports.queryCartDetails = async (cartId, store = undefined, tracksFilter
                                                                    , previews JSON, stores JSON, released DATE
                                                                    , published DATE)
                   NATURAL JOIN track__cart
-                  NATURAL LEFT JOIN user__track
-                WHERE cart_id = ${cartId}`
+                  NATURAL LEFT JOIN user__track`
 
   if (tracksFilter?.since) {
     query.append(`
