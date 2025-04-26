@@ -378,7 +378,7 @@ class Preview extends Component {
     const cartFilter = this.state.cartFilter
 
     const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
-    const currentTrackStores = currentTrack?.stores.filter(({ name }) => storeSlugs.includes(name))
+    const currentTrackStores = currentTrack?.stores.filter(({ code }) => storeSlugs.includes(code))
     return (
       <div className="preview" style={{ borderBottom: '1px solid black' }}>
         <div className="preview_details_wrapper">
