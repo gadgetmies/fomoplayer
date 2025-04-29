@@ -158,7 +158,7 @@ router.post('/follows/artists', async (req, res) => {
   if (typeIs(req, 'application/vnd.multi-store-player.artist-ids+json')) {
     addedArtists = await addArtistFollowsWithIds(body, userId)
   } else {
-    const sourceId = await insertSource({ operation: '/follows/artists', storeUrl })
+    const sourceId = await insertSource({ operation: '/follows/artists', artists: body, userId, storeUrl })
     addedArtists = await addArtistFollows(storeUrl, body, userId, sourceId)
   }
   res.status(201).send(addedArtists)
@@ -175,7 +175,7 @@ router.post('/follows/labels', async (req, res) => {
   if (typeIs(req, 'application/vnd.multi-store-player.label-ids+json')) {
     addedLabels = await addLabelFollowsWithIds(body, userId)
   } else {
-    const sourceId = await insertSource({ operation: '/follows/labels', storeUrl })
+    const sourceId = await insertSource({ operation: '/follows/labels', labels: body, userId, storeUrl })
     addedLabels = await addLabelFollows(storeUrl, body, userId, sourceId)
   }
 
