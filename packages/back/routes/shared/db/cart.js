@@ -174,8 +174,18 @@ module.exports.queryCartDetails = async (cartId, store = undefined, tracksFilter
                            NATURAL JOIN store__track
                            NATURAL JOIN store
                          WHERE cart_id = ${cartId} AND 
-                               (${store}::TEXT IS NULL OR LOWER(store_name) = ${store})
-                         ORDER BY track__cart_added DESC
+                               (${store}::TEXT IS NULL OR LOWER(store_name) = ${store})`
+  if (tracksFilter?.since) {
+    query.append(`
+    AND
+      track__cart_added > '${tracksFilter.since}'
+    `)
+  }
+
+  query.append(
+    // language=PostgreSQL
+    `
+  ORDER BY track__cart_added DESC
                          LIMIT ${limit} OFFSET ${offset})
        , td AS (SELECT DISTINCT ON (track_id) td.*
                                             , user__track_heard AS heard
@@ -189,17 +199,7 @@ module.exports.queryCartDetails = async (cartId, store = undefined, tracksFilter
                                                                    , previews JSON, stores JSON, released DATE
                                                                    , published DATE)
                   NATURAL JOIN track__cart
-                  NATURAL LEFT JOIN user__track`
-
-  if (tracksFilter?.since) {
-    query.append(`
-    AND
-      track__cart_added > '${tracksFilter.since}'
-    `)
-  }
-
-  query.append(sql`
-)
+                  NATURAL LEFT JOIN user__track)
        , tracks AS (SELECT JSON_AGG(td ORDER BY track__cart_added DESC) AS tracks
                     FROM
                       td
@@ -219,7 +219,8 @@ module.exports.queryCartDetails = async (cartId, store = undefined, tracksFilter
       NATURAL JOIN tracks
       NATURAL LEFT JOIN cart_store_details
     ORDER BY cart_is_default, cart_is_purchased, cart_name
-    `)
+    `,
+  )
 
   logger.info('Cart query', query)
 
