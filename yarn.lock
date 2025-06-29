@@ -1715,10 +1715,9 @@
   resolved "https://registry.yarnpkg.com/@leichtgewicht/ip-codec/-/ip-codec-2.0.5.tgz#4fc56c15c580b9adb7dc3c333a134e540b44bfb1"
   integrity sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==
 
-"@mebtte/react-media-session@^1.1.1":
+"@mebtte/react-media-session@mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951":
   version "1.1.2"
-  resolved "https://registry.yarnpkg.com/@mebtte/react-media-session/-/react-media-session-1.1.2.tgz#4058992b8200905420f1962ab3dcf674261e9f0d"
-  integrity sha512-cf+E/ZXOvmDG76nRuuNBFgDvQURsAaM4B8w0p+P0ugy6tUGErEE0eHPtz66p/FnXrEtj2F+45iPEKDzW2R0+Bw==
+  resolved "https://codeload.github.com/mebtte/react-media-session/tar.gz/e8db6e9f0f0a39a22333e84d7bc513d6dccd4951"
 
 "@mswjs/interceptors@^0.26.5":
   version "0.26.15"
