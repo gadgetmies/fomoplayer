@@ -1,7 +1,9 @@
 import config from './config.js'
 
 const searchParams = new URLSearchParams(window.location.search)
-let store = searchParams.get('store') || window.location.hostname.split('.').slice(0, -2).join('.')
+const storesFromHost = window.location.hostname.split('.').slice(0, -2)
+const storesFromParams = searchParams.getAll('store')
+let stores = [storesFromParams, storesFromHost, ['beatport', 'bandcamp']].find(ss => ss.length > 0)
 
 const requestJSONwithCredentials = (...args) =>
   requestWithCredentials(...args).then(async (res) => {
@@ -11,9 +13,9 @@ const requestJSONwithCredentials = (...args) =>
 const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET', body, headers }) => {
   let url = new URL(requestedUrl ? requestedUrl : `${config.apiURL}${path}`)
 
-  if (store) {
+  if (stores) {
     const urlSearchParams = new URLSearchParams(url.search)
-    urlSearchParams.set('store', store)
+    stores.forEach((s) => urlSearchParams.append('store', s))
     url.search = urlSearchParams.toString()
   }
 

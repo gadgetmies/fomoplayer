@@ -17,7 +17,7 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
 
 module.exports.searchForTracks = searchForTracks
 
-module.exports.getFollowDetails = async (query, store) => {
+module.exports.getFollowDetails = async (query, stores) => {
   let details
   if (query.match('^https://') !== null) {
     let detailsFromURL
@@ -26,9 +26,12 @@ module.exports.getFollowDetails = async (query, store) => {
     } catch (e) {
       return []
     }
-    details = await storeModules[store || detailsFromURL.storeName].logic.getFollowDetails(detailsFromURL)
+    if (!stores.includes(detailsFromURL.storeName)) {
+      return []
+    }
+    details = await storeModules[detailsFromURL.storeName].logic.getFollowDetails(detailsFromURL)
   } else {
-    details = await searchForArtistsAndLabels(query, store)
+    details = await searchForArtistsAndLabels(query, stores)
   }
   if (details.length > 0) {
     return details
@@ -37,8 +40,8 @@ module.exports.getFollowDetails = async (query, store) => {
   return []
 }
 
-module.exports.getPreview = async (id, store, format, offset) => {
-  const { url, previewId } = await queryLongestPreviewForTrack(id, store, format, offset)
+module.exports.getPreview = async (id, stores, format, offset) => {
+  const { url, previewId } = await queryLongestPreviewForTrack(id, stores, format, offset)
   if (url !== null) {
     return url
   } else {
@@ -46,7 +49,7 @@ module.exports.getPreview = async (id, store, format, offset) => {
   }
 }
 
-module.exports.getCartDetails = async (uuid, userId, store = undefined, tracksFilter) => {
+module.exports.getCartDetails = async (uuid, userId, stores = undefined, tracksFilter) => {
   logger.info(`Getting cart details for user: ${userId}, uuid: ${uuid}`)
   const { isPublic, id } = await queryCartDetailsByUuid(uuid)
   logger.info(`Cart is public: ${isPublic}, id: ${id}`)
@@ -55,7 +58,7 @@ module.exports.getCartDetails = async (uuid, userId, store = undefined, tracksFi
   if (!isPublic && ownerUserId !== userId) {
     return null
   }
-  return await queryCartDetails(id, store, tracksFilter)
+  return await queryCartDetails(id, stores, tracksFilter)
 }
 
 module.exports.getEntityDetails = queryEntityDetails

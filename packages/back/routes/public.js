@@ -9,8 +9,8 @@ router.use(bodyParser.json())
 const { verifyEmail, getCartDetails } = require('./logic.js')
 const { queryAccountCount, addEmailToWaitingList } = require('./db')
 
-router.get('/carts/:uuid', async ({ params: { uuid }, user, query: { since, offset, limit, store } }, res) => {
-  const cart = await getCartDetails(uuid, user?.id, store, { since, offset, limit })
+router.get('/carts/:uuid', async ({ params: { uuid }, user, query: { since, offset, limit, store: stores } }, res) => {
+  const cart = await getCartDetails(uuid, user?.id, stores, { since, offset, limit })
   if (cart === null) {
     return res.status(404).send()
   }

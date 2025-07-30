@@ -76,6 +76,12 @@ app.options('*', cors()) // include before other routes
 
 app.use(bodyParser.json({ limit: '50mb', extended: true, type: ['application/json', 'application/*+json'] }))
 
+app.use((req, res, next) => {
+  const val = req.query.store
+  req.query.store = val && !Array.isArray(val) ? [val] : val
+  next()
+})
+
 app.use('/api/auth', auth)
 
 const authenticateJwt = passport.authenticate('jwt', { session: false })
@@ -106,13 +112,13 @@ app.use(
 app.use(express.static('public'))
 
 const indexPath = path.resolve(__dirname, 'public/index.html')
-app.get('/carts/:uuid', async ({ params: { uuid }, query: { limit, offset, store }, user }, res, next) => {
+app.get('/carts/:uuid', async ({ params: { uuid }, query: { limit, offset, store: stores }, user }, res, next) => {
   if (!uuid) {
     logger.error('Error during file reading', { uuid })
     return res.status(500).end()
   }
 
-  const cartDetails = await getCartDetails(uuid, user?.id, store,{ offset, limit })
+  const cartDetails = await getCartDetails(uuid, user?.id, stores,{ offset, limit })
 
   if (cartDetails === null) {
     logger.debug('Cart details not found or cart not public', { uuid })

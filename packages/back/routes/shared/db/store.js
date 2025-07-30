@@ -845,7 +845,7 @@ ON CONFLICT DO NOTHING
   return trackId
 }
 
-module.exports.queryFollowRegexes = (store = undefined) =>
+module.exports.queryFollowRegexes = (stores = undefined) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryFollowRegexes
@@ -864,7 +864,7 @@ module.exports.queryFollowRegexes = (store = undefined) =>
           store
           NATURAL JOIN store_playlist_type
         ORDER BY store_playlist_type_priority)) AS a
-    WHERE ${store}::TEXT IS NULL
-       OR LOWER(store_name) = ${store}
+    WHERE ${stores}::TEXT IS NULL
+       OR LOWER(store_name) = ANY(${stores})
     `,
   )

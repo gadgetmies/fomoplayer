@@ -237,7 +237,7 @@ AND store__label_watch_id IN
   )
 }
 
-module.exports.queryUserArtistFollows = async (userId, store = undefined) => {
+module.exports.queryUserArtistFollows = async (userId, stores = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserArtistFollows
@@ -257,7 +257,7 @@ WITH distinct_store_artists AS (
              NATURAL JOIN store
     WHERE meta_account_user_id = ${userId}
       AND (store_name <> 'Bandcamp' OR store__artist_url IS NOT NULL)
-      AND (${store}::TEXT IS NULL OR LOWER(store_name) = ${store})
+      AND (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
 )
 SELECT artist_name                                           AS name
      , artist_id                                             AS id
@@ -275,7 +275,7 @@ ORDER BY 1, store_name
   )
 }
 
-module.exports.queryUserLabelFollows = async (userId, store = undefined) => {
+module.exports.queryUserLabelFollows = async (userId, stores = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserLabelFollows
@@ -294,7 +294,7 @@ WITH distinct_store_labels AS (
              NATURAL JOIN store__label_watch__user
              NATURAL JOIN store
     WHERE meta_account_user_id = ${userId} AND
-          ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
+          ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
 )
 SELECT label_name                                            AS name
      , label_id                                              AS id
@@ -312,7 +312,7 @@ ORDER BY 1, store_name
   )
 }
 
-module.exports.queryUserPlaylistFollows = async (userId, store = undefined) => {
+module.exports.queryUserPlaylistFollows = async (userId, stores = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryUserPlaylistFollows
@@ -329,14 +329,14 @@ FROM
   NATURAL JOIN store
 WHERE
   meta_account_user_id = ${userId} AND
-  ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
+  ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
 ORDER BY
   1
 `,
   )
 }
 
-module.exports.queryUserArtistOnLabelIgnores = async (userId, store = undefined) => {
+module.exports.queryUserArtistOnLabelIgnores = async (userId, stores = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryArtistOnLabelIgnores
@@ -353,12 +353,12 @@ FROM
   NATURAL JOIN store
 WHERE
   meta_account_user_id = ${userId} AND
-  ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
+  ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
 `,
   )
 }
 
-module.exports.queryUserLabelIgnores = async (userId, store = undefined) => {
+module.exports.queryUserLabelIgnores = async (userId, stores = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryLabelIgnores
@@ -372,12 +372,12 @@ FROM
   NATURAL JOIN store 
 WHERE
   meta_account_user_id = ${userId} AND
-  ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
+  ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
 `,
   )
 }
 
-module.exports.queryUserArtistIgnores = async (userId, store = undefined) => {
+module.exports.queryUserArtistIgnores = async (userId, stores = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryArtistIgnores
@@ -391,7 +391,7 @@ FROM
   NATURAL JOIN store
 WHERE
   meta_account_user_id = ${userId} AND
-  ${store}::TEXT IS NULL OR LOWER(store_name) = ${store}
+  ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
 `,
   )
 }
@@ -434,7 +434,7 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = async (userId, store = undefined, limits = { new: 80, recent: 50, heard: 20 }) => {
+module.exports.queryUserTracks = async (userId, stores = undefined, limits = { new: 80, recent: 50, heard: 20 }) => {
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC NULLS LAST, score DESC NULLS LAST`
 
@@ -451,7 +451,7 @@ WITH
     SELECT store_id, 
            store_name 
     FROM store
-    WHERE ${sql`${store}`} :: TEXT IS NULL OR LOWER(store_name) = ${sql`${store}`}
+    WHERE ${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`})
   )
   , user_purchased_tracks AS (
     SELECT
@@ -474,7 +474,7 @@ WITH
             NATURAL JOIN stores
     WHERE
         track_id NOT IN (SELECT track_id FROM user_purchased_tracks) AND
-        ${sql`${store}`} :: TEXT IS NULL OR LOWER(store_name) = ${sql`${store}`}
+        ${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`})
 )
   , new_tracks AS (
     SELECT
@@ -670,7 +670,7 @@ WITH
             NATURAL JOIN store__track
             NATURAL JOIN store
           WHERE user__track_heard IS NOT NULL
-            AND ${sql`${store}`} :: TEXT IS NULL OR LOWER(store_name) = ${sql`${store}`}
+            AND ${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`})
       )
         , recently_heard AS (
           SELECT *
@@ -1022,7 +1022,7 @@ FROM `
   )
 }
 
-module.exports.queryNotifications = async (userId, store) =>
+module.exports.queryNotifications = async (userId, stores) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--insertNotification
@@ -1033,7 +1033,7 @@ SELECT
     store_purchase_available AS "purchaseAvailable"
 FROM user_search_notification NATURAL JOIN user_search_notification__store NATURAL JOIN store
 WHERE meta_account_user_id = ${userId} AND
-      (${store} :: TEXT IS NULL OR ${store} = store_name) 
+      (${stores} :: TEXT IS NULL OR store_name = ANY(${stores})) 
 `,
   )
 

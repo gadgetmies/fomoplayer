@@ -3,8 +3,8 @@ const logger = require('fomoplayer_shared').logger(__filename)
 const { getStoreDetails, modules } = require('./store-modules')
 const { ensureAuthenticated } = require('../shared/auth')
 
-router.get('/', async ({ query: { store } }, res) => {
-  res.send(await getStoreDetails(store))
+router.get('/', async ({ query: { store: stores } }, res) => {
+  res.send(await getStoreDetails(stores))
 })
 
 Object.entries(modules).forEach(([name, module]) => {

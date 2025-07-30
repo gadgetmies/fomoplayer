@@ -15,7 +15,7 @@ const aliasToColumn = {
 
 module.exports.searchForTracks = async (
   originalQueryString,
-  { limit: l, sort: s, userId, addedSince, onlyNew, store = undefined } = {},
+  { limit: l, sort: s, userId, addedSince, onlyNew, stores = undefined } = {},
 ) => {
   const addedSinceValue = addedSince || null
   const fieldFilters = originalQueryString.match(/(\S+:\S+)+?/g)?.map((s) => s.split(':')) || []
@@ -93,7 +93,7 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
    WHERE (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
      AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL OR track_id = ${similaritySearchTrackId})
      AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
-     AND (${store} :: TEXT IS NULL OR LOWER(store_name) = ${store})`)
+     AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))`)
 
       if (fuzzyFilterQueries.length > 0) {
         query.append(' AND ')
@@ -158,7 +158,7 @@ FROM
 (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
 AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL)
 AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
-AND (${store} :: TEXT IS NULL OR LOWER(store_name) = ${store})
+AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
          `)
 
       if (idFilter) {

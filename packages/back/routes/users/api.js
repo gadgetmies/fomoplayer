@@ -61,11 +61,12 @@ router.get(
   async (
     {
       user: { id: authUserId },
-      query: { limit_new: limitNew = 100, limit_recent: limitRecent = 100, limit_heard: limitHeard = 50, store },
+      query: { limit_new: limitNew = 100, limit_recent: limitRecent = 100, limit_heard: limitHeard = 50, store: stores },
     },
     res,
   ) => {
-    const userTracks = await getUserTracks(authUserId, store, { new: limitNew, recent: limitRecent, heard: limitHeard })
+    logger.info(`Got stores: ${JSON.stringify(stores)}`)
+    const userTracks = await getUserTracks(authUserId, stores, { new: limitNew, recent: limitRecent, heard: limitHeard })
     res.json(userTracks)
   },
 )
@@ -86,8 +87,8 @@ router.patch('/tracks/', async ({ user: { id: authUserId }, body: { heard }, que
 // TODO: add genre to database?
 // router.post('/ignores/genres', ({ user: { id: userId }, body: { artistId, storeId, genre } }, res) => {})
 
-router.get('/ignores/artists-on-labels', async ({ user: { id: authUserId }, query: { store } }, res) => {
-  const artistOnLabelIgnores = await getUserArtistOnLabelIgnores(authUserId, store)
+router.get('/ignores/artists-on-labels', async ({ user: { id: authUserId }, query: { store: stores } }, res) => {
+  const artistOnLabelIgnores = await getUserArtistOnLabelIgnores(authUserId, stores)
   res.send(artistOnLabelIgnores)
 })
 
@@ -101,8 +102,8 @@ router.patch('/ignores/artists-on-labels', async ({ user: { id: authUserId }, bo
   res.status(204).send()
 })
 
-router.get('/ignores/labels', async ({ user: { id: authUserId }, query: { store } }, res) => {
-  const labelIgnores = await getUserLabelIgnores(authUserId, store)
+router.get('/ignores/labels', async ({ user: { id: authUserId }, query: { store: stores } }, res) => {
+  const labelIgnores = await getUserLabelIgnores(authUserId, stores)
   res.send(labelIgnores)
 })
 
@@ -116,8 +117,8 @@ router.delete('/ignores/labels/:id', async ({ user: { id: authUserId }, params: 
   res.status(204).send()
 })
 
-router.get('/ignores/artists', async ({ user: { id: authUserId }, query: { store } }, res) => {
-  const artistIgnores = await getUserArtistIgnores(authUserId, store)
+router.get('/ignores/artists', async ({ user: { id: authUserId }, query: { store: stores } }, res) => {
+  const artistIgnores = await getUserArtistIgnores(authUserId, stores)
   res.send(artistIgnores)
 })
 
@@ -182,8 +183,8 @@ router.post('/follows/labels', async (req, res) => {
   res.status(201).send(addedLabels)
 })
 
-router.get('/follows/artists', async ({ user: { id: authUserId }, query: { store } }, res) => {
-  const artistFollows = await getUserArtistFollows(authUserId, store)
+router.get('/follows/artists', async ({ user: { id: authUserId }, query: { store: stores } }, res) => {
+  const artistFollows = await getUserArtistFollows(authUserId, stores)
   res.send(artistFollows)
 })
 
@@ -192,8 +193,8 @@ router.delete('/follows/artists/:id', async ({ params: { id }, user: { id: authU
   res.status(204).send()
 })
 
-router.get('/follows/labels', async ({ user: { id: authUserId }, query: { store } }, res) => {
-  const labelFollows = await getUserLabelFollows(authUserId, store)
+router.get('/follows/labels', async ({ user: { id: authUserId }, query: { store: stores } }, res) => {
+  const labelFollows = await getUserLabelFollows(authUserId, stores)
   res.send(labelFollows)
 })
 
@@ -202,8 +203,8 @@ router.delete('/follows/labels/:id', async ({ params: { id }, user: { id: authUs
   res.status(204).send()
 })
 
-router.get('/follows/playlists', async ({ user: { id: authUserId }, query: { store } }, res) => {
-  const playlists = await getUserPlaylistFollows(authUserId, store)
+router.get('/follows/playlists', async ({ user: { id: authUserId }, query: { store: stores } }, res) => {
+  const playlists = await getUserPlaylistFollows(authUserId, stores)
   res.send(playlists)
 })
 
@@ -223,12 +224,12 @@ router.put('/follows/:type/:id', async ({ user: { id: userId }, params: { id, ty
   res.status(204).send()
 })
 
-router.get('/carts', async ({ user: { id: userId }, query: { store } }, res) => {
-  res.send(await getUserCarts(userId, store))
+router.get('/carts', async ({ user: { id: userId }, query: { store: stores } }, res) => {
+  res.send(await getUserCarts(userId, stores))
 })
 
-router.get('/carts?fetch=tracks', async ({ user: { id: userId }, query: { store } }, res) => {
-  res.send(await getUserCartsWithTracks(userId, store))
+router.get('/carts?fetch=tracks', async ({ user: { id: userId }, query: { store: stores } }, res) => {
+  res.send(await getUserCartsWithTracks(userId, stores))
 })
 
 router.post('/carts', async ({ user: { id: userId }, body }, res) => {
@@ -256,12 +257,11 @@ router.get(
   async ({
     user: { id: userId },
     params: { id: cartId },
-    query: { offset: tracksOffset, limit: tracksLimit },
-    res,
-    store,
+    query: { offset: tracksOffset, limit: tracksLimit, store: stores },
+    res
   }) => {
     res.send(
-      await getCartDetails(userId, cartId, store, { offset: parseInt(tracksOffset), limit: parseInt(tracksLimit) }),
+      await getCartDetails(userId, cartId, stores, { offset: parseInt(tracksOffset), limit: parseInt(tracksLimit) }),
     )
   },
 )
@@ -306,8 +306,8 @@ router.post('/score-weights', async ({ user: { id: userId }, body: weights }, re
   res.status(204).send()
 })
 
-router.get('/notifications', async ({ user: { id: userId }, query: { store } }, res) => {
-  res.send(await getNotifications(userId, store))
+router.get('/notifications', async ({ user: { id: userId }, query: { store: stores } }, res) => {
+  res.send(await getNotifications(userId, stores))
 })
 
 router.patch('/notifications', async ({ user: { id: userId }, body: requested }, res) => {
@@ -327,8 +327,9 @@ router.post('/settings', async ({ user: { id: userId }, body: { email } }, res) 
   res.status(204).send()
 })
 
-router.get('/authorizations', async ({ user: { id: userId }, query: { store } }, res) => {
-  res.send(await getAuthorizations(userId, store))
+router.get('/authorizations', async ({ user: { id: userId }, query: { stores } }, res) => {
+  // TODO: add stores
+  res.send(await getAuthorizations(userId))
 })
 
 router.delete('/authorizations/spotify', async ({ user: { id: userId } }, res) => {
