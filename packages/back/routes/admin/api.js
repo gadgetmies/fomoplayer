@@ -79,11 +79,10 @@ router.get('/analyse', async ({ query }, res) => {
   const previews = []
   for (const track of tracks) {
     const firstPreview = track.previews[0]
-    if (track.previews.length === 1 && !firstPreview.url && firstPreview.store_name === 'Bandcamp')
-    {
+    if (track.previews.length === 1 && !firstPreview.url && firstPreview.store_name === 'Bandcamp') {
       try {
         const { url } = await getPreviewDetails(firstPreview.preview_id)
-        previews.push({ ...track, previews: [{...firstPreview, preview_url: url }]})
+        previews.push({ ...track, previews: [{ ...firstPreview, preview_url: url }] })
       } catch (e) {
         logger.warn(`Unable to find preview url for track with preview id: ${track.preview_id}`, { track })
         await setPreviewMissing(track.preview_id)
@@ -104,8 +103,8 @@ router.post('/analyse', async ({ body }, res) => {
   res.send(results)
 })
 
-router.get('/preview', async ({ query }, res) => {
-  const tracks = await queryTracksWithoutWaveform(query)
+router.get('/preview', async ({ query: { limit, stores } }, res) => {
+  const tracks = await queryTracksWithoutWaveform(limit, stores.split(','))
   const previews = []
   for (const track of tracks) {
     if (track.preview_url) {

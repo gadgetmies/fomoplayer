@@ -119,8 +119,7 @@ GROUP BY track_id, track_isrc`
       // language=
       .append(purchased ? ', cart_is_purchased' : '')
       .append(' ORDER BY ')
-      .append(purchased ? 'cart_is_purchased NULLS LAST,' : '')
-      .append(sql`
+      .append(purchased ? 'cart_is_purchased NULLS LAST,' : '').append(sql`
 BOOL_OR(cart_id IS NULL) DESC, 
 MAX(store__track_published) DESC 
 LIMIT ${batch_size || 20}`),
@@ -173,12 +172,10 @@ FROM
   `,
   )
 
-module.exports.queryTracksWithoutWaveform = ({ limit, store }) => {
-  return BPromise.using(pg.getTransaction(), async (tx) => {
-    await tx.queryAsync("SET statement_timeout TO '5min'")
-    return tx.queryAsync(
-      // language=PostgreSQL
-      sql`-- Query previews without waveform
+module.exports.queryTracksWithoutWaveform = (limit, stores) => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- Query previews without waveform
 SELECT store__track_id               AS id
      , store_name
      , store__track_preview_id       AS preview_id
@@ -192,14 +189,13 @@ FROM
   NATURAL LEFT JOIN store__track_preview
   NATURAL LEFT JOIN store__track_preview_waveform
 WHERE store__track_preview_waveform_url IS NULL
-  AND (${store}::TEXT IS NULL OR LOWER(store_name) = ${store})
+  AND (${stores}::TEXT[] IS NULL OR store_name = ANY(${stores}))
   AND store__track_preview_missing IS NOT TRUE
   AND (store_name = 'Bandcamp' OR store__track_preview_url IS NOT NULL)
 ORDER BY store__track_published DESC NULLS LAST
 LIMIT ${limit}
     `,
-    )
-  })
+  )
 }
 
 module.exports.setPreviewMissing = async (storeTrackPreviewId) =>

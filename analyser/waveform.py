@@ -39,7 +39,7 @@ if not found:
 
 def get_next_waveform_previews(id_token, batch_size=20):
     res = requests.get(
-        f"https://fomoplayer.com/api/admin/preview?limit={batch_size}&store=Bandcamp",
+        f"https://fomoplayer.com/api/admin/preview?limit={batch_size}&stores=Bandcamp",
         headers={'Authorization': f"Bearer {id_token}"}
     )
     print(res.status_code)
