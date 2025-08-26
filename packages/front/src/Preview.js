@@ -576,9 +576,6 @@ class Preview extends Component {
                     console.error(e)
                   }
                 }}
-                onLoadedData={() => {
-                  this.setState({ playing: true })
-                }}
                 onPlay={async () => {
                   await this.props.markHeard(currentTrack.id)
                 }}
