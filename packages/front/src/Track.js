@@ -272,7 +272,11 @@ class Track extends Component {
                       className={'table-cell-button'}
                       style={{ display: 'flex', paddingBottom: 7, justifyContent: 'center' }}
                     >
-                      {isNumber(this.props.score) ? Math.round(this.props.score) : '-'}
+                      {this.props.scoreDetails.artists_starred || this.props.scoreDetails.label_starred
+                        ? '★'
+                        : isNumber(this.props.score)
+                          ? Math.round(this.props.score)
+                          : '-'}
                     </PillButton>
                   }
                   popupClassName={`score-popup_content`}
@@ -289,7 +293,9 @@ class Track extends Component {
                         </tr>
                       </thead>
                       <tbody>
-                        {Object.entries(this.props.scoreDetails || {}).map(([key, value]) => (
+                        {Object.entries(
+                          R.omit(['artists_starred', 'label_starred'], this.props.scoreDetails) || {},
+                        ).map(([key, value]) => (
                           <tr>
                             <td>{scoreWeights[key].label}</td>
                             <td>{value.score}</td>

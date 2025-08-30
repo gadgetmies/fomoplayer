@@ -569,7 +569,7 @@ WITH
     SELECT
         track_id
       , artists_starred
-      , label_starred 
+      , label_starred
       , user__track_heard
       , COALESCE(label_score, 0) * COALESCE(label_multiplier, 0) +
         COALESCE(artist_score, 0) * COALESCE(artist_multiplier, 0) +
@@ -588,7 +588,9 @@ WITH
           'date_released',
           JSON_BUILD_OBJECT('score', ROUND(released_score.score, 1), 'weight', date_released_multiplier),
           'date_published',
-          JSON_BUILD_OBJECT('score', ROUND(published_score.score, 1), 'weight', date_published_multiplier)
+          JSON_BUILD_OBJECT('score', ROUND(published_score.score, 1), 'weight', date_published_multiplier),
+          'artists_starred', artists_starred,
+          'label_starred', label_starred
         )
       AS score_details
     FROM
