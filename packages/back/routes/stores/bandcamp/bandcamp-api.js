@@ -7,6 +7,7 @@ const { JSDOM } = jsdom
 const { VM } = require('vm2')
 
 const vm = new VM()
+let suspendedUntil = null
 
 const scrapeJSON = R.curry((pattern, string) => {
   const match = string.match(new RegExp(pattern), 's')
@@ -26,11 +27,27 @@ const extractJSON = R.curry((selector, attribute = undefined, html) => {
 
 const request = require('request-promise')
 
-const getPageSource = (url) =>
-  request({
+const getPageSource = (url) => {
+  if (suspendedUntil) {
+    if (suspendedUntil < Date.now()) {
+      suspendedUntil = null
+    } else {
+      return Promise.reject({
+        message: `Rate limit reached. Requests are suspended until: ${suspendedUntil.toString()}`,
+      })
+    }
+  }
+  return request({
     method: 'GET',
     uri: url,
+  }).catch((e) => {
+    if (e.statusCode === 429) {
+      suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
+    } else {
+      throw e
+    }
   })
+}
 
 const getReleaseInfo = (pageSource) => extractJSON('[data-tralbum]', 'data-tralbum', pageSource)
 const getRelease = (itemUrl, callback) => {
