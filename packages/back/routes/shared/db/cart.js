@@ -32,7 +32,7 @@ module.exports.queryUserCartDetails = async (userId, stores) => {
                                   NATURAL JOIN cart__store
                                   NATURAL JOIN store
                                 WHERE meta_account_user_id = ${userId} AND
-                                      ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
+                                      (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
                                 GROUP BY 1)
        , track_counts AS (SELECT cart_id, COUNT(track_id) AS track_count
                           FROM

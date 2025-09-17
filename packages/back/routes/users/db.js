@@ -294,7 +294,7 @@ WITH distinct_store_labels AS (
              NATURAL JOIN store__label_watch__user
              NATURAL JOIN store
     WHERE meta_account_user_id = ${userId} AND
-          ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
+          (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
 )
 SELECT label_name                                            AS name
      , label_id                                              AS id
@@ -329,7 +329,7 @@ FROM
   NATURAL JOIN store
 WHERE
   meta_account_user_id = ${userId} AND
-  ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
+  (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
 ORDER BY
   1
 `,
@@ -353,7 +353,7 @@ FROM
   NATURAL JOIN store
 WHERE
   meta_account_user_id = ${userId} AND
-  ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
+  (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
 `,
   )
 }
@@ -372,7 +372,7 @@ FROM
   NATURAL JOIN store 
 WHERE
   meta_account_user_id = ${userId} AND
-  ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
+  (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
 `,
   )
 }
@@ -391,7 +391,7 @@ FROM
   NATURAL JOIN store
 WHERE
   meta_account_user_id = ${userId} AND
-  ${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
+  (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
 `,
   )
 }
@@ -451,7 +451,7 @@ WITH
     SELECT store_id, 
            store_name 
     FROM store
-    WHERE ${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`})
+    WHERE (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
   )
   , user_purchased_tracks AS (
     SELECT
@@ -474,7 +474,7 @@ WITH
             NATURAL JOIN stores
     WHERE
         track_id NOT IN (SELECT track_id FROM user_purchased_tracks) AND
-        ${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`})
+        (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
 )
   , new_tracks AS (
     SELECT
@@ -672,7 +672,7 @@ WITH
             NATURAL JOIN store__track
             NATURAL JOIN store
           WHERE user__track_heard IS NOT NULL
-            AND ${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`})
+            AND (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
       )
         , recently_heard AS (
           SELECT *

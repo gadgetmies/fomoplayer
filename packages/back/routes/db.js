@@ -22,7 +22,7 @@ FROM
 WHERE
     track_id = ${id} AND 
     store__track_preview_format = ${format} AND
-    ${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores})
+    (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
 ORDER BY
   store__track_preview_end_ms - store__track_preview_start_ms DESC NULLS LAST
 OFFSET ${skip} LIMIT 1;
