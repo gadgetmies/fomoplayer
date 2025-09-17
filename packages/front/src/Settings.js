@@ -10,7 +10,7 @@ import * as R from 'ramda'
 import scoreWeightDetails from './scoreWeights'
 import Tracks from './Tracks'
 import FollowItemButton from './FollowItemButton'
-import { Link, NavLink, withRouter } from 'react-router-dom'
+import { NavLink, withRouter } from 'react-router-dom'
 import { apiURL } from './config'
 import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
@@ -18,7 +18,6 @@ import { SettingsHelp } from './SettingsHelp'
 import ImportPlaylistButton from './ImportPlaylistButton'
 import FollowedItem from './FollowedItem'
 import SearchBar from './SearchBar'
-import CollapseHeader from './CollapseHeader'
 import ConfirmButton from './ConfirmButton'
 
 const waitUntil = async (predicate, retryMs = 50) =>
@@ -134,6 +133,7 @@ class Settings extends Component {
       exportingFollowedArtists: false,
       followedArtistsExportSuccess: null,
       authorizations: [],
+      followedTab: 'artists',
       followedArtistsFilter: '',
       followedLabelsFilter: '',
       followedPlaylistsFilter: '',
@@ -250,6 +250,10 @@ class Settings extends Component {
   onShowPage(page) {
     this.setState({ page })
     this.props.history.push(`/settings/${page}`)
+  }
+
+  onShowFollowedTab(tab) {
+    this.setState({ followedTab: tab })
   }
 
   async setScoreWeight(property, value) {
@@ -678,133 +682,187 @@ class Settings extends Component {
                   </div>
                 )}
               </label>
-              <CollapseHeader>Followed artists ({this.state.artistFollows.length})</CollapseHeader>
-              <div className={'follow-filter'}>
-                <SearchBar
-                  styles="large dark"
-                  onChange={(e) => this.setState({ followedArtistsFilter: e.target.value.toLocaleLowerCase() })}
-                  value={this.state.followedArtistsFilter}
-                  onClearSearch={() => this.setState({ followedArtistsFilter: '' })}
+              <h4>Followed</h4>
+              <div
+                className="select-button select-button--container state-select-button--container noselect"
+                style={{ marginBottom: 16 }}
+              >
+                <input
+                  type="radio"
+                  id="settings-state-following-artists"
+                  name="settings-state-following"
+                  checked={this.state.followedTab === 'artists'}
+                  onChange={() => this.onShowFollowedTab('artists')}
                 />
-              </div>
-              <ul className="no-style-list follow-list">
-                {this.state.artistFollows
-                  .filter(
-                    ({ name }) =>
-                      this.state.followedArtistsFilter === '' ||
-                      name.toLocaleLowerCase().includes(this.state.followedArtistsFilter),
-                  )
-                  .map(({ name, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
-                    return (
-                      <li key={storeArtistId} data-onboarding-id="follow-item">
-                        <FollowedItem
-                          disabled={this.state.updatingArtistFollows}
-                          onStarClick={async (e) => {
-                            e.stopPropagation()
-                            this.setState({ updatingArtistFollows: true })
-                            await this.props.onSetStarred('artists', watchId, !starred)
-                            await this.updateArtistFollows()
-                            this.setState({ updatingArtistFollows: false })
-                            if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Star)) {
-                              setTimeout(() => Onboarding.helpers.next(), 500)
-                            }
-                          }}
-                          onUnfollowClick={async () => {
-                            this.setState({ updatingArtistFollows: true })
-                            await requestWithCredentials({
-                              path: `/me/follows/artists/${storeArtistId}`,
-                              method: 'DELETE',
-                            })
-                            await this.updateArtistFollows()
-                            this.setState({ updatingArtistFollows: false })
-                            if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Unfollow)) {
-                              setTimeout(() => {
-                                document.querySelector('[data-onboarding-id=support-button]').scrollIntoView()
-                                Onboarding.helpers.next()
-                              }, 500)
-                            }
-                          }}
-                          {...{ storeName, title: name, starred, url }}
-                        />
-                      </li>
-                    )
-                  })}
-              </ul>
-              <CollapseHeader>Followed labels ({this.state.labelFollows.length})</CollapseHeader>
-              <div className={'follow-filter'}>
-                <SearchBar
-                  styles="large dark"
-                  onChange={(e) => this.setState({ followedLabelsFilter: e.target.value.toLocaleLowerCase() })}
-                  value={this.state.followedLabelsFilter}
-                  onClearSearch={() => this.setState({ followedLabelsFilter: '' })}
+                <label
+                  className="select_button-button  select_button-button__large"
+                  htmlFor="settings-state-following-artists"
+                >
+                  Artists ({this.state.artistFollows.length})
+                </label>
+                <input
+                  type="radio"
+                  id="settings-state-following-labels"
+                  name="settings-state-following"
+                  checked={this.state.followedTab === 'labels'}
+                  onChange={() => this.onShowFollowedTab('labels')}
                 />
-              </div>
-              <ul className="no-style-list follow-list">
-                {this.state.labelFollows
-                  .filter(
-                    ({ name }) =>
-                      this.state.followedLabelsFilter === '' ||
-                      name.toLocaleLowerCase().includes(this.state.followedLabelsFilter),
-                  )
-                  .map(({ name, url, storeLabelId, store: { name: storeName, watchId, starred } }) => (
-                    <li key={storeLabelId}>
-                      <FollowedItem
-                        disabled={this.state.updatingLabelFollows}
-                        onStarClick={async (e) => {
-                          e.stopPropagation()
-                          this.setState({ updatingLabelFollows: true })
-                          await this.props.onSetStarred('labels', watchId, !starred)
-                          await this.updateLabelFollows()
-                          this.setState({ updatingLabelFollows: false })
-                        }}
-                        onUnfollowClick={async () => {
-                          this.setState({ updatingLabelFollows: true })
-                          await requestWithCredentials({
-                            path: `/me/follows/labels/${storeLabelId}`,
-                            method: 'DELETE',
-                          })
-                          await this.updateLabelFollows()
-                          this.setState({ updatingLabelFollows: false })
-                        }}
-                        {...{ storeName, title: name, starred, url }}
-                      />
-                    </li>
-                  ))}
-              </ul>
-              <CollapseHeader>Followed playlists ({this.state.playlistFollows.length})</CollapseHeader>
-              <div className={'follow-filter'}>
-                <SearchBar
-                  styles="large dark"
-                  onChange={(e) => this.setState({ followedPlaylistsFilter: e.target.value.toLocaleLowerCase() })}
-                  value={this.state.followedPlaylistsFilter}
-                  onClearSearch={() => this.setState({ followedPlaylistsFilter: '' })}
+                <label
+                  className="select_button-button  select_button-button__large"
+                  htmlFor="settings-state-following-labels"
+                >
+                  Labels ({this.state.labelFollows.length})
+                </label>
+                <input
+                  type="radio"
+                  id="settings-state-following-playlists"
+                  name="settings-state-following"
+                  checked={this.state.followedTab === 'playlists'}
+                  onChange={() => this.onShowFollowedTab('playlists')}
                 />
+                <label
+                  className="select_button-button  select_button-button__large"
+                  htmlFor="settings-state-following-playlists"
+                >
+                  Playlists ({this.state.playlistFollows.length})
+                </label>
               </div>
-              <ul className="no-style-list follow-list">
-                {this.state.playlistFollows
-                  .filter(
-                    ({ name }) =>
-                      this.state.followedPlaylistsFilter === '' ||
-                      name.toLocaleLowerCase().includes(this.state.followedPlaylistsFilter),
-                  )
-                  .map(({ id, storeName, title }) => (
-                    <li key={id}>
-                      <FollowedItem
-                        disabled={this.state.updatingPlaylistFollows}
-                        onUnfollowClick={async () => {
-                          this.setState({ updatingPlaylistFollows: true })
-                          await requestWithCredentials({
-                            path: `/me/follows/playlists/${id}`,
-                            method: 'DELETE',
-                          })
-                          await this.updatePlaylistFollows()
-                          this.setState({ updatingPlaylistFollows: false })
-                        }}
-                        {...{ storeName, title }}
-                      />
-                    </li>
-                  ))}
-              </ul>
+              {this.state.followedTab === 'artists' && (
+                <>
+                  <div className={'follow-filter'}>
+                    <SearchBar
+                      styles="large dark"
+                      onChange={(e) => this.setState({ followedArtistsFilter: e.target.value.toLocaleLowerCase() })}
+                      value={this.state.followedArtistsFilter}
+                      onClearSearch={() => this.setState({ followedArtistsFilter: '' })}
+                    />
+                  </div>
+                  <ul className="no-style-list follow-list">
+                    {this.state.artistFollows
+                      .filter(
+                        ({ name }) =>
+                          this.state.followedArtistsFilter === '' ||
+                          name.toLocaleLowerCase().includes(this.state.followedArtistsFilter),
+                      )
+                      .map(({ name, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
+                        return (
+                          <li key={storeArtistId} data-onboarding-id="follow-item">
+                            <FollowedItem
+                              disabled={this.state.updatingArtistFollows}
+                              onStarClick={async (e) => {
+                                e.stopPropagation()
+                                this.setState({ updatingArtistFollows: true })
+                                await this.props.onSetStarred('artists', watchId, !starred)
+                                await this.updateArtistFollows()
+                                this.setState({ updatingArtistFollows: false })
+                                if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Star)) {
+                                  setTimeout(() => Onboarding.helpers.next(), 500)
+                                }
+                              }}
+                              onUnfollowClick={async () => {
+                                this.setState({ updatingArtistFollows: true })
+                                await requestWithCredentials({
+                                  path: `/me/follows/artists/${storeArtistId}`,
+                                  method: 'DELETE',
+                                })
+                                await this.updateArtistFollows()
+                                this.setState({ updatingArtistFollows: false })
+                                if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Unfollow)) {
+                                  setTimeout(() => {
+                                    document.querySelector('[data-onboarding-id=support-button]').scrollIntoView()
+                                    Onboarding.helpers.next()
+                                  }, 500)
+                                }
+                              }}
+                              {...{ storeName, title: name, starred, url }}
+                            />
+                          </li>
+                        )
+                      })}
+                  </ul>
+                </>
+              )}
+              {this.state.followedTab === 'labels' && (
+                <>
+                  <div className={'follow-filter'}>
+                    <SearchBar
+                      styles="large dark"
+                      onChange={(e) => this.setState({ followedLabelsFilter: e.target.value.toLocaleLowerCase() })}
+                      value={this.state.followedLabelsFilter}
+                      onClearSearch={() => this.setState({ followedLabelsFilter: '' })}
+                    />
+                  </div>
+                  <ul className="no-style-list follow-list">
+                    {this.state.labelFollows
+                      .filter(
+                        ({ name }) =>
+                          this.state.followedLabelsFilter === '' ||
+                          name.toLocaleLowerCase().includes(this.state.followedLabelsFilter),
+                      )
+                      .map(({ name, url, storeLabelId, store: { name: storeName, watchId, starred } }) => (
+                        <li key={storeLabelId}>
+                          <FollowedItem
+                            disabled={this.state.updatingLabelFollows}
+                            onStarClick={async (e) => {
+                              e.stopPropagation()
+                              this.setState({ updatingLabelFollows: true })
+                              await this.props.onSetStarred('labels', watchId, !starred)
+                              await this.updateLabelFollows()
+                              this.setState({ updatingLabelFollows: false })
+                            }}
+                            onUnfollowClick={async () => {
+                              this.setState({ updatingLabelFollows: true })
+                              await requestWithCredentials({
+                                path: `/me/follows/labels/${storeLabelId}`,
+                                method: 'DELETE',
+                              })
+                              await this.updateLabelFollows()
+                              this.setState({ updatingLabelFollows: false })
+                            }}
+                            {...{ storeName, title: name, starred, url }}
+                          />
+                        </li>
+                      ))}
+                  </ul>
+                </>
+              )}
+              {this.state.followedTab === 'playlists' && (
+                <>
+                  <div className={'follow-filter'}>
+                    <SearchBar
+                      styles="large dark"
+                      onChange={(e) => this.setState({ followedPlaylistsFilter: e.target.value.toLocaleLowerCase() })}
+                      value={this.state.followedPlaylistsFilter}
+                      onClearSearch={() => this.setState({ followedPlaylistsFilter: '' })}
+                    />
+                  </div>
+                  <ul className="no-style-list follow-list">
+                    {this.state.playlistFollows
+                      .filter(
+                        ({ name }) =>
+                          this.state.followedPlaylistsFilter === '' ||
+                          name.toLocaleLowerCase().includes(this.state.followedPlaylistsFilter),
+                      )
+                      .map(({ id, storeName, title }) => (
+                        <li key={id}>
+                          <FollowedItem
+                            disabled={this.state.updatingPlaylistFollows}
+                            onUnfollowClick={async () => {
+                              this.setState({ updatingPlaylistFollows: true })
+                              await requestWithCredentials({
+                                path: `/me/follows/playlists/${id}`,
+                                method: 'DELETE',
+                              })
+                              await this.updatePlaylistFollows()
+                              this.setState({ updatingPlaylistFollows: false })
+                            }}
+                            {...{ storeName, title }}
+                          />
+                        </li>
+                      ))}
+                  </ul>
+                </>
+              )}
             </>
           ) : null}
           {this.state.page === 'sorting' ? (
