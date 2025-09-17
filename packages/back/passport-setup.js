@@ -58,14 +58,18 @@ module.exports = function passportSetup() {
           const signUpAvailable = (await queryAccountCount()) <= config.maxAccountCount
           let user = await account.findByIdentifier(issuer, profile.id)
 
-          if (!signUpAvailable && !user) {
-            if (!inviteCode) {
-              return done(null, false, { message: 'Sign up is not available' })
+          if (!user) {
+            if (!signUpAvailable) {
+              if (!inviteCode) {
+                return done(null, false, { message: 'Sign up is not available' })
+              } else {
+                const inviteCodeConsumed = await consumeInviteCode(inviteCode)
+                if (!inviteCodeConsumed) {
+                  return done(null, false, { message: 'Invalid invite code' })
+                }
+              }
             }
-            const inviteCodeConsumed = await consumeInviteCode(inviteCode)
-            if (!inviteCodeConsumed) {
-              return done(null, false, { message: 'Invalid invite code' })
-            }
+
             user = await account.findOrCreateByIdentifier(issuer, profile.id)
           }
 
