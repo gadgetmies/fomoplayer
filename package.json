@@ -4,7 +4,7 @@
   "description": "",
   "main": "ecosystem.config.js",
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   },
   "scripts": {
     "migrate": "yarn workspace fomoplayer_back migrate",
