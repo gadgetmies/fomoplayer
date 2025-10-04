@@ -1,4 +1,4 @@
-require('fomoplayer_shared').interceptors.spotify.init()
+const spotifyInterceptor = require('fomoplayer_shared').interceptors.spotify.init()
 const L = require('partial.lenses')
 const { initDb, pg } = require('../../../lib/db.js')
 const { getUserTracks } = require('../../../../routes/users/logic.js')
@@ -46,4 +46,7 @@ test({
       // await db.initDb()
     },
   },
+  teardown: async () => {
+    spotifyInterceptor.dispose()
+  }
 })

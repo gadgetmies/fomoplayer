@@ -1,4 +1,4 @@
-require('fomoplayer_shared').interceptors.spotify.init()
+const spotifyInterceptor = require('fomoplayer_shared').interceptors.spotify.init()
 const L = require('partial.lenses')
 const R = require('ramda')
 const { initDb, pg } = require('../../../lib/db.js')
@@ -71,4 +71,7 @@ test({
     },
     teardown: teardownTracks,
   },
+  teardown: async () => {
+    spotifyInterceptor.dispose()
+  }
 })

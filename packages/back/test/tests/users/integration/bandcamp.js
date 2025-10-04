@@ -1,4 +1,4 @@
-require('fomoplayer_shared').interceptors.spotify.init()
+const spotifyInterceptor = require('fomoplayer_shared').interceptors.spotify.init() // required because of spotify client initialisation
 const bandcampInterceptor = require('fomoplayer_shared').interceptors.bandcamp.init()
 const { test } = require('fomoplayer_shared').test.test
 const bandcampLogic = require('../../../../routes/stores/bandcamp/logic')
@@ -88,4 +88,8 @@ test({
     },
     teardown: bandcampInterceptor.clearMockedRequests,
   },
+  teardown: async () => {
+    spotifyInterceptor.dispose()
+    bandcampInterceptor.dispose()
+  }
 })

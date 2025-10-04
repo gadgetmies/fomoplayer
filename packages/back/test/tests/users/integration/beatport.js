@@ -1,4 +1,4 @@
-require('fomoplayer_shared').interceptors.spotify.init()
+const spotifyInterceptor = require('fomoplayer_shared').interceptors.spotify.init() // required because of spotify client initialisation
 const beatportInterceptor = require('fomoplayer_shared').interceptors.beatport.init()
 const { test } = require('fomoplayer_shared').test.test
 const beatportLogic = require('../../../../routes/stores/beatport/logic')
@@ -23,5 +23,9 @@ test({
       undefined,
     )
     assert.deepEqual(res, beatportSearch)
-  },
+  },  
+  teardown: async () => {
+    spotifyInterceptor.dispose()
+    beatportInterceptor.dispose()
+  }
 })

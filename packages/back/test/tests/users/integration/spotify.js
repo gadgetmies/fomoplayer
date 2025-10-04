@@ -9,7 +9,6 @@ const spotifySearchMock = require('fomoplayer_shared/interceptors/fixtures/spoti
 test({
   setup: async () => {
     await refreshToken()
-    spotifyInterceptor.clearMockedRequests()
   },
   skip: () =>
     process.env.SPOTIFY_API_REDIRECT !== '' ||
@@ -19,6 +18,7 @@ test({
       ? 'Spotify redirects or credentials set'
       : undefined,
   'requests are intercepted': async () => {
+    assert.equal(spotifyInterceptor.getMockedRequests().length, 0)
     const res = await spotifyApi.search('noisia', ['track', 'artist', 'album'], { limit: 10 })
     assert.equal(res.statusCode, 200)
     assert.equal(res.headers['content-type'], 'application/json')
@@ -29,4 +29,5 @@ test({
     )
     assert.deepEqual(res.body, spotifySearchMock)
   },
+  teardown: spotifyInterceptor.dispose
 })

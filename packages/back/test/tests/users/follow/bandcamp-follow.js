@@ -1,4 +1,4 @@
-require('fomoplayer_shared').interceptors.spotify.init()
+const spotifyInterceptor = require('fomoplayer_shared').interceptors.spotify.init()
 const bandcampInterceptor = require('fomoplayer_shared').interceptors.bandcamp.init()
 
 const { waitUntil, TimeoutError } = require('async-wait-until')
@@ -119,4 +119,8 @@ test({
     'genre format follows': playlistFollowTest(electronicDigitalPlaylistUrl),
     'format follows': playlistFollowTest(allDigitalPlaylistUrl),
   },
+  teardown: async () => {
+    spotifyInterceptor.dispose()
+    bandcampInterceptor.dispose()
+  }
 })

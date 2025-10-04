@@ -1,4 +1,4 @@
-require('fomoplayer_shared').interceptors.spotify.init()
+const spotifyInterceptor = require('fomoplayer_shared').interceptors.spotify.init()
 const { initDb, pg } = require('../../../lib/db.js')
 const firstTrack = require('../../../fixtures/noisia_concussion_beatport.json')
 const assert = require('assert')
@@ -41,4 +41,7 @@ test({
     },
     teardown: teardownTracks,
   },
+  teardown: async () => {
+    spotifyInterceptor.dispose()
+  }
 })
