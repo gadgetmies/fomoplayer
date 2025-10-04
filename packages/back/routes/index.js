@@ -15,10 +15,10 @@ router.get('/tracks/:id/preview.:format', async ({ params: { id, format, offset 
 })
 
 router.get('/tracks/:id/embedding.png', async ({ params: { id } }, res) => {
-  const image = await getEmbeddingImage(id)
   if (image) {
     res.status(200)
-    image.pipe(res)
+    res.set('Content-Type', 'image/png')
+    return getEmbeddingImage(id, res)
   } else {
     res.status(404).send('Not found')
   }

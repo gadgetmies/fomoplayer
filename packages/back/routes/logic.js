@@ -8,7 +8,7 @@ const { getStoreDetailsFromUrl } = require('./stores/logic')
 const { modules: storeModules } = require('./stores/store-modules')
 const { queryEntityDetails } = require('./shared/db/entities')
 const logger = require('fomoplayer_shared').logger(__filename)
-const { createCanvas } = require('canvas')
+const { make, encodePNGToStream } = require('pureimage')
 
 module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
   const { storeCode, storeTrackId } = await queryLongestPreviewForTrack(id, format, skip)
@@ -68,15 +68,15 @@ module.exports.verifyEmail = verifyEmail
 const embeddingLength = 1280
 const gradient = new Array(100).fill(null).map((_, i, arr) => `hsl(${Math.round(40 + 300 * (i / arr.length))} 100% 50%)`)
 
-module.exports.getEmbeddingImage = async (id) => {
+module.exports.getEmbeddingImage = async (id, stream) => {
   const embedding = await queryEmbedding(id)
   if (!embedding) return
   const embeddingVector = JSON.parse(embedding)
-  const canvas = createCanvas(embeddingVector.length, 10)
+  const canvas = make(embeddingVector.length, 10)
   const ctx = canvas.getContext('2d')
   for (let i = 0; i < embeddingLength; ++i) {
     ctx.fillStyle = gradient[Math.round((embeddingVector[i] + 1) * 100)]
     ctx.fillRect(i, 0, 1, canvas.height)
   }
-  return canvas.createPNGStream()
+  return await encodePNGToStream(canvas, stream)
 }
