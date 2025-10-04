@@ -1,1 +1,1 @@
-ALTER TABLE store__track_preview_waveform DROP CONSTRAINT
+ALTER TABLE store__track_preview_waveform ALTER COLUMN store__track_preview_id DROP NOT NULL;
