@@ -62,4 +62,12 @@ typings/
 .idea
 secrets.*.js
 packages/analyser/venv
-/packages/analyser/.fomo_player_token
+analyser/.fomo_player_token
+analyser/venv/
+analyser/__pycache__/
+pg/
+packages/infrastructure/resources/build/
+packages/infrastructure/cdk.out/
+packages/back/public/static/
+packages/front/build/
+packages/integration-tests/tests_output/
