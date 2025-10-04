@@ -4,17 +4,21 @@
     "artist_follow": { "score": 0, "weight": 1 },
     "label": { "score": 1, "weight": 1 },
     "label_follow": { "score": 0, "weight": 1 },
+    "artists_starred": 0,
     "date_added": { "score": 0, "weight": -0.1 },
     "date_released": { "score": 0, "weight": -0.1 },
-    "date_published": { "score": 0, "weight": -0.1 }
+    "date_published": { "score": 0, "weight": -0.1 },
+    "label_starred": false
   },
   {
     "artist": { "score": 1, "weight": 5 },
     "artist_follow": { "score": 0, "weight": 1 },
     "label": { "score": 1, "weight": 1 },
     "label_follow": { "score": 0, "weight": 1 },
+    "artists_starred": 0,
     "date_added": { "score": 0, "weight": -0.1 },
     "date_released": { "score": 0, "weight": -0.1 },
-    "date_published": { "score": 0, "weight": -0.1 }
+    "date_published": { "score": 0, "weight": -0.1 },
+    "label_starred": false
   }
 ]
