@@ -8,9 +8,6 @@ module.exports = {
     googleOAuth: require('./interceptors/googleOAuthInterceptor.js'),
     spotify: require('./interceptors/spotifyInterceptor.js'),
   },
-  test: {
-    test: require('./test/test.js'),
-  },
   db: {
     pg: require('./db/pg.js'),
   },

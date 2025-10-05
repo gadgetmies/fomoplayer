@@ -8,8 +8,8 @@
     "start:prod": "node index.js",
     "migrate": "db-migrate -e dev up",
     "db-migrate:prod": "db-migrate -v --config ${PWD}/database.json -e prod up",
-    "test": "NODE_ENV=test node -r dotenv/config ../shared/test/run-tests.js ./test/tests dotenv_config_path=.env.test",
-    "ci:test": "NODE_ENV=ci node -r dotenv/config ../shared/test/run-tests.js ./test/tests dotenv_config_path=.env.ci"
+    "test": "NODE_ENV=test dotenv -e .env.test npx cascade-test ./test/tests",
+    "ci:test": "NODE_ENV=ci dotenv -e .env.ci npx cascade-test ./test/tests"
   },
   "engines": {
     "node": "22.x"
@@ -59,6 +59,8 @@
   "devDependencies": {
     "@types/bluebird": "^3.5.36",
     "async-wait-until": "^2.0.12",
+    "cascade-test": "^0.0.1",
+    "dotenv-cli": "^10.0.0",
     "supervisor": "^0.12.0",
     "yargs": "^17.4.0"
   }

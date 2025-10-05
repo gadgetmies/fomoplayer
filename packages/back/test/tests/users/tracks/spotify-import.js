@@ -5,7 +5,7 @@ const track = require('../../../fixtures/noisia_concussion_spotify.json')
 const assert = require('assert')
 const { teardownTracks, addNewSpotifyTracksToDb } = require('../../../lib/tracks')
 const { updateDates } = require('../../../lib/fixture-utils')
-const { test } = require('fomoplayer_shared').test.test
+const { test } = require('cascade-test')
 const expectedTrackDetails = require('../../../fixtures/spotify_track_details.json')
 
 const userId = 1

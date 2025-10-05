@@ -1,6 +1,6 @@
 const spotifyInterceptor = require('fomoplayer_shared').interceptors.spotify.init() // required because of spotify client initialisation
 const bandcampInterceptor = require('fomoplayer_shared').interceptors.bandcamp.init()
-const { test } = require('fomoplayer_shared').test.test
+const { test } = require('cascade-test')
 const bandcampLogic = require('../../../../routes/stores/bandcamp/logic')
 const bandcampSearchMapped = require('../../../fixtures/bandcamp-noisia-search-mapped.json')
 const differentEyesTracks = require('../../../fixtures/bandcamp-different-eyes-tracks.json')

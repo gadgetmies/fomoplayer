@@ -4,7 +4,7 @@ const firstTrack = require('../../../fixtures/noisia_concussion_beatport.json')
 const secondTrack = require('../../../fixtures/noisia_purpose_beatport.json')
 const assert = require('assert')
 const { setupBeatportTracks, teardownTracks } = require('../../../lib/tracks')
-const { test } = require('fomoplayer_shared').test.test
+const { test } = require('cascade-test')
 
 test({
   setup: async () => {

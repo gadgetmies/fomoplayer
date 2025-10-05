@@ -4,8 +4,7 @@
   "description": "Shared constants for keeping backend, frontend and Chrome Extension configs in sync",
   "main": "index.js",
   "bin": {
-    "get-frontend-port": "./get-frontend-port.js",
-    "run-tests": "./test/run-tests.js"
+    "get-frontend-port": "./get-frontend-port.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

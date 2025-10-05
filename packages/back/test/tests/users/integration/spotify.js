@@ -1,5 +1,5 @@
 const spotifyInterceptor = require('fomoplayer_shared').interceptors.spotify.init()
-const { test } = require('fomoplayer_shared').test.test
+const { test } = require('cascade-test')
 
 const { spotifyApi, refreshToken } = require('../../../../routes/shared/spotify')
 const assert = require('assert')

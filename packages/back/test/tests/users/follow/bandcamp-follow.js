@@ -15,7 +15,7 @@ const {
   static: { getTagsFromUrl },
 } = require('../../../../routes/stores/bandcamp/bandcamp-api.js')
 const { addPlaylistFollows } = require('../../../../routes/users/logic')
-const { test } = require('fomoplayer_shared/test/test')
+const { test } = require('cascade-test')
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 

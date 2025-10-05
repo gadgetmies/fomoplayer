@@ -3,7 +3,7 @@ const { initDb, pg } = require('../../../lib/db.js')
 const firstTrack = require('../../../fixtures/noisia_purpose_beatport.json')
 const secondTrack = require('../../../fixtures/noisia_purpose_remix_beatport.json')
 const assert = require('assert')
-const { test } = require('fomoplayer_shared').test.test
+const { test } = require('cascade-test')
 const { setupBeatportTracks, teardownTracks } = require('../../../lib/tracks.js')
 
 test({

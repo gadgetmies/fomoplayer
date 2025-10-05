@@ -1,6 +1,6 @@
 const spotifyInterceptor = require('fomoplayer_shared').interceptors.spotify.init() // required because of spotify client initialisation
 const beatportInterceptor = require('fomoplayer_shared').interceptors.beatport.init()
-const { test } = require('fomoplayer_shared').test.test
+const { test } = require('cascade-test')
 const beatportLogic = require('../../../../routes/stores/beatport/logic')
 const beatportSearch = require('../../../fixtures/beatport-search.json')
 const assert = require('assert')
