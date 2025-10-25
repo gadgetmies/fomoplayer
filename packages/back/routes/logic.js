@@ -70,13 +70,14 @@ const gradient = new Array(100).fill(null).map((_, i, arr) => `hsl(${Math.round(
 
 module.exports.getEmbeddingImage = async (id, stream) => {
   const embedding = await queryEmbedding(id)
-  if (!embedding) return
+  if (!embedding) return false
   const embeddingVector = JSON.parse(embedding)
-  const canvas = make(embeddingVector.length, 10)
+  const canvas = make(embeddingVector.length, 10, {})
   const ctx = canvas.getContext('2d')
   for (let i = 0; i < embeddingLength; ++i) {
     ctx.fillStyle = gradient[Math.round((embeddingVector[i] + 1) * 100)]
     ctx.fillRect(i, 0, 1, canvas.height)
   }
-  return await encodePNGToStream(canvas, stream)
+  await encodePNGToStream(canvas, stream)
+  return true
 }

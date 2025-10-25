@@ -6,6 +6,7 @@ const { Unauthorized } = require('./shared/httpErrors')
 const adminRouter = require('./admin/index.js')
 const { ensureAuthenticated } = require('./shared/auth.js')
 const logRouter = require('./log/index.js')
+const logger = require('fomoplayer_shared').logger(__filename)
 const { getEntityDetails, getEmbeddingImage } = require('./logic')
 
 router.use(bodyParser.json())
@@ -15,12 +16,18 @@ router.get('/tracks/:id/preview.:format', async ({ params: { id, format, offset 
 })
 
 router.get('/tracks/:id/embedding.png', async ({ params: { id } }, res) => {
-  if (image) {
+  try {
     res.status(200)
     res.set('Content-Type', 'image/png')
-    return getEmbeddingImage(id, res)
-  } else {
-    res.status(404).send('Not found')
+    const found = await getEmbeddingImage(id, res)
+    if (!found) {
+      res.status(404).send('Not found')
+      res.send()
+    }
+  } catch (e) {
+    logger.error('Embedding image generation failed', e.toString())
+    res.status(500)
+    res.send()
   }
 })
 
