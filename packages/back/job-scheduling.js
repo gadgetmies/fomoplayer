@@ -105,7 +105,7 @@ WHERE (job_run_started < NOW() - interval '10 days' AND job_run_success = TRUE)
     )
 
     const jobSchedules = await pg.queryRowsAsync(sql`
-SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job_schedule
+SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM job NATURAL LEFT JOIN job_schedule
   `)
 
     for (const scheduledName of Object.keys(scheduled)) {
@@ -116,9 +116,9 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
       }
     }
 
-    for (const { name, schedule } of jobSchedules) {
+    for (const { name, schedule, enabled } of jobSchedules) {
       if (scheduled[name]) {
-        if (scheduled[name].schedule === schedule) {
+        if (scheduled[name].schedule === schedule && scheduled[name].enabled === enabled ) {
           continue
         } else {
           logger.info(`Updating schedule of job '${name}' to ${schedule}`)
@@ -128,8 +128,8 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
         logger.info(`Scheduling new job '${name}' with schedule '${schedule}'`)
       }
 
-      if (schedule === null) {
-        logger.info(`Canceling job '${name}'`)
+      if (schedule === null || !enabled) {
+        logger.info(`Canceling job '${name}' because it is disabled or has no schedule`)
         continue
       }
 
@@ -141,6 +141,7 @@ SELECT job_name AS name, job_schedule AS schedule FROM job NATURAL LEFT JOIN job
           }
           return runJob(name)
         }),
+        enabled,
         schedule,
       }
     }
