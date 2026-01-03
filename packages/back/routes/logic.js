@@ -66,18 +66,25 @@ module.exports.getEntityDetails = queryEntityDetails
 module.exports.verifyEmail = verifyEmail
 
 const embeddingLength = 1280
-const gradient = new Array(100).fill(null).map((_, i, arr) => `hsl(${Math.round(40 + 300 * (i / arr.length))} 100% 50%)`)
+const gradient = new Array(100)
+  .fill(null)
+  .map((_, i, arr) => `hsl(${Math.round(40 + 300 * (i / arr.length))} 100% 50%)`)
 
 module.exports.getEmbeddingImage = async (id, stream) => {
-  const embedding = await queryEmbedding(id)
-  if (!embedding) return false
-  const embeddingVector = JSON.parse(embedding)
-  const canvas = make(embeddingVector.length, 10, {})
-  const ctx = canvas.getContext('2d')
-  for (let i = 0; i < embeddingLength; ++i) {
-    ctx.fillStyle = gradient[Math.round((embeddingVector[i] + 1) * 100)]
-    ctx.fillRect(i, 0, 1, canvas.height)
+  try {
+    const embedding = await queryEmbedding(id)
+    if (!embedding) return false
+    const embeddingVector = JSON.parse(embedding)
+    const canvas = make(embeddingVector.length, 10, {})
+    const ctx = canvas.getContext('2d')
+    for (let i = 0; i < embeddingLength; ++i) {
+      ctx.fillStyle = gradient[Math.round((embeddingVector[i] + 1) * 100)]
+      ctx.fillRect(i, 0, 1, canvas.height)
+    }
+    await encodePNGToStream(canvas, stream)
+    return true
+  } catch (e) {
+    logger.error('Embedding image generation failed', e.toString())
+    return false
   }
-  await encodePNGToStream(canvas, stream)
-  return true
 }
