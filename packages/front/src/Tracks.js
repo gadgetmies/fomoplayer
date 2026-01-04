@@ -40,10 +40,15 @@ class Tracks extends Component {
       trackListFilter: '',
       trackListFilterDebounced: '',
       trackListFilterDebounce: undefined,
+      visibleStartIndex: 0,
+      visibleEndIndex: 50,
     }
     this.handleScroll = this.handleScroll.bind(this)
     this.lastScrollTop = 0
     this.scrollTimeout = null
+    this.trackHeight = 34
+    this.overscan = 10
+    this.tbodyRef = React.createRef()
   }
 
   /*
@@ -54,9 +59,78 @@ class Tracks extends Component {
   }
    */
 
+  componentDidMount() {
+    if (this.tbodyRef.current) {
+      const scrollTop = this.tbodyRef.current.scrollTop
+      const clientHeight = this.tbodyRef.current.clientHeight
+      const tracks = this.props.listState === 'carts'
+        ? this.props.tracks.filter(
+            ({ artists, title, labels, keys, releases, stores }) =>
+              (!this.state.trackListFilterDebounced ||
+                filterMatches(this.state.trackListFilterDebounced, {
+                  artists,
+                  title,
+                  keys,
+                  labels,
+                  releases,
+                })) &&
+              this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+          )
+        : this.props.tracks
+      this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+    }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevProps.tracks !== this.props.tracks ||
+      prevProps.listState !== this.props.listState ||
+      prevState.trackListFilterDebounced !== this.state.trackListFilterDebounced ||
+      prevProps.enabledStores !== this.props.enabledStores
+    ) {
+      if (this.tbodyRef.current) {
+        const scrollTop = this.tbodyRef.current.scrollTop
+        const clientHeight = this.tbodyRef.current.clientHeight
+        const tracks = this.props.listState === 'carts'
+          ? this.props.tracks.filter(
+              ({ artists, title, labels, keys, releases, stores }) =>
+                (!this.state.trackListFilterDebounced ||
+                  filterMatches(this.state.trackListFilterDebounced, {
+                    artists,
+                    title,
+                    keys,
+                    labels,
+                    releases,
+                  })) &&
+                this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+            )
+          : this.props.tracks
+        this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+      }
+    }
+  }
+
   componentWillUnmount() {
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout)
+    }
+  }
+
+  updateVisibleRange(scrollTop, clientHeight, totalTracks) {
+    const startIndex = Math.max(0, Math.floor(scrollTop / this.trackHeight) - this.overscan)
+    const endIndex = Math.min(
+      totalTracks,
+      Math.ceil((scrollTop + clientHeight) / this.trackHeight) + this.overscan,
+    )
+    
+    if (
+      startIndex !== this.state.visibleStartIndex ||
+      endIndex !== this.state.visibleEndIndex
+    ) {
+      this.setState({
+        visibleStartIndex: startIndex,
+        visibleEndIndex: endIndex,
+      })
     }
   }
 
@@ -83,6 +157,23 @@ class Tracks extends Component {
     const scrollBottom = scrollHeight - scrollTop - clientHeight
     const scrollingDown = scrollTop > this.lastScrollTop
     this.lastScrollTop = scrollTop
+
+    const tracks = this.props.listState === 'carts'
+      ? this.props.tracks.filter(
+          ({ artists, title, labels, keys, releases, stores }) =>
+            (!this.state.trackListFilterDebounced ||
+              filterMatches(this.state.trackListFilterDebounced, {
+                artists,
+                title,
+                keys,
+                labels,
+                releases,
+              })) &&
+            this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+        )
+      : this.props.tracks
+
+    this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
 
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout)
@@ -128,12 +219,22 @@ class Tracks extends Component {
 
   renderTracks(tracks) {
     const defaultCart = this.props.carts.find(R.prop('is_default'))
+    const { visibleStartIndex, visibleEndIndex } = this.state
+    const visibleTracks = tracks.slice(visibleStartIndex, visibleEndIndex)
+    const topSpacerHeight = visibleStartIndex * this.trackHeight
+    const bottomSpacerHeight = (tracks.length - visibleEndIndex) * this.trackHeight
 
     return (
       <>
+        {topSpacerHeight > 0 && (
+          <tr style={{ height: topSpacerHeight, display: 'block' }}>
+            <td style={{ display: 'block', height: '100%' }} />
+          </tr>
+        )}
         {tracks.length !== 0 &&
           !this.props.searchInProgress &&
-          tracks.map((track, index) => {
+          visibleTracks.map((track, index) => {
+            const actualIndex = visibleStartIndex + index
             const {
               id,
               title,
@@ -199,7 +300,7 @@ class Tracks extends Component {
                 inDefaultCart={defaultCart ? defaultCart.tracks?.find(R.propEq('id', id)) !== undefined : false}
                 inCurrentCart={inCarts.find(({ id }) => id === selectedCartId) !== undefined}
                 inCarts={inCarts}
-                popupAbove={tracks.length > 10 && tracks.length - index < 10}
+                popupAbove={tracks.length > 10 && tracks.length - actualIndex < 10}
                 processingCart={this.props.processingCart}
                 processingTrack={this.props.processingTrack}
                 key={`track-${id}`}
@@ -238,6 +339,11 @@ class Tracks extends Component {
               />
             )
           })}
+        {bottomSpacerHeight > 0 && (
+          <tr style={{ height: bottomSpacerHeight, display: 'block' }}>
+            <td style={{ display: 'block', height: '100%' }} />
+          </tr>
+        )}
       </>
     )
   }
@@ -520,7 +626,11 @@ class Tracks extends Component {
               </th>
             </tr>
           </thead>
-          <tbody style={{ overflow: 'scroll', display: 'block', flex: 1 }} onScroll={this.handleScroll}>
+          <tbody 
+            ref={this.tbodyRef}
+            style={{ overflow: 'scroll', display: 'block', flex: 1 }} 
+            onScroll={this.handleScroll}
+          >
             <tr style={{ width: '100%', background: 'none', position: 'fixed', zIndex: 1, marginTop: 3 }}>
               <td
                 style={{
