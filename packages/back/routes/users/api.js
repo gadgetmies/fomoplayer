@@ -50,11 +50,55 @@ const {
 } = require('../shared/cart.js')
 
 const typeIs = require('type-is')
+const multer = require('multer')
+const path = require('path')
+const fs = require('fs')
+const os = require('os')
+const uuid = require('uuid').v4
 
 const { storeName: spotifyStoreName } = require('../shared/spotify')
 const { enableCartSync, removeCartSync, importPlaylistAsCart } = require('../shared/cart')
+const { getMinioClient, getBucketName, getStorageUrl } = require('../shared/minio')
+const {
+  insertNotificationAudioSample,
+  queryNotificationAudioSamples: getNotificationAudioSamples,
+  deleteNotificationAudioSample,
+} = require('./db')
 
 const router = require('express-promise-router')()
+
+const MAX_FILE_SIZE = parseInt(process.env.NOTIFICATION_AUDIO_SAMPLE_MAX_SIZE || '10485760', 10)
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const tmpDir = os.tmpdir()
+    cb(null, tmpDir)
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname)
+    cb(null, `${uuid()}${ext}`)
+  },
+})
+
+const fileFilter = (req, file, cb) => {
+  const allowedMimes = ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/mpeg', 'audio/mp3', 'audio/mpeg3']
+  const allowedExts = ['.wav', '.mp3']
+  const ext = path.extname(file.originalname).toLowerCase()
+  
+  if (allowedMimes.includes(file.mimetype) || allowedExts.includes(ext)) {
+    cb(null, true)
+  } else {
+    cb(new Error('Invalid file type. Only WAV and MP3 files are allowed.'), false)
+  }
+}
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: MAX_FILE_SIZE,
+  },
+})
 
 router.get(
   '/tracks',
@@ -348,5 +392,87 @@ router.post(
     res.status(204).send()
   },
 )
+
+router.get('/notifications/audio-samples', async ({ user: { id: userId } }, res) => {
+  const samples = await getNotificationAudioSamples(userId)
+  res.send(samples)
+})
+
+router.post(
+  '/notifications/audio-samples',
+  upload.single('audioFile'),
+  async ({ user: { id: userId }, file }, res) => {
+    if (!file) {
+      return res.status(400).send({ error: 'No file uploaded' })
+    }
+
+    const minioClient = getMinioClient()
+    const bucketName = getBucketName()
+    const storageUrl = getStorageUrl()
+
+    if (!minioClient || !bucketName) {
+      fs.unlinkSync(file.path)
+      return res.status(500).send({ error: 'File storage not configured' })
+    }
+
+    try {
+      const objectKey = `notification-samples/${userId}/${uuid()}${path.extname(file.originalname)}`
+      
+      await minioClient.fPutObject(bucketName, objectKey, file.path, {
+        'Content-Type': file.mimetype,
+      })
+
+      const cleanStorageUrl = storageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
+      const url = `https://${cleanStorageUrl}/${bucketName}/${objectKey}`
+      
+      const sample = await insertNotificationAudioSample(
+        userId,
+        bucketName,
+        objectKey,
+        url,
+        file.size,
+        file.mimetype,
+      )
+
+      fs.unlinkSync(file.path)
+
+      res.status(201).send(sample)
+    } catch (error) {
+      logger.error('Error uploading audio sample', error)
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path)
+      }
+      res.status(500).send({ error: 'Failed to upload audio sample' })
+    }
+  },
+)
+
+router.delete('/notifications/audio-samples/:id', async ({ user: { id: userId }, params: { id } }, res) => {
+  const minioClient = getMinioClient()
+  const bucketName = getBucketName()
+
+  try {
+    const samples = await getNotificationAudioSamples(userId)
+    const sample = samples.find((s) => s.id === parseInt(id, 10))
+
+    if (!sample) {
+      return res.status(404).send({ error: 'Audio sample not found' })
+    }
+
+    if (minioClient && bucketName && sample.objectKey) {
+      try {
+        await minioClient.removeObject(bucketName, sample.objectKey)
+      } catch (error) {
+        logger.warn('Error deleting file from MinIO', error)
+      }
+    }
+
+    await deleteNotificationAudioSample(userId, parseInt(id, 10))
+    res.status(204).send()
+  } catch (error) {
+    logger.error('Error deleting audio sample', error)
+    res.status(500).send({ error: 'Failed to delete audio sample' })
+  }
+})
 
 module.exports = router

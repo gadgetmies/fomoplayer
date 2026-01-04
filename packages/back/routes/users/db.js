@@ -1193,3 +1193,58 @@ module.exports.getEmailVerificationCode = async (userId) => {
 
   return verificationCode
 }
+
+module.exports.insertNotificationAudioSample = async (userId, bucketName, objectKey, url, fileSize, fileType) => {
+  const [sample] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- insertNotificationAudioSample
+    INSERT INTO user_notification_audio_sample (
+      meta_account_user_id,
+      user_notification_audio_sample_bucket_name,
+      user_notification_audio_sample_object_key,
+      user_notification_audio_sample_url,
+      user_notification_audio_sample_file_size,
+      user_notification_audio_sample_file_type
+    )
+    VALUES (
+      ${userId},
+      ${bucketName},
+      ${objectKey},
+      ${url},
+      ${fileSize},
+      ${fileType}
+    )
+    RETURNING user_notification_audio_sample_id AS id
+    `,
+  )
+  return sample
+}
+
+module.exports.queryNotificationAudioSamples = async (userId) => {
+  return await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- getNotificationAudioSamples
+    SELECT 
+      user_notification_audio_sample_id AS id,
+      user_notification_audio_sample_url AS url,
+      user_notification_audio_sample_object_key AS "objectKey",
+      user_notification_audio_sample_file_size AS "fileSize",
+      user_notification_audio_sample_file_type AS "fileType",
+      user_notification_audio_sample_created_at AS "createdAt"
+    FROM user_notification_audio_sample
+    WHERE meta_account_user_id = ${userId}
+    ORDER BY user_notification_audio_sample_created_at DESC
+    `,
+  )
+}
+
+module.exports.deleteNotificationAudioSample = async (userId, sampleId) => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- deleteNotificationAudioSample
+    DELETE FROM user_notification_audio_sample
+    WHERE user_notification_audio_sample_id = ${sampleId}
+      AND meta_account_user_id = ${userId}
+    `,
+  )
+}

@@ -140,6 +140,9 @@ class Settings extends Component {
       editingCartNameId: null,
       cartNameEditorValue: '',
       cloningCartId: null,
+      audioSamples: [],
+      uploadingAudioSample: false,
+      deletingAudioSample: null,
     }
 
     this.markHeardButton.bind(this)
@@ -147,7 +150,7 @@ class Settings extends Component {
 
   async componentDidMount() {
     try {
-      await Promise.all([this.updateFollows(), this.updateIgnores(), this.updateAuthorizations()])
+      await Promise.all([this.updateFollows(), this.updateIgnores(), this.updateAuthorizations(), this.updateAudioSamples()])
     } catch (e) {
       console.error(e)
     }
@@ -213,6 +216,79 @@ class Settings extends Component {
       path: `/me/authorizations`,
     })
     this.setState({ authorizations })
+  }
+
+  async updateAudioSamples() {
+    try {
+      const audioSamples = await requestJSONwithCredentials({
+        path: `/me/notifications/audio-samples`,
+      })
+      this.setState({ audioSamples })
+    } catch (e) {
+      console.error('Failed to load audio samples', e)
+    }
+  }
+
+  async uploadAudioSample(file) {
+    if (!file) return
+
+    const allowedTypes = ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/mpeg', 'audio/mp3']
+    const allowedExts = ['.wav', '.mp3']
+    const fileExt = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
+    
+    if (!allowedTypes.includes(file.type) && !allowedExts.includes(fileExt)) {
+      alert('Invalid file type. Only WAV and MP3 files are allowed.')
+      return
+    }
+
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      alert(`File size exceeds 10MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
+      return
+    }
+
+    this.setState({ uploadingAudioSample: true })
+
+    try {
+      const formData = new FormData()
+      formData.append('audioFile', file)
+
+      const response = await fetch(`${apiURL}/me/notifications/audio-samples`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Upload failed' }))
+        throw new Error(error.error || 'Upload failed')
+      }
+
+      await this.updateAudioSamples()
+    } catch (e) {
+      console.error('Failed to upload audio sample', e)
+      alert(`Failed to upload audio sample: ${e.message}`)
+    } finally {
+      this.setState({ uploadingAudioSample: false })
+    }
+  }
+
+  async deleteAudioSample(sampleId) {
+    this.setState({ deletingAudioSample: sampleId })
+
+    try {
+      await requestWithCredentials({
+        path: `/me/notifications/audio-samples/${sampleId}`,
+        method: 'DELETE',
+      })
+
+      await this.updateAudioSamples()
+    } catch (e) {
+      console.error('Failed to delete audio sample', e)
+      alert('Failed to delete audio sample')
+    } finally {
+      this.setState({ deletingAudioSample: null })
+    }
   }
 
   async setCartPublic(cartId, setPublic) {
@@ -1202,6 +1278,70 @@ class Settings extends Component {
                   </li>
                 ))}
               </ul>
+              <h4>Audio sample uploads</h4>
+              <p style={{ fontSize: '90%', marginBottom: '10px' }}>
+                Upload audio samples (WAV or MP3, max 10MB) to use for notification search by audio similarity.
+              </p>
+              <div style={{ marginBottom: '20px' }}>
+                <input
+                  type="file"
+                  accept="audio/wav,audio/wave,audio/x-wav,audio/mpeg,audio/mp3,.wav,.mp3"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      this.uploadAudioSample(file)
+                      e.target.value = ''
+                    }
+                  }}
+                  disabled={this.state.uploadingAudioSample || !this.props.userSettings.emailVerified}
+                  style={{ display: 'none' }}
+                  id="audio-sample-upload"
+                />
+                <label htmlFor="audio-sample-upload">
+                  <SpinnerButton
+                    size={'large'}
+                    disabled={this.state.uploadingAudioSample || !this.props.userSettings.emailVerified}
+                    loading={this.state.uploadingAudioSample}
+                    icon={'upload'}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      document.getElementById('audio-sample-upload')?.click()
+                    }}
+                  >
+                    Upload Audio Sample
+                  </SpinnerButton>
+                </label>
+              </div>
+              {this.state.audioSamples.length > 0 ? (
+                <ul className="no-style-list follow-list">
+                  {this.state.audioSamples.map((sample) => (
+                    <li key={sample.id}>
+                      <span className={'button pill pill-button'}>
+                        <span className={'pill-button-contents'}>
+                          <span style={{ marginRight: '10px' }}>
+                            <FontAwesomeIcon icon="file-audio" /> {sample.fileType.split('/')[1]?.toUpperCase() || 'AUDIO'} (
+                            {(sample.fileSize / 1024 / 1024).toFixed(2)}MB)
+                          </span>
+                          <button
+                            disabled={this.state.deletingAudioSample === sample.id}
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              if (window.confirm('Delete this audio sample?')) {
+                                await this.deleteAudioSample(sample.id)
+                              }
+                            }}
+                            title="Delete audio sample"
+                          >
+                            <FontAwesomeIcon icon="times-circle" />
+                          </button>
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ fontSize: '90%', fontStyle: 'italic' }}>No audio samples uploaded yet.</p>
+              )}
             </>
           ) : null}
           {this.state.page === 'ignores' ? (

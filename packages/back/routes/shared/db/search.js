@@ -198,8 +198,6 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
       query.append(' track_id DESC')
     }
 
-    console.log(query.text, query.values)
-
     return tx.queryRowsAsync(query)
   })
 }
