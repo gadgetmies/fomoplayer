@@ -297,7 +297,7 @@ class Track extends Component {
                           R.omit(['artists_starred', 'label_starred'], this.props.scoreDetails) || {},
                         ).map(([key, value]) => (
                           <tr>
-                            <td>{scoreWeights[key].label}</td>
+                            <td>{scoreWeights[key]?.label}</td>
                             <td>{value.score}</td>
                             <td>{value.weight}</td>
                             <td>{Math.round(value.score * value.weight * 100) / 100}</td>
