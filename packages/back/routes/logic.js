@@ -9,6 +9,7 @@ const { modules: storeModules } = require('./stores/store-modules')
 const { queryEntityDetails } = require('./shared/db/entities')
 const logger = require('fomoplayer_shared').logger(__filename)
 const { make, encodePNGToStream } = require('pureimage')
+const converter = require('hsl-to-rgb-for-reals')
 
 module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
   const { storeCode, storeTrackId } = await queryLongestPreviewForTrack(id, format, skip)
@@ -66,9 +67,6 @@ module.exports.getEntityDetails = queryEntityDetails
 module.exports.verifyEmail = verifyEmail
 
 const embeddingLength = 1280
-const gradient = new Array(100)
-  .fill(null)
-  .map((_, i, arr) => `hsl(${Math.round(40 + 300 * (i / arr.length))} 100% 50%)`)
 
 module.exports.getEmbeddingImage = async (id, stream) => {
   try {
@@ -77,14 +75,18 @@ module.exports.getEmbeddingImage = async (id, stream) => {
     const embeddingVector = JSON.parse(embedding)
     const canvas = make(embeddingVector.length, 10, {})
     const ctx = canvas.getContext('2d')
+    const max = Math.max(...embeddingVector)
+    const min = Math.min(...embeddingVector)
     for (let i = 0; i < embeddingLength; ++i) {
-      ctx.fillStyle = gradient[Math.round((embeddingVector[i] + 1) * 100)]
+      const normalizedValue = (embeddingVector[i] - min) / (max - min)
+      const color = converter((100 * normalizedValue + 270) % 360, 1, 0.5)
+      ctx.fillStyle = `#${color.map(i => (i || 0).toString(16).padStart(2, '0')).join('')}`
       ctx.fillRect(i, 0, 1, canvas.height)
     }
     await encodePNGToStream(canvas, stream)
     return true
   } catch (e) {
-    logger.error('Embedding image generation failed', e.toString())
+    logger.error(e)
     return false
   }
 }
