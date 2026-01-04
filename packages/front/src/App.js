@@ -36,6 +36,12 @@ library.add(fas, far, fab)
 const logoutPath = '/auth/logout'
 const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
+const deduplicateTracks = (existingTracks, newTracks) => {
+  const existingIds = new Set(existingTracks.map(track => track.id))
+  const uniqueNewTracks = newTracks.filter(track => !existingIds.has(track.id))
+  return [...existingTracks, ...uniqueNewTracks]
+}
+
 const Root = (props) => <div className="root" style={{ height: '100vh' }} {...props} />
 class App extends Component {
   constructor(props) {
@@ -88,12 +94,41 @@ class App extends Component {
       selectedCart: undefined,
       mode: undefined,
       tracksOffset: 0,
+      loadingMore: false,
+      trackOffsets: { new: 0, heard: 0, recent: 0, search: 0 },
+      pagination: null,
     }
   }
 
   setListState(listState) {
     this.setState({ listState })
     window.history.replaceState(undefined, undefined, `/${listState}`)
+  }
+
+  hasMoreTracks() {
+    const { listState, pagination, trackOffsets, searchResults } = this.state
+    if (listState === 'search') {
+      return searchResults.length % (this.state.searchFilters.limit || 100) === 0 && searchResults.length > 0
+    } else if (['new', 'heard', 'recent'].includes(listState) && pagination) {
+      const category = listState === 'recent' ? 'recent' : listState
+      const categoryPagination = pagination[category]
+      if (categoryPagination) {
+        return categoryPagination.offset + categoryPagination.count < categoryPagination.total
+      }
+    }
+    return true
+  }
+
+  async loadMoreTracks() {
+    const { listState, loadingMore } = this.state
+    if (loadingMore || !this.hasMoreTracks()) return
+
+    if (listState === 'search') {
+      await this.search(this.state.search, this.state.searchFilters, true)
+    } else if (['new', 'heard', 'recent'].includes(listState)) {
+      this.setState({ loadingMore: true })
+      await this.updateTracks(true)
+    }
   }
 
   async updateStatesFromServer() {
@@ -279,19 +314,107 @@ class App extends Component {
     this.setState({ notifications: await requestJSONwithCredentials({ path: '/me/notifications' }) })
   }
 
-  async updateTracks() {
+  async updateTracks(append = false) {
+    const { trackOffsets, listState } = this.state
+    let queryParams = []
+    
+    if (append) {
+      const category = listState === 'recent' ? 'recent' : listState
+      if (['new', 'heard', 'recent'].includes(category)) {
+        const offset = trackOffsets[category]
+        queryParams.push(`offset_${category}=${offset}`)
+        queryParams.push(`limit_${category}=20`)
+        
+        if (category !== 'new') queryParams.push('limit_new=0')
+        if (category !== 'heard') queryParams.push('limit_heard=0')
+        if (category !== 'recent') queryParams.push('limit_recent=0')
+      }
+    }
+    
+    const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : ''
     const {
       meta: { new: newTracks, total: totalTracks },
       tracks,
+      pagination,
     } = await requestJSONwithCredentials({
-      path: `/me/tracks`,
+      path: `/me/tracks${queryString}`,
     })
 
-    this.setState({
-      tracksData: { tracks, meta: { newTracks, totalTracks } },
-      heardTracks: tracks.heard, // TODO: is this correct? Previously this was not updated
-      onboarding: tracks.new.length === 0 && tracks.heard.length === 0,
-    })
+    if (append) {
+      const category = listState === 'recent' ? 'recent' : listState
+      const existingNew = this.state.tracksData.tracks.new
+      const existingHeard = this.state.tracksData.tracks.heard
+      const existingRecent = this.state.tracksData.tracks.recentlyAdded
+      const existingHeardTracks = this.state.heardTracks
+
+      let uniqueNew = existingNew
+      let uniqueHeard = existingHeard
+      let uniqueRecent = existingRecent
+      let uniqueHeardTracks = existingHeardTracks
+
+      if (category === 'new') {
+        uniqueNew = deduplicateTracks(existingNew, tracks.new)
+      } else if (category === 'heard') {
+        uniqueHeard = deduplicateTracks(existingHeard, tracks.heard)
+        uniqueHeardTracks = deduplicateTracks(existingHeardTracks, tracks.heard)
+      } else if (category === 'recent') {
+        uniqueRecent = deduplicateTracks(existingRecent, tracks.recentlyAdded)
+      }
+
+      const updatedOffsets = { ...trackOffsets }
+      if (pagination) {
+        if (pagination.new) {
+          updatedOffsets.new = pagination.new.offset + pagination.new.count
+        }
+        if (pagination.heard) {
+          updatedOffsets.heard = pagination.heard.offset + pagination.heard.count
+        }
+        if (pagination.recent) {
+          updatedOffsets.recent = pagination.recent.offset + pagination.recent.count
+        }
+      } else {
+        if (category === 'new') {
+          updatedOffsets.new = trackOffsets.new + (uniqueNew.length - existingNew.length)
+        } else if (category === 'heard') {
+          updatedOffsets.heard = trackOffsets.heard + (uniqueHeard.length - existingHeard.length)
+        } else if (category === 'recent') {
+          updatedOffsets.recent = trackOffsets.recent + (uniqueRecent.length - existingRecent.length)
+        }
+      }
+
+      this.setState({
+        tracksData: {
+          tracks: {
+            new: uniqueNew,
+            heard: uniqueHeard,
+            recentlyAdded: uniqueRecent,
+          },
+          meta: { newTracks, totalTracks },
+        },
+        heardTracks: uniqueHeardTracks,
+        trackOffsets: updatedOffsets,
+        pagination: pagination || this.state.pagination,
+        loadingMore: false,
+      })
+    } else {
+      this.setState({
+        tracksData: { tracks, meta: { newTracks, totalTracks } },
+        heardTracks: tracks.heard,
+        onboarding: tracks.new.length === 0 && tracks.heard.length === 0,
+        trackOffsets: pagination ? {
+          new: pagination.new.offset + pagination.new.count,
+          heard: pagination.heard.offset + pagination.heard.count,
+          recent: pagination.recent.offset + pagination.recent.count,
+          search: this.state.trackOffsets.search,
+        } : {
+          new: tracks.new.length,
+          heard: tracks.heard.length,
+          recent: tracks.recentlyAdded.length,
+          search: this.state.trackOffsets.search,
+        },
+        pagination: pagination || null,
+      })
+    }
   }
 
   async markHeard(track) {
@@ -450,27 +573,51 @@ class App extends Component {
     }
   }
 
-  async search(query, filters = {}) {
+  async search(query, filters = {}, append = false) {
     const { sort = '-released', limit = 100, addedSince = null, onlyNew = null } = filters
     console.log({ onlyNew, filters })
 
     if (query === '') return
-    this.setState({ listState: 'search', searchInProgress: true, searchError: undefined, search: query })
-    const parameters = `q=${query}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}`
-    window.history.pushState(undefined, undefined, `/search?${parameters}`)
+    const { trackOffsets } = this.state
+    const offset = append ? trackOffsets.search : 0
+    if (!append) {
+      this.setState({ listState: 'search', searchInProgress: true, searchError: undefined, search: query, trackOffsets: { ...trackOffsets, search: 0 } })
+    } else {
+      this.setState({ loadingMore: true })
+    }
+    const parameters = `q=${query}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}&offset=${offset}`
+    if (!append) {
+      window.history.pushState(undefined, undefined, `/search?${parameters}`)
+    }
     try {
       const searchResults = await (
         await requestWithCredentials({
           path: `/tracks?${parameters}`,
         })
       ).json()
-      this.setState({ searchResults, searchError: undefined })
+      if (append) {
+        const existingSearchResults = this.state.searchResults
+        const uniqueSearchResults = deduplicateTracks(existingSearchResults, searchResults)
+        this.setState({
+          searchResults: uniqueSearchResults,
+          trackOffsets: { ...this.state.trackOffsets, search: this.state.trackOffsets.search + (uniqueSearchResults.length - existingSearchResults.length) },
+          loadingMore: false,
+        })
+      } else {
+        this.setState({ 
+          searchResults, 
+          searchError: undefined,
+          trackOffsets: { ...this.state.trackOffsets, search: searchResults.length },
+        })
+      }
       return undefined
     } catch (e) {
       console.error('Search failed', e)
-      this.setState({ searchError: 'Search failed, please try again.' })
+      this.setState({ searchError: 'Search failed, please try again.', loadingMore: false })
     } finally {
-      this.setState({ searchInProgress: false })
+      if (!append) {
+        this.setState({ searchInProgress: false })
+      }
     }
   }
 
@@ -841,6 +988,8 @@ class App extends Component {
                           tracks={this.state.tracksData.tracks}
                           markHeard={this.markHeard.bind(this)}
                           tracksOffset={this.state.tracksOffset}
+                          loadingMore={this.state.loadingMore}
+                          hasMore={this.hasMoreTracks()}
                           onAddToCart={this.addToCart.bind(this)}
                           onClosePopups={this.closePopups.bind(this)}
                           onCreateCart={this.createCart.bind(this)}
@@ -850,6 +999,7 @@ class App extends Component {
                           onIgnoreArtistsByLabels={this.ignoreArtistsByLabels.bind(this)}
                           onIgnoreLabel={this.ignoreLabel.bind(this)}
                           onIgnoreRelease={this.ignoreRelease.bind(this)}
+                          onLoadMore={this.loadMoreTracks.bind(this)}
                           onMarkPurchased={this.onMarkPurchased.bind(this)}
                           onOpenFollowPopup={this.openFollowPopup.bind(this)}
                           onOpenIgnorePopup={this.openIgnorePopup.bind(this)}

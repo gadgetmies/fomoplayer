@@ -434,7 +434,7 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = async (userId, stores = undefined, limits = { new: 80, recent: 50, heard: 20 }) => {
+module.exports.queryUserTracks = async (userId, stores = undefined, limits = { new: 80, recent: 50, heard: 20 }, offsets = { new: 0, recent: 0, heard: 0 }) => {
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC NULLS LAST, score DESC NULLS LAST`
 
@@ -475,7 +475,32 @@ WITH
     WHERE
         track_id NOT IN (SELECT track_id FROM user_purchased_tracks) AND
         (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
-)
+  )
+  , heard_tracks_meta AS (
+    SELECT
+        COUNT(*) AS total
+    FROM
+        user__track
+            NATURAL JOIN logged_user
+            NATURAL JOIN store__track
+            NATURAL JOIN stores
+    WHERE
+        user__track_heard IS NOT NULL AND
+        (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
+  )
+  , recent_tracks_meta AS (
+    SELECT
+        COUNT(DISTINCT track_id) AS total
+    FROM
+        logged_user
+            NATURAL JOIN user__track
+            NATURAL JOIN track
+            NATURAL JOIN store__track
+            NATURAL JOIN stores
+    WHERE
+        user__track_heard IS NULL AND
+        (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
+  )
   , new_tracks AS (
     SELECT
         track_id
@@ -663,7 +688,7 @@ WITH
             LEFT JOIN track_date_released_score AS released_score USING (track_id)
             LEFT JOIN track_date_published_score AS published_score USING (track_id)
           ${sort}
-          LIMIT ${sql`${limits.new}`}
+          LIMIT ${sql`${limits.new}`} OFFSET ${sql`${offsets.new}`}
       )
         , heard_tracks AS (
           SELECT track_id, user__track_heard
@@ -678,7 +703,7 @@ WITH
           SELECT *
           FROM heard_tracks 
           ORDER BY user__track_heard DESC NULLS LAST
-          LIMIT ${sql`${limits.heard}`}
+          LIMIT ${sql`${limits.heard}`} OFFSET ${sql`${offsets.heard}`}
       )
         , recently_added AS (
           SELECT track_id
@@ -690,7 +715,7 @@ WITH
             NATURAL JOIN stores
           WHERE user__track_heard IS NULL
           GROUP BY 1
-          LIMIT ${sql`${limits.recent}`}
+          LIMIT ${sql`${limits.recent}`} OFFSET ${sql`${offsets.recent}`}
       )
          , limited_tracks AS (
           SELECT DISTINCT track_id
@@ -756,13 +781,32 @@ WITH
               'recentlyAdded', CASE WHEN recently_added IS NULL THEN '[]'::JSON ELSE recently_added END
           ) AS tracks
            , JSON_BUILD_OBJECT(
-              'total', total,
-              'new', new
+              'total', user_tracks_meta.total,
+              'new', user_tracks_meta.new
           ) AS meta
+           , JSON_BUILD_OBJECT(
+              'new', JSON_BUILD_OBJECT(
+                'offset', ${sql`${offsets.new}`}::INT,
+                'total', new,
+                'count', CASE WHEN new_tracks IS NULL THEN 0 ELSE jsonb_array_length(new_tracks::jsonb) END
+              ),
+              'heard', JSON_BUILD_OBJECT(
+                'offset', ${sql`${offsets.heard}`}::INT,
+                'total', COALESCE(heard_tracks_meta.total, 0),
+                'count', CASE WHEN heard_tracks IS NULL THEN 0 ELSE jsonb_array_length(heard_tracks::jsonb) END
+              ),
+              'recent', JSON_BUILD_OBJECT(
+                'offset', ${sql`${offsets.recent}`}::INT,
+                'total', COALESCE(recent_tracks_meta.total, 0),
+                'count', CASE WHEN recently_added IS NULL THEN 0 ELSE jsonb_array_length(recently_added::jsonb) END
+              )
+          ) AS pagination
       FROM new_tracks_with_details
          , heard_tracks_with_details
          , recently_added_tracks_with_details
-         , user_tracks_meta`,
+         , user_tracks_meta
+         , heard_tracks_meta
+         , recent_tracks_meta`,
       )
       .then(R.head)
   })
@@ -790,6 +834,7 @@ WITH
       heard: uniqueHeardTracks,
       recentlyAdded: uniqueAddedTracks,
     },
+    pagination: res.pagination,
   }
 }
 

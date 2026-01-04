@@ -302,6 +302,8 @@ class Player extends Component {
           sort={this.props.sort}
           enabledStores={this.state.enabledStores}
           enabledStoreSearch={this.state.enabledStoreSearch}
+          loadingMore={this.props.loadingMore}
+          hasMore={this.props.hasMore}
           onAddToCart={this.props.onAddToCart}
           onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
           onCreateCart={this.props.onCreateCart}
@@ -309,6 +311,7 @@ class Player extends Component {
           onFollowClicked={this.props.onOpenFollowPopup?.bind(this)}
           onIgnoreArtistsByLabels={this.props.onIgnoreArtistsByLabels}
           onIgnoreClicked={this.props.onOpenIgnorePopup?.bind(this)}
+          onLoadMore={this.props.onLoadMore}
           onMarkPurchasedButtonClick={this.props.onMarkPurchased}
           onPreviewRequested={(id) => {
             const requestedTrack = R.find(R.propEq('id', id), this.getTracks())

@@ -105,12 +105,25 @@ router.get(
   async (
     {
       user: { id: authUserId },
-      query: { limit_new: limitNew = 100, limit_recent: limitRecent = 100, limit_heard: limitHeard = 50, store: stores },
+      query: { 
+        limit_new: limitNew = 20, 
+        limit_recent: limitRecent = 20, 
+        limit_heard: limitHeard = 20,
+        offset_new: offsetNew = 0,
+        offset_recent: offsetRecent = 0,
+        offset_heard: offsetHeard = 0,
+        store: stores 
+      },
     },
     res,
   ) => {
     logger.info(`Got stores: ${JSON.stringify(stores)}`)
-    const userTracks = await getUserTracks(authUserId, stores, { new: limitNew, recent: limitRecent, heard: limitHeard })
+    const userTracks = await getUserTracks(
+      authUserId, 
+      stores, 
+      { new: limitNew, recent: limitRecent, heard: limitHeard },
+      { new: offsetNew, recent: offsetRecent, heard: offsetHeard }
+    )
     res.json(userTracks)
   },
 )

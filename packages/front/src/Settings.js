@@ -1282,6 +1282,8 @@ class Settings extends Component {
               <h4>Audio sample uploads</h4>
               <p style={{ fontSize: '90%', marginBottom: '10px' }}>
                 Upload audio samples (WAV or MP3, max 10MB) to use for notification search by audio similarity.
+                Uploaded samples will be processed at a later point to extract audio fingerprints. You will receive
+                a notification email if a track matching the audio fingerprint is found in or added to the database.
               </p>
               <div style={{ marginBottom: '20px' }}>
                 <input

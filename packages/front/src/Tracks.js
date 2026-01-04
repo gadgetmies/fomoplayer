@@ -42,6 +42,8 @@ class Tracks extends Component {
       trackListFilterDebounce: undefined,
     }
     this.handleScroll = this.handleScroll.bind(this)
+    this.lastScrollTop = 0
+    this.scrollTimeout = null
   }
 
   /*
@@ -52,7 +54,13 @@ class Tracks extends Component {
   }
    */
 
-  handleScroll() {
+  componentWillUnmount() {
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout)
+    }
+  }
+
+  handleScroll(event) {
     let currentBelowScreen = false
     let currentAboveScreen = false
     const current = document.querySelector('.playing')
@@ -67,6 +75,32 @@ class Tracks extends Component {
       }
     }
     this.setState({ currentBelowScreen, currentAboveScreen })
+
+    const target = event.target
+    const scrollTop = target.scrollTop
+    const scrollHeight = target.scrollHeight
+    const clientHeight = target.clientHeight
+    const scrollBottom = scrollHeight - scrollTop - clientHeight
+    const scrollingDown = scrollTop > this.lastScrollTop
+    this.lastScrollTop = scrollTop
+
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout)
+    }
+
+    const preloadThreshold = Math.max(800, clientHeight * 2)
+
+    this.scrollTimeout = setTimeout(() => {
+      if (
+        scrollingDown &&
+        scrollBottom < preloadThreshold &&
+        this.props.onLoadMore &&
+        !this.props.loadingMore &&
+        this.props.hasMore
+      ) {
+        this.props.onLoadMore()
+      }
+    }, 100)
   }
 
   scrollCurrentIntoView() {

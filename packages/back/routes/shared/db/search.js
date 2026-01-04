@@ -15,7 +15,7 @@ const aliasToColumn = {
 
 module.exports.searchForTracks = async (
   originalQueryString,
-  { limit: l, sort: s, userId, addedSince, onlyNew, stores = undefined } = {},
+  { limit: l, offset: o, sort: s, userId, addedSince, onlyNew, stores = undefined } = {},
 ) => {
   const addedSinceValue = addedSince || null
   const fieldFilters = originalQueryString.match(/(\S+:\S+)+?/g)?.map((s) => s.split(':')) || []
@@ -48,6 +48,7 @@ module.exports.searchForTracks = async (
   const fuzzyFilterJoins = fuzzyFilters.map(([key]) => keyToJoinsLookup[key])
 
   const limit = l || 100
+  const offset = o || 0
   const sortParameters = getSortParameters(s || '-released')
   const sortColumns = sortParameters
     .map(([alias, order]) => {
@@ -104,7 +105,7 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
       query.append(sql`
    GROUP BY track_id, user__track_heard
    ORDER BY MIN(store__track_preview_embedding <-> (SELECT store__track_preview_embedding FROM reference)) NULLS LAST
-   LIMIT ${limit})
+   LIMIT ${limit} OFFSET ${offset})
 `)
     }
 
@@ -189,7 +190,7 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
         query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
       )
       query.append(` track_id DESC
-        LIMIT ${limit})
+        LIMIT ${limit} OFFSET ${offset})
         ORDER BY `)
 
       sortParameters.forEach(([column, order]) =>
