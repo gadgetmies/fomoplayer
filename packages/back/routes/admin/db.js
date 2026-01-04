@@ -245,3 +245,26 @@ WHERE store__track_preview_id = ANY (${previewIds})
 `,
   )
 }
+
+module.exports.queryNotificationAudioSamplesWithoutEmbedding = async (limit) => {
+  return await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryNotificationAudioSamplesWithoutEmbedding
+SELECT 
+  user_notification_audio_sample_id AS id,
+  meta_account_user_id AS "userId",
+  user_notification_audio_sample_url AS url,
+  user_notification_audio_sample_object_key AS "objectKey",
+  user_notification_audio_sample_file_size AS "fileSize",
+  user_notification_audio_sample_file_type AS "fileType",
+  user_notification_audio_sample_created_at AS "createdAt"
+FROM user_notification_audio_sample
+  LEFT JOIN user_notification_audio_sample_embedding
+    ON user_notification_audio_sample.user_notification_audio_sample_id = 
+       user_notification_audio_sample_embedding.user_notification_audio_sample_id
+WHERE user_notification_audio_sample_embedding.user_notification_audio_sample_id IS NULL
+ORDER BY user_notification_audio_sample_created_at DESC
+LIMIT ${limit || 100}
+    `,
+  )
+}

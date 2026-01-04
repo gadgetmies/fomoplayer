@@ -14,6 +14,7 @@ const {
   setPreviewMissing,
   updateTrackDetailsForPreviewTracks,
   markPreviewsMissing,
+  queryNotificationAudioSamplesWithoutEmbedding,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 
@@ -126,6 +127,11 @@ router.post('/waveform', async ({ body }, res) => {
   await insertWaveforms(body)
   const tracks = await updateTrackDetailsForPreviewTracks(body)
   return res.status(200).send(tracks)
+})
+
+router.get('/notification-audio-samples/without-embedding', async ({ query: { limit } }, res) => {
+  const samples = await queryNotificationAudioSamplesWithoutEmbedding(limit ? parseInt(limit, 10) : undefined)
+  res.send(samples)
 })
 
 module.exports = router
