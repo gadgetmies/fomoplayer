@@ -1027,7 +1027,7 @@ FROM `
 module.exports.queryNotifications = async (userId, stores) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`--insertNotification
+    sql`--queryNotifications
 SELECT 
     user_search_notification_id AS id, 
     user_search_notification_string AS text, 
@@ -1035,7 +1035,7 @@ SELECT
     store_purchase_available AS "purchaseAvailable"
 FROM user_search_notification NATURAL JOIN user_search_notification__store NATURAL JOIN store
 WHERE meta_account_user_id = ${userId} AND
-      (${stores} :: TEXT IS NULL OR store_name = ANY(${stores})) 
+      (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
 `,
   )
 
@@ -1059,7 +1059,7 @@ module.exports.updateNotifications = async (tx, userId, operations) => {
 INSERT INTO user_search_notification__store (user_search_notification_id, store_id)
 SELECT ${notificationId}, store_id
 FROM store
-WHERE store_name = ${storeName}
+WHERE LOWER(store_name) = LOWER(${storeName})
         `,
       )
     } else if (op === 'remove') {
@@ -1071,7 +1071,7 @@ FROM user_search_notification__store
 WHERE user_search_notification_id = ${notificationId}
   AND store_id = (SELECT store_id
                   FROM store
-                  WHERE store_name = ${storeName})
+                  WHERE LOWER(store_name) = LOWER(${storeName}))
         `,
       )
     }
@@ -1163,7 +1163,7 @@ FROM
     user__store_authorization
 WHERE
       meta_account_user_id = ${userId}
-  AND store_id = (SELECT store_id FROM store WHERE store_name = ${storeName})
+  AND store_id = (SELECT store_id FROM store WHERE LOWER(store_name) = LOWER(${storeName}))
 `,
   )
 }
