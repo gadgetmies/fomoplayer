@@ -32,6 +32,8 @@ ap = argparse.ArgumentParser()
 # Add the arguments to the parser
 ap.add_argument("-m", "--model", help="Model type (e.g. 'discogs_multi_embeddings-effnet-bs64-1')")
 ap.add_argument("-p", "--purchased", help="Analyse purchased tracks")
+ap.add_argument("-a", "--audio-samples", action="store_true", help="Process uploaded audio samples instead of store previews")
+ap.add_argument("-b", "--batch-size", type=int, default=10, help="Batch size for fetching samples")
 args = ap.parse_args()
 
 client = ClientConfiguration(client_configuration='oidc_configuration.json',
@@ -53,6 +55,18 @@ def get_next_analysis_tracks(id_token, model='discogs_multi_embeddings-effnet-bs
     )
     if (res.status_code != 200):
         raise Exception(f"Next tracks request returned an error {res.text}")
+    return res.json()
+
+
+def get_next_audio_samples(id_token, batch_size=10):
+    print("Getting next audio samples to analyse")
+    print(f"{os.getenv('API_URL')}/admin/notification-audio-samples/without-embedding?limit={batch_size}")
+    res = requests.get(
+        f"{os.getenv('API_URL')}/admin/notification-audio-samples/without-embedding?limit={batch_size}",
+        headers={'Authorization': f"Bearer {id_token}"}
+    )
+    if (res.status_code != 200):
+        raise Exception(f"Next audio samples request returned an error {res.text}")
     return res.json()
 
 
@@ -183,92 +197,186 @@ def get_oauth2_token():
 if __name__ == '__main__':
     print(f"[{datetime.datetime.now()}] Starting")
     id_token = get_oauth2_token()
-    tracks_to_process = get_next_analysis_tracks(id_token, purchased=args.purchased)
-    print(f"Got {len(tracks_to_process)} tracks")
-    tracks = []
+    
+    if args.audio_samples:
+        # Process uploaded audio samples
+        samples_to_process = get_next_audio_samples(id_token, batch_size=args.batch_size)
+        print(f"Got {len(samples_to_process)} audio samples")
+        samples = []
 
-    with tempfile.TemporaryDirectory() as temp_dir_name:
-        for track in tracks_to_process:
-            previews = track.get('previews')
-            found = False
-            for preview in previews:
-                previewUrl = preview.get("url")
-                previewId = preview.get("preview_id")
-                print(f"Downloading preview with id {previewId} from : {previewUrl}")
+        with tempfile.TemporaryDirectory() as temp_dir_name:
+            for sample in samples_to_process:
+                sampleUrl = sample.get("url")
+                sampleId = sample.get("id")
+                print(f"Downloading audio sample with id {sampleId} from : {sampleUrl}")
                 try:
-                    local_filename, _ = urllib.request.urlretrieve(previewUrl)
+                    local_filename, _ = urllib.request.urlretrieve(sampleUrl)
                     print(f"Downloaded to: {local_filename}")
-                    tracks.append({"id": track.get('track_id'), "isrc": track.get('track_isrc'),
-                                   "preview_id": preview.get("preview_id"), "url": previewUrl,
-                                   "path": local_filename, "missing": False})
-                    found = True
-                    break
+                    samples.append({
+                        "id": sampleId,
+                        "url": sampleUrl,
+                        "path": local_filename,
+                        "missing": False
+                    })
                 except Exception as e:
-                    print("Downloading preview failed")
-                    tracks.append({"id": track.get('track_id'), "isrc": track.get('track_isrc'),
-                                   "preview_id": preview.get("preview_id"),
-                                   "missing": True})
+                    print("Downloading audio sample failed")
+                    samples.append({
+                        "id": sampleId,
+                        "missing": True
+                    })
                     print(e)
-            if not found:
-                print(f"Failed to find a working preview for track {track.get('track_id')}")
 
-    for track in tracks:
-        if (track['missing']):
-            print(f"Reporting track preview missing with id: {track['preview_id']}")
-            data = [{"preview_id": track.get("preview_id"), "missing": True}]
-            res = requests.post(f"{os.getenv('API_URL')}/admin/analyse",
-                                headers={'Authorization': f"Bearer {id_token}"},
-                                json=data)
-        else:
-            absolute_file_path = track.get("path").replace("'", "\''")
-            try:
-                print(f"Processing: {absolute_file_path}")
+        for sample in samples:
+            if (sample['missing']):
+                print(f"Skipping missing audio sample with id: {sample['id']}")
+                continue
+            else:
+                absolute_file_path = sample.get("path").replace("'", "\''")
+                try:
+                    print(f"Processing: {absolute_file_path}")
 
-                print("Converting mp3 to wav")
-                sound = AudioSegment.from_mp3(absolute_file_path)
-                sound.export('./output.wav', format="wav")
+                    # Determine file format and convert to wav if needed
+                    file_ext = os.path.splitext(absolute_file_path)[1].lower()
+                    if file_ext in ['.mp3', '.mpeg']:
+                        print("Converting mp3 to wav")
+                        sound = AudioSegment.from_mp3(absolute_file_path)
+                        sound.export('./output.wav', format="wav")
+                    elif file_ext == '.wav':
+                        print("File is already wav format")
+                        import shutil
+                        shutil.copy(absolute_file_path, './output.wav')
+                    else:
+                        print(f"Unsupported file format: {file_ext}")
+                        continue
 
-                print("Extracting metadata from ID3 tags")
+                    print("Preparing audio")
+                    audio = MonoLoader(filename='./output.wav', sampleRate=16000, resampleQuality=4)()
+                    print("Preparing model")
+                    model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
+                    graphFilename = f"./models/{model_name}.pb"
+                    model = TensorflowPredictEffnetDiscogs(
+                        graphFilename=graphFilename,
+                        output="PartitionedCall:1")
+                    print("Processing audio")
+                    embeddings = model(audio)
 
-                spotify_details = {}
-                isrc = track["isrc"]
-                if isrc != 'null':
-                    print(f"Fetching Spotify audio features for ISRC: {isrc}")
-                    # spotify_details = get_spotify_details(isrc)
-                # outputFile = NamedTemporaryFile()
-                print("Preparing audio")
-                audio = MonoLoader(filename='./output.wav', sampleRate=16000, resampleQuality=4)()
-                print("Preparing model")
-                graphFilename = f"./models/{args.model}.pb"
-                model = TensorflowPredictEffnetDiscogs(
-                    graphFilename=graphFilename,
-                    output="PartitionedCall:1")
-                print("Processing audio")
-                embeddings = model(audio)
+                    print(f"Processing done, sending details for audio sample with id: {sample.get('id')}")
+                    data = [{
+                        "id": sample.get("id"),
+                        "embeddings": json.dumps(embeddings.T.mean(1).tolist()),
+                        "model": model_name,
+                        "missing": False
+                    }]
+                    res = requests.post(f"{os.getenv('API_URL')}/admin/notification-audio-samples/embeddings",
+                                        headers={'Authorization': f"Bearer {id_token}"},
+                                        json=data)
+                    if res.status_code != 200:
+                        print(f"Error reporting results for {sample['id']}")
+                        print(f"Status code: {res.status_code}")
+                        print(res.text)
+                except Exception as e:
+                    print(f"Error processing {absolute_file_path}")
+                    print(e)
+                    print(traceback.format_exc())
 
-                print(f"Processing done, sending details for preview with id: {track.get("preview_id")}")
-                data = [{"id": track.get("preview_id"),
-                         "embeddings": json.dumps(embeddings.T.mean(1).tolist()),
-                         "model": args.model,
-                         "spotify": spotify_details}]
+                print("Removing temp file")
+                try:
+                    os.remove(absolute_file_path)
+                    if os.path.exists('./output.wav'):
+                        os.remove('./output.wav')
+                except Exception as e:
+                    print("Failed removing temp file")
+                    print(e)
+    else:
+        # Process store track previews (original behavior)
+        purchased = args.purchased is not None
+        tracks_to_process = get_next_analysis_tracks(id_token, purchased=purchased, batch_size=args.batch_size)
+        print(f"Got {len(tracks_to_process)} tracks")
+        tracks = []
+
+        with tempfile.TemporaryDirectory() as temp_dir_name:
+            for track in tracks_to_process:
+                previews = track.get('previews')
+                found = False
+                for preview in previews:
+                    previewUrl = preview.get("url")
+                    previewId = preview.get("preview_id")
+                    print(f"Downloading preview with id {previewId} from : {previewUrl}")
+                    try:
+                        local_filename, _ = urllib.request.urlretrieve(previewUrl)
+                        print(f"Downloaded to: {local_filename}")
+                        tracks.append({"id": track.get('track_id'), "isrc": track.get('track_isrc'),
+                                       "preview_id": preview.get("preview_id"), "url": previewUrl,
+                                       "path": local_filename, "missing": False})
+                        found = True
+                        break
+                    except Exception as e:
+                        print("Downloading preview failed")
+                        tracks.append({"id": track.get('track_id'), "isrc": track.get('track_isrc'),
+                                       "preview_id": preview.get("preview_id"),
+                                       "missing": True})
+                        print(e)
+                if not found:
+                    print(f"Failed to find a working preview for track {track.get('track_id')}")
+
+        for track in tracks:
+            if (track['missing']):
+                print(f"Reporting track preview missing with id: {track['preview_id']}")
+                data = [{"preview_id": track.get("preview_id"), "missing": True}]
                 res = requests.post(f"{os.getenv('API_URL')}/admin/analyse",
                                     headers={'Authorization': f"Bearer {id_token}"},
                                     json=data)
-                if res.status_code != 200:
-                    print(f"Error reporting results for {track['id']}")
-                    print(f"Status code: {res.status_code}")
-                    print(res.text)
-            except Exception as e:
-                print(f"Error processing {absolute_file_path}")
-                print(e)
-                print(traceback.format_exc())
+            else:
+                absolute_file_path = track.get("path").replace("'", "\''")
+                try:
+                    print(f"Processing: {absolute_file_path}")
 
-            print("Removing temp file")
-            try:
-                os.remove(absolute_file_path)
-            except Exception as e:
-                print("Failed removing temp file")
-                print(e)
+                    print("Converting mp3 to wav")
+                    sound = AudioSegment.from_mp3(absolute_file_path)
+                    sound.export('./output.wav', format="wav")
+
+                    print("Extracting metadata from ID3 tags")
+
+                    spotify_details = {}
+                    isrc = track["isrc"]
+                    if isrc != 'null':
+                        print(f"Fetching Spotify audio features for ISRC: {isrc}")
+                        # spotify_details = get_spotify_details(isrc)
+                    # outputFile = NamedTemporaryFile()
+                    print("Preparing audio")
+                    audio = MonoLoader(filename='./output.wav', sampleRate=16000, resampleQuality=4)()
+                    print("Preparing model")
+                    model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
+                    graphFilename = f"./models/{model_name}.pb"
+                    model = TensorflowPredictEffnetDiscogs(
+                        graphFilename=graphFilename,
+                        output="PartitionedCall:1")
+                    print("Processing audio")
+                    embeddings = model(audio)
+
+                    print(f"Processing done, sending details for preview with id: {track.get("preview_id")}")
+                    data = [{"id": track.get("preview_id"),
+                             "embeddings": json.dumps(embeddings.T.mean(1).tolist()),
+                             "model": args.model,
+                             "spotify": spotify_details}]
+                    res = requests.post(f"{os.getenv('API_URL')}/admin/analyse",
+                                        headers={'Authorization': f"Bearer {id_token}"},
+                                        json=data)
+                    if res.status_code != 200:
+                        print(f"Error reporting results for {track['id']}")
+                        print(f"Status code: {res.status_code}")
+                        print(res.text)
+                except Exception as e:
+                    print(f"Error processing {absolute_file_path}")
+                    print(e)
+                    print(traceback.format_exc())
+
+                print("Removing temp file")
+                try:
+                    os.remove(absolute_file_path)
+                except Exception as e:
+                    print("Failed removing temp file")
+                    print(e)
 
 print("Processing completed successfully")
 exit(0)

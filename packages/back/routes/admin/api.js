@@ -15,6 +15,7 @@ const {
   updateTrackDetailsForPreviewTracks,
   markPreviewsMissing,
   queryNotificationAudioSamplesWithoutEmbedding,
+  upsertNotificationAudioSampleEmbedding,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 
@@ -132,6 +133,14 @@ router.post('/waveform', async ({ body }, res) => {
 router.get('/notification-audio-samples/without-embedding', async ({ query: { limit } }, res) => {
   const samples = await queryNotificationAudioSamplesWithoutEmbedding(limit ? parseInt(limit, 10) : undefined)
   res.send(samples)
+})
+
+router.post('/notification-audio-samples/embeddings', async ({ body }, res) => {
+  const results = []
+  for (const { id, embeddings, model } of body.filter(({ missing }) => !missing)) {
+    results.push(await upsertNotificationAudioSampleEmbedding(id, model, embeddings))
+  }
+  res.send(results)
 })
 
 module.exports = router

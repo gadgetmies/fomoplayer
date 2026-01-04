@@ -259,12 +259,28 @@ SELECT
   user_notification_audio_sample_file_type AS "fileType",
   user_notification_audio_sample_created_at AS "createdAt"
 FROM user_notification_audio_sample
-  LEFT JOIN user_notification_audio_sample_embedding
-    ON user_notification_audio_sample.user_notification_audio_sample_id = 
-       user_notification_audio_sample_embedding.user_notification_audio_sample_id
+  NATURAL LEFT JOIN user_notification_audio_sample_embedding
 WHERE user_notification_audio_sample_embedding.user_notification_audio_sample_id IS NULL
 ORDER BY user_notification_audio_sample_created_at DESC
 LIMIT ${limit || 100}
+    `,
+  )
+}
+
+module.exports.upsertNotificationAudioSampleEmbedding = async (sampleId, model, embedding) => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- Upsert audio sample embeddings
+    INSERT
+    INTO user_notification_audio_sample_embedding (
+      user_notification_audio_sample_id,
+      user_notification_audio_sample_embedding_type,
+      user_notification_audio_sample_embedding
+    )
+    VALUES (${sampleId}, ${model}, ${embedding})
+    ON CONFLICT (user_notification_audio_sample_id, user_notification_audio_sample_embedding_type) DO UPDATE
+      SET user_notification_audio_sample_embedding = ${embedding}
+        , user_notification_audio_sample_embedding_updated_at = NOW()
     `,
   )
 }
