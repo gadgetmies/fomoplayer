@@ -1194,7 +1194,7 @@ module.exports.getEmailVerificationCode = async (userId) => {
   return verificationCode
 }
 
-module.exports.insertNotificationAudioSample = async (userId, bucketName, objectKey, url, fileSize, fileType) => {
+module.exports.insertNotificationAudioSample = async (userId, bucketName, objectKey, url, fileSize, fileType, filename) => {
   const [sample] = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- insertNotificationAudioSample
@@ -1204,7 +1204,8 @@ module.exports.insertNotificationAudioSample = async (userId, bucketName, object
       user_notification_audio_sample_object_key,
       user_notification_audio_sample_url,
       user_notification_audio_sample_file_size,
-      user_notification_audio_sample_file_type
+      user_notification_audio_sample_file_type,
+      user_notification_audio_sample_filename
     )
     VALUES (
       ${userId},
@@ -1212,7 +1213,8 @@ module.exports.insertNotificationAudioSample = async (userId, bucketName, object
       ${objectKey},
       ${url},
       ${fileSize},
-      ${fileType}
+      ${fileType},
+      ${filename}
     )
     RETURNING user_notification_audio_sample_id AS id
     `,
@@ -1230,6 +1232,7 @@ module.exports.queryNotificationAudioSamples = async (userId) => {
       user_notification_audio_sample_object_key AS "objectKey",
       user_notification_audio_sample_file_size AS "fileSize",
       user_notification_audio_sample_file_type AS "fileType",
+      user_notification_audio_sample_filename AS filename,
       user_notification_audio_sample_created_at AS "createdAt"
     FROM user_notification_audio_sample
     WHERE meta_account_user_id = ${userId}

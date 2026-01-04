@@ -257,6 +257,7 @@ SELECT
   user_notification_audio_sample_object_key AS "objectKey",
   user_notification_audio_sample_file_size AS "fileSize",
   user_notification_audio_sample_file_type AS "fileType",
+  user_notification_audio_sample_filename AS filename,
   user_notification_audio_sample_created_at AS "createdAt"
 FROM user_notification_audio_sample
   NATURAL LEFT JOIN user_notification_audio_sample_embedding

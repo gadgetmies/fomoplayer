@@ -418,6 +418,8 @@ router.post(
     try {
       const objectKey = `notification-samples/${userId}/${uuid()}${path.extname(file.originalname)}`
       
+      logger.info(`Uploading audio sample to MinIO: bucket=${bucketName}, objectKey=${objectKey}`)
+      
       await minioClient.fPutObject(bucketName, objectKey, file.path, {
         'Content-Type': file.mimetype,
       })
@@ -432,17 +434,24 @@ router.post(
         url,
         file.size,
         file.mimetype,
+        file.originalname,
       )
 
       fs.unlinkSync(file.path)
 
       res.status(201).send(sample)
     } catch (error) {
-      logger.error('Error uploading audio sample', error)
+      logger.error('Error uploading audio sample', {
+        error: error.message,
+        stack: error.stack,
+        bucket: bucketName,
+        code: error.code,
+      })
       if (fs.existsSync(file.path)) {
         fs.unlinkSync(file.path)
       }
-      res.status(500).send({ error: 'Failed to upload audio sample' })
+      const errorMessage = error.message || 'Failed to upload audio sample'
+      res.status(500).send({ error: errorMessage })
     }
   },
 )

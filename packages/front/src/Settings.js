@@ -143,6 +143,7 @@ class Settings extends Component {
       audioSamples: [],
       uploadingAudioSample: false,
       deletingAudioSample: null,
+      playingAudioSample: null,
     }
 
     this.markHeardButton.bind(this)
@@ -1314,30 +1315,87 @@ class Settings extends Component {
               </div>
               {this.state.audioSamples.length > 0 ? (
                 <ul className="no-style-list follow-list">
-                  {this.state.audioSamples.map((sample) => (
-                    <li key={sample.id}>
-                      <span className={'button pill pill-button'}>
-                        <span className={'pill-button-contents'}>
-                          <span style={{ marginRight: '10px' }}>
-                            <FontAwesomeIcon icon="file-audio" /> {sample.fileType.split('/')[1]?.toUpperCase() || 'AUDIO'} (
-                            {(sample.fileSize / 1024 / 1024).toFixed(2)}MB)
+                  {this.state.audioSamples.map((sample) => {
+                    const isPlaying = this.state.playingAudioSample === sample.id
+                    return (
+                      <li key={sample.id} style={{ marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <span className={'button pill pill-button'}>
+                            <span className={'pill-button-contents'}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const audioId = `audio-${sample.id}`
+                                  const audio = document.getElementById(audioId)
+                                  if (audio) {
+                                    if (isPlaying) {
+                                      audio.pause()
+                                      this.setState({ playingAudioSample: null })
+                                    } else {
+                                      this.state.audioSamples.forEach((s) => {
+                                        const otherAudio = document.getElementById(`audio-${s.id}`)
+                                        if (otherAudio && s.id !== sample.id) {
+                                          otherAudio.pause()
+                                        }
+                                      })
+                                      audio.play()
+                                      this.setState({ playingAudioSample: sample.id })
+                                    }
+                                  }
+                                }}
+                                title={isPlaying ? 'Pause' : 'Play'}
+                                style={{ marginRight: '8px', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
+                              >
+                                <FontAwesomeIcon icon={isPlaying ? 'pause' : 'play'} />
+                              </button>
+                              <span style={{ marginRight: '10px' }}>
+                                {sample.filename || `Audio Sample ${sample.id}`}
+                                {' '}
+                                <span style={{ fontSize: '85%', opacity: 0.8 }}>
+                                  ({sample.fileType.split('/')[1]?.toUpperCase() || 'AUDIO'}, {(sample.fileSize / 1024 / 1024).toFixed(2)}MB)
+                                </span>
+                              </span>
+                              <button
+                                disabled={this.state.deletingAudioSample === sample.id}
+                                onClick={async (e) => {
+                                  e.stopPropagation()
+                                  const audio = document.getElementById(`audio-${sample.id}`)
+                                  if (audio) {
+                                    audio.pause()
+                                  }
+                                  if (this.state.playingAudioSample === sample.id) {
+                                    this.setState({ playingAudioSample: null })
+                                  }
+                                  if (window.confirm('Delete this audio sample?')) {
+                                    await this.deleteAudioSample(sample.id)
+                                  }
+                                }}
+                                title="Delete audio sample"
+                              >
+                                <FontAwesomeIcon icon="times-circle" />
+                              </button>
+                            </span>
                           </span>
-                          <button
-                            disabled={this.state.deletingAudioSample === sample.id}
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              if (window.confirm('Delete this audio sample?')) {
-                                await this.deleteAudioSample(sample.id)
+                          <audio
+                            id={`audio-${sample.id}`}
+                            src={sample.url}
+                            onEnded={() => {
+                              this.setState({ playingAudioSample: null })
+                            }}
+                            onPause={() => {
+                              if (this.state.playingAudioSample === sample.id) {
+                                this.setState({ playingAudioSample: null })
                               }
                             }}
-                            title="Delete audio sample"
-                          >
-                            <FontAwesomeIcon icon="times-circle" />
-                          </button>
-                        </span>
-                      </span>
-                    </li>
-                  ))}
+                            onPlay={() => {
+                              this.setState({ playingAudioSample: sample.id })
+                            }}
+                            style={{ display: 'none' }}
+                          />
+                        </div>
+                      </li>
+                    )
+                  })}
                 </ul>
               ) : (
                 <p style={{ fontSize: '90%', fontStyle: 'italic' }}>No audio samples uploaded yet.</p>

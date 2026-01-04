@@ -21,6 +21,7 @@ import taglib
 import tempfile
 import traceback
 import urllib.request
+import urllib.parse
 import sys
 import datetime
 
@@ -208,14 +209,30 @@ if __name__ == '__main__':
             for sample in samples_to_process:
                 sampleUrl = sample.get("url")
                 sampleId = sample.get("id")
+                filename = sample.get("filename")
+                
+                # Determine file extension from filename or URL
+                if filename:
+                    file_ext = os.path.splitext(filename)[1]
+                else:
+                    # Fallback: try to get extension from URL
+                    url_path = urllib.parse.urlparse(sampleUrl).path
+                    file_ext = os.path.splitext(url_path)[1]
+                    if not file_ext:
+                        # Default to .mp3 if no extension found
+                        file_ext = '.mp3'
+                
+                # Create a filename with the proper extension in the temp directory
+                temp_filename = os.path.join(temp_dir_name, f"sample_{sampleId}{file_ext}")
+                
                 print(f"Downloading audio sample with id {sampleId} from : {sampleUrl}")
                 try:
-                    local_filename, _ = urllib.request.urlretrieve(sampleUrl)
-                    print(f"Downloaded to: {local_filename}")
+                    urllib.request.urlretrieve(sampleUrl, temp_filename)
+                    print(f"Downloaded to: {temp_filename}")
                     samples.append({
                         "id": sampleId,
                         "url": sampleUrl,
-                        "path": local_filename,
+                        "path": temp_filename,
                         "missing": False
                     })
                 except Exception as e:
@@ -226,67 +243,66 @@ if __name__ == '__main__':
                     })
                     print(e)
 
-        for sample in samples:
-            if (sample['missing']):
-                print(f"Skipping missing audio sample with id: {sample['id']}")
-                continue
-            else:
-                absolute_file_path = sample.get("path").replace("'", "\''")
-                try:
-                    print(f"Processing: {absolute_file_path}")
+            for sample in samples:
+                if (sample['missing']):
+                    print(f"Skipping missing audio sample with id: {sample['id']}")
+                    continue
+                else:
+                    absolute_file_path = sample.get("path").replace("'", "\''")
+                    try:
+                        print(f"Processing: {absolute_file_path}")
 
-                    # Determine file format and convert to wav if needed
-                    file_ext = os.path.splitext(absolute_file_path)[1].lower()
-                    if file_ext in ['.mp3', '.mpeg']:
-                        print("Converting mp3 to wav")
-                        sound = AudioSegment.from_mp3(absolute_file_path)
-                        sound.export('./output.wav', format="wav")
-                    elif file_ext == '.wav':
-                        print("File is already wav format")
-                        import shutil
-                        shutil.copy(absolute_file_path, './output.wav')
-                    else:
-                        print(f"Unsupported file format: {file_ext}")
-                        continue
+                        # Determine file format and convert to wav if needed
+                        file_ext = os.path.splitext(absolute_file_path)[1].lower()
+                        if file_ext in ['.mp3', '.mpeg']:
+                            print("Converting mp3 to wav")
+                            sound = AudioSegment.from_mp3(absolute_file_path)
+                            sound.export('./output.wav', format="wav")
+                        elif file_ext == '.wav':
+                            print("File is already wav format")
+                            import shutil
+                            shutil.copy(absolute_file_path, './output.wav')
+                        else:
+                            print(f"Unsupported file format: {file_ext}")
+                            continue
 
-                    print("Preparing audio")
-                    audio = MonoLoader(filename='./output.wav', sampleRate=16000, resampleQuality=4)()
-                    print("Preparing model")
-                    model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
-                    graphFilename = f"./models/{model_name}.pb"
-                    model = TensorflowPredictEffnetDiscogs(
-                        graphFilename=graphFilename,
-                        output="PartitionedCall:1")
-                    print("Processing audio")
-                    embeddings = model(audio)
+                        print("Preparing audio")
+                        audio = MonoLoader(filename='./output.wav', sampleRate=16000, resampleQuality=4)()
+                        print("Preparing model")
+                        model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
+                        graphFilename = f"./models/{model_name}.pb"
+                        model = TensorflowPredictEffnetDiscogs(
+                            graphFilename=graphFilename,
+                            output="PartitionedCall:1")
+                        print("Processing audio")
+                        embeddings = model(audio)
 
-                    print(f"Processing done, sending details for audio sample with id: {sample.get('id')}")
-                    data = [{
-                        "id": sample.get("id"),
-                        "embeddings": json.dumps(embeddings.T.mean(1).tolist()),
-                        "model": model_name,
-                        "missing": False
-                    }]
-                    res = requests.post(f"{os.getenv('API_URL')}/admin/notification-audio-samples/embeddings",
-                                        headers={'Authorization': f"Bearer {id_token}"},
-                                        json=data)
-                    if res.status_code != 200:
-                        print(f"Error reporting results for {sample['id']}")
-                        print(f"Status code: {res.status_code}")
-                        print(res.text)
-                except Exception as e:
-                    print(f"Error processing {absolute_file_path}")
-                    print(e)
-                    print(traceback.format_exc())
+                        print(f"Processing done, sending details for audio sample with id: {sample.get('id')}")
+                        data = [{
+                            "id": sample.get("id"),
+                            "embeddings": json.dumps(embeddings.T.mean(1).tolist()),
+                            "model": model_name,
+                            "missing": False
+                        }]
+                        res = requests.post(f"{os.getenv('API_URL')}/admin/notification-audio-samples/embeddings",
+                                            headers={'Authorization': f"Bearer {id_token}"},
+                                            json=data)
+                        if res.status_code != 200:
+                            print(f"Error reporting results for {sample['id']}")
+                            print(f"Status code: {res.status_code}")
+                            print(res.text)
+                    except Exception as e:
+                        print(f"Error processing {absolute_file_path}")
+                        print(e)
+                        print(traceback.format_exc())
 
-                print("Removing temp file")
-                try:
-                    os.remove(absolute_file_path)
-                    if os.path.exists('./output.wav'):
-                        os.remove('./output.wav')
-                except Exception as e:
-                    print("Failed removing temp file")
-                    print(e)
+                    print("Cleaning up temp files")
+                    try:
+                        if os.path.exists('./output.wav'):
+                            os.remove('./output.wav')
+                    except Exception as e:
+                        print("Failed removing temp file")
+                        print(e)
     else:
         # Process store track previews (original behavior)
         purchased = args.purchased is not None
