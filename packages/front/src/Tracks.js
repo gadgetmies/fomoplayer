@@ -46,7 +46,6 @@ class Tracks extends Component {
     this.handleScroll = this.handleScroll.bind(this)
     this.handleResize = this.handleResize.bind(this)
     this.lastScrollTop = 0
-    this.scrollTimeout = null
     this.trackHeight = 34
     this.overscan = 10
     this.tbodyRef = React.createRef()
@@ -327,7 +326,7 @@ class Tracks extends Component {
     }
     this.setState({ currentBelowScreen, currentAboveScreen })
 
-    const target = event.target
+    const target = this.tbodyRef.current || event.target
     const scrollTop = target.scrollTop
     const scrollHeight = target.scrollHeight
     const clientHeight = target.clientHeight
@@ -352,23 +351,17 @@ class Tracks extends Component {
 
     this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
 
-    if (this.scrollTimeout) {
-      clearTimeout(this.scrollTimeout)
-    }
+    const preloadThreshold = clientHeight * 1.5
 
-    const preloadThreshold = Math.max(800, clientHeight * 2)
-
-    this.scrollTimeout = setTimeout(() => {
-      if (
-        scrollingDown &&
-        scrollBottom < preloadThreshold &&
-        this.props.onLoadMore &&
-        !this.props.loadingMore &&
-        this.props.hasMore
-      ) {
+    if (        
+      scrollingDown &&
+      scrollBottom < preloadThreshold &&
+      this.props.onLoadMore &&
+      !this.props.loadingMore &&
+      this.props.hasMore
+    ) {
         this.props.onLoadMore()
-      }
-    }, 100)
+    }
   }
 
   scrollCurrentIntoView() {
