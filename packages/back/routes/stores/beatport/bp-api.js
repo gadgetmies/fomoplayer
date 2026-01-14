@@ -29,8 +29,8 @@ const getQueryData = (pageSource) =>
   scrapeJSON('<script id="__NEXT_DATA__" type="application/json">', '</script>', pageSource)
 
 const getPageTitleFromSource = (pageSource) => {
-  const startString = '<title>'
-  const start = pageSource.indexOf(startString)
+  const startString = '<title'
+  const start = pageSource.indexOf('>', pageSource.indexOf(startString))
   if (start !== -1) {
     const stop = pageSource.indexOf('</title>')
     return decode(pageSource.substring(start + startString.length, stop))
