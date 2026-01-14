@@ -243,7 +243,7 @@ module.exports.addLabelFollows = async (storeUrl, labels, userId, sourceId) => {
   for (const { name, url } of labels) {
     const fullUrl = getFullUrl(storeUrl, url)
     const storeModule = await getStoreModuleForLabelByUrl(fullUrl)
-    const { id } = await getStoreDetailsFromUrl(fullUrl, storeModule.logic.storeName)
+    const { id } = await getStoreDetailsFromUrl(fullUrl, [storeModule.logic.storeName])
     let labelDetails = { url: fullUrl, id, name }
 
     if (name === undefined) {

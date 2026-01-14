@@ -845,8 +845,8 @@ ON CONFLICT DO NOTHING
   return trackId
 }
 
-module.exports.queryFollowRegexes = (stores = undefined) =>
-  pg.queryRowsAsync(
+module.exports.queryFollowRegexes = (stores = undefined) => {
+  return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryFollowRegexes
     SELECT regex
@@ -868,3 +868,4 @@ module.exports.queryFollowRegexes = (stores = undefined) =>
        OR LOWER(store_name) = ANY(${stores})
     `,
   )
+}

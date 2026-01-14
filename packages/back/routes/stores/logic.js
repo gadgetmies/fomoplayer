@@ -1,7 +1,7 @@
 const { queryFollowRegexes } = require('../shared/db/store')
 
-const getStoreDetailsFromUrls = (module.exports.getStoreDetailsFromUrls = async (urlStrings, storeName = undefined) => {
-  const regexes = await queryFollowRegexes(storeName)
+const getStoreDetailsFromUrls = (module.exports.getStoreDetailsFromUrls = async (urlStrings, stores = undefined) => {
+  const regexes = await queryFollowRegexes(stores.map(store => store.toLowerCase()))
   return urlStrings.map((url) => {
     for (const { storeName, regex, type } of regexes) {
       const match = url.match(new RegExp(regex))
@@ -14,5 +14,5 @@ const getStoreDetailsFromUrls = (module.exports.getStoreDetailsFromUrls = async 
   })
 })
 
-module.exports.getStoreDetailsFromUrl = async (url, storeName = undefined) =>
-  (await getStoreDetailsFromUrls([url], storeName))[0]
+module.exports.getStoreDetailsFromUrl = async (url, stores = undefined) =>
+  (await getStoreDetailsFromUrls([url], stores))[0]

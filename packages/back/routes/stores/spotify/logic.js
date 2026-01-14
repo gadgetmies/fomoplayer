@@ -14,7 +14,7 @@ const R = require('ramda')
 const L = require('partial.lenses')
 const { processChunks } = require('../../shared/requests')
 const { addArtistsToUserFollowed } = require('../../shared/spotify')
-const { getStoreDetailsFromUrls, getStoreDetailsFromUrl } = require('../logic')
+const { getStoreDetailsFromUrls } = require('../logic')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.storeUrl = 'https://www.spotify.com'
@@ -43,7 +43,7 @@ module.exports.getUserFollowedArtists = async (userId) => {
 module.exports.followArtists = async (userId, artistUrls) => {
   logger.info(`Following Spotify artists for user ${userId}`, { artistUrls })
   try {
-    const artistIds = (await getStoreDetailsFromUrls(artistUrls, storeName)).map(({ id }) => id)
+    const artistIds = (await getStoreDetailsFromUrls(artistUrls, [storeName])).map(({ id }) => id)
     await addArtistsToUserFollowed(userId, artistIds)
   } catch (e) {
     logger.error(`Following Spotify artists for user (${userId}) failed`, e)
