@@ -44,11 +44,14 @@ class Tracks extends Component {
       visibleEndIndex: 50,
     }
     this.handleScroll = this.handleScroll.bind(this)
+    this.handleResize = this.handleResize.bind(this)
     this.lastScrollTop = 0
     this.scrollTimeout = null
     this.trackHeight = 34
     this.overscan = 10
     this.tbodyRef = React.createRef()
+    this.trackHeights = new Map()
+    this.resizeTimeout = null
   }
 
   /*
@@ -60,6 +63,8 @@ class Tracks extends Component {
    */
 
   componentDidMount() {
+    window.addEventListener('resize', this.handleResize)
+    
     if (this.tbodyRef.current) {
       const scrollTop = this.tbodyRef.current.scrollTop
       const clientHeight = this.tbodyRef.current.clientHeight
@@ -79,6 +84,29 @@ class Tracks extends Component {
         : this.props.tracks
       this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
     }
+    
+    setTimeout(() => {
+      const tracks = this.props.listState === 'carts'
+        ? this.props.tracks.filter(
+            ({ artists, title, labels, keys, releases, stores }) =>
+              (!this.state.trackListFilterDebounced ||
+                filterMatches(this.state.trackListFilterDebounced, {
+                  artists,
+                  title,
+                  keys,
+                  labels,
+                  releases,
+                })) &&
+              this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+          )
+        : this.props.tracks
+      this.measureTrackHeights(tracks)
+      if (this.tbodyRef.current) {
+        const scrollTop = this.tbodyRef.current.scrollTop
+        const clientHeight = this.tbodyRef.current.clientHeight
+        this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+      }
+    }, 0)
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -86,8 +114,181 @@ class Tracks extends Component {
       prevProps.tracks !== this.props.tracks ||
       prevProps.listState !== this.props.listState ||
       prevState.trackListFilterDebounced !== this.state.trackListFilterDebounced ||
-      prevProps.enabledStores !== this.props.enabledStores
+      prevProps.enabledStores !== this.props.enabledStores ||
+      prevState.visibleStartIndex !== this.state.visibleStartIndex ||
+      prevState.visibleEndIndex !== this.state.visibleEndIndex
     ) {
+      setTimeout(() => {
+        const tracks = this.props.listState === 'carts'
+          ? this.props.tracks.filter(
+              ({ artists, title, labels, keys, releases, stores }) =>
+                (!this.state.trackListFilterDebounced ||
+                  filterMatches(this.state.trackListFilterDebounced, {
+                    artists,
+                    title,
+                    keys,
+                    labels,
+                    releases,
+                  })) &&
+                this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+            )
+          : this.props.tracks
+        this.measureTrackHeights(tracks)
+        if (this.tbodyRef.current) {
+          const scrollTop = this.tbodyRef.current.scrollTop
+          const clientHeight = this.tbodyRef.current.clientHeight
+          const tracks = this.props.listState === 'carts'
+            ? this.props.tracks.filter(
+                ({ artists, title, labels, keys, releases, stores }) =>
+                  (!this.state.trackListFilterDebounced ||
+                    filterMatches(this.state.trackListFilterDebounced, {
+                      artists,
+                      title,
+                      keys,
+                      labels,
+                      releases,
+                    })) &&
+                  this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+              )
+            : this.props.tracks
+          this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+        }
+      }, 0)
+    }
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.handleResize)
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout)
+    }
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout)
+    }
+  }
+
+  measureTrackHeights(tracks) {
+    if (!this.tbodyRef.current) return
+    
+    let totalMeasured = 0
+    let averageHeight = this.trackHeight
+    
+    const { visibleStartIndex, visibleEndIndex } = this.state
+    const tbody = this.tbodyRef.current
+    const trackElements = Array.from(tbody.querySelectorAll('tr.track'))
+    
+    trackElements.forEach((trackElement, localIndex) => {
+      const actualIndex = visibleStartIndex + localIndex
+      if (actualIndex < tracks.length) {
+        const height = trackElement.getBoundingClientRect().height
+        if (height > 0) {
+          this.trackHeights.set(actualIndex, height)
+          totalMeasured++
+        }
+      }
+    })
+    
+    if (totalMeasured > 0) {
+      const heights = Array.from(this.trackHeights.values())
+      averageHeight = heights.reduce((sum, h) => sum + h, 0) / heights.length
+      this.trackHeight = averageHeight
+    }
+  }
+
+  getTrackHeight(index) {
+    return this.trackHeights.get(index) || this.trackHeight
+  }
+
+  getTotalHeightUpToIndex(index, totalTracks) {
+    let total = 0
+    let measuredCount = 0
+    let measuredTotal = 0
+    
+    for (let i = 0; i < index && i < totalTracks; i++) {
+      const height = this.trackHeights.get(i)
+      if (height) {
+        total += height
+        measuredCount++
+        measuredTotal += height
+      } else {
+        total += this.trackHeight
+      }
+    }
+    
+    if (measuredCount > 0 && measuredCount < index) {
+      const averageMeasured = measuredTotal / measuredCount
+      if (Math.abs(averageMeasured - this.trackHeight) > 2) {
+        this.trackHeight = averageMeasured
+      }
+    }
+    
+    return total
+  }
+
+  findVisibleRange(scrollTop, clientHeight, totalTracks) {
+    let currentTop = 0
+    let startIndex = 0
+    let endIndex = totalTracks
+    const overscanHeight = this.overscan * this.trackHeight
+    
+    for (let i = 0; i < totalTracks; i++) {
+      const height = this.getTrackHeight(i)
+      if (currentTop + height > scrollTop - overscanHeight) {
+        startIndex = Math.max(0, i - this.overscan)
+        break
+      }
+      currentTop += height
+    }
+    
+    currentTop = 0
+    for (let i = 0; i < totalTracks; i++) {
+      currentTop += this.getTrackHeight(i)
+      if (currentTop > scrollTop + clientHeight + overscanHeight) {
+        endIndex = Math.min(totalTracks, i + this.overscan + 1)
+        break
+      }
+    }
+    
+    return { startIndex, endIndex }
+  }
+
+  updateVisibleRange(scrollTop, clientHeight, totalTracks) {
+    const { startIndex, endIndex } = this.findVisibleRange(scrollTop, clientHeight, totalTracks)
+    
+    if (
+      startIndex !== this.state.visibleStartIndex ||
+      endIndex !== this.state.visibleEndIndex
+    ) {
+      this.setState({
+        visibleStartIndex: startIndex,
+        visibleEndIndex: endIndex,
+      })
+    }
+  }
+
+  handleResize() {
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout)
+    }
+    
+    this.resizeTimeout = setTimeout(() => {
+      this.trackHeights.clear()
+      const tracks = this.props.listState === 'carts'
+        ? this.props.tracks.filter(
+            ({ artists, title, labels, keys, releases, stores }) =>
+              (!this.state.trackListFilterDebounced ||
+                filterMatches(this.state.trackListFilterDebounced, {
+                  artists,
+                  title,
+                  keys,
+                  labels,
+                  releases,
+                })) &&
+              this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+          )
+        : this.props.tracks
+      this.measureTrackHeights(tracks)
+      
       if (this.tbodyRef.current) {
         const scrollTop = this.tbodyRef.current.scrollTop
         const clientHeight = this.tbodyRef.current.clientHeight
@@ -107,31 +308,7 @@ class Tracks extends Component {
           : this.props.tracks
         this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
       }
-    }
-  }
-
-  componentWillUnmount() {
-    if (this.scrollTimeout) {
-      clearTimeout(this.scrollTimeout)
-    }
-  }
-
-  updateVisibleRange(scrollTop, clientHeight, totalTracks) {
-    const startIndex = Math.max(0, Math.floor(scrollTop / this.trackHeight) - this.overscan)
-    const endIndex = Math.min(
-      totalTracks,
-      Math.ceil((scrollTop + clientHeight) / this.trackHeight) + this.overscan,
-    )
-    
-    if (
-      startIndex !== this.state.visibleStartIndex ||
-      endIndex !== this.state.visibleEndIndex
-    ) {
-      this.setState({
-        visibleStartIndex: startIndex,
-        visibleEndIndex: endIndex,
-      })
-    }
+    }, 100)
   }
 
   handleScroll(event) {
@@ -221,8 +398,9 @@ class Tracks extends Component {
     const defaultCart = this.props.carts.find(R.prop('is_default'))
     const { visibleStartIndex, visibleEndIndex } = this.state
     const visibleTracks = tracks.slice(visibleStartIndex, visibleEndIndex)
-    const topSpacerHeight = visibleStartIndex * this.trackHeight
-    const bottomSpacerHeight = (tracks.length - visibleEndIndex) * this.trackHeight
+    const topSpacerHeight = this.getTotalHeightUpToIndex(visibleStartIndex, tracks.length)
+    const bottomSpacerHeight = this.getTotalHeightUpToIndex(tracks.length, tracks.length) - 
+                                this.getTotalHeightUpToIndex(visibleEndIndex, tracks.length)
 
     return (
       <>
