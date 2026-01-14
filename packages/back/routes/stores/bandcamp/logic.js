@@ -10,7 +10,7 @@ const {
   getPageDetailsAsync,
   getTagReleasesAsync,
   getSearchResultsAsync,
-  static: { getTagsFromUrl, getTagName },
+  static: { getTagsFromUrl, getTagName, isRateLimited },
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl } = require('./db.js')
@@ -100,6 +100,10 @@ const getTracksFromReleases = async (releaseUrls) => {
       const releaseInfo = await getReleaseAsync(releaseUrl)
       releaseDetails.push(releaseInfo)
     } catch (e) {
+      if (e.isRateLimit) {
+        logger.error('Rate limit reached while fetching release details', { releaseUrl, error: e.message })
+        throw e
+      }
       const error = [`Failed to fetch release details from ${releaseUrl}`, e]
       logger.error(...error)
       errors.push(error)
@@ -133,45 +137,93 @@ const getTracksFromReleases = async (releaseUrls) => {
 }
 
 module.exports.getArtistTracks = async function* ({ url }) {
-  const { releaseUrls } = await getArtistAsync(url)
-  logger.debug(`Found ${releaseUrls.length} releases for artist ${url}`)
-  logger.debug('Processing releases', releaseUrls)
-  // TODO: figure out how to get rid of the duplication
-  for (const releaseUrl of releaseUrls) {
-    try {
-      yield await getTracksFromReleases([releaseUrl])
-    } catch (e) {
-      logger.error('Error getting artist tracks from release', e)
-      yield { tracks: [], errors: [e] }
+  try {
+    const { releaseUrls } = await getArtistAsync(url)
+    logger.debug(`Found ${releaseUrls.length} releases for artist ${url}`)
+    logger.debug('Processing releases', releaseUrls)
+    // TODO: figure out how to get rid of the duplication
+    for (const releaseUrl of releaseUrls) {
+      if (isRateLimited()) {
+        logger.error('Rate limit reached, stopping iteration for artist tracks')
+        return
+      }
+      try {
+        yield await getTracksFromReleases([releaseUrl])
+      } catch (e) {
+        if (e.isRateLimit) {
+          logger.error('Rate limit reached while getting artist tracks from release', e)
+          return
+        }
+        logger.error('Error getting artist tracks from release', e)
+        yield { tracks: [], errors: [e] }
+      }
     }
+  } catch (e) {
+    if (e.isRateLimit) {
+      logger.error('Rate limit reached while getting artist details', e)
+      return
+    }
+    throw e
   }
 }
 
 module.exports.getLabelTracks = async function* ({ url }) {
-  const { releaseUrls } = await getLabelAsync(url)
-  logger.debug(`Found ${releaseUrls.length} releases for label ${url}`)
-  logger.debug('Processing releases', releaseUrls)
-  for (const releaseUrl of releaseUrls) {
-    try {
-      yield await getTracksFromReleases([releaseUrl])
-    } catch (e) {
-      logger.error('Error getting label tracks from release', e)
-      yield { tracks: [], errors: [e] }
+  try {
+    const { releaseUrls } = await getLabelAsync(url)
+    logger.debug(`Found ${releaseUrls.length} releases for label ${url}`)
+    logger.debug('Processing releases', releaseUrls)
+    for (const releaseUrl of releaseUrls) {
+      if (isRateLimited()) {
+        logger.error('Rate limit reached, stopping iteration for label tracks')
+        return
+      }
+      try {
+        yield await getTracksFromReleases([releaseUrl])
+      } catch (e) {
+        if (e.isRateLimit) {
+          logger.error('Rate limit reached while getting label tracks from release', e)
+          return
+        }
+        logger.error('Error getting label tracks from release', e)
+        yield { tracks: [], errors: [e] }
+      }
     }
+  } catch (e) {
+    if (e.isRateLimit) {
+      logger.error('Rate limit reached while getting label details', e)
+      return
+    }
+    throw e
   }
 }
 
 module.exports.getPlaylistTracks = async function* ({ playlistStoreId, type }) {
   if (type === 'tag') {
-    const { releaseUrls } = await getTagReleasesAsync(getTagsFromUrl(playlistStoreId))
-    const uniqueReleaseUrls = R.uniq(releaseUrls)
-    logger.debug(`Found ${uniqueReleaseUrls.length} releases for tag ${playlistStoreId}`)
-    for (const releaseUrl of uniqueReleaseUrls) {
-      try {
-        yield await getTracksFromReleases([releaseUrl])
-      } catch (e) {
-        yield { tracks: [], errors: [e] }
+    try {
+      const { releaseUrls } = await getTagReleasesAsync(getTagsFromUrl(playlistStoreId))
+      const uniqueReleaseUrls = R.uniq(releaseUrls)
+      logger.debug(`Found ${uniqueReleaseUrls.length} releases for tag ${playlistStoreId}`)
+      for (const releaseUrl of uniqueReleaseUrls) {
+        if (isRateLimited()) {
+          logger.error('Rate limit reached, stopping iteration for playlist tracks')
+          return
+        }
+        try {
+          yield await getTracksFromReleases([releaseUrl])
+        } catch (e) {
+          if (e.isRateLimit) {
+            logger.error('Rate limit reached while getting playlist tracks from release', e)
+            return
+          }
+          yield { tracks: [], errors: [e] }
+        }
       }
+    } catch (e) {
+      if (e.isRateLimit) {
+        logger.error('Rate limit reached while getting tag releases', e)
+        return
+      }
+      throw e
     }
   } else {
     throw new Error(`Unsupported playlist type: '${type}' (supported: 'tag') ${type === 'tag'}`)

@@ -32,9 +32,9 @@ const getPageSource = (url) => {
     if (suspendedUntil < Date.now()) {
       suspendedUntil = null
     } else {
-      return Promise.reject({
-        message: `Rate limit reached. Requests are suspended until: ${suspendedUntil.toString()}`,
-      })
+      const error = new Error(`Rate limit reached. Requests are suspended until: ${suspendedUntil.toString()}`)
+      error.isRateLimit = true
+      return Promise.reject(error)
     }
   }
   return request({
@@ -43,10 +43,18 @@ const getPageSource = (url) => {
   }).catch((e) => {
     if ([429, 403].includes(e.statusCode)) {
       suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
+      const error = new Error(`Rate limit reached. Status code: ${e.statusCode}. Requests are suspended until: ${suspendedUntil.toString()}`)
+      error.isRateLimit = true
+      error.statusCode = e.statusCode
+      throw error
     } else {
       throw e
     }
   })
+}
+
+const isRateLimited = () => {
+  return suspendedUntil !== null && suspendedUntil >= Date.now()
 }
 
 const getReleaseInfo = (pageSource) => extractJSON('[data-tralbum]', 'data-tralbum', pageSource)
@@ -200,5 +208,6 @@ module.exports = {
   static: {
     getTagsFromUrl,
     getTagName,
+    isRateLimited,
   },
 }
