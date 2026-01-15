@@ -39,6 +39,7 @@ FROM
 WHERE
     store_url = ${storeUrl} AND
     store__artist_ignored IS FALSE
+AND store__artist_missing IS FALSE
 AND store__artist_url IS NOT NULL
 AND (store__artist_last_update IS NULL OR store__artist_last_update + INTERVAL '6 hours' < NOW())
 ORDER BY
@@ -63,6 +64,7 @@ FROM
 WHERE
     store_url = ${storeUrl} AND
     store__label_ignored IS FALSE
+AND store__label_missing IS FALSE
 AND (store__label_last_update IS NULL OR store__label_last_update + INTERVAL '6 hours' < NOW())
 ORDER BY
   store__label_last_update NULLS FIRST

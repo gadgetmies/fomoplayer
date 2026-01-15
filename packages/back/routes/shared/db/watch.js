@@ -33,3 +33,25 @@ SET
 WHERE
   store__label_id = ${storeLabelId}`,
   )
+
+module.exports.setArtistMissing = async (storeArtistId) =>
+  pg.queryAsync(
+    // language=PostgreSQL
+    sql`--setArtistMissing
+UPDATE store__artist
+SET
+  store__artist_missing = TRUE
+WHERE
+  store__artist_id = ${storeArtistId}`,
+  )
+
+module.exports.setLabelMissing = async (storeLabelId) =>
+  pg.queryAsync(
+    // language=PostgreSQL
+    sql`--setLabelMissing
+UPDATE store__label
+SET
+  store__label_missing = TRUE
+WHERE
+  store__label_id = ${storeLabelId}`,
+  )

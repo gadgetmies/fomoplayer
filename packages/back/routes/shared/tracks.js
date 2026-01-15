@@ -1,7 +1,7 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const R = require('ramda')
-const { setArtistUpdated, setPlaylistUpdated, setLabelUpdated } = require('./db/watch')
+const { setArtistUpdated, setPlaylistUpdated, setLabelUpdated, setArtistMissing, setLabelMissing } = require('./db/watch')
 const { modules: storeModules } = require('../stores/store-modules')
 const BPromise = require('bluebird')
 const { updateIgnoresInUserTracks } = require('../shared/db/user')
@@ -206,6 +206,19 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
       logger.error(`Rate limit reached after ${requestCount} requests while fetching artist tracks: ${details.url}`)
       return combinedErrors
     }
+    if (statusCode === 404) {
+      const error = [`Artist not found in store (404)`, { error: e.toString(), sourceId, details }]
+      combinedErrors.push(error)
+      logger.warn(`Artist not found in store (404): ${details.url}, marking as missing`)
+      try {
+        await setArtistMissing(details.storeArtistId)
+      } catch (markError) {
+        logger.error(`Failed to mark artist as missing: ${markError.toString()}`)
+        combinedErrors.push([`Failed to mark artist as missing`, { error: markError.toString(), details }])
+      }
+      logger.debug(`Processing tracks for artist: ${details.url} stopped due to 404. Errors: ${JSON.stringify(combinedErrors)}`)
+      return combinedErrors
+    }
     throw e
   }
 
@@ -259,6 +272,19 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
       const error = [`Rate limit reached after ${requestCount} requests while fetching label tracks`, { error: e.toString(), sourceId, details, requestCount, isRateLimit: true }]
       combinedErrors.push(error)
       logger.error(`Rate limit reached after ${requestCount} requests while fetching label tracks: ${details.url}`)
+      return combinedErrors
+    }
+    if (statusCode === 404) {
+      const error = [`Label not found in store (404)`, { error: e.toString(), sourceId, details }]
+      combinedErrors.push(error)
+      logger.warn(`Label not found in store (404): ${details.url}, marking as missing`)
+      try {
+        await setLabelMissing(details.storeLabelId)
+      } catch (markError) {
+        logger.error(`Failed to mark label as missing: ${markError.toString()}`)
+        combinedErrors.push([`Failed to mark label as missing`, { error: markError.toString(), details }])
+      }
+      logger.debug(`Processing tracks for label: ${details.url} stopped due to 404. Errors: ${JSON.stringify(combinedErrors)}`)
       return combinedErrors
     }
     throw e
