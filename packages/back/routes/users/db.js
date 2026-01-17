@@ -434,7 +434,7 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = async (userId, stores = undefined, limits = { new: 80, recent: 50, heard: 20 }, offsets = { new: 0, recent: 0, heard: 0 }) => {
+module.exports.queryUserTracks = async (userId, stores = undefined, limits = { new: 80, recent: 50, heard: 20 }, offsets = { new: 0, recent: 0, heard: 0 }, notHeardBefore = undefined) => {
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC NULLS LAST, score DESC NULLS LAST`
 
@@ -513,7 +513,7 @@ WITH
             NATURAL JOIN store__track
             NATURAL JOIN stores
     WHERE
-          user__track_heard IS NULL
+          (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP))
       AND user__track_ignored IS NULL
       AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
     GROUP BY track_id
@@ -713,7 +713,7 @@ WITH
             NATURAL JOIN track
             NATURAL JOIN store__track
             NATURAL JOIN stores
-          WHERE user__track_heard IS NULL
+          WHERE (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP))
           GROUP BY 1
           LIMIT ${sql`${limits.recent}`} OFFSET ${sql`${offsets.recent}`}
       )
@@ -801,6 +801,7 @@ WITH
                 'count', CASE WHEN recently_added IS NULL THEN 0 ELSE jsonb_array_length(recently_added::jsonb) END
               )
           ) AS pagination
+           , COALESCE(${sql`${notHeardBefore}`}::TIMESTAMP, NOW()) AS "notHeardBefore"
       FROM new_tracks_with_details
          , heard_tracks_with_details
          , recently_added_tracks_with_details
@@ -835,6 +836,7 @@ WITH
       recentlyAdded: uniqueAddedTracks,
     },
     pagination: res.pagination,
+    notHeardBefore: res.notHeardBefore,
   }
 }
 

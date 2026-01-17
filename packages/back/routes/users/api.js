@@ -112,7 +112,8 @@ router.get(
         offset_new: offsetNew = 0,
         offset_recent: offsetRecent = 0,
         offset_heard: offsetHeard = 0,
-        store: stores 
+        store: stores,
+        not_heard_before: notHeardBefore
       },
     },
     res,
@@ -122,7 +123,8 @@ router.get(
       authUserId, 
       stores, 
       { new: limitNew, recent: limitRecent, heard: limitHeard },
-      { new: offsetNew, recent: offsetRecent, heard: offsetHeard }
+      { new: offsetNew, recent: offsetRecent, heard: offsetHeard },
+      notHeardBefore ? new Date(notHeardBefore) : undefined
     )
     res.json(userTracks)
   },

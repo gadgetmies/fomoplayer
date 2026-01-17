@@ -97,6 +97,7 @@ class App extends Component {
       loadingMore: false,
       trackOffsets: { new: 0, heard: 0, recent: 0, search: 0 },
       pagination: null,
+      notHeardBefore: null,
     }
   }
 
@@ -315,7 +316,7 @@ class App extends Component {
   }
 
   async updateTracks(append = false) {
-    const { trackOffsets, listState } = this.state
+    const { trackOffsets, listState, notHeardBefore } = this.state
     let queryParams = []
     
     if (append) {
@@ -331,14 +332,23 @@ class App extends Component {
       }
     }
     
+    if (notHeardBefore) {
+      queryParams.push(`not_heard_before=${encodeURIComponent(notHeardBefore)}`)
+    }
+    
     const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : ''
     const {
       meta: { new: newTracks, total: totalTracks },
       tracks,
       pagination,
+      notHeardBefore: responseNotHeardBefore,
     } = await requestJSONwithCredentials({
       path: `/me/tracks${queryString}`,
     })
+    
+    if (responseNotHeardBefore && !this.state.notHeardBefore) {
+      this.setState({ notHeardBefore: responseNotHeardBefore })
+    }
 
     if (append) {
       const category = listState === 'recent' ? 'recent' : listState
