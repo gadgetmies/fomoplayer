@@ -385,7 +385,7 @@ class Preview extends Component {
           {currentTrack ? (
             <>
               <div style={{ marginTop: '0' }} className="preview_title">
-                {trackArtistsAndTitle(currentTrack, this.props.follows)}
+                {trackArtistsAndTitle(currentTrack, this.props.follows, this.props.onAddEntityToSearch)}
               </div>
               <div style={{ display: 'flex', gap: 8, flex: 1 }}>
                 <div style={{ flex: 1 }}>
@@ -395,7 +395,7 @@ class Preview extends Component {
                       <span className="preview_detail">
                         {!currentTrack.labels?.length
                           ? null
-                          : followableNameLinks(currentTrack.labels, this.props.follows, 'label')}
+                          : followableNameLinks(currentTrack.labels, this.props.follows, 'label', this.props.onAddEntityToSearch)}
                       </span>
                       <br />
                       <span className="preview_label">Released:</span>{' '}
@@ -412,7 +412,7 @@ class Preview extends Component {
                       <span className="preview_detail">
                         {!currentTrack.releases?.length
                           ? null
-                          : followableNameLinks(currentTrack.releases, [], 'release')}
+                          : followableNameLinks(currentTrack.releases, [], 'release', this.props.onAddEntityToSearch)}
                       </span>
                     </div>
                     <div style={{ fontSize: '75%' }}>

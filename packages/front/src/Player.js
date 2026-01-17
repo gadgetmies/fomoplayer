@@ -279,6 +279,7 @@ class Player extends Component {
           onPlayPauseToggle={this.handlePlayPauseToggle.bind(this)}
           onPrevious={() => this.playPreviousTrack()}
           onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
+          onAddEntityToSearch={this.props.onAddEntityToSearch}
         />
         <Tracks
           mode={this.props.mode}
@@ -328,6 +329,7 @@ class Player extends Component {
           onUpdateCarts={this.props.onUpdateCarts}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onMarkHeardButtonClick={this.markHeard.bind(this)}
+          onAddEntityToSearch={this.props.onAddEntityToSearch}
         />
       </div>
     )

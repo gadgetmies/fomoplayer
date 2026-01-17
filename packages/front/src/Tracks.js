@@ -507,6 +507,7 @@ class Tracks extends Component {
                 onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
                 onCartFilterChange={this.onCartFilterChange.bind(this)}
                 onMarkHeardButtonClick={this.props.onMarkHeardButtonClick}
+                onAddEntityToSearch={this.props.onAddEntityToSearch}
               />
             )
           })}

@@ -185,7 +185,7 @@ class Track extends Component {
         <td className={'track-details tracks-cell'}>
           <div className={'track-details-left track-details-content'}>
             <div className={'artist-cell track-table-cell'} title={namesToString(artistsAndRemixers)}>
-              {followableNameLinks(artistsAndRemixers, this.props.follows, 'artist')}
+              {followableNameLinks(artistsAndRemixers, this.props.follows, 'artist', this.props.onAddEntityToSearch)}
             </div>
             <div className={'title-cell track-table-cell'} title={title}>
               {title}
@@ -194,7 +194,7 @@ class Track extends Component {
               className={`label-cell track-table-cell ${this.props.labels ? '' : 'empty-cell'}`}
               title={namesToString(this.props.labels)}
             >
-              {followableNameLinks(this.props.labels, this.props.follows, 'label')}
+              {followableNameLinks(this.props.labels, this.props.follows, 'label', this.props.onAddEntityToSearch)}
             </div>
           </div>
           <div className={'track-details-center track-details-content'}>

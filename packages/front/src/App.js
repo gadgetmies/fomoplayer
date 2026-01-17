@@ -583,6 +583,19 @@ class App extends Component {
     }
   }
 
+  addEntityToSearch(entityType, entityId) {
+    const entityPattern = `${entityType}:${entityId}`
+    const currentSearch = this.state.search || ''
+    const entityPatterns = currentSearch.match(/\b(artist|label):\d+\b/gi) || []
+    
+    if (!entityPatterns.some((pattern) => pattern.toLowerCase() === entityPattern.toLowerCase())) {
+      const freeText = currentSearch.replace(/\b(artist|label):\d+\b/gi, '').trim()
+      const newSearch = [...entityPatterns, entityPattern, freeText].filter(Boolean).join(' ').trim()
+      this.setState({ search: newSearch })
+      this.search(newSearch, this.state.searchFilters)
+    }
+  }
+
   async search(query, filters = {}, append = false) {
     const { sort = '-released', limit = 100, addedSince = null, onlyNew = null } = filters
     console.log({ onlyNew, filters })
@@ -1020,6 +1033,7 @@ class App extends Component {
                           onSetListState={this.setListState.bind(this)}
                           onUpdateCarts={this.updateCarts.bind(this)}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
+                          onAddEntityToSearch={this.addEntityToSearch.bind(this)}
                           style={{ display: !settingsVisible ? 'flex' : 'none' }}
                         />
                       </>

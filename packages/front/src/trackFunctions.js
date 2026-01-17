@@ -9,13 +9,19 @@ export const namesToString = (entities) => {
   const tail = names.splice(-1)
   return `${names.join(', ')}${tail.map((name) => ` & ${name}`).join('')}`
 }
-export const followableNameLinks = (followable, follows, type) => {
+export const followableNameLinks = (followable, follows, type, onEntityClick = null) => {
   const links = followable.map(({ id, name }) => (
     <Link
       className={follows && follows[`${type}s`]?.some(({ id: followableId }) => id === followableId) ? 'followed' : ''}
       key={`${type}-${id}`}
       to={`/search?q=${type}:${id}`}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (onEntityClick && e.shiftKey) {
+          e.preventDefault()
+          onEntityClick(type, id)
+        }
+      }}
     >
       {name}
     </Link>
@@ -31,9 +37,9 @@ export const followableNameLinks = (followable, follows, type) => {
   )
 }
 
-export const trackArtistsAndTitle = (track, follows) => (
+export const trackArtistsAndTitle = (track, follows, onEntityClick = null) => (
   <>
-    {followableNameLinks(R.uniq([track.artists, track.remixers].flat()) || [], follows, 'artist')} - {trackTitle(track)}
+    {followableNameLinks(R.uniq([track.artists, track.remixers].flat()) || [], follows, 'artist', onEntityClick)} - {trackTitle(track)}
   </>
 )
 
