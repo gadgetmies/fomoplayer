@@ -203,6 +203,11 @@ if __name__ == '__main__':
         # Process uploaded audio samples
         samples_to_process = get_next_audio_samples(id_token, batch_size=args.batch_size)
         print(f"Got {len(samples_to_process)} audio samples")
+
+        if (len(samples_to_process) == 0):
+            print("No audio samples to process")
+            exit(0)
+
         samples = []
 
         with tempfile.TemporaryDirectory() as temp_dir_name:
@@ -308,6 +313,11 @@ if __name__ == '__main__':
         purchased = args.purchased is not None
         tracks_to_process = get_next_analysis_tracks(id_token, purchased=purchased, batch_size=args.batch_size)
         print(f"Got {len(tracks_to_process)} tracks")
+
+        if (len(tracks_to_process) == 0):
+            print("No tracks to process")
+            exit(0)
+
         tracks = []
 
         with tempfile.TemporaryDirectory() as temp_dir_name:
