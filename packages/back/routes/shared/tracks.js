@@ -176,25 +176,37 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
 module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingArtist(details.storeArtistId)
-  const generator = await storeModule.logic.getArtistTracks(details)
   let combinedErrors = []
 
   logger.debug(`Processing tracks for artist: ${details.url}`)
-  for await (const { tracks, errors } of generator) {
-    if (errors.length > 0) {
-      logger.error(`Errors in fetching tracks for artist (${details.url}): ${JSON.stringify(errors)}`)
+  try {
+    const generator = await storeModule.logic.getArtistTracks(details)
+    for await (const { tracks, errors } of generator) {
+      if (errors.length > 0) {
+        logger.error(`Errors in fetching tracks for artist (${details.url}): ${JSON.stringify(errors)}`)
+      }
+
+      logger.debug(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
+
+      try {
+        combinedErrors = combinedErrors.concat(errors)
+        await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
+      } catch (e) {
+        const error = [`Failed to add artist tracks to users`, { error: e.toString(), sourceId, details }]
+        combinedErrors.push(error)
+        logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
+      }
     }
-
-    logger.debug(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
-
-    try {
-      combinedErrors.concat(errors)
-      await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
-    } catch (e) {
-      const error = [`Failed to add artist tracks to users`, { error: e.toString(), sourceId, details }]
+  } catch (e) {
+    const statusCode = e.statusCode || e.response?.statusCode || e.response?.status
+    if (e.isRateLimit) {
+      const requestCount = e.requestCount || 'unknown'
+      const error = [`Rate limit reached after ${requestCount} requests while fetching artist tracks`, { error: e.toString(), sourceId, details, requestCount, isRateLimit: true }]
       combinedErrors.push(error)
-      logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
+      logger.error(`Rate limit reached after ${requestCount} requests while fetching artist tracks: ${details.url}`)
+      return combinedErrors
     }
+    throw e
   }
 
   if (combinedErrors.length === 0) {
@@ -218,26 +230,38 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
     logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
     return [error]
   }
-  const generator = storeModule.logic.getLabelTracks(details)
 
   logger.debug(`Processing tracks for label: ${details.url}`)
   let combinedErrors = []
-  for await (const { tracks, errors } of generator) {
-    if (errors.length > 0) {
-      logger.error(`Errors in fetching tracks for label (${details.url}): ${JSON.stringify(errors)}`)
+  try {
+    const generator = storeModule.logic.getLabelTracks(details)
+    for await (const { tracks, errors } of generator) {
+      if (errors.length > 0) {
+        logger.error(`Errors in fetching tracks for label (${details.url}): ${JSON.stringify(errors)}`)
+      }
+
+      logger.debug(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
+
+      try {
+        combinedErrors = combinedErrors.concat(errors)
+        logger.debug(`Processing ${tracks.length} tracks`)
+        await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
+      } catch (e) {
+        const error = [`Failed to add label tracks to users`, { error: e.toString(), tracks, details }]
+        combinedErrors.push(error)
+        logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
+      }
     }
-
-    logger.debug(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
-
-    try {
-      combinedErrors.concat(errors)
-      logger.debug(`Processing ${tracks.length} tracks`)
-      await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
-    } catch (e) {
-      const error = [`Failed to add label tracks to users`, { error: e.toString(), tracks, details }]
+  } catch (e) {
+    const statusCode = e.statusCode || e.response?.statusCode || e.response?.status
+    if (e.isRateLimit) {
+      const requestCount = e.requestCount || 'unknown'
+      const error = [`Rate limit reached after ${requestCount} requests while fetching label tracks`, { error: e.toString(), sourceId, details, requestCount, isRateLimit: true }]
       combinedErrors.push(error)
-      logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
+      logger.error(`Rate limit reached after ${requestCount} requests while fetching label tracks: ${details.url}`)
+      return combinedErrors
     }
+    throw e
   }
 
   if (combinedErrors.length === 0) {
@@ -258,16 +282,27 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingPlaylist(details.playlistId)
 
-  const generator = await storeModule.logic.getPlaylistTracks(details)
-  for await (const { tracks, errors } of generator) {
-    err.concat(errors)
-    try {
-      await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
-    } catch (e) {
-      const error = [`Failed to add playlist tracks to users`, { error: e.toString(), tracks, sourceId, details }]
-      err.push(error)
-      logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
+  try {
+    const generator = await storeModule.logic.getPlaylistTracks(details)
+    for await (const { tracks, errors } of generator) {
+      err.concat(errors)
+      try {
+        await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
+      } catch (e) {
+        const error = [`Failed to add playlist tracks to users`, { error: e.toString(), tracks, sourceId, details }]
+        err.push(error)
+        logger.error(`${error[0]}, error: ${JSON.stringify(error[1]).substring(0, 800)}, stack: ${e.stack}`)
+      }
     }
+  } catch (e) {
+    if (e.isRateLimit) {
+      const requestCount = e.requestCount || 'unknown'
+      const error = [`Rate limit reached after ${requestCount} requests while fetching playlist tracks`, { error: e.toString(), sourceId, details, requestCount, isRateLimit: true }]
+      err.push(error)
+      logger.error(`Rate limit reached after ${requestCount} requests while fetching playlist tracks: ${details.url || details.playlistStoreId}`)
+      return err
+    }
+    throw e
   }
 
   if (err.length === 0) {

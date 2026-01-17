@@ -8,6 +8,7 @@ const { VM } = require('vm2')
 
 const vm = new VM()
 let suspendedUntil = null
+let requestCount = 0
 
 const scrapeJSON = R.curry((pattern, string) => {
   const match = string.match(new RegExp(pattern), 's')
@@ -31,21 +32,25 @@ const getPageSource = (url) => {
   if (suspendedUntil) {
     if (suspendedUntil < Date.now()) {
       suspendedUntil = null
+      requestCount = 0
     } else {
       const error = new Error(`Rate limit reached. Requests are suspended until: ${suspendedUntil.toString()}`)
       error.isRateLimit = true
       return Promise.reject(error)
     }
   }
+  requestCount++
   return request({
     method: 'GET',
     uri: url,
   }).catch((e) => {
     if ([429, 403].includes(e.statusCode)) {
       suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
-      const error = new Error(`Rate limit reached. Status code: ${e.statusCode}. Requests are suspended until: ${suspendedUntil.toString()}`)
+      logger.error(`Rate limit reached after ${requestCount} requests. Status code: ${e.statusCode}. Requests are suspended until: ${suspendedUntil.toString()}`)
+      const error = new Error(`Rate limit reached after ${requestCount} requests. Status code: ${e.statusCode}. Requests are suspended until: ${suspendedUntil.toString()}`)
       error.isRateLimit = true
       error.statusCode = e.statusCode
+      error.requestCount = requestCount
       throw error
     } else {
       throw e
@@ -195,6 +200,10 @@ const getSearchResults = (query, callback) => {
     })
 }
 
+const resetRequestCount = () => {
+  requestCount = 0
+}
+
 module.exports = {
   ...BPromise.promisifyAll({
     getRelease,
@@ -209,5 +218,6 @@ module.exports = {
     getTagsFromUrl,
     getTagName,
     isRateLimited,
+    resetRequestCount,
   },
 }
