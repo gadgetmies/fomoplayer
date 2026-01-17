@@ -1247,37 +1247,40 @@ class Settings extends Component {
               </label>
               <h4>Search notification subscriptions</h4>
               <ul className="no-style-list follow-list">
-                {this.props.notifications.map(({ id, text, storeName }) => (
-                  <li key={`${id}-${storeName}`}>
-                    <span className={'button pill pill-button'}>
-                      <span className={'pill-button-contents'}>
-                        <NavLink to={`/search/?q=${text}`} title={`Search for "${text}"`}>
-                          {text}
-                        </NavLink>{' '}
-                        <button
-                          disabled={this.state.updatingNotifications}
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            this.setState({ updatingNotifications: true })
-                            await this.props.onRequestNotificationUpdate([
-                              {
-                                op: 'remove',
-                                storeName,
-                                text,
-                              },
-                            ])
+                {this.props.notifications.map(({ id, text, storeName, displayName }) => {
+                  const displayText = displayName || text
+                  return (
+                    <li key={`${id}-${storeName}`}>
+                      <span className={'button pill pill-button'}>
+                        <span className={'pill-button-contents'}>
+                          <NavLink to={`/search/?q=${text}`} title={`Search for "${text}"`}>
+                            {displayText}
+                          </NavLink>{' '}
+                          <button
+                            disabled={this.state.updatingNotifications}
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              this.setState({ updatingNotifications: true })
+                              await this.props.onRequestNotificationUpdate([
+                                {
+                                  op: 'remove',
+                                  storeName,
+                                  text,
+                                },
+                              ])
 
-                            this.setState({ updatingNotifications: false })
-                          }}
-                          title={`Unsubscribe from "${text}"`}
-                        >
-                          <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
-                          <FontAwesomeIcon icon="times-circle" />
-                        </button>
+                              this.setState({ updatingNotifications: false })
+                            }}
+                            title={`Unsubscribe from "${displayText}"`}
+                          >
+                            <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
+                            <FontAwesomeIcon icon="times-circle" />
+                          </button>
+                        </span>
                       </span>
-                    </span>
-                  </li>
-                ))}
+                    </li>
+                  )
+                })}
               </ul>
               <h4>Audio sample uploads</h4>
               <p style={{ fontSize: '90%', marginBottom: '10px' }}>

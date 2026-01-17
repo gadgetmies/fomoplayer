@@ -1075,14 +1075,41 @@ module.exports.queryNotifications = async (userId, stores) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryNotifications
-SELECT 
+WITH notification_data AS (
+  SELECT 
     user_search_notification_id AS id, 
     user_search_notification_string AS text, 
     store_name AS "storeName",
-    store_purchase_available AS "purchaseAvailable"
-FROM user_search_notification NATURAL JOIN user_search_notification__store NATURAL JOIN store
-WHERE meta_account_user_id = ${userId} AND
-      (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
+    store_purchase_available AS "purchaseAvailable",
+    CASE 
+      WHEN user_search_notification_string ~ '^artist:(\d+)$' 
+      THEN (regexp_match(user_search_notification_string, '^artist:(\d+)$'))[1]::INTEGER 
+      ELSE NULL 
+    END AS artist_id,
+    CASE 
+      WHEN user_search_notification_string ~ '^label:(\d+)$' 
+      THEN (regexp_match(user_search_notification_string, '^label:(\d+)$'))[1]::INTEGER 
+      ELSE NULL 
+    END AS label_id
+  FROM user_search_notification 
+  NATURAL JOIN user_search_notification__store 
+  NATURAL JOIN store
+  WHERE meta_account_user_id = ${userId} AND
+        (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
+)
+SELECT 
+  id,
+  text,
+  "storeName",
+  "purchaseAvailable",
+  CASE
+    WHEN notification_data.artist_id IS NOT NULL THEN COALESCE(artist.artist_name, text)
+    WHEN notification_data.label_id IS NOT NULL THEN COALESCE(label.label_name, text)
+    ELSE text
+  END AS "displayName"
+FROM notification_data
+LEFT JOIN artist ON notification_data.artist_id = artist.artist_id
+LEFT JOIN label ON notification_data.label_id = label.label_id
 `,
   )
 
