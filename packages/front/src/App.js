@@ -48,12 +48,6 @@ class App extends Component {
     super(props)
     const { listState, currentTrack } = JSON.parse(window.localStorage.getItem('currentTrack')) || {}
 
-    this.searchEventHandler = async function (params) {
-      const { q, ...rest } = params.detail
-      this.setState({ search: q, searchFilters: rest })
-      await this.search(q, { ...filters, ...rest })
-    }.bind(this)
-
     const searchParams = new URLSearchParams(window.location.search)
     const filters = {
       sort: searchParams.get('sort') || '-released',
@@ -62,10 +56,15 @@ class App extends Component {
       onlyNew: searchParams.get('onlyNew') || '',
     }
 
+    this.searchEventHandler = async function (params) {
+      const { q, ...rest } = params.detail
+      this.setState({ search: q, searchFilters: rest })
+      await this.search(q, { ...filters, ...rest })
+    }.bind(this)
+
     const search = searchParams.get('q') || ''
-    if (search) {
-      this.search(search, filters)
-    }
+    const isSearchPath = window.location.pathname.match(/^\/search\/?$/)
+    const initialListState = search && isSearchPath ? 'search' : (listState || 'new')
 
     this.state = {
       carts: [],
@@ -87,7 +86,7 @@ class App extends Component {
       searchInProgress: false,
       searchError: undefined,
       searchResults: [],
-      listState: listState || 'new',
+      listState: initialListState,
       currentTrack,
       heardTracks: defaultTracksData.tracks.heard,
       selectedCartUuid: undefined,
@@ -177,6 +176,19 @@ class App extends Component {
       }
 
       this.setState({ loggedIn: true, mode: 'app', stores, ...sharedStates })
+
+      const searchParams = new URLSearchParams(window.location.search)
+      const search = searchParams.get('q') || ''
+      const isSearchPath = window.location.pathname.match(/^\/search\/?$/)
+      if (search && isSearchPath) {
+        const filters = {
+          sort: searchParams.get('sort') || '-released',
+          limit: searchParams.get('limit') || 100,
+          addedSince: searchParams.get('addedSince') || '',
+          onlyNew: searchParams.get('onlyNew') || '',
+        }
+        await this.search(search, filters)
+      }
     } catch (e) {
       if (e.response?.status === 401 && isCartPath) {
         const stores = await storeFetchPromise
@@ -931,16 +943,16 @@ class App extends Component {
                     } = window
                     const pathParts = pathname.slice(1).split('/')
                     const searchParams = new URLSearchParams(search)
-                    const query = searchParams.get('q')?.trim()
-                    const idSearch = query?.match(/(artist|label|release):(\d?)/)
-                    if (pathname.match(/^\/search\/?/) && idSearch !== null && this.state.search !== query) {
+                    const query = searchParams.get('q') || ''
+                    const isSearchPath = pathname.match(/^\/search\/?$/)
+                    if (isSearchPath && query && this.state.search !== query) {
                       const filters = {
                         sort: searchParams.get('sort') || '-released',
                         limit: searchParams.get('limit') || 100,
                         addedSince: searchParams.get('addedSince') || '',
                         onlyNew: searchParams.get('onlyNew') || '',
                       }
-                      this.setState({ search: query, searchFilters: filters })
+                      this.setState({ search: query, searchFilters: filters, listState: 'search' })
                       this.search(query, filters)
                     }
                     const settingsVisible = pathname.match(/\/settings\/?/)

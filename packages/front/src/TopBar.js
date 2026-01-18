@@ -152,6 +152,10 @@ class TopBar extends Component {
               onChange={(e) => this.setSearch(e.target.value)}
               onKeyDown={(e) => {
                 if (e.code === 'Enter') {
+                  if (this.state.searchDebounce) {
+                    clearTimeout(this.state.searchDebounce)
+                    this.setState({ searchDebounce: undefined })
+                  }
                   return this.props.onSearch(this.state.search, { onlyNew: false })
                 }
               }}
