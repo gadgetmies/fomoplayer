@@ -39,8 +39,54 @@ const splitTextByWhitespace = (text) => {
     return []
   }
 
-  const words = trimmed.split(/\s+/)
-  return words.map((word) => ({ type: 'text', value: word }))
+  const terms = []
+  let currentIndex = 0
+  let inQuotes = false
+  let quoteChar = null
+  let currentTerm = ''
+  let i = 0
+
+  while (i < trimmed.length) {
+    const char = trimmed[i]
+    const isQuote = char === '"' || char === "'"
+    const isWhitespace = /\s/.test(char)
+
+    if (isQuote && !inQuotes) {
+      if (currentTerm.trim()) {
+        terms.push({ type: 'text', value: currentTerm.trim() })
+        currentTerm = ''
+      }
+      inQuotes = true
+      quoteChar = char
+      i++
+      continue
+    } else if (isQuote && inQuotes && char === quoteChar) {
+      if (currentTerm) {
+        terms.push({ type: 'text', value: currentTerm })
+        currentTerm = ''
+      }
+      inQuotes = false
+      quoteChar = null
+      i++
+      continue
+    } else if (isWhitespace && !inQuotes) {
+      if (currentTerm.trim()) {
+        terms.push({ type: 'text', value: currentTerm.trim() })
+        currentTerm = ''
+      }
+      i++
+      continue
+    } else {
+      currentTerm += char
+      i++
+    }
+  }
+
+  if (currentTerm.trim()) {
+    terms.push({ type: 'text', value: currentTerm.trim() })
+  }
+
+  return terms
 }
 
 export const searchTermsToString = (searchTerms, preserveTrailingSpace = false) => {
@@ -49,7 +95,13 @@ export const searchTermsToString = (searchTerms, preserveTrailingSpace = false) 
   }
 
   const result = searchTerms
-    .map((term) => term.value)
+    .map((term) => {
+      const value = term.value
+      if (term.type === 'text' && /\s/.test(value)) {
+        return `"${value}"`
+      }
+      return value
+    })
     .join(' ')
   
   return preserveTrailingSpace ? result : result.trim()
