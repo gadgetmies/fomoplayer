@@ -163,8 +163,9 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
          `)
 
       if (idFilter) {
-        query.append(` AND ${tx.escapeIdentifier(`${idFilter[0]}_id`)} = `)
+        query.append(` AND EXISTS (SELECT 1 FROM track__artist ta2 WHERE ta2.track_id = track.track_id AND ta2.${tx.escapeIdentifier(`${idFilter[0]}_id`)} = `)
         query.append(sql`${idFilter[1]}`)
+        query.append(`)`)
       } else if (fuzzyFilters.length > 0) {
         query.append(' AND ')
         R.intersperse(' AND ', fuzzyFilterQueries).forEach((q) => query.append(q))
@@ -174,7 +175,7 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
       query.append(sql` GROUP BY track_id, track_title, track_version `)
 
       sortColumns.forEach(([column]) => query.append(`, ${tx.escapeIdentifier(column)}`))
-      !idFilter && queryString !== '' &&
+      if (queryString !== '') {
         query.append(sql` HAVING
                                   TO_TSVECTOR(
                                           'simple',
@@ -184,6 +185,7 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
                                                    STRING_AGG(release_name, ' ') || ' ' ||
                                                    STRING_AGG(COALESCE(label_name, ''), ' '))) @@
                                   websearch_to_tsquery('simple', unaccent(${queryString}))`)
+      }
 
       query.append(` ORDER BY `)
       sortColumns.forEach(([column, order]) =>
