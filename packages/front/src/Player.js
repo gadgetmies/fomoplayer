@@ -297,7 +297,7 @@ class Player extends Component {
           processingTrack={this.props.processingTrack}
           follows={this.props.follows}
           notificationsEnabled={this.props.notificationsEnabled}
-          search={this.props.search}
+          searchTerms={this.props.searchTerms}
           searchInProgress={this.props.searchInProgress}
           searchError={this.props.searchError}
           sort={this.props.sort}

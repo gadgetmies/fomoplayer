@@ -27,6 +27,12 @@ import KeyboardShortcutsPopup from './KeyboardShortcutsPopup'
 
 import { isMobile } from 'react-device-detect'
 import { events, subscribe, unsubscribe } from './events'
+import {
+  parseSearchTerms,
+  searchTermsToString,
+  searchTermsToQueryString,
+  addEntityTerm,
+} from './searchTerms'
 
 library.add(fas, far, fab)
 
@@ -58,13 +64,15 @@ class App extends Component {
 
     this.searchEventHandler = async function (params) {
       const { q, ...rest } = params.detail
-      this.setState({ search: q, searchFilters: rest })
-      await this.search(q, { ...filters, ...rest })
+      const searchTerms = parseSearchTerms(q)
+      this.setState({ searchTerms, searchFilters: rest })
+      await this.search(searchTerms, { ...filters, ...rest })
     }.bind(this)
 
-    const search = searchParams.get('q') || ''
+    const searchQuery = searchParams.get('q') || ''
+    const searchTerms = parseSearchTerms(searchQuery)
     const isSearchPath = window.location.pathname.match(/^\/search\/?$/)
-    const initialListState = search && isSearchPath ? 'search' : (listState || 'new')
+    const initialListState = searchTerms.length > 0 && isSearchPath ? 'search' : (listState || 'new')
 
     this.state = {
       carts: [],
@@ -81,7 +89,7 @@ class App extends Component {
       userSettings: {},
       isMobile,
       onboarding: false,
-      search,
+      searchTerms,
       searchFilters: filters,
       searchInProgress: false,
       searchError: undefined,
@@ -124,7 +132,7 @@ class App extends Component {
     if (loadingMore || !this.hasMoreTracks()) return
 
     if (listState === 'search') {
-      await this.search(this.state.search, this.state.searchFilters, true)
+      await this.search(this.state.searchTerms, this.state.searchFilters, true)
     } else if (['new', 'heard', 'recent'].includes(listState)) {
       this.setState({ loadingMore: true })
       await this.updateTracks(true)
@@ -178,16 +186,17 @@ class App extends Component {
       this.setState({ loggedIn: true, mode: 'app', stores, ...sharedStates })
 
       const searchParams = new URLSearchParams(window.location.search)
-      const search = searchParams.get('q') || ''
+      const searchQuery = searchParams.get('q') || ''
+      const searchTerms = parseSearchTerms(searchQuery)
       const isSearchPath = window.location.pathname.match(/^\/search\/?$/)
-      if (search && isSearchPath) {
+      if (searchTerms.length > 0 && isSearchPath) {
         const filters = {
           sort: searchParams.get('sort') || '-released',
           limit: searchParams.get('limit') || 100,
           addedSince: searchParams.get('addedSince') || '',
           onlyNew: searchParams.get('onlyNew') || '',
         }
-        await this.search(search, filters)
+        await this.search(searchTerms, filters)
       }
     } catch (e) {
       if (e.response?.status === 401 && isCartPath) {
@@ -566,26 +575,27 @@ class App extends Component {
     }
   }
 
-  async handleToggleNotificationClick(search, subscribe, storeNames = undefined) {
+  async handleToggleNotificationClick(searchTerms, subscribe, storeNames = undefined) {
     let operations = []
     try {
+      const searchString = searchTermsToString(searchTerms)
       if (storeNames === undefined) {
         if (subscribe) {
           operations = operations.concat(
             this.state.stores.map(({ storeName }) => ({
               op: 'add',
               storeName,
-              text: search,
+              text: searchString,
             })),
           )
         } else {
           operations = operations.concat(
-            this.state.stores.map(({ storeName }) => ({ op: 'remove', storeName, text: search })),
+            this.state.stores.map(({ storeName }) => ({ op: 'remove', storeName, text: searchString })),
           )
         }
       } else {
         storeNames.forEach((storeName) => {
-          operations.push({ op: subscribe ? 'add' : 'remove', storeName, text: search })
+          operations.push({ op: subscribe ? 'add' : 'remove', storeName, text: searchString })
         })
       }
 
@@ -596,31 +606,25 @@ class App extends Component {
   }
 
   addEntityToSearch(entityType, entityId) {
-    const entityPattern = `${entityType}:${entityId}`
-    const currentSearch = this.state.search || ''
-    const entityPatterns = currentSearch.match(/\b(artist|label):\d+\b/gi) || []
-    
-    if (!entityPatterns.some((pattern) => pattern.toLowerCase() === entityPattern.toLowerCase())) {
-      const freeText = currentSearch.replace(/\b(artist|label):\d+\b/gi, '').trim()
-      const newSearch = [...entityPatterns, entityPattern, freeText].filter(Boolean).join(' ').trim()
-      this.setState({ search: newSearch })
-      this.search(newSearch, this.state.searchFilters)
-    }
+    const newSearchTerms = addEntityTerm(this.state.searchTerms || [], entityType, entityId)
+    this.setState({ searchTerms: newSearchTerms })
+    this.search(newSearchTerms, this.state.searchFilters)
   }
 
-  async search(query, filters = {}, append = false) {
+  async search(searchTerms, filters = {}, append = false) {
     const { sort = '-released', limit = 100, addedSince = null, onlyNew = null } = filters
     console.log({ onlyNew, filters })
 
+    const query = searchTermsToQueryString(searchTerms)
     if (query === '') return
     const { trackOffsets } = this.state
     const offset = append ? trackOffsets.search : 0
     if (!append) {
-      this.setState({ listState: 'search', searchInProgress: true, searchError: undefined, search: query, trackOffsets: { ...trackOffsets, search: 0 } })
+      this.setState({ listState: 'search', searchInProgress: true, searchError: undefined, searchTerms, trackOffsets: { ...trackOffsets, search: 0 } })
     } else {
       this.setState({ loadingMore: true })
     }
-    const parameters = `q=${query}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}&offset=${offset}`
+    const parameters = `q=${encodeURIComponent(query)}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}&offset=${offset}`
     if (!append) {
       window.history.pushState(undefined, undefined, `/search?${parameters}`)
     }
@@ -666,10 +670,10 @@ class App extends Component {
   }
 
   async triggerSearch() {
-    return this.setSearch(this.state.search, true)
+    return this.setSearch(this.state.searchTerms, true)
   }
 
-  setSearch(search, triggerSearch = false) {}
+  setSearch(searchTerms, triggerSearch = false) {}
 
   // TODO: change to POST {ignore: true} /me/labels/?
   async ignoreArtistsByLabels(artistId, labelIds, ignore) {
@@ -913,7 +917,7 @@ class App extends Component {
                   handleToggleNotificationClick={this.handleToggleNotificationClick.bind(this)}
                   listState={this.state.listState}
                   notifications={this.state.notifications}
-                  search={this.state.search}
+                  searchTerms={this.state.searchTerms}
                   searchFilters={this.state.searchFilters}
                   userSettings={this.state.userSettings}
                   stores={this.state.stores}
@@ -945,15 +949,19 @@ class App extends Component {
                     const searchParams = new URLSearchParams(search)
                     const query = searchParams.get('q') || ''
                     const isSearchPath = pathname.match(/^\/search\/?$/)
-                    if (isSearchPath && query && this.state.search !== query) {
-                      const filters = {
-                        sort: searchParams.get('sort') || '-released',
-                        limit: searchParams.get('limit') || 100,
-                        addedSince: searchParams.get('addedSince') || '',
-                        onlyNew: searchParams.get('onlyNew') || '',
+                    if (isSearchPath && query) {
+                      const searchTerms = parseSearchTerms(query)
+                      const currentQuery = searchTermsToQueryString(this.state.searchTerms || [])
+                      if (currentQuery !== query) {
+                        const filters = {
+                          sort: searchParams.get('sort') || '-released',
+                          limit: searchParams.get('limit') || 100,
+                          addedSince: searchParams.get('addedSince') || '',
+                          onlyNew: searchParams.get('onlyNew') || '',
+                        }
+                        this.setState({ searchTerms, searchFilters: filters, listState: 'search' })
+                        this.search(searchTerms, filters)
                       }
-                      this.setState({ search: query, searchFilters: filters, listState: 'search' })
-                      this.search(query, filters)
                     }
                     const settingsVisible = pathname.match(/\/settings\/?/)
                     let listState = this.state.listState
@@ -961,7 +969,7 @@ class App extends Component {
                     // Perhaps a componentWillChange handling could work?
                     if (!pathParts.includes(listState)) {
                       if (pathname !== '/search') {
-                        this.setState({ search: '' })
+                        this.setState({ searchTerms: [] })
                       }
                       this.setState({
                         listState: props.match.params.path === 'tracks' ? pathParts[1] || 'new' : pathParts[0],
@@ -1013,7 +1021,7 @@ class App extends Component {
                           newTracks={this.state.tracksData.meta.newTracks}
                           processingCart={this.state.processingCart}
                           processingTrack={this.state.processingTrack}
-                          search={this.state.search || ''}
+                          searchTerms={this.state.searchTerms || []}
                           searchError={this.state.searchError}
                           searchInProgress={this.state.searchInProgress}
                           searchResults={this.state.searchResults}

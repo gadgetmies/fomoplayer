@@ -10,16 +10,18 @@ import SearchBar from './SearchBar'
 import DropDownButton from './DropDownButton'
 import { isMobile } from 'react-device-detect'
 import Popup from './Popup'
+import { searchTermsToString, updateTextTerms, getTextValueFromTerms, parseSearchTerms } from './searchTerms'
 
 class TopBar extends Component {
   constructor(props) {
     super(props)
 
-    const query = props.search
+    const searchTerms = props.searchTerms || []
+    const textValue = getTextValueFromTerms(searchTerms)
     this.state = {
       requestNotificationSearch: '',
       searchDebounce: undefined,
-      search: query,
+      searchText: textValue,
       supportMenuOpen: false,
       emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
       discoverMenuOpen: false,
@@ -32,15 +34,18 @@ class TopBar extends Component {
     this.setState({ emailVerificationDismissed: true })
   }
 
-  async setSearch(search, skipDebounce = false) {
-    this.setState({ search })
+  async setSearch(searchText, skipDebounce = false) {
+    this.setState({ searchText })
 
     if (this.state.searchDebounce) {
       clearTimeout(this.state.searchDebounce)
     }
 
-    if (search === '') {
-      this.props.onSearch('', this.props.searchFilters)
+    const parsedTerms = parseSearchTerms(searchText)
+    const searchString = searchTermsToString(parsedTerms)
+
+    if (searchString === '') {
+      this.props.onSearch([], this.props.searchFilters)
       return
     }
 
@@ -48,7 +53,7 @@ class TopBar extends Component {
       async () => {
         this.setState({ searchDebounce: undefined, listState: 'search' })
         // TODO: cancel this request if new one is requested
-        await this.props.onSearch(this.state.search, { onlyNew: false })
+        await this.props.onSearch(parsedTerms, { onlyNew: false })
       },
       skipDebounce ? 0 : 1000,
     )
@@ -56,20 +61,27 @@ class TopBar extends Component {
   }
 
   getNotificationSubscriptions() {
-    return this.props.notifications.filter(R.propEq('text', this.state.search?.toLocaleLowerCase()))
+    const searchString = searchTermsToString(this.props.searchTerms || [])
+    return this.props.notifications.filter(R.propEq('text', searchString?.toLocaleLowerCase()))
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevProps.search !== this.props.search) {
-      this.setState({ search: this.props.search })
+    if (prevProps.searchTerms !== this.props.searchTerms) {
+      const textValue = getTextValueFromTerms(this.props.searchTerms || [])
+      const prevTextValue = getTextValueFromTerms(prevProps.searchTerms || [])
+      const currentInputMatchesPrevProps = this.state.searchText.trim() === prevTextValue.trim()
+      if (textValue !== prevTextValue && currentInputMatchesPrevProps) {
+        this.setState({ searchText: textValue })
+      }
     }
   }
 
   render() {
     const notificationSubscriptions = this.getNotificationSubscriptions()
     const subscribed = notificationSubscriptions.length > 0
+    const searchString = searchTermsToString(this.props.searchTerms || [])
     const notificationSubscriptionDisabled =
-      this.state.search === '' || this.state.modifyingNotification || !this.props.emailVerified
+      searchString === '' || this.state.modifyingNotification || !this.props.emailVerified
     const notificationSubscriptionLoading = this.state.modifyingNotification
 
     return (
@@ -156,10 +168,11 @@ class TopBar extends Component {
                     clearTimeout(this.state.searchDebounce)
                     this.setState({ searchDebounce: undefined })
                   }
-                  return this.props.onSearch(this.state.search, { onlyNew: false })
+                  const parsedTerms = parseSearchTerms(this.state.searchText)
+                  return this.props.onSearch(parsedTerms, { onlyNew: false })
                 }
               }}
-              value={this.state.search}
+              value={this.state.searchText}
               onClearSearch={() => this.setSearch('')}
               styles={`top_bar`}
               className={`${this.props.searchActive ? '' : 'search__inactive'}`}
@@ -177,7 +190,7 @@ class TopBar extends Component {
                     onClick={async (e) => {
                       e.stopPropagation()
                       this.setState({ modifyingNotification: true })
-                      await this.props.handleToggleNotificationClick(this.state.search, !subscribed)
+                      await this.props.handleToggleNotificationClick(this.props.searchTerms || [], !subscribed)
                       this.setState({ modifyingNotification: false })
                     }}
                     disabled={notificationSubscriptionDisabled}
@@ -198,7 +211,7 @@ class TopBar extends Component {
                               e.stopPropagation()
                               try {
                                 this.setState({ modifyingNotification: true })
-                                await this.props.handleToggleNotificationClick(this.state.search, !isSubscribed, [
+                                await this.props.handleToggleNotificationClick(this.props.searchTerms || [], !isSubscribed, [
                                   storeName,
                                 ])
                               } finally {
