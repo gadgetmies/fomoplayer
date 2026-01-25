@@ -16,6 +16,11 @@ const {
   markPreviewsMissing,
   queryNotificationAudioSamplesWithoutEmbedding,
   upsertNotificationAudioSampleEmbedding,
+  queryPreviewsWithoutFingerprint,
+  upsertPreviewFingerprints,
+  queryAudioSamplesWithoutFingerprint,
+  upsertAudioSampleFingerprints,
+  findExactMatchForSample,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 
@@ -141,6 +146,47 @@ router.post('/notification-audio-samples/embeddings', async ({ body }, res) => {
     results.push(await upsertNotificationAudioSampleEmbedding(id, model, embeddings))
   }
   res.send(results)
+})
+
+router.get('/exact-match/previews/without-fingerprint', async ({ query: { limit } }, res) => {
+  const previews = await queryPreviewsWithoutFingerprint(limit ? parseInt(limit, 10) : undefined)
+  res.send(previews)
+})
+
+router.post('/exact-match/previews/fingerprints', async ({ body: { preview_id, fingerprints } }, res) => {
+  try {
+    await upsertPreviewFingerprints(preview_id, fingerprints)
+    res.send({ success: true, preview_id })
+  } catch (error) {
+    logger.error('Error uploading preview fingerprints', { error: error.message, stack: error.stack })
+    res.status(500).send({ error: error.message })
+  }
+})
+
+router.get('/exact-match/audio-samples/without-fingerprint', async ({ query: { limit } }, res) => {
+  const samples = await queryAudioSamplesWithoutFingerprint(limit ? parseInt(limit, 10) : undefined)
+  res.send(samples)
+})
+
+router.post('/exact-match/audio-samples/fingerprints', async ({ body: { sample_id, fingerprints } }, res) => {
+  try {
+    await upsertAudioSampleFingerprints(sample_id, fingerprints)
+    res.send({ success: true, sample_id })
+  } catch (error) {
+    logger.error('Error uploading audio sample fingerprints', { error: error.message, stack: error.stack })
+    res.status(500).send({ error: error.message })
+  }
+})
+
+router.get('/exact-match/audio-samples/:sampleId/match', async ({ params: { sampleId }, query: { threshold } }, res) => {
+  try {
+    const matchThreshold = threshold ? parseFloat(threshold) : 0.5
+    const matches = await findExactMatchForSample(parseInt(sampleId, 10), matchThreshold)
+    res.send(matches)
+  } catch (error) {
+    logger.error('Error finding exact match', { error: error.message, stack: error.stack })
+    res.status(500).send({ error: error.message })
+  }
 })
 
 module.exports = router

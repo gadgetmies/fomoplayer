@@ -99,19 +99,19 @@ module.exports.queryNextTracksToAnalyse = async ({ model, batch_size, purchased 
 SELECT track_id
      , track_isrc
      , JSON_AGG(
-    JSON_BUILD_OBJECT('preview_id', store__track_preview_id, 
-                      'url', store__track_preview_url, 
-                      'start_ms', store__track_preview_start_ms, 
+    JSON_BUILD_OBJECT('preview_id', store__track_preview_id,
+                      'url', store__track_preview_url,
+                      'start_ms', store__track_preview_start_ms,
                       'end_ms', store__track_preview_end_ms)
        ) AS previews
 FROM
   track
   NATURAL JOIN store__track
-  NATURAL JOIN store__track_preview p 
+  NATURAL JOIN store__track_preview p
   NATURAL LEFT JOIN track__cart
   NATURAL LEFT JOIN cart
 WHERE NOT EXISTS (SELECT 1 FROM store__track_preview_embedding e
-                       WHERE p.store__track_preview_id = e.store__track_preview_id 
+                       WHERE p.store__track_preview_id = e.store__track_preview_id
                          AND store__track_preview_embedding_type = ${model})
   AND store__track_preview_url IS NOT NULL
   AND NOT store__track_preview_missing
@@ -120,8 +120,8 @@ GROUP BY track_id, track_isrc`
       .append(purchased ? ', cart_is_purchased' : '')
       .append(' ORDER BY ')
       .append(purchased ? 'cart_is_purchased NULLS LAST,' : '').append(sql`
-BOOL_OR(cart_id IS NULL) DESC, 
-MAX(store__track_published) DESC 
+BOOL_OR(cart_id IS NULL) DESC,
+MAX(store__track_published) DESC
 LIMIT ${batch_size || 20}`),
   )
 }
@@ -241,7 +241,7 @@ FROM
   track
   NATURAL JOIN store__track
   NATURAL JOIN store__track_preview
-WHERE store__track_preview_id = ANY (${previewIds}) 
+WHERE store__track_preview_id = ANY (${previewIds})
 `,
   )
 }
@@ -250,7 +250,7 @@ module.exports.queryNotificationAudioSamplesWithoutEmbedding = async (limit) => 
   return await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryNotificationAudioSamplesWithoutEmbedding
-SELECT 
+SELECT
   user_notification_audio_sample_id AS id,
   meta_account_user_id AS "userId",
   user_notification_audio_sample_url AS url,
@@ -282,6 +282,192 @@ module.exports.upsertNotificationAudioSampleEmbedding = async (sampleId, model, 
     ON CONFLICT (user_notification_audio_sample_id, user_notification_audio_sample_embedding_type) DO UPDATE
       SET user_notification_audio_sample_embedding = ${embedding}
         , user_notification_audio_sample_embedding_updated_at = NOW()
+    `,
+  )
+}
+
+module.exports.queryPreviewsWithoutFingerprint = async (limit) => {
+  return await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryPreviewsWithoutFingerprint
+SELECT
+  store__track_preview_id AS "preview_id",
+  store__track_preview_url AS url,
+  store__track_id AS "store_track_id"
+FROM store__track_preview
+  NATURAL LEFT JOIN store__track_preview_fingerprint_meta
+WHERE store__track_preview_fingerprint_meta.store__track_preview_id IS NULL
+  AND store__track_preview_url IS NOT NULL
+  AND NOT store__track_preview_missing
+ORDER BY store__track_preview_id DESC
+LIMIT ${limit || 100}
+    `,
+  )
+}
+
+module.exports.upsertPreviewFingerprints = async (previewId, fingerprints) => {
+  await BPromise.using(pg.getTransaction(), async (tx) => {
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- Delete existing fingerprints for this preview
+      DELETE FROM store__track_preview_fingerprint
+      WHERE store__track_preview_id = ${previewId}
+      `,
+    )
+
+    if (fingerprints && fingerprints.length > 0) {
+      const fingerprintValues = fingerprints.map((fp) => ({
+        preview_id: previewId,
+        hash: fp.hash || fp.hash_value || 0,
+        position: fp.position || fp.time || 0.0,
+        f1: fp.f1 || null,
+      }))
+
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- Insert fingerprints
+        INSERT INTO store__track_preview_fingerprint (
+          store__track_preview_id,
+          store__track_preview_fingerprint_hash,
+          store__track_preview_fingerprint_position,
+          store__track_preview_fingerprint_frequency_bin
+        )
+        SELECT
+          rec.preview_id::BIGINT,
+          rec.hash::BIGINT,
+          rec.position::FLOAT,
+          CASE WHEN rec.f1 IS NULL OR rec.f1 = 'null' THEN NULL ELSE rec.f1::INTEGER END
+        FROM json_to_recordset(${JSON.stringify(fingerprintValues)}::json) AS rec (preview_id TEXT, hash TEXT, position TEXT, f1 TEXT)
+        `,
+      )
+
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- Upsert fingerprint metadata
+        INSERT INTO store__track_preview_fingerprint_meta (
+          store__track_preview_id,
+          store__track_preview_fingerprint_count,
+          store__track_preview_fingerprint_extracted_at
+        )
+        VALUES (${previewId}, ${fingerprints.length}, NOW())
+        ON CONFLICT (store__track_preview_id) DO UPDATE
+          SET store__track_preview_fingerprint_count = ${fingerprints.length}
+            , store__track_preview_fingerprint_extracted_at = NOW()
+        `,
+      )
+    }
+  })
+}
+
+module.exports.queryAudioSamplesWithoutFingerprint = async (limit) => {
+  return await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryAudioSamplesWithoutFingerprint
+SELECT
+  user_notification_audio_sample_id AS id,
+  meta_account_user_id AS "userId",
+  user_notification_audio_sample_url AS url,
+  user_notification_audio_sample_object_key AS "objectKey",
+  user_notification_audio_sample_file_size AS "fileSize",
+  user_notification_audio_sample_file_type AS "fileType",
+  user_notification_audio_sample_filename AS filename,
+  user_notification_audio_sample_created_at AS "createdAt"
+FROM user_notification_audio_sample
+  NATURAL LEFT JOIN user_notification_audio_sample_fingerprint_meta
+WHERE user_notification_audio_sample_fingerprint_meta.user_notification_audio_sample_id IS NULL
+ORDER BY user_notification_audio_sample_created_at DESC
+LIMIT ${limit || 100}
+    `,
+  )
+}
+
+module.exports.upsertAudioSampleFingerprints = async (sampleId, fingerprints) => {
+  await BPromise.using(pg.getTransaction(), async (tx) => {
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- Delete existing fingerprints for this sample
+      DELETE FROM user_notification_audio_sample_fingerprint
+      WHERE user_notification_audio_sample_id = ${sampleId}
+      `,
+    )
+
+    if (fingerprints && fingerprints.length > 0) {
+      const fingerprintValues = fingerprints.map((fp) => ({
+        sample_id: sampleId,
+        hash: fp.hash || fp.hash_value || 0,
+        position: fp.position || fp.time || 0.0,
+        f1: fp.f1 || null,
+      }))
+
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- Insert fingerprints
+        INSERT INTO user_notification_audio_sample_fingerprint (
+          user_notification_audio_sample_id,
+          user_notification_audio_sample_fingerprint_hash,
+          user_notification_audio_sample_fingerprint_position,
+          user_notification_audio_sample_fingerprint_frequency_bin
+        )
+        SELECT
+          rec.sample_id::BIGINT,
+          rec.hash::BIGINT,
+          rec.position::FLOAT,
+          CASE WHEN rec.f1 IS NULL OR rec.f1 = 'null' THEN NULL ELSE rec.f1::INTEGER END
+        FROM json_to_recordset(${JSON.stringify(fingerprintValues)}::json) AS rec (sample_id TEXT, hash TEXT, position TEXT, f1 TEXT)
+        `,
+      )
+
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- Upsert fingerprint metadata
+        INSERT INTO user_notification_audio_sample_fingerprint_meta (
+          user_notification_audio_sample_id,
+          user_notification_audio_sample_fingerprint_count,
+          user_notification_audio_sample_fingerprint_extracted_at
+        )
+        VALUES (${sampleId}, ${fingerprints.length}, NOW())
+        ON CONFLICT (user_notification_audio_sample_id) DO UPDATE
+          SET user_notification_audio_sample_fingerprint_count = ${fingerprints.length}
+            , user_notification_audio_sample_fingerprint_extracted_at = NOW()
+        `,
+      )
+    }
+  })
+}
+
+module.exports.findExactMatchForSample = async (sampleId, threshold = 0.5) => {
+  return await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- findExactMatchForSample
+WITH sample_hashes AS (
+  SELECT DISTINCT user_notification_audio_sample_fingerprint_hash
+  FROM user_notification_audio_sample_fingerprint
+  WHERE user_notification_audio_sample_id = ${sampleId}
+),
+preview_matches AS (
+  SELECT
+    stp.store__track_preview_id,
+    stp.store__track_id,
+    COUNT(DISTINCT stpf.store__track_preview_fingerprint_hash) AS matching_hashes,
+    (SELECT COUNT(*) FROM sample_hashes) AS sample_hash_count
+  FROM store__track_preview_fingerprint stpf
+    NATURAL JOIN store__track_preview stp
+    INNER JOIN sample_hashes sh ON stpf.store__track_preview_fingerprint_hash = sh.user_notification_audio_sample_fingerprint_hash
+  GROUP BY stp.store__track_preview_id, stp.store__track_id
+  HAVING COUNT(DISTINCT stpf.store__track_preview_fingerprint_hash)::FLOAT /
+         NULLIF((SELECT COUNT(*) FROM sample_hashes), 0) >= ${threshold}
+)
+SELECT
+  pm.store__track_preview_id,
+  pm.store__track_id,
+  pm.matching_hashes,
+  pm.sample_hash_count,
+  (pm.matching_hashes::FLOAT / NULLIF(pm.sample_hash_count, 0)) AS match_score,
+  st.track_id
+FROM preview_matches pm
+  NATURAL JOIN store__track st
+ORDER BY match_score DESC, matching_hashes DESC
+LIMIT 10
     `,
   )
 }

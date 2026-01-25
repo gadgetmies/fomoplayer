@@ -1,0 +1,13 @@
+-- Add frequency_bin field to fingerprint tables for Panako matching
+-- The frequency_bin (f1) is used for frequency-based filtering during fingerprint matching
+
+ALTER TABLE store__track_preview_fingerprint
+  ADD COLUMN store__track_preview_fingerprint_frequency_bin INTEGER;
+
+ALTER TABLE user_notification_audio_sample_fingerprint
+  ADD COLUMN user_notification_audio_sample_fingerprint_frequency_bin INTEGER;
+
+-- Add index on frequency_bin for potential queries
+CREATE INDEX idx_store__track_preview_fingerprint_frequency_bin ON store__track_preview_fingerprint(store__track_preview_fingerprint_frequency_bin);
+CREATE INDEX idx_user_notification_audio_sample_fingerprint_frequency_bin ON user_notification_audio_sample_fingerprint(user_notification_audio_sample_fingerprint_frequency_bin);
+

@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS user_notification_audio_sample_fingerprint_meta;
+DROP TABLE IF EXISTS user_notification_audio_sample_fingerprint;
+DROP TABLE IF EXISTS store__track_preview_fingerprint_meta;
+DROP TABLE IF EXISTS store__track_preview_fingerprint;
+
