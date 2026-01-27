@@ -1,0 +1,5 @@
+ALTER TABLE waiting_list
+DROP COLUMN waiting_list_first_invite_sent_at,
+DROP COLUMN waiting_list_second_invite_sent_at,
+DROP COLUMN waiting_list_third_invite_sent_at;
+
