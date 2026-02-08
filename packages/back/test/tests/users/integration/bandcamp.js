@@ -2,7 +2,6 @@ const spotifyInterceptor = require('fomoplayer_shared').interceptors.spotify.ini
 const bandcampInterceptor = require('fomoplayer_shared').interceptors.bandcamp.init()
 const { test } = require('cascade-test')
 const bandcampLogic = require('../../../../routes/stores/bandcamp/logic')
-const bandcampApi = require('../../../../routes/stores/bandcamp/bandcamp-api')
 const bandcampSearchMapped = require('../../../fixtures/bandcamp-noisia-search-mapped.json')
 const differentEyesTracks = require('../../../fixtures/bandcamp-different-eyes-tracks.json')
 const f4kY00Tracks = require('../../../fixtures/bandcamp-f4k-y00-tracks.json')
@@ -29,10 +28,7 @@ test({
       )
       assert.deepEqual(res, bandcampSearchMapped)
     },
-    teardown: () => {
-      bandcampInterceptor.clearMockedRequests()
-      bandcampApi.static.resetCache()
-    },
+    teardown: bandcampInterceptor.clearMockedRequests,
   },
   'artist tracks': {
     'are fetched': async () => {
@@ -61,10 +57,7 @@ test({
         undefined,
       )
     },
-    teardown: () => {
-      bandcampInterceptor.clearMockedRequests()
-      bandcampApi.static.resetCache()
-    },
+    teardown: bandcampInterceptor.clearMockedRequests,
   },
   'label details': {
     'are fetched': async () => {
@@ -93,10 +86,7 @@ test({
         undefined,
       )
     },
-    teardown: () => {
-      bandcampInterceptor.clearMockedRequests()
-      bandcampApi.static.resetCache()
-    },
+    teardown: bandcampInterceptor.clearMockedRequests,
   },
   teardown: async () => {
     spotifyInterceptor.dispose()

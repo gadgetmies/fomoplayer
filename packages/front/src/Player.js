@@ -122,7 +122,7 @@ class Player extends Component {
   }
 
   getTrackIndex(track) {
-    return R.findIndex(R.propEq('id', track.id), this.getTracks())
+    return track ? R.findIndex(R.propEq('id', track.id), this.getTracks()) : -1
   }
 
   async jumpTracks(numberOfTracksToJump) {

@@ -63,24 +63,15 @@ const isRateLimited = () => {
 }
 
 const getReleaseInfo = (pageSource) => extractJSON('[data-tralbum]', 'data-tralbum', pageSource)
-const releaseCache = new Map()
 const getRelease = (itemUrl, callback) => {
-  const now = Date.now()
-  let cached = releaseCache.get(itemUrl)
-
-  if (!cached || cached.expires <= now) {
-    const promise = BPromise.resolve(getPageSource(itemUrl))
-      .then((res) => ({ ...getReleaseInfo(res), url: itemUrl }))
-      .catch((e) => {
-        releaseCache.delete(itemUrl)
-        throw e
-      })
-
-    cached = { promise, expires: now + 1000 * 60 * 60 }
-    releaseCache.set(itemUrl, cached)
-  }
-
-  return cached.promise.asCallback(callback)
+  return getPageSource(itemUrl)
+    .then((res) => {
+      callback(null, { ...getReleaseInfo(res), url: itemUrl })
+    })
+    .catch((e) => {
+      logger.error(`Fetching release from ${itemUrl} failed`, { statusCode: e.statusCode })
+      callback(e)
+    })
 }
 
 const getName = (dom) => {
@@ -213,10 +204,6 @@ const resetRequestCount = () => {
   requestCount = 0
 }
 
-const resetCache = () => {
-  releaseCache.clear()
-}
-
 module.exports = {
   ...BPromise.promisifyAll({
     getRelease,
@@ -232,6 +219,5 @@ module.exports = {
     getTagName,
     isRateLimited,
     resetRequestCount,
-    resetCache,
   },
 }
