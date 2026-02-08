@@ -9,6 +9,7 @@ const spotifySearchMock = require('fomoplayer_shared/interceptors/fixtures/spoti
 test({
   setup: async () => {
     await refreshToken()
+    spotifyInterceptor.clearMockedRequests()
   },
   skip: () =>
     process.env.SPOTIFY_API_REDIRECT !== '' ||
