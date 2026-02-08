@@ -10,12 +10,9 @@ on:
     branches: [master]
 
 jobs:
-  # Label of the container job
   test:
-    # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
-    # Docker Hub image that `container-job` executes in
-    container: node:22-alpine
+    container: node:22
 
     strategy:
       matrix:
@@ -31,6 +28,8 @@ jobs:
         # Provide the password for postgres
         env:
           POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -41,22 +40,22 @@ jobs:
     steps:
       # Downloads a copy of the code in your repository before running CI tests
       - name: Check out repository code
-        uses: actions/checkout@v2
-
-      - name: Preinstall system dependencies
-        run: |
-          apk add --no-cache git postgresql-client
-
-      # Performs a clean installation of all dependencies in the `package.json` file
-      # For more information, see https://docs.npmjs.com/cli/ci.html
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'yarn'
+
+      - name: Preinstall system dependencies
+        run: |
+          apt-get update && apt-get install -y git postgresql-client
+
+      # Performs a clean installation of all dependencies in the `package.json` file
+      # For more information, see https://docs.npmjs.com/cli/ci.html
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
 
       - name: Setup database
         run: psql -h postgres -U postgres -c 'CREATE DATABASE "multi-store-player-test";'

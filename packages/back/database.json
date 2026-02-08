@@ -1,7 +1,4 @@
 {
-  "defaultEnv": {
-    "ENV": "NODE_ENV"
-  },
   "dev": {
     "driver": "pg",
     "host": "localhost",
@@ -13,11 +10,12 @@
     "database": "multi-store-player-test"
   },
   "ci": {
-    "ENV": "DATABASE_URL"
+    "driver": "pg",
+    "connectionString": { "ENV": "DATABASE_URL" }
   },
   "prod": {
-    "ENV": "DATABASE_URL",
     "driver": "pg",
+    "connectionString": { "ENV": "DATABASE_URL" },
     "ssl": {
       "rejectUnauthorized": false
     }
