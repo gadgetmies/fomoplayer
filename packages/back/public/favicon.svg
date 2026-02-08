@@ -1,0 +1,1579 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="32"
+   height="32"
+   viewBox="0 0 8.4666665 8.4666669"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.1 (c3084ef, 2021-09-22)"
+   sodipodi:docname="favicon.svg"
+   inkscape:export-filename="/Users/mikokiiski/Documents/Projects/multi_store_player/packages/front/public/favicon.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="false"
+     inkscape:document-units="mm"
+     showgrid="false"
+     units="px"
+     inkscape:zoom="5.7299663"
+     inkscape:cx="-5.0611118"
+     inkscape:cy="8.0279704"
+     inkscape:window-width="1920"
+     inkscape:window-height="990"
+     inkscape:window-x="720"
+     inkscape:window-y="101"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer2" />
+  <defs
+     id="defs2">
+    <filter
+       inkscape:collect="always"
+       style="color-interpolation-filters:sRGB"
+       id="filter2524"
+       x="-0.41832894"
+       y="-0.27664861"
+       width="1.8366579"
+       height="1.5532972">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.4611786"
+         id="feGaussianBlur2526" />
+    </filter>
+    <meshgradient
+       inkscape:collect="always"
+       id="meshgradient2666"
+       gradientUnits="userSpaceOnUse"
+       x="8.2020831"
+       y="4.2333331">
+      <meshrow
+         id="meshrow2668">
+        <meshpatch
+           id="meshpatch2670">
+          <stop
+             path="c 0,1.05258  -0.418135,2.06205  -1.16242,2.80633"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2672" />
+          <stop
+             path="l -0.350791,-0.350791"
+             style="stop-color:#999999;stop-opacity:1"
+             id="stop2674" />
+          <stop
+             path="c 0.651249,-0.651249  1.01712,-1.53453  1.01712,-2.45554"
+             style="stop-color:#999999;stop-opacity:1"
+             id="stop2676" />
+          <stop
+             path="l 0.496094,0"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2678" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2680">
+          <stop
+             path="c -0.744285,0.744285  -1.75375,1.16242  -2.80633,1.16242"
+             id="stop2682" />
+          <stop
+             path="l 0,-0.496094"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2684" />
+          <stop
+             path="c 0.921006,0  1.80429,-0.365868  2.45554,-1.01712"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2686" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2688">
+          <stop
+             path="c -1.05258,0  -2.06205,-0.418135  -2.80633,-1.16242"
+             id="stop2690" />
+          <stop
+             path="l 0.350791,-0.350791"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2692" />
+          <stop
+             path="c 0.651249,0.651249  1.53453,1.01712  2.45554,1.01712"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2694" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2696">
+          <stop
+             path="c -0.744285,-0.744285  -1.16242,-1.75375  -1.16242,-2.80633"
+             id="stop2698" />
+          <stop
+             path="l 0.496094,-8.88178e-16"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2700" />
+          <stop
+             path="c 0,0.921006  0.365868,1.80429  1.01712,2.45554"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2702" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2704">
+          <stop
+             path="c -1.11022e-16,-1.05258  0.418135,-2.06205  1.16242,-2.80633"
+             id="stop2706" />
+          <stop
+             path="l 0.350791,0.350791"
+             style="stop-color:#b3b3b3;stop-opacity:1"
+             id="stop2708" />
+          <stop
+             path="c -0.651249,0.651249  -1.01712,1.53453  -1.01712,2.45554"
+             style="stop-color:#b3b3b3;stop-opacity:1"
+             id="stop2710" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2712">
+          <stop
+             path="c 0.744285,-0.744285  1.75375,-1.16242  2.80633,-1.16242"
+             id="stop2714" />
+          <stop
+             path="l 8.88178e-16,0.496094"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2716" />
+          <stop
+             path="c -0.921006,1.11022e-16  -1.80429,0.365868  -2.45554,1.01712"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2718" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2720">
+          <stop
+             path="c 1.05258,-1.66533e-16  2.06205,0.418135  2.80633,1.16242"
+             id="stop2722" />
+          <stop
+             path="l -0.350791,0.350791"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2724" />
+          <stop
+             path="c -0.651249,-0.651249  -1.53453,-1.01712  -2.45554,-1.01712"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2726" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2728">
+          <stop
+             path="c 0.744285,0.744285  1.16242,1.75375  1.16242,2.80633"
+             id="stop2730" />
+          <stop
+             path="l -0.496094,8.88178e-16"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2732" />
+          <stop
+             path="c 0,-0.921006  -0.365868,-1.80429  -1.01712,-2.45554"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2734" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow2736">
+        <meshpatch
+           id="meshpatch2738">
+          <stop
+             path="l -0.350791,-0.350791"
+             id="stop2740" />
+          <stop
+             path="c 0.558214,-0.558214  0.871815,-1.31531  0.871815,-2.10475"
+             style="stop-color:#999999;stop-opacity:1"
+             id="stop2742" />
+          <stop
+             path="l 0.496094,0"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2744" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2746">
+          <stop
+             path="l 0,-0.496094"
+             id="stop2748" />
+          <stop
+             path="c 0.789433,0  1.54653,-0.313601  2.10475,-0.871815"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2750" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2752">
+          <stop
+             path="l 0.350791,-0.350791"
+             id="stop2754" />
+          <stop
+             path="c 0.558214,0.558214  1.31531,0.871815  2.10475,0.871815"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2756" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2758">
+          <stop
+             path="l 0.496094,0"
+             id="stop2760" />
+          <stop
+             path="c 0,0.789433  0.313601,1.54653  0.871815,2.10475"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2762" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2764">
+          <stop
+             path="l 0.350791,0.350791"
+             id="stop2766" />
+          <stop
+             path="c -0.558214,0.558214  -0.871815,1.31531  -0.871815,2.10475"
+             style="stop-color:#b3b3b3;stop-opacity:1"
+             id="stop2768" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2770">
+          <stop
+             path="l 0,0.496094"
+             id="stop2772" />
+          <stop
+             path="c -0.789433,0  -1.54653,0.313601  -2.10475,0.871815"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2774" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2776">
+          <stop
+             path="l -0.350791,0.350791"
+             id="stop2778" />
+          <stop
+             path="c -0.558214,-0.558214  -1.31531,-0.871815  -2.10475,-0.871815"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2780" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2782">
+          <stop
+             path="l -0.496094,0"
+             id="stop2784" />
+          <stop
+             path="c 0,-0.789433  -0.313601,-1.54653  -0.871815,-2.10475"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2786" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow2788">
+        <meshpatch
+           id="meshpatch2790">
+          <stop
+             path="l -0.350791,-0.350791"
+             id="stop2792" />
+          <stop
+             path="c 0.465178,-0.465178  0.726512,-1.0961  0.726512,-1.75396"
+             style="stop-color:#999999;stop-opacity:1"
+             id="stop2794" />
+          <stop
+             path="l 0.496094,0"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2796" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2798">
+          <stop
+             path="l 0,-0.496094"
+             id="stop2800" />
+          <stop
+             path="c 0.657861,0  1.28878,-0.261334  1.75396,-0.726512"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2802" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2804">
+          <stop
+             path="l 0.350791,-0.350791"
+             id="stop2806" />
+          <stop
+             path="c 0.465178,0.465178  1.0961,0.726512  1.75396,0.726512"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2808" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2810">
+          <stop
+             path="l 0.496094,0"
+             id="stop2812" />
+          <stop
+             path="c 0,0.657861  0.261334,1.28878  0.726512,1.75396"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2814" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2816">
+          <stop
+             path="l 0.350791,0.350791"
+             id="stop2818" />
+          <stop
+             path="c -0.465178,0.465178  -0.726512,1.0961  -0.726512,1.75396"
+             style="stop-color:#b3b3b3;stop-opacity:1"
+             id="stop2820" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2822">
+          <stop
+             path="l 0,0.496094"
+             id="stop2824" />
+          <stop
+             path="c -0.657861,0  -1.28878,0.261334  -1.75396,0.726512"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2826" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2828">
+          <stop
+             path="l -0.350791,0.350791"
+             id="stop2830" />
+          <stop
+             path="c -0.465178,-0.465178  -1.0961,-0.726512  -1.75396,-0.726512"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2832" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2834">
+          <stop
+             path="l -0.496094,0"
+             id="stop2836" />
+          <stop
+             path="c 0,-0.657861  -0.261334,-1.28878  -0.726512,-1.75396"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2838" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow2840">
+        <meshpatch
+           id="meshpatch2842">
+          <stop
+             path="l -0.350791,-0.350791"
+             id="stop2844" />
+          <stop
+             path="c 0.372143,-0.372143  0.58121,-0.876876  0.58121,-1.40317"
+             style="stop-color:#999999;stop-opacity:1"
+             id="stop2846" />
+          <stop
+             path="l 0.496094,0"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2848" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2850">
+          <stop
+             path="l 0,-0.496094"
+             id="stop2852" />
+          <stop
+             path="c 0.526289,-1.77636e-15  1.03102,-0.209067  1.40317,-0.58121"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2854" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2856">
+          <stop
+             path="l 0.350791,-0.350791"
+             id="stop2858" />
+          <stop
+             path="c 0.372143,0.372143  0.876876,0.58121  1.40317,0.58121"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2860" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2862">
+          <stop
+             path="l 0.496094,0"
+             id="stop2864" />
+          <stop
+             path="c 0,0.526289  0.209067,1.03102  0.58121,1.40317"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2866" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2868">
+          <stop
+             path="l 0.350791,0.350791"
+             id="stop2870" />
+          <stop
+             path="c -0.372143,0.372143  -0.58121,0.876876  -0.58121,1.40317"
+             style="stop-color:#b3b3b3;stop-opacity:1"
+             id="stop2872" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2874">
+          <stop
+             path="l 0,0.496094"
+             id="stop2876" />
+          <stop
+             path="c -0.526289,0  -1.03102,0.209067  -1.40317,0.58121"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2878" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2880">
+          <stop
+             path="l -0.350791,0.350791"
+             id="stop2882" />
+          <stop
+             path="c -0.372143,-0.372143  -0.876876,-0.58121  -1.40317,-0.58121"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2884" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2886">
+          <stop
+             path="l -0.496094,0"
+             id="stop2888" />
+          <stop
+             path="c -1.77636e-15,-0.526289  -0.209067,-1.03102  -0.58121,-1.40317"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2890" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow2892">
+        <meshpatch
+           id="meshpatch2894">
+          <stop
+             path="l -0.350791,-0.350791"
+             id="stop2896" />
+          <stop
+             path="c 0.279107,-0.279107  0.435907,-0.657657  0.435907,-1.05237"
+             style="stop-color:#999999;stop-opacity:1"
+             id="stop2898" />
+          <stop
+             path="l 0.496094,0"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2900" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2902">
+          <stop
+             path="l 0,-0.496094"
+             id="stop2904" />
+          <stop
+             path="c 0.394717,-1.77636e-15  0.773267,-0.156801  1.05237,-0.435907"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2906" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2908">
+          <stop
+             path="l 0.350791,-0.350791"
+             id="stop2910" />
+          <stop
+             path="c 0.279107,0.279107  0.657657,0.435907  1.05237,0.435907"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2912" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2914">
+          <stop
+             path="l 0.496094,0"
+             id="stop2916" />
+          <stop
+             path="c 0,0.394717  0.156801,0.773267  0.435907,1.05237"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2918" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2920">
+          <stop
+             path="l 0.350791,0.350791"
+             id="stop2922" />
+          <stop
+             path="c -0.279107,0.279107  -0.435907,0.657657  -0.435907,1.05237"
+             style="stop-color:#b3b3b3;stop-opacity:1"
+             id="stop2924" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2926">
+          <stop
+             path="l 0,0.496094"
+             id="stop2928" />
+          <stop
+             path="c -0.394717,0  -0.773267,0.156801  -1.05237,0.435907"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2930" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2932">
+          <stop
+             path="l -0.350791,0.350791"
+             id="stop2934" />
+          <stop
+             path="c -0.279107,-0.279107  -0.657657,-0.435907  -1.05237,-0.435907"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2936" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2938">
+          <stop
+             path="l -0.496094,0"
+             id="stop2940" />
+          <stop
+             path="c -1.77636e-15,-0.394717  -0.156801,-0.773267  -0.435907,-1.05237"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2942" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow2944">
+        <meshpatch
+           id="meshpatch2946">
+          <stop
+             path="l -0.350791,-0.350791"
+             id="stop2948" />
+          <stop
+             path="c 0.186071,-0.186071  0.290605,-0.438438  0.290605,-0.701583"
+             style="stop-color:#999999;stop-opacity:1"
+             id="stop2950" />
+          <stop
+             path="l 0.496094,0"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2952" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2954">
+          <stop
+             path="l 0,-0.496094"
+             id="stop2956" />
+          <stop
+             path="c 0.263144,-8.88178e-16  0.515511,-0.104534  0.701583,-0.290605"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2958" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2960">
+          <stop
+             path="l 0.350791,-0.350791"
+             id="stop2962" />
+          <stop
+             path="c 0.186071,0.186071  0.438438,0.290605  0.701583,0.290605"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2964" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2966">
+          <stop
+             path="l 0.496094,0"
+             id="stop2968" />
+          <stop
+             path="c 0,0.263144  0.104534,0.515511  0.290605,0.701583"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop2970" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2972">
+          <stop
+             path="l 0.350791,0.350791"
+             id="stop2974" />
+          <stop
+             path="c -0.186071,0.186071  -0.290605,0.438438  -0.290605,0.701583"
+             style="stop-color:#b3b3b3;stop-opacity:1"
+             id="stop2976" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2978">
+          <stop
+             path="l 0,0.496094"
+             id="stop2980" />
+          <stop
+             path="c -0.263144,0  -0.515511,0.104534  -0.701583,0.290605"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2982" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2984">
+          <stop
+             path="l -0.350791,0.350791"
+             id="stop2986" />
+          <stop
+             path="c -0.186071,-0.186071  -0.438438,-0.290605  -0.701583,-0.290605"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2988" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch2990">
+          <stop
+             path="l -0.496094,0"
+             id="stop2992" />
+          <stop
+             path="c -8.88178e-16,-0.263144  -0.104534,-0.515511  -0.290605,-0.701583"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop2994" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow2996">
+        <meshpatch
+           id="meshpatch2998">
+          <stop
+             path="l -0.350791,-0.350791"
+             id="stop3000" />
+          <stop
+             path="c 0.0930356,-0.0930356  0.145302,-0.219219  0.145302,-0.350791"
+             style="stop-color:#999999;stop-opacity:1"
+             id="stop3002" />
+          <stop
+             path="l 0.496094,0"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop3004" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3006">
+          <stop
+             path="l 0,-0.496094"
+             id="stop3008" />
+          <stop
+             path="c 0.131572,0  0.257756,-0.0522669  0.350791,-0.145302"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop3010" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3012">
+          <stop
+             path="l 0.350791,-0.350791"
+             id="stop3014" />
+          <stop
+             path="c 0.0930356,0.0930356  0.219219,0.145302  0.350791,0.145302"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop3016" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3018">
+          <stop
+             path="l 0.496094,0"
+             id="stop3020" />
+          <stop
+             path="c 0,0.131572  0.0522669,0.257756  0.145302,0.350791"
+             style="stop-color:#808080;stop-opacity:1"
+             id="stop3022" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3024">
+          <stop
+             path="l 0.350791,0.350791"
+             id="stop3026" />
+          <stop
+             path="c -0.0930356,0.0930356  -0.145302,0.219219  -0.145302,0.350791"
+             style="stop-color:#333333;stop-opacity:1"
+             id="stop3028" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3030">
+          <stop
+             path="l 0,0.496094"
+             id="stop3032" />
+          <stop
+             path="c -0.131572,0  -0.257756,0.0522669  -0.350791,0.145302"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop3034" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3036">
+          <stop
+             path="l -0.350791,0.350791"
+             id="stop3038" />
+          <stop
+             path="c -0.0930356,-0.0930356  -0.219219,-0.145302  -0.350791,-0.145302"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop3040" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3042">
+          <stop
+             path="l -0.496094,0"
+             id="stop3044" />
+          <stop
+             path="c 0,-0.131572  -0.0522669,-0.257756  -0.145302,-0.350791"
+             style="stop-color:#666666;stop-opacity:1"
+             id="stop3046" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow3048">
+        <meshpatch
+           id="meshpatch3050">
+          <stop
+             path="l -0.350791,-0.350791"
+             id="stop3052" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#4d4d4d;stop-opacity:1"
+             id="stop3054" />
+          <stop
+             path="l 0.496094,0"
+             style="stop-color:#4d4d4d;stop-opacity:1"
+             id="stop3056" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3058">
+          <stop
+             path="l 0,-0.496094"
+             id="stop3060" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#4d4d4d;stop-opacity:1"
+             id="stop3062" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3064">
+          <stop
+             path="l 0.350791,-0.350791"
+             id="stop3066" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#4d4d4d;stop-opacity:1"
+             id="stop3068" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3070">
+          <stop
+             path="l 0.496094,0"
+             id="stop3072" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#4d4d4d;stop-opacity:1"
+             id="stop3074" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3076">
+          <stop
+             path="l 0.350791,0.350791"
+             id="stop3078" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#4d4d4d;stop-opacity:1"
+             id="stop3080" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3082">
+          <stop
+             path="l 0,0.496094"
+             id="stop3084" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#4d4d4d;stop-opacity:1"
+             id="stop3086" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3088">
+          <stop
+             path="l -0.350791,0.350791"
+             id="stop3090" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#4d4d4d;stop-opacity:1"
+             id="stop3092" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch3094">
+          <stop
+             path="l -0.496094,0"
+             id="stop3096" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#4d4d4d;stop-opacity:1"
+             id="stop3098" />
+        </meshpatch>
+      </meshrow>
+    </meshgradient>
+    <meshgradient
+       inkscape:collect="always"
+       id="meshgradient7662"
+       gradientUnits="userSpaceOnUse"
+       x="5.8208331"
+       y="4.2333331"
+       gradientTransform="matrix(0.8,0,0,0.8,0.84666697,0.84666697)">
+      <meshrow
+         id="meshrow7664">
+        <meshpatch
+           id="meshpatch7666">
+          <stop
+             path="c 0,0.421031  -0.167254,0.824818  -0.464968,1.12253"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7668" />
+          <stop
+             path="l -0.140316,-0.140316"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7670" />
+          <stop
+             path="c 0.2605,-0.2605  0.406847,-0.613813  0.406847,-0.982215"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7672" />
+          <stop
+             path="l 0.198437,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7674" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7676">
+          <stop
+             path="c -0.297714,0.297714  -0.701501,0.464968  -1.12253,0.464968"
+             id="stop7678" />
+          <stop
+             path="l 0,-0.198437"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7680" />
+          <stop
+             path="c 0.368402,0  0.721716,-0.146347  0.982215,-0.406847"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7682" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7684">
+          <stop
+             path="c -0.421031,0  -0.824818,-0.167254  -1.12253,-0.464968"
+             id="stop7686" />
+          <stop
+             path="l 0.140316,-0.140316"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7688" />
+          <stop
+             path="c 0.2605,0.2605  0.613813,0.406847  0.982215,0.406847"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7690" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7692">
+          <stop
+             path="c -0.297714,-0.297714  -0.464968,-0.701501  -0.464968,-1.12253"
+             id="stop7694" />
+          <stop
+             path="l 0.198437,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7696" />
+          <stop
+             path="c 0,0.368402  0.146347,0.721716  0.406847,0.982215"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7698" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7700">
+          <stop
+             path="c 0,-0.421031  0.167254,-0.824818  0.464968,-1.12253"
+             id="stop7702" />
+          <stop
+             path="l 0.140316,0.140316"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7704" />
+          <stop
+             path="c -0.2605,0.2605  -0.406847,0.613813  -0.406847,0.982215"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7706" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7708">
+          <stop
+             path="c 0.297714,-0.297714  0.701501,-0.464968  1.12253,-0.464968"
+             id="stop7710" />
+          <stop
+             path="l 0,0.198437"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7712" />
+          <stop
+             path="c -0.368402,0  -0.721716,0.146347  -0.982215,0.406847"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7714" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7716">
+          <stop
+             path="c 0.421031,0  0.824818,0.167254  1.12253,0.464968"
+             id="stop7718" />
+          <stop
+             path="l -0.140316,0.140316"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7720" />
+          <stop
+             path="c -0.2605,-0.2605  -0.613813,-0.406847  -0.982215,-0.406847"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7722" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7724">
+          <stop
+             path="c 0.297714,0.297714  0.464968,0.701501  0.464968,1.12253"
+             id="stop7726" />
+          <stop
+             path="l -0.198437,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7728" />
+          <stop
+             path="c 0,-0.368402  -0.146347,-0.721716  -0.406847,-0.982215"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7730" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow7732">
+        <meshpatch
+           id="meshpatch7734">
+          <stop
+             path="l -0.140316,-0.140316"
+             id="stop7736" />
+          <stop
+             path="c 0.223285,-0.223285  0.348726,-0.526126  0.348726,-0.841899"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7738" />
+          <stop
+             path="l 0.198437,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7740" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7742">
+          <stop
+             path="l 0,-0.198437"
+             id="stop7744" />
+          <stop
+             path="c 0.315773,0  0.618614,-0.12544  0.841899,-0.348726"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7746" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7748">
+          <stop
+             path="l 0.140316,-0.140316"
+             id="stop7750" />
+          <stop
+             path="c 0.223285,0.223285  0.526126,0.348726  0.841899,0.348726"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7752" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7754">
+          <stop
+             path="l 0.198437,0"
+             id="stop7756" />
+          <stop
+             path="c 8.88178e-16,0.315773  0.12544,0.618614  0.348726,0.841899"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7758" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7760">
+          <stop
+             path="l 0.140316,0.140316"
+             id="stop7762" />
+          <stop
+             path="c -0.223285,0.223285  -0.348726,0.526126  -0.348726,0.841899"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7764" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7766">
+          <stop
+             path="l 0,0.198437"
+             id="stop7768" />
+          <stop
+             path="c -0.315773,8.88178e-16  -0.618614,0.12544  -0.841899,0.348726"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7770" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7772">
+          <stop
+             path="l -0.140316,0.140316"
+             id="stop7774" />
+          <stop
+             path="c -0.223285,-0.223285  -0.526126,-0.348726  -0.841899,-0.348726"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7776" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7778">
+          <stop
+             path="l -0.198437,0"
+             id="stop7780" />
+          <stop
+             path="c 0,-0.315773  -0.12544,-0.618614  -0.348726,-0.841899"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7782" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow7784">
+        <meshpatch
+           id="meshpatch7786">
+          <stop
+             path="l -0.140316,-0.140316"
+             id="stop7788" />
+          <stop
+             path="c 0.186071,-0.186071  0.290605,-0.438438  0.290605,-0.701582"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7790" />
+          <stop
+             path="l 0.198437,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7792" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7794">
+          <stop
+             path="l 0,-0.198437"
+             id="stop7796" />
+          <stop
+             path="c 0.263144,0  0.515511,-0.104534  0.701582,-0.290605"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7798" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7800">
+          <stop
+             path="l 0.140316,-0.140316"
+             id="stop7802" />
+          <stop
+             path="c 0.186071,0.186071  0.438438,0.290605  0.701582,0.290605"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7804" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7806">
+          <stop
+             path="l 0.198437,0"
+             id="stop7808" />
+          <stop
+             path="c 8.88178e-16,0.263144  0.104534,0.515511  0.290605,0.701582"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7810" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7812">
+          <stop
+             path="l 0.140316,0.140316"
+             id="stop7814" />
+          <stop
+             path="c -0.186071,0.186071  -0.290605,0.438438  -0.290605,0.701582"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7816" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7818">
+          <stop
+             path="l 0,0.198437"
+             id="stop7820" />
+          <stop
+             path="c -0.263144,8.88178e-16  -0.515511,0.104534  -0.701582,0.290605"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7822" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7824">
+          <stop
+             path="l -0.140316,0.140316"
+             id="stop7826" />
+          <stop
+             path="c -0.186071,-0.186071  -0.438438,-0.290605  -0.701582,-0.290605"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7828" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7830">
+          <stop
+             path="l -0.198437,0"
+             id="stop7832" />
+          <stop
+             path="c 0,-0.263144  -0.104534,-0.515511  -0.290605,-0.701582"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7834" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow7836">
+        <meshpatch
+           id="meshpatch7838">
+          <stop
+             path="l -0.140316,-0.140316"
+             id="stop7840" />
+          <stop
+             path="c 0.148857,-0.148857  0.232484,-0.35075  0.232484,-0.561266"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7842" />
+          <stop
+             path="l 0.198437,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7844" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7846">
+          <stop
+             path="l 0,-0.198437"
+             id="stop7848" />
+          <stop
+             path="c 0.210516,0  0.412409,-0.083627  0.561266,-0.232484"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7850" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7852">
+          <stop
+             path="l 0.140316,-0.140316"
+             id="stop7854" />
+          <stop
+             path="c 0.148857,0.148857  0.35075,0.232484  0.561266,0.232484"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7856" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7858">
+          <stop
+             path="l 0.198437,0"
+             id="stop7860" />
+          <stop
+             path="c 1.33227e-15,0.210516  0.083627,0.412409  0.232484,0.561266"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7862" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7864">
+          <stop
+             path="l 0.140316,0.140316"
+             id="stop7866" />
+          <stop
+             path="c -0.148857,0.148857  -0.232484,0.35075  -0.232484,0.561266"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7868" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7870">
+          <stop
+             path="l 0,0.198437"
+             id="stop7872" />
+          <stop
+             path="c -0.210516,1.33227e-15  -0.412409,0.083627  -0.561266,0.232484"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7874" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7876">
+          <stop
+             path="l -0.140316,0.140316"
+             id="stop7878" />
+          <stop
+             path="c -0.148857,-0.148857  -0.35075,-0.232484  -0.561266,-0.232484"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7880" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7882">
+          <stop
+             path="l -0.198437,0"
+             id="stop7884" />
+          <stop
+             path="c 0,-0.210516  -0.083627,-0.412409  -0.232484,-0.561266"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7886" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow7888">
+        <meshpatch
+           id="meshpatch7890">
+          <stop
+             path="l -0.140316,-0.140316"
+             id="stop7892" />
+          <stop
+             path="c 0.111643,-0.111643  0.174363,-0.263063  0.174363,-0.420949"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7894" />
+          <stop
+             path="l 0.198437,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7896" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7898">
+          <stop
+             path="l 0,-0.198437"
+             id="stop7900" />
+          <stop
+             path="c 0.157887,0  0.309307,-0.0627202  0.420949,-0.174363"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7902" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7904">
+          <stop
+             path="l 0.140316,-0.140316"
+             id="stop7906" />
+          <stop
+             path="c 0.111643,0.111643  0.263063,0.174363  0.420949,0.174363"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7908" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7910">
+          <stop
+             path="l 0.198437,0"
+             id="stop7912" />
+          <stop
+             path="c 8.88178e-16,0.157887  0.0627202,0.309307  0.174363,0.420949"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7914" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7916">
+          <stop
+             path="l 0.140316,0.140316"
+             id="stop7918" />
+          <stop
+             path="c -0.111643,0.111643  -0.174363,0.263063  -0.174363,0.420949"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7920" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7922">
+          <stop
+             path="l 0,0.198437"
+             id="stop7924" />
+          <stop
+             path="c -0.157887,8.88178e-16  -0.309307,0.0627202  -0.420949,0.174363"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7926" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7928">
+          <stop
+             path="l -0.140316,0.140316"
+             id="stop7930" />
+          <stop
+             path="c -0.111643,-0.111643  -0.263063,-0.174363  -0.420949,-0.174363"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7932" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7934">
+          <stop
+             path="l -0.198437,0"
+             id="stop7936" />
+          <stop
+             path="c 0,-0.157887  -0.0627202,-0.309307  -0.174363,-0.420949"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7938" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow7940">
+        <meshpatch
+           id="meshpatch7942">
+          <stop
+             path="l -0.140316,-0.140316"
+             id="stop7944" />
+          <stop
+             path="c 0.0744285,-0.0744285  0.116242,-0.175375  0.116242,-0.280633"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7946" />
+          <stop
+             path="l 0.198437,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7948" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7950">
+          <stop
+             path="l 0,-0.198437"
+             id="stop7952" />
+          <stop
+             path="c 0.105258,0  0.206205,-0.0418135  0.280633,-0.116242"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7954" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7956">
+          <stop
+             path="l 0.140316,-0.140316"
+             id="stop7958" />
+          <stop
+             path="c 0.0744285,0.0744285  0.175375,0.116242  0.280633,0.116242"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7960" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7962">
+          <stop
+             path="l 0.198437,0"
+             id="stop7964" />
+          <stop
+             path="c 0,0.105258  0.0418135,0.206205  0.116242,0.280633"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7966" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7968">
+          <stop
+             path="l 0.140316,0.140316"
+             id="stop7970" />
+          <stop
+             path="c -0.0744285,0.0744285  -0.116242,0.175375  -0.116242,0.280633"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7972" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7974">
+          <stop
+             path="l 0,0.198437"
+             id="stop7976" />
+          <stop
+             path="c -0.105258,0  -0.206205,0.0418135  -0.280633,0.116242"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7978" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7980">
+          <stop
+             path="l -0.140316,0.140316"
+             id="stop7982" />
+          <stop
+             path="c -0.0744285,-0.0744285  -0.175375,-0.116242  -0.280633,-0.116242"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop7984" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch7986">
+          <stop
+             path="l -0.198437,0"
+             id="stop7988" />
+          <stop
+             path="c 0,-0.105258  -0.0418135,-0.206205  -0.116242,-0.280633"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7990" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow7992">
+        <meshpatch
+           id="meshpatch7994">
+          <stop
+             path="l -0.140316,-0.140316"
+             id="stop7996" />
+          <stop
+             path="c 0.0372142,-0.0372142  0.058121,-0.0876876  0.058121,-0.140316"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop7998" />
+          <stop
+             path="l 0.198437,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8000" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8002">
+          <stop
+             path="l 0,-0.198437"
+             id="stop8004" />
+          <stop
+             path="c 0.0526289,0  0.103102,-0.0209067  0.140316,-0.058121"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8006" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8008">
+          <stop
+             path="l 0.140316,-0.140316"
+             id="stop8010" />
+          <stop
+             path="c 0.0372142,0.0372142  0.0876876,0.058121  0.140316,0.058121"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop8012" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8014">
+          <stop
+             path="l 0.198437,0"
+             id="stop8016" />
+          <stop
+             path="c 0,0.0526289  0.0209067,0.103102  0.058121,0.140316"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8018" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8020">
+          <stop
+             path="l 0.140316,0.140316"
+             id="stop8022" />
+          <stop
+             path="c -0.0372142,0.0372142  -0.058121,0.0876876  -0.058121,0.140316"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8024" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8026">
+          <stop
+             path="l 0,0.198437"
+             id="stop8028" />
+          <stop
+             path="c -0.0526289,0  -0.103102,0.0209067  -0.140316,0.058121"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8030" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8032">
+          <stop
+             path="l -0.140316,0.140316"
+             id="stop8034" />
+          <stop
+             path="c -0.0372142,-0.0372142  -0.0876876,-0.058121  -0.140316,-0.058121"
+             style="stop-color:#ffffff;stop-opacity:1"
+             id="stop8036" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8038">
+          <stop
+             path="l -0.198437,0"
+             id="stop8040" />
+          <stop
+             path="c 0,-0.0526289  -0.0209067,-0.103102  -0.058121,-0.140316"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8042" />
+        </meshpatch>
+      </meshrow>
+      <meshrow
+         id="meshrow8044">
+        <meshpatch
+           id="meshpatch8046">
+          <stop
+             path="l -0.140316,-0.140316"
+             id="stop8048" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8050" />
+          <stop
+             path="l 0.198437,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8052" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8054">
+          <stop
+             path="l 0,-0.198437"
+             id="stop8056" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8058" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8060">
+          <stop
+             path="l 0.140316,-0.140316"
+             id="stop8062" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8064" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8066">
+          <stop
+             path="l 0.198437,0"
+             id="stop8068" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8070" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8072">
+          <stop
+             path="l 0.140316,0.140316"
+             id="stop8074" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8076" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8078">
+          <stop
+             path="l 0,0.198437"
+             id="stop8080" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8082" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8084">
+          <stop
+             path="l -0.140316,0.140316"
+             id="stop8086" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8088" />
+        </meshpatch>
+        <meshpatch
+           id="meshpatch8090">
+          <stop
+             path="l -0.198437,0"
+             id="stop8092" />
+          <stop
+             path="l 0,0"
+             style="stop-color:#f2f2f2;stop-opacity:1"
+             id="stop8094" />
+        </meshpatch>
+      </meshrow>
+    </meshgradient>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="display:inline">
+    <circle
+       style="fill:url(#meshgradient2666);fill-opacity:1;fill-rule:evenodd;stroke-width:0.220996"
+       id="path167"
+       cx="4.2333331"
+       cy="4.2333331"
+       r="3.96875" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2"
+     style="display:inline">
+    <circle
+       style="fill:url(#meshgradient7662);fill-opacity:1;fill-rule:evenodd;stroke-width:0.0707186"
+       id="circle1558"
+       cx="4.2333331"
+       cy="4.2333331"
+       r="1.27" />
+    <circle
+       style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke-width:0.0117865"
+       id="circle1650"
+       cx="4.2333331"
+       cy="4.2333331"
+       r="0.21166666" />
+    <path
+       id="path1302"
+       style="mix-blend-mode:multiply;fill:#50003d;fill-opacity:1;stroke-width:0.402672;filter:url(#filter2524);opacity:0.77777778"
+       d="m -1.1346294,3.8766608 c 0,0.7306267 -0.59229,1.3229167 -1.3229167,1.3229167 -0.7306266,0 -1.3229166,-0.59229 -1.3229166,-1.3229167 0,-0.7306267 1.3555676,-2.6779298 1.3555676,-2.6779298 0,0 1.2902657,1.9473031 1.2902657,2.6779298 z"
+       sodipodi:nodetypes="ssscs"
+       transform="matrix(0.8,0,0,0.8,4.2636543,0.06944825)" />
+    <g
+       id="g7079"
+       transform="matrix(0.8,0,0,0.8,4.3694257,0.17532367)"
+       style="fill:#df00aa;fill-opacity:1">
+      <path
+         id="path2504"
+         style="fill:#df00aa;fill-opacity:1;stroke-width:0.402672"
+         d="m -1.2668436,3.7443164 c 0,0.7306267 -0.59229,1.3229167 -1.3229167,1.3229167 -0.7306266,0 -1.3229166,-0.59229 -1.3229166,-1.3229167 0,-0.7306267 1.3555676,-2.6779298 1.3555676,-2.6779298 0,0 1.2902657,1.9473031 1.2902657,2.6779298 z"
+         sodipodi:nodetypes="ssscs" />
+    </g>
+  </g>
+  <script
+     id="mesh_polyfill"
+     type="text/javascript">
+!function(){const t=&quot;http://www.w3.org/2000/svg&quot;,e=&quot;http://www.w3.org/1999/xlink&quot;,s=&quot;http://www.w3.org/1999/xhtml&quot;,r=2;if(document.createElementNS(t,&quot;meshgradient&quot;).x)return;const n=(t,e,s,r)=&gt;{let n=new x(.5*(e.x+s.x),.5*(e.y+s.y)),o=new x(.5*(t.x+e.x),.5*(t.y+e.y)),i=new x(.5*(s.x+r.x),.5*(s.y+r.y)),a=new x(.5*(n.x+o.x),.5*(n.y+o.y)),h=new x(.5*(n.x+i.x),.5*(n.y+i.y)),l=new x(.5*(a.x+h.x),.5*(a.y+h.y));return[[t,o,a,l],[l,h,i,r]]},o=t=&gt;{let e=t[0].distSquared(t[1]),s=t[2].distSquared(t[3]),r=.25*t[0].distSquared(t[2]),n=.25*t[1].distSquared(t[3]),o=e&gt;s?e:s,i=r&gt;n?r:n;return 18*(o&gt;i?o:i)},i=(t,e)=&gt;Math.sqrt(t.distSquared(e)),a=(t,e)=&gt;t.scale(2/3).add(e.scale(1/3)),h=t=&gt;{let e,s,r,n,o,i,a,h=new g;return t.match(/(\w+\(\s*[^)]+\))+/g).forEach(t=&gt;{let l=t.match(/[\w.-]+/g),d=l.shift();switch(d){case&quot;translate&quot;:2===l.length?e=new g(1,0,0,1,l[0],l[1]):(console.error(&quot;mesh.js: translate does not have 2 arguments!&quot;),e=new g(1,0,0,1,0,0)),h=h.append(e);break;case&quot;scale&quot;:1===l.length?s=new g(l[0],0,0,l[0],0,0):2===l.length?s=new g(l[0],0,0,l[1],0,0):(console.error(&quot;mesh.js: scale does not have 1 or 2 arguments!&quot;),s=new g(1,0,0,1,0,0)),h=h.append(s);break;case&quot;rotate&quot;:if(3===l.length&amp;&amp;(e=new g(1,0,0,1,l[1],l[2]),h=h.append(e)),l[0]){r=l[0]*Math.PI/180;let t=Math.cos(r),e=Math.sin(r);Math.abs(t)&lt;1e-16&amp;&amp;(t=0),Math.abs(e)&lt;1e-16&amp;&amp;(e=0),a=new g(t,e,-e,t,0,0),h=h.append(a)}else console.error(&quot;math.js: No argument to rotate transform!&quot;);3===l.length&amp;&amp;(e=new g(1,0,0,1,-l[1],-l[2]),h=h.append(e));break;case&quot;skewX&quot;:l[0]?(r=l[0]*Math.PI/180,n=Math.tan(r),o=new g(1,0,n,1,0,0),h=h.append(o)):console.error(&quot;math.js: No argument to skewX transform!&quot;);break;case&quot;skewY&quot;:l[0]?(r=l[0]*Math.PI/180,n=Math.tan(r),i=new g(1,n,0,1,0,0),h=h.append(i)):console.error(&quot;math.js: No argument to skewY transform!&quot;);break;case&quot;matrix&quot;:6===l.length?h=h.append(new g(...l)):console.error(&quot;math.js: Incorrect number of arguments for matrix!&quot;);break;default:console.error(&quot;mesh.js: Unhandled transform type: &quot;+d)}}),h},l=t=&gt;{let e=[],s=t.split(/[ ,]+/);for(let t=0,r=s.length-1;t&lt;r;t+=2)e.push(new x(parseFloat(s[t]),parseFloat(s[t+1])));return e},d=(t,e)=&gt;{for(let s in e)t.setAttribute(s,e[s])},c=(t,e,s,r,n)=&gt;{let o,i,a=[0,0,0,0];for(let h=0;h&lt;3;++h)e[h]&lt;t[h]&amp;&amp;e[h]&lt;s[h]||t[h]&lt;e[h]&amp;&amp;s[h]&lt;e[h]?a[h]=0:(a[h]=.5*((e[h]-t[h])/r+(s[h]-e[h])/n),o=Math.abs(3*(e[h]-t[h])/r),i=Math.abs(3*(s[h]-e[h])/n),a[h]&gt;o?a[h]=o:a[h]&gt;i&amp;&amp;(a[h]=i));return a},u=[[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],[-3,3,0,0,-2,-1,0,0,0,0,0,0,0,0,0,0],[2,-2,0,0,1,1,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,-3,3,0,0,-2,-1,0,0],[0,0,0,0,0,0,0,0,2,-2,0,0,1,1,0,0],[-3,0,3,0,0,0,0,0,-2,0,-1,0,0,0,0,0],[0,0,0,0,-3,0,3,0,0,0,0,0,-2,0,-1,0],[9,-9,-9,9,6,3,-6,-3,6,-6,3,-3,4,2,2,1],[-6,6,6,-6,-3,-3,3,3,-4,4,-2,2,-2,-2,-1,-1],[2,0,-2,0,0,0,0,0,1,0,1,0,0,0,0,0],[0,0,0,0,2,0,-2,0,0,0,0,0,1,0,1,0],[-6,6,6,-6,-4,-2,4,2,-3,3,-3,3,-2,-1,-2,-1],[4,-4,-4,4,2,2,-2,-2,2,-2,2,-2,1,1,1,1]],f=t=&gt;{let e=[];for(let s=0;s&lt;16;++s){e[s]=0;for(let r=0;r&lt;16;++r)e[s]+=u[s][r]*t[r]}return e},p=(t,e,s)=&gt;{const r=e*e,n=s*s,o=e*e*e,i=s*s*s;return t[0]+t[1]*e+t[2]*r+t[3]*o+t[4]*s+t[5]*s*e+t[6]*s*r+t[7]*s*o+t[8]*n+t[9]*n*e+t[10]*n*r+t[11]*n*o+t[12]*i+t[13]*i*e+t[14]*i*r+t[15]*i*o},y=t=&gt;{let e=[],s=[],r=[];for(let s=0;s&lt;4;++s)e[s]=[],e[s][0]=n(t[0][s],t[1][s],t[2][s],t[3][s]),e[s][1]=[],e[s][1].push(...n(...e[s][0][0])),e[s][1].push(...n(...e[s][0][1])),e[s][2]=[],e[s][2].push(...n(...e[s][1][0])),e[s][2].push(...n(...e[s][1][1])),e[s][2].push(...n(...e[s][1][2])),e[s][2].push(...n(...e[s][1][3]));for(let t=0;t&lt;8;++t){s[t]=[];for(let r=0;r&lt;4;++r)s[t][r]=[],s[t][r][0]=n(e[0][2][t][r],e[1][2][t][r],e[2][2][t][r],e[3][2][t][r]),s[t][r][1]=[],s[t][r][1].push(...n(...s[t][r][0][0])),s[t][r][1].push(...n(...s[t][r][0][1])),s[t][r][2]=[],s[t][r][2].push(...n(...s[t][r][1][0])),s[t][r][2].push(...n(...s[t][r][1][1])),s[t][r][2].push(...n(...s[t][r][1][2])),s[t][r][2].push(...n(...s[t][r][1][3]))}for(let t=0;t&lt;8;++t){r[t]=[];for(let e=0;e&lt;8;++e)r[t][e]=[],r[t][e][0]=s[t][0][2][e],r[t][e][1]=s[t][1][2][e],r[t][e][2]=s[t][2][2][e],r[t][e][3]=s[t][3][2][e]}return r};class x{constructor(t,e){this.x=t||0,this.y=e||0}toString(){return`(x=${this.x}, y=${this.y})`}clone(){return new x(this.x,this.y)}add(t){return new x(this.x+t.x,this.y+t.y)}scale(t){return void 0===t.x?new x(this.x*t,this.y*t):new x(this.x*t.x,this.y*t.y)}distSquared(t){let e=this.x-t.x,s=this.y-t.y;return e*e+s*s}transform(t){let e=this.x*t.a+this.y*t.c+t.e,s=this.x*t.b+this.y*t.d+t.f;return new x(e,s)}}class g{constructor(t,e,s,r,n,o){void 0===t?(this.a=1,this.b=0,this.c=0,this.d=1,this.e=0,this.f=0):(this.a=t,this.b=e,this.c=s,this.d=r,this.e=n,this.f=o)}toString(){return`affine: ${this.a} ${this.c} ${this.e} \n       ${this.b} ${this.d} ${this.f}`}append(t){t instanceof g||console.error(&quot;mesh.js: argument to Affine.append is not affine!&quot;);let e=this.a*t.a+this.c*t.b,s=this.b*t.a+this.d*t.b,r=this.a*t.c+this.c*t.d,n=this.b*t.c+this.d*t.d,o=this.a*t.e+this.c*t.f+this.e,i=this.b*t.e+this.d*t.f+this.f;return new g(e,s,r,n,o,i)}}class w{constructor(t,e){this.nodes=t,this.colors=e}paintCurve(t,e){if(o(this.nodes)&gt;r){const s=n(...this.nodes);let r=[[],[]],o=[[],[]];for(let t=0;t&lt;4;++t)r[0][t]=this.colors[0][t],r[1][t]=(this.colors[0][t]+this.colors[1][t])/2,o[0][t]=r[1][t],o[1][t]=this.colors[1][t];let i=new w(s[0],r),a=new w(s[1],o);i.paintCurve(t,e),a.paintCurve(t,e)}else{let s=Math.round(this.nodes[0].x);if(s&gt;=0&amp;&amp;s&lt;e){let r=4*(~~this.nodes[0].y*e+s);t[r]=Math.round(this.colors[0][0]),t[r+1]=Math.round(this.colors[0][1]),t[r+2]=Math.round(this.colors[0][2]),t[r+3]=Math.round(this.colors[0][3])}}}}class m{constructor(t,e){this.nodes=t,this.colors=e}split(){let t=[[],[],[],[]],e=[[],[],[],[]],s=[[[],[]],[[],[]]],r=[[[],[]],[[],[]]];for(let s=0;s&lt;4;++s){const r=n(this.nodes[0][s],this.nodes[1][s],this.nodes[2][s],this.nodes[3][s]);t[0][s]=r[0][0],t[1][s]=r[0][1],t[2][s]=r[0][2],t[3][s]=r[0][3],e[0][s]=r[1][0],e[1][s]=r[1][1],e[2][s]=r[1][2],e[3][s]=r[1][3]}for(let t=0;t&lt;4;++t)s[0][0][t]=this.colors[0][0][t],s[0][1][t]=this.colors[0][1][t],s[1][0][t]=(this.colors[0][0][t]+this.colors[1][0][t])/2,s[1][1][t]=(this.colors[0][1][t]+this.colors[1][1][t])/2,r[0][0][t]=s[1][0][t],r[0][1][t]=s[1][1][t],r[1][0][t]=this.colors[1][0][t],r[1][1][t]=this.colors[1][1][t];return[new m(t,s),new m(e,r)]}paint(t,e){let s,n=!1;for(let t=0;t&lt;4;++t)if((s=o([this.nodes[0][t],this.nodes[1][t],this.nodes[2][t],this.nodes[3][t]]))&gt;r){n=!0;break}if(n){let s=this.split();s[0].paint(t,e),s[1].paint(t,e)}else{new w([...this.nodes[0]],[...this.colors[0]]).paintCurve(t,e)}}}class b{constructor(t){this.readMesh(t),this.type=t.getAttribute(&quot;type&quot;)||&quot;bilinear&quot;}readMesh(t){let e=[[]],s=[[]],r=Number(t.getAttribute(&quot;x&quot;)),n=Number(t.getAttribute(&quot;y&quot;));e[0][0]=new x(r,n);let o=t.children;for(let t=0,r=o.length;t&lt;r;++t){e[3*t+1]=[],e[3*t+2]=[],e[3*t+3]=[],s[t+1]=[];let r=o[t].children;for(let n=0,o=r.length;n&lt;o;++n){let o=r[n].children;for(let r=0,i=o.length;r&lt;i;++r){let i=r;0!==t&amp;&amp;++i;let h,d=o[r].getAttribute(&quot;path&quot;),c=&quot;l&quot;;null!=d&amp;&amp;(c=(h=d.match(/\s*([lLcC])\s*(.*)/))[1]);let u=l(h[2]);switch(c){case&quot;l&quot;:0===i?(e[3*t][3*n+3]=u[0].add(e[3*t][3*n]),e[3*t][3*n+1]=a(e[3*t][3*n],e[3*t][3*n+3]),e[3*t][3*n+2]=a(e[3*t][3*n+3],e[3*t][3*n])):1===i?(e[3*t+3][3*n+3]=u[0].add(e[3*t][3*n+3]),e[3*t+1][3*n+3]=a(e[3*t][3*n+3],e[3*t+3][3*n+3]),e[3*t+2][3*n+3]=a(e[3*t+3][3*n+3],e[3*t][3*n+3])):2===i?(0===n&amp;&amp;(e[3*t+3][3*n+0]=u[0].add(e[3*t+3][3*n+3])),e[3*t+3][3*n+1]=a(e[3*t+3][3*n],e[3*t+3][3*n+3]),e[3*t+3][3*n+2]=a(e[3*t+3][3*n+3],e[3*t+3][3*n])):(e[3*t+1][3*n]=a(e[3*t][3*n],e[3*t+3][3*n]),e[3*t+2][3*n]=a(e[3*t+3][3*n],e[3*t][3*n]));break;case&quot;L&quot;:0===i?(e[3*t][3*n+3]=u[0],e[3*t][3*n+1]=a(e[3*t][3*n],e[3*t][3*n+3]),e[3*t][3*n+2]=a(e[3*t][3*n+3],e[3*t][3*n])):1===i?(e[3*t+3][3*n+3]=u[0],e[3*t+1][3*n+3]=a(e[3*t][3*n+3],e[3*t+3][3*n+3]),e[3*t+2][3*n+3]=a(e[3*t+3][3*n+3],e[3*t][3*n+3])):2===i?(0===n&amp;&amp;(e[3*t+3][3*n+0]=u[0]),e[3*t+3][3*n+1]=a(e[3*t+3][3*n],e[3*t+3][3*n+3]),e[3*t+3][3*n+2]=a(e[3*t+3][3*n+3],e[3*t+3][3*n])):(e[3*t+1][3*n]=a(e[3*t][3*n],e[3*t+3][3*n]),e[3*t+2][3*n]=a(e[3*t+3][3*n],e[3*t][3*n]));break;case&quot;c&quot;:0===i?(e[3*t][3*n+1]=u[0].add(e[3*t][3*n]),e[3*t][3*n+2]=u[1].add(e[3*t][3*n]),e[3*t][3*n+3]=u[2].add(e[3*t][3*n])):1===i?(e[3*t+1][3*n+3]=u[0].add(e[3*t][3*n+3]),e[3*t+2][3*n+3]=u[1].add(e[3*t][3*n+3]),e[3*t+3][3*n+3]=u[2].add(e[3*t][3*n+3])):2===i?(e[3*t+3][3*n+2]=u[0].add(e[3*t+3][3*n+3]),e[3*t+3][3*n+1]=u[1].add(e[3*t+3][3*n+3]),0===n&amp;&amp;(e[3*t+3][3*n+0]=u[2].add(e[3*t+3][3*n+3]))):(e[3*t+2][3*n]=u[0].add(e[3*t+3][3*n]),e[3*t+1][3*n]=u[1].add(e[3*t+3][3*n]));break;case&quot;C&quot;:0===i?(e[3*t][3*n+1]=u[0],e[3*t][3*n+2]=u[1],e[3*t][3*n+3]=u[2]):1===i?(e[3*t+1][3*n+3]=u[0],e[3*t+2][3*n+3]=u[1],e[3*t+3][3*n+3]=u[2]):2===i?(e[3*t+3][3*n+2]=u[0],e[3*t+3][3*n+1]=u[1],0===n&amp;&amp;(e[3*t+3][3*n+0]=u[2])):(e[3*t+2][3*n]=u[0],e[3*t+1][3*n]=u[1]);break;default:console.error(&quot;mesh.js: &quot;+c+&quot; invalid path type.&quot;)}if(0===t&amp;&amp;0===n||r&gt;0){let e=window.getComputedStyle(o[r]).stopColor.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i),a=window.getComputedStyle(o[r]).stopOpacity,h=255;a&amp;&amp;(h=Math.floor(255*a)),e&amp;&amp;(0===i?(s[t][n]=[],s[t][n][0]=Math.floor(e[1]),s[t][n][1]=Math.floor(e[2]),s[t][n][2]=Math.floor(e[3]),s[t][n][3]=h):1===i?(s[t][n+1]=[],s[t][n+1][0]=Math.floor(e[1]),s[t][n+1][1]=Math.floor(e[2]),s[t][n+1][2]=Math.floor(e[3]),s[t][n+1][3]=h):2===i?(s[t+1][n+1]=[],s[t+1][n+1][0]=Math.floor(e[1]),s[t+1][n+1][1]=Math.floor(e[2]),s[t+1][n+1][2]=Math.floor(e[3]),s[t+1][n+1][3]=h):3===i&amp;&amp;(s[t+1][n]=[],s[t+1][n][0]=Math.floor(e[1]),s[t+1][n][1]=Math.floor(e[2]),s[t+1][n][2]=Math.floor(e[3]),s[t+1][n][3]=h))}}e[3*t+1][3*n+1]=new x,e[3*t+1][3*n+2]=new x,e[3*t+2][3*n+1]=new x,e[3*t+2][3*n+2]=new x,e[3*t+1][3*n+1].x=(-4*e[3*t][3*n].x+6*(e[3*t][3*n+1].x+e[3*t+1][3*n].x)+-2*(e[3*t][3*n+3].x+e[3*t+3][3*n].x)+3*(e[3*t+3][3*n+1].x+e[3*t+1][3*n+3].x)+-1*e[3*t+3][3*n+3].x)/9,e[3*t+1][3*n+2].x=(-4*e[3*t][3*n+3].x+6*(e[3*t][3*n+2].x+e[3*t+1][3*n+3].x)+-2*(e[3*t][3*n].x+e[3*t+3][3*n+3].x)+3*(e[3*t+3][3*n+2].x+e[3*t+1][3*n].x)+-1*e[3*t+3][3*n].x)/9,e[3*t+2][3*n+1].x=(-4*e[3*t+3][3*n].x+6*(e[3*t+3][3*n+1].x+e[3*t+2][3*n].x)+-2*(e[3*t+3][3*n+3].x+e[3*t][3*n].x)+3*(e[3*t][3*n+1].x+e[3*t+2][3*n+3].x)+-1*e[3*t][3*n+3].x)/9,e[3*t+2][3*n+2].x=(-4*e[3*t+3][3*n+3].x+6*(e[3*t+3][3*n+2].x+e[3*t+2][3*n+3].x)+-2*(e[3*t+3][3*n].x+e[3*t][3*n+3].x)+3*(e[3*t][3*n+2].x+e[3*t+2][3*n].x)+-1*e[3*t][3*n].x)/9,e[3*t+1][3*n+1].y=(-4*e[3*t][3*n].y+6*(e[3*t][3*n+1].y+e[3*t+1][3*n].y)+-2*(e[3*t][3*n+3].y+e[3*t+3][3*n].y)+3*(e[3*t+3][3*n+1].y+e[3*t+1][3*n+3].y)+-1*e[3*t+3][3*n+3].y)/9,e[3*t+1][3*n+2].y=(-4*e[3*t][3*n+3].y+6*(e[3*t][3*n+2].y+e[3*t+1][3*n+3].y)+-2*(e[3*t][3*n].y+e[3*t+3][3*n+3].y)+3*(e[3*t+3][3*n+2].y+e[3*t+1][3*n].y)+-1*e[3*t+3][3*n].y)/9,e[3*t+2][3*n+1].y=(-4*e[3*t+3][3*n].y+6*(e[3*t+3][3*n+1].y+e[3*t+2][3*n].y)+-2*(e[3*t+3][3*n+3].y+e[3*t][3*n].y)+3*(e[3*t][3*n+1].y+e[3*t+2][3*n+3].y)+-1*e[3*t][3*n+3].y)/9,e[3*t+2][3*n+2].y=(-4*e[3*t+3][3*n+3].y+6*(e[3*t+3][3*n+2].y+e[3*t+2][3*n+3].y)+-2*(e[3*t+3][3*n].y+e[3*t][3*n+3].y)+3*(e[3*t][3*n+2].y+e[3*t+2][3*n].y)+-1*e[3*t][3*n].y)/9}}this.nodes=e,this.colors=s}paintMesh(t,e){let s=(this.nodes.length-1)/3,r=(this.nodes[0].length-1)/3;if(&quot;bilinear&quot;===this.type||s&lt;2||r&lt;2){let n;for(let o=0;o&lt;s;++o)for(let s=0;s&lt;r;++s){let r=[];for(let t=3*o,e=3*o+4;t&lt;e;++t)r.push(this.nodes[t].slice(3*s,3*s+4));let i=[];i.push(this.colors[o].slice(s,s+2)),i.push(this.colors[o+1].slice(s,s+2)),(n=new m(r,i)).paint(t,e)}}else{let n,o,a,h,l,d,u;const x=s,g=r;s++,r++;let w=new Array(s);for(let t=0;t&lt;s;++t){w[t]=new Array(r);for(let e=0;e&lt;r;++e)w[t][e]=[],w[t][e][0]=this.nodes[3*t][3*e],w[t][e][1]=this.colors[t][e]}for(let t=0;t&lt;s;++t)for(let e=0;e&lt;r;++e)0!==t&amp;&amp;t!==x&amp;&amp;(n=i(w[t-1][e][0],w[t][e][0]),o=i(w[t+1][e][0],w[t][e][0]),w[t][e][2]=c(w[t-1][e][1],w[t][e][1],w[t+1][e][1],n,o)),0!==e&amp;&amp;e!==g&amp;&amp;(n=i(w[t][e-1][0],w[t][e][0]),o=i(w[t][e+1][0],w[t][e][0]),w[t][e][3]=c(w[t][e-1][1],w[t][e][1],w[t][e+1][1],n,o));for(let t=0;t&lt;r;++t){w[0][t][2]=[],w[x][t][2]=[];for(let e=0;e&lt;4;++e)n=i(w[1][t][0],w[0][t][0]),o=i(w[x][t][0],w[x-1][t][0]),w[0][t][2][e]=n&gt;0?2*(w[1][t][1][e]-w[0][t][1][e])/n-w[1][t][2][e]:0,w[x][t][2][e]=o&gt;0?2*(w[x][t][1][e]-w[x-1][t][1][e])/o-w[x-1][t][2][e]:0}for(let t=0;t&lt;s;++t){w[t][0][3]=[],w[t][g][3]=[];for(let e=0;e&lt;4;++e)n=i(w[t][1][0],w[t][0][0]),o=i(w[t][g][0],w[t][g-1][0]),w[t][0][3][e]=n&gt;0?2*(w[t][1][1][e]-w[t][0][1][e])/n-w[t][1][3][e]:0,w[t][g][3][e]=o&gt;0?2*(w[t][g][1][e]-w[t][g-1][1][e])/o-w[t][g-1][3][e]:0}for(let s=0;s&lt;x;++s)for(let r=0;r&lt;g;++r){let n=i(w[s][r][0],w[s+1][r][0]),o=i(w[s][r+1][0],w[s+1][r+1][0]),c=i(w[s][r][0],w[s][r+1][0]),x=i(w[s+1][r][0],w[s+1][r+1][0]),g=[[],[],[],[]];for(let t=0;t&lt;4;++t){(d=[])[0]=w[s][r][1][t],d[1]=w[s+1][r][1][t],d[2]=w[s][r+1][1][t],d[3]=w[s+1][r+1][1][t],d[4]=w[s][r][2][t]*n,d[5]=w[s+1][r][2][t]*n,d[6]=w[s][r+1][2][t]*o,d[7]=w[s+1][r+1][2][t]*o,d[8]=w[s][r][3][t]*c,d[9]=w[s+1][r][3][t]*x,d[10]=w[s][r+1][3][t]*c,d[11]=w[s+1][r+1][3][t]*x,d[12]=0,d[13]=0,d[14]=0,d[15]=0,u=f(d);for(let e=0;e&lt;9;++e){g[t][e]=[];for(let s=0;s&lt;9;++s)g[t][e][s]=p(u,e/8,s/8),g[t][e][s]&gt;255?g[t][e][s]=255:g[t][e][s]&lt;0&amp;&amp;(g[t][e][s]=0)}}h=[];for(let t=3*s,e=3*s+4;t&lt;e;++t)h.push(this.nodes[t].slice(3*r,3*r+4));l=y(h);for(let s=0;s&lt;8;++s)for(let r=0;r&lt;8;++r)(a=new m(l[s][r],[[[g[0][s][r],g[1][s][r],g[2][s][r],g[3][s][r]],[g[0][s][r+1],g[1][s][r+1],g[2][s][r+1],g[3][s][r+1]]],[[g[0][s+1][r],g[1][s+1][r],g[2][s+1][r],g[3][s+1][r]],[g[0][s+1][r+1],g[1][s+1][r+1],g[2][s+1][r+1],g[3][s+1][r+1]]]])).paint(t,e)}}}transform(t){if(t instanceof x)for(let e=0,s=this.nodes.length;e&lt;s;++e)for(let s=0,r=this.nodes[0].length;s&lt;r;++s)this.nodes[e][s]=this.nodes[e][s].add(t);else if(t instanceof g)for(let e=0,s=this.nodes.length;e&lt;s;++e)for(let s=0,r=this.nodes[0].length;s&lt;r;++s)this.nodes[e][s]=this.nodes[e][s].transform(t)}scale(t){for(let e=0,s=this.nodes.length;e&lt;s;++e)for(let s=0,r=this.nodes[0].length;s&lt;r;++s)this.nodes[e][s]=this.nodes[e][s].scale(t)}}document.querySelectorAll(&quot;rect,circle,ellipse,path,text&quot;).forEach((r,n)=&gt;{let o=r.getAttribute(&quot;id&quot;);o||(o=&quot;patchjs_shape&quot;+n,r.setAttribute(&quot;id&quot;,o));const i=r.style.fill.match(/^url\(\s*&quot;?\s*#([^\s&quot;]+)&quot;?\s*\)/),a=r.style.stroke.match(/^url\(\s*&quot;?\s*#([^\s&quot;]+)&quot;?\s*\)/);if(i&amp;&amp;i[1]){const a=document.getElementById(i[1]);if(a&amp;&amp;&quot;meshgradient&quot;===a.nodeName){const i=r.getBBox();let l=document.createElementNS(s,&quot;canvas&quot;);d(l,{width:i.width,height:i.height});const c=l.getContext(&quot;2d&quot;);let u=c.createImageData(i.width,i.height);const f=new b(a);&quot;objectBoundingBox&quot;===a.getAttribute(&quot;gradientUnits&quot;)&amp;&amp;f.scale(new x(i.width,i.height));const p=a.getAttribute(&quot;gradientTransform&quot;);null!=p&amp;&amp;f.transform(h(p)),&quot;userSpaceOnUse&quot;===a.getAttribute(&quot;gradientUnits&quot;)&amp;&amp;f.transform(new x(-i.x,-i.y)),f.paintMesh(u.data,l.width),c.putImageData(u,0,0);const y=document.createElementNS(t,&quot;image&quot;);d(y,{width:i.width,height:i.height,x:i.x,y:i.y});let g=l.toDataURL();y.setAttributeNS(e,&quot;xlink:href&quot;,g),r.parentNode.insertBefore(y,r),r.style.fill=&quot;none&quot;;const w=document.createElementNS(t,&quot;use&quot;);w.setAttributeNS(e,&quot;xlink:href&quot;,&quot;#&quot;+o);const m=&quot;patchjs_clip&quot;+n,M=document.createElementNS(t,&quot;clipPath&quot;);M.setAttribute(&quot;id&quot;,m),M.appendChild(w),r.parentElement.insertBefore(M,r),y.setAttribute(&quot;clip-path&quot;,&quot;url(#&quot;+m+&quot;)&quot;),u=null,l=null,g=null}}if(a&amp;&amp;a[1]){const o=document.getElementById(a[1]);if(o&amp;&amp;&quot;meshgradient&quot;===o.nodeName){const i=parseFloat(r.style.strokeWidth.slice(0,-2))*(parseFloat(r.style.strokeMiterlimit)||parseFloat(r.getAttribute(&quot;stroke-miterlimit&quot;))||1),a=r.getBBox(),l=Math.trunc(a.width+i),c=Math.trunc(a.height+i),u=Math.trunc(a.x-i/2),f=Math.trunc(a.y-i/2);let p=document.createElementNS(s,&quot;canvas&quot;);d(p,{width:l,height:c});const y=p.getContext(&quot;2d&quot;);let g=y.createImageData(l,c);const w=new b(o);&quot;objectBoundingBox&quot;===o.getAttribute(&quot;gradientUnits&quot;)&amp;&amp;w.scale(new x(l,c));const m=o.getAttribute(&quot;gradientTransform&quot;);null!=m&amp;&amp;w.transform(h(m)),&quot;userSpaceOnUse&quot;===o.getAttribute(&quot;gradientUnits&quot;)&amp;&amp;w.transform(new x(-u,-f)),w.paintMesh(g.data,p.width),y.putImageData(g,0,0);const M=document.createElementNS(t,&quot;image&quot;);d(M,{width:l,height:c,x:0,y:0});let S=p.toDataURL();M.setAttributeNS(e,&quot;xlink:href&quot;,S);const k=&quot;pattern_clip&quot;+n,A=document.createElementNS(t,&quot;pattern&quot;);d(A,{id:k,patternUnits:&quot;userSpaceOnUse&quot;,width:l,height:c,x:u,y:f}),A.appendChild(M),o.parentNode.appendChild(A),r.style.stroke=&quot;url(#&quot;+k+&quot;)&quot;,g=null,p=null,S=null}}})}();
+</script>
+</svg>
