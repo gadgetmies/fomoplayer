@@ -38,6 +38,7 @@ class Preview extends Component {
       cartFilter: '',
       embeddingMissing: true,
     }
+    this._playPauseSource = undefined
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
     }
@@ -45,11 +46,11 @@ class Preview extends Component {
     this.setVolume = this.setVolume.bind(this)
 
     const actionHandlers = [
-      ['play', this.setPlaying.bind(this, true)],
-      ['pause', this.setPlaying.bind(this, false)],
+      ['play', () => this.setPlaying(true, 'media')],
+      ['pause', () => this.setPlaying(false, 'media')],
       ['previoustrack', this.handlePreviousClick.bind(this)],
       ['nexttrack', this.handleNextClick.bind(this)],
-      ['stop', this.setPlaying.bind(this, false)],
+      ['stop', () => this.setPlaying(false, 'media')],
       ['seekbackward', ({ seekOffset }) => this.scan.bind(this, -seekOffset)],
       ['seekforward', ({ seekOffset }) => this.scan.bind(this, seekOffset)],
       [
@@ -69,12 +70,18 @@ class Preview extends Component {
     }
   }
 
-  setPlaying(playing) {
+  setPlaying(playing, source) {
+    const sourceToUse = source || this._playPauseSource
+    this._playPauseSource = undefined
+
+    if (this.state.playing === playing && !sourceToUse) return
+
     this.setState({ playing })
-    this.props.onPlayPauseToggle(playing)
+    this.props.onPlayPauseToggle(playing, sourceToUse)
   }
 
-  togglePlaying() {
+  togglePlaying(source) {
+    this._playPauseSource = source
     this.setState({ playing: !this.state.playing })
   }
 
@@ -742,7 +749,7 @@ class Preview extends Component {
               ) : null}
             </div>
             <div className="button-wrapper">
-              <button className="button button-playback" onClick={() => this.togglePlaying()}>
+              <button className="button button-playback" onClick={() => this.togglePlaying('ui')}>
                 <FontAwesomeIcon icon={this.state.playing ? 'pause' : 'play'} />
               </button>
               <button className="button button-playback" onClick={() => this.props.onPrevious()}>
