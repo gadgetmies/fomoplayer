@@ -19,8 +19,6 @@ import { search } from './events'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
-const previewUrlCache = new Map()
-
 class Preview extends Component {
   constructor(props) {
     super(props)
@@ -108,14 +106,9 @@ class Preview extends Component {
   }
 
   async fetchPreviewUrl(preview, retryCount = 0) {
-    if (previewUrlCache.has(preview.id)) {
-      return previewUrlCache.get(preview.id)
-    }
-
     try {
       const res = await requestWithCredentials({ path: `/stores/${preview.store}/previews/${preview.id}` })
       const { url } = await res.json()
-      previewUrlCache.set(preview.id, url)
       return url
     } catch (e) {
       if (retryCount < 2) {
@@ -136,7 +129,7 @@ class Preview extends Component {
     if (!track) return
     const previews = this.getMp3Previews(track, this.state.preferFullTracks)
     for (const preview of previews) {
-      if (preview.store === 'bandcamp' && preview.url === null) {
+      if (preview.url === null) {
         try {
           await this.fetchPreviewUrl(preview)
         } catch (e) {
