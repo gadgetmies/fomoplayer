@@ -19,6 +19,8 @@ import { search } from './events'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
+const previewUrlCache = new Map()
+
 class Preview extends Component {
   constructor(props) {
     super(props)
@@ -105,10 +107,43 @@ class Preview extends Component {
     }
   }
 
-  async fetchPreviewUrl(preview) {
-    const res = await requestWithCredentials({ path: `/stores/${preview.store}/previews/${preview.id}` })
-    const { url } = await res.json()
-    return url
+  async fetchPreviewUrl(preview, retryCount = 0) {
+    if (previewUrlCache.has(preview.id)) {
+      return previewUrlCache.get(preview.id)
+    }
+
+    try {
+      const res = await requestWithCredentials({ path: `/stores/${preview.store}/previews/${preview.id}` })
+      const { url } = await res.json()
+      previewUrlCache.set(preview.id, url)
+      return url
+    } catch (e) {
+      if (retryCount < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        return this.fetchPreviewUrl(preview, retryCount + 1)
+      }
+      throw e
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.nextTrack !== prevProps.nextTrack) {
+      this.prefetchTrack(this.props.nextTrack)
+    }
+  }
+
+  async prefetchTrack(track) {
+    if (!track) return
+    const previews = this.getMp3Previews(track, this.state.preferFullTracks)
+    for (const preview of previews) {
+      if (preview.store === 'bandcamp' && preview.url === null) {
+        try {
+          await this.fetchPreviewUrl(preview)
+        } catch (e) {
+          console.error('Pre-fetch failed', e)
+        }
+      }
+    }
   }
 
   // TODO: replace componentWillUpdate with something that is supported. componentDidUpdate does not work: E.g. changing track causes the previous track to be played. Maybe getDerivedStateFromProps (suggested by co-pilot)?
