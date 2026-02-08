@@ -89,10 +89,11 @@ class Preview extends Component {
       totalDuration: undefined,
       mp3Preview: preview,
       previewUrl: undefined,
+      retryWithForce: false,
     })
 
     let url = preview.url
-    if (url === null) {
+    if (url === null || (preview.store === 'bandcamp' && (url === undefined || !url.includes('token=')))) {
       url = await this.fetchPreviewUrl(preview)
     }
 
@@ -105,15 +106,17 @@ class Preview extends Component {
     }
   }
 
-  async fetchPreviewUrl(preview, retryCount = 0) {
+  async fetchPreviewUrl(preview, force = false, retryCount = 0) {
     try {
-      const res = await requestWithCredentials({ path: `/stores/${preview.store}/previews/${preview.id}` })
+      const res = await requestWithCredentials({
+        path: `/stores/${preview.store}/previews/${preview.id}${force ? '?force=true' : ''}`,
+      })
       const { url } = await res.json()
       return url
     } catch (e) {
       if (retryCount < 2) {
         await new Promise((resolve) => setTimeout(resolve, 1000))
-        return this.fetchPreviewUrl(preview, retryCount + 1)
+        return this.fetchPreviewUrl(preview, force, retryCount + 1)
       }
       throw e
     }
@@ -129,7 +132,7 @@ class Preview extends Component {
     if (!track) return
     const previews = this.getMp3Previews(track, this.state.preferFullTracks)
     for (const preview of previews) {
-      if (preview.url === null) {
+      if (preview.url === null || (preview.store === 'bandcamp' && !preview.url.includes('token='))) {
         try {
           await this.fetchPreviewUrl(preview)
         } catch (e) {
@@ -642,8 +645,18 @@ class Preview extends Component {
                 }}
                 onError={async (e) => {
                   console.error('Audio error', e)
+                  if (this.state.previewUrl && this.state.mp3Preview && !this.state.retryWithForce) {
+                    this.setState({ retryWithForce: true })
+                    try {
+                      const url = await this.fetchPreviewUrl(this.state.mp3Preview, true)
+                      this.setState({ previewUrl: url })
+                    } catch (e) {
+                      console.error('Retry with force failed', e)
+                    }
+                  }
+
                   await requestWithCredentials({
-                    url: '/log/error',
+                    path: '/log/error',
                     method: 'POST',
                     body: { message: 'Audio playback error', error: e.toString() },
                   })

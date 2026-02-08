@@ -10,6 +10,31 @@ const vm = new VM()
 let suspendedUntil = null
 let requestCount = 0
 
+const cache = new Map()
+const CACHE_TTL = 60 * 60 * 1000 // 1 hour
+
+const getFromCache = (key) => {
+  const cached = cache.get(key)
+  if (cached && cached.expiry > Date.now()) {
+    return cached.value
+  }
+  cache.delete(key)
+  return null
+}
+
+const setToCache = (key, value) => {
+  cache.set(key, { value, expiry: Date.now() + CACHE_TTL })
+}
+
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, cached] of cache.entries()) {
+    if (cached.expiry < now) {
+      cache.delete(key)
+    }
+  }
+}, 10 * 60 * 1000) // Clean every 10 minutes
+
 const scrapeJSON = R.curry((pattern, string) => {
   const match = string.match(new RegExp(pattern), 's')
   if (match === null) {
@@ -64,9 +89,15 @@ const isRateLimited = () => {
 
 const getReleaseInfo = (pageSource) => extractJSON('[data-tralbum]', 'data-tralbum', pageSource)
 const getRelease = (itemUrl, callback) => {
+  const cacheKey = `release:${itemUrl}`
+  const cached = getFromCache(cacheKey)
+  if (cached) return callback(null, cached)
+
   return getPageSource(itemUrl)
     .then((res) => {
-      callback(null, { ...getReleaseInfo(res), url: itemUrl })
+      const releaseInfo = { ...getReleaseInfo(res), url: itemUrl }
+      setToCache(cacheKey, releaseInfo)
+      callback(null, releaseInfo)
     })
     .catch((e) => {
       logger.error(`Fetching release from ${itemUrl} failed`, { statusCode: e.statusCode })
@@ -88,15 +119,21 @@ const getReleaseUrls = (host, dom) => {
 const getIdFromUrl = (url) => url.substring(0, url.indexOf('.'))
 
 const getPageInfo = (url, callback) => {
+  const cacheKey = `pageInfo:${url}`
+  const cached = getFromCache(cacheKey)
+  if (cached) return callback(null, cached)
+
   const id = getIdFromUrl(url)
   getPageSource(url + '/music')
     .then((res) => {
       const dom = new JSDOM(res)
-      return callback(null, {
+      const pageInfo = {
         id,
         name: getName(dom),
         releaseUrls: getReleaseUrls(url, dom),
-      })
+      }
+      setToCache(cacheKey, pageInfo)
+      return callback(null, pageInfo)
     })
     .catch((e) => {
       callback(e)
@@ -131,30 +168,42 @@ const getTagDetails = (tags, callback) => {
 
 const getTagReleases = (tags, callback) => {
   const url = getTagUrl(tags instanceof String ? JSON.parse(tags) : tags)
+  const cacheKey = `tagReleases:${url}`
+  const cached = getFromCache(cacheKey)
+  if (cached) return callback(null, cached)
+
   return getPageSource(url)
     .then(decode)
     .then((res) => {
       const dom = new JSDOM(res)
-      return callback(null, {
+      const tagReleases = {
         id: url,
         name: getTagName(tags),
         releaseUrls: getReleaseUrls(url, dom),
-      })
+      }
+      setToCache(cacheKey, tagReleases)
+      return callback(null, tagReleases)
     })
     .catch((e) => callback(e))
 }
 
 const getPageDetails = (url, callback) => {
+  const cacheKey = `pageDetails:${url}`
+  const cached = getFromCache(cacheKey)
+  if (cached) return callback(null, cached)
+
   return getPageSource(url)
     .then((res) => {
       const dom = new JSDOM(res)
       const pageTitle = getName(dom)
       const artistsLink = dom.window.document.querySelector('[href="/artists"]')
-      return callback(null, {
-        id: getIdFromUrl,
+      const pageDetails = {
+        id: getIdFromUrl(url),
         name: pageTitle,
         type: artistsLink === null ? 'artist' : 'label',
-      })
+      }
+      setToCache(cacheKey, pageDetails)
+      return callback(null, pageDetails)
     })
     .catch((e) => {
       callback(e)
@@ -204,6 +253,14 @@ const resetRequestCount = () => {
   requestCount = 0
 }
 
+const invalidateCache = (key) => {
+  if (key) {
+    cache.delete(key)
+  } else {
+    cache.clear()
+  }
+}
+
 module.exports = {
   ...BPromise.promisifyAll({
     getRelease,
@@ -219,5 +276,6 @@ module.exports = {
     getTagName,
     isRateLimited,
     resetRequestCount,
+    invalidateCache,
   },
 }
