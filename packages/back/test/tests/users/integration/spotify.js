@@ -18,7 +18,6 @@ test({
       ? 'Spotify redirects or credentials set'
       : undefined,
   'requests are intercepted': async () => {
-    spotifyInterceptor.clearMockedRequests()
     assert.equal(spotifyInterceptor.getMockedRequests().length, 0)
     const res = await spotifyApi.search('noisia', ['track', 'artist', 'album'], { limit: 10 })
     assert.equal(res.statusCode, 200)

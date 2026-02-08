@@ -46,8 +46,6 @@ class Player extends Component {
             case 'q':
               await this.playPreviousTrack()
               break
-            case ' ':
-              event.preventDefault()
             case 'w':
               that.preview.current?.togglePlaying('keyboard')
               break

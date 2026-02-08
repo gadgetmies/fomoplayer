@@ -35,10 +35,13 @@ const activeInterceptors = new Map()
 module.exports.init = function init({ proxies, mocks, name, regex }) {
   let mockedRequests = []
 
-  // Check if interceptor already exists and return it
+  // Check if interceptor already exists and clean it up
   if (activeInterceptors.has(name)) {
-    logger.info(`Using existing interceptor for ${name}`)
-    return activeInterceptors.get(name)
+    logger.info(`Cleaning up existing interceptor for ${name}`)
+    const existingInterceptor = activeInterceptors.get(name)
+    if (existingInterceptor && typeof existingInterceptor.dispose === 'function') {
+      existingInterceptor.dispose()
+    }
   }
 
   logger.info(`Enabling development / test http request interceptors for ${name}`)
@@ -49,14 +52,8 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
 
   interceptor.apply()
 
-  const result = {
-    clearMockedRequests,
-    getMockedRequests,
-    dispose,
-  }
-
   // Store the interceptor for cleanup
-  activeInterceptors.set(name, result)
+  activeInterceptors.set(name, interceptor)
 
   interceptor.on('request', async (...args) => {
     const { request } = args[0]
@@ -124,7 +121,11 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
     activeInterceptors.delete(name)
   }
 
-  return result
+  return {
+    clearMockedRequests,
+    getMockedRequests,
+    dispose,
+  }
 }
 
 // Global cleanup function to dispose all interceptors
