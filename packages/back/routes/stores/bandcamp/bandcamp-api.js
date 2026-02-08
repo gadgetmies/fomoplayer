@@ -213,6 +213,10 @@ const resetRequestCount = () => {
   requestCount = 0
 }
 
+const resetCache = () => {
+  releaseCache.clear()
+}
+
 module.exports = {
   ...BPromise.promisifyAll({
     getRelease,
@@ -228,5 +232,6 @@ module.exports = {
     getTagName,
     isRateLimited,
     resetRequestCount,
+    resetCache,
   },
 }
