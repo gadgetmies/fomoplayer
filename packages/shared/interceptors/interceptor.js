@@ -33,16 +33,11 @@ async function makeRequestAndRespond({ request, url = undefined, options = {} })
 const activeInterceptors = new Map()
 
 module.exports.init = function init({ proxies, mocks, name, regex }) {
-  let mockedRequests = []
-
-  // Check if interceptor already exists and clean it up
   if (activeInterceptors.has(name)) {
-    logger.info(`Cleaning up existing interceptor for ${name}`)
-    const existingInterceptor = activeInterceptors.get(name)
-    if (existingInterceptor && typeof existingInterceptor.dispose === 'function') {
-      existingInterceptor.dispose()
-    }
+    return activeInterceptors.get(name).publicApi
   }
+
+  let mockedRequests = []
 
   logger.info(`Enabling development / test http request interceptors for ${name}`)
   const interceptor = new BatchInterceptor({
@@ -53,7 +48,23 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
   interceptor.apply()
   
   // Store the interceptor for cleanup
-  activeInterceptors.set(name, interceptor)
+  const publicApi = {
+    clearMockedRequests: () => {
+      mockedRequests = []
+    },
+    getMockedRequests: () => {
+      return mockedRequests
+    },
+    dispose: () => {
+      logger.info(`Disposing interceptor for ${name}`)
+      if (interceptor && typeof interceptor.dispose === 'function') {
+        interceptor.dispose()
+      }
+      activeInterceptors.delete(name)
+    },
+  }
+
+  activeInterceptors.set(name, { interceptor, publicApi })
 
   interceptor.on('request', async (...args) => {
     const { request } = args[0]
@@ -63,8 +74,8 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
     const requestDetails = { url, pathname: new URL(url).pathname, request }
 
     if (url.match(regex) && (proxies || mocks)) {
-      const proxy = proxies.find(({ test }) => test(requestDetails))
-      const mock = mocks.find(({ test }) => test(requestDetails))
+      const proxy = proxies && proxies.find(({ test }) => test(requestDetails))
+      const mock = mocks && mocks.find(({ test }) => test(requestDetails))
       
       if (proxy !== undefined) {        
         const requestBody = request.body && (await request.clone().text())
@@ -91,8 +102,7 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
       } else if (mock !== undefined) {
         logger.info(`Mocking request: ${url}`)
         mockedRequests.push({ url, request })
-        const pathname = new URL(url).pathname
-        const { body, options } = mock.getResponse({ url, pathname, request })
+        const { body, options } = mock.getResponse(requestDetails)
         
         try {
           const result = request.respondWith(new Response(body instanceof Object ? JSON.stringify(body) : body, options))
@@ -105,33 +115,13 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
     }
   })
 
-  function clearMockedRequests() {
-    mockedRequests = []
-  }
-
-  function getMockedRequests() {
-    return mockedRequests
-  }
-
-  function dispose() {
-    logger.info(`Disposing interceptor for ${name}`)
-    if (interceptor && typeof interceptor.dispose === 'function') {
-      interceptor.dispose()
-    }
-    activeInterceptors.delete(name)
-  }
-
-  return {
-    clearMockedRequests,
-    getMockedRequests,
-    dispose,
-  }
+  return publicApi
 }
 
 // Global cleanup function to dispose all interceptors
 module.exports.disposeAll = function disposeAll() {
   logger.info('Disposing all active interceptors')
-  for (const [name, interceptor] of activeInterceptors) {
+  for (const [name, { interceptor }] of activeInterceptors) {
     if (interceptor && typeof interceptor.dispose === 'function') {
       interceptor.dispose()
     }

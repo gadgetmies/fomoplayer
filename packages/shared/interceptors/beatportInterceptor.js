@@ -12,15 +12,19 @@ const beatportLabelsSearchMock = fs
   .readFileSync(path.resolve(`${__dirname}/fixtures/beatport-labels-search.html`))
   .toString('utf-8')
 
-const beatportRedirect = process.env.BEATPORT_API_REDIRECT
-const useMocks = process.env.BEATPORT_API_MOCK
+module.exports.init = () => {
+  const beatportRedirect = process.env.BEATPORT_API_REDIRECT
+  const useMocks = process.env.BEATPORT_API_MOCK
 
-module.exports.init = () =>
-  interceptor.init({
+  return interceptor.init({
     proxies: [
       {
         test: () => !useMocks,
-        url: ({ url }) => (new URL(url).host = beatportRedirect),
+        url: ({ url }) => {
+          const u = new URL(url)
+          u.host = beatportRedirect
+          return u.toString()
+        },
       },
     ],
     mocks: [
@@ -64,3 +68,4 @@ module.exports.init = () =>
     beatportArtistsSearchMock,
     beatportLabelsSearchMock,
   })
+}

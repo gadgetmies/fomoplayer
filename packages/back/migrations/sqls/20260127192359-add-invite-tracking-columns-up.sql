@@ -1,0 +1,4 @@
+ALTER TABLE waiting_list
+ADD COLUMN waiting_list_first_invite_sent_at TIMESTAMP,
+ADD COLUMN waiting_list_second_invite_sent_at TIMESTAMP,
+ADD COLUMN waiting_list_third_invite_sent_at TIMESTAMP;

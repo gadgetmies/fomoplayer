@@ -34,9 +34,6 @@ const bandcampElectronicDigitalDnbMock = readFileSync(
   path.resolve(`${__dirname}/fixtures/bandcamp-electronic-digital-drum-and-bass.html`),
 ).toString('utf-8')
 
-const bandcampRedirect = process.env.BANDCAMP_API_REDIRECT
-const useMocks = process.env.BANDCAMP_API_MOCK
-
 const respondWith =
   (body, contentType = 'application/json') =>
   () => ({
@@ -66,12 +63,19 @@ const getMocks = (urlResponsePairs) =>
     getResponse: respondWith(response, response instanceof Object ? 'application/json' : 'text/html; charset=utf-8'),
   }))
 
-module.exports.init = () =>
-  interceptor.init({
+module.exports.init = () => {
+  const bandcampRedirect = process.env.BANDCAMP_API_REDIRECT
+  const useMocks = process.env.BANDCAMP_API_MOCK
+
+  return interceptor.init({
     proxies: [
       {
         test: () => !useMocks,
-        url: ({ url }) => (new URL(url).host = bandcampRedirect),
+        url: ({ url }) => {
+          const u = new URL(url)
+          u.host = bandcampRedirect
+          return u.toString()
+        },
       },
     ],
     mocks: getMocks([
@@ -98,3 +102,4 @@ module.exports.init = () =>
     bandcampNoisiaMock: bandcampNoisiaMock,
     bandcampVisionMock: bandcampVisionMock,
   })
+}
