@@ -112,8 +112,17 @@ class Player extends Component {
     return this.getTrackIndex(this.props.currentTrack)
   }
 
+  getNextTrack() {
+    const tracks = this.getTracks()
+    const currentIndex = this.getCurrentTrackIndex()
+    if (currentIndex !== -1 && currentIndex < tracks.length - 1) {
+      return tracks[currentIndex + 1]
+    }
+    return null
+  }
+
   getTrackIndex(track) {
-    return R.findIndex(R.propEq('id', track.id), this.getTracks())
+    return track ? R.findIndex(R.propEq('id', track.id), this.getTracks()) : -1
   }
 
   async jumpTracks(numberOfTracksToJump) {
@@ -250,6 +259,7 @@ class Player extends Component {
         <Preview
           carts={this.props.carts}
           currentTrack={currentTrack}
+          nextTrack={this.getNextTrack()}
           follows={this.props.follows}
           inCarts={inCarts}
           inDefaultCart={inDefaultCart}
