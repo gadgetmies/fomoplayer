@@ -3,7 +3,11 @@ console.log('Initializing db-migrate with config: ', JSON.stringify(dbConfig))
 
 module.exports = {
   initDb: async () => {
-    const dbMigrate = require('db-migrate').getInstance(true, { config: dbConfig, cwd: `${__dirname}/../../` })
+    const dbMigrate = require('db-migrate').getInstance(true, {
+      config: dbConfig,
+      cwd: `${__dirname}/../../`,
+      env: process.env.NODE_ENV || 'dev',
+    })
     dbMigrate.silence(true)
     console.log('Resetting database')
     await dbMigrate.reset()

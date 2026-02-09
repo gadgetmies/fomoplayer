@@ -10,13 +10,14 @@ const resonanceVITracks = require('../../../fixtures/bandcamp-resonance-vi-track
 const assert = require('assert')
 
 test({
-  setup: () => {},
+  setup: () => {
+    bandcampInterceptor.clearMockedRequests()
+  },
   skip: () =>
     process.env.BANDCAMP_API_REDIRECT === '' && !process.env.BANDCAMP_API_MOCK
       ? 'Bandcamp redirects set or mocks not set'
       : undefined,
   'search results': {
-    skip: () => 'Interceptor does not catch the search request',
     'are mapped': async () => {
       const res = await bandcampLogic.search('noisia')
       assert.equal(bandcampInterceptor.getMockedRequests().length, 1)
