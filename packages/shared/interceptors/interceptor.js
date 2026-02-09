@@ -46,7 +46,7 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
   })
 
   interceptor.apply()
-  
+
   // Store the interceptor for cleanup
   const publicApi = {
     clearMockedRequests: () => {

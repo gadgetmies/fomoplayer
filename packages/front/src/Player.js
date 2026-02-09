@@ -47,7 +47,7 @@ class Player extends Component {
               await this.playPreviousTrack()
               break
             case 'w':
-              that.preview.current?.togglePlaying()
+              that.preview.current?.togglePlaying('keyboard')
               break
             case 'r':
               await this.playNextUnheard()
@@ -179,16 +179,19 @@ class Player extends Component {
     return this.props.carts.find(R.prop('is_default'))
   }
 
-  async handlePlayPauseToggle(playing) {
+  async handlePlayPauseToggle(playing, source) {
     if (this.props.mode !== 'app') return
+    const isKeyboardOrMedia = ['keyboard', 'media'].includes(source)
+
     if (playing && this.state.playPauseDoubleClickStarted) {
       this.setState({ playPauseDoubleClickStarted: false })
-      await this.props.onAddToCart(this.getDefaultCart().id, this.props.currentTrack.id)
-    } else if (!playing) {
-      const that = this
+      if (isKeyboardOrMedia) {
+        await this.props.onAddToCart(this.getDefaultCart().id, this.props.currentTrack.id)
+      }
+    } else if (!playing && isKeyboardOrMedia) {
       this.setState({ playPauseDoubleClickStarted: true })
       setTimeout(() => {
-        that.setState({ playPauseDoubleClickStarted: false })
+        this.setState({ playPauseDoubleClickStarted: false })
       }, 200)
     }
   }
