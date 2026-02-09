@@ -6,7 +6,9 @@ const beatportSearch = require('../../../fixtures/beatport-search.json')
 const assert = require('assert')
 
 test({
-  setup: () => {},
+  setup: () => {
+    beatportInterceptor.clearMockedRequests()
+  },
   skip: () =>
     process.env.BEATPORT_API_REDIRECT === '' && !process.env.BEATPORT_API_MOCK
       ? 'Beatport redirects set or mocks not set'
@@ -19,11 +21,11 @@ test({
       undefined,
     )
     assert.notEqual(
-      beatportInterceptor.getMockedRequests().find(({ url }) => new URL(url).pathname === '/search/artists'),
+      beatportInterceptor.getMockedRequests().find(({ url }) => new URL(url).pathname === '/search/labels'),
       undefined,
     )
     assert.deepEqual(res, beatportSearch)
-  },  
+  },
   teardown: async () => {
     spotifyInterceptor.dispose()
     beatportInterceptor.dispose()

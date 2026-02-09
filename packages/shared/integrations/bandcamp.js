@@ -1,1 +1,1 @@
-module.exports.BandcampUrlRegex = /^https:\/\/(.*)\.?bandcamp.com(.*)/
+module.exports.BandcampUrlRegex = /^https:\/\/([^/]+\.)?bandcamp\.com/
