@@ -4,6 +4,7 @@ import { Chart } from 'react-chartjs-2'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
 import { apiURL } from './config'
 import beautify from 'js-beautify'
+import { withRouter } from 'react-router-dom'
 
 const L = require('partial.lenses')
 const R = require('ramda')
@@ -168,8 +169,16 @@ class Admin extends Component {
       type: 'line',
     }
     return (
-      <div>
-        <h1>Radiator</h1>
+      <div style={{ padding: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1>Radiator</h1>
+          <button
+            className="button button-push_button button-push_button-primary"
+            onClick={() => this.props.history.push('/admin/duplicates')}
+          >
+            Manage Duplicates
+          </button>
+        </div>
         <div style={{ display: 'flex', gap: 15 }}>
           <div style={{ width: '50%' }}>
             <Chart type={config.type} options={this.state.config} data={this.state.chartData} />
@@ -261,4 +270,4 @@ class Admin extends Component {
   }
 }
 
-export default Admin
+export default withRouter(Admin)
