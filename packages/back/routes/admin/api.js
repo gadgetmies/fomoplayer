@@ -21,6 +21,9 @@ const {
   queryAudioSamplesWithoutFingerprint,
   upsertAudioSampleFingerprints,
   findExactMatchForSample,
+  getSuspectedDuplicates,
+  mergeDuplicate,
+  ignoreDuplicate,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 
@@ -187,6 +190,20 @@ router.get('/exact-match/audio-samples/:sampleId/match', async ({ params: { samp
     logger.error('Error finding exact match', { error: error.message, stack: error.stack })
     res.status(500).send({ error: error.message })
   }
+})
+
+router.get('/duplicates/:type', async ({ params: { type } }, res) => {
+  res.send(await getSuspectedDuplicates(type))
+})
+
+router.post('/duplicates/:type/merge', async ({ params: { type }, body: { keptId, deletedId } }, res) => {
+  await mergeDuplicate(type, keptId, deletedId)
+  res.send('OK')
+})
+
+router.post('/duplicates/:type/ignore', async ({ params: { type }, body: { id1, id2 } }, res) => {
+  await ignoreDuplicate(type, id1, id2)
+  res.send('OK')
 })
 
 module.exports = router
