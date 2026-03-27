@@ -23,7 +23,7 @@ module.exports.searchForTracks = async (
 
   const queryString = originalQueryString.replace(/(\S+:\S+)\s*/g, '').trim()
 
-  const idFilter = fieldFilters.filter(([key]) => ['artist', 'label', 'release'].includes(key))[0]
+  const idFilter = fieldFilters.filter(([key]) => ['artist', 'label', 'release', 'track'].includes(key))[0]
 
   const keyToJoinsLookup = {
     bpm: sql``,
@@ -163,9 +163,23 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
          `)
 
       if (idFilter) {
-        query.append(` AND EXISTS (SELECT 1 FROM track__artist ta2 WHERE ta2.track_id = track.track_id AND ta2.${tx.escapeIdentifier(`${idFilter[0]}_id`)} = `)
-        query.append(sql`${idFilter[1]}`)
-        query.append(`)`)
+        if (idFilter[0] === 'track') {
+          query.append(sql` AND track.track_id = ${idFilter[1]}`)
+        } else {
+          const idFilterToTable = {
+            artist: 'track__artist',
+            label: 'track__label',
+            release: 'release__track',
+          }
+          const junctionTable = idFilterToTable[idFilter[0]]
+          query.append(
+            ` AND EXISTS (SELECT 1 FROM ${tx.escapeIdentifier(junctionTable)} t2 WHERE t2.track_id = track.track_id AND t2.${tx.escapeIdentifier(
+              `${idFilter[0]}_id`,
+            )} = `,
+          )
+          query.append(sql`${idFilter[1]}`)
+          query.append(`)`)
+        }
       } else if (fuzzyFilters.length > 0) {
         query.append(' AND ')
         R.intersperse(' AND ', fuzzyFilterQueries).forEach((q) => query.append(q))

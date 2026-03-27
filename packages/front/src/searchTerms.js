@@ -4,7 +4,7 @@ export const parseSearchTerms = (searchString) => {
   }
 
   const terms = []
-  const entityPattern = /(artist|label|release):(\d+)/gi
+  const entityPattern = /(artist|label|release|track):(\d+)/gi
   let lastIndex = 0
   let match
 
