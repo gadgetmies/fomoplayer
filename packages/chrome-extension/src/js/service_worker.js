@@ -330,7 +330,7 @@ console.log('registered')
 
 chrome.storage.local.get(['enabledStores', 'appUrl'], ({ appUrl, enabledStores }) => {
   chrome.storage.local.set({
-    enabledStores: enabledStores ? enabledStores : { beatport: true, bandcamp: true },
+    enabledStores: enabledStores ? enabledStores : { beatport: true, bandcamp: true, junodownload: true },
     appUrl: appUrl ? appUrl : 'https://fomoplayer.com',
   })
 })

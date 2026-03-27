@@ -4,6 +4,7 @@ import React from 'react'
 import Login from './Login.jsx'
 import BeatportPanel from './BeatportPanel.jsx'
 import BandcampPanel from './BandcampPanel.jsx'
+import JunodownloadPanel from './JunodownloadPanel.jsx'
 import MultiStorePlayerPanel from './MultiStorePlayerPanel.jsx'
 import Error from './Error.jsx'
 import Status from './Status.jsx'
@@ -66,6 +67,11 @@ export default class Root extends React.Component {
               storeName: 'bandcamp',
               matcher: /^https:\/\/.*\.?bandcamp\.com/,
               component: BandcampPanel,
+            },
+            {
+              storeName: 'junodownload',
+              matcher: /^https:\/\/www\.junodownload\.com/,
+              component: JunodownloadPanel,
             },
           ]
 

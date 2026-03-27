@@ -14,6 +14,9 @@ if (process.env.NODE_ENV !== 'production') {
   if (process.env.BANDCAMP_REDIRECT || process.env.BANDCAMP_MOCK) {
     require('fomoplayer_shared').interceptors.bandcamp.init()
   }
+  if (process.env.JUNODOWNLOAD_REDIRECT || process.env.JUNODOWNLOAD_MOCK) {
+    require('fomoplayer_shared').interceptors.junodownload.init()
+  }
 }
 
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/multi-store-player'

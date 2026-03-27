@@ -1,0 +1,66 @@
+[
+  {
+    "title": "No Looking Back",
+    "version": null,
+    "id": "7475994-02-01",
+    "url": "https://www.junodownload.com/products/basstripper-no-looking-back-unmasked/7475994-02/?track_number=1",
+    "artists": [{ "name": "Basstripper", "role": "author", "id": null, "url": "https://www.junodownload.com/artists/Basstripper/" }],
+    "genres": [{ "name": "Drum & Bass / Jungle", "id": null, "url": "https://www.junodownload.com/drumandbass/" }],
+    "duration_ms": 213000,
+    "release": {
+      "id": "7475994-02",
+      "title": "No Looking Back / Unmasked",
+      "url": "https://www.junodownload.com/products/basstripper-no-looking-back-unmasked/7475994-02",
+      "catalog_number": "502685 4563909"
+    },
+    "released": "2026-02-26",
+    "published": null,
+    "previews": [
+      {
+        "format": "mp3",
+        "url": "https://www.junodownload.com/MP3/SF7475994-02-01-01.mp3",
+        "start_ms": 0,
+        "end_ms": 213000
+      }
+    ],
+    "label": { "id": null, "name": "DnB Allstars", "url": "https://www.junodownload.com/labels/DnB+Allstars/" },
+    "waveform": null,
+    "key": null,
+    "bpm": 175,
+    "isrc": null,
+    "track_number": 1,
+    "store_details": []
+  },
+  {
+    "title": "Unmasked",
+    "version": null,
+    "id": "7475994-02-02",
+    "url": "https://www.junodownload.com/products/basstripper-no-looking-back-unmasked/7475994-02/?track_number=2",
+    "artists": [{ "name": "Basstripper", "role": "author", "id": null, "url": "https://www.junodownload.com/artists/Basstripper/" }],
+    "genres": [{ "name": "Drum & Bass / Jungle", "id": null, "url": "https://www.junodownload.com/drumandbass/" }],
+    "duration_ms": 202000,
+    "release": {
+      "id": "7475994-02",
+      "title": "No Looking Back / Unmasked",
+      "url": "https://www.junodownload.com/products/basstripper-no-looking-back-unmasked/7475994-02",
+      "catalog_number": "502685 4563909"
+    },
+    "released": "2026-02-26",
+    "published": null,
+    "previews": [
+      {
+        "format": "mp3",
+        "url": "https://www.junodownload.com/MP3/SF7475994-02-01-02.mp3",
+        "start_ms": 0,
+        "end_ms": 202000
+      }
+    ],
+    "label": { "id": null, "name": "DnB Allstars", "url": "https://www.junodownload.com/labels/DnB+Allstars/" },
+    "waveform": null,
+    "key": null,
+    "bpm": 175,
+    "isrc": null,
+    "track_number": 2,
+    "store_details": []
+  }
+]

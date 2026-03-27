@@ -10,7 +10,7 @@ export default class Root extends React.Component {
       that.setState({
         appUrl,
         storedAppUrl: appUrl,
-        enabledStores: enabledStores || { beatport: true, bandcamp: true },
+        enabledStores: enabledStores || { beatport: true, bandcamp: true, junodownload: true },
       })
     })
 
@@ -80,6 +80,17 @@ export default class Root extends React.Component {
             />
             <label htmlFor="beatport-checkbox" className="noselect">
               <span>Beatport</span>
+            </label>
+          </div>
+          <div className="checkbox">
+            <input
+              id="junodownload-checkbox"
+              type="checkbox"
+              onChange={this.toggleStore('junodownload')}
+              checked={this.state.enabledStores.junodownload}
+            />
+            <label htmlFor="junodownload-checkbox" className="noselect">
+              <span>Juno Download</span>
             </label>
           </div>
         </fieldset>

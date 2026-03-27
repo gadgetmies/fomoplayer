@@ -4,6 +4,7 @@ const { scheduleJob } = require('node-schedule')
 const fetchBeatportWatches = require('./jobs/watches/fetch-beatport-watches')
 const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
 const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')
+const fetchJunodownloadWatches = require('./jobs/watches/fetch-junodownload-watches')
 const { sendNextEmailBatch } = require('./services/mailer')
 const { updateNotifications } = require('./jobs/notifications')
 const { updateTrackDetails } = require('./jobs/track_details')
@@ -17,6 +18,7 @@ const { findMatchingTracks } = require('./jobs/find-matching-tracks')
 const { syncCarts } = require('./jobs/cart-sync')
 const beatportIntegrationTest = require('./jobs/integration/beatport')
 const bandcampIntegrationTest = require('./jobs/integration/bandcamp')
+const junodownloadIntegrationTest = require('./jobs/integration/junodownload')
 const logger = require('fomoplayer_shared').logger(__filename)
 const radiator = require('./jobs/radiator/radiator')
 const { removeOldSources } = require('./jobs/remove-old-sources')
@@ -155,6 +157,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   fetchBeatportWatches,
   fetchSpotifyWatches,
   fetchBandcampWatches,
+  fetchJunodownloadWatches,
   sendNextEmailBatch,
   updateNotifications,
   updateTrackDetails,
@@ -162,6 +165,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   findMatchingTracks,
   beatportIntegrationTest,
   bandcampIntegrationTest,
+  junodownloadIntegrationTest,
   removeOldSources,
   sendInvites,
   ...radiator,
