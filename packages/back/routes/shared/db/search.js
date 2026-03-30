@@ -25,6 +25,12 @@ module.exports.searchForTracks = async (
 
   const idFilters = fieldFilters.filter(([key]) => ['artist', 'label', 'release', 'track'].includes(key))
 
+  const genreFilters = fieldFilters
+    .filter(([key, value]) => key === 'genre' && /^\d+$/.test(value))
+    .map(([, value]) =>
+      sql`EXISTS (SELECT 1 FROM track__genre t2 WHERE t2.track_id = track.track_id AND t2.genre_id = ${parseInt(value, 10)})`,
+    )
+
   const keyToJoinsLookup = {
     bpm: sql``,
     key: sql`NATURAL JOIN track__key NATURAL JOIN key NATURAL JOIN key_name`,
@@ -46,6 +52,32 @@ module.exports.searchForTracks = async (
     .map(([key, value]) => [key, value.substring(1)])
   const fuzzyFilterQueries = fuzzyFilters.map(([key, value]) => keyToQueryFnLookup[key](value))
   const fuzzyFilterJoins = fuzzyFilters.map(([key]) => keyToJoinsLookup[key])
+
+  const exactKeyFilters = fieldFilters
+    .filter(([key, value]) => key === 'key' && !value.startsWith('~'))
+    .map(([, value]) =>
+      sql`EXISTS (SELECT 1 FROM track__key JOIN key ON track__key.key_id = key.key_id JOIN key_name kn ON key.key_id = kn.key_id WHERE track__key.track_id = track.track_id AND LOWER(kn.key_name) = LOWER(${value}))`,
+    )
+
+  const bpmRangeFilters = fieldFilters
+    .filter(([key, value]) => key === 'bpm' && /^\d+-\d+$/.test(value))
+    .map(([, value]) => {
+      const [min, max] = value.split('-').map(Number)
+      return sql`store__track_bpm BETWEEN ${min} AND ${max}`
+    })
+
+  const bpmExactFilters = fieldFilters
+    .filter(([key, value]) => key === 'bpm' && /^\d+(?:\.\d+)?$/.test(value))
+    .map(([, value]) => sql`store__track_bpm = ${Number(value)}`)
+  const exactFilterGroups = [exactKeyFilters, bpmRangeFilters, bpmExactFilters, genreFilters]
+  const appendAndFilters = (queryBuilder, filterGroups) => {
+    filterGroups.forEach((filters) => {
+      if (filters.length > 0) {
+        queryBuilder.append(' AND ')
+        R.intersperse(' AND ', filters).forEach((q) => queryBuilder.append(q))
+      }
+    })
+  }
 
   const limit = l || 100
   const offset = o || 0
@@ -100,6 +132,8 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
         query.append(' AND ')
         R.intersperse(' AND ', fuzzyFilterQueries).forEach((q) => query.append(q))
       }
+
+      appendAndFilters(query, exactFilterGroups)
 
       // language=PostgreSQL
       query.append(sql`
@@ -187,6 +221,8 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
         R.intersperse(' AND ', fuzzyFilterQueries).forEach((q) => query.append(q))
         query.append(' ')
       }
+
+      appendAndFilters(query, exactFilterGroups)
 
       query.append(sql` GROUP BY track_id, track_title, track_version `)
 

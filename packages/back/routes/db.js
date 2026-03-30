@@ -206,3 +206,9 @@ module.exports.addEmailToWaitingList = async (email) => {
     sql`INSERT INTO waiting_list (waiting_list_email) VALUES (${email}) ON CONFLICT DO NOTHING`,
   )
 }
+
+module.exports.queryGenres = () =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`SELECT genre_id AS id, genre_name AS name FROM genre ORDER BY genre_name`,
+  )

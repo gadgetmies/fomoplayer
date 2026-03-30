@@ -87,6 +87,21 @@
   border-color: #2a4a6a;
 }
 
+.search_pill_bpm {
+  background-color: #1a3a3a;
+  border-color: #2a7a7a;
+}
+
+.search_pill_key {
+  background-color: #3a3a1a;
+  border-color: #7a7a2a;
+}
+
+.search_pill_genre {
+  background-color: #3a1a1a;
+  border-color: #7a3a2a;
+}
+
 .search_pill_type {
   font-size: 0.75em;
   opacity: 0.65;
@@ -116,6 +131,34 @@
 
 .search_pill_remove:hover {
   opacity: 1;
+}
+
+/* ── Genre popup ───────────────────────────────────────────────────────────── */
+
+.search_genre_popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #141414;
+  border: 1px solid #444;
+  border-radius: 0.25rem;
+  margin-top: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.search_genre_option {
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.9em;
+  color: #ddd;
+}
+
+.search_genre_option:hover,
+.search_genre_option_selected {
+  background-color: #252525;
 }
 
 /* ── Quote mode indicator ──────────────────────────────────────────────────── */
@@ -177,6 +220,7 @@
 .search_container {
   display: flex;
   flex: 1;
+  position: relative;
 }
 
 @media (max-width: 590px) {

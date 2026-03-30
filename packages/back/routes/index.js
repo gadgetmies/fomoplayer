@@ -6,6 +6,7 @@ const { Unauthorized } = require('./shared/httpErrors')
 const adminRouter = require('./admin/index.js')
 const { ensureAuthenticated } = require('./shared/auth.js')
 const logRouter = require('./log/index.js')
+const { queryGenres } = require('./db')
 const logger = require('fomoplayer_shared').logger(__filename)
 const { getEntityDetails, getEmbeddingImage } = require('./logic')
 
@@ -46,6 +47,10 @@ router.get('/artists/:id', async ({ params: { id } }, res) => {
 
 router.get('/labels/:id', async ({ params: { id } }, res) => {
   res.send(await getEntityDetails('label', id))
+})
+
+router.get('/genres', async (req, res) => {
+  res.json(await queryGenres())
 })
 
 router.get('/followDetails', async ({ query: { q, store: stores } }, res) => {

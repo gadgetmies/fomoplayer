@@ -1,34 +1,3 @@
-export const parseSearchTerms = (searchString) => {
-  if (!searchString) {
-    return []
-  }
-
-  const terms = []
-  const entityPattern = /(artist|label|release|track):(\d+)/gi
-  let lastIndex = 0
-  let match
-
-  while ((match = entityPattern.exec(searchString)) !== null) {
-    if (match.index > lastIndex) {
-      const textBefore = searchString.substring(lastIndex, match.index)
-      const textTerms = splitTextByWhitespace(textBefore)
-      terms.push(...textTerms)
-    }
-
-    const entityType = match[1].toLowerCase()
-    const entityId = parseInt(match[2], 10)
-    terms.push({ type: entityType, value: `${entityType}:${entityId}`, id: entityId })
-
-    lastIndex = match.index + match[0].length
-  }
-
-  const remainingText = searchString.substring(lastIndex)
-  const textTerms = splitTextByWhitespace(remainingText)
-  terms.push(...textTerms)
-
-  return terms
-}
-
 const splitTextByWhitespace = (text) => {
   if (!text) {
     return []
@@ -85,6 +54,68 @@ const splitTextByWhitespace = (text) => {
     terms.push({ type: 'text', value: currentTerm.trim() })
   }
 
+  return terms
+}
+
+const parseFilterTerm = (type, value, raw) => {
+  switch (type) {
+    case 'artist':
+    case 'label':
+    case 'release':
+    case 'track':
+    case 'genre': {
+      const id = parseInt(value, 10)
+      if (!isNaN(id) && String(id) === value) return { type, value: raw, id }
+      break
+    }
+    case 'bpm': {
+      const rangeMatch = value.match(/^(\d+)-(\d+)$/)
+      if (rangeMatch) return { type: 'bpm', value: raw, min: parseInt(rangeMatch[1]), max: parseInt(rangeMatch[2]) }
+      const fuzzyMatch = value.match(/^~(\d+(?:\.\d+)?)$/)
+      if (fuzzyMatch) return { type: 'bpm', value: raw, fuzzy: true, bpm: parseFloat(fuzzyMatch[1]) }
+      const exactMatch = value.match(/^\d+(?:\.\d+)?$/)
+      if (exactMatch) return { type: 'bpm', value: raw, bpm: parseFloat(value) }
+      break
+    }
+    case 'key': {
+      const compatible = value.startsWith('~')
+      const keyValue = compatible ? value.slice(1) : value
+      if (keyValue) return { type: 'key', value: raw, key: keyValue, compatible }
+      break
+    }
+  }
+  return { type: 'text', value: raw }
+}
+
+export const parseSingleTerm = (raw) => {
+  const colonIdx = raw.indexOf(':')
+  if (colonIdx <= 0) return { type: 'text', value: raw }
+  const type = raw.slice(0, colonIdx).toLowerCase()
+  const value = raw.slice(colonIdx + 1)
+  return parseFilterTerm(type, value, raw)
+}
+
+export const parseSearchTerms = (searchString) => {
+  if (!searchString) {
+    return []
+  }
+
+  const terms = []
+  const filterPattern = /(\S+:\S+)/g
+  let lastIndex = 0
+  let match
+
+  while ((match = filterPattern.exec(searchString)) !== null) {
+    if (match.index > lastIndex) {
+      const textBefore = searchString.substring(lastIndex, match.index)
+      terms.push(...splitTextByWhitespace(textBefore))
+    }
+    terms.push(parseSingleTerm(match[0]))
+    lastIndex = match.index + match[0].length
+  }
+
+  const remainingText = searchString.substring(lastIndex)
+  terms.push(...splitTextByWhitespace(remainingText))
   return terms
 }
 

@@ -25,6 +25,7 @@ class TopBar extends Component {
       emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
       discoverMenuOpen: false,
       cartsMenuOpen: false,
+      genres: [],
     }
   }
 
@@ -76,26 +77,35 @@ class TopBar extends Component {
 
   // Fetch display names for entity pills that were committed without one (e.g. typed
   // manually as "artist:50" or restored from a URL that predates the names param).
-  // Only artist and label have dedicated lookup endpoints.
   async resolveEntityNames(committedTerms) {
-    const nameless = committedTerms.filter(
-      (t) => t.type !== 'text' && !t.name && (t.type === 'artist' || t.type === 'label'),
-    )
+    const nameless = committedTerms.filter((t) => t.type !== 'text' && !t.name)
     if (nameless.length === 0) return
 
-    const resolved = await Promise.all(
-      nameless.map(async (term) => {
-        try {
-          const data = await requestJSONwithCredentials({ path: `/${term.type}s/${term.id}` })
-          return data?.name ? { termValue: term.value, name: data.name } : null
-        } catch {
-          return null
-        }
-      }),
-    )
-
     const nameMap = {}
+
+    // Resolve genre names locally from the genres list
+    nameless
+      .filter((t) => t.type === 'genre')
+      .forEach((t) => {
+        const genre = (this.state.genres || []).find((g) => g.id === t.id)
+        if (genre) nameMap[t.value] = genre.name
+      })
+
+    // Resolve artist and label names via API
+    const resolved = await Promise.all(
+      nameless
+        .filter((t) => t.type === 'artist' || t.type === 'label')
+        .map(async (term) => {
+          try {
+            const data = await requestJSONwithCredentials({ path: `/${term.type}s/${term.id}` })
+            return data?.name ? { termValue: term.value, name: data.name } : null
+          } catch {
+            return null
+          }
+        }),
+    )
     resolved.forEach((r) => r && (nameMap[r.termValue] = r.name))
+
     if (Object.keys(nameMap).length === 0) return
 
     this.setState((prev) => ({
@@ -106,6 +116,11 @@ class TopBar extends Component {
   componentDidMount() {
     // Resolve names for any entity terms that were restored from the URL.
     this.resolveEntityNames(this.state.committedTerms)
+    requestJSONwithCredentials({ path: '/genres' })
+      .then((genres) => {
+        this.setState({ genres }, () => this.resolveEntityNames(this.state.committedTerms))
+      })
+      .catch((e) => console.error('Failed to fetch genres', e))
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -222,6 +237,7 @@ class TopBar extends Component {
               onClearSearch={() => this.handleChange([], '')}
               styles="top_bar"
               className={this.props.searchActive ? '' : 'search__inactive'}
+              genres={this.state.genres || []}
             />
             {this.props.searchActive && (
               <>

@@ -2,22 +2,7 @@ import './SearchBar.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { useState, useRef } from 'react'
 import Spinner from './Spinner'
-
-/**
- * Attempt to parse a single input string as an entity term (e.g. "artist:42").
- * Returns a term object, or a plain text term if it doesn't match.
- */
-const parseInputAsTerm = (text) => {
-  const entityMatch = text.match(/^(artist|label|release|track):(\d+)$/i)
-  if (entityMatch) {
-    return {
-      type: entityMatch[1].toLowerCase(),
-      value: text,
-      id: parseInt(entityMatch[2], 10),
-    }
-  }
-  return { type: 'text', value: text }
-}
+import { parseSingleTerm } from './searchTerms'
 
 /**
  * Pill-based search bar.
@@ -27,19 +12,52 @@ const parseInputAsTerm = (text) => {
  *   onChange(committedTerms, inputValue)  — called on every change; TopBar debounces search
  *   onSearch(committedTerms, inputValue)  — called on Enter; TopBar fires immediately
  *   onClearSearch()
- *   loading, disabled, placeholder, styles, className
+ *   loading, disabled, placeholder, styles, className, genres
  */
-const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, disabled, placeholder, styles, className }) => {
+const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, disabled, placeholder, styles, className, genres = [] }) => {
   const [inputValue, setInputValue] = useState('')
   const [inQuote, setInQuote] = useState(false)
+  const [selectedGenreIndex, setSelectedGenreIndex] = useState(-1)
   const inputRef = useRef(null)
 
   const focusInput = () => inputRef.current?.focus()
 
-  const getTermLabel = (term) => term.name ?? term.value
+  const getTermLabel = (term) => {
+    switch (term.type) {
+      case 'bpm':
+        if (term.min !== undefined) return `${term.min}–${term.max}`
+        if (term.fuzzy) return `~${term.bpm}`
+        return `${term.bpm}`
+      case 'key':
+        return term.compatible ? `~${term.key.toUpperCase()}` : term.key.toUpperCase()
+      case 'genre':
+        return term.name ?? `${term.id}`
+      default:
+        return term.name ?? term.value
+    }
+  }
+
+  const genreSearchText = inputValue.match(/^genre:(.*)/i)?.[1] ?? null
+  const showGenrePopup = genreSearchText !== null && genres.length > 0
+  const filteredGenres = showGenrePopup
+    ? genres.filter((g) => !genreSearchText || g.name.toLowerCase().includes(genreSearchText.toLowerCase()))
+    : []
+
+  const commitGenre = (genre) => {
+    const newTerm = { type: 'genre', value: `genre:${genre.id}`, id: genre.id, name: genre.name }
+    const newTerms = [...terms, newTerm]
+    setInputValue('')
+    setSelectedGenreIndex(-1)
+    onChange(newTerms, '')
+    focusInput()
+  }
 
   const handleChange = (e) => {
     const value = e.target.value
+
+    if (genreSearchText !== null && !value.match(/^genre:/i)) {
+      setSelectedGenreIndex(-1)
+    }
 
     // Entering quote mode: first character typed is "
     if (!inQuote && value === '"') {
@@ -66,9 +84,9 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
       return
     }
 
-    // Commit on space (outside quote mode)
-    if (!inQuote && value.endsWith(' ') && value.trim()) {
-      const newTerm = parseInputAsTerm(value.trim())
+    // Commit on space (outside quote mode), but not if in genre search
+    if (!inQuote && value.endsWith(' ') && value.trim() && !value.trim().match(/^genre:/i)) {
+      const newTerm = parseSingleTerm(value.trim())
       const newTerms = [...terms, newTerm]
       setInputValue('')
       onChange(newTerms, '')
@@ -80,11 +98,36 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
   }
 
   const handleKeyDown = (e) => {
+    if (showGenrePopup) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelectedGenreIndex((i) => Math.min(i + 1, filteredGenres.length - 1))
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelectedGenreIndex((i) => Math.max(i - 1, 0))
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setInputValue('')
+        setSelectedGenreIndex(-1)
+        onChange(terms, '')
+        return
+      }
+      if (e.key === 'Enter' && selectedGenreIndex >= 0) {
+        e.preventDefault()
+        commitGenre(filteredGenres[selectedGenreIndex])
+        return
+      }
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault()
       let finalTerms = terms
       if (!inQuote && inputValue.trim()) {
-        finalTerms = [...terms, parseInputAsTerm(inputValue.trim())]
+        finalTerms = [...terms, parseSingleTerm(inputValue.trim())]
         setInputValue('')
         onChange(finalTerms, '')
       }
@@ -166,6 +209,22 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
           <FontAwesomeIcon className="search-input-icon" icon="search" />
         )}
       </div>
+      {showGenrePopup && filteredGenres.length > 0 && (
+        <div className="search_genre_popup">
+          {filteredGenres.map((genre, i) => (
+            <div
+              key={genre.id}
+              className={`search_genre_option${i === selectedGenreIndex ? ' search_genre_option_selected' : ''}`}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                commitGenre(genre)
+              }}
+            >
+              {genre.name}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
