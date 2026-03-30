@@ -39,6 +39,7 @@ const auth = require('./routes/auth.js')
 const { HttpError } = require('./routes/shared/httpErrors')
 const { logRequestError } = require('./routes/shared/error-logging')
 const { getCartDetails } = require('./routes/logic')
+const { createCorsOriginValidator } = require('./cors-origin')
 
 const app = express()
 app.use(compression())
