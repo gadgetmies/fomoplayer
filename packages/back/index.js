@@ -38,6 +38,7 @@ const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
 const { HttpError } = require('./routes/shared/httpErrors')
 const { getCartDetails } = require('./routes/logic')
+const { createCorsOriginValidator } = require('./cors-origin')
 
 const app = express()
 app.use(compression())
