@@ -4,6 +4,59 @@ const BPromise = require('bluebird')
 const R = require('ramda')
 const logger = require('fomoplayer_shared').logger(__filename)
 
+const SINGLE_VALUE_FILTER_KEYS = new Set(['label', 'release', 'track', 'bpm', 'key', 'genre'])
+
+const deduplicateFieldFilters = (fieldFilters) => {
+  const seenKeys = new Set()
+  return fieldFilters.filter(([key]) => {
+    if (!SINGLE_VALUE_FILTER_KEYS.has(key)) return true
+    if (seenKeys.has(key)) return false
+    seenKeys.add(key)
+    return true
+  })
+}
+
+const appendIdFilters = (queryBuilder, idFilters, tx) => {
+  const idFilterToTable = {
+    artist: 'track__artist',
+    label: 'track__label',
+    release: 'release__track',
+  }
+  const artistFilters = idFilters.filter(([k]) => k === 'artist')
+  const otherIdFilters = idFilters.filter(([k]) => k !== 'artist')
+
+  if (artistFilters.length > 0) {
+    queryBuilder.append(' AND (')
+    artistFilters.forEach(([key, value], i) => {
+      if (i > 0) queryBuilder.append(' AND ')
+      const junctionTable = idFilterToTable[key]
+      queryBuilder.append(
+        `EXISTS (SELECT 1 FROM ${tx.escapeIdentifier(junctionTable)} t2 WHERE t2.track_id = track.track_id AND t2.${tx.escapeIdentifier(
+          `${key}_id`,
+        )} = `,
+      )
+      queryBuilder.append(sql`${value}`)
+      queryBuilder.append(`)`)
+    })
+    queryBuilder.append(')')
+  }
+
+  for (const idFilter of otherIdFilters) {
+    if (idFilter[0] === 'track') {
+      queryBuilder.append(sql` AND track.track_id = ${idFilter[1]}`)
+    } else {
+      const junctionTable = idFilterToTable[idFilter[0]]
+      queryBuilder.append(
+        ` AND EXISTS (SELECT 1 FROM ${tx.escapeIdentifier(junctionTable)} t2 WHERE t2.track_id = track.track_id AND t2.${tx.escapeIdentifier(
+          `${idFilter[0]}_id`,
+        )} = `,
+      )
+      queryBuilder.append(sql`${idFilter[1]}`)
+      queryBuilder.append(`)`)
+    }
+  }
+}
+
 // TODO: would it be possible to somehow derive these from the track_details function?
 const aliasToColumn = {
   published: 'store__track_published',
@@ -18,7 +71,9 @@ module.exports.searchForTracks = async (
   { limit: l, offset: o, sort: s, userId, addedSince, onlyNew, stores = undefined } = {},
 ) => {
   const addedSinceValue = addedSince || null
-  const fieldFilters = originalQueryString.match(/(\S+:\S+)+?/g)?.map((s) => s.split(':')) || []
+  const fieldFilters = deduplicateFieldFilters(
+    originalQueryString.match(/(\S+:\S+)+?/g)?.map((s) => s.split(':')) || [],
+  )
   const similaritySearchTrackId = originalQueryString.match(/track:~(\d+)/)?.[1]
 
   const queryString = originalQueryString.replace(/(\S+:\S+)\s*/g, '').trim()
@@ -72,11 +127,6 @@ module.exports.searchForTracks = async (
     .filter(([key, value]) => key === 'bpm' && /^\d+(?:\.\d+)?$/.test(value))
     .map(([, value]) => sql`store__track_bpm = ${Number(value)}`)
   const exactFilterGroups = [exactKeyFilters, bpmRangeFilters, bpmExactFilters, genreFilters]
-  const idFilterToTable = {
-    artist: 'track__artist',
-    label: 'track__label',
-    release: 'release__track',
-  }
   const appendAndFilters = (queryBuilder, filterGroups) => {
     filterGroups.forEach((filters) => {
       if (filters.length > 0) {
@@ -148,20 +198,7 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
 
       appendAndFilters(query, exactFilterGroups)
 
-      for (const idFilter of idFilters) {
-        if (idFilter[0] === 'track') {
-          query.append(sql` AND track.track_id = ${idFilter[1]}`)
-        } else {
-          const junctionTable = idFilterToTable[idFilter[0]]
-          query.append(
-            ` AND EXISTS (SELECT 1 FROM ${tx.escapeIdentifier(junctionTable)} t2 WHERE t2.track_id = track.track_id AND t2.${tx.escapeIdentifier(
-              `${idFilter[0]}_id`,
-            )} = `,
-          )
-          query.append(sql`${idFilter[1]}`)
-          query.append(`)`)
-        }
-      }
+      appendIdFilters(query, idFilters, tx)
 
       // language=PostgreSQL
       query.append(sql`
@@ -239,20 +276,7 @@ AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
 AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
          `)
 
-      for (const idFilter of idFilters) {
-        if (idFilter[0] === 'track') {
-          query.append(sql` AND track.track_id = ${idFilter[1]}`)
-        } else {
-          const junctionTable = idFilterToTable[idFilter[0]]
-          query.append(
-            ` AND EXISTS (SELECT 1 FROM ${tx.escapeIdentifier(junctionTable)} t2 WHERE t2.track_id = track.track_id AND t2.${tx.escapeIdentifier(
-              `${idFilter[0]}_id`,
-            )} = `,
-          )
-          query.append(sql`${idFilter[1]}`)
-          query.append(`)`)
-        }
-      }
+      appendIdFilters(query, idFilters, tx)
 
       if (fuzzyFilters.length > 0) {
         query.append(' AND ')
