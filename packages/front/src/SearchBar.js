@@ -266,12 +266,18 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
         {terms.map((term, i) => (
           <span
             key={i}
-            className={`search_pill search_pill_${term.type}${
+            className={`search_pill search_pill_${term.type}${term.ignoredReason ? ' search_pill_ignored' : ''}${
               hasSelectedPills && i >= selectedPillFrom && i <= selectedPillTo ? ' search_pill_selected' : ''
             }`}
+            title={term.ignoredReason || undefined}
           >
             {term.type !== 'text' && <span className="search_pill_type">{term.type}</span>}
             <span className="search_pill_name">{getTermLabel(term)}</span>
+            {term.ignoredReason && (
+              <span className="search_pill_warning" aria-label={term.ignoredReason}>
+                <FontAwesomeIcon icon="circle-exclamation" />
+              </span>
+            )}
             <button
               className="search_pill_remove"
               onClick={(e) => {

@@ -67,6 +67,11 @@
   filter: brightness(1.2);
 }
 
+.search_pill_ignored {
+  border-color: #d84343 !important;
+  background-color: #4a1414 !important;
+}
+
 .search_pill_text {
   background-color: #1a3a5c;
   border-color: #2a5a8c;
@@ -118,6 +123,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 160px;
+}
+
+.search_pill_warning {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.95;
 }
 
 .search_pill_remove {

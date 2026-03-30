@@ -142,8 +142,34 @@ export const searchTermsToString = (searchTerms, preserveTrailingSpace = false) 
   return preserveTrailingSpace ? result : result.trim()
 }
 
+const SINGLE_VALUE_FILTER_TYPES = new Set(['artist', 'label', 'release', 'track', 'bpm', 'key'])
+
+export const analyzeSearchTerms = (searchTerms = []) => {
+  const seenTypes = new Set()
+
+  return searchTerms.map((term) => {
+    if (!SINGLE_VALUE_FILTER_TYPES.has(term.type)) {
+      return { ...term, ignoredReason: undefined }
+    }
+
+    if (!seenTypes.has(term.type)) {
+      seenTypes.add(term.type)
+      return { ...term, ignoredReason: undefined }
+    }
+
+    return {
+      ...term,
+      ignoredReason: `Only one ${term.type} filter is applied. This term is ignored to prevent conflicting filters.`,
+    }
+  })
+}
+
+export const getActiveSearchTerms = (searchTerms = []) => {
+  return analyzeSearchTerms(searchTerms).filter((term) => !term.ignoredReason)
+}
+
 export const searchTermsToQueryString = (searchTerms) => {
-  return searchTermsToString(searchTerms)
+  return searchTermsToString(getActiveSearchTerms(searchTerms))
 }
 
 export const hasEntityTerm = (searchTerms, entityType, entityId) => {

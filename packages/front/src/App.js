@@ -34,6 +34,8 @@ import {
   addEntityTerm,
   entityNamesToUrlParam,
   applyEntityNamesFromUrlParam,
+  analyzeSearchTerms,
+  getActiveSearchTerms,
 } from './searchTerms'
 
 library.add(fas, far, fab)
@@ -66,15 +68,14 @@ class App extends Component {
 
     this.searchEventHandler = async function (params) {
       const { q, ...rest } = params.detail
-      const searchTerms = parseSearchTerms(q)
+      const searchTerms = analyzeSearchTerms(parseSearchTerms(q))
       this.setState({ searchTerms, searchFilters: rest })
       await this.search(searchTerms, { ...filters, ...rest })
     }.bind(this)
 
     const searchQuery = searchParams.get('q') || ''
-    const searchTerms = applyEntityNamesFromUrlParam(
-      parseSearchTerms(searchQuery),
-      searchParams.get('names') || '',
+    const searchTerms = analyzeSearchTerms(
+      applyEntityNamesFromUrlParam(parseSearchTerms(searchQuery), searchParams.get('names') || ''),
     )
     const isSearchPath = window.location.pathname.match(/^\/search\/?$/)
     const initialListState = searchTerms.length > 0 && isSearchPath ? 'search' : (listState || 'new')
@@ -192,9 +193,8 @@ class App extends Component {
 
       const searchParams = new URLSearchParams(window.location.search)
       const searchQuery = searchParams.get('q') || ''
-      const searchTerms = applyEntityNamesFromUrlParam(
-        parseSearchTerms(searchQuery),
-        searchParams.get('names') || '',
+      const searchTerms = analyzeSearchTerms(
+        applyEntityNamesFromUrlParam(parseSearchTerms(searchQuery), searchParams.get('names') || ''),
       )
       const isSearchPath = window.location.pathname.match(/^\/search\/?$/)
       if (searchTerms.length > 0 && isSearchPath) {
@@ -614,7 +614,9 @@ class App extends Component {
   }
 
   addEntityToSearch(entityType, entityId, entityName) {
-    const newSearchTerms = addEntityTerm(this.state.searchTerms || [], entityType, entityId, entityName)
+    const newSearchTerms = analyzeSearchTerms(
+      addEntityTerm(this.state.searchTerms || [], entityType, entityId, entityName),
+    )
     this.setState({ searchTerms: newSearchTerms })
     this.search(newSearchTerms, this.state.searchFilters)
   }
@@ -623,16 +625,24 @@ class App extends Component {
     const { sort = '-released', limit = 100, addedSince = null, onlyNew = null } = filters
     console.log({ onlyNew, filters })
 
-    const query = searchTermsToQueryString(searchTerms)
+    const analyzedSearchTerms = analyzeSearchTerms(searchTerms)
+    const activeSearchTerms = getActiveSearchTerms(analyzedSearchTerms)
+    const query = searchTermsToQueryString(analyzedSearchTerms)
     if (query === '') return
     const { trackOffsets } = this.state
     const offset = append ? trackOffsets.search : 0
     if (!append) {
-      this.setState({ listState: 'search', searchInProgress: true, searchError: undefined, searchTerms, trackOffsets: { ...trackOffsets, search: 0 } })
+      this.setState({
+        listState: 'search',
+        searchInProgress: true,
+        searchError: undefined,
+        searchTerms: analyzedSearchTerms,
+        trackOffsets: { ...trackOffsets, search: 0 },
+      })
     } else {
       this.setState({ loadingMore: true })
     }
-    const names = entityNamesToUrlParam(searchTerms)
+    const names = entityNamesToUrlParam(activeSearchTerms)
     const parameters = `q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}&offset=${offset}`
     if (!append) {
       window.history.pushState(undefined, undefined, `/search?${parameters}`)

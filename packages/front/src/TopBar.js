@@ -10,7 +10,7 @@ import SearchBar from './SearchBar'
 import DropDownButton from './DropDownButton'
 import { isMobile } from 'react-device-detect'
 import Popup from './Popup'
-import { searchTermsToString } from './searchTerms'
+import { analyzeSearchTerms, searchTermsToString } from './searchTerms'
 import { requestJSONwithCredentials } from './request-json-with-credentials'
 
 class TopBar extends Component {
@@ -18,7 +18,7 @@ class TopBar extends Component {
     super(props)
 
     this.state = {
-      committedTerms: props.searchTerms || [],
+      committedTerms: analyzeSearchTerms(props.searchTerms || []),
       inputValue: '',
       searchDebounce: undefined,
       supportMenuOpen: false,
@@ -38,14 +38,15 @@ class TopBar extends Component {
   // committedTerms — pills that have been fully committed
   // inputValue     — text currently being typed (not yet a pill)
   handleChange(committedTerms, inputValue) {
-    this.setState({ committedTerms, inputValue })
+    const analyzedCommittedTerms = analyzeSearchTerms(committedTerms)
+    this.setState({ committedTerms: analyzedCommittedTerms, inputValue })
 
     if (this.state.searchDebounce) {
       clearTimeout(this.state.searchDebounce)
     }
 
     const partialTerms = inputValue.trim() ? [{ type: 'text', value: inputValue.trim() }] : []
-    const effectiveTerms = [...committedTerms, ...partialTerms]
+    const effectiveTerms = analyzeSearchTerms([...analyzedCommittedTerms, ...partialTerms])
 
     if (effectiveTerms.length === 0) {
       this.props.onSearch([], this.props.searchFilters)
@@ -66,7 +67,7 @@ class TopBar extends Component {
       this.setState({ searchDebounce: undefined })
     }
     const partialTerms = inputValue.trim() ? [{ type: 'text', value: inputValue.trim() }] : []
-    const effectiveTerms = [...committedTerms, ...partialTerms]
+    const effectiveTerms = analyzeSearchTerms([...committedTerms, ...partialTerms])
     return this.props.onSearch(effectiveTerms, { onlyNew: false })
   }
 
@@ -118,7 +119,9 @@ class TopBar extends Component {
     if (Object.keys(nameMap).length === 0) return
 
     this.setState((prev) => ({
-      committedTerms: prev.committedTerms.map((t) => (nameMap[t.value] ? { ...t, name: nameMap[t.value] } : t)),
+      committedTerms: analyzeSearchTerms(
+        prev.committedTerms.map((t) => (nameMap[t.value] ? { ...t, name: nameMap[t.value] } : t)),
+      ),
     }))
   }
 
@@ -142,7 +145,7 @@ class TopBar extends Component {
 
       if (JSON.stringify(incomingEntityTerms) !== JSON.stringify(currentEntityTerms)) {
         const committedTextTerms = this.state.committedTerms.filter((t) => t.type === 'text')
-        this.setState({ committedTerms: [...incomingEntityTerms, ...committedTextTerms] })
+        this.setState({ committedTerms: analyzeSearchTerms([...incomingEntityTerms, ...committedTextTerms]) })
       }
     }
 

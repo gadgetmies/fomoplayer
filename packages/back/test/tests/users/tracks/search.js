@@ -123,10 +123,12 @@ test({
       const noisiaResult = await setupBeatportTracks([{ tracks: updateDatesToToday(concussionFixture) }])
       const otherResult = await setupBeatportTracks([{ tracks: updateDatesToToday(otherArtistFixture) }])
       const noisiaArtistId = await getTrackArtistId(noisiaResult.addedTracks)
+      const otherArtistId = await getTrackArtistId(otherResult.addedTracks)
       return {
         addedTracks: [...noisiaResult.addedTracks, ...otherResult.addedTracks],
         addedSources: [...noisiaResult.addedSources, ...otherResult.addedSources],
         noisiaArtistId,
+        otherArtistId,
       }
     },
     teardown: teardownTracks,
@@ -143,6 +145,11 @@ test({
     'artist filter combined with title text is AND': async ({ noisiaArtistId }) => {
       const results = await searchForTracks(`artist:${noisiaArtistId} concussion`, { userId })
       assert.strictEqual(results.length, 1)
+    },
+    'duplicate artist filters keep the first artist filter only': async ({ noisiaArtistId, otherArtistId }) => {
+      const results = await searchForTracks(`artist:${noisiaArtistId} artist:${otherArtistId} concussion`, { userId })
+      assert.strictEqual(results.length, 1)
+      assert.strictEqual(results[0].title, 'Concussion')
     },
   },
 
