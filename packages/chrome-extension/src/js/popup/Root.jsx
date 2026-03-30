@@ -51,10 +51,11 @@ export default class Root extends React.Component {
         ['running', 'token', 'enabledStores', 'appUrl', 'error', 'operationStatus', 'operationProgress'],
         function ({ running, token, enabledStores, appUrl, error, operationStatus, operationProgress }) {
           const currentHostname = getCurrentHostname(tabArray)
+          const resolvedAppUrl = appUrl || DEFAULT_APP_URL
 
           const panels = [
             {
-              matcher: new RegExp(`^${appUrl}`),
+              matcher: new RegExp(`^${resolvedAppUrl}`),
               component: MultiStorePlayerPanel,
             },
             {
@@ -75,7 +76,7 @@ export default class Root extends React.Component {
             running,
             enabledStores,
             panels,
-            appUrl,
+            appUrl: resolvedAppUrl,
             error,
             operationStatus,
             operationProgress,
