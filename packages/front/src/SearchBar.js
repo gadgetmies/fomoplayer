@@ -18,9 +18,19 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
   const [inputValue, setInputValue] = useState('')
   const [inQuote, setInQuote] = useState(false)
   const [selectedGenreIndex, setSelectedGenreIndex] = useState(-1)
+  const [selectedPillStart, setSelectedPillStart] = useState(null)
+  const [selectedPillEnd, setSelectedPillEnd] = useState(null)
   const inputRef = useRef(null)
+  const selectAllPressedRef = useRef(false)
 
   const focusInput = () => inputRef.current?.focus()
+  const clearPillSelection = () => {
+    setSelectedPillStart(null)
+    setSelectedPillEnd(null)
+  }
+  const hasSelectedPills = selectedPillStart !== null && selectedPillEnd !== null
+  const selectedPillFrom = hasSelectedPills ? Math.min(selectedPillStart, selectedPillEnd) : -1
+  const selectedPillTo = hasSelectedPills ? Math.max(selectedPillStart, selectedPillEnd) : -1
 
   const getTermLabel = (term) => {
     switch (term.type) {
@@ -54,6 +64,8 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
 
   const handleChange = (e) => {
     const value = e.target.value
+    selectAllPressedRef.current = false
+    clearPillSelection()
 
     if (genreSearchText !== null && !value.match(/^genre:/i)) {
       setSelectedGenreIndex(-1)
@@ -98,6 +110,64 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
   }
 
   const handleKeyDown = (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+      selectAllPressedRef.current = true
+      if (terms.length > 0) {
+        setSelectedPillStart(0)
+        setSelectedPillEnd(terms.length - 1)
+      } else {
+        clearPillSelection()
+      }
+      return
+    }
+
+    if (e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && inputValue === '' && !inQuote && terms.length > 0) {
+      e.preventDefault()
+      selectAllPressedRef.current = false
+
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === 'ArrowLeft') {
+          setSelectedPillStart(0)
+          setSelectedPillEnd(terms.length - 1)
+        } else {
+          clearPillSelection()
+        }
+        return
+      }
+
+      if (e.key === 'ArrowLeft') {
+        if (!hasSelectedPills) {
+          setSelectedPillStart(terms.length - 1)
+          setSelectedPillEnd(terms.length - 1)
+        } else {
+          setSelectedPillStart(Math.max(0, selectedPillFrom - 1))
+          setSelectedPillEnd(selectedPillTo)
+        }
+      } else if (hasSelectedPills) {
+        const nextStart = selectedPillFrom + 1
+        if (nextStart > selectedPillTo) {
+          clearPillSelection()
+        } else {
+          setSelectedPillStart(nextStart)
+          setSelectedPillEnd(selectedPillTo)
+        }
+      }
+      return
+    }
+
+    if (
+      hasSelectedPills &&
+      !e.shiftKey &&
+      (e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight' ||
+        e.key === 'ArrowUp' ||
+        e.key === 'ArrowDown' ||
+        e.key === 'Home' ||
+        e.key === 'End')
+    ) {
+      clearPillSelection()
+    }
+
     if (showGenrePopup) {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
@@ -124,6 +194,8 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
     }
 
     if (e.key === 'Enter') {
+      selectAllPressedRef.current = false
+      clearPillSelection()
       e.preventDefault()
       let finalTerms = terms
       if (!inQuote && inputValue.trim()) {
@@ -136,8 +208,29 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
       return
     }
 
+    if (selectAllPressedRef.current && (e.key === 'Backspace' || e.key === 'Delete')) {
+      e.preventDefault()
+      selectAllPressedRef.current = false
+      clearPillSelection()
+      setInputValue('')
+      setInQuote(false)
+      setSelectedGenreIndex(-1)
+      onClearSearch()
+      return
+    }
+
+    if (hasSelectedPills && (e.key === 'Backspace' || e.key === 'Delete')) {
+      e.preventDefault()
+      clearPillSelection()
+      const remainingTerms = terms.filter((_, i) => i < selectedPillFrom || i > selectedPillTo)
+      onChange(remainingTerms, inputValue)
+      return
+    }
+
     // Backspace or Delete at start of empty input → expand last pill back to editable text
     if ((e.key === 'Backspace' || e.key === 'Delete') && inputValue === '' && !inQuote && terms.length > 0) {
+      selectAllPressedRef.current = false
+      clearPillSelection()
       e.preventDefault()
       const lastTerm = terms[terms.length - 1]
       const remainingTerms = terms.slice(0, -1)
@@ -151,6 +244,7 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
   }
 
   const removeTerm = (index) => {
+    clearPillSelection()
     const newTerms = [...terms.slice(0, index), ...terms.slice(index + 1)]
     onChange(newTerms, inputValue)
     focusInput()
@@ -159,10 +253,21 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
   const hasContent = terms.length > 0 || inputValue !== '' || inQuote
 
   return (
-    <div className={`search_container ${className || ''}`} onClick={focusInput}>
+    <div
+      className={`search_container ${className || ''}`}
+      onClick={() => {
+        clearPillSelection()
+        focusInput()
+      }}
+    >
       <div className={`search_bar search_bar_pills${inQuote ? ' search_bar_in_quote' : ''}`}>
         {terms.map((term, i) => (
-          <span key={i} className={`search_pill search_pill_${term.type}`}>
+          <span
+            key={i}
+            className={`search_pill search_pill_${term.type}${
+              hasSelectedPills && i >= selectedPillFrom && i <= selectedPillTo ? ' search_pill_selected' : ''
+            }`}
+          >
             {term.type !== 'text' && <span className="search_pill_type">{term.type}</span>}
             <span className="search_pill_name">{getTermLabel(term)}</span>
             <button
@@ -190,7 +295,10 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder={!hasContent ? placeholder : ''}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation()
+            clearPillSelection()
+          }}
           autoComplete="off"
           spellCheck={false}
         />
@@ -200,6 +308,11 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
           <FontAwesomeIcon
             onClick={(e) => {
               e.stopPropagation()
+              selectAllPressedRef.current = false
+              clearPillSelection()
+              setInputValue('')
+              setInQuote(false)
+              setSelectedGenreIndex(-1)
               onClearSearch()
             }}
             className="search-input-icon clear-search"
