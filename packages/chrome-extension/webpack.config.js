@@ -9,6 +9,10 @@ const config = require('./utils/config.js')
 const nodeEnv = process.env.NODE_ENV || 'development'
 const sharedConfig = require('fomoplayer_shared/config')(nodeEnv).config
 
+const sharedConfigForEnv = Object.fromEntries(
+  Object.entries(sharedConfig).filter(([, value]) => value !== undefined && value !== null),
+)
+
 const alias = {
   'react-dom': '@hot-loader/react-dom',
 }
@@ -67,7 +71,7 @@ let options = {
     new CleanWebpackPlugin(),
     new DefinePlugin(config),
     // expose and write the allowed env vars on the compiled bundle
-    new EnvironmentPlugin({ ...sharedConfig, IP: sharedConfig.IP || '' }),
+    new EnvironmentPlugin({ ...sharedConfigForEnv, IP: sharedConfig.IP || '' }),
     new CopyWebpackPlugin({
       patterns: [
         {
