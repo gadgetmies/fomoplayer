@@ -18,6 +18,10 @@ const otherArtistFixture = R.pipe(
   L.modify(L.query('isrc'), R.always('OTHR000001')),
   L.modify(L.query('catalog_number'), R.always('OTHR001')),
   L.modify([L.query('release'), 'id'], R.always(99999)),
+  L.modify([L.query('genre')], R.always({ id: 99999, name: 'Other Genre', slug: 'other-genre' })),
+  L.modify([L.query('label')], R.always({ id: 99999, name: 'Other Label', slug: 'other-label' })),
+  L.modify([L.query('bpm')], R.always(100)),
+  L.modify([L.query('key')], R.always({ "camelot_number": 7, "camelot_letter": "B", "chord_type": { "id": 2, "name": "Major", "url": "https://api-internal.beatportprod.com/v4/catalog/chord-types/2/" } })),
   L.modify(L.query('artists'), (artists) =>
     artists.map((a) => ({ ...a, id: 99999, name: 'Other Artist', slug: 'other-artist' })),
   ),
@@ -41,34 +45,23 @@ const getTrackLabelId = async (trackIds) => {
   return labelId
 }
 
+const getTrackGenreId = async (trackIds) => {
+  const [{ genreId }] = await pg.queryRowsAsync(
+    sql`SELECT MIN(genre_id) AS "genreId" FROM track NATURAL JOIN track__genre WHERE track_id = ANY(${trackIds})`,
+  )
+  return genreId
+}
+
+const trackRowArtists = (row) => {
+  const raw = row.artists
+  return typeof raw === 'string' ? JSON.parse(raw) : raw
+}
+
 test({
   setup: async () => {
     await initDb()
   },
 
-  'when a track is added': {
-    setup: async () => {
-      const result = await setupBeatportTracks([{ tracks: updateDatesToToday(concussionFixture) }])
-      const artistId = await getTrackArtistId(result.addedTracks)
-      const labelId = await getTrackLabelId(result.addedTracks)
-      return { ...result, artistId, labelId }
-    },
-    teardown: teardownTracks,
-
-    'text search finds the track': async () => {
-      const results = await searchForTracks('concussion', { userId })
-      assert.strictEqual(results.length, 1)
-      assert.strictEqual(results[0].title, 'Concussion')
-    },
-    'artist filter returns the track': async ({ artistId }) => {
-      const results = await searchForTracks(`artist:${artistId}`, { userId })
-      assert.strictEqual(results.length, 1)
-    },
-    'label filter returns the track': async ({ labelId }) => {
-      const results = await searchForTracks(`label:${labelId}`, { userId })
-      assert.strictEqual(results.length, 1)
-    },
-  },
 
   'when two tracks by the same artist are added': {
     setup: async () => {
@@ -122,35 +115,84 @@ test({
     setup: async () => {
       const noisiaResult = await setupBeatportTracks([{ tracks: updateDatesToToday(concussionFixture) }])
       const otherResult = await setupBeatportTracks([{ tracks: updateDatesToToday(otherArtistFixture) }])
+
+      const noisiaGenreId = await getTrackGenreId(noisiaResult.addedTracks)
       const noisiaArtistId = await getTrackArtistId(noisiaResult.addedTracks)
+      const noisiaLabelId = await getTrackLabelId(noisiaResult.addedTracks)
+
+      const otherGenreId = await getTrackGenreId(otherResult.addedTracks)
       const otherArtistId = await getTrackArtistId(otherResult.addedTracks)
+      const otherLabelId = await getTrackLabelId(otherResult.addedTracks)
+
       return {
-        addedTracks: [...noisiaResult.addedTracks, ...otherResult.addedTracks],
-        addedSources: [...noisiaResult.addedSources, ...otherResult.addedSources],
+        noisiaGenreId,
         noisiaArtistId,
+        noisiaLabelId,
+        otherGenreId,
         otherArtistId,
+        otherLabelId,
       }
     },
     teardown: teardownTracks,
 
+    'artist filter returns the track': async ({ noisiaArtistId }) => {
+      const results = await searchForTracks(`artist:${noisiaArtistId}`, { userId })
+      assert.strictEqual(results.length, 1)
+    },
+    'label filter returns the track': async ({ noisiaLabelId }) => {
+      const results = await searchForTracks(`label:${noisiaLabelId}`, { userId })
+      assert.strictEqual(results.length, 1)
+    },
+    'genre filter returns the correct track': async ({ noisiaGenreId }) => {
+      const results = await searchForTracks(`genre:${noisiaGenreId}`, { userId })
+      //console.log(JSON.stringify(results, null, 2))
+      assert.strictEqual(results.length, 1)
+    },
+    'duplicate genre filters keep the first genre only': async ({ noisiaGenreId, otherGenreId }) => {
+      const results = await searchForTracks(`genre:${noisiaGenreId} genre:${otherGenreId} concussion`, { userId })
+      assert.strictEqual(results.length, 1)
+    },
+    'duplicate label filters keep the first label only': async ({ noisiaLabelId, otherLabelId }) => {
+      const results = await searchForTracks(`label:${noisiaLabelId} label:${otherLabelId} concussion`, { userId })
+      assert.strictEqual(results.length, 1)
+    },
+    'duplicate bpm filters keep the first bpm only': async () => {
+      const results = await searchForTracks(`bpm:86 bpm:200 concussion`, { userId })
+      //console.log(JSON.stringify(results, null, 2))
+      assert.strictEqual(results.length, 1)
+    },
     'text search returns all tracks matching the title': async () => {
       const results = await searchForTracks('concussion', { userId })
       assert.strictEqual(results.length, 2)
+      assert.ok(results.every((r) => r.title === 'Concussion'))
+      const authorNames = results
+        .flatMap((r) => trackRowArtists(r).map((a) => a.name))
+        .sort()
+      assert.deepStrictEqual(authorNames, ['Noisia', 'Other Artist'])
     },
     'artist filter returns only that artist tracks': async ({ noisiaArtistId }) => {
       const results = await searchForTracks(`artist:${noisiaArtistId}`, { userId })
       assert.strictEqual(results.length, 1)
       assert.strictEqual(results[0].title, 'Concussion')
+      const authors = trackRowArtists(results[0])
+      assert.deepStrictEqual(
+        authors.map((a) => a.name),
+        ['Noisia'],
+      )
     },
     'artist filter combined with title text is AND': async ({ noisiaArtistId }) => {
       const results = await searchForTracks(`artist:${noisiaArtistId} concussion`, { userId })
       assert.strictEqual(results.length, 1)
-    },
-    'duplicate artist filters keep the first artist filter only': async ({ noisiaArtistId, otherArtistId }) => {
-      const results = await searchForTracks(`artist:${noisiaArtistId} artist:${otherArtistId} concussion`, { userId })
-      assert.strictEqual(results.length, 1)
       assert.strictEqual(results[0].title, 'Concussion')
+      assert.deepStrictEqual(
+        trackRowArtists(results[0]).map((a) => a.name),
+        ['Noisia'],
+      )
     },
+    'multiple artist filters match only tracks with all listed artists': async ({ noisiaArtistId, otherArtistId }) => {
+      const results = await searchForTracks(`artist:${noisiaArtistId} artist:${otherArtistId}`, { userId })
+      assert.strictEqual(results.length, 0)
+    }
   },
 
   teardown: async () => {
