@@ -42,6 +42,8 @@ const SearchBar = ({ terms = [], onChange, onSearch, onClearSearch, loading, dis
         return term.compatible ? `~${term.key.toUpperCase()}` : term.key.toUpperCase()
       case 'genre':
         return term.name ?? `${term.id}`
+      case 'track':
+        return term.similar ? `~${term.name ?? term.id}` : term.name ?? `${term.id}`
       default:
         return term.name ?? term.value
     }

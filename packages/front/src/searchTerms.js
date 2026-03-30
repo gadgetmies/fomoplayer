@@ -64,6 +64,11 @@ const parseFilterTerm = (type, value, raw) => {
     case 'release':
     case 'track':
     case 'genre': {
+      if (type === 'track' && value.startsWith('~')) {
+        const idValue = value.slice(1)
+        const id = parseInt(idValue, 10)
+        if (!isNaN(id) && String(id) === idValue) return { type, value: raw, id, similar: true }
+      }
       const id = parseInt(value, 10)
       if (!isNaN(id) && String(id) === value) return { type, value: raw, id }
       break

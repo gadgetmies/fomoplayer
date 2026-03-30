@@ -94,9 +94,18 @@ class TopBar extends Component {
     // Resolve artist and label names via API
     const resolved = await Promise.all(
       nameless
-        .filter((t) => t.type === 'artist' || t.type === 'label')
+        .filter((t) => t.type === 'artist' || t.type === 'label' || t.type === 'track')
         .map(async (term) => {
           try {
+            if (term.type === 'track') {
+              const tracks = await requestJSONwithCredentials({
+                path: `/tracks/?q=${encodeURIComponent(`track:${term.id}`)}&limit=1&offset=0`,
+              })
+              const track = tracks?.[0]
+              if (!track) return null
+              const trackVersion = track.version ? ` (${track.version})` : ''
+              return { termValue: term.value, name: `${track.title}${trackVersion}` }
+            }
             const data = await requestJSONwithCredentials({ path: `/${term.type}s/${term.id}` })
             return data?.name ? { termValue: term.value, name: data.name } : null
           } catch {

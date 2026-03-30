@@ -23,7 +23,9 @@ module.exports.searchForTracks = async (
 
   const queryString = originalQueryString.replace(/(\S+:\S+)\s*/g, '').trim()
 
-  const idFilters = fieldFilters.filter(([key]) => ['artist', 'label', 'release', 'track'].includes(key))
+  const idFilters = fieldFilters.filter(
+    ([key, value]) => ['artist', 'label', 'release', 'track'].includes(key) && /^\d+$/.test(value),
+  )
 
   const genreFilters = fieldFilters
     .filter(([key, value]) => key === 'genre' && /^\d+$/.test(value))
@@ -70,6 +72,11 @@ module.exports.searchForTracks = async (
     .filter(([key, value]) => key === 'bpm' && /^\d+(?:\.\d+)?$/.test(value))
     .map(([, value]) => sql`store__track_bpm = ${Number(value)}`)
   const exactFilterGroups = [exactKeyFilters, bpmRangeFilters, bpmExactFilters, genreFilters]
+  const idFilterToTable = {
+    artist: 'track__artist',
+    label: 'track__label',
+    release: 'release__track',
+  }
   const appendAndFilters = (queryBuilder, filterGroups) => {
     filterGroups.forEach((filters) => {
       if (filters.length > 0) {
@@ -116,6 +123,12 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
      NATURAL JOIN store__track
      NATURAL JOIN track
      NATURAL JOIN store
+     NATURAL JOIN track__artist
+     NATURAL JOIN artist
+     NATURAL LEFT JOIN track__label
+     NATURAL LEFT JOIN label
+     NATURAL LEFT JOIN release__track
+     NATURAL LEFT JOIN release
      `)
 
       R.intersperse(' ', fuzzyFilterJoins).forEach((join) => query.append(join))
@@ -135,9 +148,39 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
 
       appendAndFilters(query, exactFilterGroups)
 
+      for (const idFilter of idFilters) {
+        if (idFilter[0] === 'track') {
+          query.append(sql` AND track.track_id = ${idFilter[1]}`)
+        } else {
+          const junctionTable = idFilterToTable[idFilter[0]]
+          query.append(
+            ` AND EXISTS (SELECT 1 FROM ${tx.escapeIdentifier(junctionTable)} t2 WHERE t2.track_id = track.track_id AND t2.${tx.escapeIdentifier(
+              `${idFilter[0]}_id`,
+            )} = `,
+          )
+          query.append(sql`${idFilter[1]}`)
+          query.append(`)`)
+        }
+      }
+
       // language=PostgreSQL
       query.append(sql`
-   GROUP BY track_id, user__track_heard
+   GROUP BY track_id, user__track_heard`)
+
+      if (queryString !== '') {
+        const filteredEntityTypes = new Set(idFilters.map(([type]) => type))
+        const textParts = [`track_title || ' ' || COALESCE(track_version, '')`]
+        if (!filteredEntityTypes.has('artist')) textParts.push(`STRING_AGG(artist_name, ' ')`)
+        if (!filteredEntityTypes.has('release')) textParts.push(`STRING_AGG(release_name, ' ')`)
+        if (!filteredEntityTypes.has('label')) textParts.push(`STRING_AGG(COALESCE(label_name, ''), ' ')`)
+        query.append(
+          ` HAVING TO_TSVECTOR('simple', unaccent(${textParts.join(` || ' ' || `)})) @@ websearch_to_tsquery('simple', unaccent(`,
+        )
+        query.append(sql`${queryString}`)
+        query.append(`))`)
+      }
+
+      query.append(sql`
    ORDER BY MIN(store__track_preview_embedding <-> (SELECT store__track_preview_embedding FROM reference)) NULLS LAST
    LIMIT ${limit} OFFSET ${offset})
 `)
@@ -196,11 +239,6 @@ AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
 AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
          `)
 
-      const idFilterToTable = {
-        artist: 'track__artist',
-        label: 'track__label',
-        release: 'release__track',
-      }
       for (const idFilter of idFilters) {
         if (idFilter[0] === 'track') {
           query.append(sql` AND track.track_id = ${idFilter[1]}`)
