@@ -71,8 +71,16 @@ app.use(passport.session())
 
 morgan('tiny')
 
-app.use(cors({ credentials: true, origin: config.allowedOrigins }))
-app.options('*', cors()) // include before other routes
+const corsOptions = {
+  credentials: true,
+  origin: createCorsOriginValidator({
+    allowedOrigins: config.allowedOrigins,
+    allowedOriginRegexes: config.allowedOriginRegexes,
+  }),
+}
+
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions)) // include before other routes
 
 app.use(bodyParser.json({ limit: '50mb', extended: true, type: ['application/json', 'application/*+json'] }))
 
