@@ -15,7 +15,8 @@
   display: none;
 }
 
-.search_bar:focus-within .clear-search, .search_bar:hover .clear-search {
+.search_bar:focus-within .clear-search,
+.search_bar:hover .clear-search {
   display: block;
 }
 
@@ -24,17 +25,135 @@
   color: #ffffffb3;
 }
 
-.search {
-  border-radius: 0.25rem;
-  padding-right: 32px;
-  text-overflow: ellipsis;
-}
+/* ── Pill bar layout ───────────────────────────────────────────────────────── */
 
 .search_bar {
   box-sizing: border-box;
   position: relative;
   width: 100%;
   display: flex;
+}
+
+.search_bar_pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 36px 4px 6px; /* right padding leaves room for the clear icon */
+  min-height: 34px;
+  border-radius: 0.25rem;
+  cursor: text;
+  background-color: #050505;
+}
+
+/* ── Pills ─────────────────────────────────────────────────────────────────── */
+
+.search_pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 0.9em;
+  padding: 1px 4px 1px 8px;
+  font-size: 0.85em;
+  white-space: nowrap;
+  max-width: 220px;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  color: #eee;
+}
+
+.search_pill_text {
+  background-color: #1a3a5c;
+  border-color: #2a5a8c;
+}
+
+.search_pill_artist {
+  background-color: #1a3a1a;
+  border-color: #2a6a2a;
+}
+
+.search_pill_label {
+  background-color: #3a1a3a;
+  border-color: #6a2a6a;
+}
+
+.search_pill_release {
+  background-color: #3a2a1a;
+  border-color: #7a4a1a;
+}
+
+.search_pill_track {
+  background-color: #1a2a3a;
+  border-color: #2a4a6a;
+}
+
+.search_pill_type {
+  font-size: 0.75em;
+  opacity: 0.65;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.search_pill_name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.search_pill_remove {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0.5;
+  color: inherit;
+  line-height: 1;
+  font-size: 0.8em;
+  display: flex;
+  align-items: center;
+}
+
+.search_pill_remove:hover {
+  opacity: 1;
+}
+
+/* ── Quote mode indicator ──────────────────────────────────────────────────── */
+
+.search_quote_start {
+  opacity: 0.5;
+  font-style: italic;
+  margin-right: -2px;
+  align-self: center;
+}
+
+.search_bar_in_quote .search_input_pills {
+  font-style: italic;
+}
+
+/* ── Inline text input inside the pill bar ─────────────────────────────────── */
+
+.search_input_pills {
+  flex: 1;
+  min-width: 60px;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 2px !important;
+  outline: none;
+  box-shadow: none !important;
+  color: inherit;
+  font-size: 1em;
+}
+
+.search_bar_pills:focus-within {
+  -webkit-box-shadow: 0 0 8px 2px rgb(153, 0, 117);
+  box-shadow: 0 0 2px 2px rgb(153, 0, 117);
+}
+
+.search {
+  border-radius: 0.25rem;
+  padding-right: 32px;
+  text-overflow: ellipsis;
 }
 
 .search {
@@ -64,7 +183,4 @@
   .menu_search {
     flex: 0;
   }
-}
-
-@media (min-width: 591px) {
 }

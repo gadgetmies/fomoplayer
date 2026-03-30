@@ -19,7 +19,7 @@ export const followableNameLinks = (followable, follows, type, onEntityClick = n
         e.stopPropagation()
         if (onEntityClick && e.shiftKey) {
           e.preventDefault()
-          onEntityClick(type, id)
+          onEntityClick(type, id, name)
         }
       }}
     >

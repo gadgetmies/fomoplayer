@@ -32,6 +32,8 @@ import {
   searchTermsToString,
   searchTermsToQueryString,
   addEntityTerm,
+  entityNamesToUrlParam,
+  applyEntityNamesFromUrlParam,
 } from './searchTerms'
 
 library.add(fas, far, fab)
@@ -70,7 +72,10 @@ class App extends Component {
     }.bind(this)
 
     const searchQuery = searchParams.get('q') || ''
-    const searchTerms = parseSearchTerms(searchQuery)
+    const searchTerms = applyEntityNamesFromUrlParam(
+      parseSearchTerms(searchQuery),
+      searchParams.get('names') || '',
+    )
     const isSearchPath = window.location.pathname.match(/^\/search\/?$/)
     const initialListState = searchTerms.length > 0 && isSearchPath ? 'search' : (listState || 'new')
 
@@ -187,7 +192,10 @@ class App extends Component {
 
       const searchParams = new URLSearchParams(window.location.search)
       const searchQuery = searchParams.get('q') || ''
-      const searchTerms = parseSearchTerms(searchQuery)
+      const searchTerms = applyEntityNamesFromUrlParam(
+        parseSearchTerms(searchQuery),
+        searchParams.get('names') || '',
+      )
       const isSearchPath = window.location.pathname.match(/^\/search\/?$/)
       if (searchTerms.length > 0 && isSearchPath) {
         const filters = {
@@ -605,8 +613,8 @@ class App extends Component {
     }
   }
 
-  addEntityToSearch(entityType, entityId) {
-    const newSearchTerms = addEntityTerm(this.state.searchTerms || [], entityType, entityId)
+  addEntityToSearch(entityType, entityId, entityName) {
+    const newSearchTerms = addEntityTerm(this.state.searchTerms || [], entityType, entityId, entityName)
     this.setState({ searchTerms: newSearchTerms })
     this.search(newSearchTerms, this.state.searchFilters)
   }
@@ -624,7 +632,8 @@ class App extends Component {
     } else {
       this.setState({ loadingMore: true })
     }
-    const parameters = `q=${encodeURIComponent(query)}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}&offset=${offset}`
+    const names = entityNamesToUrlParam(searchTerms)
+    const parameters = `q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}&offset=${offset}`
     if (!append) {
       window.history.pushState(undefined, undefined, `/search?${parameters}`)
     }
@@ -950,7 +959,10 @@ class App extends Component {
                     const query = searchParams.get('q') || ''
                     const isSearchPath = pathname.match(/^\/search\/?$/)
                     if (isSearchPath && query) {
-                      const searchTerms = parseSearchTerms(query)
+                      const searchTerms = applyEntityNamesFromUrlParam(
+                        parseSearchTerms(query),
+                        searchParams.get('names') || '',
+                      )
                       const currentQuery = searchTermsToQueryString(this.state.searchTerms || [])
                       if (currentQuery !== query) {
                         const filters = {

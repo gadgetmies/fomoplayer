@@ -10,18 +10,17 @@ import SearchBar from './SearchBar'
 import DropDownButton from './DropDownButton'
 import { isMobile } from 'react-device-detect'
 import Popup from './Popup'
-import { searchTermsToString, updateTextTerms, getTextValueFromTerms, parseSearchTerms } from './searchTerms'
+import { searchTermsToString } from './searchTerms'
+import { requestJSONwithCredentials } from './request-json-with-credentials'
 
 class TopBar extends Component {
   constructor(props) {
     super(props)
 
-    const searchTerms = props.searchTerms || []
-    const textValue = getTextValueFromTerms(searchTerms)
     this.state = {
-      requestNotificationSearch: '',
+      committedTerms: props.searchTerms || [],
+      inputValue: '',
       searchDebounce: undefined,
-      searchText: textValue,
       supportMenuOpen: false,
       emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
       discoverMenuOpen: false,
@@ -34,30 +33,40 @@ class TopBar extends Component {
     this.setState({ emailVerificationDismissed: true })
   }
 
-  async setSearch(searchText, skipDebounce = false) {
-    this.setState({ searchText })
+  // Called by SearchBar on every change (typing, commit, remove).
+  // committedTerms — pills that have been fully committed
+  // inputValue     — text currently being typed (not yet a pill)
+  handleChange(committedTerms, inputValue) {
+    this.setState({ committedTerms, inputValue })
 
     if (this.state.searchDebounce) {
       clearTimeout(this.state.searchDebounce)
     }
 
-    const parsedTerms = parseSearchTerms(searchText)
-    const searchString = searchTermsToString(parsedTerms)
+    const partialTerms = inputValue.trim() ? [{ type: 'text', value: inputValue.trim() }] : []
+    const effectiveTerms = [...committedTerms, ...partialTerms]
 
-    if (searchString === '') {
+    if (effectiveTerms.length === 0) {
       this.props.onSearch([], this.props.searchFilters)
       return
     }
 
-    const timeout = setTimeout(
-      async () => {
-        this.setState({ searchDebounce: undefined, listState: 'search' })
-        // TODO: cancel this request if new one is requested
-        await this.props.onSearch(parsedTerms, { onlyNew: false })
-      },
-      skipDebounce ? 0 : 1000,
-    )
+    const timeout = setTimeout(async () => {
+      this.setState({ searchDebounce: undefined })
+      await this.props.onSearch(effectiveTerms, { onlyNew: false })
+    }, 1000)
     this.setState({ searchDebounce: timeout })
+  }
+
+  // Called by SearchBar on Enter — triggers an immediate search.
+  handleSearch(committedTerms, inputValue) {
+    if (this.state.searchDebounce) {
+      clearTimeout(this.state.searchDebounce)
+      this.setState({ searchDebounce: undefined })
+    }
+    const partialTerms = inputValue.trim() ? [{ type: 'text', value: inputValue.trim() }] : []
+    const effectiveTerms = [...committedTerms, ...partialTerms]
+    return this.props.onSearch(effectiveTerms, { onlyNew: false })
   }
 
   getNotificationSubscriptions() {
@@ -65,14 +74,60 @@ class TopBar extends Component {
     return this.props.notifications.filter(R.propEq('text', searchString?.toLocaleLowerCase()))
   }
 
+  // Fetch display names for entity pills that were committed without one (e.g. typed
+  // manually as "artist:50" or restored from a URL that predates the names param).
+  // Only artist and label have dedicated lookup endpoints.
+  async resolveEntityNames(committedTerms) {
+    const nameless = committedTerms.filter(
+      (t) => t.type !== 'text' && !t.name && (t.type === 'artist' || t.type === 'label'),
+    )
+    if (nameless.length === 0) return
+
+    const resolved = await Promise.all(
+      nameless.map(async (term) => {
+        try {
+          const data = await requestJSONwithCredentials({ path: `/${term.type}s/${term.id}` })
+          return data?.name ? { termValue: term.value, name: data.name } : null
+        } catch {
+          return null
+        }
+      }),
+    )
+
+    const nameMap = {}
+    resolved.forEach((r) => r && (nameMap[r.termValue] = r.name))
+    if (Object.keys(nameMap).length === 0) return
+
+    this.setState((prev) => ({
+      committedTerms: prev.committedTerms.map((t) => (nameMap[t.value] ? { ...t, name: nameMap[t.value] } : t)),
+    }))
+  }
+
+  componentDidMount() {
+    // Resolve names for any entity terms that were restored from the URL.
+    this.resolveEntityNames(this.state.committedTerms)
+  }
+
   componentDidUpdate(prevProps, prevState) {
     if (prevProps.searchTerms !== this.props.searchTerms) {
-      const textValue = getTextValueFromTerms(this.props.searchTerms || [])
-      const prevTextValue = getTextValueFromTerms(prevProps.searchTerms || [])
-      const currentInputMatchesPrevProps = this.state.searchText.trim() === prevTextValue.trim()
-      if (textValue !== prevTextValue && currentInputMatchesPrevProps) {
-        this.setState({ searchText: textValue })
+      // Only sync entity terms from props. Text terms must never flow back into
+      // committedTerms from App state — that would promote in-progress typed text
+      // into pills every time the debounced search fires.
+      const incomingEntityTerms = (this.props.searchTerms || []).filter((t) => t.type !== 'text')
+      const currentEntityTerms = this.state.committedTerms.filter((t) => t.type !== 'text')
+
+      if (JSON.stringify(incomingEntityTerms) !== JSON.stringify(currentEntityTerms)) {
+        const committedTextTerms = this.state.committedTerms.filter((t) => t.type === 'text')
+        this.setState({ committedTerms: [...incomingEntityTerms, ...committedTextTerms] })
       }
+    }
+
+    // Resolve names for newly-added nameless entity pills.
+    if (prevState.committedTerms !== this.state.committedTerms) {
+      const prevNameless = prevState.committedTerms.filter((t) => t.type !== 'text' && !t.name)
+      const currNameless = this.state.committedTerms.filter((t) => t.type !== 'text' && !t.name)
+      const hasNew = currNameless.some((t) => !prevNameless.find((p) => p.value === t.value))
+      if (hasNew) this.resolveEntityNames(this.state.committedTerms)
     }
   }
 
@@ -161,21 +216,12 @@ class TopBar extends Component {
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className={`menu_search`}>
             <SearchBar
-              onChange={(e) => this.setSearch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.code === 'Enter') {
-                  if (this.state.searchDebounce) {
-                    clearTimeout(this.state.searchDebounce)
-                    this.setState({ searchDebounce: undefined })
-                  }
-                  const parsedTerms = parseSearchTerms(this.state.searchText)
-                  return this.props.onSearch(parsedTerms, { onlyNew: false })
-                }
-              }}
-              value={this.state.searchText}
-              onClearSearch={() => this.setSearch('')}
-              styles={`top_bar`}
-              className={`${this.props.searchActive ? '' : 'search__inactive'}`}
+              terms={this.state.committedTerms}
+              onChange={this.handleChange.bind(this)}
+              onSearch={this.handleSearch.bind(this)}
+              onClearSearch={() => this.handleChange([], '')}
+              styles="top_bar"
+              className={this.props.searchActive ? '' : 'search__inactive'}
             />
             {this.props.searchActive && (
               <>

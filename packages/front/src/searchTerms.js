@@ -40,7 +40,6 @@ const splitTextByWhitespace = (text) => {
   }
 
   const terms = []
-  let currentIndex = 0
   let inQuotes = false
   let quoteChar = null
   let currentTerm = ''
@@ -103,7 +102,7 @@ export const searchTermsToString = (searchTerms, preserveTrailingSpace = false) 
       return value
     })
     .join(' ')
-  
+
   return preserveTrailingSpace ? result : result.trim()
 }
 
@@ -112,12 +111,10 @@ export const searchTermsToQueryString = (searchTerms) => {
 }
 
 export const hasEntityTerm = (searchTerms, entityType, entityId) => {
-  return searchTerms.some(
-    (term) => term.type === entityType && term.id === entityId,
-  )
+  return searchTerms.some((term) => term.type === entityType && term.id === entityId)
 }
 
-export const addEntityTerm = (searchTerms, entityType, entityId) => {
+export const addEntityTerm = (searchTerms, entityType, entityId, entityName = undefined) => {
   if (hasEntityTerm(searchTerms, entityType, entityId)) {
     return searchTerms
   }
@@ -126,19 +123,16 @@ export const addEntityTerm = (searchTerms, entityType, entityId) => {
     type: entityType,
     value: `${entityType}:${entityId}`,
     id: entityId,
+    ...(entityName ? { name: entityName } : {}),
   }
 
   const textTerms = searchTerms.filter((term) => term.type === 'text')
   const entityTerms = searchTerms.filter((term) => term.type !== 'text')
-  const newEntityTerms = [...entityTerms, entityTerm]
-
-  return [...newEntityTerms, ...textTerms]
+  return [...entityTerms, entityTerm, ...textTerms]
 }
 
 export const removeEntityTerm = (searchTerms, entityType, entityId) => {
-  return searchTerms.filter(
-    (term) => !(term.type === entityType && term.id === entityId),
-  )
+  return searchTerms.filter((term) => !(term.type === entityType && term.id === entityId))
 }
 
 export const updateTextTerms = (searchTerms, textValue) => {
@@ -155,3 +149,34 @@ export const getTextValueFromTerms = (searchTerms, preserveTrailingSpace = false
   return preserveTrailingSpace ? result : result
 }
 
+/**
+ * Encode entity term display names into a URL parameter string.
+ * Format: "artist:42=Some Artist,label:100=Some Label"
+ * Only entity terms with a known name are included.
+ */
+export const entityNamesToUrlParam = (searchTerms) => {
+  const namedEntityTerms = searchTerms.filter((t) => t.type !== 'text' && t.name)
+  if (namedEntityTerms.length === 0) return ''
+  return namedEntityTerms.map((t) => `${t.value}=${encodeURIComponent(t.name)}`).join(',')
+}
+
+/**
+ * Merge display names from a `names` URL parameter back into parsed search terms.
+ * namesParam format: "artist:42=Some Artist,label:100=Some Label"
+ */
+export const applyEntityNamesFromUrlParam = (searchTerms, namesParam) => {
+  if (!namesParam) return searchTerms
+  const nameMap = {}
+  namesParam.split(',').forEach((entry) => {
+    const eqIdx = entry.indexOf('=')
+    if (eqIdx > 0) {
+      nameMap[entry.slice(0, eqIdx)] = decodeURIComponent(entry.slice(eqIdx + 1))
+    }
+  })
+  return searchTerms.map((term) => {
+    if (term.type !== 'text' && nameMap[term.value]) {
+      return { ...term, name: nameMap[term.value] }
+    }
+    return term
+  })
+}
