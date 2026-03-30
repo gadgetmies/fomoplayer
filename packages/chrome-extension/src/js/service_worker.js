@@ -132,6 +132,7 @@ const handleError = (error) => {
 
 const sendTracks = (storeUrl, type = 'tracks', tracks) => {
   chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
+    const base = appUrl || DEFAULT_APP_URL
     try {
       const chunks = R.splitEvery(100, tracks)
       const chunkIndexes = R.range(0, chunks.length)
@@ -143,7 +144,7 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
         })
         chrome.runtime.sendMessage({ type: 'refresh' })
 
-        const res = await fetch(`${appUrl}/api/me/${type}`, {
+        const res = await fetch(`${base}/api/me/${type}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -163,7 +164,7 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
       const message = {
         message: `Failed to send tracks from ${storeUrl}`,
         stack: JSON.stringify({
-          url: `${appUrl}/api/me/${type}`,
+          url: `${base}/api/me/${type}`,
           storeUrl,
           stack: e.stack,
           time: new Date().toUTCString(),
@@ -176,6 +177,7 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
 
 const sendArtists = (storeUrl, artists) => {
   chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
+    const base = appUrl || DEFAULT_APP_URL
     try {
       chrome.storage.local.set({
         operationStatus: `Sending artists`,
@@ -183,7 +185,7 @@ const sendArtists = (storeUrl, artists) => {
       })
       chrome.runtime.sendMessage({ type: 'refresh' })
 
-      const res = await fetch(`${appUrl}/api/me/follows/artists`, {
+      const res = await fetch(`${base}/api/me/follows/artists`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -202,7 +204,7 @@ const sendArtists = (storeUrl, artists) => {
       const message = {
         message: `Failed to send artists from ${storeUrl}`,
         stack: JSON.stringify({
-          url: `${appUrl}/api/me/follows/artists`,
+          url: `${base}/api/me/follows/artists`,
           storeUrl,
           stack: e.stack,
           time: new Date().toUTCString(),
@@ -215,6 +217,7 @@ const sendArtists = (storeUrl, artists) => {
 
 const sendLabels = (storeUrl, labels) => {
   chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
+    const base = appUrl || DEFAULT_APP_URL
     try {
       chrome.storage.local.set({
         operationStatus: `Sending labels`,
@@ -222,7 +225,7 @@ const sendLabels = (storeUrl, labels) => {
       })
       chrome.runtime.sendMessage({ type: 'refresh' })
 
-      const res = await fetch(`${appUrl}/api/me/follows/labels`, {
+      const res = await fetch(`${base}/api/me/follows/labels`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -241,7 +244,7 @@ const sendLabels = (storeUrl, labels) => {
       const message = {
         message: `Failed to send labels from ${storeUrl}`,
         stack: JSON.stringify({
-          url: `${appUrl}/api/me/follows/labels`,
+          url: `${base}/api/me/follows/labels`,
           storeUrl,
           stack: e.stack,
           time: new Date().toUTCString(),
@@ -331,6 +334,6 @@ console.log('registered')
 chrome.storage.local.get(['enabledStores', 'appUrl'], ({ appUrl, enabledStores }) => {
   chrome.storage.local.set({
     enabledStores: enabledStores ? enabledStores : { beatport: true, bandcamp: true },
-    appUrl: appUrl ? appUrl : 'https://fomoplayer.com',
+    appUrl: appUrl ? appUrl : DEFAULT_APP_URL,
   })
 })
