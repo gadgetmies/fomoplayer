@@ -3,13 +3,13 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 export const trackTitle = (track) => (track ? `${track.title} ${track.version ? `(${track.version})` : ''}` : '')
-export const namesToString = (entities) => {
+export const namesToString = (entities, separator = ', ', lastSeparator = ' & ') => {
   const names = entities.map(R.prop('name'))
   if (names.length === 1) return names[0]
   const tail = names.splice(-1)
-  return `${names.join(', ')}${tail.map((name) => ` & ${name}`).join('')}`
+  return `${names.join(separator)}${tail.map((name) => `${lastSeparator || separator} ${name}`).join('')}`
 }
-export const followableNameLinks = (followable, follows, type, onEntityClick = null) => {
+export const followableNameLinks = (followable, follows, type, separator = ', ', lastSeparator = ' & ', onEntityClick = null) => {
   const links = followable.map(({ id, name }) => (
     <Link
       className={follows && follows[`${type}s`]?.some(({ id: followableId }) => id === followableId) ? 'followed' : ''}
@@ -32,7 +32,7 @@ export const followableNameLinks = (followable, follows, type, onEntityClick = n
   const tail = links.splice(-1)
   return (
     <>
-      {R.intersperse(', ', links)} & {tail[0]}
+      {R.intersperse(separator, links)}{lastSeparator || separator} {tail[0]}
     </>
   )
 }
