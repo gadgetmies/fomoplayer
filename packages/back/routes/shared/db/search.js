@@ -23,7 +23,7 @@ module.exports.searchForTracks = async (
 
   const queryString = originalQueryString.replace(/(\S+:\S+)\s*/g, '').trim()
 
-  const idFilter = fieldFilters.filter(([key]) => ['artist', 'label', 'release', 'track'].includes(key))[0]
+  const idFilters = fieldFilters.filter(([key]) => ['artist', 'label', 'release', 'track'].includes(key))
 
   const keyToJoinsLookup = {
     bpm: sql``,
@@ -162,15 +162,15 @@ AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
 AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
          `)
 
-      if (idFilter) {
+      const idFilterToTable = {
+        artist: 'track__artist',
+        label: 'track__label',
+        release: 'release__track',
+      }
+      for (const idFilter of idFilters) {
         if (idFilter[0] === 'track') {
           query.append(sql` AND track.track_id = ${idFilter[1]}`)
         } else {
-          const idFilterToTable = {
-            artist: 'track__artist',
-            label: 'track__label',
-            release: 'release__track',
-          }
           const junctionTable = idFilterToTable[idFilter[0]]
           query.append(
             ` AND EXISTS (SELECT 1 FROM ${tx.escapeIdentifier(junctionTable)} t2 WHERE t2.track_id = track.track_id AND t2.${tx.escapeIdentifier(
@@ -180,7 +180,9 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
           query.append(sql`${idFilter[1]}`)
           query.append(`)`)
         }
-      } else if (fuzzyFilters.length > 0) {
+      }
+
+      if (fuzzyFilters.length > 0) {
         query.append(' AND ')
         R.intersperse(' AND ', fuzzyFilterQueries).forEach((q) => query.append(q))
         query.append(' ')
@@ -190,15 +192,19 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
 
       sortColumns.forEach(([column]) => query.append(`, ${tx.escapeIdentifier(column)}`))
       if (queryString !== '') {
-        query.append(sql` HAVING
-                                  TO_TSVECTOR(
-                                          'simple',
-                                          unaccent(track_title || ' ' ||
-                                                   COALESCE(track_version, '') || ' ' ||
-                                                   STRING_AGG(artist_name, ' ') || ' ' ||
-                                                   STRING_AGG(release_name, ' ') || ' ' ||
-                                                   STRING_AGG(COALESCE(label_name, ''), ' '))) @@
-                                  websearch_to_tsquery('simple', unaccent(${queryString}))`)
+        // Exclude the aggregated name fields for entity types that are already filtered by ID.
+        // Otherwise e.g. artist:1 techno would match ALL tracks by "Techno Artist" because the
+        // artist name itself contains "techno", making the text filter a no-op.
+        const filteredEntityTypes = new Set(idFilters.map(([type]) => type))
+        const textParts = [`track_title || ' ' || COALESCE(track_version, '')`]
+        if (!filteredEntityTypes.has('artist')) textParts.push(`STRING_AGG(artist_name, ' ')`)
+        if (!filteredEntityTypes.has('release')) textParts.push(`STRING_AGG(release_name, ' ')`)
+        if (!filteredEntityTypes.has('label')) textParts.push(`STRING_AGG(COALESCE(label_name, ''), ' ')`)
+        query.append(
+          ` HAVING TO_TSVECTOR('simple', unaccent(${textParts.join(` || ' ' || `)})) @@ websearch_to_tsquery('simple', unaccent(`,
+        )
+        query.append(sql`${queryString}`)
+        query.append(`))`)
       }
 
       query.append(` ORDER BY `)
