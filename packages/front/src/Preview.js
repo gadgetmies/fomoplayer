@@ -412,7 +412,14 @@ class Preview extends Component {
                       <span className="preview_detail">
                         {!currentTrack.releases?.length
                           ? null
-                          : followableNameLinks(currentTrack.releases, [], 'release', this.props.onAddEntityToSearch)}
+                          : followableNameLinks(
+                              currentTrack.releases,
+                              [],
+                              'release',
+                              ' / ',
+                              ' / ',
+                              this.props.onAddEntityToSearch,
+                            )}
                       </span>
                     </div>
                     <div style={{ fontSize: '75%' }}>
