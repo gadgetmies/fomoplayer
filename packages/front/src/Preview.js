@@ -237,7 +237,7 @@ class Preview extends Component {
   }
 
   async handleNextClick() {
-    const behavior = localStorage.getItem(this.props.isMobile ? 'mediaButtonBehaviorMobile' : 'mediaButtonBehaviorDesktop')
+    const behavior = localStorage.getItem('mediaButtonBehavior')
     if (behavior === 'skip') {
       await this.props.onNext()
     } else {
@@ -256,7 +256,7 @@ class Preview extends Component {
   }
 
   async handlePreviousClick() {
-    const behavior = localStorage.getItem(this.props.isMobile ? 'mediaButtonBehaviorMobile' : 'mediaButtonBehaviorDesktop')
+    const behavior = localStorage.getItem('mediaButtonBehavior')
     if (behavior === 'skip') {
       if (this.getPlayer().currentTime > 2) {
         this.getPlayer().currentTime = 0

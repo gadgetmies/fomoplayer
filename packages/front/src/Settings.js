@@ -140,8 +140,7 @@ class Settings extends Component {
       editingCartNameId: null,
       cartNameEditorValue: '',
       cloningCartId: null,
-      mediaButtonBehaviorDesktop: localStorage.getItem('mediaButtonBehaviorDesktop') || 'seek',
-      mediaButtonBehaviorMobile: localStorage.getItem('mediaButtonBehaviorMobile') || 'seek',
+      mediaButtonBehavior: localStorage.getItem('mediaButtonBehavior') || 'seek',
       audioSamples: [],
       uploadingAudioSample: false,
       deletingAudioSample: null,
@@ -1535,61 +1534,31 @@ class Settings extends Component {
               <p>
                 Configure how the next and previous media buttons on your device (keyboard, headphones, etc.) behave.
               </p>
-              <h5>Desktop</h5>
               <div className="select-button select-button--container state-select-button--container noselect">
                 <input
                   type="radio"
-                  id="media-button-behavior-desktop-seek"
-                  name="media-button-behavior-desktop"
-                  checked={this.state.mediaButtonBehaviorDesktop === 'seek'}
+                  id="media-button-behavior-seek"
+                  name="media-button-behavior"
+                  checked={this.state.mediaButtonBehavior === 'seek'}
                   onChange={() => {
-                    localStorage.setItem('mediaButtonBehaviorDesktop', 'seek')
-                    this.setState({ mediaButtonBehaviorDesktop: 'seek' })
+                    localStorage.setItem('mediaButtonBehavior', 'seek')
+                    this.setState({ mediaButtonBehavior: 'seek' })
                   }}
                 />
-                <label className="select_button-button" htmlFor="media-button-behavior-desktop-seek">
+                <label className="select_button-button" htmlFor="media-button-behavior-seek">
                   Seek (double click to skip)
                 </label>
                 <input
                   type="radio"
-                  id="media-button-behavior-desktop-skip"
-                  name="media-button-behavior-desktop"
-                  checked={this.state.mediaButtonBehaviorDesktop === 'skip'}
+                  id="media-button-behavior-skip"
+                  name="media-button-behavior"
+                  checked={this.state.mediaButtonBehavior === 'skip'}
                   onChange={() => {
-                    localStorage.setItem('mediaButtonBehaviorDesktop', 'skip')
-                    this.setState({ mediaButtonBehaviorDesktop: 'skip' })
+                    localStorage.setItem('mediaButtonBehavior', 'skip')
+                    this.setState({ mediaButtonBehavior: 'skip' })
                   }}
                 />
-                <label className="select_button-button" htmlFor="media-button-behavior-desktop-skip">
-                  Skip
-                </label>
-              </div>
-              <h5>Mobile</h5>
-              <div className="select-button select-button--container state-select-button--container noselect">
-                <input
-                  type="radio"
-                  id="media-button-behavior-mobile-seek"
-                  name="media-button-behavior-mobile"
-                  checked={this.state.mediaButtonBehaviorMobile === 'seek'}
-                  onChange={() => {
-                    localStorage.setItem('mediaButtonBehaviorMobile', 'seek')
-                    this.setState({ mediaButtonBehaviorMobile: 'seek' })
-                  }}
-                />
-                <label className="select_button-button" htmlFor="media-button-behavior-mobile-seek">
-                  Seek (double click to skip)
-                </label>
-                <input
-                  type="radio"
-                  id="media-button-behavior-mobile-skip"
-                  name="media-button-behavior-mobile"
-                  checked={this.state.mediaButtonBehaviorMobile === 'skip'}
-                  onChange={() => {
-                    localStorage.setItem('mediaButtonBehaviorMobile', 'skip')
-                    this.setState({ mediaButtonBehaviorMobile: 'skip' })
-                  }}
-                />
-                <label className="select_button-button" htmlFor="media-button-behavior-mobile-skip">
+                <label className="select_button-button" htmlFor="media-button-behavior-skip">
                   Skip
                 </label>
               </div>
