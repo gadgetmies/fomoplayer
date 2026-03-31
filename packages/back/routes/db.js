@@ -200,6 +200,18 @@ module.exports.queryAccountCount = async () => {
   return Number(res[0].count)
 }
 
+module.exports.consumeHandoffJti = async (jti, expiresAt) => {
+  const [inserted] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`INSERT INTO auth_handoff_jti
+        (auth_handoff_jti_value, auth_handoff_jti_expires_at)
+        VALUES (${jti}, ${expiresAt})
+        ON CONFLICT (auth_handoff_jti_value) DO NOTHING
+        RETURNING auth_handoff_jti_value`,
+  )
+  return Boolean(inserted)
+}
+
 module.exports.addEmailToWaitingList = async (email) => {
   await pg.queryRowsAsync(
     // language=PostgreSQL
