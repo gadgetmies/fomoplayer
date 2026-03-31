@@ -8,7 +8,13 @@ const { queryAccountCount: defaultQueryAccountCount, consumeHandoffJti: defaultC
 const { deleteInviteCode: defaultDeleteInviteCode } = require('../db/account')
 const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/shared/spotify')
 const { upsertUserAuthorizationTokens } = require('./db')
-const { parseReturnUrl, isAllowedReturnUrl, evaluateSignUpPolicy, isGoogleSubAllowed } = require('./shared/auth-flow')
+const {
+  parseReturnUrl,
+  isAllowedReturnUrl,
+  evaluateSignUpPolicy,
+  isGoogleSubAllowed,
+  getRequestOrigin,
+} = require('./shared/auth-flow')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 const handoffTtlSeconds = 120
@@ -24,6 +30,7 @@ const createAuthRouter = ({
   const router = express.Router()
   const {
     frontendURL,
+    apiURL,
     allowedOrigins,
     allowedOriginRegexes,
     internalAuthHandoffPrivateKey,
@@ -34,6 +41,7 @@ const createAuthRouter = ({
     isPreviewEnv,
     previewAllowedGoogleSubs,
     googleClientId,
+    googleOidcApiRedirect,
   } = config
   const { issueInternalToken, verifyInternalToken, verifyGoogleIdToken, getInternalPublicJwk } = tokenServer
   const canIssueInternalToken = Boolean(internalAuthHandoffIssuer && internalAuthHandoffPrivateKey)
@@ -41,6 +49,33 @@ const createAuthRouter = ({
 
   const isAllowedReturnUrlForConfig = (returnUrl) =>
     isAllowedReturnUrl(returnUrl, allowedOrigins, allowedOriginRegexes)
+
+  const loginFailedRedirectUrl = (() => {
+    const parsedFrontendUrl = parseReturnUrl(frontendURL)
+    if (!parsedFrontendUrl) {
+      return '/?loginFailed=true'
+    }
+
+    return new URL('/?loginFailed=true', parsedFrontendUrl.origin).toString()
+  })()
+
+  const delegatedGoogleLoginBaseUrl = (() => {
+    const parsedApiUrl = parseReturnUrl(apiURL)
+    const parsedGoogleCallback = parseReturnUrl(googleOidcApiRedirect)
+    if (!parsedApiUrl || !parsedGoogleCallback) {
+      return undefined
+    }
+
+    if (parsedApiUrl.origin === parsedGoogleCallback.origin) {
+      return undefined
+    }
+
+    const delegatedPath = parsedGoogleCallback.pathname.replace(
+      /\/auth\/login\/google\/return$/,
+      '/auth/login/google',
+    )
+    return new URL(delegatedPath, parsedGoogleCallback.origin)
+  })()
 
   const isValidHandoffPayload = (payload, expectedAudience) => {
     const now = Math.floor(Date.now() / 1000)
@@ -100,6 +135,9 @@ const createAuthRouter = ({
 
   router.get('/login/google', (req, res, next) => {
     const returnUrl = req.query.return_url
+    const inviteCode = req.query.invite_code
+    const delegatedPreviewSessionId = req.query.preview_session_id
+    const delegatedPreviewNonce = req.query.preview_nonce
     if (!isAllowedReturnUrlForConfig(returnUrl)) {
       return res.status(400).json({ error: 'Invalid return_url' })
     }
@@ -108,14 +146,33 @@ const createAuthRouter = ({
       return res.status(400).json({ error: 'Invalid return_url' })
     }
 
-    const nonce = crypto.randomUUID()
+    const previewSessionId = delegatedPreviewSessionId || req.sessionID
+    const previewNonce = delegatedPreviewNonce || crypto.randomUUID()
     req.session.oidcHandoff = {
-      nonce,
+      nonce: previewNonce,
+      returnUrl,
+      sessionId: previewSessionId,
       returnOrigin: parsedReturnUrl.origin,
     }
-    req.session.inviteCode = req.query.invite_code
+    req.session.inviteCode = inviteCode
+
+    const currentRequestOrigin = parseReturnUrl(getRequestOrigin(req))
+    const shouldDelegateLogin =
+      delegatedGoogleLoginBaseUrl &&
+      (!currentRequestOrigin || currentRequestOrigin.host !== delegatedGoogleLoginBaseUrl.host)
+    if (shouldDelegateLogin) {
+      const delegatedLoginUrl = new URL(delegatedGoogleLoginBaseUrl.toString())
+      delegatedLoginUrl.searchParams.set('return_url', returnUrl)
+      delegatedLoginUrl.searchParams.set('preview_session_id', previewSessionId)
+      delegatedLoginUrl.searchParams.set('preview_nonce', previewNonce)
+      if (inviteCode) {
+        delegatedLoginUrl.searchParams.set('invite_code', inviteCode)
+      }
+      return res.redirect(delegatedLoginUrl.toString())
+    }
+
     return passport.authenticate('openidconnect', {
-      state: { return_url: returnUrl, preview_session_id: req.sessionID, preview_nonce: nonce },
+      state: { return_url: returnUrl, preview_session_id: previewSessionId, preview_nonce: previewNonce },
     })(req, res, next)
   })
 
@@ -237,9 +294,9 @@ const createAuthRouter = ({
 
   router.get('/login/google/return', (req, res, next) => {
     passport.authenticate('openidconnect', (err, user, info) => {
-      const stateReturnUrl = info?.state?.return_url
-      const previewSessionId = info?.state?.preview_session_id
-      const previewNonce = info?.state?.preview_nonce
+      const stateReturnUrl = info?.state?.return_url || req.session?.oidcHandoff?.returnUrl
+      const previewSessionId = info?.state?.preview_session_id || req.session?.oidcHandoff?.sessionId
+      const previewNonce = info?.state?.preview_nonce || req.session?.oidcHandoff?.nonce
 
       if (err || !user) {
         if (isAllowedReturnUrlForConfig(stateReturnUrl)) {
@@ -247,7 +304,7 @@ const createAuthRouter = ({
           failedUrl.searchParams.set('loginFailed', 'true')
           return res.redirect(failedUrl.toString())
         }
-        return res.redirect(`${frontendURL}/?loginFailed=true`)
+        return res.redirect(loginFailedRedirectUrl)
       }
       const isHandoffState = Boolean(previewSessionId && previewNonce)
       if (
@@ -255,12 +312,12 @@ const createAuthRouter = ({
         !canIssueInternalToken ||
         !isAllowedReturnUrlForConfig(stateReturnUrl)
       ) {
-        return res.redirect(`${frontendURL}/?loginFailed=true`)
+        return res.redirect(loginFailedRedirectUrl)
       }
 
       const returnUrl = parseReturnUrl(stateReturnUrl)
       if (!returnUrl) {
-        return res.redirect(`${frontendURL}/?loginFailed=true`)
+        return res.redirect(loginFailedRedirectUrl)
       }
       return issueInternalToken({
         privateKey: internalAuthHandoffPrivateKey,
@@ -285,7 +342,7 @@ const createAuthRouter = ({
         })
         .catch((tokenError) => {
           logger.error(`Failed to issue handoff token: ${tokenError.toString()}`)
-          return res.redirect(`${frontendURL}/?loginFailed=true`)
+          return res.redirect(loginFailedRedirectUrl)
         })
     })(req, res, next)
   })
