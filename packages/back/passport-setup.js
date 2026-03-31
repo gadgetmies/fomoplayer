@@ -67,7 +67,9 @@ module.exports = function passportSetup() {
 
         try {
           const oidcState = parseOidcState(req)
-          const isHandoffState = Boolean(oidcState?.preview_session_id && oidcState?.preview_nonce)
+          const isHandoffState = Boolean(
+            (oidcState?.preview_session_id && oidcState?.preview_nonce) || req.session?.oidcHandoff?.nonce,
+          )
           if (isHandoffState) {
             const user = { id: null }
             user.oidcIssuer = issuer
