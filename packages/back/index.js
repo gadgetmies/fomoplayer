@@ -37,6 +37,7 @@ const { ensureAuthenticated } = require('./routes/shared/auth.js')
 const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
 const { HttpError } = require('./routes/shared/httpErrors')
+const { logRequestError } = require('./routes/shared/error-logging')
 const { getCartDetails } = require('./routes/logic')
 
 const app = express()
@@ -160,12 +161,11 @@ const sendIndex = (_, res) => {
 app.get('/*', sendIndex)
 
 const handleErrors = (err, req, res, _) => {
-  logger.error(err instanceof String ? err : err.toString(), {
+  logRequestError(logger, err, {
     url: req.url,
     method: req.method,
-    body: req.body,
-    stack: err.stack,
   })
+
   if (err instanceof HttpError) {
     return res.status(err.getCode()).json({
       status: 'error',
@@ -175,7 +175,7 @@ const handleErrors = (err, req, res, _) => {
 
   return res.status(500).json({
     status: 'error',
-    message: err.message,
+    message: 'Internal server error',
   })
 }
 
