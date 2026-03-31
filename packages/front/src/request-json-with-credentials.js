@@ -10,8 +10,17 @@ const requestJSONwithCredentials = (...args) =>
     return await res.json()
   })
 
+const resolveRequestUrl = (value) => {
+  try {
+    return new URL(value)
+  } catch (e) {
+    const origin = window?.location?.origin || 'http://localhost'
+    return new URL(value, origin)
+  }
+}
+
 const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET', body, headers }) => {
-  let url = new URL(requestedUrl ? requestedUrl : `${config.apiURL}${path}`)
+  let url = resolveRequestUrl(requestedUrl ? requestedUrl : `${config.apiURL}${path}`)
 
   if (stores) {
     const urlSearchParams = new URLSearchParams(url.search)
