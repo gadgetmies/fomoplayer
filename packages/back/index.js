@@ -94,7 +94,8 @@ app.use((req, res, next) => {
 
 app.use('/api/auth', auth)
 
-const authenticateJwt = passport.authenticate('jwt', { session: false })
+const jwtStrategies = config.internalAuthHandoffJwksUrl && config.internalAuthHandoffIssuer ? ['jwt-internal'] : []
+const authenticateJwt = jwtStrategies.length > 0 ? passport.authenticate(jwtStrategies, { session: false }) : undefined
 
 app.use('/api', require('./routes/public.js'))
 
@@ -107,6 +108,9 @@ app.use(
   (req, res, next) => {
     try {
       if (req.headers.authorization) {
+        if (!authenticateJwt) {
+          return res.status(401).end()
+        }
         authenticateJwt(req, res, next)
       } else {
         ensureAuthenticated(req, res, next)

@@ -163,6 +163,11 @@ class App extends Component {
   async componentDidMount() {
     subscribe(events.SEARCH, this.searchEventHandler)
 
+    if (window.location.pathname === '/auth/consume') {
+      await this.consumeAuthHandoff()
+      return
+    }
+
     const pathParts = location.pathname.slice(1).split('/')
     const isCartPath = pathParts[0] === 'carts'
     let sharedStates
@@ -218,6 +223,42 @@ class App extends Component {
       })
     } finally {
       this.setState({ loading: false })
+    }
+  }
+
+  async consumeAuthHandoff() {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    const returnUrl = params.get('return_url')
+    const fallbackURL = `${window.location.origin}/?loginFailed=true`
+
+    if (!code || !returnUrl) {
+      window.location.replace(fallbackURL)
+      return
+    }
+
+    let parsedReturnUrl
+    try {
+      parsedReturnUrl = new URL(returnUrl)
+    } catch (_) {
+      window.location.replace(fallbackURL)
+      return
+    }
+
+    if (parsedReturnUrl.origin !== window.location.origin) {
+      window.location.replace(fallbackURL)
+      return
+    }
+
+    try {
+      await requestWithCredentials({
+        path: '/auth/handoff/exchange',
+        method: 'POST',
+        body: { code },
+      })
+      window.location.replace(parsedReturnUrl.toString())
+    } catch (e) {
+      window.location.replace(fallbackURL)
     }
   }
 
@@ -829,7 +870,7 @@ class App extends Component {
                         <Login
                           onLoginDone={this.onLoginDone.bind(this)}
                           onLogoutDone={this.onLogoutDone.bind(this)}
-                          googleLoginPath={`${config.apiURL}/auth/login/google?returnURL=${window.location.href}`}
+                          googleLoginPath={`${config.apiURL}/auth/login/google?return_url=${encodeURIComponent(window.location.href)}`}
                           logoutPath={logoutPath}
                         />
                       </div>
