@@ -266,6 +266,7 @@ class Player extends Component {
           stores={this.props.stores}
           togglingCurrentInCart={this.state.togglingCurrentInCart}
           totalTracks={this.props.meta ? this.props.meta.totalTracks : null}
+          isMobile={this.props.isMobile}
           ref={this.preview}
           markHeard={this.markHeard.bind(this)}
           onCartButtonClick={this.props.onHandleCartButtonClick?.bind(this)}
