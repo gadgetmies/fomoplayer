@@ -49,6 +49,10 @@ router.get('/labels/:id', async ({ params: { id } }, res) => {
   res.send(await getEntityDetails('label', id))
 })
 
+router.get('/releases/:id', async ({ params: { id } }, res) => {
+  res.send(await getEntityDetails('release', id))
+})
+
 router.get('/genres', async (req, res) => {
   res.json(await queryGenres())
 })

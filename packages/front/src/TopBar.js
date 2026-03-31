@@ -92,10 +92,10 @@ class TopBar extends Component {
         if (genre) nameMap[t.value] = genre.name
       })
 
-    // Resolve artist and label names via API
+    const entityTypesWithApiLookup = ['artist', 'label', 'release', 'track']
     const resolved = await Promise.all(
       nameless
-        .filter((t) => t.type === 'artist' || t.type === 'label' || t.type === 'track')
+        .filter((t) => entityTypesWithApiLookup.includes(t.type))
         .map(async (term) => {
           try {
             if (term.type === 'track') {
