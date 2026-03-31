@@ -73,6 +73,7 @@ module.exports.removeLabelIgnoreFromUser = deleteLabelIgnoreFromUser
 module.exports.removeArtistIgnoreFromUser = deleteArtistIgnoreFromUser
 
 const { updateIgnoresInUserTracks } = require('../shared/db/user.js')
+const { searchForTracks } = require('../shared/db/search')
 const { deleteUserCartStoreDetails } = require('../shared/cart')
 const { insertSource } = require('../../jobs/watches/shared/db')
 const { getStoreDetailsFromUrl } = require('../stores/logic')
@@ -335,6 +336,37 @@ module.exports.updateNotifications = async (userId, operations) => {
   })
 
   return queryNotifications(userId)
+}
+
+module.exports.getNotificationTracks = async (userId, stores, { limit, offset }) => {
+  const notifications = await queryNotifications(userId, stores)
+  const tracks = (
+    await BPromise.map(notifications, ({ text }) =>
+      searchForTracks(text, {
+        userId,
+        limit: 100,
+        onlyNew: true,
+      }),
+    )
+  ).flat()
+
+  const uniqueTracks = R.uniqBy(R.prop('id'), tracks)
+  const sortedTracks = R.sort(R.descend(R.prop('added')), uniqueTracks)
+  const pagedTracks = sortedTracks.slice(offset, offset + limit)
+
+  return {
+    tracks: {
+      notifications: pagedTracks,
+    },
+    pagination: {
+      notifications: {
+        offset,
+        limit,
+        total: sortedTracks.length,
+        count: pagedTracks.length,
+      },
+    },
+  }
 }
 
 module.exports.getUserSettings = async (userId) => {

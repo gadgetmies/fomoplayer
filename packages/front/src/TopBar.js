@@ -191,6 +191,14 @@ class TopBar extends Component {
                 </NavLink>
                 <NavLink
                   style={(isActive) => ({ opacity: isActive ? 1 : 0.7 })}
+                  to={'/tracks/notifications'}
+                  className={'pill pill-button button-push_button-small'}
+                  onClick={() => this.setState({ discoverMenuOpen: false })}
+                >
+                  <span className={'pill-button-contents button-push_button_label'}>Notification tracks</span>
+                </NavLink>
+                <NavLink
+                  style={(isActive) => ({ opacity: isActive ? 1 : 0.7 })}
                   to={'/tracks/recent'}
                   className={'pill pill-button button-push_button-small'}
                   onClick={() => this.setState({ discoverMenuOpen: false })}

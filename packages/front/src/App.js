@@ -42,7 +42,7 @@ library.add(fas, far, fab)
 // injectTapEventPlugin();
 
 const logoutPath = '/auth/logout'
-const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [] }, meta: { totalTracks: 0, newTracks: 0 } }
+const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [], notifications: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
 const buildLoginReturnPath = () => {
   const params = new URLSearchParams(window.location.search)
@@ -103,7 +103,10 @@ class App extends Component {
       searchParams.get('names') || '',
     )
     const isSearchPath = window.location.pathname.match(/^\/search\/?$/)
-    const initialListState = searchTerms.length > 0 && isSearchPath ? 'search' : (listState || 'new')
+    const pathParts = window.location.pathname.slice(1).split('/')
+    const isNotificationsPath = pathParts[0] === 'tracks' && pathParts[1] === 'notifications'
+    const initialListState = searchTerms.length > 0 && isSearchPath ? 'search' :
+                             isNotificationsPath ? 'notifications' : (listState || 'new')
 
     this.state = {
       carts: [],
@@ -133,7 +136,7 @@ class App extends Component {
       mode: undefined,
       tracksOffset: 0,
       loadingMore: false,
-      trackOffsets: { new: 0, heard: 0, recent: 0, search: 0 },
+      trackOffsets: { new: 0, heard: 0, recent: 0, search: 0, notifications: 0 },
       pagination: null,
       notHeardBefore: null,
     }
@@ -150,7 +153,7 @@ class App extends Component {
     const { listState, pagination, trackOffsets, searchResults } = this.state
     if (listState === 'search') {
       return searchResults.length % (this.state.searchFilters.limit || 100) === 0 && searchResults.length > 0
-    } else if (['new', 'heard', 'recent'].includes(listState) && pagination) {
+    } else if (['new', 'heard', 'recent', 'notifications'].includes(listState) && pagination) {
       const category = listState === 'recent' ? 'recent' : listState
       const categoryPagination = pagination[category]
       if (categoryPagination) {
@@ -166,7 +169,7 @@ class App extends Component {
 
     if (listState === 'search') {
       await this.search(this.state.searchTerms, this.state.searchFilters, true)
-    } else if (['new', 'heard', 'recent'].includes(listState)) {
+    } else if (['new', 'heard', 'recent', 'notifications'].includes(listState)) {
       this.setState({ loadingMore: true })
       await this.updateTracks(true)
     }
@@ -317,8 +320,13 @@ class App extends Component {
       }
     }
 
+    const navigatingToNotifications = nextListState === 'notifications' && nextListState !== this.state.listState
     if (shouldSetState) {
-      this.setState(nextState)
+      this.setState(nextState, () => {
+        if (navigatingToNotifications) {
+          this.updateTracks()
+        }
+      })
     }
   }
 
@@ -455,6 +463,39 @@ class App extends Component {
 
   async updateTracks(append = false) {
     const { trackOffsets, listState, notHeardBefore } = this.state
+    if (listState === 'notifications') {
+      const offset = append ? trackOffsets.notifications : 0
+      const {
+        tracks: { notifications: notificationTracks },
+        pagination,
+      } = await requestJSONwithCredentials({
+        path: `/me/tracks/notifications?offset=${offset}&limit=20`,
+      })
+
+      const existingNotifications = append ? this.state.tracksData.tracks.notifications : []
+      const uniqueNotifications = deduplicateTracks(existingNotifications, notificationTracks)
+      this.setState({
+        tracksData: {
+          ...this.state.tracksData,
+          tracks: {
+            ...this.state.tracksData.tracks,
+            notifications: uniqueNotifications,
+          },
+        },
+        trackOffsets: {
+          ...trackOffsets,
+          notifications: pagination.notifications.offset + pagination.notifications.count,
+        },
+        pagination: {
+          ...this.state.pagination,
+          notifications: pagination.notifications,
+        },
+        loadingMore: false,
+      })
+
+      return
+    }
+
     let queryParams = []
     
     if (append) {
@@ -533,6 +574,7 @@ class App extends Component {
       this.setState({
         tracksData: {
           tracks: {
+            ...this.state.tracksData.tracks,
             new: uniqueNew,
             heard: uniqueHeard,
             recentlyAdded: uniqueRecent,
@@ -546,21 +588,29 @@ class App extends Component {
       })
     } else {
       this.setState({
-        tracksData: { tracks, meta: { newTracks, totalTracks } },
+        tracksData: {
+          ...this.state.tracksData,
+          tracks: {
+            ...this.state.tracksData.tracks,
+            ...tracks
+          },
+          meta: { newTracks, totalTracks }
+        },
         heardTracks: tracks.heard,
         onboarding: tracks.new.length === 0 && tracks.heard.length === 0,
-        trackOffsets: pagination ? {
-          new: pagination.new.offset + pagination.new.count,
-          heard: pagination.heard.offset + pagination.heard.count,
-          recent: pagination.recent.offset + pagination.recent.count,
-          search: this.state.trackOffsets.search,
-        } : {
-          new: tracks.new.length,
-          heard: tracks.heard.length,
-          recent: tracks.recentlyAdded.length,
-          search: this.state.trackOffsets.search,
+        trackOffsets: {
+          ...this.state.trackOffsets,
+          ...(pagination ? {
+            new: pagination.new.offset + pagination.new.count,
+            heard: pagination.heard.offset + pagination.heard.count,
+            recent: pagination.recent.offset + pagination.recent.count,
+          } : {
+            new: tracks.new.length,
+            heard: tracks.heard.length,
+            recent: tracks.recentlyAdded.length,
+          })
         },
-        pagination: pagination || null,
+        pagination: pagination ? { ...this.state.pagination, ...pagination } : this.state.pagination,
       })
     }
   }

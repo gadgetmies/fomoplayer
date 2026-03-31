@@ -31,6 +31,7 @@ const {
   updateNotifications,
   getNotifications,
   getUserSettings,
+  getNotificationTracks,
   setEmail,
   setFollowStarred,
   getAuthorizations,
@@ -100,6 +101,23 @@ const upload = multer({
     fileSize: MAX_FILE_SIZE,
   },
 })
+
+router.get(
+  '/tracks/notifications',
+  async (
+    {
+      user: { id: authUserId },
+      query: { limit = 20, offset = 0, store: stores },
+    },
+    res,
+  ) => {
+    const notificationTracks = await getNotificationTracks(authUserId, stores, {
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10),
+    })
+    res.json(notificationTracks)
+  },
+)
 
 router.get(
   '/tracks',
