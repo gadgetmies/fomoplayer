@@ -140,6 +140,7 @@ class Settings extends Component {
       editingCartNameId: null,
       cartNameEditorValue: '',
       cloningCartId: null,
+      mediaButtonBehavior: localStorage.getItem('mediaButtonBehavior') || 'seek',
       audioSamples: [],
       uploadingAudioSample: false,
       deletingAudioSample: null,
@@ -587,6 +588,20 @@ class Settings extends Component {
                   </label>
                 </>
               )}
+              <input
+                type="radio"
+                id="settings-state-player"
+                name="settings-state"
+                checked={this.state.page === 'player'}
+                onChange={() => this.onShowPage('player')}
+              />
+              <label
+                className="select_button-button select_button-button__large"
+                htmlFor="settings-state-player"
+                data-help-id="player-tab"
+              >
+                Player
+              </label>
             </div>
           </div>
           {this.state.page === 'following' ? (
@@ -1513,6 +1528,42 @@ class Settings extends Component {
                 {this.markHeardButton('Tracks older than two years', '2 years')}
               </p>
               <p className="input-layout">{this.markHeardButton('All tracks', '0')}</p>
+            </>
+          ) : null}
+          {this.state.page === 'player' ? (
+            <>
+              <h4>Media button behavior</h4>
+              <p>
+                Configure how the next and previous media buttons on your device (keyboard, headphones, etc.) behave.
+              </p>
+              <div className="select-button select-button--container state-select-button--container noselect">
+                <input
+                  type="radio"
+                  id="media-button-behavior-seek"
+                  name="media-button-behavior"
+                  checked={this.state.mediaButtonBehavior === 'seek'}
+                  onChange={() => {
+                    localStorage.setItem('mediaButtonBehavior', 'seek')
+                    this.setState({ mediaButtonBehavior: 'seek' })
+                  }}
+                />
+                <label className="select_button-button" htmlFor="media-button-behavior-seek">
+                  Seek (double click to skip)
+                </label>
+                <input
+                  type="radio"
+                  id="media-button-behavior-skip"
+                  name="media-button-behavior"
+                  checked={this.state.mediaButtonBehavior === 'skip'}
+                  onChange={() => {
+                    localStorage.setItem('mediaButtonBehavior', 'skip')
+                    this.setState({ mediaButtonBehavior: 'skip' })
+                  }}
+                />
+                <label className="select_button-button" htmlFor="media-button-behavior-skip">
+                  Skip
+                </label>
+              </div>
             </>
           ) : null}
           {this.state.page === 'integrations' ? (
