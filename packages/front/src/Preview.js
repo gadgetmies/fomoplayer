@@ -257,30 +257,44 @@ class Preview extends Component {
   }
 
   async handleNextClick() {
-    if (this.state.nextDoubleClickStarted) {
-      this.setState({ nextDoubleClickStarted: false })
+    const behavior = localStorage.getItem('mediaButtonBehavior')
+    if (behavior === 'skip') {
       await this.props.onNext()
     } else {
-      const that = this
-      this.setState({ nextDoubleClickStarted: true })
-      setTimeout(() => {
-        that.setState({ nextDoubleClickStarted: false })
-      }, 200)
-      this.seekForward()
+      if (this.state.nextDoubleClickStarted) {
+        this.setState({ nextDoubleClickStarted: false })
+        await this.props.onNext()
+      } else {
+        const that = this
+        this.setState({ nextDoubleClickStarted: true })
+        setTimeout(() => {
+          that.setState({ nextDoubleClickStarted: false })
+        }, 200)
+        this.seekForward()
+      }
     }
   }
 
   async handlePreviousClick() {
-    if (this.state.previousDoubleClickStarted) {
-      this.setState({ previousDoubleClickStarted: false })
-      await this.props.onPrevious()
+    const behavior = localStorage.getItem('mediaButtonBehavior')
+    if (behavior === 'skip') {
+      if (this.getPlayer().currentTime > 2) {
+        this.getPlayer().currentTime = 0
+      } else {
+        await this.props.onPrevious()
+      }
     } else {
-      const that = this
-      this.setState({ previousDoubleClickStarted: true })
-      setTimeout(() => {
-        that.setState({ previousDoubleClickStarted: false })
-      }, 200)
-      this.seekBackward()
+      if (this.state.previousDoubleClickStarted) {
+        this.setState({ previousDoubleClickStarted: false })
+        await this.props.onPrevious()
+      } else {
+        const that = this
+        this.setState({ previousDoubleClickStarted: true })
+        setTimeout(() => {
+          that.setState({ previousDoubleClickStarted: false })
+        }, 200)
+        this.seekBackward()
+      }
     }
   }
 
