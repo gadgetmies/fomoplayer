@@ -5,10 +5,12 @@ const {
 } = shared
 
 const isBrowserRuntime = typeof window !== 'undefined'
+const isPreviewEnv = String(process.env.REACT_APP_PREVIEW_ENV || process.env.PREVIEW_ENV || '').toLowerCase() === 'true'
 
 module.exports = {
   serviceURL: FRONTEND_URL,
   servicePort: FRONTEND_PORT,
+  isPreviewEnv,
   apiURL: resolveApiURL({
     apiURL: API_URL,
     rawApiURL: RAW_API_URL,

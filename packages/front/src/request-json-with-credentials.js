@@ -1,9 +1,19 @@
 import config from './config.js'
 
-const searchParams = new URLSearchParams(window.location.search)
-const storesFromHost = window.location.hostname.split('.').slice(0, -2)
-const storesFromParams = searchParams.getAll('store')
-let stores = [storesFromParams, storesFromHost, ['beatport', 'bandcamp']].find(ss => ss.length > 0)
+const defaultStores = ['beatport', 'bandcamp']
+
+const resolveStoresForRequest = ({ search, hostname, isPreviewEnv }) => {
+  const searchParams = new URLSearchParams(search)
+  const storesFromParams = searchParams.getAll('store')
+  const storesFromHost = isPreviewEnv ? [] : hostname.split('.').slice(0, -2)
+  return [storesFromParams, storesFromHost, defaultStores].find((storeNames) => storeNames.length > 0)
+}
+
+const stores = resolveStoresForRequest({
+  search: window.location.search,
+  hostname: window.location.hostname,
+  isPreviewEnv: config.isPreviewEnv,
+})
 
 const requestJSONwithCredentials = (...args) =>
   requestWithCredentials(...args).then(async (res) => {
@@ -49,4 +59,4 @@ const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET',
   }
 }
 
-export { requestJSONwithCredentials, requestWithCredentials }
+export { requestJSONwithCredentials, requestWithCredentials, resolveStoresForRequest }
