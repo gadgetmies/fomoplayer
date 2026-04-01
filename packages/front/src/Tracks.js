@@ -624,7 +624,7 @@ class Tracks extends Component {
                         className={'cart-filter'}
                         style={{ maxWidth: '50ch' }}
                         styles={'large'}
-                        onChange={({ target: { value: filter } }) => {
+                        onChange={(_, filter) => {
                           // TODO: replace aborted and debounce with flatmapLatest
                           if (this.state.trackListFilterDebounce) {
                             clearTimeout(this.state.trackListFilterDebounce)

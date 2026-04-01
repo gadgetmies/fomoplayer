@@ -293,8 +293,8 @@ class Preview extends Component {
     return ((previewDetails ? previewDetails.length_ms : this.props.currentTrack.duration) / 5 / 1000) | 7
   }
 
-  onCartFilterChange(e) {
-    this.setState({ cartFilter: e.target.value })
+  onCartFilterChange(_, inputValue) {
+    this.setState({ cartFilter: inputValue })
   }
 
   onClearCartFilter() {

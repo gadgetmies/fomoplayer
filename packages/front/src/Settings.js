@@ -599,10 +599,10 @@ class Settings extends Component {
                     styles="large dark"
                     value={this.state.followQuery}
                     onClearSearch={this.clearSearch.bind(this)}
-                    onChange={(e) => {
+                    onChange={(_, inputValue) => {
                       // TODO: replace aborted and debounce with flatmapLatest
                       this.setState({
-                        followQuery: e.target.value,
+                        followQuery: inputValue,
                         followDetails: undefined,
                         updatingFollowDetails: null,
                       })
@@ -614,7 +614,7 @@ class Settings extends Component {
                         })
                       }
 
-                      if (e.target.value === '') {
+                      if (inputValue === '') {
                         return
                       }
                       this.setState({
@@ -809,7 +809,7 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={(e) => this.setState({ followedArtistsFilter: e.target.value.toLocaleLowerCase() })}
+                      onChange={(_, inputValue) => this.setState({ followedArtistsFilter: inputValue.toLocaleLowerCase() })}
                       value={this.state.followedArtistsFilter}
                       onClearSearch={() => this.setState({ followedArtistsFilter: '' })}
                     />
@@ -864,7 +864,7 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={(e) => this.setState({ followedLabelsFilter: e.target.value.toLocaleLowerCase() })}
+                      onChange={(_, inputValue) => this.setState({ followedLabelsFilter: inputValue.toLocaleLowerCase() })}
                       value={this.state.followedLabelsFilter}
                       onClearSearch={() => this.setState({ followedLabelsFilter: '' })}
                     />
@@ -908,7 +908,9 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={(e) => this.setState({ followedPlaylistsFilter: e.target.value.toLocaleLowerCase() })}
+                      onChange={(_, inputValue) =>
+                        this.setState({ followedPlaylistsFilter: inputValue.toLocaleLowerCase() })
+                      }
                       value={this.state.followedPlaylistsFilter}
                       onClearSearch={() => this.setState({ followedPlaylistsFilter: '' })}
                     />
