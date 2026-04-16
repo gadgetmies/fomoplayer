@@ -30,7 +30,7 @@
     "express": "^4.21.2",
     "express-promise-router": "^4.1.1",
     "express-rate-limit": "^7.3.1",
-    "express-session": "^1.18.1",
+    "express-session": "^1.19.0",
     "fomoplayer_shared": "1.0.0",
     "hsl-to-rgb-for-reals": "^1.1.1",
     "html-entities": "^2.3.2",
