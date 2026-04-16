@@ -25,9 +25,7 @@ const extractJSON = R.curry((selector, attribute = undefined, html) => {
   return JSON.parse(text)
 })
 
-const request = require('request-promise')
-
-const getPageSource = (url) => {
+const getPageSource = async (url) => {
   if (suspendedUntil) {
     if (suspendedUntil < Date.now()) {
       suspendedUntil = null
@@ -35,26 +33,26 @@ const getPageSource = (url) => {
     } else {
       const error = new Error(`Rate limit reached. Requests are suspended until: ${suspendedUntil.toString()}`)
       error.isRateLimit = true
-      return Promise.reject(error)
+      throw error
     }
   }
   requestCount++
-  return request({
-    method: 'GET',
-    uri: url,
-  }).catch((e) => {
-    if ([429, 403].includes(e.statusCode)) {
-      suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
-      logger.error(`Rate limit reached after ${requestCount} requests. Status code: ${e.statusCode}. Requests are suspended until: ${suspendedUntil.toString()}`)
-      const error = new Error(`Rate limit reached after ${requestCount} requests. Status code: ${e.statusCode}. Requests are suspended until: ${suspendedUntil.toString()}`)
-      error.isRateLimit = true
-      error.statusCode = e.statusCode
-      error.requestCount = requestCount
-      throw error
-    } else {
-      throw e
-    }
-  })
+  const res = await fetch(url, { method: 'GET' })
+  if ([429, 403].includes(res.status)) {
+    suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
+    logger.error(`Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`)
+    const error = new Error(`Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`)
+    error.isRateLimit = true
+    error.statusCode = res.status
+    error.requestCount = requestCount
+    throw error
+  }
+  if (!res.ok) {
+    const error = new Error(`Request failed with status ${res.status}`)
+    error.statusCode = res.status
+    throw error
+  }
+  return res.text()
 }
 
 const isRateLimited = () => {
@@ -170,20 +168,19 @@ const mapSearchResults = ({ auto: { results } }) =>
   }))
 
 const getSearchResults = (query, callback) => {
-  return request({
+  return fetch('https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic', {
     method: 'POST',
-    uri: 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic',
-    body: {
+    body: JSON.stringify({
       search_text: query,
       search_filter: 'b',
       fan_id: null,
       full_page: false,
-    },
-    json: true,
+    }),
     headers: {
       'Content-Type': 'application/json; charset=UTF-8',
     },
   })
+    .then((res) => res.json())
     .then((res) => {
       callback(null, mapSearchResults(res))
     })
