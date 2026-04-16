@@ -1,5 +1,6 @@
 const { BatchInterceptor } = require('@mswjs/interceptors')
 const { default: nodeInterceptors } = require('@mswjs/interceptors/presets/node')
+const { FetchInterceptor } = require('@mswjs/interceptors/fetch')
 const R = require('ramda')
 const logger = require('../logger')(__filename)
 
@@ -42,7 +43,7 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
   logger.info(`Enabling development / test http request interceptors for ${name}`)
   const interceptor = new BatchInterceptor({
     name: `${name}Interceptor`,
-    interceptors: nodeInterceptors,
+    interceptors: [...nodeInterceptors, new FetchInterceptor()],
   })
 
   interceptor.apply()
