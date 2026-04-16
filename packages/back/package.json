@@ -49,7 +49,6 @@
     "pg-using-bluebird": "^4.0.1",
     "pureimage": "^0.3.0",
     "ramda": "^0.27.1",
-    "request-in-session": "elysion/request-in-session#v1.2.5",
     "spotify-web-api-node": "^5.0.2",
     "sql-template-strings": "^2.2.2",
     "type-is": "^1.6.18",
