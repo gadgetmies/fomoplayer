@@ -56,7 +56,6 @@
     "sql-template-strings": "^2.2.2",
     "type-is": "^1.6.18",
     "uuid": "^9.0.1",
-    "vm2": "^3.9.19",
     "winston": "^3.3.3",
     "winston-telegram": "^2.6.0"
   },

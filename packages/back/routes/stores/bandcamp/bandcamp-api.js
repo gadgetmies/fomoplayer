@@ -4,9 +4,8 @@ const logger = require('fomoplayer_shared').logger(__filename)
 const { decode } = require('html-entities')
 const jsdom = require('jsdom')
 const { JSDOM } = jsdom
-const { VM } = require('vm2')
+const vm = require('vm')
 
-const vm = new VM()
 let suspendedUntil = null
 let requestCount = 0
 
@@ -16,7 +15,7 @@ const scrapeJSON = R.curry((pattern, string) => {
     throw new Error('No match for pattern')
   }
 
-  return vm.run(match[1])
+  return vm.runInNewContext(match[1], {})
 })
 
 const extractJSON = R.curry((selector, attribute = undefined, html) => {
