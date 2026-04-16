@@ -15,7 +15,7 @@
     "node": "22.x"
   },
   "dependencies": {
-    "@mswjs/interceptors": "^0.26.5",
+    "@mswjs/interceptors": "^0.41.3",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.1",
     "cloudmailin": "^0.1.0",
