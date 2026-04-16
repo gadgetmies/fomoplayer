@@ -34,8 +34,10 @@
     "fomoplayer_shared": "1.0.0",
     "hsl-to-rgb-for-reals": "^1.1.1",
     "html-entities": "^2.3.2",
-    "jose": "^6.2.2",
-    "jsdom": "^25.0.1",
+
+=======
+    "jsdom": "^29.0.2",
+>>>>>>> 67f2bf9b (Bump jsdom to ^29.0.2)
     "jwks-rsa": "^4.0.1",
     "minio": "^8.0.6",
     "morgan": "^1.10.0",
