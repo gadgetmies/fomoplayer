@@ -49,4 +49,48 @@ test({
       /CORS origin denied: https:\/\/evil\.example\.com/,
     )
   },
+
+  'parseOriginRegexes anchors unanchored patterns': () => {
+    const regexes = parseOriginRegexes('https://preview\\.example\\.com')
+    assert.strictEqual(regexes.length, 1)
+    assert.strictEqual(regexes[0].test('https://preview.example.com'), true)
+    assert.strictEqual(regexes[0].test('https://preview.example.com.evil.com'), false)
+    assert.strictEqual(regexes[0].test('https://evil.com/preview.example.com'), false)
+  },
+
+  'parseOriginRegexes preserves patterns that already have anchors': () => {
+    const regexes = parseOriginRegexes('^https://preview\\.example\\.com$')
+    assert.strictEqual(regexes.length, 1)
+    assert.strictEqual(regexes[0].test('https://preview.example.com'), true)
+    assert.strictEqual(regexes[0].test('https://preview.example.com.evil.com'), false)
+  },
+
+  'validator rejects subdomain-smuggling origin via regex': async () => {
+    const validator = createCorsOriginValidator({
+      allowedOrigins: [],
+      allowedOriginRegexes: parseOriginRegexes('https://preview\\.example\\.com'),
+    })
+    await assert.rejects(
+      async () => validateOrigin(validator, 'https://preview.example.com.attacker.com'),
+      /CORS origin denied: https:\/\/preview\.example\.com\.attacker\.com/,
+    )
+  },
+
+  'validator rejects origin containing a path component via regex': async () => {
+    const validator = createCorsOriginValidator({
+      allowedOrigins: [],
+      allowedOriginRegexes: parseOriginRegexes('https://preview\\.example\\.com'),
+    })
+    await assert.rejects(
+      async () => validateOrigin(validator, 'https://evil.com/preview.example.com'),
+      /CORS origin denied: https:\/\/evil\.com\/preview\.example\.com/,
+    )
+  },
+
+  'parseOriginRegexes handles wildcard subdomain pattern': () => {
+    const regexes = parseOriginRegexes('https://pr-[0-9]+\\.preview\\.example\\.com')
+    assert.strictEqual(regexes.length, 1)
+    assert.strictEqual(regexes[0].test('https://pr-42.preview.example.com'), true)
+    assert.strictEqual(regexes[0].test('https://pr-42.preview.example.com.evil.com'), false)
+  },
 })

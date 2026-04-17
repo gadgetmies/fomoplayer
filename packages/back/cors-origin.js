@@ -5,7 +5,10 @@ const parseOriginRegexes = (value) =>
     .split(',')
     .map((entry) => entry.trim())
     .filter(Boolean)
-    .map((pattern) => new RegExp(pattern))
+    .map((pattern) => {
+      const stripped = pattern.replace(/^\^/, '').replace(/\$$/, '')
+      return new RegExp(`^(?:${stripped})$`)
+    })
 
 const createCorsOriginValidator = ({ allowedOrigins = [], allowedOriginRegexes = [] }) => {
   const exactOrigins = new Set(normalizeOriginList(allowedOrigins))
