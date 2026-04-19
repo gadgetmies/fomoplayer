@@ -1,22 +1,10 @@
 const router = require('express').Router()
 const passport = require('passport')
-const { frontendURL } = require('../config.js')
+const { frontendURL, allowedOrigins } = require('../config.js')
 const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/shared/spotify')
 const { upsertUserAuthorizationTokens } = require('./db')
+const { isSafeRedirectPath } = require('./shared/safe-redirect')
 const logger = require('fomoplayer_shared').logger(__filename)
-
-const isSafeRedirectPath = (url, baseURL) => {
-  if (!url) return false
-  if (url.startsWith('//') || url.startsWith('http://') || url.startsWith('https://')) {
-    try {
-      return new URL(url).origin === new URL(baseURL).origin
-    } catch {
-      return false
-    }
-  }
-  if (url.includes('\\')) return false
-  return url.startsWith('/')
-}
 
 const logout = (req, res, next) => {
   req.logout((err) => {
@@ -44,7 +32,7 @@ router.get(
   passport.authenticate('openidconnect', { failureRedirect: `${frontendURL}/?loginFailed=true` }),
   (req, res) => {
     const returnURL = req.authInfo?.state?.returnURL
-    res.redirect(isSafeRedirectPath(returnURL, frontendURL) ? returnURL : frontendURL)
+    res.redirect(isSafeRedirectPath(returnURL, allowedOrigins) ? returnURL : frontendURL)
   },
 )
 
