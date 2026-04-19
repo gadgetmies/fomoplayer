@@ -93,7 +93,8 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.options('*', cors(corsOptions)) // include before other routes
 
-app.use(bodyParser.json({ limit: '50mb', extended: true, type: ['application/json', 'application/*+json'] }))
+app.use('/api/admin', bodyParser.json({ limit: '20mb', extended: true, type: ['application/json', 'application/*+json'] }))
+app.use(bodyParser.json({ limit: '1mb', extended: true, type: ['application/json', 'application/*+json'] }))
 
 app.use((req, res, next) => {
   const val = req.query.store
