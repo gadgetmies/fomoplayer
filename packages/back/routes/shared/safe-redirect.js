@@ -20,4 +20,23 @@ const isSafeRedirectPath = (url, trustedOrigins) => {
   return url.startsWith('/')
 }
 
-module.exports = { isSafeRedirectPath }
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const isSafeHandoffTarget = (url) => {
+  if (!url) return false
+  const service = process.env.RAILWAY_SERVICE_NAME
+  const project = process.env.RAILWAY_PROJECT_NAME
+  if (!service || !project) return false
+  const pattern = new RegExp(
+    `^${escapeRegex(service)}-${escapeRegex(project)}-pr-\\d+\\.up\\.railway\\.app$`,
+    'i',
+  )
+  try {
+    const { protocol, hostname } = new URL(url)
+    return protocol === 'https:' && pattern.test(hostname)
+  } catch {
+    return false
+  }
+}
+
+module.exports = { isSafeRedirectPath, isSafeHandoffTarget }
