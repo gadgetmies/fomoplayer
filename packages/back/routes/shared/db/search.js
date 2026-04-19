@@ -285,7 +285,7 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
       sortColumns.forEach(([column, order]) =>
         query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
       )
-      query.append(` track_id DESC
+      query.append(sql` track_id DESC
         LIMIT ${limit} OFFSET ${offset})
         ORDER BY `)
 
