@@ -4,11 +4,13 @@ const sql = require('sql-template-strings')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 module.exports.queryEntityDetails = async (entityType, entityId) => {
+  const parsedId = parseInt(entityId, 10)
+  if (Number.isNaN(parsedId) || parsedId <= 0) throw new Error('Invalid entity id')
   return BPromise.using(pg.getTransaction(), async (tx) => {
     let query = sql`
 --queryNameForEntity
 SELECT `
-    query.append(sql`
+    query.append(`
     ${tx.escapeIdentifier(`${entityType}_id`)} as id,
     ${tx.escapeIdentifier(`${entityType}_name`)} as name,
     JSON_AGG(JSON_BUILD_OBJECT(
@@ -23,7 +25,9 @@ SELECT `
 FROM ${tx.escapeIdentifier(entityType)}
 NATURAL JOIN ${tx.escapeIdentifier(`store__${entityType}`)}
 NATURAL JOIN store
-WHERE ${tx.escapeIdentifier(`${entityType}_id`)} = ${entityId}
+WHERE `)
+    query.append(`${tx.escapeIdentifier(`${entityType}_id`)} = `)
+    query.append(sql`${parsedId}
 GROUP BY 1, 2
 `)
     const res = await tx.queryRowsAsync(query)
