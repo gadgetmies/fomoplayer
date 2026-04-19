@@ -19,7 +19,7 @@ if (isPreviewEnv && previewAllowedGoogleSubs.length === 0) {
 const port = sharedConfig.API_PORT
 const frontendURL = resolveServiceURL(sharedConfig.FRONTEND_URL, sharedConfig.IP, sharedConfig.FRONTEND_PORT)
 const apiURL = resolveServiceURL(sharedConfig.API_URL, sharedConfig.IP, port, '/api')
-const additonalOrigins = process.env.ADDITIONAL_ORIGINS?.split(',').map((origin) => origin.trim()) || []
+const additionalOrigins = process.env.ADDITIONAL_ORIGINS?.split(',').map((origin) => origin.trim()) || []
 const allowedOriginRegexes = parseOriginRegexes(process.env.ALLOWED_ORIGIN_REGEX)
 const allowedPreviewOriginRegexes = parseOriginRegexes(process.env.ALLOWED_PREVIEW_ORIGIN_REGEX)
 const internalAuthHandoffIssuer = process.env.INTERNAL_AUTH_HANDOFF_ISSUER || defaultInternalAuthHandoffIssuer
@@ -61,7 +61,7 @@ if (handoffEnabled && isHandoffIssuerRole && !internalAuthHandoffPublicKey) {
 }
 
 module.exports = {
-  allowedOrigins: [frontendURL, 'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn', ...additonalOrigins],
+  allowedOrigins: [frontendURL, 'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn', ...additionalOrigins],
   allowedOriginRegexes: [...allowedOriginRegexes, ...allowedPreviewOriginRegexes],
   port,
   apiURL,
