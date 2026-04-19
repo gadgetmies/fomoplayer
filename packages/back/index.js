@@ -40,7 +40,12 @@ const { HttpError } = require('./routes/shared/httpErrors')
 const { logRequestError } = require('./routes/shared/error-logging')
 const { getCartDetails } = require('./routes/logic')
 
+const isPreviewEnv = process.env.IS_PREVIEW_ENV === 'true'
+const cookieSecure = isPreviewEnv || (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test')
+
 const app = express()
+app.set('trust proxy', 1)
+app.use(morgan('combined'))
 app.use(compression())
 app.use(
   session({
@@ -51,7 +56,12 @@ app.use(
     secret: config.sessionSecret,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }, // 30 days
+    cookie: {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      httpOnly: true,
+      secure: cookieSecure,
+      sameSite: isPreviewEnv ? 'none' : 'lax',
+    },
   }),
 )
 
@@ -70,8 +80,6 @@ if (process.env.USE_RATE_LIMITER) {
 passportSetup()
 app.use(passport.initialize())
 app.use(passport.session())
-
-morgan('tiny')
 
 app.use(cors({ credentials: true, origin: config.allowedOrigins }))
 app.options('*', cors()) // include before other routes
