@@ -136,6 +136,15 @@ app.use(
 app.use(express.static('public'))
 
 const indexPath = path.resolve(__dirname, 'public/index.html')
+
+const escapeHtmlAttribute = (value) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
 app.get('/carts/:uuid', async ({ params: { uuid }, query: { limit, offset, store: stores }, user }, res, next) => {
   if (!uuid) {
     logger.error('Error during file reading', { uuid })
@@ -149,15 +158,15 @@ app.get('/carts/:uuid', async ({ params: { uuid }, query: { limit, offset, store
     return res.status(404).end()
   }
 
-  const sanitizedName = cartDetails.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  
+  const sanitizedName = escapeHtmlAttribute(cartDetails.name)
+
   const cartOpenGraphDetails = cartDetails.tracks
     .map(({ artists, duration, previews, released, title }, index) => {
       const preview = previews.find(R.prop('url'))
 
       return preview
         ? `
-  <meta property='music:song' content='${preview.url}'>
+  <meta property='music:song' content='${escapeHtmlAttribute(preview.url)}'>
   <meta property='music:song:disc' content='1'>
   <meta property='music:song:track' content='${index}'>`
         : ''
