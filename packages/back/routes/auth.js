@@ -17,6 +17,19 @@ const {
 } = require('./shared/auth-flow')
 const logger = require('fomoplayer_shared').logger(__filename)
 
+const isSafeRedirectPath = (url, baseURL) => {
+  if (!url) return false
+  if (url.startsWith('//') || url.startsWith('http://') || url.startsWith('https://')) {
+    try {
+      return new URL(url).origin === new URL(baseURL).origin
+    } catch {
+      return false
+    }
+  }
+  if (url.includes('\\')) return false
+  return url.startsWith('/')
+}
+
 const handoffTtlSeconds = 120
 
 const createAuthRouter = ({
@@ -368,7 +381,8 @@ const createAuthRouter = ({
     } catch (e) {
       logger.error(`Spotify callback handling failed: ${e.toString()}`)
     }
-    res.redirect(`${frontendURL}${path}`)
+    const safePath = isSafeRedirectPath(path, frontendURL) ? path : ''
+    res.redirect(`${frontendURL}${safePath}`)
   })
 
   if (process.env.NODE_ENV !== 'production') {
