@@ -24,11 +24,16 @@ const {
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 
+const adminUserIds = (process.env.ADMIN_USER_IDS ?? '')
+  .split(',')
+  .map((s) => parseInt(s.trim(), 10))
+  .filter((n) => !Number.isNaN(n))
+
 const ensureIsAdmin = ({ user: { id: userId } }, res, next) => {
-  if (process.env.NODE_ENV === 'dev' || userId === 2) {
+  if (adminUserIds.includes(userId)) {
     next()
   } else {
-    res.status(401).send({ error: 'Access denied' })
+    res.status(403).send({ error: 'Access denied' })
   }
 }
 
@@ -53,14 +58,10 @@ router.post('/jobs/:name/run', ({ user: { id: userId }, params: { name } }, res)
 
 router.get(
   '/merge-tracks/:trackToBeDeleted/to/:trackToKeep',
-  async ({ user: { id: userId }, params: { trackToBeDeleted, trackToKeep } }, res) => {
-    if (process.env.NODE_ENV === 'dev' || userId === 2) {
-      logger.info(`Merging tracks: ${trackToBeDeleted} ${trackToKeep}`)
-      await mergeTracks({ trackToBeDeleted, trackToKeep })
-      res.send('OK')
-    } else {
-      res.status(401).send({ error: 'Access denied' })
-    }
+  async ({ params: { trackToBeDeleted, trackToKeep } }, res) => {
+    logger.info(`Merging tracks: ${trackToBeDeleted} ${trackToKeep}`)
+    await mergeTracks({ trackToBeDeleted, trackToKeep })
+    res.send('OK')
   },
 )
 
