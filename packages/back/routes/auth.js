@@ -3,7 +3,7 @@ const passport = require('passport')
 const { frontendURL, allowedOrigins } = require('../config.js')
 const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/shared/spotify')
 const { upsertUserAuthorizationTokens } = require('./db')
-const { isSafeRedirectPath } = require('./shared/safe-redirect')
+const { isSafeRedirectPath, isSafeHandoffTarget } = require('./shared/safe-redirect')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 const logout = (req, res, next) => {
@@ -22,7 +22,7 @@ router.get('/logout', logout)
 router.get('/login/google', (req, res, next) => {
   req.session.inviteCode = req.query.invite_code
   return passport.authenticate('openidconnect', {
-    state: { returnURL: req.query.returnURL },
+    state: { returnPath: req.query.returnPath, handoffTarget: req.query.handoffTarget },
   })(req, res, next)
 })
 
@@ -31,8 +31,10 @@ router.get(
   '/login/google/return',
   passport.authenticate('openidconnect', { failureRedirect: `${frontendURL}/?loginFailed=true` }),
   (req, res) => {
-    const returnURL = req.authInfo?.state?.returnURL
-    res.redirect(isSafeRedirectPath(returnURL, allowedOrigins) ? returnURL : frontendURL)
+    const { returnPath, handoffTarget } = req.authInfo?.state ?? {}
+    const targetOrigin = isSafeHandoffTarget(handoffTarget) ? handoffTarget : frontendURL
+    const safePath = isSafeRedirectPath(returnPath, frontendURL) ? returnPath : ''
+    res.redirect(`${targetOrigin}${safePath}`)
   },
 )
 
