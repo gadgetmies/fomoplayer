@@ -6,10 +6,10 @@ const sharedConfig = require('fomoplayer_shared/config')(nodeEnv).config
 const port = sharedConfig.API_PORT
 const frontendURL = resolveServiceURL(sharedConfig.FRONTEND_URL, sharedConfig.IP, sharedConfig.FRONTEND_PORT)
 const apiURL = resolveServiceURL(sharedConfig.API_URL, sharedConfig.IP, port, '/api')
-const additonalOrigins = process.env.ADDITIONAL_ORIGINS?.split(',').map((origin) => origin.trim()) || []
+const additionalOrigins = process.env.ADDITIONAL_ORIGINS?.split(',').map((origin) => origin.trim()) || []
 
 module.exports = {
-  allowedOrigins: [frontendURL, 'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn', ...additonalOrigins],
+  allowedOrigins: [frontendURL, 'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn', ...additionalOrigins],
   port,
   apiURL,
   frontendURL,
