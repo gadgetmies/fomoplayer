@@ -8,7 +8,7 @@ module.exports.queryEntityDetails = async (entityType, entityId) => {
     let query = sql`
 --queryNameForEntity
 SELECT `
-    query.append(`
+    query.append(sql`
     ${tx.escapeIdentifier(`${entityType}_id`)} as id,
     ${tx.escapeIdentifier(`${entityType}_name`)} as name,
     JSON_AGG(JSON_BUILD_OBJECT(
