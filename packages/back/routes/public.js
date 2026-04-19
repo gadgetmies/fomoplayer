@@ -16,6 +16,9 @@ const createPublicRouter = ({
   router.use(bodyParser.json())
 
   router.get('/carts/:uuid', async ({ params: { uuid }, user, query: { since, offset, limit, store: stores } }, res) => {
+    if (since !== undefined && Number.isNaN(new Date(since).getTime())) {
+      return res.status(400).json({ error: 'Invalid since date' })
+    }
     const cart = await getCartDetails(uuid, user?.id, stores, { since, offset, limit })
     if (cart === null) {
       return res.status(404).send()
