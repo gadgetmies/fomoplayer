@@ -41,6 +41,7 @@ class FollowedItem extends Component {
               <a
                 href={this.props.url}
                 target="_blank"
+                rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 title={'Check details from store'}
               >

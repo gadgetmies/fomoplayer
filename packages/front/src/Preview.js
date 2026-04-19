@@ -454,6 +454,7 @@ class Preview extends Component {
                         key={url || releaseUrl}
                         href={url || releaseUrl}
                         target="_blank"
+                        rel="noopener noreferrer"
                         className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
                         style={{ display: 'flex', padding: '16px 8px' }}
                       >
@@ -477,6 +478,7 @@ class Preview extends Component {
                               key={`${searchUrl}${searchString}`}
                               href={`${searchUrl}${searchString}`}
                               target="_blank"
+                              rel="noopener noreferrer"
                               className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
                               style={{ display: 'flex', padding: '16px 8px' }}
                             >
@@ -489,6 +491,7 @@ class Preview extends Component {
                       <a
                         href={`https://www.youtube.com/results?search_query=${searchString}`}
                         target="_blank"
+                        rel="noopener noreferrer"
                         className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
                         style={{ display: 'flex', padding: '16px 8px' }}
                       >

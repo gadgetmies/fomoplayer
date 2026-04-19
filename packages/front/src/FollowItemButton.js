@@ -18,6 +18,7 @@ class FollowItemButton extends Component {
         <a
           href={url}
           target="_blank"
+          rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
           title={'Check details from store'}
           style={{ position: 'relative', height: 100, width: 100, display: 'block', margin: 'auto' }}

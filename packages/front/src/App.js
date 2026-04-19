@@ -913,6 +913,7 @@ class App extends Component {
                           href="https://github.com/gadgetmies/fomoplayer/wiki"
                           className={'button button-push_button button-push_button-large button-push_button-primary'}
                           target="_blank"
+                          rel="noopener noreferrer"
                         >
                           Find out more on Github <FontAwesomeIcon icon={['fab', 'github']} />
                         </a>
