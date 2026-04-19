@@ -89,6 +89,7 @@ class Track extends Component {
                 key={trackStore.name}
                 className="pill pill-link pill-link-collapse table-cell-button"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 <StoreIcon code={trackStore.code} />
                 <span className={'pill-link-text'}>{trackStore.name}</span>
@@ -102,6 +103,7 @@ class Track extends Component {
                 href={`${searchUrl}${searchString}`}
                 title={`Search from ${storeName}`}
                 target="_blank"
+                rel="noopener noreferrer"
                 key={storeName}
               >
                 <StoreIcon code={storeName.toLowerCase()} />
