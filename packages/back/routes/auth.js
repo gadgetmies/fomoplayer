@@ -5,6 +5,19 @@ const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = requ
 const { upsertUserAuthorizationTokens } = require('./db')
 const logger = require('fomoplayer_shared').logger(__filename)
 
+const isSafeRedirectPath = (url, baseURL) => {
+  if (!url) return false
+  if (url.startsWith('//') || url.startsWith('http://') || url.startsWith('https://')) {
+    try {
+      return new URL(url).origin === new URL(baseURL).origin
+    } catch {
+      return false
+    }
+  }
+  if (url.includes('\\')) return false
+  return url.startsWith('/')
+}
+
 const logout = (req, res, next) => {
   req.logout((err) => {
     if (err) {
@@ -29,7 +42,10 @@ router.get('/login/google', (req, res, next) => {
 router.get(
   '/login/google/return',
   passport.authenticate('openidconnect', { failureRedirect: `${frontendURL}/?loginFailed=true` }),
-  (req, res) => res.redirect(req.authInfo.state.returnURL),
+  (req, res) => {
+    const returnURL = req.authInfo?.state?.returnURL
+    res.redirect(isSafeRedirectPath(returnURL, frontendURL) ? returnURL : frontendURL)
+  },
 )
 
 router.get('/spotify', async ({ user: { id: userId }, query }, res) => {
@@ -53,7 +69,8 @@ router.get('/spotify/callback', async ({ user: { id: userId }, query: { code, st
   } catch (e) {
     logger.error(`Spotify callback handling failed: ${e.toString()}`)
   }
-  res.redirect(`${frontendURL}${path}`)
+  const safePath = isSafeRedirectPath(path, frontendURL) ? path : ''
+  res.redirect(`${frontendURL}${safePath}`)
 })
 
 if (process.env.NODE_ENV !== 'production') {
