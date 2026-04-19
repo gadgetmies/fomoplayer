@@ -120,13 +120,15 @@ app.get('/carts/:uuid', async ({ params: { uuid }, query: { limit, offset, store
     return res.status(500).end()
   }
 
-  const cartDetails = await getCartDetails(uuid, user?.id, stores,{ offset, limit })
+  const cartDetails = await getCartDetails(uuid, user?.id, stores, { offset, limit })
 
   if (cartDetails === null) {
     logger.debug('Cart details not found or cart not public', { uuid })
     return res.status(404).end()
   }
 
+  const sanitizedName = cartDetails.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  
   const cartOpenGraphDetails = cartDetails.tracks
     .map(({ artists, duration, previews, released, title }, index) => {
       const preview = previews.find(R.prop('url'))
@@ -141,12 +143,12 @@ app.get('/carts/:uuid', async ({ params: { uuid }, query: { limit, offset, store
     .join('\n')
 
   const patchedIndex = indexFile
-    .replace('<title>Player</title>', `<title>Player - ${cartDetails.name}</title>`)
+    .replace('<title>Player</title>', `<title>Player - ${sanitizedName}</title>`)
     .replace(
       '</head>',
       `<meta property='og:type' content='music.album'>
-<meta property='og:description' content='${cartDetails.name} · ${cartDetails.tracks.length} songs.'>
-<meta property='og:title' content='${cartDetails.name}'>
+<meta property='og:description' content='${sanitizedName} · ${cartDetails.tracks.length} songs.'>
+<meta property='og:title' content='${sanitizedName}'>
 ${cartOpenGraphDetails}`,
     )
   return res.send(patchedIndex)
