@@ -84,7 +84,8 @@ app.use(passport.session())
 app.use(cors({ credentials: true, origin: config.allowedOrigins }))
 app.options('*', cors()) // include before other routes
 
-app.use(bodyParser.json({ limit: '50mb', extended: true, type: ['application/json', 'application/*+json'] }))
+app.use('/api/admin', bodyParser.json({ limit: '20mb', extended: true, type: ['application/json', 'application/*+json'] }))
+app.use(bodyParser.json({ limit: '1mb', extended: true, type: ['application/json', 'application/*+json'] }))
 
 app.use((req, res, next) => {
   const val = req.query.store
