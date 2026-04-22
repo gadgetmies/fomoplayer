@@ -11,7 +11,6 @@ const pgrm = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const { queryAccountCount } = require('./routes/db')
 const { deleteInviteCode } = require('./db/account')
-const { evaluateSignUpPolicy } = require('./routes/shared/auth-flow')
 
 const parseOidcState = (req) => {
   const rawState = req?.query?.state
@@ -49,8 +48,11 @@ module.exports = function passportSetup() {
   }
 
   const googleOpenIDIssuer = 'accounts.google.com'
-  passport.use(
-    new OpenIDStrategy(
+  const googleOidcConfigured = Boolean(config.googleClientId && config.googleClientSecret)
+  if (!googleOidcConfigured) {
+    logger.info('Google OIDC client credentials not configured; skipping OIDC strategy registration')
+  } else {
+    passport.use(new OpenIDStrategy(
       {
         issuer: googleOpenIDIssuer,
         clientID: config.googleClientId,
@@ -61,113 +63,67 @@ module.exports = function passportSetup() {
         passReqToCallback: true,
       },
       async (req, issuer, profile, done) => {
-        if (profile.id === undefined) {
-          throw new Error('OIDC profile id not returned!')
-        }
-
         try {
-          const oidcState = parseOidcState(req)
-          const isHandoffState = Boolean(
-            (oidcState?.preview_session_id && oidcState?.preview_nonce) || req.session?.oidcHandoff?.nonce,
-          )
-          if (isHandoffState) {
-            const user = { id: null }
-            user.oidcIssuer = issuer
-            user.oidcSubject = profile.id
-            done(null, user)
-            return
+          if (!profile || profile.id === undefined) {
+            logger.error('OIDC profile id not returned by provider', { issuer, profile })
+            return done(null, false, { message: 'OIDC profile id not returned' })
           }
 
-          let user = await account.findByIdentifier(issuer, profile.id)
+          const normalizedIssuer = issuer.replace(/^https?:\/\//, '')
+          const oidcIdentity = { issuer: normalizedIssuer, subject: profile.id }
+
+          const inviteCode = req.session?.inviteCode
+          const accountCount = await queryAccountCount()
+          const signUpAvailable = accountCount <= config.maxAccountCount
+          let user = await account.findByIdentifier(normalizedIssuer, profile.id)
 
           if (!user) {
-            const signUpPolicy = await evaluateSignUpPolicy({
-              inviteCode: req.session.inviteCode,
-              queryAccountCount,
-              maxAccountCount: config.maxAccountCount,
-              deleteInviteCode,
-            })
-            if (!signUpPolicy.allowed) {
-              if (signUpPolicy.error === 'sign_up_not_available') {
+            if (!signUpAvailable) {
+              if (!inviteCode) {
+                logger.warn('OIDC sign-up denied: sign-up closed and no invite code', {
+                  accountCount,
+                  maxAccountCount: config.maxAccountCount,
+                })
                 return done(null, false, { message: 'Sign up is not available' })
               }
-              if (signUpPolicy.error === 'invalid_invite_code') {
+              const inviteCodeConsumed = await deleteInviteCode(inviteCode)
+              if (!inviteCodeConsumed) {
+                logger.warn('OIDC sign-up denied: invalid invite code')
                 return done(null, false, { message: 'Invalid invite code' })
               }
             }
 
-            user = await account.findOrCreateByIdentifier(issuer, profile.id)
+            user = await account.findOrCreateByIdentifier(normalizedIssuer, profile.id)
           }
 
-          user.oidcIssuer = issuer
-          user.oidcSubject = profile.id
-          done(null, user)
-          await pgrm.queryAsync(
-            //language=PostgreSQL
-            sql` -- open id login
-UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_id = ${user.id} 
+          if (!user || user.id === undefined) {
+            logger.error('OIDC verify: user lookup/create returned no usable user', { user })
+            return done(null, false, { message: 'User lookup failed' })
+          }
+
+          done(null, { ...user, oidcIdentity })
+          try {
+            await pgrm.queryAsync(
+              //language=PostgreSQL
+              sql` -- open id login
+UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_id = ${user.id}
 `,
-          )
+            )
+          } catch (e) {
+            logger.error('Failed to update last login timestamp after OIDC login', {
+              errorMessage: e?.message ?? String(e),
+              stack: e?.stack,
+            })
+          }
         } catch (e) {
-          logger.error('Creating or fetching user for OIDC failed', e)
-          done(null)
+          logger.error('Creating or fetching user for OIDC failed', {
+            errorMessage: e?.message ?? String(e),
+            stack: e?.stack,
+          })
+          done(e)
         }
       },
-    ),
-  )
-
-  const JwtStrategy = require('passport-jwt').Strategy
-  const ExtractJwt = require('passport-jwt').ExtractJwt
-  const jwksRsa = require('jwks-rsa')
-  const internalJwtStrategyOptions = config.internalAuthHandoffJwksUrl
-    ? {
-        secretOrKeyProvider: jwksRsa.passportJwtSecret({
-          cache: true,
-          rateLimit: true,
-          jwksRequestsPerMinute: 5,
-          jwksUri: config.internalAuthHandoffJwksUrl,
-        }),
-        algorithms: ['RS256'],
-      }
-    : undefined
-
-  if (internalJwtStrategyOptions && config.internalAuthHandoffIssuer) {
-    const verifyInternal = async (_req, jwtPayload, done) => {
-      if (
-        !jwtPayload ||
-        jwtPayload.token_type !== 'api_access' ||
-        !jwtPayload.sub ||
-        !jwtPayload.oidc_iss ||
-        jwtPayload.aud !== config.internalAuthApiAudience
-      ) {
-        return done(null, false)
-      }
-
-      try {
-        const acc = await account.findOrCreateByIdentifier(jwtPayload.oidc_iss, jwtPayload.sub)
-        if (acc) {
-          return done(null, acc)
-        }
-        return done(null, false)
-      } catch (e) {
-        logger.error('Internal JWT verification failed', e)
-        return done(e)
-      }
-    }
-
-    passport.use(
-      'jwt-internal',
-      new JwtStrategy(
-        {
-          ...internalJwtStrategyOptions,
-          jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-          issuer: config.internalAuthHandoffIssuer,
-          audience: config.internalAuthApiAudience,
-          passReqToCallback: true,
-        },
-        verifyInternal,
-      ),
-    )
+    ))
   }
 
   passport.serializeUser(async (userToSerialize, done) => {

@@ -40,7 +40,7 @@ module.exports.getPreviewDetails = async (previewId) => {
     const albumInfo = await getReleaseAsync(albumUrl)
     logger.debug('albuminfo trackinfo', albumInfo.trackinfo)
     logger.debug('details', details)
-    const url = await albumInfo.trackinfo.find(R.propEq('track_id', parseInt(storeTrackId, 10)))?.file['mp3-128']
+    const url = await albumInfo.trackinfo.find(R.propEq(parseInt(storeTrackId, 10), 'track_id'))?.file?.['mp3-128']
     if (url) {
       return {
         ...details,
@@ -87,7 +87,7 @@ module.exports.getFollowDetails = async ({ id, type, url }) => {
 
 const releaseTracksWithFiles = (releaseDetails) => {
   const tracks = releaseDetails.reduce((acc, { trackinfo }) => acc.concat(trackinfo), [])
-  return tracks.filter(R.complement(R.propEq('file', null)))
+  return tracks.filter(R.complement(R.propEq(null, 'file')))
 }
 
 const getTracksFromReleases = async (releaseUrls) => {

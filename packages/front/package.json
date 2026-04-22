@@ -34,8 +34,11 @@
     "waveform-generator-web": "^0.1.0"
   },
   "scripts": {
-    "start": "REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL REACT_APP_FRONTEND_URL=$FRONTEND_URL REACT_APP_PREVIEW_ENV=${PREVIEW_ENV} PORT=4004 react-scripts start",
-    "build": "REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL REACT_APP_FRONTEND_URL=$FRONTEND_URL REACT_APP_PREVIEW_ENV=${PREVIEW_ENV} react-scripts build && mkdir -p ../back/public && cp -r build/* ../back/public/",
+
+
+    "start": "GENERATE_SOURCEMAP=true REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL REACT_APP_FRONTEND_URL=$FRONTEND_URL PORT=4004 react-scripts start",
+    "build": "GENERATE_SOURCEMAP=true REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL REACT_APP_FRONTEND_URL=$FRONTEND_URL react-scripts build && mkdir -p ../back/public && cp -r build/* ../back/public/",
+
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },

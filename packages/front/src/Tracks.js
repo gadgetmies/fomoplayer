@@ -79,7 +79,7 @@ class Tracks extends Component {
                   labels,
                   releases,
                 })) &&
-              this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+              this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
           )
         : this.props.tracks
       this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
@@ -97,7 +97,7 @@ class Tracks extends Component {
                   labels,
                   releases,
                 })) &&
-              this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+              this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
           )
         : this.props.tracks
       this.measureTrackHeights(tracks)
@@ -131,7 +131,7 @@ class Tracks extends Component {
                     labels,
                     releases,
                   })) &&
-                this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+                this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
             )
           : this.props.tracks
         this.measureTrackHeights(tracks)
@@ -149,7 +149,7 @@ class Tracks extends Component {
                       labels,
                       releases,
                     })) &&
-                  this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+                  this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
               )
             : this.props.tracks
           this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
@@ -305,7 +305,7 @@ class Tracks extends Component {
                   labels,
                   releases,
                 })) &&
-              this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+              this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
           )
         : this.props.tracks
       this.measureTrackHeights(tracks)
@@ -324,7 +324,7 @@ class Tracks extends Component {
                     labels,
                     releases,
                   })) &&
-                this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+                this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
             )
           : this.props.tracks
         this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
@@ -397,7 +397,7 @@ class Tracks extends Component {
                 labels,
                 releases,
               })) &&
-            this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+            this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
         )
       : this.props.tracks
 
@@ -482,7 +482,7 @@ class Tracks extends Component {
 
             const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
             const storePreviews = previews.filter(({ store }) => storeSlugs.includes(store))
-            const inCarts = this.props.carts.filter((cart) => cart.tracks?.find(R.propEq('id', id)))
+            const inCarts = this.props.carts.filter((cart) => cart.tracks?.find(R.propEq(id, 'id')))
             const selectedCartId = this.props.selectedCart?.id
             return (
               <Track
@@ -520,7 +520,7 @@ class Tracks extends Component {
                 enabledStores={this.props.enabledStores}
                 enabledStoreSearch={this.props.enabledStoreSearch}
                 selectedCart={this.props.selectedCart}
-                inDefaultCart={defaultCart ? defaultCart.tracks?.find(R.propEq('id', id)) !== undefined : false}
+                inDefaultCart={defaultCart ? defaultCart.tracks?.find(R.propEq(id, 'id')) !== undefined : false}
                 inCurrentCart={inCarts.find(({ id }) => id === selectedCartId) !== undefined}
                 inCarts={inCarts}
                 popupAbove={tracks.length > 10 && tracks.length - actualIndex < 10}
@@ -530,13 +530,16 @@ class Tracks extends Component {
                 follows={this.props.follows}
                 noPreviews={storePreviews.every(({ url, store }) => !url && store !== 'bandcamp')}
                 onClick={() => {
-                  this.props.onPreviewRequested(id)
+                  this.setState({ selectedTrack: id })
+                  this.props.onPreviewRequested(track)
                 }}
                 onDoubleClick={() => {
-                  this.props.onPreviewRequested(id)
+                  this.setState({ selectedTrack: id })
+                  this.props.onPreviewRequested(track)
                 }}
                 onTouchTap={() => {
-                  this.props.onPreviewRequested(id)
+                  this.setState({ selectedTrack: id })
+                  this.props.onPreviewRequested(track)
                 }}
                 onAddToCart={this.props.onAddToCart}
                 onCreateCart={this.props.onCreateCart}
@@ -822,7 +825,7 @@ class Tracks extends Component {
                       {[...this.props.stores, { storeName: 'Youtube' }].map(({ storeName }) => {
                         const elementId = `${storeName}-search-enabled`
                         const storeDisabled =
-                          this.props.stores.some(R.propEq('storeName', storeName)) &&
+                          this.props.stores.some(R.propEq(storeName, 'storeName')) &&
                           !this.props.enabledStores?.includes(storeName)
                         if (storeDisabled) return null
                         return (
@@ -879,7 +882,7 @@ class Tracks extends Component {
                             labels,
                             releases,
                           })) &&
-                        this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+                        this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
                     )
                   : tracks,
               )}

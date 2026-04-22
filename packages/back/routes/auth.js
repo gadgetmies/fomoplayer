@@ -2,116 +2,53 @@ const crypto = require('crypto')
 const express = require('express')
 const passport = require('passport')
 const defaultAccount = require('../db/account.js')
-const defaultTokenServer = require('../token-server')
 const defaultConfig = require('../config.js')
 const { queryAccountCount: defaultQueryAccountCount, consumeHandoffJti: defaultConsumeHandoffJti } = require('./db')
 const { deleteInviteCode: defaultDeleteInviteCode } = require('../db/account')
 const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/shared/spotify')
 const { upsertUserAuthorizationTokens } = require('./db')
-const {
-  parseReturnUrl,
-  isAllowedReturnUrl,
-  evaluateSignUpPolicy,
-  isGoogleSubAllowed,
-  getRequestOrigin,
-} = require('./shared/auth-flow')
+const { isSafeRedirectPath, isSafeHandoffTarget } = require('./shared/safe-redirect')
+const { mintHandoffToken: defaultMintHandoffToken, verifyHandoffToken: defaultVerifyHandoffToken } = require('./shared/auth-handoff-token')
+const { evaluateSignUpPolicy } = require('./shared/auth-flow')
 const logger = require('fomoplayer_shared').logger(__filename)
-
-const isSafeRedirectPath = (url, baseURL) => {
-  if (!url) return false
-  if (url.startsWith('//') || url.startsWith('http://') || url.startsWith('https://')) {
-    try {
-      return new URL(url).origin === new URL(baseURL).origin
-    } catch {
-      return false
-    }
-  }
-  if (url.includes('\\')) return false
-  return url.startsWith('/')
-}
-
-const handoffTtlSeconds = 120
 
 const createAuthRouter = ({
   account = defaultAccount,
-  tokenServer = defaultTokenServer,
-  config = defaultConfig,
-  queryAccountCount = defaultQueryAccountCount,
   consumeHandoffJti = defaultConsumeHandoffJti,
   deleteInviteCode = defaultDeleteInviteCode,
+  queryAccountCount = defaultQueryAccountCount,
+  config = defaultConfig,
+  mintHandoffTokenFn = defaultMintHandoffToken,
+  verifyHandoffTokenFn = defaultVerifyHandoffToken,
 } = {}) => {
   const router = express.Router()
   const {
     frontendURL,
-    apiURL,
+    apiOrigin,
     allowedOrigins,
     allowedOriginRegexes,
-    internalAuthHandoffPrivateKey,
-    internalAuthHandoffJwksUrl,
-    internalAuthHandoffKid,
-    internalAuthHandoffIssuer,
-    internalAuthApiAudience,
+    oidcHandoffUrl,
+    oidcHandoffSecret,
+    oidcHandoffAuthorityOrigin,
     isPreviewEnv,
-    previewAllowedGoogleSubs,
-    googleClientId,
-    googleOidcApiRedirect,
+    maxAccountCount,
   } = config
-  const { issueInternalToken, verifyInternalToken, verifyGoogleIdToken, getInternalPublicJwk } = tokenServer
-  const canIssueInternalToken = Boolean(internalAuthHandoffIssuer && internalAuthHandoffPrivateKey)
-  const canVerifyInternalToken = Boolean(internalAuthHandoffIssuer && internalAuthHandoffJwksUrl)
 
-  const isAllowedReturnUrlForConfig = (returnUrl) =>
-    isAllowedReturnUrl(returnUrl, allowedOrigins, allowedOriginRegexes)
-
-  const loginFailedRedirectUrl = (() => {
-    const parsedFrontendUrl = parseReturnUrl(frontendURL)
-    if (!parsedFrontendUrl) {
-      return '/?loginFailed=true'
-    }
-
-    return new URL('/?loginFailed=true', parsedFrontendUrl.origin).toString()
-  })()
-
-  const delegatedGoogleLoginBaseUrl = (() => {
-    const parsedApiUrl = parseReturnUrl(apiURL)
-    const parsedGoogleCallback = parseReturnUrl(googleOidcApiRedirect)
-    if (!parsedApiUrl || !parsedGoogleCallback) {
-      return undefined
-    }
-
-    if (parsedApiUrl.origin === parsedGoogleCallback.origin) {
-      return undefined
-    }
-
-    const delegatedPath = parsedGoogleCallback.pathname.replace(
-      /\/auth\/login\/google\/return$/,
-      '/auth/login/google',
-    )
-    return new URL(delegatedPath, parsedGoogleCallback.origin)
-  })()
-
-  const isValidHandoffPayload = (payload, expectedAudience) => {
-    const now = Math.floor(Date.now() / 1000)
-    const aud = Array.isArray(payload?.aud) ? payload.aud[0] : payload?.aud
-    if (
-      !payload ||
-      payload.iss !== internalAuthHandoffIssuer ||
-      aud !== expectedAudience ||
-      !payload.sub ||
-      !payload.sid ||
-      !payload.nonce ||
-      !payload.oidc_iss ||
-      !payload.jti ||
-      payload.token_type !== 'preview_handoff'
-    ) {
-      return false
-    }
-
-    if (typeof payload.exp !== 'number' || typeof payload.iat !== 'number') {
-      return false
-    }
-
-    return payload.exp >= now && payload.iat <= now + 30
+  const loginFailedUrl = `${frontendURL}/?loginFailed=true`
+  const isSelfReferentialHandoffUrl = Boolean(
+    oidcHandoffAuthorityOrigin && apiOrigin && oidcHandoffAuthorityOrigin === apiOrigin,
+  )
+  const delegatesToAuthority = Boolean(
+    oidcHandoffUrl && oidcHandoffAuthorityOrigin && oidcHandoffSecret && !isSelfReferentialHandoffUrl,
+  )
+  const canMintHandoff = Boolean(oidcHandoffSecret && apiOrigin)
+  if (isSelfReferentialHandoffUrl) {
+    logger.info('OIDC_HANDOFF_URL points to this backend; acting as authority and ignoring delegation')
+  }
+  const redirectWithLoginFailed = (res) => res.redirect(loginFailedUrl)
+  const safeFrontendRedirect = (res, returnPath) => {
+    const safePath = isSafeRedirectPath(returnPath, frontendURL) ? returnPath : ''
+    return res.redirect(`${frontendURL}${safePath}`)
   }
 
   const logout = (req, res, next) => {
@@ -127,237 +64,141 @@ const createAuthRouter = ({
   router.post('/logout', logout)
   router.get('/logout', logout)
 
-  router.get('/.well-known/jwks.json', async (_, res) => {
-    if (!config.internalAuthHandoffPublicKey) {
-      return res.status(404).json({ error: 'JWKS is not configured' })
-    }
-    try {
-      const jwk = await getInternalPublicJwk({
-        publicKey: config.internalAuthHandoffPublicKey,
-        keyId: internalAuthHandoffKid,
-      })
-      if (!jwk) {
-        return res.status(404).json({ error: 'JWKS is not configured' })
-      }
-      return res.json({ keys: [jwk] })
-    } catch (e) {
-      logger.error(`Failed to load internal auth JWKS: ${e.toString()}`)
-      return res.status(500).json({ error: 'Failed to load JWKS' })
-    }
-  })
-
   router.get('/login/google', (req, res, next) => {
-    const returnUrl = req.query.return_url
-    const inviteCode = req.query.invite_code
-    const delegatedPreviewSessionId = req.query.preview_session_id
-    const delegatedPreviewNonce = req.query.preview_nonce
-    if (!isAllowedReturnUrlForConfig(returnUrl)) {
-      return res.status(400).json({ error: 'Invalid return_url' })
+    if (req.query.invite_code) {
+      req.session.inviteCode = req.query.invite_code
     }
-    const parsedReturnUrl = parseReturnUrl(returnUrl)
-    if (!parsedReturnUrl) {
-      return res.status(400).json({ error: 'Invalid return_url' })
+    const { returnPath } = req.query
+
+    if (delegatesToAuthority) {
+      const url = new URL(oidcHandoffUrl)
+      if (returnPath) url.searchParams.set('returnPath', returnPath)
+      url.searchParams.set('handoffTarget', apiOrigin)
+      return res.redirect(url.toString())
     }
 
-    const previewSessionId = delegatedPreviewSessionId || req.sessionID
-    const previewNonce = delegatedPreviewNonce || crypto.randomUUID()
-    req.session.oidcHandoff = {
-      nonce: previewNonce,
-      returnUrl,
-      sessionId: previewSessionId,
-      returnOrigin: parsedReturnUrl.origin,
-    }
-    req.session.inviteCode = inviteCode
-
-    const currentRequestOrigin = parseReturnUrl(getRequestOrigin(req))
-    const shouldDelegateLogin =
-      delegatedGoogleLoginBaseUrl &&
-      (!currentRequestOrigin || currentRequestOrigin.host !== delegatedGoogleLoginBaseUrl.host)
-    if (shouldDelegateLogin) {
-      const delegatedLoginUrl = new URL(delegatedGoogleLoginBaseUrl.toString())
-      delegatedLoginUrl.searchParams.set('return_url', returnUrl)
-      delegatedLoginUrl.searchParams.set('preview_session_id', previewSessionId)
-      delegatedLoginUrl.searchParams.set('preview_nonce', previewNonce)
-      if (inviteCode) {
-        delegatedLoginUrl.searchParams.set('invite_code', inviteCode)
-      }
-      return res.redirect(delegatedLoginUrl.toString())
+    const requestedHandoffTarget = req.query.handoffTarget
+    const handoffTarget =
+      requestedHandoffTarget && isSafeHandoffTarget(requestedHandoffTarget) ? requestedHandoffTarget : undefined
+    if (requestedHandoffTarget && !handoffTarget) {
+      logger.warn('Rejected unsafe handoffTarget at /login/google', { requestedHandoffTarget })
+      return redirectWithLoginFailed(res)
     }
 
     return passport.authenticate('openidconnect', {
-      state: { return_url: returnUrl, preview_session_id: previewSessionId, preview_nonce: previewNonce },
+      state: { returnPath, handoffTarget },
     })(req, res, next)
-  })
-
-  router.post('/handoff/exchange', async (req, res) => {
-    if (!canVerifyInternalToken) {
-      return res.status(500).json({ error: 'OIDC handoff is not configured' })
-    }
-
-    const token = req.body?.code
-    if (!token) {
-      return res.status(400).json({ error: 'Missing handoff code' })
-    }
-
-    try {
-      const sessionHandoff = req.session.oidcHandoff
-      const expectedAudience = sessionHandoff?.returnOrigin
-      if (!expectedAudience) {
-        return res.status(401).json({ error: 'Invalid handoff session' })
-      }
-      const payload = await verifyInternalToken({
-        token,
-        jwksUrl: internalAuthHandoffJwksUrl,
-        issuer: internalAuthHandoffIssuer,
-        audience: expectedAudience,
-      })
-      if (!isValidHandoffPayload(payload, expectedAudience)) {
-        return res.status(401).json({ error: 'Invalid handoff payload' })
-      }
-      if (!isGoogleSubAllowed({ isPreviewEnv, previewAllowedGoogleSubs, googleSub: payload.sub })) {
-        return res.status(403).json({ error: 'preview_access_denied' })
-      }
-
-      if (!sessionHandoff || payload.sid !== req.sessionID || payload.nonce !== sessionHandoff.nonce) {
-        return res.status(401).json({ error: 'Invalid handoff session' })
-      }
-
-      const jtiExpiresAt = new Date(payload.exp * 1000)
-      const jtiConsumed = await consumeHandoffJti(payload.jti, jtiExpiresAt)
-      if (!jtiConsumed) {
-        return res.status(401).json({ error: 'Handoff code has already been used' })
-      }
-
-      let user = await account.findByIdentifier(payload.oidc_iss, payload.sub)
-      if (!user) {
-        const signUpPolicy = await evaluateSignUpPolicy({
-          inviteCode: req.session?.inviteCode,
-          queryAccountCount,
-          maxAccountCount: config.maxAccountCount,
-          deleteInviteCode,
-        })
-        if (!signUpPolicy.allowed) {
-          if (signUpPolicy.error === 'sign_up_not_available') {
-            return res.status(403).json({ error: 'Sign up is not available' })
-          }
-          if (signUpPolicy.error === 'invalid_invite_code') {
-            return res.status(401).json({ error: 'Invalid invite code' })
-          }
-        }
-
-        user = await account.findOrCreateByIdentifier(payload.oidc_iss, payload.sub)
-      }
-
-      req.session.regenerate((regenerateErr) => {
-        if (regenerateErr) {
-          logger.error('Preview handoff session regeneration failed', regenerateErr)
-          return res.status(500).json({ error: 'Preview login failed' })
-        }
-        req.login(user, (loginErr) => {
-          if (loginErr) {
-            logger.error('Preview handoff login failed', loginErr)
-            return res.status(500).json({ error: 'Preview login failed' })
-          }
-          return res.status(204).end()
-        })
-      })
-    } catch (e) {
-      logger.error(`Handoff exchange failed: ${e.toString()}`)
-      return res.status(401).json({ error: 'Invalid handoff code' })
-    }
-  })
-
-  router.post('/token/exchange-google', async (req, res) => {
-    if (!canIssueInternalToken) {
-      return res.status(500).json({ error: 'Internal token issuing is not configured' })
-    }
-
-    const id_token = req.body?.id_token
-    if (!id_token) {
-      return res.status(400).json({ error: 'Missing Google id_token' })
-    }
-
-    try {
-      const googlePayload = await verifyGoogleIdToken({ id_token, googleClientId })
-      if (!isGoogleSubAllowed({ isPreviewEnv, previewAllowedGoogleSubs, googleSub: googlePayload.sub })) {
-        return res.status(403).json({ error: 'preview_access_denied' })
-      }
-      const user = await account.findOrCreateByIdentifier(googlePayload.iss, googlePayload.sub)
-      const expiresIn = 60 * 15
-      const accessToken = await issueInternalToken({
-        privateKey: internalAuthHandoffPrivateKey,
-        keyId: internalAuthHandoffKid,
-        issuer: internalAuthHandoffIssuer,
-        audience: internalAuthApiAudience,
-        subject: googlePayload.sub,
-        expiresInSeconds: expiresIn,
-        payload: {
-          oidc_iss: googlePayload.iss,
-          token_type: 'api_access',
-          jti: crypto.randomUUID(),
-          user_id: user.id,
-        },
-      })
-      return res.json({ access_token: accessToken, token_type: 'Bearer', expires_in: expiresIn })
-    } catch (e) {
-      logger.error(`Google token exchange failed: ${e.toString()}`)
-      return res.status(401).json({ error: 'Invalid Google id_token' })
-    }
   })
 
   router.get('/login/google/return', (req, res, next) => {
     passport.authenticate('openidconnect', (err, user, info) => {
-      const stateReturnUrl = info?.state?.return_url || req.session?.oidcHandoff?.returnUrl
-      const previewSessionId = info?.state?.preview_session_id || req.session?.oidcHandoff?.sessionId
-      const previewNonce = info?.state?.preview_nonce || req.session?.oidcHandoff?.nonce
+      if (err) {
+        logger.error('OIDC authentication errored', {
+          errorMessage: err?.message ?? String(err),
+          errorName: err?.name,
+          stack: err?.stack,
+          info,
+        })
+        return redirectWithLoginFailed(res)
+      }
+      if (!user) {
+        logger.warn('OIDC authentication produced no user', {
+          failureInfo: info && typeof info === 'object' ? { ...info, reason: info.message } : info,
+        })
+        return redirectWithLoginFailed(res)
+      }
 
-      if (err || !user) {
-        if (isAllowedReturnUrlForConfig(stateReturnUrl)) {
-          const failedUrl = new URL(stateReturnUrl)
-          failedUrl.searchParams.set('loginFailed', 'true')
-          return res.redirect(failedUrl.toString())
+      const { returnPath, handoffTarget } = info?.state ?? {}
+      const wantsHandoff = Boolean(handoffTarget)
+
+      if (wantsHandoff) {
+        if (!canMintHandoff || !isSafeHandoffTarget(handoffTarget)) {
+          logger.warn('Handoff requested but cannot be fulfilled; falling back to login failure', {
+            canMintHandoff,
+            handoffTargetValid: isSafeHandoffTarget(handoffTarget),
+          })
+          return redirectWithLoginFailed(res)
         }
-        return res.redirect(loginFailedRedirectUrl)
-      }
-      const isHandoffState = Boolean(previewSessionId && previewNonce)
-      if (
-        !isHandoffState ||
-        !canIssueInternalToken ||
-        !isAllowedReturnUrlForConfig(stateReturnUrl)
-      ) {
-        return res.redirect(loginFailedRedirectUrl)
+
+        const oidcIdentity = user?.oidcIdentity
+        if (!oidcIdentity?.issuer || !oidcIdentity?.subject) {
+          logger.error('OIDC identity missing on user after auth; cannot mint handoff token')
+          return redirectWithLoginFailed(res)
+        }
+
+        const targetOrigin = new URL(handoffTarget).origin
+        let token
+        try {
+          ;({ token } = mintHandoffTokenFn({
+            secret: oidcHandoffSecret,
+            issuer: apiOrigin,
+            audience: targetOrigin,
+            oidcIssuer: oidcIdentity.issuer,
+            oidcSubject: oidcIdentity.subject,
+          }))
+        } catch (e) {
+          logger.error(`Minting handoff token failed: ${e.toString()}`)
+          return redirectWithLoginFailed(res)
+        }
+
+        const consumeUrl = new URL(`${targetOrigin}/api/auth/login/google/handoff`)
+        consumeUrl.searchParams.set('token', token)
+        if (returnPath) consumeUrl.searchParams.set('returnPath', returnPath)
+
+        return res.redirect(consumeUrl.toString())
       }
 
-      const returnUrl = parseReturnUrl(stateReturnUrl)
-      if (!returnUrl) {
-        return res.redirect(loginFailedRedirectUrl)
-      }
-      return issueInternalToken({
-        privateKey: internalAuthHandoffPrivateKey,
-        keyId: internalAuthHandoffKid,
-        issuer: internalAuthHandoffIssuer,
-        audience: returnUrl.origin,
-        subject: user.oidcSubject,
-        expiresInSeconds: handoffTtlSeconds,
-        payload: {
-          oidc_iss: user.oidcIssuer,
-          sid: previewSessionId,
-          nonce: previewNonce,
-          token_type: 'preview_handoff',
-          jti: crypto.randomUUID(),
-        },
+      return req.login(user, (loginErr) => {
+        if (loginErr) {
+          logger.error('req.login failed after OIDC authentication', {
+            errorMessage: loginErr?.message ?? String(loginErr),
+            stack: loginErr?.stack,
+          })
+          return redirectWithLoginFailed(res)
+        }
+        return safeFrontendRedirect(res, returnPath)
       })
-        .then((handoffCode) => {
-          const consumeUrl = new URL('/auth/consume', returnUrl.origin)
-          consumeUrl.searchParams.set('code', handoffCode)
-          consumeUrl.searchParams.set('return_url', stateReturnUrl)
-          return res.redirect(consumeUrl.toString())
-        })
-        .catch((tokenError) => {
-          logger.error(`Failed to issue handoff token: ${tokenError.toString()}`)
-          return res.redirect(loginFailedRedirectUrl)
-        })
     })(req, res, next)
+  })
+
+  router.get('/login/google/handoff', async (req, res, next) => {
+    try {
+      if (!delegatesToAuthority) {
+        logger.warn('Handoff consume called but this backend is not configured as a handoff consumer')
+        return redirectWithLoginFailed(res)
+      }
+
+      const { token, returnPath } = req.query
+      const payload = verifyHandoffTokenFn({
+        token,
+        secret: oidcHandoffSecret,
+        issuer: oidcHandoffAuthorityOrigin,
+        audience: apiOrigin,
+      })
+      if (!payload) {
+        return redirectWithLoginFailed(res)
+      }
+
+      const expiresAt = new Date(payload.exp * 1000)
+      const consumed = await consumeHandoffJti(payload.jti, expiresAt)
+      if (!consumed) {
+        logger.warn('Handoff token replay rejected', { jti: payload.jti })
+        return redirectWithLoginFailed(res)
+      }
+
+      const user = await account.findOrCreateByIdentifier(payload.oidcIssuer, payload.sub)
+      if (!user) {
+        logger.error('Handoff user lookup/create failed')
+        return redirectWithLoginFailed(res)
+      }
+
+      req.login(user, (err) => {
+        if (err) return next(err)
+        return safeFrontendRedirect(res, returnPath)
+      })
+    } catch (e) {
+      next(e)
+    }
   })
 
   router.get('/spotify', async ({ user: { id: userId }, query }, res) => {

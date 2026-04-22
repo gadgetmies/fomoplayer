@@ -30,7 +30,8 @@ const resolveRequestUrl = (value) => {
 }
 
 const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET', body, headers }) => {
-  let url = resolveRequestUrl(requestedUrl ? requestedUrl : `${config.apiURL}${path}`)
+  const resolvedUrl = requestedUrl ? requestedUrl : `${config.apiURL}${path}`
+  let url = new URL(resolvedUrl, window.location.origin)
 
   if (stores) {
     const urlSearchParams = new URLSearchParams(url.search)

@@ -1,4 +1,4 @@
-DROP MATERIALIZED VIEW track_date_released_score;
+DROP MATERIALIZED VIEW IF EXISTS track_date_released_score;
 CREATE MATERIALIZED VIEW track_date_released_score AS
 SELECT
     track.track_id
@@ -10,7 +10,7 @@ GROUP BY
     track.track_id;
 REFRESH MATERIALIZED VIEW track_date_released_score;
 
-DROP MATERIALIZED VIEW track_date_added_score;
+DROP MATERIALIZED VIEW IF EXISTS track_date_added_score;
 CREATE MATERIALIZED VIEW track_date_added_score AS
 SELECT
     track.track_id
@@ -19,7 +19,7 @@ FROM
     track;
 REFRESH MATERIALIZED VIEW track_date_added_score;
 
-DROP MATERIALIZED VIEW track_date_published_score;
+DROP MATERIALIZED VIEW IF EXISTS track_date_published_score;
 CREATE MATERIALIZED VIEW track_date_published_score AS
 SELECT
     track.track_id

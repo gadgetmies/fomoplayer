@@ -118,10 +118,15 @@ router.get(
     },
     res,
   ) => {
-    logger.info(`Got stores: ${JSON.stringify(stores)}`)
+    const normalizedStores = (Array.isArray(stores) ? stores : stores ? [stores] : [])
+      .map((store) => (typeof store === 'string' ? store.toLowerCase().trim() : ''))
+      .filter(Boolean)
+    const storeFilter = normalizedStores.length > 0 ? normalizedStores : null
+
+    logger.info(`Got stores: ${JSON.stringify(storeFilter)}`)
     const userTracks = await getUserTracks(
       authUserId, 
-      stores, 
+      storeFilter, 
       { new: limitNew, recent: limitRecent, heard: limitHeard },
       { new: offsetNew, recent: offsetRecent, heard: offsetHeard },
       notHeardBefore ? new Date(notHeardBefore) : undefined
