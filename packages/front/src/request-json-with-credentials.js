@@ -11,7 +11,8 @@ const requestJSONwithCredentials = (...args) =>
   })
 
 const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET', body, headers }) => {
-  let url = new URL(requestedUrl ? requestedUrl : `${config.apiURL}${path}`)
+  const resolvedUrl = requestedUrl ? requestedUrl : `${config.apiURL}${path}`
+  let url = new URL(resolvedUrl, window.location.origin)
 
   if (stores) {
     const urlSearchParams = new URLSearchParams(url.search)

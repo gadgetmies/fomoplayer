@@ -69,3 +69,55 @@ jobs:
         # Environment variables used by the `client.js` script to create a new PostgreSQL table.
         env:
           DATABASE_URL: postgres://postgres:postgres@postgres/multi-store-player-test
+
+  browser-test:
+    runs-on: ubuntu-latest
+    container: node:22
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+
+      - name: Preinstall system dependencies
+        run: |
+          apt-get update && apt-get install -y git postgresql-client
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: yarn workspace fomoplayer_back npx playwright install --with-deps chromium
+
+      - name: Setup database
+        run: psql -h postgres -U postgres -c 'CREATE DATABASE "multi-store-player-test";'
+        env:
+          PGPASSWORD: postgres
+
+      - name: Run browser tests
+        run: yarn run ci:test:browser
+        env:
+          DATABASE_URL: postgres://postgres:postgres@postgres/multi-store-player-test
+          REACT_APP_ENV: ci

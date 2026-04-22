@@ -61,7 +61,7 @@ export const CartDropDownButton = ({
           : carts
               .filter(({ name }) => !cartFilter || name.toLocaleLowerCase().includes(cartFilter.toLowerCase()))
               .map(({ id: cartId, name }) => {
-                const isInCart = inCarts.find(R.propEq('id', cartId))
+                const isInCart = inCarts.find(R.propEq(cartId, 'id'))
                 return (
                   <button
                     disabled={processingCart}

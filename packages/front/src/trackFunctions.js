@@ -17,9 +17,9 @@ export const followableNameLinks = (followable, follows, type, separator = ', ',
       to={`/search?q=${type}:${id}`}
       onClick={(e) => {
         e.stopPropagation()
-        if (onEntityClick && e.shiftKey) {
+        if (onEntityClick && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.altKey) {
           e.preventDefault()
-          onEntityClick(type, id, name)
+          onEntityClick(type, id, name, e.shiftKey)
         }
       }}
     >
@@ -39,7 +39,7 @@ export const followableNameLinks = (followable, follows, type, separator = ', ',
 
 export const trackArtistsAndTitle = (track, follows, onEntityClick = null) => (
   <>
-    {followableNameLinks(R.uniq([track.artists, track.remixers].flat()) || [], follows, 'artist', onEntityClick)} - {trackTitle(track)}
+    {followableNameLinks(R.uniq([track.artists, track.remixers].flat()) || [], follows, 'artist', ', ', ' & ', onEntityClick)} - {trackTitle(track)}
   </>
 )
 

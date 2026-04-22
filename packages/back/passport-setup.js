@@ -37,8 +37,11 @@ module.exports = function passportSetup() {
   }
 
   const googleOpenIDIssuer = 'accounts.google.com'
-  passport.use(
-    new OpenIDStrategy(
+  const googleOidcConfigured = Boolean(config.googleClientId && config.googleClientSecret)
+  if (!googleOidcConfigured) {
+    logger.info('Google OIDC client credentials not configured; skipping OIDC strategy registration')
+  } else {
+    passport.use(new OpenIDStrategy(
       {
         issuer: googleOpenIDIssuer,
         clientID: config.googleClientId,
@@ -49,44 +52,68 @@ module.exports = function passportSetup() {
         passReqToCallback: true,
       },
       async (req, issuer, profile, done) => {
-        if (profile.id === undefined) {
-          throw new Error('OIDC profile id not returned!')
-        }
-
         try {
-          const inviteCode = req.session.inviteCode
-          const signUpAvailable = (await queryAccountCount()) <= config.maxAccountCount
-          let user = await account.findByIdentifier(issuer, profile.id)
+          if (!profile || profile.id === undefined) {
+            logger.error('OIDC profile id not returned by provider', { issuer, profile })
+            return done(null, false, { message: 'OIDC profile id not returned' })
+          }
+
+          const normalizedIssuer = issuer.replace(/^https?:\/\//, '')
+          const oidcIdentity = { issuer: normalizedIssuer, subject: profile.id }
+
+          const inviteCode = req.session?.inviteCode
+          const accountCount = await queryAccountCount()
+          const signUpAvailable = accountCount <= config.maxAccountCount
+          let user = await account.findByIdentifier(normalizedIssuer, profile.id)
 
           if (!user) {
             if (!signUpAvailable) {
               if (!inviteCode) {
+                logger.warn('OIDC sign-up denied: sign-up closed and no invite code', {
+                  accountCount,
+                  maxAccountCount: config.maxAccountCount,
+                })
                 return done(null, false, { message: 'Sign up is not available' })
-              } else {
-                const inviteCodeConsumed = await consumeInviteCode(inviteCode)
-                if (!inviteCodeConsumed) {
-                  return done(null, false, { message: 'Invalid invite code' })
-                }
+              }
+              const inviteCodeConsumed = await consumeInviteCode(inviteCode)
+              if (!inviteCodeConsumed) {
+                logger.warn('OIDC sign-up denied: invalid invite code')
+                return done(null, false, { message: 'Invalid invite code' })
               }
             }
 
-            user = await account.findOrCreateByIdentifier(issuer, profile.id)
+            user = await account.findOrCreateByIdentifier(normalizedIssuer, profile.id)
           }
 
-          done(null, user)
-          await pgrm.queryAsync(
-            //language=PostgreSQL
-            sql` -- open id login
-UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_id = ${user.id} 
+          if (!user || user.id === undefined) {
+            logger.error('OIDC verify: user lookup/create returned no usable user', { user })
+            return done(null, false, { message: 'User lookup failed' })
+          }
+
+          done(null, { ...user, oidcIdentity })
+          try {
+            await pgrm.queryAsync(
+              //language=PostgreSQL
+              sql` -- open id login
+UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_id = ${user.id}
 `,
-          )
+            )
+          } catch (e) {
+            logger.error('Failed to update last login timestamp after OIDC login', {
+              errorMessage: e?.message ?? String(e),
+              stack: e?.stack,
+            })
+          }
         } catch (e) {
-          logger.error('Creating or fetching user for OIDC failed', e)
-          done(null)
+          logger.error('Creating or fetching user for OIDC failed', {
+            errorMessage: e?.message ?? String(e),
+            stack: e?.stack,
+          })
+          done(e)
         }
       },
-    ),
-  )
+    ))
+  }
 
   const JwtStrategy = require('passport-jwt').Strategy
   const ExtractJwt = require('passport-jwt').ExtractJwt

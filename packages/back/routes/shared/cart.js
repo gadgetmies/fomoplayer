@@ -94,8 +94,8 @@ const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userI
 })
 
 module.exports.updateCartContents = async (userId, cartId, operations) => {
-  const tracksToBeRemoved = operations.filter(R.propEq('op', 'remove')).map(R.prop('trackId'))
-  const tracksToBeAdded = operations.filter(R.propEq('op', 'add')).map(R.prop('trackId'))
+  const tracksToBeRemoved = operations.filter(R.propEq('remove', 'op')).map(R.prop('trackId'))
+  const tracksToBeAdded = operations.filter(R.propEq('add', 'op')).map(R.prop('trackId'))
 
   if (tracksToBeRemoved.length > 0) {
     await removeTracksFromCart(userId, cartId, tracksToBeRemoved)
@@ -106,8 +106,8 @@ module.exports.updateCartContents = async (userId, cartId, operations) => {
 }
 
 module.exports.updateAllCartContents = async (userId, operations, excludePurchased = true) => {
-  const tracksToBeRemoved = operations.filter(R.propEq('op', 'remove')).map(R.prop('trackId'))
-  const tracksToBeAdded = operations.filter(R.propEq('op', 'add')).map(R.prop('trackId'))
+  const tracksToBeRemoved = operations.filter(R.propEq('remove', 'op')).map(R.prop('trackId'))
+  const tracksToBeAdded = operations.filter(R.propEq('add', 'op')).map(R.prop('trackId'))
 
   const carts = await queryUserCartDetails(userId)
   for (const { id, is_purchased } of carts) {

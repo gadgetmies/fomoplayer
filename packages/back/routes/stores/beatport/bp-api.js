@@ -49,7 +49,7 @@ const getPageTitleFromSource = (pageSource) => {
   const start = pageSource.indexOf('>', pageSource.indexOf(startString))
   if (start !== -1) {
     const stop = pageSource.indexOf('</title>')
-    return decode(pageSource.substring(start + startString.length, stop))
+    return decode(pageSource.substring(start + 1, stop))
       .replace(' :: Beatport', '')
       .replace(' artists & music download - Beatport', '')
       .replace(' music download - Beatport', '')

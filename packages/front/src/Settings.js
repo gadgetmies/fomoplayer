@@ -464,7 +464,7 @@ class Settings extends Component {
   }
 
   render() {
-    const spotifyAuthorization = this.state.authorizations?.find(R.propEq('store_name', 'Spotify'))
+    const spotifyAuthorization = this.state.authorizations?.find(R.propEq('Spotify', 'store_name'))
     return (
       <div className="page-container scroll-container" style={{ paddingBottom: 16, ...this.props.style }}>
         <SettingsHelp
@@ -599,10 +599,10 @@ class Settings extends Component {
                     styles="large dark"
                     value={this.state.followQuery}
                     onClearSearch={this.clearSearch.bind(this)}
-                    onChange={(e) => {
+                    onChange={(_terms, inputValue) => {
                       // TODO: replace aborted and debounce with flatmapLatest
                       this.setState({
-                        followQuery: e.target.value,
+                        followQuery: inputValue,
                         followDetails: undefined,
                         updatingFollowDetails: null,
                       })
@@ -614,7 +614,7 @@ class Settings extends Component {
                         })
                       }
 
-                      if (e.target.value === '') {
+                      if (inputValue === '') {
                         return
                       }
                       this.setState({
@@ -697,7 +697,7 @@ class Settings extends Component {
                       <div>
                         {R.sortBy(R.prop(0), Object.entries(R.groupBy(R.prop('type'), this.state.followDetails))).map(
                           ([type, items]) => (
-                            <>
+                            <React.Fragment key={type}>
                               <h5>
                                 {type[0].toLocaleUpperCase()}
                                 {type.substring(1)}s
@@ -714,13 +714,13 @@ class Settings extends Component {
                                   ),
                                 ),
                               ).map(([isNotExactMatch, grouped]) => (
-                                <>
+                                <React.Fragment key={`${type}-${isNotExactMatch}`}>
                                   {type !== 'playlist' && (
                                     <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>
                                   )}
                                   <ul className={'no-style-list follow-list'}>
                                     {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
-                                      <li key={this.props.id}>
+                                      <li key={`${storeName}-${type}-${id ?? url}`}>
                                         <FollowItemButton
                                           id={id}
                                           name={name}
@@ -728,7 +728,7 @@ class Settings extends Component {
                                           type={type}
                                           url={url}
                                           img={img}
-                                          disabled={this.getFollowItemDisabled(type, url)}
+                                          disabled={this.getFollowItemDisabled(type, { id, url, storeName })}
                                           loading={this.state.updatingFollowWithUrl === url}
                                           onClick={(() => this.onFollowItemClick(url, name, type)).bind(this)}
                                           data-onboarding-id="follow-item"
@@ -736,9 +736,9 @@ class Settings extends Component {
                                       </li>
                                     ))}
                                   </ul>
-                                </>
+                                </React.Fragment>
                               ))}
-                            </>
+                            </React.Fragment>
                           ),
                         )}
                       </div>
@@ -809,7 +809,9 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={(e) => this.setState({ followedArtistsFilter: e.target.value.toLocaleLowerCase() })}
+                      onChange={(_terms, inputValue) =>
+                        this.setState({ followedArtistsFilter: inputValue.toLocaleLowerCase() })
+                      }
                       value={this.state.followedArtistsFilter}
                       onClearSearch={() => this.setState({ followedArtistsFilter: '' })}
                     />
@@ -864,7 +866,9 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={(e) => this.setState({ followedLabelsFilter: e.target.value.toLocaleLowerCase() })}
+                      onChange={(_terms, inputValue) =>
+                        this.setState({ followedLabelsFilter: inputValue.toLocaleLowerCase() })
+                      }
                       value={this.state.followedLabelsFilter}
                       onClearSearch={() => this.setState({ followedLabelsFilter: '' })}
                     />
@@ -876,8 +880,8 @@ class Settings extends Component {
                           this.state.followedLabelsFilter === '' ||
                           name.toLocaleLowerCase().includes(this.state.followedLabelsFilter),
                       )
-                      .map(({ name, url, storeLabelId, store: { name: storeName, watchId, starred } }) => (
-                        <li key={storeLabelId}>
+                      .map(({ name, url, storeLabelId, store: { name: storeName, watchId, starred } }, index) => (
+                        <li key={`${storeLabelId ?? url ?? watchId ?? name}-${index}`}>
                           <FollowedItem
                             disabled={this.state.updatingLabelFollows}
                             onStarClick={async (e) => {
@@ -908,7 +912,9 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={(e) => this.setState({ followedPlaylistsFilter: e.target.value.toLocaleLowerCase() })}
+                      onChange={(_terms, inputValue) =>
+                        this.setState({ followedPlaylistsFilter: inputValue.toLocaleLowerCase() })
+                      }
                       value={this.state.followedPlaylistsFilter}
                       onClearSearch={() => this.setState({ followedPlaylistsFilter: '' })}
                     />
@@ -1669,7 +1675,7 @@ class Settings extends Component {
                     )}
                     <ul className={'no-style-list'} style={{ display: 'flex', flexWrap: 'wrap' }}>
                       {this.state.spotifyPlaylists?.map(({ id, url, name, img }) => (
-                        <li key={this.props.id}>
+                        <li key={id ?? url}>
                           <ImportPlaylistButton
                             id={id}
                             name={name}
@@ -1745,10 +1751,32 @@ class Settings extends Component {
     }
   }
 
-  getFollowItemDisabled(type, url) {
-    return this.state.updatingFollowWithUrl !== null || type === 'playlist'
-      ? this.state.playlistFollows.find(R.propEq('playlistStoreId', url))
-      : (type === 'artist' ? this.state.artistFollows : this.state.labelFollows).find(R.propEq('url', url))
+  getFollowItemDisabled(type, { id, url, storeName }) {
+    if (this.state.updatingFollowWithUrl !== null) {
+      return true
+    }
+
+    if (type === 'playlist') {
+      return this.state.playlistFollows.some(
+        ({ id: followId, playlistStoreId, storeName: followStoreName, url: followUrl }) =>
+          (followId && id && String(followId) === String(id)) ||
+          (playlistStoreId && id && String(playlistStoreId) === String(id)) ||
+          (followUrl && url && followUrl === url) ||
+          (followStoreName && storeName && followStoreName === storeName && followUrl === url),
+      )
+    }
+
+    const follows = type === 'artist' ? this.state.artistFollows : this.state.labelFollows
+    const storeIdProperty = type === 'artist' ? 'storeArtistId' : 'storeLabelId'
+    return follows.some((follow) => {
+      const followStoreName = follow.store?.name
+      const followStoreId = follow[storeIdProperty]
+      return (
+        (follow.url && url && follow.url === url) ||
+        (followStoreId && id && String(followStoreId) === String(id)) ||
+        (followStoreName && storeName && followStoreName === storeName && followStoreId && id && String(followStoreId) === String(id))
+      )
+    })
   }
 
   async onImportPlaylistItemClick(url) {

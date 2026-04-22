@@ -40,8 +40,8 @@ const { HttpError } = require('./routes/shared/httpErrors')
 const { logRequestError } = require('./routes/shared/error-logging')
 const { getCartDetails } = require('./routes/logic')
 
-const isPreviewEnv = process.env.IS_PREVIEW_ENV === 'true'
-const cookieSecure = isPreviewEnv || (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test')
+const { isPreviewEnv, isDevelopment, isTest } = config
+const cookieSecure = isPreviewEnv || (!isDevelopment && !isTest)
 
 const app = express()
 app.set('trust proxy', 1)

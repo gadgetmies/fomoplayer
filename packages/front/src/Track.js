@@ -43,7 +43,7 @@ class Track extends Component {
   }
 
   getStoreTrackByStoreCode(code) {
-    return this.props.trackStores.find(R.propEq('code', code))
+    return this.props.trackStores.find(R.propEq(code, 'code'))
   }
 
   render() {
@@ -66,6 +66,7 @@ class Track extends Component {
     const processingTrack = this.props.processingTrack
     const removeLabel = this.props.listState === 'carts' ? 'Remove from current cart' : 'Remove from default cart'
     const noPreviews = this.props.noPreviews
+    const scoreDetails = this.props.scoreDetails || {}
 
     const actions = this.props.stores
       ?.map(({ storeName, searchUrl }) => {
@@ -75,7 +76,7 @@ class Track extends Component {
           !this.props.enabledStores?.includes(storeName)
         )
           return null
-        const trackStore = this.props.trackStores.find(R.propEq('name', storeName))
+        const trackStore = this.props.trackStores.find(R.propEq(storeName, 'name'))
         return trackStore
           ? (this.props.listState !== 'carts' ||
               this.props.mode !== 'app' ||
@@ -245,7 +246,7 @@ class Track extends Component {
                 '-'
               ) : (
                 <ul className="comma-list">
-                  {this.props.keys.filter(R.propEq('system', 'open-key')).map(({ key }) => (
+                  {this.props.keys.filter(R.propEq('open-key', 'system')).map(({ key }) => (
                     <li key={key}>{key}</li>
                   ))}
                 </ul>
@@ -274,7 +275,7 @@ class Track extends Component {
                       className={'table-cell-button'}
                       style={{ display: 'flex', paddingBottom: 7, justifyContent: 'center' }}
                     >
-                      {this.props.scoreDetails.artists_starred || this.props.scoreDetails.label_starred
+                      {scoreDetails.artists_starred || scoreDetails.label_starred
                         ? '★'
                         : isNumber(this.props.score)
                           ? Math.round(this.props.score)
@@ -296,9 +297,9 @@ class Track extends Component {
                       </thead>
                       <tbody>
                         {Object.entries(
-                          R.omit(['artists_starred', 'label_starred'], this.props.scoreDetails) || {},
+                          R.omit(['artists_starred', 'label_starred'], scoreDetails) || {},
                         ).map(([key, value]) => (
-                          <tr>
+                          <tr key={key}>
                             <td>{scoreWeights[key]?.label}</td>
                             <td>{value.score}</td>
                             <td>{value.weight}</td>

@@ -16,28 +16,28 @@ const {
   updateDateAddedScore,
   updatePurchasedScores,
 } = require('../../../../jobs/scores')
-const { setupBeatportTracks } = require('../../../lib/tracks')
-
-const userId = 1
+const { resolveTestUserId } = require('../../../lib/test-user')
 
 test({
   'when track and a remix is added': {
     setup: async () => {
       const updateDatesToToday = updateDates()
       await initDb()
-      await addPurchasedBeatportTracksToDb(updateDatesToToday(beatportLibrary))
-      await addNewBeatportTracksToDb(updateDatesToToday(firstTrack))
-      await addNewBeatportTracksToDb(updateDatesToToday(secondTrack))
+      const userId = await resolveTestUserId()
+      await addPurchasedBeatportTracksToDb(updateDatesToToday(beatportLibrary), [userId])
+      await addNewBeatportTracksToDb(updateDatesToToday(firstTrack), false, [userId])
+      await addNewBeatportTracksToDb(updateDatesToToday(secondTrack), false, [userId])
       await updateDateReleasedScore()
       await updateDatePublishedScore()
       await updateDateAddedScore()
       await updatePurchasedScores()
+      return { userId }
     },
     'two tracks are added': async () => {
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from track')
       assert.strictEqual(trackCount, 3)
     },
-    'correct score is returned': async () => {
+    'correct score is returned': async ({ userId }) => {
       const tracks = await getUserTracks(userId)
       const actualScoreDetails = L.collect([L.query(L.props('score_details'), L.flat(L.values))], tracks.tracks.new)
       assert.deepStrictEqual(actualScoreDetails, scoreDetails)

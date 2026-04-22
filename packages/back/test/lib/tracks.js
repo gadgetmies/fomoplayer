@@ -14,15 +14,13 @@ const {
 } = require('../../../chrome-extension/src/js/transforms/beatport.js')
 const { spotifyTracksTransform } = require('fomoplayer_chrome_extension/src/js/transforms/spotify')
 
-const userId = 1
-
-const addBeatportTracks = (module.exports.addTracks = async (tracks, skipOld, type = 'new') => {
+const addBeatportTracks = (module.exports.addTracks = async (tracks, skipOld, type = 'new', userIds) => {
   const sourceId = await insertSource({
     operation: 'tracksHandlerTest',
     type: 'new',
     storeUrl: beatportUrl,
   })
-  const addedTracks = await addStoreTracksToUsers(beatportUrl, tracks, [userId], sourceId, skipOld, type)
+  const addedTracks = await addStoreTracksToUsers(beatportUrl, tracks, userIds, sourceId, skipOld, type)
 
   return {
     sourceId,
@@ -30,13 +28,13 @@ const addBeatportTracks = (module.exports.addTracks = async (tracks, skipOld, ty
   }
 })
 
-const addSpotifyTracks = (module.exports.addTracks = async (tracks, skipOld, type = 'new') => {
+const addSpotifyTracks = (module.exports.addTracks = async (tracks, skipOld, type = 'new', userIds) => {
   const sourceId = await insertSource({
     operation: 'tracksHandlerTest',
     type: 'new',
     storeUrl: spotifyUrl,
   })
-  const addedTracks = await addStoreTracksToUsers(spotifyUrl, tracks, [userId], sourceId, skipOld, type)
+  const addedTracks = await addStoreTracksToUsers(spotifyUrl, tracks, userIds, sourceId, skipOld, type)
 
   return {
     sourceId,
@@ -44,11 +42,11 @@ const addSpotifyTracks = (module.exports.addTracks = async (tracks, skipOld, typ
   }
 })
 
-const addNewBeatportTracksToDb = (module.exports.addNewBeatportTracksToDb = async (tracks, skipOld) =>
-  await addBeatportTracks(beatportTracksTransform(tracks), skipOld))
+const addNewBeatportTracksToDb = (module.exports.addNewBeatportTracksToDb = async (tracks, skipOld, userIds) =>
+  await addBeatportTracks(beatportTracksTransform(tracks), skipOld, 'new', userIds))
 
-const addPurchasedBeatportTracksToDb = (module.exports.addPurchasedBeatportTracksToDb = async (tracks) =>
-  await addBeatportTracks(beatportLibraryTransform(tracks), false, 'purchased'))
+const addPurchasedBeatportTracksToDb = (module.exports.addPurchasedBeatportTracksToDb = async (tracks, userIds) =>
+  await addBeatportTracks(beatportLibraryTransform(tracks), false, 'purchased', userIds))
 
 const removeTracks = (module.exports.removeTracks = async (trackIds) =>
   await pg.queryRowsAsync(
@@ -58,7 +56,7 @@ DELETE from track WHERE track_id = ANY(${trackIds})
 `,
   ))
 
-module.exports.addNewSpotifyTracksToDb = async (tracks, skipOld = false) => {
+module.exports.addNewSpotifyTracksToDb = async (tracks, skipOld = false, userIds) => {
   const sourceId = await insertSource({
     operation: 'tracksHandlerTest',
     type: 'new',
@@ -67,7 +65,7 @@ module.exports.addNewSpotifyTracksToDb = async (tracks, skipOld = false) => {
   const addedTracks = await addStoreTracksToUsers(
     spotifyUrl,
     spotifyTracksTransform(tracks),
-    [userId],
+    userIds,
     sourceId,
     skipOld,
   )
@@ -78,13 +76,15 @@ module.exports.addNewSpotifyTracksToDb = async (tracks, skipOld = false) => {
   }
 }
 
-module.exports.setupBeatportTracks = async (trackBatches, skipOld = false) => {
+module.exports.setupBeatportTracks = async (trackBatches, skipOld = false, userIds) => {
   let addedSources = []
   let addedTracksAgg = []
 
   for (const { type = 'new', tracks } of trackBatches) {
     const { sourceId, addedTracks } = await (
-      type === 'new' ? (tracks) => addNewBeatportTracksToDb(tracks, skipOld) : addPurchasedBeatportTracksToDb
+      type === 'new'
+        ? (tracks) => addNewBeatportTracksToDb(tracks, skipOld, userIds)
+        : (tracks) => addPurchasedBeatportTracksToDb(tracks, userIds)
     )(tracks)
     addedSources.push(sourceId)
     addedTracksAgg = [...addedTracksAgg, ...addedTracks]

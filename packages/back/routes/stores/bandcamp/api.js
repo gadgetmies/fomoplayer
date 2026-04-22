@@ -6,6 +6,6 @@ router.get('/previews/:previewId', ({ params: { previewId } }, res) => {
   return getPreviewDetails(previewId).then((url) => res.send(url))
 })
 
-router.get('/search', ({ query: q }, res) => search(q).then((results) => res.send(results)))
+router.get('/search', ({ query: { q } }, res) => search(q).then((results) => res.send(results)))
 
 module.exports = router
