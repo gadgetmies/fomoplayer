@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
-import { BrowserRouter as Router, Redirect, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Redirect, Route, withRouter } from 'react-router-dom'
 import { ErrorBoundary } from 'react-error-boundary'
 import Login from './UserLogin.js'
 import Player from './Player.js'
@@ -58,6 +58,25 @@ const deduplicateTracks = (existingTracks, newTracks) => {
 }
 
 const Root = (props) => <div className="root" style={{ height: '100vh' }} {...props} />
+
+class LocationWatcherBase extends Component {
+  componentDidMount() {
+    this.props.onLocationChange(this.props.location)
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.location !== this.props.location) {
+      this.props.onLocationChange(this.props.location)
+    }
+  }
+
+  render() {
+    return null
+  }
+}
+
+const LocationWatcher = withRouter(LocationWatcherBase)
+
 class App extends Component {
   constructor(props) {
     super(props)
@@ -236,8 +255,8 @@ class App extends Component {
     this.syncStateWithLocation()
   }
 
-  syncStateWithLocation() {
-    const { pathname, search } = window.location
+  syncStateWithLocation(location = window.location) {
+    const { pathname, search } = location
     const locationSignature = `${pathname}${search}`
     if (locationSignature === this.lastLocationSignature) return
     this.lastLocationSignature = locationSignature
@@ -282,8 +301,11 @@ class App extends Component {
 
     if (nextListState === 'carts') {
       const selectedCartUuid = pathParts[1]
-      if (selectedCartUuid && this.state.selectedCartUuid !== selectedCartUuid) {
-        const selectedCart = this.state.carts?.find(({ uuid }) => uuid === selectedCartUuid)
+      const selectedCart = this.state.carts?.find(({ uuid }) => uuid === selectedCartUuid)
+      if (
+        selectedCartUuid &&
+        (this.state.selectedCartUuid !== selectedCartUuid || this.state.selectedCart !== selectedCart)
+      ) {
         nextState.selectedCartUuid = selectedCartUuid
         nextState.selectedCart = selectedCart
         shouldSetState = true
@@ -313,11 +335,14 @@ class App extends Component {
     const carts = await requestJSONwithCredentials({
       path: `/me/carts`,
     })
+    const visibleCarts = carts.filter(({ deleted }) => !deleted)
+    const selectedCartUuid = this.state.selectedCartUuid || visibleCarts[0]?.uuid
+    const selectedCart = selectedCartUuid ? visibleCarts.find(({ uuid }) => uuid === selectedCartUuid) : undefined
 
     this.setState({
-      carts: carts.filter(({ deleted }) => !deleted),
-      selectedCartUuid: this.state.selectedCartUuid || carts[0].uuid,
-      selectedCart: this.state.carts.find(({ uuid }) => uuid === this.state.selectedCartUuid),
+      carts: visibleCarts,
+      selectedCartUuid,
+      selectedCart,
     })
   }
 
@@ -380,9 +405,14 @@ class App extends Component {
 
   updateCart(cartDetails) {
     const index = this.state.carts.findIndex(R.propEq(cartDetails.id, 'id'))
+    if (index === -1) return
     const clonedCarts = this.state.carts.slice()
     clonedCarts[index] = cartDetails
-    this.setState({ carts: clonedCarts })
+    const selectedCart =
+      this.state.selectedCartUuid === cartDetails.uuid || this.state.selectedCart?.id === cartDetails.id
+        ? cartDetails
+        : this.state.selectedCart
+    this.setState({ carts: clonedCarts, selectedCart })
   }
 
   async updateFollows() {
@@ -874,6 +904,7 @@ class App extends Component {
           }}
         >
           <Router>
+            <LocationWatcher onLocationChange={this.syncStateWithLocation.bind(this)} />
             {this.state.loading ? (
               <div className="loading-overlay">
                 🚀 Launching app
@@ -1039,7 +1070,7 @@ class App extends Component {
                     const pathParts = pathname.slice(1).split('/')
                     const settingsVisible = pathname.match(/\/settings\/?/)
                     let listState = this.state.listState
-                    const routeListState = props.match.params.path === 'tracks' ? pathParts[1] || 'new' : pathParts[0]
+                    const routeListState = pathParts[0] === 'tracks' ? pathParts[1] || 'new' : pathParts[0]
                     if (routeListState && routeListState !== 'settings') {
                       listState = routeListState
                     }

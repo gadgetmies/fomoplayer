@@ -825,7 +825,7 @@ class Preview extends Component {
                     onCartButtonClick={this.props.onCartButtonClick}
                     onCreateCartClick={this.props.onCreateCartClick}
                     onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
-                    disabled={!this.props.currentTrack}
+                    disabled={!this.props.currentTrack || !this.props.hasSelectedTrack}
                   />
                 )}
                 <button

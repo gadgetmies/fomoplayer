@@ -254,6 +254,7 @@ class Player extends Component {
   render() {
     const tracks = this.getTracks()
     const currentTrack = this.props.currentTrack
+    const hasSelectedTrack = Boolean(currentTrack && tracks.some(({ id }) => id === currentTrack.id))
     const inCarts = currentTrack
       ? this.props.carts.filter((cart) => cart.tracks?.find(R.propEq(currentTrack.id, 'id')))
       : []
@@ -275,6 +276,7 @@ class Player extends Component {
           currentTrack={currentTrack}
           follows={this.props.follows}
           inCarts={inCarts}
+          defaultCartId={defaultCart?.id}
           inDefaultCart={inDefaultCart}
           inCurrentCart={inCurrentCart}
           selectedCartId={selectedCartId}
@@ -303,6 +305,7 @@ class Player extends Component {
           onPrevious={() => this.playPreviousTrack()}
           onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
           onAddEntityToSearch={this.props.onAddEntityToSearch}
+          hasSelectedTrack={hasSelectedTrack}
         />
         <Tracks
           mode={this.props.mode}
