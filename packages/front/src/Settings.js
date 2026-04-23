@@ -599,7 +599,7 @@ class Settings extends Component {
                     styles="large dark"
                     value={this.state.followQuery}
                     onClearSearch={this.clearSearch.bind(this)}
-                    onChange={(_terms, inputValue) => {
+                    onChange={({ target: { value: inputValue } }) => {
                       // TODO: replace aborted and debounce with flatmapLatest
                       this.setState({
                         followQuery: inputValue,
@@ -809,9 +809,7 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={(_terms, inputValue) =>
-                        this.setState({ followedArtistsFilter: inputValue.toLocaleLowerCase() })
-                      }
+                      onChange={({ target: { value } }) => this.setState({ followedArtistsFilter: value.toLocaleLowerCase() })}
                       value={this.state.followedArtistsFilter}
                       onClearSearch={() => this.setState({ followedArtistsFilter: '' })}
                     />
@@ -866,9 +864,7 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={(_terms, inputValue) =>
-                        this.setState({ followedLabelsFilter: inputValue.toLocaleLowerCase() })
-                      }
+                      onChange={({ target: { value } }) => this.setState({ followedLabelsFilter: value.toLocaleLowerCase() })}
                       value={this.state.followedLabelsFilter}
                       onClearSearch={() => this.setState({ followedLabelsFilter: '' })}
                     />
@@ -912,8 +908,8 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={(_terms, inputValue) =>
-                        this.setState({ followedPlaylistsFilter: inputValue.toLocaleLowerCase() })
+                      onChange={({ target: { value } }) =>
+                        this.setState({ followedPlaylistsFilter: value.toLocaleLowerCase() })
                       }
                       value={this.state.followedPlaylistsFilter}
                       onClearSearch={() => this.setState({ followedPlaylistsFilter: '' })}

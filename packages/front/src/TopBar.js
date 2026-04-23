@@ -6,7 +6,7 @@ import * as R from 'ramda'
 import { Link, NavLink, withRouter } from 'react-router-dom'
 import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
-import SearchBar from './SearchBar'
+import GlobalSearchBar from './GlobalSearchBar'
 import DropDownButton from './DropDownButton'
 import { isMobile } from 'react-device-detect'
 import Popup from './Popup'
@@ -239,7 +239,7 @@ class TopBar extends Component {
             </Popup>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className={`menu_search`}>
-            <SearchBar
+            <GlobalSearchBar
               terms={this.state.committedTerms}
               onChange={this.handleChange.bind(this)}
               onSearch={this.handleSearch.bind(this)}

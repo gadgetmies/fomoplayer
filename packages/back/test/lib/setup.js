@@ -52,6 +52,17 @@ const warnIfFrontendBuildIsOutdated = async () => {
   }
 }
 
+const waitForWithTimeoutMessage = async (waitOperation, timeoutMessage) => {
+  try {
+    return await waitOperation()
+  } catch (error) {
+    if (error?.name === 'TimeoutError') {
+      throw new Error(timeoutMessage, { cause: error })
+    }
+    throw error
+  }
+}
+
 const dismissOnboarding = async (page) => {
   const hasTracks = (await page.locator('.track').count()) > 0
   if (hasTracks) {
@@ -60,13 +71,19 @@ const dismissOnboarding = async (page) => {
 
   const skipButton = page.locator('[data-test-id="button-skip"]').first()
   try {
-    await skipButton.waitFor({ state: 'visible', timeout: 500 })
+    await waitForWithTimeoutMessage(
+      () => skipButton.waitFor({ state: 'visible', timeout: 500 }),
+      'Detect onboarding skip button visibility before deciding to dismiss onboarding.',
+    )
   } catch (e) {
     return
   }
 
   await skipButton.click({ timeout: 2000 })
-  await skipButton.waitFor({ state: 'hidden', timeout: 2000 })
+  await waitForWithTimeoutMessage(
+    () => skipButton.waitFor({ state: 'hidden', timeout: 2000 }),
+    'Ensure onboarding closes after clicking the skip button.',
+  )
 }
 
 const initialize = async () => {
@@ -78,7 +95,8 @@ const initialize = async () => {
   const baseURL = `http://localhost:${port}`
 
   const headed = process.env.PW_HEADED === '1' || process.env.PWDEBUG === '1'
-  const slowMo = Number(process.env.PW_SLOWMO || 0)
+  const slowMoValue = process.env.PW_SLOWMO ?? process.env.PW_SLOMO ?? '0'
+  const slowMo = Number(slowMoValue)
   const browser = await chromium.launch({
     headless: !headed,
     slowMo: Number.isFinite(slowMo) ? slowMo : 0,
@@ -95,9 +113,9 @@ const initialize = async () => {
     const targetUrl = `${baseURL}${requestUrl.pathname}${requestUrl.search}`
     await route.continue({ url: targetUrl })
   })
-  
+
   const page = await context.newPage()
-  await page.goto('/')
+  await page.goto('/tracks/recent')
 
   const loginStatus = await page.evaluate(async () => {
     const res = await fetch('/api/auth/login', {
@@ -120,8 +138,11 @@ const initialize = async () => {
   if (!sessionCookies.some(({ name }) => name === 'connect.sid')) {
     throw new Error('Login did not establish a session cookie')
   }
-  await page.goto('/')
-  await page.waitForSelector('.tracks-table', { timeout: 15000 })
+  await page.goto('/tracks/recent')
+  await waitForWithTimeoutMessage(
+    () => page.waitForSelector('.tracks-table', { timeout: 15000 }),
+    'Load the tracks table after login redirects to the recent tracks page.',
+  )
   await dismissOnboarding(page)
 
   process.on('exit', () => server.kill())
@@ -137,3 +158,4 @@ module.exports.getSharedContext = () => {
 }
 
 module.exports.dismissOnboarding = dismissOnboarding
+module.exports.waitForWithTimeoutMessage = waitForWithTimeoutMessage
