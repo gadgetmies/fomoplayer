@@ -243,8 +243,8 @@ const createAuthRouter = ({
       const expiresAt = new Date(payload.exp * 1000)
       const consumed = await consumeHandoffJti(payload.jti, expiresAt)
       if (!consumed) { logger.warn('CLI exchange: token replay rejected', { jti: payload.jti }); return res.status(401).json({ error: 'Token already used' }) }
-      const user = await account.findOrCreateByIdentifier(payload.oidcIssuer, payload.sub)
-      if (!user) return res.status(500).json({ error: 'User lookup failed' })
+      const user = await account.findByIdentifier(payload.oidcIssuer, payload.sub)
+      if (!user) return res.status(403).json({ error: 'No account found for this identity. Please log in via the web app first.' })
       const rawKey = `fp_${uuid()}`
       const keyRecord = await createApiKey(user.id, rawKey, name)
       return res.json({ key: rawKey, id: keyRecord.api_key_id, name: keyRecord.api_key_name })

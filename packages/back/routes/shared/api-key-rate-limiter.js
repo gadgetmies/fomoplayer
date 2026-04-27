@@ -1,4 +1,9 @@
 'use strict'
+// In-process sliding window — state is not shared across multiple Node.js
+// processes or instances. In a horizontally-scaled deployment, effective
+// limits are perMinute×N and perDay×N where N is the instance count.
+// Migrate to a shared store (Redis or Postgres) before scaling beyond
+// a single process.
 class ApiKeyRateLimiter {
   constructor({ now = () => Date.now() } = {}) {
     this._now = now

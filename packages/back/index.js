@@ -7,6 +7,11 @@ logger.info('####################################')
 logger.info('####### Starting Fomo Player #######')
 logger.info('####################################')
 
+if (!config.cryptoKey || Buffer.byteLength(config.cryptoKey, 'utf8') < 16) {
+  logger.error('CRYPTO_KEY must be set and at least 16 bytes — refusing to start')
+  process.exit(1)
+}
+
 if (process.env.NODE_ENV !== 'production') {
   if (process.env.BEATPORT_REDIRECT || process.env.BEATPORT_MOCK) {
     require('fomoplayer_shared').interceptors.beatport.init()
