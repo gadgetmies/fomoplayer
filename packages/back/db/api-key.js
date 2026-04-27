@@ -2,8 +2,11 @@
 const crypto = require('crypto')
 const sql = require('sql-template-strings')
 const pg = require('fomoplayer_shared').db.pg
+const config = require('../config')
 
-const hashApiKey = (rawKey) => crypto.createHash('sha256').update(rawKey).digest('hex')
+const hashApiKey = (rawKey) => crypto.createHmac('sha256', config.cryptoKey).update(rawKey).digest('hex')
+
+module.exports.hashApiKey = hashApiKey
 
 module.exports.createApiKey = async (userId, rawKey, name) => {
   const hash = hashApiKey(rawKey)

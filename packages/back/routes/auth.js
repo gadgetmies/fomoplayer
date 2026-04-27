@@ -234,7 +234,8 @@ const createAuthRouter = ({
 
   router.post('/api-keys/exchange-handoff', async (req, res, next) => {
     try {
-      const { token, name = 'fomoplayer CLI' } = req.body ?? {}
+      const { token, name: rawName = 'fomoplayer CLI' } = req.body ?? {}
+      const name = typeof rawName === 'string' && rawName.trim().length > 0 ? rawName.trim().slice(0, 100) : 'fomoplayer CLI'
       if (!token) return res.status(400).json({ error: 'token is required' })
       if (!canMintHandoff) return res.status(503).json({ error: 'API key exchange not configured' })
       const payload = verifyHandoffTokenFn({ token, secret: oidcHandoffSecret, issuer: apiOrigin, audience: apiOrigin })

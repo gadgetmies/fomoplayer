@@ -1,12 +1,10 @@
 'use strict'
-const crypto = require('crypto')
 const { expect } = require('chai')
 const { test } = require('cascade-test')
 const { startServer } = require('../../../lib/server')
 const { createTestApiKey } = require('../../../lib/api-key')
 const { pg } = require('../../../lib/db')
-
-const hashApiKey = (rawKey) => crypto.createHash('sha256').update(rawKey).digest('hex')
+const { hashApiKey } = require('../../../../db/api-key')
 
 const createLimitedApiKey = async () => {
   const { raw, userId } = await createTestApiKey()

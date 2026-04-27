@@ -144,7 +144,13 @@ UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_
       })
       if (!rl.allowed) return done(null, false, { rateLimited: true, ...rl })
       touchApiKey(keyRecord.api_key_id).catch(() => {})
-      const user = await account.findByUserId(keyRecord.meta_account_user_id)
+      let user
+      try {
+        user = await account.findByUserId(keyRecord.meta_account_user_id)
+      } catch (e) {
+        if (e.message && e.message.includes('User not found')) return done(null, false)
+        throw e
+      }
       return done(null, user ?? false)
     } catch (e) {
       return done(e)
