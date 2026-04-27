@@ -6,7 +6,6 @@ const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const logger = require('fomoplayer_shared').logger(__filename)
 
-const sqlParser = new Parser()
 const MAX_ROWS = 500
 const EXPOSED_TABLES = [
   'artist','artist__genre','cart','cart__store','genre','key','key_name','key_system',
@@ -25,8 +24,14 @@ const EXPOSED_TABLES = [
 
 const isSelectOnly = (userSql) => {
   try {
-    const ast = sqlParser.astify(userSql)
-    return (Array.isArray(ast) ? ast : [ast]).every((s) => s.type === 'select')
+    const parser = new Parser()
+    const ast = parser.astify(userSql, { database: 'PostgreSQL' })
+    const stmts = Array.isArray(ast) ? ast : [ast]
+    if (!stmts.every((s) => s.type === 'select')) return false
+    // Reject writable CTEs: WITH x AS (INSERT/UPDATE/DELETE ...) SELECT ...
+    return stmts.every(
+      (s) => !s.with || s.with.every((cte) => cte.stmt?.type === 'select'),
+    )
   } catch { return false }
 }
 
@@ -48,6 +53,9 @@ router.get('/schema', async (req, res) => {
 router.post('/', async ({ user: { id: userId }, body: { sql: userSql } }, res) => {
   if (!userSql || typeof userSql !== 'string') return res.status(400).json({ error: 'sql is required' })
   if (!isSelectOnly(userSql)) return res.status(400).json({ error: 'Only SELECT statements are allowed' })
+  // Strip trailing semicolons and wrap with a server-side LIMIT to prevent memory exhaustion
+  const safeUserSql = userSql.trimEnd().replace(/;+\s*$/, '')
+  const limitedSql = `SELECT * FROM (${safeUserSql}) AS _q LIMIT ${MAX_ROWS + 1}`
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
@@ -55,7 +63,7 @@ router.post('/', async ({ user: { id: userId }, body: { sql: userSql } }, res) =
     await client.query('SET TRANSACTION READ ONLY')
     await client.query("SET LOCAL statement_timeout = '3s'")
     await client.query('SELECT set_config($1, $2, true)', ['app.current_user_id', String(userId)])
-    const result = await client.query(userSql)
+    const result = await client.query(limitedSql)
     await client.query('COMMIT')
     const rows = result.rows.slice(0, MAX_ROWS)
     return res.json({ rows, truncated: result.rows.length > MAX_ROWS })
@@ -63,7 +71,7 @@ router.post('/', async ({ user: { id: userId }, body: { sql: userSql } }, res) =
     await client.query('ROLLBACK').catch(() => {})
     logger.warn('Query endpoint error', { message: err?.message })
     if (err.code === '57014') return res.status(408).json({ error: 'Query timed out' })
-    return res.status(400).json({ error: err.message })
+    return res.status(400).json({ error: 'Query execution failed' })
   } finally {
     client.release()
   }

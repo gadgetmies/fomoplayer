@@ -1,9 +1,13 @@
 -- Create read-only query role
 DO $$ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'fomoplayer_query') THEN
-    CREATE ROLE fomoplayer_query;
+    CREATE ROLE fomoplayer_query NOLOGIN NOINHERIT;
   END IF;
 END $$;
+
+-- Restrict schema access: role may use the public schema but cannot create objects
+REVOKE ALL ON SCHEMA public FROM fomoplayer_query;
+GRANT USAGE ON SCHEMA public TO fomoplayer_query;
 
 -- Grant SELECT on all exposed tables to fomoplayer_query
 GRANT SELECT ON
@@ -49,6 +53,8 @@ ALTER TABLE user_search_notification ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_track_score_weight ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notification_audio_sample ENABLE ROW LEVEL SECURITY;
 ALTER TABLE track__cart ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cart__store ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_search_notification__store ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notification_audio_sample_embedding ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notification_audio_sample_fingerprint ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notification_audio_sample_fingerprint_meta ENABLE ROW LEVEL SECURITY;
@@ -80,6 +86,16 @@ CREATE POLICY query_user_notification_audio_sample ON user_notification_audio_sa
   USING (meta_account_user_id = current_setting('app.current_user_id')::int);
 
 -- Subquery policies
+CREATE POLICY query_cart_store ON cart__store FOR SELECT TO fomoplayer_query
+  USING (cart_id IN (
+    SELECT cart_id FROM cart
+    WHERE meta_account_user_id = current_setting('app.current_user_id')::int
+  ));
+CREATE POLICY query_user_search_notification_store ON user_search_notification__store FOR SELECT TO fomoplayer_query
+  USING (user_search_notification_id IN (
+    SELECT user_search_notification_id FROM user_search_notification
+    WHERE meta_account_user_id = current_setting('app.current_user_id')::int
+  ));
 CREATE POLICY query_track_cart ON track__cart FOR SELECT TO fomoplayer_query
   USING (cart_id IN (
     SELECT cart_id FROM cart

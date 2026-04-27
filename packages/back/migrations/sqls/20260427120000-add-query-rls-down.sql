@@ -10,6 +10,8 @@ DROP POLICY IF EXISTS query_user_playlist_watch ON user__playlist_watch;
 DROP POLICY IF EXISTS query_user_search_notification ON user_search_notification;
 DROP POLICY IF EXISTS query_user_track_score_weight ON user_track_score_weight;
 DROP POLICY IF EXISTS query_user_notification_audio_sample ON user_notification_audio_sample;
+DROP POLICY IF EXISTS query_cart_store ON cart__store;
+DROP POLICY IF EXISTS query_user_search_notification_store ON user_search_notification__store;
 DROP POLICY IF EXISTS query_track_cart ON track__cart;
 DROP POLICY IF EXISTS query_user_notification_audio_sample_embedding ON user_notification_audio_sample_embedding;
 DROP POLICY IF EXISTS query_user_notification_audio_sample_fingerprint ON user_notification_audio_sample_fingerprint;
@@ -28,9 +30,20 @@ ALTER TABLE user_search_notification DISABLE ROW LEVEL SECURITY;
 ALTER TABLE user_track_score_weight DISABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notification_audio_sample DISABLE ROW LEVEL SECURITY;
 ALTER TABLE track__cart DISABLE ROW LEVEL SECURITY;
+ALTER TABLE cart__store DISABLE ROW LEVEL SECURITY;
+ALTER TABLE user_search_notification__store DISABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notification_audio_sample_embedding DISABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notification_audio_sample_fingerprint DISABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notification_audio_sample_fingerprint_meta DISABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM fomoplayer_query;
-DROP ROLE IF EXISTS fomoplayer_query;
+REVOKE ALL ON SCHEMA public FROM fomoplayer_query;
+DO $$ BEGIN
+  IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'fomoplayer_query') THEN
+    DROP OWNED BY fomoplayer_query;
+    DROP ROLE fomoplayer_query;
+  END IF;
+EXCEPTION WHEN dependent_objects_still_exist THEN
+  -- Role has privileges in other databases; privileges revoked in this database only.
+  NULL;
+END $$;
