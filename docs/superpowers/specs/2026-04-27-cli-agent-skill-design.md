@@ -399,3 +399,21 @@ Note: handoff token mint/verify mechanics are already covered in `test/tests/use
 - `track__cart` RLS is the most critical: prevents a user reading another user's cart contents via SQL
 - `user_notification_audio_sample` and subtables are personal content; all require RLS
 - Rate limiting protects against agent runaway loops and cost blowouts
+
+### CLI login route and open redirect
+
+`GET /api/auth/login/cli` accepts a `callbackPort` integer, not a full URL. The server
+constructs `http://localhost:PORT` internally — user input never becomes the redirect target.
+This eliminates classical open redirect (attacker cannot choose the destination host).
+
+The existing `isSafeHandoffTarget` and `GET /api/auth/login/google` route are left unchanged;
+localhost is intentionally not added there to keep the Railway cross-environment handoff
+surface narrow and auditable.
+
+Port validation: `callbackPort` must be an integer in the unprivileged range 1024–65535.
+Values outside this range are rejected with 400 before the OIDC flow begins.
+
+Residual risk: a malicious local process could squat the port and intercept the handoff token.
+This requires local code execution on the user's machine. The 60s TTL and one-time-use jti
+limit the interception window. This risk is inherent to all local-server OAuth callback flows
+(including official Google and GitHub CLIs) and is considered acceptable.
