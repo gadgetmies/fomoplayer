@@ -400,7 +400,7 @@ Note: handoff token mint/verify mechanics are already covered in `test/tests/use
 - `user_notification_audio_sample` and subtables are personal content; all require RLS
 - Rate limiting protects against agent runaway loops and cost blowouts
 
-### CLI login route and open redirect
+### CLI login route
 
 `GET /api/auth/login/cli` accepts a `callbackPort` integer, not a full URL. The server
 constructs `http://localhost:PORT` internally — user input never becomes the redirect target.
