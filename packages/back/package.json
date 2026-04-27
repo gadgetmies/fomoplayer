@@ -46,6 +46,7 @@
     "node-schedule": "^2.1.1",
     "partial.lenses": "^14.17.0",
     "passport": "^0.7.0",
+    "passport-custom": "^1.1.1",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
     "passport-openidconnect": "^0.1.2",

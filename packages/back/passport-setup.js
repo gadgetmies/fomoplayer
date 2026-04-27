@@ -126,6 +126,32 @@ UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_
     ))
   }
 
+
+  const CustomStrategy = require('passport-custom').Strategy
+  const { findApiKeyByRaw, touchApiKey } = require('./db/api-key')
+  const { apiKeyRateLimiter } = require('./routes/shared/api-key-rate-limiter')
+
+  passport.use('api-key', new CustomStrategy(async (req, done) => {
+    try {
+      const authHeader = req.headers.authorization ?? ''
+      if (!authHeader.startsWith('Bearer fp_')) return done(null, false)
+      const rawKey = authHeader.slice(7)
+      const keyRecord = await findApiKeyByRaw(rawKey)
+      if (!keyRecord || keyRecord.api_key_revoked_at) return done(null, false)
+      const rl = apiKeyRateLimiter.check(keyRecord.api_key_id, {
+        perMinute: keyRecord.rate_limit_per_minute,
+        perDay: keyRecord.rate_limit_per_day,
+      })
+      if (!rl.allowed) return done(null, false, { rateLimited: true, ...rl })
+      touchApiKey(keyRecord.api_key_id).catch(() => {})
+      const user = await account.findByUserId(keyRecord.meta_account_user_id)
+      return done(null, user ?? false)
+    } catch (e) {
+      return done(e)
+    }
+  }))
+
+
   passport.serializeUser(async (userToSerialize, done) => {
     try {
       return done(null, userToSerialize.id)

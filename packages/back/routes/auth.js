@@ -5,6 +5,8 @@ const defaultAccount = require('../db/account.js')
 const defaultConfig = require('../config.js')
 const { queryAccountCount: defaultQueryAccountCount, consumeHandoffJti: defaultConsumeHandoffJti } = require('./db')
 const { deleteInviteCode: defaultDeleteInviteCode } = require('../db/account')
+const { v4: uuid } = require('uuid')
+const { createApiKey } = require('../db/api-key')
 const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/shared/spotify')
 const { upsertUserAuthorizationTokens } = require('./db')
 const { isSafeRedirectPath, isSafeHandoffTarget } = require('./shared/safe-redirect')
@@ -90,6 +92,14 @@ const createAuthRouter = ({
     })(req, res, next)
   })
 
+  router.get('/login/cli', (req, res, next) => {
+    const callbackPort = parseInt(req.query.callbackPort, 10)
+    if (!Number.isInteger(callbackPort) || callbackPort < 1024 || callbackPort > 65535) {
+      return res.status(400).json({ error: 'callbackPort must be an integer between 1024 and 65535' })
+    }
+    return passport.authenticate('openidconnect', { state: { cliCallbackPort: callbackPort } })(req, res, next)
+  })
+
   router.get('/login/google/return', (req, res, next) => {
     passport.authenticate('openidconnect', (err, user, info) => {
       if (err) {
@@ -108,7 +118,28 @@ const createAuthRouter = ({
         return redirectWithLoginFailed(res)
       }
 
-      const { returnPath, handoffTarget } = info?.state ?? {}
+      const { returnPath, handoffTarget, cliCallbackPort } = info?.state ?? {}
+
+      if (cliCallbackPort) {
+        const port = parseInt(cliCallbackPort, 10)
+        if (!Number.isInteger(port) || port < 1024 || port > 65535) return redirectWithLoginFailed(res)
+        if (!canMintHandoff) { logger.warn('CLI login: OIDC_HANDOFF_SECRET not configured'); return redirectWithLoginFailed(res) }
+        const oidcIdentity = user?.oidcIdentity
+        if (!oidcIdentity?.issuer || !oidcIdentity?.subject) {
+          logger.error('CLI login: OIDC identity missing after auth'); return redirectWithLoginFailed(res)
+        }
+        let token
+        try {
+          ;({ token } = mintHandoffTokenFn({
+            secret: oidcHandoffSecret, issuer: apiOrigin, audience: apiOrigin,
+            oidcIssuer: oidcIdentity.issuer, oidcSubject: oidcIdentity.subject,
+          }))
+        } catch (e) { logger.error(`CLI login: minting handoff token failed: ${e}`); return redirectWithLoginFailed(res) }
+        const callbackUrl = new URL(`http://localhost:${port}/`)
+        callbackUrl.searchParams.set('token', token)
+        return res.redirect(callbackUrl.toString())
+      }
+
       const wantsHandoff = Boolean(handoffTarget)
 
       if (wantsHandoff) {
@@ -199,6 +230,24 @@ const createAuthRouter = ({
     } catch (e) {
       next(e)
     }
+  })
+
+  router.post('/api-keys/exchange-handoff', async (req, res, next) => {
+    try {
+      const { token, name = 'fomoplayer CLI' } = req.body ?? {}
+      if (!token) return res.status(400).json({ error: 'token is required' })
+      if (!canMintHandoff) return res.status(503).json({ error: 'API key exchange not configured' })
+      const payload = verifyHandoffTokenFn({ token, secret: oidcHandoffSecret, issuer: apiOrigin, audience: apiOrigin })
+      if (!payload) return res.status(401).json({ error: 'Invalid or expired token' })
+      const expiresAt = new Date(payload.exp * 1000)
+      const consumed = await consumeHandoffJti(payload.jti, expiresAt)
+      if (!consumed) { logger.warn('CLI exchange: token replay rejected', { jti: payload.jti }); return res.status(401).json({ error: 'Token already used' }) }
+      const user = await account.findOrCreateByIdentifier(payload.oidcIssuer, payload.sub)
+      if (!user) return res.status(500).json({ error: 'User lookup failed' })
+      const rawKey = `fp_${uuid()}`
+      const keyRecord = await createApiKey(user.id, rawKey, name)
+      return res.json({ key: rawKey, id: keyRecord.api_key_id, name: keyRecord.api_key_name })
+    } catch (e) { next(e) }
   })
 
   router.get('/spotify', async ({ user: { id: userId }, query }, res) => {

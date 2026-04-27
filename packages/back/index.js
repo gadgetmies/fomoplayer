@@ -113,18 +113,35 @@ if (process.env.NODE_ENV !== 'production') {
   app.use('/api/mock/', require('./routes/mock/index.js'))
 }
 
+const authenticateApiKey = (req, res, next) =>
+  passport.authenticate('api-key', { session: false }, (err, user, info) => {
+    if (err) return next(err)
+    if (!user) {
+      if (info?.rateLimited) {
+        res.set('Retry-After', String(info.retryAfter))
+        res.set('X-RateLimit-Limit-Minute', String(info.limitPerMinute))
+        res.set('X-RateLimit-Remaining-Minute', String(info.remainingMinute))
+        res.set('X-RateLimit-Limit-Day', String(info.limitPerDay))
+        res.set('X-RateLimit-Remaining-Day', String(info.remainingDay))
+        return res.status(429).json({ error: 'Rate limit exceeded' })
+      }
+      return res.status(401).json({ error: 'Invalid or revoked API key' })
+    }
+    req.user = user
+    next()
+  })(req, res, next)
+
 app.use(
   '/api',
   (req, res, next) => {
     try {
-      if (req.headers.authorization) {
-        if (!authenticateJwt) {
-          return res.status(401).end()
-        }
-        authenticateJwt(req, res, next)
-      } else {
-        ensureAuthenticated(req, res, next)
+      const auth = req.headers.authorization ?? ''
+      if (auth.startsWith('Bearer fp_')) return authenticateApiKey(req, res, next)
+      if (auth) {
+        if (!authenticateJwt) return res.status(401).end()
+        return authenticateJwt(req, res, next)
       }
+      return ensureAuthenticated(req, res, next)
     } catch (e) {
       logger.error('Error authenticating request', e)
       next(e)
