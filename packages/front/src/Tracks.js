@@ -886,6 +886,23 @@ class Tracks extends Component {
                     )
                   : tracks,
               )}
+            {this.props.loadingMore && tracks.length > 0 && (
+              <tr style={{ display: 'flex', width: '100%', background: 'none' }}>
+                <td
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    padding: 16,
+                  }}
+                >
+                  <Spinner />
+                  <span>Loading more tracks...</span>
+                </td>
+              </tr>
+            )}
             <tr
               style={{
                 margin: 0,
