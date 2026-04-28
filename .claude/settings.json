@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "fomoplayer": {
+      "command": "node",
+      "args": ["/Users/gadgetmies/Documents/Projects/Code/multi_store_player/.worktrees/cli-agent-skill/packages/cli/mcp/server.js"]
+    }
+  }
+}

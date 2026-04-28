@@ -1,7 +1,10 @@
 {
   "name": "fomoplayer-cli",
   "version": "0.1.0",
-  "bin": { "fomoplayer": "./src/index.js" },
+  "bin": {
+    "fomoplayer": "./src/index.js",
+    "mcp": "mcp/server.js"
+  },
   "main": "./src/index.js",
   "dependencies": {
     "conf": "^10.2.0",
@@ -9,6 +12,7 @@
     "open": "^8.4.2"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "cascade-test": "^0.2.3",
     "chai": "^4.0.0"
   }
