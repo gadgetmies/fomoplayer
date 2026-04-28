@@ -6,7 +6,7 @@ module.exports = {
     const dbMigrate = require('db-migrate').getInstance(true, {
       config: dbConfig,
       cwd: `${__dirname}/../../`,
-      env: process.env.NODE_ENV || 'dev',
+      env: process.env.NODE_ENV || 'test',
     })
     dbMigrate.silence(true)
     console.log('Resetting database')
