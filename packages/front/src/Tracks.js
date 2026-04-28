@@ -51,6 +51,7 @@ class Tracks extends Component {
     this.tbodyRef = React.createRef()
     this.trackHeights = new Map()
     this.resizeTimeout = null
+    this.lastAutoLoadRequestedTrackCount = null
   }
 
   /*
@@ -105,6 +106,7 @@ class Tracks extends Component {
         const clientHeight = this.tbodyRef.current.clientHeight
         this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
       }
+      this.tryAutoLoadMoreWithoutScroll(tracks.length)
     }, 0)
   }
 
@@ -152,7 +154,27 @@ class Tracks extends Component {
             : this.props.tracks
           this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
         }
+        this.tryAutoLoadMoreWithoutScroll(tracks.length)
       }, 0)
+    }
+
+    const tracks = this.props.listState === 'carts'
+      ? this.props.tracks.filter(
+          ({ artists, title, labels, keys, releases, stores }) =>
+            (!this.state.trackListFilterDebounced ||
+              filterMatches(this.state.trackListFilterDebounced, {
+                artists,
+                title,
+                keys,
+                labels,
+                releases,
+              })) &&
+            this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
+        )
+      : this.props.tracks
+    const tracksLengthChanged = prevProps.tracks.length !== this.props.tracks.length
+    if (tracksLengthChanged || prevProps.loadingMore !== this.props.loadingMore || prevProps.hasMore !== this.props.hasMore) {
+      this.tryAutoLoadMoreWithoutScroll(tracks.length)
     }
   }
 
@@ -306,8 +328,38 @@ class Tracks extends Component {
             )
           : this.props.tracks
         this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+        this.tryAutoLoadMoreWithoutScroll(tracks.length)
       }
     }, 100)
+  }
+
+  tryAutoLoadMoreWithoutScroll(visibleTrackCount) {
+    if (!this.tbodyRef.current || !this.props.onLoadMore) {
+      return
+    }
+
+    if (!this.props.hasMore) {
+      this.lastAutoLoadRequestedTrackCount = null
+      return
+    }
+
+    if (this.props.loadingMore) {
+      return
+    }
+
+    const { scrollHeight, clientHeight } = this.tbodyRef.current
+    const hasScrollableOverflow = scrollHeight > clientHeight
+    if (hasScrollableOverflow) {
+      this.lastAutoLoadRequestedTrackCount = null
+      return
+    }
+
+    if (this.lastAutoLoadRequestedTrackCount === visibleTrackCount) {
+      return
+    }
+
+    this.lastAutoLoadRequestedTrackCount = visibleTrackCount
+    this.props.onLoadMore()
   }
 
   handleScroll(event) {
