@@ -216,3 +216,67 @@ export const applyEntityNamesFromUrlParam = (searchTerms, namesParam) => {
     return term
   })
 }
+
+const getTrackBpms = (track) => {
+  const raw = Array.isArray(track.bpms)
+    ? track.bpms
+    : Array.isArray(track.stores)
+      ? Array.from(new Set(track.stores.map((s) => s?.bpm)))
+      : []
+  return raw.filter((b) => b !== null && b !== undefined && !Number.isNaN(b)).map(Number)
+}
+
+const matchTrackText = (track, text) => {
+  const haystack = [
+    ...(track.artists || []).map((a) => a?.name),
+    track.title,
+    ...(track.keys || []).map((k) => k?.key),
+    ...(track.releases || []).map((r) => r?.name),
+    ...(track.labels || []).map((l) => l?.name),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+  return haystack.includes(text.toLowerCase())
+}
+
+// Local (client-side) match used by the cart filter. The global search runs the
+// same term syntax server-side; this mirrors the behaviour against the tracks
+// already loaded in the browser. `key:~` falls back to exact match because the
+// chord-number compatibility data is not shipped to the client.
+export const trackMatchesTerm = (track, term) => {
+  switch (term.type) {
+    case 'text':
+      return matchTrackText(track, term.value)
+    case 'artist':
+      return (track.artists || []).some((a) => a?.id === term.id)
+    case 'label':
+      return (track.labels || []).some((l) => l?.id === term.id)
+    case 'release':
+      return (track.releases || []).some((r) => r?.id === term.id)
+    case 'track':
+      return track.id === term.id
+    case 'genre':
+      return (track.genres || []).some((g) => g?.id === term.id)
+    case 'bpm': {
+      const bpms = getTrackBpms(track)
+      if (term.min !== undefined) return bpms.some((b) => b >= term.min && b <= term.max)
+      if (term.fuzzy)
+        return bpms.some(
+          (b) => Math.min(Math.abs(b - term.bpm), Math.abs(b * 2 - term.bpm), Math.abs(b - term.bpm * 2)) < 5,
+        )
+      return bpms.some((b) => b === term.bpm)
+    }
+    case 'key': {
+      const keys = (track.keys || []).map((k) => (k?.key || '').toLowerCase())
+      return keys.includes(term.key.toLowerCase())
+    }
+    default:
+      return true
+  }
+}
+
+export const trackMatchesAllTerms = (track, terms) => {
+  if (!terms || terms.length === 0) return true
+  return terms.every((t) => trackMatchesTerm(track, t))
+}
