@@ -217,7 +217,31 @@ const createAuthRouter = ({
         return redirectWithLoginFailed(res)
       }
 
-      const user = await account.findOrCreateByIdentifier(payload.oidcIssuer, payload.sub)
+      let user = await account.findByIdentifier(payload.oidcIssuer, payload.sub)
+
+      if (!user) {
+        const accountCount = await queryAccountCount()
+        const signUpAvailable = accountCount <= maxAccountCount
+
+        if (!signUpAvailable) {
+          const inviteCode = req.session?.inviteCode
+          if (!inviteCode) {
+            logger.warn('Handoff sign-up denied: sign-up closed and no invite code', {
+              accountCount,
+              maxAccountCount,
+            })
+            return redirectWithLoginFailed(res)
+          }
+          const inviteCodeConsumed = await deleteInviteCode(inviteCode)
+          if (!inviteCodeConsumed) {
+            logger.warn('Handoff sign-up denied: invalid invite code')
+            return redirectWithLoginFailed(res)
+          }
+        }
+
+        user = await account.findOrCreateByIdentifier(payload.oidcIssuer, payload.sub)
+      }
+
       if (!user) {
         logger.error('Handoff user lookup/create failed')
         return redirectWithLoginFailed(res)
