@@ -3,8 +3,9 @@ const { expect } = require('chai')
 const { test } = require('cascade-test')
 const { startServer } = require('../../../lib/server')
 const { createTestApiKey } = require('../../../lib/api-key')
-const { createApiKey } = require('../../../../db/api-key')
+const { createApiKey, hashApiKey } = require('../../../../db/api-key')
 const { resolveTestUserId } = require('../../../lib/test-user')
+const { pg } = require('../../../lib/db')
 
 test({
   setup: async () => {
@@ -13,7 +14,10 @@ test({
     const { raw: rawKey } = await createTestApiKey()
     return { server, baseUrl, rawKey }
   },
-  teardown: async ({ server }) => { server.kill() },
+  teardown: async ({ server, rawKey }) => {
+    server.kill()
+    await pg.queryAsync(`DELETE FROM api_key WHERE api_key_hash = $1`, [hashApiKey(rawKey)])
+  },
   'GET /api/me/api-keys returns array with prefix': async ({ baseUrl, rawKey }) => {
     const r = await fetch(`${baseUrl}/api/me/api-keys`, {
       headers: { Authorization: `Bearer ${rawKey}` },
@@ -30,6 +34,9 @@ test({
       const raw2 = `fp_${randomUUID()}`
       const record = await createApiKey(userId, raw2, 'to-revoke')
       return { ...parentCtx, raw2, record }
+    },
+    teardown: async ({ record }) => {
+      await pg.queryAsync(`DELETE FROM api_key WHERE api_key_id = $1`, [record.api_key_id])
     },
     'revoke returns 204': async ({ baseUrl, rawKey, record }) => {
       const r = await fetch(`${baseUrl}/api/me/api-keys/${record.api_key_id}`, {

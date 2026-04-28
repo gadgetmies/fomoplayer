@@ -43,7 +43,7 @@ test({
       assert.deepStrictEqual(actualScoreDetails, scoreDetails)
     },
     teardown: async () => {
-      // await db.initDb()
+      await initDb()
     },
   },
   teardown: async () => {

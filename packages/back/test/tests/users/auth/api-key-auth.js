@@ -13,7 +13,7 @@ const createLimitedApiKey = async () => {
     `UPDATE api_key SET rate_limit_per_minute = 1 WHERE api_key_hash = $1`,
     [hash],
   )
-  return { raw, userId }
+  return { raw, hash, userId }
 }
 
 test({
@@ -23,8 +23,9 @@ test({
     const { raw: rawKey } = await createTestApiKey()
     return { server, baseUrl, rawKey }
   },
-  teardown: async ({ server }) => {
+  teardown: async ({ server, rawKey }) => {
     server.kill()
+    await pg.queryAsync(`DELETE FROM api_key WHERE api_key_hash = $1`, [hashApiKey(rawKey)])
   },
 
   'valid api key returns 200 on GET /api/me/tracks': async ({ baseUrl, rawKey }) => {
@@ -48,12 +49,14 @@ test({
 
   'rate limit exceeded': {
     setup: async ({ baseUrl }) => {
-      const { raw: limitedKey } = await createLimitedApiKey()
-      // Consume the one allowed request
+      const { raw: limitedKey, hash: limitedKeyHash } = await createLimitedApiKey()
       await fetch(`${baseUrl}/api/me/tracks`, {
         headers: { Authorization: `Bearer ${limitedKey}` },
       })
-      return { baseUrl, limitedKey }
+      return { baseUrl, limitedKey, limitedKeyHash }
+    },
+    teardown: async ({ limitedKeyHash }) => {
+      await pg.queryAsync(`DELETE FROM api_key WHERE api_key_hash = $1`, [limitedKeyHash])
     },
     'returns 429 with Retry-After header when per-minute limit exceeded': async ({ baseUrl, limitedKey }) => {
       const r = await fetch(`${baseUrl}/api/me/tracks`, {

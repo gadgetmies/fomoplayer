@@ -31,6 +31,7 @@ test({
       },
       'when the track is re-added': {
         setup: async ({ userId }) => ({ userId, ...(await setupBeatportTracks([{ tracks: tracksWithUpdatedDates }], false, [userId])) }),
+        teardown: teardownTracks,
         'tracks are added for the user with ignore': async () => {
           const res = await pg.queryRowsAsync('select user__track_ignored from user__track')
           assert.strictEqual(res.length, 1)
