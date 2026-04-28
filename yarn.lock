@@ -1877,10 +1877,9 @@
   resolved "https://registry.npmjs.org/@leichtgewicht/ip-codec/-/ip-codec-2.0.5.tgz"
   integrity sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==
 
-"@mebtte/react-media-session@mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951":
+"@mebtte/react-media-session@https://github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951":
   version "1.1.2"
-  resolved "git+ssh://git@github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951"
-  integrity sha512-VhE3mEuy5LG/lV9a8YHV2Uz+GqF1SOCK/OTYNl4Og034AHXF8qLAhht9/uUg1xqhwjWHt7No904sFgJf1lLhRQ==
+  resolved "https://github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951"
 
 "@modelcontextprotocol/sdk@^1.0.0":
   version "1.29.0"
