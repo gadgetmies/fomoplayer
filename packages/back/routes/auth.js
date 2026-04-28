@@ -11,7 +11,7 @@ const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = requ
 const { upsertUserAuthorizationTokens } = require('./db')
 const { isSafeRedirectPath, isSafeHandoffTarget } = require('./shared/safe-redirect')
 const { mintHandoffToken: defaultMintHandoffToken, verifyHandoffToken: defaultVerifyHandoffToken } = require('./shared/auth-handoff-token')
-const { evaluateSignUpPolicy } = require('./shared/auth-flow')
+const { evaluateSignUpPolicy, getRequestOrigin } = require('./shared/auth-flow')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 const createAuthRouter = ({
@@ -40,8 +40,8 @@ const createAuthRouter = ({
   const isSelfReferentialHandoffUrl = Boolean(
     oidcHandoffAuthorityOrigin && apiOrigin && oidcHandoffAuthorityOrigin === apiOrigin,
   )
-  const delegatesToAuthority = Boolean(
-    oidcHandoffUrl && oidcHandoffAuthorityOrigin && oidcHandoffSecret && !isSelfReferentialHandoffUrl,
+  const isHandoffConsumerConfigured = Boolean(
+    oidcHandoffUrl && oidcHandoffAuthorityOrigin && oidcHandoffSecret,
   )
   const canMintHandoff = Boolean(oidcHandoffSecret && apiOrigin)
   if (isSelfReferentialHandoffUrl) {
@@ -66,16 +66,28 @@ const createAuthRouter = ({
   router.post('/logout', logout)
   router.get('/logout', logout)
 
+  const shouldDelegateToAuthority = (req) => {
+    if (!isHandoffConsumerConfigured) {
+      return false
+    }
+    try {
+      return new URL(getRequestOrigin(req)).origin !== oidcHandoffAuthorityOrigin
+    } catch {
+      return !isSelfReferentialHandoffUrl
+    }
+  }
+
   router.get('/login/google', (req, res, next) => {
     if (req.query.invite_code) {
       req.session.inviteCode = req.query.invite_code
     }
     const { returnPath } = req.query
 
-    if (delegatesToAuthority) {
+    if (shouldDelegateToAuthority(req)) {
       const url = new URL(oidcHandoffUrl)
+      const requestOrigin = getRequestOrigin(req)
       if (returnPath) url.searchParams.set('returnPath', returnPath)
-      url.searchParams.set('handoffTarget', apiOrigin)
+      url.searchParams.set('handoffTarget', requestOrigin)
       return res.redirect(url.toString())
     }
 
@@ -194,7 +206,7 @@ const createAuthRouter = ({
 
   router.get('/login/google/handoff', async (req, res, next) => {
     try {
-      if (!delegatesToAuthority) {
+      if (!isHandoffConsumerConfigured) {
         logger.warn('Handoff consume called but this backend is not configured as a handoff consumer')
         return redirectWithLoginFailed(res)
       }
