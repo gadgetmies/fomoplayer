@@ -1,7 +1,7 @@
 const logger = require('../logger')(__filename)
 
 const env = {
-  dbUrl: process.env.DATABASE_URL,
+  dbUrl: process.env.DATABASE_URL_PRIVATE || process.env.DATABASE_URL,
   statementTimeout: process.env.STATEMENT_TIMEOUT,
   ssl: Boolean(process.env.DATABASE_USE_SSL)
     ? {

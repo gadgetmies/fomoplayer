@@ -15,6 +15,6 @@
   },
   "prod": {
     "driver": "pg",
-    "connectionString": { "ENV": "DATABASE_PRIVATE_URL" }
+    "connectionString": { "ENV": "DATABASE_URL" }
   }
 }
