@@ -23,6 +23,7 @@ const mintHandoffToken = ({ secret, issuer, audience, oidcIssuer, oidcSubject })
   return { token, jti }
 }
 
+
 const verifyHandoffToken = ({ token, secret, issuer, audience }) => {
   if (!token || !secret || !issuer || !audience) return null
   try {

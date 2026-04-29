@@ -1,8 +1,5 @@
 'use strict'
 
-// Load the backend test environment so that OIDC_HANDOFF_SECRET, DATABASE_URL,
-// CRYPTO_KEY, etc. are available — the same variables the backend server reads
-// when it starts up in test mode.
 const path = require('path')
 require('dotenv').config({ path: path.resolve(__dirname, '../../back/.env.test') })
 process.env.NODE_ENV = process.env.NODE_ENV || 'test'
@@ -11,74 +8,75 @@ const { expect } = require('chai')
 const { test } = require('cascade-test')
 
 const { startServer } = require('../../back/test/lib/server')
-const { mintHandoffToken } = require('../../back/routes/shared/auth-handoff-token')
-const account = require('../../back/db/account')
 const { hashApiKey } = require('../../back/db/api-key')
 const { pg } = require('../../back/test/lib/db')
 
 const { login } = require('../src/auth')
 
-const HANDOFF_SECRET = process.env.OIDC_HANDOFF_SECRET
-// The backend derives apiOrigin from API_URL env var: 'http://localhost' in .env.test
-const API_ORIGIN = 'http://localhost'
-const OIDC_ISSUER = 'accounts.google.com'
-const OIDC_SUBJECT = 'test-subject-cli-auth-test'
-
 test({
   setup: async () => {
     const { server, port } = await startServer()
     const apiUrl = `http://localhost:${port}`
-
-    // Ensure a user with the test OIDC identity exists in the DB
-    const user = await account.findOrCreateByIdentifier(OIDC_ISSUER, OIDC_SUBJECT)
-
-    // Give the nested group (including inner setup + test) 60 seconds — server
-    // startup and the DB migration round-trip can take a while on the first run.
-    return { server, apiUrl, userId: user.id, timeout: 60000 }
+    return { server, apiUrl, timeout: 60000 }
   },
   teardown: async ({ server }) => {
     server.kill()
   },
 
-  'login flow: starts HTTP listener and exchanges handoff token': {
-    setup: async ({ server, apiUrl, userId }) => {
-      // Mint a handoff token directly — this simulates what the backend would
-      // do after a successful OIDC redirect for the CLI flow.
-      // The backend's apiOrigin is 'http://localhost' (from API_URL in .env.test),
-      // regardless of the actual port, so the token must be issued/audienced to
-      // that origin.
-      const { token } = mintHandoffToken({
-        secret: HANDOFF_SECRET,
-        issuer: API_ORIGIN,
-        audience: API_ORIGIN,
-        oidcIssuer: OIDC_ISSUER,
-        oidcSubject: OIDC_SUBJECT,
-      })
-
-      // openBrowser mock: extracts the callback port from the login URL, then
-      // immediately drives the local HTTP server with the minted token, exactly
-      // as a real browser would after completing the OIDC flow.
+  'login flow: PKCE code exchange returns an API key': {
+    setup: async ({ server, apiUrl }) => {
+      // Simulate the browser: authenticate, visit the CLI login page, confirm access.
+      // Manually track the session cookie across requests.
       const openBrowser = async (loginUrl) => {
         const url = new URL(loginUrl)
         const callbackPort = url.searchParams.get('callbackPort')
-        const callbackUrl = `http://localhost:${callbackPort}/?token=${encodeURIComponent(token)}`
-        const res = await fetch(callbackUrl)
-        if (!res.ok) {
-          throw new Error(`Callback server responded with ${res.status}`)
+
+        // Step 1: authenticate as the seeded test user
+        const loginRes = await fetch(`${apiUrl}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'testuser', password: 'testpwd' }),
+          redirect: 'manual',
+        })
+        const sessionCookie = loginRes.headers.get('set-cookie')
+        if (!sessionCookie) throw new Error('No session cookie after login')
+
+        // Step 2: visit the CLI authorization page (passes PKCE params from loginUrl through)
+        const cliPageRes = await fetch(loginUrl, {
+          headers: { cookie: sessionCookie },
+          redirect: 'manual',
+        })
+        if (cliPageRes.status !== 200) {
+          throw new Error(`CLI login page returned ${cliPageRes.status}`)
+        }
+
+        // Step 3: submit the confirm form
+        const confirmRes = await fetch(`${apiUrl}/api/auth/login/cli/confirm`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            cookie: sessionCookie,
+          },
+          body: '',
+          redirect: 'manual',
+        })
+        const location = confirmRes.headers.get('location')
+        if (!location) throw new Error(`Confirm returned ${confirmRes.status} with no redirect`)
+
+        // Step 4: follow the redirect to the CLI's local callback server
+        const callbackRes = await fetch(location)
+        if (!callbackRes.ok) {
+          throw new Error(`Callback server responded with ${callbackRes.status}`)
         }
       }
 
       const result = await login(apiUrl, openBrowser)
-      return { server, apiUrl, userId, result }
+      return { server, apiUrl, result }
     },
-    teardown: async ({ result, userId }) => {
-      // Clean up the created API key from the database
+    teardown: async ({ result }) => {
       if (result?.key) {
         const hash = hashApiKey(result.key)
-        await pg.queryAsync(
-          'DELETE FROM api_key WHERE api_key_hash = $1 AND meta_account_user_id = $2',
-          [hash, userId],
-        )
+        await pg.queryAsync('DELETE FROM api_key WHERE api_key_hash = $1', [hash])
       }
     },
     'returns an API key starting with fp_': async ({ result }) => {
