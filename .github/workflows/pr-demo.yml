@@ -21,12 +21,16 @@ jobs:
       - uses: actions/checkout@v4
 
       # ── 1. Determine the Railway PR preview URL ───────────────────────────
-      # Set RAILWAY_SERVICE_NAME and RAILWAY_PROJECT_NAME as repository
-      # variables (Settings → Variables → Actions).
+      # Railway publishes preview deployments at
+      # https://<service>-<environment>.up.railway.app, and our environments
+      # are named `fomoplayer-pr-<N>`. The service+environment names are
+      # already public on every preview URL, so they're hard-coded here
+      # instead of stored as repository variables.
       - name: Determine preview URL
         id: preview
         run: |
-          PREVIEW_URL="https://${{ vars.RAILWAY_SERVICE_NAME }}-${{ vars.RAILWAY_PROJECT_NAME }}-pr-${{ github.event.pull_request.number }}.up.railway.app"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PREVIEW_URL="https://fomoplayer-fomoplayer-pr-${PR_NUMBER}.up.railway.app"
           echo "url=${PREVIEW_URL}" >> "$GITHUB_OUTPUT"
 
       # ── 2. Wait for the Railway preview to be live ────────────────────────
