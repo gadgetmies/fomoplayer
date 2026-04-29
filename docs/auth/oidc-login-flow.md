@@ -14,8 +14,8 @@ The authoritative source of truth is the code:
   `/login/google/return`, `/login/google/handoff`, `/cli-token`,
   `/api-keys/exchange-handoff`, `/login/actions`).
 - `packages/back/routes/shared/cli-auth-code.js` — In-memory PKCE
-  authorization code store (`issueCode` / `consumeCode`, 60 s TTL, S256
-  verification).
+  authorization code store (`issueCode` / `consumeCode`, 5 min TTL, S256
+  verification with `timingSafeEqual`).
 - `packages/back/routes/shared/auth-handoff-token.js` — Handoff JWT mint /
   verify (HS256, 60 s TTL).
 - `packages/back/routes/shared/auth-handoff-jti.js` +
@@ -244,7 +244,7 @@ session.
    serves HTML page: "Grant CLI access?" with Allow / Deny buttons
 3a. User clicks Allow →
     POST /login/cli/confirm (session carries P, C, S)
-    backend calls issueCode(userId, C) → opaque 60 s auth code
+    backend calls issueCode(userId, C) → opaque 5 min auth code
     302 to http://localhost:P/?code=<code>&state=S
 3b. User clicks Deny →
     POST /login/cli/deny
@@ -255,7 +255,7 @@ session.
    POSTs { code, code_verifier } to POST /api/auth/cli-token:
      backend calls consumeCode(code, codeVerifier):
        verifies base64url(SHA256(codeVerifier)) === stored codeChallenge
-       deletes code (single-use), checks 60 s TTL
+       deletes code (single-use), checks 5 min TTL
        creates fp_<uuid>, stores SHA-256 hash in api_key table
        returns { access_token: "fp_<uuid>", token_type: "bearer" }
    CLI stores the API key; all subsequent requests use
