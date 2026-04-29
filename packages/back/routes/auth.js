@@ -13,7 +13,9 @@ const { isSafeRedirectPath, isSafeHandoffTarget } = require('./shared/safe-redir
 const { mintHandoffToken: defaultMintHandoffToken, verifyHandoffToken: defaultVerifyHandoffToken } = require('./shared/auth-handoff-token')
 const { issueCode: defaultIssueCode, consumeCode: defaultConsumeCode } = require('./shared/cli-auth-code')
 const { verifyActionsToken: defaultVerifyActionsToken, GITHUB_ACTIONS_ISSUER } = require('./shared/github-actions-oidc')
-const { evaluateSignUpPolicy, getRequestOrigin } = require('./shared/auth-flow')
+const { evaluateSignUpPolicy, getRequestOrigin, isGoogleSubAllowed } = require('./shared/auth-flow')
+
+const GOOGLE_OIDC_ISSUER = 'accounts.google.com'
 const logger = require('fomoplayer_shared').logger(__filename)
 
 const createAuthRouter = ({
@@ -38,6 +40,7 @@ const createAuthRouter = ({
     oidcHandoffSecret,
     oidcHandoffAuthorityOrigin,
     isPreviewEnv,
+    previewAllowedGoogleSubs,
     maxAccountCount,
     githubActionsOidcRepo,
   } = config
@@ -341,6 +344,18 @@ const createAuthRouter = ({
       const consumed = await consumeHandoffJti(payload.jti, expiresAt)
       if (!consumed) {
         logger.warn('Handoff token replay rejected', { jti: payload.jti })
+        return redirectWithLoginFailed(res)
+      }
+
+      if (
+        payload.oidcIssuer === GOOGLE_OIDC_ISSUER &&
+        !isGoogleSubAllowed({
+          isPreviewEnv,
+          previewAllowedGoogleSubs,
+          googleSub: payload.sub,
+        })
+      ) {
+        logger.warn('Handoff consume: Google sub not in preview allowlist', { sub: payload.sub })
         return redirectWithLoginFailed(res)
       }
 
