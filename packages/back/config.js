@@ -24,7 +24,14 @@ const safeOrigin = (url) => {
 const apiOrigin = safeOrigin(apiURL)
 const oidcHandoffUrl = process.env.OIDC_HANDOFF_URL || undefined
 const oidcHandoffAuthorityOrigin = oidcHandoffUrl ? safeOrigin(oidcHandoffUrl) : null
-const isPreviewEnv = process.env.IS_PREVIEW_ENV === 'true'
+const isPreviewEnv = process.env.PREVIEW_ENV === 'true'
+const previewAllowedGoogleSubs = (process.env.PREVIEW_ALLOWED_GOOGLE_SUBS || '')
+  .split(',')
+  .map((sub) => sub.trim())
+  .filter((sub) => sub.length > 0)
+if (isPreviewEnv && previewAllowedGoogleSubs.length === 0) {
+  throw new Error('PREVIEW_ALLOWED_GOOGLE_SUBS must be set when PREVIEW_ENV=true')
+}
 const isDevelopment = nodeEnv === 'development'
 const isTest = nodeEnv === 'test'
 
@@ -45,6 +52,7 @@ module.exports = {
   isDevelopment,
   isTest,
   isPreviewEnv,
+  previewAllowedGoogleSubs,
   oidcHandoffUrl,
   oidcHandoffAuthorityOrigin,
   oidcHandoffSecret: process.env.OIDC_HANDOFF_SECRET || undefined,

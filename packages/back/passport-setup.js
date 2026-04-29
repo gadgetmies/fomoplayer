@@ -11,6 +11,7 @@ const pgrm = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const { queryAccountCount } = require('./routes/db')
 const { deleteInviteCode } = require('./db/account')
+const { isGoogleSubAllowed } = require('./routes/shared/auth-flow')
 
 const parseOidcState = (req) => {
   const rawState = req?.query?.state
@@ -71,6 +72,18 @@ module.exports = function passportSetup() {
 
           const normalizedIssuer = issuer.replace(/^https?:\/\//, '')
           const oidcIdentity = { issuer: normalizedIssuer, subject: profile.id }
+
+          if (
+            normalizedIssuer === googleOpenIDIssuer &&
+            !isGoogleSubAllowed({
+              isPreviewEnv: config.isPreviewEnv,
+              previewAllowedGoogleSubs: config.previewAllowedGoogleSubs,
+              googleSub: profile.id,
+            })
+          ) {
+            logger.warn('Preview env: Google sub not in allowlist; rejecting login', { sub: profile.id })
+            return done(null, false, { message: 'Account not allowed in preview environment' })
+          }
 
           const inviteCode = req.session?.inviteCode
           const accountCount = await queryAccountCount()
