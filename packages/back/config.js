@@ -48,4 +48,5 @@ module.exports = {
   oidcHandoffUrl,
   oidcHandoffAuthorityOrigin,
   oidcHandoffSecret: process.env.OIDC_HANDOFF_SECRET || undefined,
+  githubActionsOidcRepo: process.env.GITHUB_ACTIONS_OIDC_REPO || undefined,
 }

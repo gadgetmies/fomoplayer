@@ -45,6 +45,8 @@ const createPublicRouter = ({
     }
   })
 
+  router.get('/health', (_, res) => res.json({ status: 'ok' }))
+
   router.get('/sign-up-available', async (_, res) => {
     if (config.isPreviewEnv) {
       return res.send({ available: false })

@@ -12,6 +12,7 @@ const { upsertUserAuthorizationTokens } = require('./db')
 const { isSafeRedirectPath, isSafeHandoffTarget } = require('./shared/safe-redirect')
 const { mintHandoffToken: defaultMintHandoffToken, verifyHandoffToken: defaultVerifyHandoffToken } = require('./shared/auth-handoff-token')
 const { issueCode: defaultIssueCode, consumeCode: defaultConsumeCode } = require('./shared/cli-auth-code')
+const { verifyActionsToken: defaultVerifyActionsToken, GITHUB_ACTIONS_ISSUER } = require('./shared/github-actions-oidc')
 const { evaluateSignUpPolicy, getRequestOrigin } = require('./shared/auth-flow')
 const logger = require('fomoplayer_shared').logger(__filename)
 
@@ -25,6 +26,7 @@ const createAuthRouter = ({
   verifyHandoffTokenFn = defaultVerifyHandoffToken,
   issueCodeFn = defaultIssueCode,
   consumeCodeFn = defaultConsumeCode,
+  verifyActionsTokenFn = defaultVerifyActionsToken,
 } = {}) => {
   const router = express.Router()
   const {
@@ -37,6 +39,7 @@ const createAuthRouter = ({
     oidcHandoffAuthorityOrigin,
     isPreviewEnv,
     maxAccountCount,
+    githubActionsOidcRepo,
   } = config
 
   const loginFailedUrl = `${frontendURL}/?loginFailed=true`
@@ -399,6 +402,11 @@ const createAuthRouter = ({
     } catch (e) { next(e) }
   })
 
+  router.get('/me', (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).end()
+    return res.json({ id: req.user.id })
+  })
+
   router.get('/spotify', async ({ user: { id: userId }, query }, res) => {
     const authorizationUrl = getAuthorizationUrl(query.path, query.write === 'true')
     res.redirect(authorizationUrl)
@@ -423,6 +431,36 @@ const createAuthRouter = ({
     const safePath = isSafeRedirectPath(path, frontendURL) ? path : ''
     res.redirect(`${frontendURL}${safePath}`)
   })
+
+  if (isPreviewEnv && githubActionsOidcRepo) {
+    router.post('/login/actions', async (req, res, next) => {
+      try {
+        const { token } = req.body ?? {}
+        if (!token) return res.status(400).json({ error: 'token is required' })
+
+        const payload = await verifyActionsTokenFn({
+          token,
+          audience: apiOrigin,
+          allowedRepo: githubActionsOidcRepo,
+        })
+        if (!payload) {
+          logger.warn('Actions OIDC login rejected: invalid or unauthorized token')
+          return res.status(401).json({ error: 'Invalid or unauthorized Actions token' })
+        }
+
+        const normalizedIssuer = GITHUB_ACTIONS_ISSUER.replace(/^https?:\/\//, '')
+        const user = await account.findOrCreateByIdentifier(normalizedIssuer, githubActionsOidcRepo)
+        if (!user) return res.status(500).json({ error: 'Failed to resolve bot user' })
+
+        req.login(user, (err) => {
+          if (err) return next(err)
+          res.status(204).end()
+        })
+      } catch (e) {
+        next(e)
+      }
+    })
+  }
 
   if (process.env.NODE_ENV !== 'production') {
     router.post(

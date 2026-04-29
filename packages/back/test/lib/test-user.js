@@ -1,7 +1,20 @@
 const account = require('../../db/account')
 const { pg } = require('./db')
+const { getBrowserContext } = require('./setup')
+
+const isRemotePreview = Boolean(process.env.PREVIEW_URL)
 
 module.exports.resolveTestUserId = async () => {
+  if (isRemotePreview) {
+    // Bot user was created when logging in via GitHub Actions OIDC. Fetch their
+    // ID from the session using the browser context's cookie jar.
+    const ctx = getBrowserContext()
+    const res = await ctx.request.get(`${process.env.PREVIEW_URL}/api/auth/me`)
+    if (!res.ok()) throw new Error(`GET /api/auth/me failed: HTTP ${res.status()}`)
+    const { id } = await res.json()
+    return id
+  }
+
   const authResult = await account.authenticate('testuser', 'testpwd')
   if (!authResult?.id) {
     throw new Error('Could not resolve test user id')
