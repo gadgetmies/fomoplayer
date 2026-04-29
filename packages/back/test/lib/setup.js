@@ -91,149 +91,6 @@ const dismissOnboarding = async (page) => {
   )
 }
 
-// Injected into every page in remote demo mode to visualise cursor, clicks,
-// keyboard events, and scroll direction.
-const demoOverlay = () => {
-  const cursor = document.createElement('div')
-  Object.assign(cursor.style, {
-    position: 'fixed',
-    width: '28px',
-    height: '28px',
-    borderRadius: '50%',
-    border: '3px solid rgba(255,120,0,.9)',
-    backgroundColor: 'rgba(255,120,0,.15)',
-    boxShadow: '0 0 8px rgba(255,120,0,.5)',
-    pointerEvents: 'none',
-    zIndex: '2147483647',
-    transform: 'translate(-50%,-50%)',
-    transition: 'transform .08s,background-color .08s',
-    display: 'none',
-  })
-  document.addEventListener('mousemove', (e) => {
-    cursor.style.display = 'block'
-    cursor.style.left = e.clientX + 'px'
-    cursor.style.top = e.clientY + 'px'
-  })
-  document.addEventListener('mousedown', () => {
-    cursor.style.backgroundColor = 'rgba(255,120,0,.5)'
-    cursor.style.transform = 'translate(-50%,-50%) scale(.75)'
-  })
-  document.addEventListener('mouseup', () => {
-    cursor.style.backgroundColor = 'rgba(255,120,0,.15)'
-    cursor.style.transform = 'translate(-50%,-50%) scale(1)'
-  })
-
-  const spawnRipple = (x, y) => {
-    const r = document.createElement('div')
-    Object.assign(r.style, {
-      position: 'fixed',
-      left: x + 'px',
-      top: y + 'px',
-      width: '50px',
-      height: '50px',
-      borderRadius: '50%',
-      border: '2px solid rgba(255,120,0,.8)',
-      backgroundColor: 'rgba(255,120,0,.2)',
-      transform: 'translate(-50%,-50%) scale(0)',
-      pointerEvents: 'none',
-      zIndex: '2147483646',
-    })
-    document.body.appendChild(r)
-    r.animate(
-      [
-        { transform: 'translate(-50%,-50%) scale(0)', opacity: 1 },
-        { transform: 'translate(-50%,-50%) scale(2.5)', opacity: 0 },
-      ],
-      { duration: 500, easing: 'ease-out' },
-    ).onfinish = () => r.remove()
-  }
-  document.addEventListener('click', (e) => spawnRipple(e.clientX, e.clientY))
-  document.addEventListener('contextmenu', (e) => spawnRipple(e.clientX, e.clientY))
-
-  const kbd = document.createElement('div')
-  Object.assign(kbd.style, {
-    position: 'fixed',
-    bottom: '24px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    backgroundColor: 'rgba(0,0,0,.82)',
-    color: '#fff',
-    borderRadius: '10px',
-    padding: '10px 20px',
-    fontSize: '17px',
-    fontFamily: '"SF Mono","Fira Code",monospace',
-    pointerEvents: 'none',
-    zIndex: '2147483647',
-    display: 'none',
-    whiteSpace: 'nowrap',
-    boxShadow: '0 4px 12px rgba(0,0,0,.4)',
-  })
-  const heldKeys = new Set()
-  let kbdTimer
-  document.addEventListener('keydown', (e) => {
-    if (!e.repeat) heldKeys.add(e.key)
-    clearTimeout(kbdTimer)
-    if (heldKeys.size > 0) {
-      kbd.style.display = 'block'
-      kbd.textContent = [...heldKeys].map((k) => (k.length === 1 ? k : `[${k}]`)).join(' + ')
-    }
-  })
-  document.addEventListener('keyup', (e) => {
-    heldKeys.delete(e.key)
-    if (heldKeys.size > 0) {
-      kbd.textContent = [...heldKeys].map((k) => (k.length === 1 ? k : `[${k}]`)).join(' + ')
-    } else {
-      kbdTimer = setTimeout(() => {
-        kbd.style.display = 'none'
-        kbd.textContent = ''
-      }, 700)
-    }
-  })
-
-  const scrollEl = document.createElement('div')
-  Object.assign(scrollEl.style, {
-    position: 'fixed',
-    right: '20px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    backgroundColor: 'rgba(0,0,0,.75)',
-    color: '#fff',
-    borderRadius: '10px',
-    padding: '10px 12px',
-    fontSize: '22px',
-    pointerEvents: 'none',
-    zIndex: '2147483647',
-    display: 'none',
-    boxShadow: '0 4px 12px rgba(0,0,0,.4)',
-  })
-  let scrollTimer
-  document.addEventListener(
-    'scroll',
-    (e) => {
-      const t = e.target
-      const prev = t._demoScrollTop ?? 0
-      const cur = t === document ? window.scrollY : t.scrollTop
-      t._demoScrollTop = cur
-      scrollEl.textContent = cur > prev ? '↓' : '↑'
-      scrollEl.style.display = 'block'
-      clearTimeout(scrollTimer)
-      scrollTimer = setTimeout(() => (scrollEl.style.display = 'none'), 700)
-    },
-    true,
-  )
-
-  const mount = () => {
-    document.body.appendChild(cursor)
-    document.body.appendChild(kbd)
-    document.body.appendChild(scrollEl)
-  }
-  if (document.body) {
-    mount()
-  } else {
-    document.addEventListener('DOMContentLoaded', mount)
-  }
-}
-
 const initialize = async () => {
   let baseURL, server
 
@@ -265,9 +122,12 @@ const initialize = async () => {
   }
   sharedBrowserContext = await sharedBrowser.newContext(contextOptions)
 
-  if (isRemotePreview) {
-    await sharedBrowserContext.addInitScript(demoOverlay)
-  } else {
+  const tracePath = process.env.TRACE_PATH
+  if (tracePath) {
+    await sharedBrowserContext.tracing.start({ screenshots: true, snapshots: true, sources: true })
+  }
+
+  if (!isRemotePreview) {
     await sharedBrowserContext.route('**/*', async (route) => {
       const requestUrl = new URL(route.request().url())
       if (!requestUrl.pathname.startsWith('/api/')) {
@@ -326,9 +186,12 @@ const initialize = async () => {
     process.on('exit', () => server.kill())
   }
 
-  // Finalize video recording (if active) before process exits.
+  // Finalize video + trace recording (if active) before process exits.
   process.on('beforeExit', async () => {
     if (sharedBrowserContext) {
+      if (tracePath) {
+        await sharedBrowserContext.tracing.stop({ path: tracePath }).catch(() => {})
+      }
       await sharedBrowserContext.close().catch(() => {})
       sharedBrowserContext = null
     }

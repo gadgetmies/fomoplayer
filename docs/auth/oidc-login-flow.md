@@ -371,16 +371,17 @@ const loginRes = await page.request.post(`${PREVIEW_URL}/api/auth/login/actions`
 await page.goto('/tracks/recent')
 ```
 
-### Demo mode (slowMo + video + visual overlay)
+### Demo mode (slowMo + video + trace)
 
 When `PREVIEW_URL` is set, `test/lib/setup.js` automatically enables:
 - **slowMo** — defaults to 600 ms per action (override with `PW_SLOWMO`),
   making every interaction visible to a human reviewer.
 - **Video recording** — written to `VIDEO_DIR` when set; finalized when the
   browser context closes (wired to `process.beforeExit`).
-- **Visual overlay** — injected into every page via `context.addInitScript()`:
-  an orange cursor indicator, click ripple effects, a keyboard badge showing
-  currently-held keys, and a scroll-direction arrow.
+- **Playwright trace** — written to `TRACE_PATH` when set, with screenshots,
+  DOM snapshots, and sources enabled. The trace.zip can be opened at
+  [trace.playwright.dev](https://trace.playwright.dev/) (drag-and-drop) for
+  cursor pointer, click highlights, network, console, and full DOM scrubbing.
 
 ### Test seeding in remote mode
 

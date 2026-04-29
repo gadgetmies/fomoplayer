@@ -94,11 +94,12 @@ jobs:
       - name: Install Playwright browser
         run: yarn workspace fomoplayer_back npx playwright install --with-deps chromium
 
-      # ── 6. Run the browser test in demo mode (slow-mo, video, overlay) ────
+      # ── 6. Run the browser test in demo mode (slow-mo, video, trace) ──────
       - name: Run demo test
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.url }}
           VIDEO_DIR: ${{ github.workspace }}/demo-output
+          TRACE_PATH: ${{ github.workspace }}/demo-output/trace.zip
           # OIDC_TOKEN is already in env from step 4
           # PW_SLOWMO defaults to 600ms when PREVIEW_URL is set (see setup.js)
         run: |
@@ -106,12 +107,12 @@ jobs:
           NODE_ENV=ci dotenv -e .env.ci -- \
             npx cascade-test "${{ steps.demo.outputs.test_file }}"
 
-      # ── 7. Upload the recorded video ──────────────────────────────────────
-      - name: Upload demo video
+      # ── 7. Upload the recorded video and trace ────────────────────────────
+      - name: Upload demo artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: demo-video-pr-${{ github.event.pull_request.number }}
+          name: demo-pr-${{ github.event.pull_request.number }}
           path: ${{ github.workspace }}/demo-output/
           retention-days: 30
 
@@ -124,6 +125,7 @@ jobs:
             const succeeded = '${{ job.status }}' === 'success'
             const icon = succeeded ? '✅' : '❌'
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const artifactName = `demo-pr-${context.payload.pull_request.number}`
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -131,10 +133,12 @@ jobs:
               body: [
                 `${icon} **Demo test ${succeeded ? 'succeeded' : 'failed'}**`,
                 '',
-                `[View recording and run logs](${runUrl})`,
+                `[View run logs](${runUrl})`,
                 '',
                 succeeded
-                  ? 'Download the `demo-video-pr-${{ github.event.pull_request.number }}` artifact from the run page to watch the video.'
+                  ? `Download the \`${artifactName}\` artifact from the run page; it contains both the recorded video (\`*.webm\`) and a Playwright trace (\`trace.zip\`).`
                   : 'Check the run logs for details.',
+                '',
+                'Open the trace at [trace.playwright.dev](https://trace.playwright.dev/) — drag and drop `trace.zip` into the page (mouse pointer, network, console and DOM snapshots are all included).',
               ].join('\n'),
             })
