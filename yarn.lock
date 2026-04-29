@@ -1877,7 +1877,7 @@
 
 "@mebtte/react-media-session@https://github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951":
   version "1.1.2"
-  resolved "git+ssh://git@github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951"
+  resolved "https://github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951"
   integrity sha512-VhE3mEuy5LG/lV9a8YHV2Uz+GqF1SOCK/OTYNl4Og034AHXF8qLAhht9/uUg1xqhwjWHt7No904sFgJf1lLhRQ==
 
 "@modelcontextprotocol/sdk@^1.0.0":
