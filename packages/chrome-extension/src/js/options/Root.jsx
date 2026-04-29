@@ -7,10 +7,9 @@ export default class Root extends React.Component {
 
     const that = this
     chrome.storage.local.get(['appUrl', 'enabledStores'], function ({ appUrl, enabledStores }) {
-      const resolvedAppUrl = appUrl || DEFAULT_APP_URL
       that.setState({
-        appUrl: resolvedAppUrl,
-        storedAppUrl: resolvedAppUrl,
+        appUrl,
+        storedAppUrl: appUrl,
         enabledStores: enabledStores || { beatport: true, bandcamp: true },
       })
     })

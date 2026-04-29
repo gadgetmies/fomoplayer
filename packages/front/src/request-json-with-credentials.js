@@ -1,37 +1,17 @@
 import config from './config.js'
 
-const defaultStores = ['beatport', 'bandcamp']
-
-const resolveStoresForRequest = ({ search, hostname, isPreviewEnv }) => {
-  const searchParams = new URLSearchParams(search)
-  const storesFromParams = searchParams.getAll('store')
-  const storesFromHost = isPreviewEnv ? [] : hostname.split('.').slice(0, -2)
-  return [storesFromParams, storesFromHost, defaultStores].find((storeNames) => storeNames.length > 0)
-}
-
-const stores = resolveStoresForRequest({
-  search: window.location.search,
-  hostname: window.location.hostname,
-  isPreviewEnv: config.isPreviewEnv,
-})
+const searchParams = new URLSearchParams(window.location.search)
+const storesFromHost = window.location.hostname.split('.').slice(0, -2)
+const storesFromParams = searchParams.getAll('store')
+let stores = [storesFromParams, storesFromHost, ['beatport', 'bandcamp']].find(ss => ss.length > 0)
 
 const requestJSONwithCredentials = (...args) =>
   requestWithCredentials(...args).then(async (res) => {
     return await res.json()
   })
 
-const resolveRequestUrl = (value) => {
-  try {
-    return new URL(value)
-  } catch (e) {
-    const origin = window?.location?.origin || 'http://localhost'
-    return new URL(value, origin)
-  }
-}
-
 const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET', body, headers }) => {
-  const resolvedUrl = requestedUrl ? requestedUrl : `${config.apiURL}${path}`
-  let url = new URL(resolvedUrl, window.location.origin)
+  let url = new URL(requestedUrl ? requestedUrl : `${config.apiURL}${path}`)
 
   if (stores) {
     const urlSearchParams = new URLSearchParams(url.search)
@@ -60,4 +40,4 @@ const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET',
   }
 }
 
-export { requestJSONwithCredentials, requestWithCredentials, resolveStoresForRequest }
+export { requestJSONwithCredentials, requestWithCredentials }

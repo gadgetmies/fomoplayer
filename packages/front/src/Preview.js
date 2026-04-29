@@ -17,7 +17,7 @@ import Popup from './Popup'
 import { apiURL } from './config'
 import { search } from './events'
 
-const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(value, prop))
+const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(prop, value))
 
 class Preview extends Component {
   constructor(props) {
@@ -92,14 +92,14 @@ class Preview extends Component {
     })
 
     let url = preview.url
-    if (!url) {
+    if (url === null) {
       url = await this.fetchPreviewUrl(preview)
     }
 
     this.setState({ previewUrl: url })
     const waveform = preview.waveforms[0] || this.getWaveform(track)
-    if ((!waveform || preview.start_ms === null) && this.audioContext && preview.store !== 'bandcamp' && url) {
-      await this.updateWaveform(url)
+    if ((!waveform || preview.start_ms === null) && this.audioContext && preview.store !== 'bandcamp') {
+      await this.updateWaveform(preview.url)
     } else {
       this.setState({ waveform })
     }
@@ -111,12 +111,13 @@ class Preview extends Component {
     return url
   }
 
-  async componentDidUpdate(prevProps, prevState) {
-    if (prevState.playing !== this.state.playing) {
+  // TODO: replace componentWillUpdate with something that is supported. componentDidUpdate does not work: E.g. changing track causes the previous track to be played. Maybe getDerivedStateFromProps (suggested by co-pilot)?
+  async componentWillUpdate({ currentTrack: nextTrack }, { playing }) {
+    if (this.state.playing !== playing) {
       const player = this.getPlayer()
       if (player) {
         try {
-          await player[this.state.playing ? 'play' : 'pause']()
+          await player[playing ? 'play' : 'pause']()
         } catch (e) {
           console.error('Unable to set playback status', e)
           this.setState({ playing: false })
@@ -124,22 +125,9 @@ class Preview extends Component {
       }
     }
 
-    if (prevProps.currentTrack?.id !== this.props.currentTrack?.id) {
-      const nextTrack = this.props.currentTrack
-      if (!nextTrack) return
+    if (this.props.currentTrack !== nextTrack) {
       this.setState({ loading: true, embeddingMissing: true })
       const previews = this.getMp3Previews(nextTrack, this.state.preferFullTracks)
-      console.log('[Preview] selecting preview', {
-        trackId: nextTrack.id,
-        previewCandidates: previews.length,
-        storeSlugs: this.props.stores.map(({ storeName }) => storeName.toLowerCase()),
-        firstPreview: previews[0] && {
-          id: previews[0].id,
-          store: previews[0].store,
-          format: previews[0].format,
-          hasUrl: Boolean(previews[0].url),
-        },
-      })
 
       let trackUpdated = false
       for (const preview of previews) {
@@ -148,21 +136,14 @@ class Preview extends Component {
           trackUpdated = true
           break
         } catch (e) {
-          console.error('[Preview] updateTrack failed', e)
+          console.error(e)
         }
       }
 
-      this.setState({ loading: false, playing: trackUpdated })
       if (!trackUpdated) {
-        console.warn('[Preview] no playable preview for track', nextTrack.id)
-      }
-    }
-
-    if (prevState.previewUrl !== this.state.previewUrl) {
-      const player = this.getPlayer()
-      if (player) {
-        player.currentTime = 0
-        player.load()
+        await this.props.onNext()
+      } else {
+        this.setState({ loading: false, playing: true })
       }
     }
   }
@@ -206,8 +187,7 @@ class Preview extends Component {
   }
 
   getWaveform(track) {
-    const preview = this.getFirstMp3Preview(track, this.state.preferFullTracks)
-    return preview?.waveforms?.[0]
+    return this.getFirstMp3Preview(track, this.state.preferFullTracks).waveforms[0]
   }
 
   async updateWaveform(previewUrl) {
@@ -313,8 +293,8 @@ class Preview extends Component {
     return ((previewDetails ? previewDetails.length_ms : this.props.currentTrack.duration) / 5 / 1000) | 7
   }
 
-  onCartFilterChange(_, inputValue) {
-    this.setState({ cartFilter: inputValue })
+  onCartFilterChange(e) {
+    this.setState({ cartFilter: e.target.value })
   }
 
   onClearCartFilter() {
@@ -378,7 +358,7 @@ class Preview extends Component {
 
     const previews =
       currentTrack?.previews?.filter(({ store }) => store !== 'bandcamp' && this.props.stores.includes(store)) || []
-    const spotifyAuthorization = this.state.authorizations?.find(R.propEq('Spotify', 'store_name'))
+    const spotifyAuthorization = this.state.authorizations?.find(R.propEq('store_name', 'Spotify'))
     const fullTracks = currentTrack?.previews?.filter(
       ({ store }) =>
         ['bandcamp', ...[spotifyAuthorization ? ['spotify'] : []]].includes(store) && this.props.stores.includes(store),
@@ -415,14 +395,7 @@ class Preview extends Component {
                       <span className="preview_detail">
                         {!currentTrack.labels?.length
                           ? null
-                          : followableNameLinks(
-                              currentTrack.labels,
-                              this.props.follows,
-                              'label',
-                              ', ',
-                              ' & ',
-                              this.props.onAddEntityToSearch,
-                            )}
+                          : followableNameLinks(currentTrack.labels, this.props.follows, 'label', this.props.onAddEntityToSearch)}
                       </span>
                       <br />
                       <span className="preview_label">Released:</span>{' '}
@@ -439,14 +412,7 @@ class Preview extends Component {
                       <span className="preview_detail">
                         {!currentTrack.releases?.length
                           ? null
-                          : followableNameLinks(
-                              currentTrack.releases,
-                              [],
-                              'release',
-                              ', ',
-                              ' & ',
-                              this.props.onAddEntityToSearch,
-                            )}
+                          : followableNameLinks(currentTrack.releases, [], 'release', this.props.onAddEntityToSearch)}
                       </span>
                     </div>
                     <div style={{ fontSize: '75%' }}>
@@ -488,7 +454,6 @@ class Preview extends Component {
                         key={url || releaseUrl}
                         href={url || releaseUrl}
                         target="_blank"
-                        rel="noopener noreferrer"
                         className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
                         style={{ display: 'flex', padding: '16px 8px' }}
                       >
@@ -505,14 +470,13 @@ class Preview extends Component {
                     <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
                       {this.props.stores
                         ?.filter(({ storeName }) => currentTrackStores.every(({ name }) => storeName !== name))
-                        .map(({ storeName, searchUrl }) => {
-                          if (!searchUrl) return null
+                        .map(({ storeName }) => {
+                          const searchUrl = this.props.stores.find(R.propEq('storeName', storeName)).searchUrl
                           return (
                             <a
                               key={`${searchUrl}${searchString}`}
                               href={`${searchUrl}${searchString}`}
                               target="_blank"
-                              rel="noopener noreferrer"
                               className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
                               style={{ display: 'flex', padding: '16px 8px' }}
                             >
@@ -525,7 +489,6 @@ class Preview extends Component {
                       <a
                         href={`https://www.youtube.com/results?search_query=${searchString}`}
                         target="_blank"
-                        rel="noopener noreferrer"
                         className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
                         style={{ display: 'flex', padding: '16px 8px' }}
                       >
@@ -688,11 +651,8 @@ class Preview extends Component {
                       type="radio"
                       id="sample_select_state-preview"
                       name="sample-select-state"
+                      defaultChecked={!this.state.preferFullTracks}
                       checked={!this.state.preferFullTracks}
-                      onChange={() => {
-                        localStorage.setItem('preferFullTracks', 'false')
-                        this.setState({ preferFullTracks: false })
-                      }}
                     />
                     <label
                       htmlFor="sample_select_state-preview"
@@ -739,11 +699,8 @@ class Preview extends Component {
                       type="radio"
                       id="sample_select_state-full_track"
                       name="sample-select-state"
+                      defaultChecked={this.state.preferFullTracks}
                       checked={this.state.preferFullTracks}
-                      onChange={() => {
-                        localStorage.setItem('preferFullTracks', 'true')
-                        this.setState({ preferFullTracks: true })
-                      }}
                     />
                     <label
                       htmlFor="sample_select_state-full_track"
@@ -825,7 +782,7 @@ class Preview extends Component {
                     onCartButtonClick={this.props.onCartButtonClick}
                     onCreateCartClick={this.props.onCreateCartClick}
                     onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
-                    disabled={!this.props.currentTrack || !this.props.hasSelectedTrack}
+                    disabled={!this.props.currentTrack}
                   />
                 )}
                 <button
@@ -964,7 +921,7 @@ class Preview extends Component {
   async onPreviewStoreClicked(id) {
     this.setState({ loading: true })
     try {
-      const preview = this.props.currentTrack.previews.find(R.propEq(id, 'id'))
+      const preview = this.props.currentTrack.previews.find(R.propEq('id', id))
 
       await this.updateTrack(this.props.currentTrack, preview)
       this.setState({ mp3Preview: preview, position: 0, loading: false })

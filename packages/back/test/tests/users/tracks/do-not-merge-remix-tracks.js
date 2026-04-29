@@ -5,15 +5,13 @@ const secondTrack = require('../../../fixtures/noisia_purpose_remix_beatport.jso
 const assert = require('assert')
 const { test } = require('cascade-test')
 const { setupBeatportTracks, teardownTracks } = require('../../../lib/tracks.js')
-const { resolveTestUserId } = require('../../../lib/test-user')
 
 test({
   setup: async () => {
     await initDb()
-    return { userId: await resolveTestUserId() }
   },
   'when track and a remix is added': {
-    setup: async ({ userId }) => setupBeatportTracks([{ tracks: firstTrack }, { tracks: secondTrack }], false, [userId]),
+    setup: async () => setupBeatportTracks([{ tracks: firstTrack }, { tracks: secondTrack }]),
     'two tracks are added': async () => {
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) as "trackCount" from track')
       assert.equal(trackCount, 2)

@@ -6,7 +6,7 @@ import * as R from 'ramda'
 import { Link, NavLink, withRouter } from 'react-router-dom'
 import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
-import GlobalSearchBar from './GlobalSearchBar'
+import SearchBar from './SearchBar'
 import DropDownButton from './DropDownButton'
 import { isMobile } from 'react-device-detect'
 import Popup from './Popup'
@@ -72,7 +72,7 @@ class TopBar extends Component {
 
   getNotificationSubscriptions() {
     const searchString = searchTermsToString(this.props.searchTerms || [])
-    return this.props.notifications.filter(R.propEq(searchString?.toLocaleLowerCase(), 'text'))
+    return this.props.notifications.filter(R.propEq('text', searchString?.toLocaleLowerCase()))
   }
 
   // Fetch display names for entity pills that were committed without one (e.g. typed
@@ -191,6 +191,14 @@ class TopBar extends Component {
                 </NavLink>
                 <NavLink
                   style={(isActive) => ({ opacity: isActive ? 1 : 0.7 })}
+                  to={'/tracks/notifications'}
+                  className={'pill pill-button button-push_button-small'}
+                  onClick={() => this.setState({ discoverMenuOpen: false })}
+                >
+                  <span className={'pill-button-contents button-push_button_label'}>Notification tracks</span>
+                </NavLink>
+                <NavLink
+                  style={(isActive) => ({ opacity: isActive ? 1 : 0.7 })}
                   to={'/tracks/recent'}
                   className={'pill pill-button button-push_button-small'}
                   onClick={() => this.setState({ discoverMenuOpen: false })}
@@ -239,7 +247,7 @@ class TopBar extends Component {
             </Popup>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className={`menu_search`}>
-            <GlobalSearchBar
+            <SearchBar
               terms={this.state.committedTerms}
               onChange={this.handleChange.bind(this)}
               onSearch={this.handleSearch.bind(this)}
@@ -272,7 +280,7 @@ class TopBar extends Component {
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {this.props.stores?.map(({ storeName, purchaseAvailable }) => {
-                        const isSubscribed = notificationSubscriptions.some(R.propEq(storeName, 'storeName'))
+                        const isSubscribed = notificationSubscriptions.some(R.propEq('storeName', storeName))
                         return (
                           <button
                             disabled={notificationSubscriptionDisabled}

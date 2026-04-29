@@ -71,8 +71,6 @@ router.use(
 router.use('/log', ensureAuthenticated, logRouter)
 
 router.use('/me/', usersRouter)
-router.use('/me/api-keys', require('./users/api-keys.js'))
-router.use('/me/query', require('./users/query.js'))
 router.use('/admin/', adminRouter)
 
 module.exports = router

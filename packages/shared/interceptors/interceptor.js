@@ -1,9 +1,9 @@
 const { BatchInterceptor } = require('@mswjs/interceptors')
-const nodeInterceptors = require('@mswjs/interceptors/presets/node')
+const { default: nodeInterceptors } = require('@mswjs/interceptors/presets/node')
 const R = require('ramda')
 const logger = require('../logger')(__filename)
 
-async function makeRequestAndRespond({ request, controller, url = undefined, options = {} }) {
+async function makeRequestAndRespond({ request, url = undefined, options = {} }) {
   options = {
     method: request.method,
     duplex: request.duplex,
@@ -14,13 +14,13 @@ async function makeRequestAndRespond({ request, controller, url = undefined, opt
   const body = await res.text()
   const headers = Object.fromEntries(res.headers)
 
-  // Guard: only respond if the controller has not already handled this request
-  if (controller.readyState !== 0) {
-    logger.warn(`Request already handled, cannot respond again: ${request.url}`)
+  // Check if request has already been responded to before responding
+  if (request.responded || request._responded) {
+    logger.warn(`Request already responded, cannot respond again: ${request.url}`)
     return
   }
 
-  return controller.respondWith(
+  return request.respondWith(
     new Response(body, {
       status: res.status,
       statusText: res.statusText,
@@ -40,12 +40,9 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
   let mockedRequests = []
 
   logger.info(`Enabling development / test http request interceptors for ${name}`)
-
-  // In v0.41, nodeInterceptors is a plain array (no .default wrapper).
-  // It already includes FetchInterceptor — do not add another one.
   const interceptor = new BatchInterceptor({
     name: `${name}Interceptor`,
-    interceptors: [...nodeInterceptors],
+    interceptors: nodeInterceptors,
   })
 
   interceptor.apply()
@@ -69,9 +66,8 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
 
   activeInterceptors.set(name, { interceptor, publicApi })
 
-  // In v0.41 the listener receives { request, requestId, controller }.
-  // Responses must be issued via controller.respondWith() — request.respondWith() no longer exists.
-  interceptor.on('request', async ({ request, requestId, controller }) => {
+  interceptor.on('request', async (...args) => {
+    const { request } = args[0]
     const url = request.url
     logger.info(`Got request: ${url}`)
 
@@ -97,7 +93,6 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
               body: requestBody,
             },
             request,
-            controller,
           })
           return result
         } catch (error) {
@@ -110,9 +105,7 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
         const { body, options } = mock.getResponse(requestDetails)
 
         try {
-          const result = controller.respondWith(
-            new Response(body instanceof Object ? JSON.stringify(body) : body, options),
-          )
+          const result = request.respondWith(new Response(body instanceof Object ? JSON.stringify(body) : body, options))
           return result
         } catch (error) {
           logger.error(`Failed to mock request ${url}: ${error.message}`)

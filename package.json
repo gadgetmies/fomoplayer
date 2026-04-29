@@ -17,8 +17,6 @@
     "start:integration-tests": "concurrently \"NODE_ENV=test yarn run start:back\" \"NODE_ENV=test yarn run start:front\"",
     "start:prod": "yarn run start:back:prod",
     "ci:test": "yarn workspace fomoplayer_back ci:test",
-    "test:browser": "NODE_ENV=test yarn build && yarn workspace fomoplayer_back test:browser",
-    "ci:test:browser": "NODE_ENV=ci yarn build && yarn workspace fomoplayer_back ci:test:browser",
     "test": "yarn workspace fomoplayer_back test",
     "ui:test": "yarn workspace fomoplayer_integration_tests test",
     "ciui:test": "yarn workspace fomoplayer_integration_tests ci:test",

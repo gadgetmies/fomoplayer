@@ -5,7 +5,6 @@ const { initDb, pg } = require('../../../lib/db.js')
 const assert = require('assert')
 const { test } = require('cascade-test')
 const { setupBeatportTracks, teardownTracks } = require('../../../lib/tracks.js')
-const { resolveTestUserId } = require('../../../lib/test-user')
 const track = require('../../../fixtures/noisia_concussion_beatport.json')
 const repl = require('repl')
 const setMixName = (version) => L.modify(L.query('mix_name'), R.always(version))
@@ -47,10 +46,9 @@ let count = 1
 test({
   setup: async () => {
     await initDb()
-    return { userId: await resolveTestUserId() }
   },
   'when duplicate tracks are added': {
-    setup: async ({ userId }) => setupBeatportTracks([{ tracks: track }, { tracks: trackWithSameISRC }], false, [userId]),
+    setup: async () => setupBeatportTracks([{ tracks: track }, { tracks: trackWithSameISRC }]),
     'only one track is added to db': async () => {
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from track')
       assert.strictEqual(trackCount, 1)
@@ -58,7 +56,7 @@ test({
     teardown: teardownTracks,
   },
   'when remixed track is added': {
-    setup: async ({ userId }) => setupBeatportTracks([{ tracks: track }, { tracks: remixedTrack }], false, [userId]),
+    setup: async () => setupBeatportTracks([{ tracks: track }, { tracks: remixedTrack }]),
     'both tracks are added to db': async () => {
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from track')
       assert.strictEqual(trackCount, 2)
@@ -66,7 +64,7 @@ test({
     teardown: teardownTracks,
   },
   'when an edit of remixed track is added': {
-    setup: async ({ userId }) => setupBeatportTracks([{ tracks: remixedTrack }, { tracks: editOfRemixedTrack }], false, [userId]),
+    setup: async () => setupBeatportTracks([{ tracks: remixedTrack }, { tracks: editOfRemixedTrack }]),
     'both tracks are added to db': async () => {
       const [{ trackCount }] = await pg.queryRowsAsync('select count(*) :: INT as "trackCount" from track')
       assert.strictEqual(trackCount, 2)

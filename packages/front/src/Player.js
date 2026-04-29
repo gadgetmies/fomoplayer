@@ -75,33 +75,10 @@ class Player extends Component {
     }
   }
 
-  componentDidUpdate(prevProps) {
-    const storesChanged = prevProps.stores !== this.props.stores
-    if (!storesChanged || !this.props.stores?.length) return
-
-    const availableStores = this.props.stores.map(({ storeName }) => storeName)
-    const enabledStores = this.state.enabledStores.filter((store) => availableStores.includes(store))
-    const enabledStoreSearch = this.state.enabledStoreSearch.filter((store) => availableStores.includes(store))
-
-    const nextState = {}
-    if (enabledStores.length === 0) {
-      nextState.enabledStores = availableStores
-      window.localStorage.setItem('enabledStores', JSON.stringify(availableStores))
-    }
-    if (enabledStoreSearch.length === 0) {
-      nextState.enabledStoreSearch = availableStores
-      window.localStorage.setItem('enabledStoreSearch', JSON.stringify(availableStores))
-    }
-
-    if (Object.keys(nextState).length > 0) {
-      this.setState(nextState)
-    }
-  }
-
   mergeHeardStatus(tracks) {
     if (!tracks) return
     this.props.heardTracks.forEach((heardTrack) => {
-      const index = tracks.findIndex(R.propEq(parseInt(heardTrack.id, 10), 'id'))
+      const index = tracks.findIndex(R.propEq('id', parseInt(heardTrack.id, 10)))
       if (index !== -1) {
         tracks[index].heard = heardTrack.heard
       }
@@ -120,6 +97,8 @@ class Player extends Component {
       tracks = this.props.heardTracks
     } else if (this.props.listState === 'recent') {
       tracks = this.props.tracks.recentlyAdded.slice()
+    } else if (this.props.listState === 'notifications') {
+      tracks = this.props.tracks.notifications.slice()
     } else if (this.props.listState === 'carts') {
       tracks = this.props.selectedCart?.tracks || []
     } else if (this.props.listState === 'search') {
@@ -136,7 +115,7 @@ class Player extends Component {
   }
 
   getTrackIndex(track) {
-    return R.findIndex(R.propEq(track.id, 'id'), this.getTracks())
+    return R.findIndex(R.propEq('id', track.id), this.getTracks())
   }
 
   async jumpTracks(numberOfTracksToJump) {
@@ -194,7 +173,7 @@ class Player extends Component {
   isCurrentInDefaultCart() {
     const currentTrack = this.props.currentTrack
     return currentTrack && this.getDefaultCart()
-      ? this.getDefaultCart().tracks?.find(R.propEq(currentTrack.id, 'id'))
+      ? this.getDefaultCart().tracks?.find(R.propEq('id', currentTrack.id))
       : null
   }
 
@@ -248,21 +227,20 @@ class Player extends Component {
   }
 
   async markHeard(id) {
-    return this.props.markHeard(this.getTracks().find(R.propEq(id, 'id')))
+    return this.props.markHeard(this.getTracks().find(R.propEq('id', id)))
   }
 
   render() {
     const tracks = this.getTracks()
     const currentTrack = this.props.currentTrack
-    const hasSelectedTrack = Boolean(currentTrack && tracks.some(({ id }) => id === currentTrack.id))
     const inCarts = currentTrack
-      ? this.props.carts.filter((cart) => cart.tracks?.find(R.propEq(currentTrack.id, 'id')))
+      ? this.props.carts.filter((cart) => cart.tracks?.find(R.propEq('id', currentTrack.id)))
       : []
     const selectedCartId = this.props.selectedCart?.id
     const selectedCartIsPurchased = this.props.selectedCart?.is_purchased
     const defaultCart = this.props.carts.find(R.prop('is_default'))
     const inDefaultCart =
-      defaultCart && currentTrack ? defaultCart.tracks?.find(R.propEq(currentTrack.id, 'id')) !== undefined : false
+      defaultCart && currentTrack ? defaultCart.tracks?.find(R.propEq('id', currentTrack.id)) !== undefined : false
     const inCurrentCart = inCarts.find(({ id }) => id === selectedCartId)
 
     return (
@@ -276,7 +254,6 @@ class Player extends Component {
           currentTrack={currentTrack}
           follows={this.props.follows}
           inCarts={inCarts}
-          defaultCartId={defaultCart?.id}
           inDefaultCart={inDefaultCart}
           inCurrentCart={inCurrentCart}
           selectedCartId={selectedCartId}
@@ -305,7 +282,6 @@ class Player extends Component {
           onPrevious={() => this.playPreviousTrack()}
           onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
           onAddEntityToSearch={this.props.onAddEntityToSearch}
-          hasSelectedTrack={hasSelectedTrack}
         />
         <Tracks
           mode={this.props.mode}
@@ -340,7 +316,8 @@ class Player extends Component {
           onIgnoreClicked={this.props.onOpenIgnorePopup?.bind(this)}
           onLoadMore={this.props.onLoadMore}
           onMarkPurchasedButtonClick={this.props.onMarkPurchased}
-          onPreviewRequested={(requestedTrack) => {
+          onPreviewRequested={(id) => {
+            const requestedTrack = R.find(R.propEq('id', id), this.getTracks())
             const requestedTrackIndex = this.getTrackIndex(requestedTrack)
             const trackCount = this.getTracks().length - 1
             if (requestedTrackIndex === trackCount) this.props.onUpdateTracksClicked()
