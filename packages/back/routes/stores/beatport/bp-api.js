@@ -1,24 +1,8 @@
 const BPromise = require('bluebird')
 const R = require('ramda')
-const { init, initWithSession } = require('./session-request')
+const { init, initWithSession } = require('request-in-session')
+const request = require('request-promise').defaults({ strictSSL: false, resolveWithFullResponse: true })
 const { decode } = require('html-entities')
-
-// Wraps native fetch to provide {statusCode, body} shape matching the old request-promise API.
-// Note: strictSSL: false equivalent is not needed for Node 22's built-in fetch in typical use.
-const request = (uri, callback) => {
-  const promise = fetch(uri)
-    .then(async (res) => {
-      const body = await res.text()
-      const result = { statusCode: res.status, body }
-      if (callback) callback(null, result)
-      return result
-    })
-    .catch((e) => {
-      if (callback) callback(e)
-      else throw e
-    })
-  return promise
-}
 
 const beatportUri = 'https://www.beatport.com'
 const loginUri = 'https://www.beatport.com/account/login'
@@ -49,7 +33,7 @@ const getPageTitleFromSource = (pageSource) => {
   const start = pageSource.indexOf('>', pageSource.indexOf(startString))
   if (start !== -1) {
     const stop = pageSource.indexOf('</title>')
-    return decode(pageSource.substring(start + 1, stop))
+    return decode(pageSource.substring(start + startString.length, stop))
       .replace(' :: Beatport', '')
       .replace(' artists & music download - Beatport', '')
       .replace(' music download - Beatport', '')

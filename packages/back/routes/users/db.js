@@ -942,35 +942,38 @@ WHERE
   )
 }
 
-module.exports.setTrackHeard = async (trackId, userId, heard) => {
+module.exports.setTrackHeard = (trackId, userId, heard) => {
   logger.debug('setTrackHeard', { trackId, userId, heard })
-  const now = heard ? new Date() : null
-  await pg.queryAsync(sql`-- setTrackHeard
-UPDATE user__track SET user__track_heard = ${now}
-WHERE track_id = ${trackId} AND meta_account_user_id = ${userId}
-`)
-  return { heardAt: now ? now.toISOString() : null }
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- setTrackHeard
+UPDATE user__track
+SET
+  user__track_heard = ${heard ? 'now()' : null}
+WHERE
+    track_id = ${trackId}
+AND meta_account_user_id = (SELECT meta_account_user_id FROM meta_account WHERE meta_account_user_id = ${userId})
+`,
+  )
 }
 
-module.exports.setAllHeard = async (userId, heard, interval) => {
-  const now = heard ? new Date() : null
-  const result = await pg.queryAsync(sql`-- setAllHeard
-UPDATE user__track SET user__track_heard = ${now}
+module.exports.setAllHeard = (userId, heard, interval) =>
+  pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- setAllHeard
+UPDATE user__track
+SET user__track_heard = ${heard ? 'NOW()' : null}
 WHERE track_id IN (
-  SELECT track_id FROM user__track NATURAL JOIN track NATURAL JOIN store__track
-  WHERE meta_account_user_id = ${userId}
-    AND user__track_heard IS NULL
-    AND store__track_released < NOW() - ${interval}::INTERVAL
+    SELECT track_id
+    FROM user__track
+             NATURAL JOIN track
+             NATURAL JOIN store__track
+    WHERE meta_account_user_id = ${userId}
+      AND user__track_heard IS NULL
+      AND store__track_released < NOW() - ${interval}::INTERVAL
 )
-`)
-  return { heardAt: now ? now.toISOString() : null, count: result.rowCount }
-}
-
-module.exports.deleteHeardSince = (userId, since) =>
-  pg.queryAsync(sql`-- deleteHeardSince
-UPDATE user__track SET user__track_heard = NULL
-WHERE meta_account_user_id = ${userId} AND user__track_heard >= ${since}
-`)
+`,
+  )
 
 module.exports.addTrackToUser = async (tx, userId, trackId, sourceId) => {
   await tx.queryAsync(

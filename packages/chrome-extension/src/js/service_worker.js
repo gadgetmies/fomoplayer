@@ -35,60 +35,11 @@ const fetchGoogleToken = (handler) => {
         token = params.get('id_token')
         // Example: id_token=<YOUR_BELOVED_ID_TOKEN>&authuser=0&hd=<SOME.DOMAIN.PL>&session_state=<SESSION_SATE>&prompt=<PROMPT>
       }
-      chrome.storage.local.set({ googleIdToken: token }, () => {
-        handler(token)
+      chrome.storage.local.set({ token }, () => {
+        handler(!!token)
       })
     },
   )
-}
-
-const chromeStorageGet = (keys) =>
-  new Promise((resolve) => {
-    chrome.storage.local.get(keys, resolve)
-  })
-
-const chromeStorageSet = (values) =>
-  new Promise((resolve) => {
-    chrome.storage.local.set(values, resolve)
-  })
-
-const exchangeGoogleTokenForInternalToken = async ({ googleIdToken, appUrl }) => {
-  const base = appUrl || DEFAULT_APP_URL
-  const response = await fetch(`${base}/api/auth/token/exchange-google`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ id_token: googleIdToken }),
-  })
-
-  if (!response.ok) {
-    const message = await response.text()
-    throw new Error(`Token exchange failed: ${response.status} ${response.statusText} ${message}`)
-  }
-
-  const { access_token, expires_in } = await response.json()
-  const accessToken = access_token
-  const tokenExpiresAt = Date.now() + Math.max((expires_in - 10) * 1000, 1000)
-  return { accessToken, tokenExpiresAt }
-}
-
-const resolveInternalAccessToken = async (appUrl) => {
-  const { token, tokenExpiresAt, googleIdToken } = await chromeStorageGet(['token', 'tokenExpiresAt', 'googleIdToken'])
-  if (token && tokenExpiresAt && tokenExpiresAt > Date.now()) {
-    return token
-  }
-
-  if (!googleIdToken) {
-    return null
-  }
-
-  const { accessToken, tokenExpiresAt: refreshedTokenExpiresAt } = await exchangeGoogleTokenForInternalToken({
-    googleIdToken,
-    appUrl,
-  })
-  await chromeStorageSet({ token: accessToken, tokenExpiresAt: refreshedTokenExpiresAt })
-  return accessToken
 }
 
 const waitFunction = `
@@ -180,14 +131,8 @@ const handleError = (error) => {
 }
 
 const sendTracks = (storeUrl, type = 'tracks', tracks) => {
-  chrome.storage.local.get(['appUrl'], async ({ appUrl }) => {
-    const base = appUrl || DEFAULT_APP_URL
+  chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
     try {
-      const accessToken = await resolveInternalAccessToken(base)
-      if (!accessToken) {
-        throw new Error('Not authenticated. Please log in again.')
-      }
-
       const chunks = R.splitEvery(100, tracks)
       const chunkIndexes = R.range(0, chunks.length)
 
@@ -198,11 +143,11 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
         })
         chrome.runtime.sendMessage({ type: 'refresh' })
 
-        const res = await fetch(`${base}/api/me/${type}`, {
+        const res = await fetch(`${appUrl}/api/me/${type}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            authorization: `Bearer ${accessToken}`,
+            authorization: `Bearer ${token}`,
             'x-multi-store-player-store': storeUrl,
           },
           body: JSON.stringify(chunks[i]),
@@ -218,7 +163,7 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
       const message = {
         message: `Failed to send tracks from ${storeUrl}`,
         stack: JSON.stringify({
-          url: `${base}/api/me/${type}`,
+          url: `${appUrl}/api/me/${type}`,
           storeUrl,
           stack: e.stack,
           time: new Date().toUTCString(),
@@ -230,25 +175,19 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
 }
 
 const sendArtists = (storeUrl, artists) => {
-  chrome.storage.local.get(['appUrl'], async ({ appUrl }) => {
-    const base = appUrl || DEFAULT_APP_URL
+  chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
     try {
-      const accessToken = await resolveInternalAccessToken(base)
-      if (!accessToken) {
-        throw new Error('Not authenticated. Please log in again.')
-      }
-
       chrome.storage.local.set({
         operationStatus: `Sending artists`,
         operationProgress: 0,
       })
       chrome.runtime.sendMessage({ type: 'refresh' })
 
-      const res = await fetch(`${base}/api/me/follows/artists`, {
+      const res = await fetch(`${appUrl}/api/me/follows/artists`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          authorization: `Bearer ${accessToken}`,
+          authorization: `Bearer ${token}`,
           'x-multi-store-player-store': storeUrl,
         },
         body: JSON.stringify(artists),
@@ -263,7 +202,7 @@ const sendArtists = (storeUrl, artists) => {
       const message = {
         message: `Failed to send artists from ${storeUrl}`,
         stack: JSON.stringify({
-          url: `${base}/api/me/follows/artists`,
+          url: `${appUrl}/api/me/follows/artists`,
           storeUrl,
           stack: e.stack,
           time: new Date().toUTCString(),
@@ -275,25 +214,19 @@ const sendArtists = (storeUrl, artists) => {
 }
 
 const sendLabels = (storeUrl, labels) => {
-  chrome.storage.local.get(['appUrl'], async ({ appUrl }) => {
-    const base = appUrl || DEFAULT_APP_URL
+  chrome.storage.local.get(['token', 'appUrl'], async ({ token, appUrl }) => {
     try {
-      const accessToken = await resolveInternalAccessToken(base)
-      if (!accessToken) {
-        throw new Error('Not authenticated. Please log in again.')
-      }
-
       chrome.storage.local.set({
         operationStatus: `Sending labels`,
         operationProgress: 0,
       })
       chrome.runtime.sendMessage({ type: 'refresh' })
 
-      const res = await fetch(`${base}/api/me/follows/labels`, {
+      const res = await fetch(`${appUrl}/api/me/follows/labels`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          authorization: `Bearer ${accessToken}`,
+          authorization: `Bearer ${token}`,
           'x-multi-store-player-store': storeUrl,
         },
         body: JSON.stringify(labels),
@@ -308,7 +241,7 @@ const sendLabels = (storeUrl, labels) => {
       const message = {
         message: `Failed to send labels from ${storeUrl}`,
         stack: JSON.stringify({
-          url: `${base}/api/me/follows/labels`,
+          url: `${appUrl}/api/me/follows/labels`,
           storeUrl,
           stack: e.stack,
           time: new Date().toUTCString(),
@@ -376,34 +309,17 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       fetchNextItem()
     }
   } else if (message.type === 'logging-out') {
-    chrome.storage.local.remove(['token', 'tokenExpiresAt', 'googleIdToken'], () => {
+    chrome.storage.local.remove('token', () => {
       chrome.runtime.sendMessage({ type: 'refresh' })
     })
   } else if (message.type === 'oauth-login') {
-    fetchGoogleToken(async (googleIdToken) => {
-      if (!googleIdToken) {
+    fetchGoogleToken((success) => {
+      if (success) {
+        console.log('Got token from Google')
+      } else {
         console.log('Did not get token from Google')
-        chrome.runtime.sendMessage({ type: 'login', success: false })
-        return
       }
-
-      try {
-        const { appUrl } = await chromeStorageGet(['appUrl'])
-        const { accessToken, tokenExpiresAt } = await exchangeGoogleTokenForInternalToken({
-          googleIdToken,
-          appUrl: appUrl || DEFAULT_APP_URL,
-        })
-        await chromeStorageSet({
-          token: accessToken,
-          tokenExpiresAt,
-          googleIdToken,
-        })
-        console.log('Exchanged Google token for internal access token')
-        chrome.runtime.sendMessage({ type: 'login', success: true })
-      } catch (e) {
-        console.log('Token exchange failed', e)
-        chrome.runtime.sendMessage({ type: 'login', success: false })
-      }
+      chrome.runtime.sendMessage({ type: 'login', success })
     })
   }
 
@@ -415,6 +331,6 @@ console.log('registered')
 chrome.storage.local.get(['enabledStores', 'appUrl'], ({ appUrl, enabledStores }) => {
   chrome.storage.local.set({
     enabledStores: enabledStores ? enabledStores : { beatport: true, bandcamp: true },
-    appUrl: appUrl ? appUrl : DEFAULT_APP_URL,
+    appUrl: appUrl ? appUrl : 'https://fomoplayer.com',
   })
 })

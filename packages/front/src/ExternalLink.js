@@ -14,10 +14,9 @@ class ExternalLink extends Component {
       <a
         onClick={(e) => e.stopPropagation()}
         className={`${this.props.className || ''} external-link link`}
+        target="_blank"
         style={{ display: 'inline-flex' }}
         {...R.omit(['children', 'showIcon'], this.props)}
-        target="_blank"
-        rel="noopener noreferrer"
       >
         <span>{this.props.children}</span>
         <span>{this.props.showIcon ? <FontAwesomeIcon icon="square-arrow-up-right" /> : null}</span>

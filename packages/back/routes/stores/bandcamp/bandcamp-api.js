@@ -4,8 +4,9 @@ const logger = require('fomoplayer_shared').logger(__filename)
 const { decode } = require('html-entities')
 const jsdom = require('jsdom')
 const { JSDOM } = jsdom
-const vm = require('vm')
+const { VM } = require('vm2')
 
+const vm = new VM()
 let suspendedUntil = null
 let requestCount = 0
 
@@ -15,7 +16,7 @@ const scrapeJSON = R.curry((pattern, string) => {
     throw new Error('No match for pattern')
   }
 
-  return vm.runInNewContext(match[1], {})
+  return vm.run(match[1])
 })
 
 const extractJSON = R.curry((selector, attribute = undefined, html) => {
@@ -25,7 +26,9 @@ const extractJSON = R.curry((selector, attribute = undefined, html) => {
   return JSON.parse(text)
 })
 
-const getPageSource = async (url) => {
+const request = require('request-promise')
+
+const getPageSource = (url) => {
   if (suspendedUntil) {
     if (suspendedUntil < Date.now()) {
       suspendedUntil = null
@@ -33,26 +36,26 @@ const getPageSource = async (url) => {
     } else {
       const error = new Error(`Rate limit reached. Requests are suspended until: ${suspendedUntil.toString()}`)
       error.isRateLimit = true
-      throw error
+      return Promise.reject(error)
     }
   }
   requestCount++
-  const res = await fetch(url, { method: 'GET' })
-  if ([429, 403].includes(res.status)) {
-    suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
-    logger.error(`Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`)
-    const error = new Error(`Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`)
-    error.isRateLimit = true
-    error.statusCode = res.status
-    error.requestCount = requestCount
-    throw error
-  }
-  if (!res.ok) {
-    const error = new Error(`Request failed with status ${res.status}`)
-    error.statusCode = res.status
-    throw error
-  }
-  return res.text()
+  return request({
+    method: 'GET',
+    uri: url,
+  }).catch((e) => {
+    if ([429, 403].includes(e.statusCode)) {
+      suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
+      logger.error(`Rate limit reached after ${requestCount} requests. Status code: ${e.statusCode}. Requests are suspended until: ${suspendedUntil.toString()}`)
+      const error = new Error(`Rate limit reached after ${requestCount} requests. Status code: ${e.statusCode}. Requests are suspended until: ${suspendedUntil.toString()}`)
+      error.isRateLimit = true
+      error.statusCode = e.statusCode
+      error.requestCount = requestCount
+      throw error
+    } else {
+      throw e
+    }
+  })
 }
 
 const isRateLimited = () => {
@@ -168,19 +171,20 @@ const mapSearchResults = ({ auto: { results } }) =>
   }))
 
 const getSearchResults = (query, callback) => {
-  return fetch('https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic', {
+  return request({
     method: 'POST',
-    body: JSON.stringify({
+    uri: 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic',
+    body: {
       search_text: query,
       search_filter: 'b',
       fan_id: null,
       full_page: false,
-    }),
+    },
+    json: true,
     headers: {
       'Content-Type': 'application/json; charset=UTF-8',
     },
   })
-    .then((res) => res.json())
     .then((res) => {
       callback(null, mapSearchResults(res))
     })

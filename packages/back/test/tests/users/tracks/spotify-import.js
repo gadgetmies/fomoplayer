@@ -7,16 +7,16 @@ const { teardownTracks, addNewSpotifyTracksToDb } = require('../../../lib/tracks
 const { updateDates } = require('../../../lib/fixture-utils')
 const { test } = require('cascade-test')
 const expectedTrackDetails = require('../../../fixtures/spotify_track_details.json')
-const { resolveTestUserId } = require('../../../lib/test-user')
+
+const userId = 1
 
 const trackWithUpdatedDates = updateDates()(track)
 test({
   setup: async () => {
     await initDb()
-    return { userId: await resolveTestUserId() }
   },
   'when a track is added': {
-    setup: async ({ userId }) => addNewSpotifyTracksToDb([trackWithUpdatedDates], false, [userId]),
+    setup: async () => addNewSpotifyTracksToDb([trackWithUpdatedDates]),
     'track is added to user': async () => {
       const [{ trackCount }] = await pg.queryRowsAsync('SELECT COUNT(*) :: INT AS "trackCount" FROM user__track')
       return assert.strictEqual(trackCount, 1)

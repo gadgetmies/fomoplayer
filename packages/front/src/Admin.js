@@ -143,7 +143,7 @@ class Admin extends Component {
   }
 
   selectConfig(e) {
-    const config = this.state.configs.find(R.propEq(Number(e.target.value), 'id'))
+    const config = this.state.configs.find(R.propEq('id', Number(e.target.value)))
     this.setState({ config: config.config, lens: config.lens, name: config.name })
     this.updateChart()
   }

@@ -68,21 +68,6 @@ export default class Login extends Component {
   }
 
   render() {
-    if (window.location.search.includes('loginFailed=true')) {
-      return (
-        <div className={this.props.className}>
-          <h2>Login failed</h2>
-          <p>
-            Your login attempt was not successful. This can happen when registration is closed and no
-            invite code was provided, or if there was a problem during authentication.
-          </p>
-          <a href="/" className="button button-push_button button-push_button-large button-push_button-primary">
-            ← Back to login
-          </a>
-        </div>
-      )
-    }
-
     return (
       <div className={this.props.className}>
         {this.state.loggedIn ? (
@@ -107,6 +92,9 @@ export default class Login extends Component {
               </a>
               {this.state.loginError ? 'Login failed' : ''}
             </div>
+            {window.location.search.includes('loginFailed=true') && (
+              <p>Failed to log in. Please ensure you used the correct account.</p>
+            )}
             {this.state.signUpAvailable === null ? (
               <Spinner />
             ) : (

@@ -12,25 +12,14 @@ const sql = require('sql-template-strings')
 const { queryAccountCount } = require('./routes/db')
 const { deleteInviteCode } = require('./db/account')
 
-const parseOidcState = (req) => {
-  const rawState = req?.query?.state
-  if (!rawState) {
-    return undefined
+const consumeInviteCode = async (inviteCode) => {
+  const deleteCount = await deleteInviteCode(inviteCode)
+  if (deleteCount === 1) {
+    return true
+  } else if (deleteCount === 0) {
+    return false
   }
-
-  if (typeof rawState === 'object') {
-    return rawState
-  }
-
-  if (typeof rawState === 'string') {
-    try {
-      return JSON.parse(rawState)
-    } catch (_) {
-      return undefined
-    }
-  }
-
-  return undefined
+  throw new Error('Consumed more than one invite code')
 }
 
 module.exports = function passportSetup() {
@@ -48,115 +37,95 @@ module.exports = function passportSetup() {
   }
 
   const googleOpenIDIssuer = 'accounts.google.com'
-  const googleOidcConfigured = Boolean(config.googleClientId && config.googleClientSecret)
-  if (!googleOidcConfigured) {
-    logger.info('Google OIDC client credentials not configured; skipping OIDC strategy registration')
-  } else {
-    passport.use(new OpenIDStrategy(
+  passport.use(
+    new OpenIDStrategy(
       {
         issuer: googleOpenIDIssuer,
         clientID: config.googleClientId,
         clientSecret: config.googleClientSecret,
         authorizationURL: 'https://accounts.google.com/o/oauth2/auth',
         tokenURL: 'https://www.googleapis.com/oauth2/v3/token',
-        callbackURL: config.googleOidcApiRedirect || `${config.apiURL}/auth/login/google/return`,
+        callbackURL: `${config.apiURL}/auth/login/google/return`,
         passReqToCallback: true,
       },
       async (req, issuer, profile, done) => {
+        if (profile.id === undefined) {
+          throw new Error('OIDC profile id not returned!')
+        }
+
         try {
-          if (!profile || profile.id === undefined) {
-            logger.error('OIDC profile id not returned by provider', { issuer, profile })
-            return done(null, false, { message: 'OIDC profile id not returned' })
-          }
-
-          const normalizedIssuer = issuer.replace(/^https?:\/\//, '')
-          const oidcIdentity = { issuer: normalizedIssuer, subject: profile.id }
-
-          const inviteCode = req.session?.inviteCode
-          const accountCount = await queryAccountCount()
-          const signUpAvailable = accountCount <= config.maxAccountCount
-          let user = await account.findByIdentifier(normalizedIssuer, profile.id)
+          const inviteCode = req.session.inviteCode
+          const signUpAvailable = (await queryAccountCount()) <= config.maxAccountCount
+          let user = await account.findByIdentifier(issuer, profile.id)
 
           if (!user) {
             if (!signUpAvailable) {
               if (!inviteCode) {
-                logger.warn('OIDC sign-up denied: sign-up closed and no invite code', {
-                  accountCount,
-                  maxAccountCount: config.maxAccountCount,
-                })
                 return done(null, false, { message: 'Sign up is not available' })
-              }
-              const inviteCodeConsumed = await deleteInviteCode(inviteCode)
-              if (!inviteCodeConsumed) {
-                logger.warn('OIDC sign-up denied: invalid invite code')
-                return done(null, false, { message: 'Invalid invite code' })
+              } else {
+                const inviteCodeConsumed = await consumeInviteCode(inviteCode)
+                if (!inviteCodeConsumed) {
+                  return done(null, false, { message: 'Invalid invite code' })
+                }
               }
             }
 
-            user = await account.findOrCreateByIdentifier(normalizedIssuer, profile.id)
+            user = await account.findOrCreateByIdentifier(issuer, profile.id)
           }
 
-          if (!user || user.id === undefined) {
-            logger.error('OIDC verify: user lookup/create returned no usable user', { user })
-            return done(null, false, { message: 'User lookup failed' })
-          }
-
-          done(null, { ...user, oidcIdentity })
-          try {
-            await pgrm.queryAsync(
-              //language=PostgreSQL
-              sql` -- open id login
+          done(null, user)
+          await pgrm.queryAsync(
+            //language=PostgreSQL
+            sql` -- open id login
 UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_id = ${user.id}
 `,
-            )
-          } catch (e) {
-            logger.error('Failed to update last login timestamp after OIDC login', {
-              errorMessage: e?.message ?? String(e),
-              stack: e?.stack,
-            })
-          }
+          )
         } catch (e) {
-          logger.error('Creating or fetching user for OIDC failed', {
-            errorMessage: e?.message ?? String(e),
-            stack: e?.stack,
-          })
-          done(e)
+          logger.error('Creating or fetching user for OIDC failed', e)
+          done(null)
         }
       },
-    ))
+    ),
+  )
+
+  const JwtStrategy = require('passport-jwt').Strategy
+  const ExtractJwt = require('passport-jwt').ExtractJwt
+  const jwksRsa = require('jwks-rsa')
+  const allowedIssuers = ['accounts.google.com', 'https://accounts.google.com']
+
+  const verify = async (jwt_payload, done) => {
+    if (jwt_payload && jwt_payload.sub && allowedIssuers.includes(jwt_payload.iss)) {
+      try {
+        const acc = await account.findOrCreateByIdentifier(jwt_payload.iss, jwt_payload.sub)
+        if (acc) {
+          return done(null, acc)
+        } else {
+          return done(null, false)
+        }
+      } catch (e) {
+        logger.error('OIDC verification failed', e)
+        return done(e)
+      }
+    }
+
+    return done(null, false)
   }
 
-
-  const CustomStrategy = require('passport-custom').Strategy
-  const { findApiKeyByRaw, touchApiKey } = require('./db/api-key')
-  const { apiKeyRateLimiter } = require('./routes/shared/api-key-rate-limiter')
-
-  passport.use('api-key', new CustomStrategy(async (req, done) => {
-    try {
-      const authHeader = req.headers.authorization ?? ''
-      if (!authHeader.startsWith('Bearer fp_')) return done(null, false)
-      const rawKey = authHeader.slice(7)
-      const keyRecord = await findApiKeyByRaw(rawKey)
-      if (!keyRecord || keyRecord.api_key_revoked_at) return done(null, false)
-      const rl = apiKeyRateLimiter.check(keyRecord.api_key_id, {
-        perMinute: keyRecord.rate_limit_per_minute,
-        perDay: keyRecord.rate_limit_per_day,
-      })
-      if (!rl.allowed) return done(null, false, { rateLimited: true, ...rl })
-      touchApiKey(keyRecord.api_key_id).catch(() => {})
-      let user
-      try {
-        user = await account.findByUserId(keyRecord.meta_account_user_id)
-      } catch (e) {
-        if (e.message && e.message.includes('User not found')) return done(null, false)
-        throw e
-      }
-      return done(null, user ?? false)
-    } catch (e) {
-      return done(e)
-    }
-  }))
-
+  passport.use(
+    new JwtStrategy(
+      {
+        // Dynamically provide a signing key based on the kid in the header and the signing keys provided by the JWKS endpoint.
+        secretOrKeyProvider: jwksRsa.passportJwtSecret({
+          cache: true,
+          rateLimit: true,
+          jwksRequestsPerMinute: 5,
+          jwksUri: `https://www.googleapis.com/oauth2/v3/certs`,
+        }),
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      },
+      verify,
+    ),
+  )
 
   passport.serializeUser(async (userToSerialize, done) => {
     try {

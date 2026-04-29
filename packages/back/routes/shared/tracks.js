@@ -86,7 +86,7 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
   logger.debug('Start processing received tracks', { userIds, storeUrl, skipOld, type })
 
   let storedTracks = await queryStoredTracksForUrls(tracks.map(R.prop('url')))
-  const filteredTracks = tracks.filter(({ url }) => !storedTracks.find(R.propEq(url, 'url')))
+  const filteredTracks = tracks.filter(({ url }) => !storedTracks.find(R.propEq('url', url)))
   if (filteredTracks.length === 0) {
     logger.debug(`All tracks already exist in database (stored count: ${storedTracks.length})`)
   }

@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import * as R from 'ramda'
-import { BrowserRouter as Router, Redirect, Route, withRouter } from 'react-router-dom'
+import { BrowserRouter as Router, Redirect, Route } from 'react-router-dom'
 import { ErrorBoundary } from 'react-error-boundary'
 import Login from './UserLogin.js'
 import Player from './Player.js'
@@ -44,13 +44,6 @@ library.add(fas, far, fab)
 const logoutPath = '/auth/logout'
 const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [], notifications: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
-const buildLoginReturnPath = () => {
-  const params = new URLSearchParams(window.location.search)
-  params.delete('loginFailed')
-  const query = params.toString()
-  return `${window.location.pathname}${query ? `?${query}` : ''}`
-}
-
 const deduplicateTracks = (existingTracks, newTracks) => {
   const existingIds = new Set(existingTracks.map(track => track.id))
   const uniqueNewTracks = newTracks.filter(track => !existingIds.has(track.id))
@@ -58,25 +51,6 @@ const deduplicateTracks = (existingTracks, newTracks) => {
 }
 
 const Root = (props) => <div className="root" style={{ height: '100vh' }} {...props} />
-
-class LocationWatcherBase extends Component {
-  componentDidMount() {
-    this.props.onLocationChange(this.props.location)
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.location !== this.props.location) {
-      this.props.onLocationChange(this.props.location)
-    }
-  }
-
-  render() {
-    return null
-  }
-}
-
-const LocationWatcher = withRouter(LocationWatcherBase)
-
 class App extends Component {
   constructor(props) {
     super(props)
@@ -140,8 +114,6 @@ class App extends Component {
       pagination: null,
       notHeardBefore: null,
     }
-
-    this.lastLocationSignature = ''
   }
 
   setListState(listState) {
@@ -193,8 +165,6 @@ class App extends Component {
 
   async componentDidMount() {
     subscribe(events.SEARCH, this.searchEventHandler)
-    this.syncStateWithLocation()
-
 
     const pathParts = location.pathname.slice(1).split('/')
     const isCartPath = pathParts[0] === 'carts'
@@ -254,82 +224,6 @@ class App extends Component {
     }
   }
 
-  componentDidUpdate() {
-    this.syncStateWithLocation()
-  }
-
-  syncStateWithLocation(location = window.location) {
-    const { pathname, search } = location
-    const locationSignature = `${pathname}${search}`
-    if (locationSignature === this.lastLocationSignature) return
-    this.lastLocationSignature = locationSignature
-
-    const pathParts = pathname.slice(1).split('/')
-    const searchParams = new URLSearchParams(search)
-    const query = searchParams.get('q') || ''
-    const isSearchPath = pathname.match(/^\/search\/?$/)
-
-    const nextState = {}
-    let shouldSetState = false
-
-    if (isSearchPath && query) {
-      const searchTerms = applyEntityNamesFromUrlParam(
-        parseSearchTerms(query),
-        searchParams.get('names') || '',
-      )
-      const filters = {
-        sort: searchParams.get('sort') || '-released',
-        limit: searchParams.get('limit') || 100,
-        addedSince: searchParams.get('addedSince') || '',
-        onlyNew: searchParams.get('onlyNew') || '',
-      }
-      const currentQuery = searchTermsToQueryString(this.state.searchTerms || [])
-      if (currentQuery !== query || this.state.listState !== 'search') {
-        nextState.searchTerms = searchTerms
-        nextState.searchFilters = filters
-        nextState.listState = 'search'
-        shouldSetState = true
-        this.search(searchTerms, filters)
-      }
-    } else if (this.state.searchTerms.length > 0) {
-      nextState.searchTerms = []
-      shouldSetState = true
-    }
-
-    const nextListState = pathParts[0] === 'tracks' ? (pathParts[1] || 'new') : pathParts[0]
-    if (nextListState && nextListState !== this.state.listState && nextListState !== 'search') {
-      nextState.listState = nextListState
-      shouldSetState = true
-    }
-
-    if (nextListState === 'carts') {
-      const selectedCartUuid = pathParts[1]
-      const selectedCart = this.state.carts?.find(({ uuid }) => uuid === selectedCartUuid)
-      if (
-        selectedCartUuid &&
-        (this.state.selectedCartUuid !== selectedCartUuid || this.state.selectedCart !== selectedCart)
-      ) {
-        nextState.selectedCartUuid = selectedCartUuid
-        nextState.selectedCart = selectedCart
-        shouldSetState = true
-      }
-      const tracksOffset = parseInt(searchParams.get('offset') || 0)
-      if (tracksOffset !== this.state.tracksOffset) {
-        nextState.tracksOffset = tracksOffset
-        shouldSetState = true
-      }
-    }
-
-    const navigatingToNotifications = nextListState === 'notifications' && nextListState !== this.state.listState
-    if (shouldSetState) {
-      this.setState(nextState, () => {
-        if (navigatingToNotifications) {
-          this.updateTracks()
-        }
-      })
-    }
-  }
-
   async onLoginDone() {
     this.setState({ loggedIn: true })
     await this.updateStatesFromServer()
@@ -343,14 +237,11 @@ class App extends Component {
     const carts = await requestJSONwithCredentials({
       path: `/me/carts`,
     })
-    const visibleCarts = carts.filter(({ deleted }) => !deleted)
-    const selectedCartUuid = this.state.selectedCartUuid || visibleCarts[0]?.uuid
-    const selectedCart = selectedCartUuid ? visibleCarts.find(({ uuid }) => uuid === selectedCartUuid) : undefined
 
     this.setState({
-      carts: visibleCarts,
-      selectedCartUuid,
-      selectedCart,
+      carts: carts.filter(({ deleted }) => !deleted),
+      selectedCartUuid: this.state.selectedCartUuid || carts[0].uuid,
+      selectedCart: this.state.carts.find(({ uuid }) => uuid === this.state.selectedCartUuid),
     })
   }
 
@@ -412,15 +303,10 @@ class App extends Component {
   }
 
   updateCart(cartDetails) {
-    const index = this.state.carts.findIndex(R.propEq(cartDetails.id, 'id'))
-    if (index === -1) return
+    const index = this.state.carts.findIndex(R.propEq('id', cartDetails.id))
     const clonedCarts = this.state.carts.slice()
     clonedCarts[index] = cartDetails
-    const selectedCart =
-      this.state.selectedCartUuid === cartDetails.uuid || this.state.selectedCart?.id === cartDetails.id
-        ? cartDetails
-        : this.state.selectedCart
-    this.setState({ carts: clonedCarts, selectedCart })
+    this.setState({ carts: clonedCarts })
   }
 
   async updateFollows() {
@@ -625,7 +511,7 @@ class App extends Component {
 
     let updatedHeardTracks = this.state.heardTracks
     const updatedTrack = R.assoc('heard', (new Date()).toISOString(), track)
-    const playedTrackIndex = this.state.heardTracks.findIndex(R.propEq(track.id, 'id'))
+    const playedTrackIndex = this.state.heardTracks.findIndex(R.propEq('id', track.id))
     if (playedTrackIndex !== -1) {
       updatedHeardTracks.splice(playedTrackIndex, 1)
     } else {
@@ -772,9 +658,8 @@ class App extends Component {
     }
   }
 
-  addEntityToSearch(entityType, entityId, entityName, append = false) {
-    const baseSearchTerms = append ? (this.state.searchTerms || []) : []
-    const newSearchTerms = addEntityTerm(baseSearchTerms, entityType, entityId, entityName)
+  addEntityToSearch(entityType, entityId, entityName) {
+    const newSearchTerms = addEntityTerm(this.state.searchTerms || [], entityType, entityId, entityName)
     this.setState({ searchTerms: newSearchTerms })
     this.search(newSearchTerms, this.state.searchFilters)
   }
@@ -904,6 +789,7 @@ class App extends Component {
       'currentTrack',
       JSON.stringify({ listState: this.state.listState, currentTrack: track }),
     )
+    console.log(this.state.stores.length)
     document.title = `${trackArtistsAndTitleText(track)} - Fomo Player ${this.state.stores.length === 1 ? ` - ${this.state.stores[0].storeName}` : ''}`
   }
 
@@ -933,8 +819,6 @@ class App extends Component {
   }
 
   render() {
-    const googleLoginPath = `${config.apiURL}/auth/login/google?returnPath=${encodeURIComponent(buildLoginReturnPath())}`
-
     return (
       <ErrorBoundary
         onError={(error, errorInfo) =>
@@ -954,7 +838,6 @@ class App extends Component {
           }}
         >
           <Router>
-            <LocationWatcher onLocationChange={this.syncStateWithLocation.bind(this)} />
             {this.state.loading ? (
               <div className="loading-overlay">
                 🚀 Launching app
@@ -991,7 +874,7 @@ class App extends Component {
                         <Login
                           onLoginDone={this.onLoginDone.bind(this)}
                           onLogoutDone={this.onLogoutDone.bind(this)}
-                          googleLoginPath={googleLoginPath}
+                          googleLoginPath={`${config.apiURL}/auth/login/google?returnURL=${window.location.href}`}
                           logoutPath={logoutPath}
                         />
                       </div>
@@ -1034,7 +917,6 @@ class App extends Component {
                           href="https://github.com/gadgetmies/fomoplayer/wiki"
                           className={'button button-push_button button-push_button-large button-push_button-primary'}
                           target="_blank"
-                          rel="noopener noreferrer"
                         >
                           Find out more on Github <FontAwesomeIcon icon={['fab', 'github']} />
                         </a>
@@ -1115,14 +997,57 @@ class App extends Component {
                   path="/:path"
                   render={(props) => {
                     const {
-                      location: { pathname },
+                      location: { pathname, search },
                     } = window
                     const pathParts = pathname.slice(1).split('/')
+                    const searchParams = new URLSearchParams(search)
+                    const query = searchParams.get('q') || ''
+                    const isSearchPath = pathname.match(/^\/search\/?$/)
+                    if (isSearchPath && query) {
+                      const searchTerms = applyEntityNamesFromUrlParam(
+                        parseSearchTerms(query),
+                        searchParams.get('names') || '',
+                      )
+                      const currentQuery = searchTermsToQueryString(this.state.searchTerms || [])
+                      if (currentQuery !== query) {
+                        const filters = {
+                          sort: searchParams.get('sort') || '-released',
+                          limit: searchParams.get('limit') || 100,
+                          addedSince: searchParams.get('addedSince') || '',
+                          onlyNew: searchParams.get('onlyNew') || '',
+                        }
+                        this.setState({ searchTerms, searchFilters: filters, listState: 'search' })
+                        this.search(searchTerms, filters)
+                      }
+                    }
                     const settingsVisible = pathname.match(/\/settings\/?/)
                     let listState = this.state.listState
-                    const routeListState = pathParts[0] === 'tracks' ? pathParts[1] || 'new' : pathParts[0]
-                    if (routeListState && routeListState !== 'settings') {
-                      listState = routeListState
+                    // TODO: this always takes the path from the match, which does not work when the state is changed instead
+                    // Perhaps a componentWillChange handling could work?
+                    if (!pathParts.includes(listState)) {
+                      if (pathname !== '/search') {
+                        this.setState({ searchTerms: [] })
+                      }
+                      const newListState = props.match.params.path === 'tracks' ? pathParts[1] || 'new' : pathParts[0]
+                      this.setState({
+                        listState: newListState,
+                      }, () => {
+                        if (newListState === 'notifications') {
+                          this.updateTracks()
+                        }
+                      })
+                      listState = props.match.params.path
+                    }
+
+                    if (listState === 'carts') {
+                      if (this.state.selectedCartUuid !== pathParts[1]) {
+                        const selectedCart = this.state.carts?.find(({ uuid }) => uuid === pathParts[1])
+                        this.setState({ selectedCartUuid: pathParts[1], selectedCart })
+                      }
+                      const tracksOffset = parseInt(searchParams.get('offset') || 0)
+                      if (tracksOffset !== this.state.tracksOffset) {
+                        this.setState({ tracksOffset })
+                      }
                     }
 
                     return (

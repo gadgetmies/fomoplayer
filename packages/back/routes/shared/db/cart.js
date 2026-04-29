@@ -182,12 +182,15 @@ module.exports.queryCartDetails = async (
                          WHERE cart_id = ${cartId} AND 
                                (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))`
   if (tracksFilter?.since) {
-    query.append(sql` AND track__cart_added > ${tracksFilter.since}::TIMESTAMPTZ`)
+    query.append(`
+    AND
+      track__cart_added > '${tracksFilter.since}'
+    `)
   }
 
   query.append(
     // language=PostgreSQL
-    sql`
+    `
   ORDER BY track__cart_added DESC
                          LIMIT ${limit} OFFSET ${offset})
        , td AS (SELECT DISTINCT ON (track_id) td.*

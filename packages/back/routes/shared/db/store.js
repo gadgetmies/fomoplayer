@@ -831,7 +831,7 @@ ON CONFLICT DO NOTHING
     }
   }
 
-  await tx.queryAsync(
+  tx.queryAsync(
     // language=PostgreSQL
     sql`-- addStoreTrack INSERT INTO track_details
     INSERT INTO track_details (track_id, track_details)

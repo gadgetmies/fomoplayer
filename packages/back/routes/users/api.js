@@ -64,7 +64,6 @@ const {
   insertNotificationAudioSample,
   queryNotificationAudioSamples: getNotificationAudioSamples,
   deleteNotificationAudioSample,
-  deleteHeardSince,
 } = require('./db')
 
 const router = require('express-promise-router')()
@@ -137,15 +136,10 @@ router.get(
     },
     res,
   ) => {
-    const normalizedStores = (Array.isArray(stores) ? stores : stores ? [stores] : [])
-      .map((store) => (typeof store === 'string' ? store.toLowerCase().trim() : ''))
-      .filter(Boolean)
-    const storeFilter = normalizedStores.length > 0 ? normalizedStores : null
-
-    logger.info(`Got stores: ${JSON.stringify(storeFilter)}`)
+    logger.info(`Got stores: ${JSON.stringify(stores)}`)
     const userTracks = await getUserTracks(
       authUserId, 
-      storeFilter, 
+      stores,
       { new: limitNew, recent: limitRecent, heard: limitHeard },
       { new: offsetNew, recent: offsetRecent, heard: offsetHeard },
       notHeardBefore ? new Date(notHeardBefore) : undefined
@@ -158,22 +152,13 @@ router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
   getTracksM3u(userId).tap((m3u) => res.send(m3u)),
 )
 
-router.post('/tracks/:id', async ({ user: { id: userId }, params: { id }, body: { heard } }, res) => {
-  const result = await setTrackHeard(id, userId, heard)
-  res.json(result)
+router.post('/tracks/:id', ({ user: { id: userId }, params: { id }, body: { heard } }, res) => {
+  setTrackHeard(id, userId, heard).tap(() => res.send())
 })
 
 router.patch('/tracks/', async ({ user: { id: authUserId }, body: { heard }, query: { interval } }, res) => {
-  const result = await setAllHeard(authUserId, heard, interval)
-  res.json(result)
-})
-
-router.delete('/tracks/heard', async ({ user: { id: authUserId }, query: { since } }, res) => {
-  if (!since) return res.status(400).json({ error: 'since query parameter is required' })
-  const sinceDate = new Date(since)
-  if (isNaN(sinceDate.getTime())) return res.status(400).json({ error: 'since must be a valid ISO timestamp' })
-  await deleteHeardSince(authUserId, sinceDate)
-  res.status(204).end()
+  await setAllHeard(authUserId, heard, interval)
+  res.send()
 })
 
 // TODO: add genre to database?
