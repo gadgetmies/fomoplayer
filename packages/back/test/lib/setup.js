@@ -5,10 +5,15 @@ const { initDb } = require('./db')
 const { startServer } = require('./server')
 
 let initPromise = null
+let sharedBrowserContext = null
+let sharedBrowser = null
+
 const BACKEND_ROOT = path.resolve(__dirname, '../..')
 const FRONTEND_ROOT = path.resolve(BACKEND_ROOT, '../front')
 const FRONTEND_SOURCE_PATHS = ['src', 'public', 'package.json'].map((entry) => path.join(FRONTEND_ROOT, entry))
 const FRONTEND_BUILD_PATH = path.join(BACKEND_ROOT, 'public')
+
+const isRemotePreview = Boolean(process.env.PREVIEW_URL)
 
 const getLatestMtimeMs = async (targetPath) => {
   let stats
@@ -87,57 +92,89 @@ const dismissOnboarding = async (page) => {
 }
 
 const initialize = async () => {
-  await initDb()
-  await warnIfFrontendBuildIsOutdated()
+  let baseURL, server
 
-  const { server, port } = await startServer()
-  console.log(`[browser-test] Using server port ${port}`)
-  const baseURL = `http://localhost:${port}`
+  if (isRemotePreview) {
+    baseURL = process.env.PREVIEW_URL
+    server = null
+  } else {
+    await initDb()
+    await warnIfFrontendBuildIsOutdated()
+    const result = await startServer()
+    console.log(`[browser-test] Using server port ${result.port}`)
+    server = result.server
+    baseURL = `http://localhost:${result.port}`
+  }
 
   const headed = process.env.PW_HEADED === '1' || process.env.PWDEBUG === '1'
-  const slowMoValue = process.env.PW_SLOWMO ?? process.env.PW_SLOMO ?? '0'
+  const slowMoValue = process.env.PW_SLOWMO ?? process.env.PW_SLOMO ?? (isRemotePreview ? '600' : '0')
   const slowMo = Number(slowMoValue)
-  const browser = await chromium.launch({
+
+  sharedBrowser = await chromium.launch({
     headless: !headed,
     slowMo: Number.isFinite(slowMo) ? slowMo : 0,
   })
-  const context = await browser.newContext({ baseURL })
 
-  await context.route('**/*', async (route) => {
-    const requestUrl = new URL(route.request().url())
-    if (!requestUrl.pathname.startsWith('/api/')) {
-      await route.continue()
-      return
-    }
+  const videoDir = process.env.VIDEO_DIR
+  const contextOptions = { baseURL }
+  if (videoDir) {
+    contextOptions.recordVideo = { dir: videoDir, size: { width: 1280, height: 720 } }
+  }
+  sharedBrowserContext = await sharedBrowser.newContext(contextOptions)
 
-    const targetUrl = `${baseURL}${requestUrl.pathname}${requestUrl.search}`
-    await route.continue({ url: targetUrl })
-  })
+  const tracePath = process.env.TRACE_PATH
+  if (tracePath) {
+    await sharedBrowserContext.tracing.start({ screenshots: true, snapshots: true, sources: true })
+  }
 
-  const page = await context.newPage()
+  if (!isRemotePreview) {
+    await sharedBrowserContext.route('**/*', async (route) => {
+      const requestUrl = new URL(route.request().url())
+      if (!requestUrl.pathname.startsWith('/api/')) {
+        await route.continue()
+        return
+      }
+      const targetUrl = `${baseURL}${requestUrl.pathname}${requestUrl.search}`
+      await route.continue({ url: targetUrl })
+    })
+  }
+
+  const page = await sharedBrowserContext.newPage()
   await page.goto('/tracks/recent')
 
-  const loginStatus = await page.evaluate(async () => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      credentials: 'same-origin',
-      mode: 'same-origin',
-      redirect: 'follow',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ username: 'testuser', password: 'testpwd' }),
+  if (isRemotePreview) {
+    const oidcToken = process.env.OIDC_TOKEN
+    if (!oidcToken) throw new Error('OIDC_TOKEN env var is required for remote preview login')
+    const loginRes = await page.request.post(`${baseURL}/api/auth/login/actions`, {
+      data: { token: oidcToken },
     })
-    return res.status
-  })
-  if (loginStatus !== 204) {
-    throw new Error(`Login failed with status ${loginStatus}`)
+    if (!loginRes.ok()) {
+      throw new Error(`Remote preview OIDC login failed: HTTP ${loginRes.status()} — ${await loginRes.text()}`)
+    }
+  } else {
+    const loginStatus = await page.evaluate(async () => {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        mode: 'same-origin',
+        redirect: 'follow',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ username: 'testuser', password: 'testpwd' }),
+      })
+      return res.status
+    })
+    if (loginStatus !== 204) {
+      throw new Error(`Login failed with status ${loginStatus}`)
+    }
+    const sessionCookies = await sharedBrowserContext.cookies(baseURL)
+    if (!sessionCookies.some(({ name }) => name === 'connect.sid')) {
+      throw new Error('Login did not establish a session cookie')
+    }
   }
-  const sessionCookies = await context.cookies(baseURL)
-  if (!sessionCookies.some(({ name }) => name === 'connect.sid')) {
-    throw new Error('Login did not establish a session cookie')
-  }
+
   await page.goto('/tracks/recent')
   await waitForWithTimeoutMessage(
     () => page.waitForSelector('.tracks-table', { timeout: 15000 }),
@@ -145,9 +182,26 @@ const initialize = async () => {
   )
   await dismissOnboarding(page)
 
-  process.on('exit', () => server.kill())
+  if (server) {
+    process.on('exit', () => server.kill())
+  }
 
-  return { server, browser, context, page }
+  // Finalize video + trace recording (if active) before process exits.
+  process.on('beforeExit', async () => {
+    if (sharedBrowserContext) {
+      if (tracePath) {
+        await sharedBrowserContext.tracing.stop({ path: tracePath }).catch(() => {})
+      }
+      await sharedBrowserContext.close().catch(() => {})
+      sharedBrowserContext = null
+    }
+    if (sharedBrowser) {
+      await sharedBrowser.close().catch(() => {})
+      sharedBrowser = null
+    }
+  })
+
+  return { server, browser: sharedBrowser, context: sharedBrowserContext, page }
 }
 
 module.exports.getSharedContext = () => {
@@ -156,6 +210,8 @@ module.exports.getSharedContext = () => {
   }
   return initPromise
 }
+
+module.exports.getBrowserContext = () => sharedBrowserContext
 
 module.exports.dismissOnboarding = dismissOnboarding
 module.exports.waitForWithTimeoutMessage = waitForWithTimeoutMessage
