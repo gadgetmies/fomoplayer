@@ -9,6 +9,8 @@
   "scripts": {
     "migrate": "yarn workspace fomoplayer_back migrate",
     "db-migrate:prod": "yarn workspace fomoplayer_back db-migrate:prod",
+    "db-migrate:prod:retry": "yarn workspace fomoplayer_back db-migrate:prod:retry",
+    "db:wait": "yarn workspace fomoplayer_back db:wait",
     "start:back": "yarn workspace fomoplayer_back start",
     "start:back:prod": "yarn workspace fomoplayer_back start:prod",
     "start:front": "yarn workspace fomoplayer_front start",
