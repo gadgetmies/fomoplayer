@@ -10,7 +10,7 @@ const {
   getPageDetailsAsync,
   getTagReleasesAsync,
   getSearchResultsAsync,
-  static: { getTagsFromUrl, getTagName, isRateLimited },
+  static: { getTagsFromUrl, getTagName, isRateLimited, invalidateCache },
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl } = require('./db.js')
@@ -31,12 +31,15 @@ const getStoreDbId = () => {
   }
 }
 
-module.exports.getPreviewDetails = async (previewId) => {
+module.exports.getPreviewDetails = async (previewId, force = false) => {
   const storeId = await getStoreDbId()
   const details = await queryPreviewDetails(previewId)
   for (const detail of details) {
     const storeTrackId = detail.store_track_id
     const albumUrl = await queryAlbumUrl(storeId, storeTrackId)
+    if (force) {
+      invalidateCache(`release:${albumUrl}`)
+    }
     const albumInfo = await getReleaseAsync(albumUrl)
     logger.debug('albuminfo trackinfo', albumInfo.trackinfo)
     logger.debug('details', details)
@@ -121,6 +124,23 @@ const getTracksFromReleases = async (releaseUrls) => {
   }
 
   const tracksWithFiles = releaseTracksWithFiles(releaseDetails)
+
+  transformed.forEach((track) => {
+    const release = releaseDetails.find((r) => r.url === track.release.url)
+    if (release) {
+      const trackInfo = release.trackinfo.find((t) => t.track_id === track.id)
+      if (trackInfo && trackInfo.file && trackInfo.file['mp3-128']) {
+        const mp3Url = trackInfo.file['mp3-128']
+        const urlWithoutToken = mp3Url.split('?')[0]
+        track.previews.forEach((preview) => {
+          if (preview.format === 'mp3') {
+            preview.url = urlWithoutToken
+          }
+        })
+      }
+    }
+  })
+
   if (
     transformed.length === 0 &&
     releaseDetails.length > 0 &&

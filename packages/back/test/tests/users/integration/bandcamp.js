@@ -10,9 +10,7 @@ const resonanceVITracks = require('../../../fixtures/bandcamp-resonance-vi-track
 const assert = require('assert')
 
 test({
-  setup: () => {
-    bandcampInterceptor.clearMockedRequests()
-  },
+  setup: () => {},
   skip: () =>
     process.env.BANDCAMP_API_REDIRECT === '' && !process.env.BANDCAMP_API_MOCK
       ? 'Bandcamp redirects set or mocks not set'
