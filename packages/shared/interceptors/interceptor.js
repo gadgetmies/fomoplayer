@@ -34,7 +34,11 @@ const activeInterceptors = new Map()
 
 module.exports.init = function init({ proxies, mocks, name, regex }) {
   if (activeInterceptors.has(name)) {
-    return activeInterceptors.get(name).publicApi
+    logger.info(`Cleaning up existing interceptor for ${name}`)
+    const existing = activeInterceptors.get(name)
+    if (existing?.publicApi && typeof existing.publicApi.dispose === 'function') {
+      existing.publicApi.dispose()
+    }
   }
 
   let mockedRequests = []
@@ -49,7 +53,6 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
   })
 
   interceptor.apply()
-
   // Store the interceptor for cleanup
   const publicApi = {
     clearMockedRequests: () => {
