@@ -32,8 +32,7 @@ const previewAllowedGoogleSubs = (process.env.PREVIEW_ALLOWED_GOOGLE_SUBS || '')
 if (isPreviewEnv && previewAllowedGoogleSubs.length === 0) {
   throw new Error('PREVIEW_ALLOWED_GOOGLE_SUBS must be set when PREVIEW_ENV=true')
 }
-const isDevelopment = nodeEnv === 'development'
-const isTest = nodeEnv === 'test' || nodeEnv === 'ci'
+const isProduction = nodeEnv === 'production'
 
 const extensionOauthAllowedIds = (process.env.EXTENSION_OAUTH_ALLOWED_IDS || '')
   .split(',')
@@ -62,8 +61,7 @@ module.exports = {
   cryptoKey: process.env.CRYPTO_KEY,
   maxAccountCount: Number(process.env.MAX_ACCOUNT_COUNT),
   nodeEnv,
-  isDevelopment,
-  isTest,
+  isProduction,
   isPreviewEnv,
   previewAllowedGoogleSubs,
   oidcHandoffUrl,

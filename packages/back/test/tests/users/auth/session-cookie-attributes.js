@@ -8,7 +8,7 @@ const createTestApp = ({ isPreviewEnv }) => {
   const crossSiteCookies = isPreviewEnv
   // SameSite=None requires Secure, so preview envs must always use secure cookies
   // regardless of the NODE_ENV value used during testing.
-  const cookieSecure = isPreviewEnv || !['development', 'test', 'ci'].includes(process.env.NODE_ENV)
+  const cookieSecure = isPreviewEnv || process.env.NODE_ENV === 'production'
   const app = express()
   app.set('trust proxy', 1)
   app.use(
@@ -80,19 +80,13 @@ test({
     )
   },
 
-  'cookieSecure is false in development/test environments': () => {
+  'cookieSecure is false in non-production environments': () => {
     const originalNodeEnv = process.env.NODE_ENV
     try {
-      process.env.NODE_ENV = 'development'
-      assert.strictEqual(
-        process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test',
-        false,
-      )
-      process.env.NODE_ENV = 'test'
-      assert.strictEqual(
-        process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test',
-        false,
-      )
+      for (const env of ['development', 'test', 'ci']) {
+        process.env.NODE_ENV = env
+        assert.strictEqual(process.env.NODE_ENV === 'production', false)
+      }
     } finally {
       process.env.NODE_ENV = originalNodeEnv
     }
@@ -102,10 +96,7 @@ test({
     const originalNodeEnv = process.env.NODE_ENV
     try {
       process.env.NODE_ENV = 'production'
-      assert.strictEqual(
-        process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test',
-        true,
-      )
+      assert.strictEqual(process.env.NODE_ENV === 'production', true)
     } finally {
       process.env.NODE_ENV = originalNodeEnv
     }

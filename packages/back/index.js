@@ -46,8 +46,8 @@ const { logRequestError } = require('./routes/shared/error-logging')
 const { getCartDetails } = require('./routes/logic')
 const { createCorsOriginValidator } = require('./cors-origin')
 
-const { isPreviewEnv, isDevelopment, isTest } = config
-const cookieSecure = isPreviewEnv || (!isDevelopment && !isTest)
+const { isPreviewEnv, isProduction } = config
+const cookieSecure = isPreviewEnv || isProduction
 
 const app = express()
 app.set('trust proxy', 1)
