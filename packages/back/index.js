@@ -47,7 +47,7 @@ const { getCartDetails } = require('./routes/logic')
 const { createCorsOriginValidator } = require('./cors-origin')
 
 const { isPreviewEnv, isProduction } = config
-const cookieSecure = isProduction
+const cookieSecure = isPreviewEnv || isProduction
 
 const app = express()
 app.set('trust proxy', 1)

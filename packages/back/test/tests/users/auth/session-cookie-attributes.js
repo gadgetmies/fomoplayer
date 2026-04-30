@@ -6,9 +6,11 @@ const { test } = require('cascade-test')
 
 const createTestApp = ({ isPreviewEnv }) => {
   const crossSiteCookies = isPreviewEnv
-  // Mirrors packages/back/index.js: preview deploys always run NODE_ENV=production,
-  // so the cookieSecure check only needs to gate on production.
-  const cookieSecure = process.env.NODE_ENV === 'production'
+  // Mirrors packages/back/index.js. Preview mode is supported under any
+  // NODE_ENV (so we can integration-test preview-only flows under test/ci);
+  // SameSite=None requires Secure, so isPreviewEnv must imply cookieSecure
+  // independently of NODE_ENV.
+  const cookieSecure = isPreviewEnv || process.env.NODE_ENV === 'production'
   const app = express()
   app.set('trust proxy', 1)
   app.use(
@@ -57,39 +59,27 @@ test({
   },
 
   'session cookie has SameSite=None in preview mode': async () => {
-    const originalNodeEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'production'
-    try {
-      const app = createTestApp({ isPreviewEnv: true })
-      const response = await request(app).get('/write-session').set('x-forwarded-proto', 'https')
-      const setCookie = response.headers['set-cookie']
-      assert.ok(setCookie, 'Expected Set-Cookie header to be present')
-      const cookieString = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie
-      assert.ok(
-        /SameSite=None/i.test(cookieString),
-        `Expected Set-Cookie to contain SameSite=None, got: ${cookieString}`,
-      )
-    } finally {
-      process.env.NODE_ENV = originalNodeEnv
-    }
+    const app = createTestApp({ isPreviewEnv: true })
+    const response = await request(app).get('/write-session').set('x-forwarded-proto', 'https')
+    const setCookie = response.headers['set-cookie']
+    assert.ok(setCookie, 'Expected Set-Cookie header to be present')
+    const cookieString = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie
+    assert.ok(
+      /SameSite=None/i.test(cookieString),
+      `Expected Set-Cookie to contain SameSite=None, got: ${cookieString}`,
+    )
   },
 
   'session cookie has Secure flag in preview mode': async () => {
-    const originalNodeEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'production'
-    try {
-      const app = createTestApp({ isPreviewEnv: true })
-      const response = await request(app).get('/write-session').set('x-forwarded-proto', 'https')
-      const setCookie = response.headers['set-cookie']
-      assert.ok(setCookie, 'Expected Set-Cookie header to be present')
-      const cookieString = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie
-      assert.ok(
-        /\bSecure\b/i.test(cookieString),
-        `Expected Set-Cookie to contain Secure, got: ${cookieString}`,
-      )
-    } finally {
-      process.env.NODE_ENV = originalNodeEnv
-    }
+    const app = createTestApp({ isPreviewEnv: true })
+    const response = await request(app).get('/write-session').set('x-forwarded-proto', 'https')
+    const setCookie = response.headers['set-cookie']
+    assert.ok(setCookie, 'Expected Set-Cookie header to be present')
+    const cookieString = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie
+    assert.ok(
+      /\bSecure\b/i.test(cookieString),
+      `Expected Set-Cookie to contain Secure, got: ${cookieString}`,
+    )
   },
 
   'cookieSecure is false in non-production environments': () => {
