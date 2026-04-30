@@ -34,7 +34,7 @@ const createTestApp = ({ isPreviewEnv }) => {
 test({
   'session cookie has httpOnly attribute': async () => {
     const app = createTestApp({ isPreviewEnv: false })
-    const response = await request(app).get('/write-session').set('x-forwarded-proto', 'https')
+    const response = await request(app).get('/write-session')
     const setCookie = response.headers['set-cookie']
     assert.ok(setCookie, 'Expected Set-Cookie header to be present')
     const cookieString = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie
@@ -46,7 +46,7 @@ test({
 
   'session cookie has SameSite=Lax in non-preview mode': async () => {
     const app = createTestApp({ isPreviewEnv: false })
-    const response = await request(app).get('/write-session').set('x-forwarded-proto', 'https')
+    const response = await request(app).get('/write-session')
     const setCookie = response.headers['set-cookie']
     assert.ok(setCookie, 'Expected Set-Cookie header to be present')
     const cookieString = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie
