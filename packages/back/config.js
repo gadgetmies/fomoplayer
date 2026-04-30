@@ -33,7 +33,7 @@ if (isPreviewEnv && previewAllowedGoogleSubs.length === 0) {
   throw new Error('PREVIEW_ALLOWED_GOOGLE_SUBS must be set when PREVIEW_ENV=true')
 }
 const isDevelopment = nodeEnv === 'development'
-const isTest = nodeEnv === 'test'
+const isTest = nodeEnv === 'test' || nodeEnv === 'ci'
 
 const extensionOauthAllowedIds = (process.env.EXTENSION_OAUTH_ALLOWED_IDS || '')
   .split(',')

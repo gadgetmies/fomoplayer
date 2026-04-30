@@ -8,7 +8,7 @@ const createTestApp = ({ isPreviewEnv }) => {
   const crossSiteCookies = isPreviewEnv
   // SameSite=None requires Secure, so preview envs must always use secure cookies
   // regardless of the NODE_ENV value used during testing.
-  const cookieSecure = isPreviewEnv || (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test')
+  const cookieSecure = isPreviewEnv || !['development', 'test', 'ci'].includes(process.env.NODE_ENV)
   const app = express()
   app.set('trust proxy', 1)
   app.use(
