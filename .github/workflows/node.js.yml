@@ -109,7 +109,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: yarn workspace fomoplayer_back npx playwright install --with-deps chromium
+        run: yarn workspace fomoplayer_back run playwright install --with-deps chromium
 
       - name: Setup database
         run: psql -h postgres -U postgres -c 'CREATE DATABASE "multi-store-player-test";'

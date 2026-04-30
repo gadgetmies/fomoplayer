@@ -92,7 +92,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Install Playwright browser
-        run: yarn workspace fomoplayer_back npx playwright install --with-deps chromium
+        run: yarn workspace fomoplayer_back run playwright install --with-deps chromium
 
       # ── 6. Run the browser test in demo mode (slow-mo, video, overlay) ────
       - name: Run demo test
