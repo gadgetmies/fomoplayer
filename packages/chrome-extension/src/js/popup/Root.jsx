@@ -48,8 +48,8 @@ export default class Root extends React.Component {
 
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabArray) {
       chrome.storage.local.get(
-        ['running', 'token', 'enabledStores', 'appUrl', 'error', 'operationStatus', 'operationProgress'],
-        function ({ running, token, enabledStores, appUrl, error, operationStatus, operationProgress }) {
+        ['running', 'refreshToken', 'enabledStores', 'appUrl', 'error', 'operationStatus', 'operationProgress'],
+        function ({ running, refreshToken, enabledStores, appUrl, error, operationStatus, operationProgress }) {
           const currentHostname = getCurrentHostname(tabArray)
           const resolvedAppUrl = appUrl || DEFAULT_APP_URL
 
@@ -71,7 +71,7 @@ export default class Root extends React.Component {
           ]
 
           that.setState({
-            loggedIn: token !== undefined,
+            loggedIn: refreshToken !== undefined,
             currentHostname,
             running,
             enabledStores,

@@ -42,9 +42,14 @@ class Tracks extends Component {
       trackListFilterDebounce: undefined,
       visibleStartIndex: 0,
       visibleEndIndex: 50,
+      pullDistance: 0,
+      pullingToRefresh: false,
     }
     this.handleScroll = this.handleScroll.bind(this)
     this.handleResize = this.handleResize.bind(this)
+    this.handleTouchStart = this.handleTouchStart.bind(this)
+    this.handleTouchMove = this.handleTouchMove.bind(this)
+    this.handleTouchEnd = this.handleTouchEnd.bind(this)
     this.lastScrollTop = 0
     this.trackHeight = 34
     this.overscan = 10
@@ -52,6 +57,9 @@ class Tracks extends Component {
     this.trackHeights = new Map()
     this.resizeTimeout = null
     this.lastAutoLoadRequestedTrackCount = null
+    this.pullStartY = null
+    this.pullThreshold = 60
+    this.pullMax = 120
   }
 
   /*
@@ -413,6 +421,46 @@ class Tracks extends Component {
       this.props.hasMore
     ) {
         this.props.onLoadMore()
+    }
+  }
+
+  isPullToRefreshAvailable() {
+    return ['new', 'recent', 'heard'].includes(this.props.listState) && !this.props.preview
+  }
+
+  handleTouchStart(event) {
+    if (!this.isPullToRefreshAvailable()) return
+    if (this.state.updatingTracks) return
+    if (!this.tbodyRef.current || this.tbodyRef.current.scrollTop > 0) return
+    this.pullStartY = event.touches[0].clientY
+    this.setState({ pullingToRefresh: true })
+  }
+
+  handleTouchMove(event) {
+    if (!this.state.pullingToRefresh) return
+    if (!this.tbodyRef.current || this.tbodyRef.current.scrollTop > 0) {
+      this.pullStartY = null
+      this.setState({ pullingToRefresh: false, pullDistance: 0 })
+      return
+    }
+    const delta = event.touches[0].clientY - this.pullStartY
+    if (delta <= 0) {
+      if (this.state.pullDistance !== 0) this.setState({ pullDistance: 0 })
+      return
+    }
+    const resisted = Math.min(this.pullMax, delta * 0.5)
+    if (Math.abs(resisted - this.state.pullDistance) > 0.5) {
+      this.setState({ pullDistance: resisted })
+    }
+  }
+
+  handleTouchEnd() {
+    if (!this.state.pullingToRefresh) return
+    const triggered = this.state.pullDistance >= this.pullThreshold
+    this.pullStartY = null
+    this.setState({ pullingToRefresh: false, pullDistance: 0 })
+    if (triggered) {
+      this.refreshTracks()
     }
   }
 
@@ -853,11 +901,46 @@ class Tracks extends Component {
               </th>
             </tr>
           </thead>
-          <tbody 
+          <tbody
             ref={this.tbodyRef}
-            style={{ overflow: 'scroll', display: 'block', flex: 1 }} 
+            style={{ overflow: 'scroll', display: 'block', flex: 1, overscrollBehaviorY: 'contain' }}
             onScroll={this.handleScroll}
+            onTouchStart={this.handleTouchStart}
+            onTouchMove={this.handleTouchMove}
+            onTouchEnd={this.handleTouchEnd}
+            onTouchCancel={this.handleTouchEnd}
           >
+            {this.isPullToRefreshAvailable() && (this.state.pullDistance > 0 || this.state.updatingTracks) && (
+              <tr
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  height: this.state.updatingTracks ? 50 : this.state.pullDistance,
+                  overflow: 'hidden',
+                  transition: this.state.pullingToRefresh ? 'none' : 'height 200ms ease',
+                }}
+              >
+                <td
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    width: '100%',
+                    height: '100%',
+                  }}
+                >
+                  <Spinner />
+                  <span>
+                    {this.state.updatingTracks
+                      ? 'Refreshing tracks...'
+                      : this.state.pullDistance >= this.pullThreshold
+                        ? 'Release to refresh'
+                        : 'Pull down to refresh'}
+                  </span>
+                </td>
+              </tr>
+            )}
             <tr style={{ width: '100%', background: 'none', position: 'fixed', zIndex: 1, marginTop: 3 }}>
               <td
                 style={{
@@ -886,6 +969,23 @@ class Tracks extends Component {
                     )
                   : tracks,
               )}
+            {this.props.loadingMore && tracks.length > 0 && (
+              <tr style={{ display: 'flex', width: '100%', background: 'none' }}>
+                <td
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    padding: 16,
+                  }}
+                >
+                  <Spinner />
+                  <span>Loading more tracks...</span>
+                </td>
+              </tr>
+            )}
             <tr
               style={{
                 margin: 0,
@@ -909,41 +1009,26 @@ class Tracks extends Component {
               </td>
             </tr>
           </tbody>
-          {!this.props.preview && (this.props.listState !== 'carts' || multiplePages) && (
+          {!this.props.preview && this.props.listState === 'carts' && multiplePages && (
             <tfoot>
-              {['new', 'recent', 'heard'].includes(this.props.listState) ? (
-                <tr style={{ display: 'flex' }}>
-                  <td style={{ flex: 1, margin: 4 }}>
-                    <SpinnerButton
-                      size={isMobile ? 'small' : 'large'}
-                      loading={this.state.updatingTracks}
-                      onClick={this.refreshTracks.bind(this)}
-                      style={{ margin: 'auto', height: '100%', display: 'block' }}
-                      label={'Refresh'}
-                      loadingLabel={'Loading'}
-                    />
-                  </td>
-                </tr>
-              ) : this.props.listState === 'carts' && multiplePages ? (
-                <tr style={{ display: 'flex', justifyContent: 'center', background: 'rgb(34, 34, 34)' }}>
-                  <td style={{ display: 'flex', gap: 16, margin: 4 }}>
-                    <SpinnerButton
-                      size={isMobile ? 'small' : 'large'}
-                      loading={this.state.updatingTracks}
-                      disabled={this.props.tracksOffset === 0}
-                      onClick={this.adjustOffset.bind(this, -200)}
-                      label={'Previous page'}
-                    />
-                    <SpinnerButton
-                      size={isMobile ? 'small' : 'large'}
-                      loading={this.state.updatingTracks}
-                      disabled={tracks.length < 200}
-                      onClick={this.adjustOffset.bind(this, 200)}
-                      label={'Next page'}
-                    />
-                  </td>
-                </tr>
-              ) : null}
+              <tr style={{ display: 'flex', justifyContent: 'center', background: 'rgb(34, 34, 34)' }}>
+                <td style={{ display: 'flex', gap: 16, margin: 4 }}>
+                  <SpinnerButton
+                    size={isMobile ? 'small' : 'large'}
+                    loading={this.state.updatingTracks}
+                    disabled={this.props.tracksOffset === 0}
+                    onClick={this.adjustOffset.bind(this, -200)}
+                    label={'Previous page'}
+                  />
+                  <SpinnerButton
+                    size={isMobile ? 'small' : 'large'}
+                    loading={this.state.updatingTracks}
+                    disabled={tracks.length < 200}
+                    onClick={this.adjustOffset.bind(this, 200)}
+                    label={'Next page'}
+                  />
+                </td>
+              </tr>
             </tfoot>
           )}
         </table>

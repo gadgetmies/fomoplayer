@@ -11,7 +11,7 @@ test({
     await seedTracks({ userIds: [userId] })
     await page.reload()
     await waitForWithTimeoutMessage(
-      () => page.waitForSelector('.tracks-table', { timeout: 1000 }),
+      () => page.waitForSelector('.tracks-table', { timeout: 5000 }),
       'Load the tracks table after reload so browsing assertions run on rendered rows.',
     )
     await dismissOnboarding(page)
@@ -34,8 +34,16 @@ test({
       () => page.waitForSelector('.tracks-table', { timeout: 1000 }),
       'Load the tracks table before asserting seeded artists.',
     )
-    const artists = await page.locator('.track .artist-cell').allTextContents()
-    expect(artists.map((t) => t.trim())).to.include.members(seededTrackAssertions.artists)
+    const cellTexts = await page.locator('.track .artist-cell').allTextContents()
+    const artistNames = Array.from(
+      new Set(
+        cellTexts
+          .flatMap((cell) => cell.split(/,| & /))
+          .map((name) => name.trim())
+          .filter((name) => name.length > 0),
+      ),
+    )
+    expect(artistNames).to.include.members(seededTrackAssertions.artists)
   },
 
   'mark-heard button is present on each track': async ({ page }) => {

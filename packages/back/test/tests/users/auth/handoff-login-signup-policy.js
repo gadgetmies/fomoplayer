@@ -22,6 +22,7 @@ const baseConfig = {
   oidcHandoffSecret: 'test-handoff-secret',
   maxAccountCount: 5,
   isPreviewEnv: true,
+  previewAllowedGoogleSubs: [OIDC_SUBJECT],
 }
 
 const validPayload = {

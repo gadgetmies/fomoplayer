@@ -24,9 +24,28 @@ const safeOrigin = (url) => {
 const apiOrigin = safeOrigin(apiURL)
 const oidcHandoffUrl = process.env.OIDC_HANDOFF_URL || undefined
 const oidcHandoffAuthorityOrigin = oidcHandoffUrl ? safeOrigin(oidcHandoffUrl) : null
-const isPreviewEnv = process.env.IS_PREVIEW_ENV === 'true'
-const isDevelopment = nodeEnv === 'development'
-const isTest = nodeEnv === 'test'
+const isPreviewEnv = process.env.PREVIEW_ENV === 'true'
+const previewAllowedGoogleSubs = (process.env.PREVIEW_ALLOWED_GOOGLE_SUBS || '')
+  .split(',')
+  .map((sub) => sub.trim())
+  .filter((sub) => sub.length > 0)
+if (isPreviewEnv && previewAllowedGoogleSubs.length === 0) {
+  throw new Error('PREVIEW_ALLOWED_GOOGLE_SUBS must be set when PREVIEW_ENV=true')
+}
+const isProduction = nodeEnv === 'production'
+
+const extensionOauthAllowedIds = (process.env.EXTENSION_OAUTH_ALLOWED_IDS || '')
+  .split(',')
+  .map((id) => id.trim())
+  .filter((id) => id.length > 0)
+
+const decodePem = (value) => (typeof value === 'string' ? value.replace(/\\n/g, '\n') : undefined)
+const internalAuthHandoffPrivateKey = decodePem(process.env.INTERNAL_AUTH_HANDOFF_PRIVATE_KEY) || undefined
+const internalAuthHandoffPublicKey = decodePem(process.env.INTERNAL_AUTH_HANDOFF_PUBLIC_KEY) || undefined
+const internalAuthHandoffKeyId = process.env.INTERNAL_AUTH_HANDOFF_KEY_ID || undefined
+const internalAuthHandoffIssuer = process.env.INTERNAL_AUTH_HANDOFF_ISSUER || undefined
+const internalAuthHandoffJwksUrl = process.env.INTERNAL_AUTH_HANDOFF_JWKS_URL || undefined
+const internalAuthApiAudience = process.env.INTERNAL_AUTH_API_AUDIENCE || undefined
 
 module.exports = {
   allowedOrigins: [frontendURL, 'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn', ...additionalOrigins],
@@ -42,10 +61,20 @@ module.exports = {
   cryptoKey: process.env.CRYPTO_KEY,
   maxAccountCount: Number(process.env.MAX_ACCOUNT_COUNT),
   nodeEnv,
-  isDevelopment,
-  isTest,
+  isProduction,
   isPreviewEnv,
+  previewAllowedGoogleSubs,
   oidcHandoffUrl,
   oidcHandoffAuthorityOrigin,
   oidcHandoffSecret: process.env.OIDC_HANDOFF_SECRET || undefined,
+  githubActionsOidcRepo: process.env.GITHUB_ACTIONS_OIDC_REPO || undefined,
+  extensionOauthAllowedIds,
+  internalAuthHandoffPrivateKey,
+  internalAuthHandoffPublicKey,
+  internalAuthHandoffKeyId,
+  internalAuthHandoffIssuer,
+  internalAuthHandoffJwksUrl,
+  internalAuthApiAudience,
+  extensionAccessTokenTtlSeconds: 15 * 60,
+  extensionRefreshTokenTtlSeconds: 90 * 24 * 60 * 60,
 }

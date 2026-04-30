@@ -46,8 +46,8 @@ const { logRequestError } = require('./routes/shared/error-logging')
 const { getCartDetails } = require('./routes/logic')
 const { createCorsOriginValidator } = require('./cors-origin')
 
-const { isPreviewEnv, isDevelopment, isTest } = config
-const cookieSecure = isPreviewEnv || (!isDevelopment && !isTest)
+const { isPreviewEnv, isProduction } = config
+const cookieSecure = isPreviewEnv || isProduction
 
 const app = express()
 app.set('trust proxy', 1)
@@ -173,6 +173,10 @@ app.get('/carts/:uuid', async ({ params: { uuid }, query: { limit, offset, store
     return res.status(500).end()
   }
 
+  if (!indexFile) {
+    return res.status(503).send('Frontend build not available')
+  }
+
   const cartDetails = await getCartDetails(uuid, user?.id, stores, { offset, limit })
 
   if (cartDetails === null) {
@@ -207,8 +211,21 @@ ${cartOpenGraphDetails}`,
   return res.send(patchedIndex)
 })
 
-const indexFile = fs.readFileSync(indexPath, 'utf8')
+const indexFile = (() => {
+  try {
+    return fs.readFileSync(indexPath, 'utf8')
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      logger.warn(`SPA index not found at ${indexPath}; SPA routes will respond with 503 until the front-end is built`)
+      return null
+    }
+    throw err
+  }
+})()
 const sendIndex = (_, res) => {
+  if (!indexFile) {
+    return res.status(503).send('Frontend build not available')
+  }
   res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Length': indexFile.length })
   res.write(indexFile)
   res.end()

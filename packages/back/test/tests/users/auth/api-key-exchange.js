@@ -7,15 +7,14 @@ const account = require('../../../../db/account')
 const { pg } = require('../../../lib/db')
 
 const HANDOFF_SECRET = process.env.OIDC_HANDOFF_SECRET
-const API_ORIGIN = 'http://localhost'
 const OIDC_ISSUER = 'accounts.google.com'
 const OIDC_SUBJECT = 'test-subject-cli-exchange'
 
-const mintToken = () =>
+const mintToken = (apiOrigin) =>
   mintHandoffToken({
     secret: HANDOFF_SECRET,
-    issuer: API_ORIGIN,
-    audience: API_ORIGIN,
+    issuer: apiOrigin,
+    audience: apiOrigin,
     oidcIssuer: OIDC_ISSUER,
     oidcSubject: OIDC_SUBJECT,
   })
@@ -53,7 +52,7 @@ test({
   },
 
   'returns api key for valid token': async ({ baseUrl }) => {
-    const { token } = mintToken()
+    const { token } = mintToken(baseUrl)
     const r = await fetch(`${baseUrl}/api/auth/api-keys/exchange-handoff`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -68,7 +67,7 @@ test({
   },
 
   'accepts custom name': async ({ baseUrl }) => {
-    const { token } = mintToken()
+    const { token } = mintToken(baseUrl)
     const r = await fetch(`${baseUrl}/api/auth/api-keys/exchange-handoff`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -81,7 +80,7 @@ test({
 
   'rejects replayed token': {
     setup: async ({ baseUrl }) => {
-      const { token } = mintToken()
+      const { token } = mintToken(baseUrl)
       // Consume the token once
       await fetch(`${baseUrl}/api/auth/api-keys/exchange-handoff`, {
         method: 'POST',
