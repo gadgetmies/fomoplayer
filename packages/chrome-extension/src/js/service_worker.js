@@ -2,93 +2,132 @@ import { bandcampReleasesTransform } from './transforms/bandcamp'
 import { beatportTracksTransform, beatportLibraryTransform } from './transforms/beatport'
 import * as R from 'ramda'
 
-const fetchGoogleToken = (handler) => {
-  var manifest = chrome.runtime.getManifest()
+const ACCESS_TOKEN_REFRESH_LEEWAY_SECONDS = 30
 
-  var clientId = encodeURIComponent(manifest.oauth2.client_id)
-  var scopes = encodeURIComponent(['profile', 'openid'].join(' '))
-  var redirectUri = encodeURIComponent('https://' + chrome.runtime.id + '.chromiumapp.org')
+const chromeStorageGet = (area, keys) =>
+  new Promise((resolve) => {
+    area.get(keys, resolve)
+  })
 
-  var url =
-    'https://accounts.google.com/o/oauth2/auth' +
-    '?client_id=' +
-    clientId +
-    '&response_type=id_token' +
-    '&access_type=offline' +
-    '&redirect_uri=' +
-    redirectUri +
-    '&scope=' +
-    scopes
+const chromeStorageSet = (area, values) =>
+  new Promise((resolve) => {
+    area.set(values, resolve)
+  })
 
-  chrome.identity.launchWebAuthFlow(
-    {
-      url: url,
-      interactive: true,
-    },
-    async function (redirectedTo) {
-      let token = null
-      if (chrome.runtime.lastError) {
-        // Example: Authorization page could not be loaded.
-        console.log(chrome.runtime.lastError.message)
-      } else {
-        const params = new URLSearchParams(redirectedTo.split('#', 2)[1])
-        token = params.get('id_token')
-        // Example: id_token=<YOUR_BELOVED_ID_TOKEN>&authuser=0&hd=<SOME.DOMAIN.PL>&session_state=<SESSION_SATE>&prompt=<PROMPT>
-      }
-      chrome.storage.local.set({ googleIdToken: token }, () => {
-        handler(token)
-      })
-    },
-  )
+const chromeStorageRemove = (area, keys) =>
+  new Promise((resolve) => {
+    area.remove(keys, resolve)
+  })
+
+const sessionAreaAvailable = () =>
+  Boolean(chrome.storage && chrome.storage.session && typeof chrome.storage.session.get === 'function')
+
+const accessArea = () => (sessionAreaAvailable() ? chrome.storage.session : chrome.storage.local)
+const refreshArea = () => chrome.storage.local
+
+const base64UrlEncode = (bytes) => {
+  let str = ''
+  for (let i = 0; i < bytes.length; i += 1) str += String.fromCharCode(bytes[i])
+  return btoa(str).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
 }
 
-const chromeStorageGet = (keys) =>
-  new Promise((resolve) => {
-    chrome.storage.local.get(keys, resolve)
+const sha256Base64Url = async (input) => {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input))
+  return base64UrlEncode(new Uint8Array(digest))
+}
+
+const randomUrlSafe = (byteLength) => {
+  const bytes = new Uint8Array(byteLength)
+  crypto.getRandomValues(bytes)
+  return base64UrlEncode(bytes)
+}
+
+const launchWebAuthFlow = (url) =>
+  new Promise((resolve, reject) => {
+    chrome.identity.launchWebAuthFlow({ url, interactive: true }, (redirectedTo) => {
+      if (chrome.runtime.lastError || !redirectedTo) {
+        return reject(new Error(chrome.runtime.lastError?.message || 'Login window closed'))
+      }
+      resolve(redirectedTo)
+    })
   })
 
-const chromeStorageSet = (values) =>
-  new Promise((resolve) => {
-    chrome.storage.local.set(values, resolve)
-  })
+const startExtensionLogin = async (appUrl) => {
+  const codeVerifier = randomUrlSafe(32)
+  const codeChallenge = await sha256Base64Url(codeVerifier)
+  const state = randomUrlSafe(16)
+  const extensionId = chrome.runtime.id
 
-const exchangeGoogleTokenForInternalToken = async ({ googleIdToken, appUrl }) => {
-  const base = appUrl || DEFAULT_APP_URL
-  const response = await fetch(`${base}/api/auth/token/exchange-google`, {
+  const startUrl = new URL(`${appUrl}/api/auth/login/extension`)
+  startUrl.searchParams.set('extensionId', extensionId)
+  startUrl.searchParams.set('code_challenge', codeChallenge)
+  startUrl.searchParams.set('code_challenge_method', 'S256')
+  startUrl.searchParams.set('state', state)
+
+  const redirectedTo = await launchWebAuthFlow(startUrl.toString())
+  const redirectUrl = new URL(redirectedTo)
+  const code = redirectUrl.searchParams.get('code')
+  const returnedState = redirectUrl.searchParams.get('state')
+  if (!code || !returnedState) throw new Error('Login response missing code or state')
+  if (returnedState !== state) throw new Error('State mismatch — possible CSRF')
+
+  const tokenResponse = await fetch(`${appUrl}/api/auth/extension/token`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ id_token: googleIdToken }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, code_verifier: codeVerifier, extensionId }),
   })
+  if (!tokenResponse.ok) {
+    const message = await tokenResponse.text()
+    throw new Error(`Extension token exchange failed: ${tokenResponse.status} ${tokenResponse.statusText} ${message}`)
+  }
+  return await tokenResponse.json()
+}
 
+const refreshAccessToken = async (appUrl, refreshToken) => {
+  const response = await fetch(`${appUrl}/api/auth/extension/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  })
   if (!response.ok) {
     const message = await response.text()
-    throw new Error(`Token exchange failed: ${response.status} ${response.statusText} ${message}`)
+    throw new Error(`Refresh failed: ${response.status} ${response.statusText} ${message}`)
   }
-
-  const { access_token, expires_in } = await response.json()
-  const accessToken = access_token
-  const tokenExpiresAt = Date.now() + Math.max((expires_in - 10) * 1000, 1000)
-  return { accessToken, tokenExpiresAt }
+  return await response.json()
 }
 
-const resolveInternalAccessToken = async (appUrl) => {
-  const { token, tokenExpiresAt, googleIdToken } = await chromeStorageGet(['token', 'tokenExpiresAt', 'googleIdToken'])
-  if (token && tokenExpiresAt && tokenExpiresAt > Date.now()) {
-    return token
+const persistTokens = async ({ access_token, refresh_token, expires_in }) => {
+  const expiresAt = Date.now() + Math.max((expires_in - ACCESS_TOKEN_REFRESH_LEEWAY_SECONDS) * 1000, 1000)
+  await chromeStorageSet(accessArea(), { accessToken: access_token, accessTokenExpiresAt: expiresAt })
+  await chromeStorageSet(refreshArea(), { refreshToken: refresh_token })
+}
+
+const clearTokens = async () => {
+  await chromeStorageRemove(accessArea(), ['accessToken', 'accessTokenExpiresAt'])
+  await chromeStorageRemove(refreshArea(), ['refreshToken', 'token', 'tokenExpiresAt', 'googleIdToken'])
+}
+
+const resolveAccessToken = async (appUrl) => {
+  const { accessToken, accessTokenExpiresAt } = await chromeStorageGet(accessArea(), [
+    'accessToken',
+    'accessTokenExpiresAt',
+  ])
+  if (accessToken && accessTokenExpiresAt && accessTokenExpiresAt > Date.now()) {
+    return accessToken
   }
 
-  if (!googleIdToken) {
+  const { refreshToken } = await chromeStorageGet(refreshArea(), ['refreshToken'])
+  if (!refreshToken) return null
+
+  try {
+    const tokens = await refreshAccessToken(appUrl, refreshToken)
+    await persistTokens(tokens)
+    return tokens.access_token
+  } catch (e) {
+    console.log('Token refresh failed; clearing stored credentials', e)
+    await clearTokens()
     return null
   }
-
-  const { accessToken, tokenExpiresAt: refreshedTokenExpiresAt } = await exchangeGoogleTokenForInternalToken({
-    googleIdToken,
-    appUrl,
-  })
-  await chromeStorageSet({ token: accessToken, tokenExpiresAt: refreshedTokenExpiresAt })
-  return accessToken
 }
 
 const waitFunction = `
@@ -183,7 +222,7 @@ const sendTracks = (storeUrl, type = 'tracks', tracks) => {
   chrome.storage.local.get(['appUrl'], async ({ appUrl }) => {
     const base = appUrl || DEFAULT_APP_URL
     try {
-      const accessToken = await resolveInternalAccessToken(base)
+      const accessToken = await resolveAccessToken(base)
       if (!accessToken) {
         throw new Error('Not authenticated. Please log in again.')
       }
@@ -233,7 +272,7 @@ const sendArtists = (storeUrl, artists) => {
   chrome.storage.local.get(['appUrl'], async ({ appUrl }) => {
     const base = appUrl || DEFAULT_APP_URL
     try {
-      const accessToken = await resolveInternalAccessToken(base)
+      const accessToken = await resolveAccessToken(base)
       if (!accessToken) {
         throw new Error('Not authenticated. Please log in again.')
       }
@@ -278,7 +317,7 @@ const sendLabels = (storeUrl, labels) => {
   chrome.storage.local.get(['appUrl'], async ({ appUrl }) => {
     const base = appUrl || DEFAULT_APP_URL
     try {
-      const accessToken = await resolveInternalAccessToken(base)
+      const accessToken = await resolveAccessToken(base)
       if (!accessToken) {
         throw new Error('Not authenticated. Please log in again.')
       }
@@ -376,32 +415,33 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       fetchNextItem()
     }
   } else if (message.type === 'logging-out') {
-    chrome.storage.local.remove(['token', 'tokenExpiresAt', 'googleIdToken'], () => {
+    chrome.storage.local.get(['appUrl'], async ({ appUrl }) => {
+      const base = appUrl || DEFAULT_APP_URL
+      const { refreshToken } = await chromeStorageGet(refreshArea(), ['refreshToken'])
+      if (refreshToken) {
+        try {
+          await fetch(`${base}/api/auth/extension/logout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          })
+        } catch (e) {
+          console.log('Logout request failed; clearing local credentials anyway', e)
+        }
+      }
+      await clearTokens()
       chrome.runtime.sendMessage({ type: 'refresh' })
     })
   } else if (message.type === 'oauth-login') {
-    fetchGoogleToken(async (googleIdToken) => {
-      if (!googleIdToken) {
-        console.log('Did not get token from Google')
-        chrome.runtime.sendMessage({ type: 'login', success: false })
-        return
-      }
-
+    chrome.storage.local.get(['appUrl'], async ({ appUrl }) => {
+      const base = appUrl || DEFAULT_APP_URL
       try {
-        const { appUrl } = await chromeStorageGet(['appUrl'])
-        const { accessToken, tokenExpiresAt } = await exchangeGoogleTokenForInternalToken({
-          googleIdToken,
-          appUrl: appUrl || DEFAULT_APP_URL,
-        })
-        await chromeStorageSet({
-          token: accessToken,
-          tokenExpiresAt,
-          googleIdToken,
-        })
-        console.log('Exchanged Google token for internal access token')
+        const tokens = await startExtensionLogin(base)
+        await persistTokens(tokens)
+        console.log('Extension login successful')
         chrome.runtime.sendMessage({ type: 'login', success: true })
       } catch (e) {
-        console.log('Token exchange failed', e)
+        console.log('Extension login failed', e)
         chrome.runtime.sendMessage({ type: 'login', success: false })
       }
     })

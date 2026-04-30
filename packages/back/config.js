@@ -35,6 +35,19 @@ if (isPreviewEnv && previewAllowedGoogleSubs.length === 0) {
 const isDevelopment = nodeEnv === 'development'
 const isTest = nodeEnv === 'test'
 
+const extensionOauthAllowedIds = (process.env.EXTENSION_OAUTH_ALLOWED_IDS || '')
+  .split(',')
+  .map((id) => id.trim())
+  .filter((id) => id.length > 0)
+
+const decodePem = (value) => (typeof value === 'string' ? value.replace(/\\n/g, '\n') : undefined)
+const internalAuthHandoffPrivateKey = decodePem(process.env.INTERNAL_AUTH_HANDOFF_PRIVATE_KEY) || undefined
+const internalAuthHandoffPublicKey = decodePem(process.env.INTERNAL_AUTH_HANDOFF_PUBLIC_KEY) || undefined
+const internalAuthHandoffKeyId = process.env.INTERNAL_AUTH_HANDOFF_KEY_ID || undefined
+const internalAuthHandoffIssuer = process.env.INTERNAL_AUTH_HANDOFF_ISSUER || undefined
+const internalAuthHandoffJwksUrl = process.env.INTERNAL_AUTH_HANDOFF_JWKS_URL || undefined
+const internalAuthApiAudience = process.env.INTERNAL_AUTH_API_AUDIENCE || undefined
+
 module.exports = {
   allowedOrigins: [frontendURL, 'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn', ...additionalOrigins],
   allowedOriginRegexes: [...allowedOriginRegexes, ...allowedPreviewOriginRegexes],
@@ -57,4 +70,13 @@ module.exports = {
   oidcHandoffAuthorityOrigin,
   oidcHandoffSecret: process.env.OIDC_HANDOFF_SECRET || undefined,
   githubActionsOidcRepo: process.env.GITHUB_ACTIONS_OIDC_REPO || undefined,
+  extensionOauthAllowedIds,
+  internalAuthHandoffPrivateKey,
+  internalAuthHandoffPublicKey,
+  internalAuthHandoffKeyId,
+  internalAuthHandoffIssuer,
+  internalAuthHandoffJwksUrl,
+  internalAuthApiAudience,
+  extensionAccessTokenTtlSeconds: 15 * 60,
+  extensionRefreshTokenTtlSeconds: 90 * 24 * 60 * 60,
 }

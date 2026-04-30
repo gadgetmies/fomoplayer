@@ -7,6 +7,8 @@ const { queryAccountCount: defaultQueryAccountCount, consumeHandoffJti: defaultC
 const { deleteInviteCode: defaultDeleteInviteCode } = require('../db/account')
 const { v4: uuid } = require('uuid')
 const { createApiKey } = require('../db/api-key')
+const defaultExtensionRefreshToken = require('../db/extension-refresh-token')
+const defaultTokenServer = require('../token-server')
 const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/shared/spotify')
 const { upsertUserAuthorizationTokens } = require('./db')
 const { isSafeRedirectPath, isSafeHandoffTarget } = require('./shared/safe-redirect')
@@ -16,6 +18,7 @@ const { verifyActionsToken: defaultVerifyActionsToken, GITHUB_ACTIONS_ISSUER } =
 const { evaluateSignUpPolicy, getRequestOrigin, isGoogleSubAllowed } = require('./shared/auth-flow')
 
 const GOOGLE_OIDC_ISSUER = 'accounts.google.com'
+const EXTENSION_ID_PATTERN = /^[a-p]{32}$/
 const logger = require('fomoplayer_shared').logger(__filename)
 
 const createAuthRouter = ({
@@ -29,6 +32,8 @@ const createAuthRouter = ({
   issueCodeFn = defaultIssueCode,
   consumeCodeFn = defaultConsumeCode,
   verifyActionsTokenFn = defaultVerifyActionsToken,
+  extensionRefreshToken = defaultExtensionRefreshToken,
+  tokenServer = defaultTokenServer,
 } = {}) => {
   const router = express.Router()
   const {
@@ -43,7 +48,33 @@ const createAuthRouter = ({
     previewAllowedGoogleSubs,
     maxAccountCount,
     githubActionsOidcRepo,
+    extensionOauthAllowedIds,
+    internalAuthHandoffPrivateKey,
+    internalAuthHandoffPublicKey,
+    internalAuthHandoffKeyId,
+    internalAuthHandoffIssuer,
+    internalAuthApiAudience,
+    extensionAccessTokenTtlSeconds,
+    extensionRefreshTokenTtlSeconds,
   } = config
+
+  const extensionAllowlist = new Set(extensionOauthAllowedIds || [])
+  const isExtensionFlowConfigured = Boolean(
+    extensionAllowlist.size > 0 &&
+      internalAuthHandoffPrivateKey &&
+      internalAuthHandoffIssuer &&
+      internalAuthApiAudience,
+  )
+  const isExtensionIdAllowed = (extensionId) =>
+    typeof extensionId === 'string' &&
+    EXTENSION_ID_PATTERN.test(extensionId) &&
+    extensionAllowlist.has(extensionId)
+  const buildExtensionRedirectUrl = (extensionId, code, state) => {
+    const url = new URL(`https://${extensionId}.chromiumapp.org/`)
+    url.searchParams.set('code', code)
+    url.searchParams.set('state', state)
+    return url.toString()
+  }
 
   const loginFailedUrl = `${frontendURL}/?loginFailed=true`
   const isSelfReferentialHandoffUrl = Boolean(
@@ -238,6 +269,215 @@ const createAuthRouter = ({
     }
   })
 
+  const extensionPageShell = (title, body) => cliPageShell(title, body)
+
+  router.get('/login/extension', (req, res) => {
+    if (!isExtensionFlowConfigured) {
+      return res.status(503).json({ error: 'Extension login is not configured on this backend' })
+    }
+
+    const requestedExtensionId = req.query.extensionId ?? req.session?.extensionId
+    if (!isExtensionIdAllowed(requestedExtensionId)) {
+      logger.warn('Rejected extension login: extensionId not allowed', { requestedExtensionId })
+      return res.status(400).json({ error: 'Unknown or invalid extensionId' })
+    }
+
+    const codeChallenge = req.query.code_challenge ?? req.session?.extensionCodeChallenge
+    const codeChallengeMethod = req.query.code_challenge_method ?? req.session?.extensionCodeChallengeMethod
+    const state = req.query.state ?? req.session?.extensionState
+
+    if (!codeChallenge || codeChallengeMethod !== 'S256' || !state) {
+      return res.status(400).json({ error: 'code_challenge (S256) and state are required' })
+    }
+
+    req.session.extensionId = requestedExtensionId
+    req.session.extensionCodeChallenge = codeChallenge
+    req.session.extensionCodeChallengeMethod = codeChallengeMethod
+    req.session.extensionState = state
+
+    if (req.isAuthenticated()) {
+      return res.status(200).type('html').send(extensionPageShell('Grant Extension Access',
+        `<h1>Grant extension access?</h1>
+  <p>The Fomo Player browser extension is requesting access to your account. Allowing will issue a short-lived access token plus a refresh token that you can revoke at any time from your account settings.</p>
+  <div class="actions">
+    <form method="POST" action="/api/auth/login/extension/confirm">
+      <button type="submit" class="allow btn">Allow</button>
+    </form>
+    <form method="POST" action="/api/auth/login/extension/deny">
+      <button type="submit" class="deny btn">Deny</button>
+    </form>
+  </div>`))
+    }
+
+    return res.status(200).type('html').send(extensionPageShell('Extension Access',
+      `<h1>Fomo Player Extension Access</h1>
+  <p>The Fomo Player browser extension is requesting access to your account. Log in to continue.</p>
+  <div class="actions">
+    <a href="/api/auth/login/extension/google" class="btn google">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Log in with Google
+    </a>
+  </div>`))
+  })
+
+  router.get('/login/extension/google', (req, res, next) => {
+    if (!isExtensionFlowConfigured) {
+      return res.status(503).json({ error: 'Extension login is not configured on this backend' })
+    }
+    return passport.authenticate('openidconnect', { state: { returnToExtension: true } })(req, res, next)
+  })
+
+  router.post('/login/extension/confirm', async (req, res) => {
+    if (!isExtensionFlowConfigured) {
+      return res.status(503).json({ error: 'Extension login is not configured on this backend' })
+    }
+    if (!req.isAuthenticated()) return res.status(401).end()
+    const extensionId = req.session?.extensionId
+    const codeChallenge = req.session?.extensionCodeChallenge
+    const state = req.session?.extensionState
+    if (!isExtensionIdAllowed(extensionId)) {
+      return res.status(400).json({ error: 'Session missing or invalid extensionId' })
+    }
+    if (!codeChallenge || !state) {
+      return res.status(400).json({ error: 'Session missing PKCE parameters' })
+    }
+    try {
+      const code = issueCodeFn(req.user.id, codeChallenge)
+      delete req.session.extensionId
+      delete req.session.extensionCodeChallenge
+      delete req.session.extensionCodeChallengeMethod
+      delete req.session.extensionState
+      return res.redirect(buildExtensionRedirectUrl(extensionId, code, state))
+    } catch (e) {
+      logger.error(`Extension login/confirm: issuing auth code failed: ${e}`)
+      return redirectWithLoginFailed(res)
+    }
+  })
+
+  router.post('/login/extension/deny', (req, res) => {
+    delete req.session.extensionId
+    delete req.session.extensionCodeChallenge
+    delete req.session.extensionCodeChallengeMethod
+    delete req.session.extensionState
+    return res.status(200).type('html').send(extensionPageShell('Extension Access Denied',
+      `<h1>Access denied</h1>
+  <p>The extension login was aborted. You can close this tab.</p>`))
+  })
+
+  const issueExtensionAccessToken = async (userId) =>
+    tokenServer.issueInternalToken({
+      privateKey: internalAuthHandoffPrivateKey,
+      keyId: internalAuthHandoffKeyId,
+      issuer: internalAuthHandoffIssuer,
+      audience: internalAuthApiAudience,
+      subject: String(userId),
+      expiresInSeconds: extensionAccessTokenTtlSeconds,
+      payload: { token_type: 'extension_access' },
+    })
+
+  router.post('/extension/token', async (req, res, next) => {
+    try {
+      if (!isExtensionFlowConfigured) {
+        return res.status(503).json({ error: 'Extension login is not configured on this backend' })
+      }
+      const body = req.body ?? {}
+      const { code, code_verifier: codeVerifier, refresh_token: refreshToken, extensionId } = body
+
+      if (refreshToken) {
+        const row = await extensionRefreshToken.findRefreshToken(refreshToken)
+        if (!row) return res.status(401).json({ error: 'Invalid refresh token' })
+        if (row.revoked_at) return res.status(401).json({ error: 'Refresh token revoked' })
+        if (row.expires_at && new Date(row.expires_at).getTime() <= Date.now()) {
+          return res.status(401).json({ error: 'Refresh token expired' })
+        }
+        if (row.replaced_by) {
+          logger.warn('Extension refresh token reuse detected; revoking chain', { chainId: row.chain_id })
+          await extensionRefreshToken.revokeChain(row.chain_id)
+          return res.status(401).json({ error: 'Refresh token reuse detected; chain revoked' })
+        }
+
+        const newRawRefresh = `fp_rt_${uuid()}`
+        await extensionRefreshToken.rotateRefreshToken({
+          oldRowId: row.id,
+          userId: row.user_id,
+          extensionId: row.extension_id,
+          chainId: row.chain_id,
+          newRawToken: newRawRefresh,
+          ttlSeconds: extensionRefreshTokenTtlSeconds,
+        })
+        const accessToken = await issueExtensionAccessToken(row.user_id)
+        return res.json({
+          access_token: accessToken,
+          refresh_token: newRawRefresh,
+          token_type: 'Bearer',
+          expires_in: extensionAccessTokenTtlSeconds,
+        })
+      }
+
+      if (!code || !codeVerifier) {
+        return res.status(400).json({ error: 'code and code_verifier are required' })
+      }
+      if (!isExtensionIdAllowed(extensionId)) {
+        return res.status(400).json({ error: 'Unknown or invalid extensionId' })
+      }
+      const result = consumeCodeFn(code, codeVerifier)
+      if (!result) {
+        return res.status(401).json({ error: 'Invalid, expired, or already used authorization code' })
+      }
+      const rawRefresh = `fp_rt_${uuid()}`
+      await extensionRefreshToken.createRefreshToken({
+        userId: result.userId,
+        extensionId,
+        rawToken: rawRefresh,
+        ttlSeconds: extensionRefreshTokenTtlSeconds,
+      })
+      const accessToken = await issueExtensionAccessToken(result.userId)
+      return res.json({
+        access_token: accessToken,
+        refresh_token: rawRefresh,
+        token_type: 'Bearer',
+        expires_in: extensionAccessTokenTtlSeconds,
+      })
+    } catch (e) {
+      next(e)
+    }
+  })
+
+  router.post('/extension/logout', async (req, res, next) => {
+    try {
+      if (!isExtensionFlowConfigured) {
+        return res.status(503).json({ error: 'Extension login is not configured on this backend' })
+      }
+      const { refresh_token: refreshToken } = req.body ?? {}
+      if (!refreshToken) return res.status(400).json({ error: 'refresh_token is required' })
+      await extensionRefreshToken.revokeRefreshTokenByRaw(refreshToken)
+      return res.status(204).end()
+    } catch (e) {
+      next(e)
+    }
+  })
+
+  router.get('/.well-known/jwks.json', async (req, res, next) => {
+    try {
+      if (!internalAuthHandoffPrivateKey && !internalAuthHandoffPublicKey) {
+        return res.status(404).json({ error: 'JWKS not configured' })
+      }
+      let publicKeyPem = internalAuthHandoffPublicKey
+      if (!publicKeyPem && internalAuthHandoffPrivateKey) {
+        const publicKeyObject = crypto.createPublicKey(internalAuthHandoffPrivateKey)
+        publicKeyPem = publicKeyObject.export({ type: 'spki', format: 'pem' })
+      }
+      const jwk = await tokenServer.getInternalPublicJwk({
+        publicKey: publicKeyPem,
+        keyId: internalAuthHandoffKeyId,
+      })
+      if (!jwk) return res.status(404).json({ error: 'JWKS not configured' })
+      return res.json({ keys: [jwk] })
+    } catch (e) {
+      next(e)
+    }
+  })
+
   router.get('/login/google/return', (req, res, next) => {
     passport.authenticate('openidconnect', (err, user, info) => {
       if (err) {
@@ -256,7 +496,7 @@ const createAuthRouter = ({
         return redirectWithLoginFailed(res)
       }
 
-      const { returnPath, handoffTarget, returnToCli, cliCallbackPort } = info?.state ?? {}
+      const { returnPath, handoffTarget, returnToCli, cliCallbackPort, returnToExtension } = info?.state ?? {}
 
       if (returnToCli) {
         const port = parseInt(cliCallbackPort, 10)
@@ -267,6 +507,16 @@ const createAuthRouter = ({
             return redirectWithLoginFailed(res)
           }
           return res.redirect(`/api/auth/login/cli?callbackPort=${port}`)
+        })
+      }
+
+      if (returnToExtension) {
+        return req.login(user, (loginErr) => {
+          if (loginErr) {
+            logger.error('req.login failed after extension OIDC', { errorMessage: loginErr?.message })
+            return redirectWithLoginFailed(res)
+          }
+          return res.redirect(`/api/auth/login/extension`)
         })
       }
 

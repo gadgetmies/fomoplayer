@@ -170,6 +170,52 @@ UPDATE meta_account SET meta_account_last_login = NOW() WHERE meta_account_user_
     }
   }))
 
+  if (config.internalAuthHandoffJwksUrl && config.internalAuthHandoffIssuer) {
+    const { verifyInternalToken } = require('./token-server')
+    passport.use(
+      'jwt-internal',
+      new CustomStrategy(async (req, done) => {
+        try {
+          const authHeader = req.headers.authorization ?? ''
+          if (!authHeader.startsWith('Bearer ')) return done(null, false)
+          const token = authHeader.slice('Bearer '.length).trim()
+          if (!token || token.startsWith('fp_')) return done(null, false)
+
+          let payload
+          try {
+            payload = await verifyInternalToken({
+              token,
+              publicKey: config.internalAuthHandoffPublicKey,
+              jwksUrl: config.internalAuthHandoffPublicKey ? undefined : config.internalAuthHandoffJwksUrl,
+              issuer: config.internalAuthHandoffIssuer,
+              audience: config.internalAuthApiAudience,
+            })
+          } catch (e) {
+            return done(null, false, { message: e?.message ?? 'Invalid internal token' })
+          }
+
+          const subject = payload?.sub
+          if (typeof subject !== 'string' || subject.length === 0) {
+            return done(null, false, { message: 'Internal token missing sub' })
+          }
+          const userId = Number(subject)
+          if (!Number.isInteger(userId)) return done(null, false, { message: 'Internal token sub is not numeric' })
+
+          let user
+          try {
+            user = await account.findByUserId(userId)
+          } catch (e) {
+            if (e.message && e.message.includes('User not found')) return done(null, false)
+            throw e
+          }
+          return done(null, user ?? false)
+        } catch (e) {
+          return done(e)
+        }
+      }),
+    )
+  }
+
 
   passport.serializeUser(async (userToSerialize, done) => {
     try {
