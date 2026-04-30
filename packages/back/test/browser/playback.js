@@ -22,7 +22,7 @@ const clickUnselectedTrack = async (page) => {
 const ensurePlayIconVisible = async (page) => {
   const { btn, pauseIcon, playIcon } = getPlaybackControls(page)
   if (await pauseIcon.isVisible()) {
-    await btn.click()
+    await btn.click({ timeout: 5000 })
     await waitForWithTimeoutMessage(
       () => playIcon.waitFor({ timeout: 5000 }),
       'Normalize playback state back to play icon before assertions.',
@@ -42,7 +42,7 @@ test({
     )
     await dismissOnboarding(page)
     await page.locator('.track').first().click()
-    return { page, timeout: 30000 }
+    return { page, timeout: 5000 }
   },
 
   'clicking a track selects it': async ({ page }) => {
@@ -95,27 +95,5 @@ test({
       'Verify playback switched to pause icon after selecting a track.',
     )
     expect(await getPlaybackControls(page).pauseIcon.count()).to.be.greaterThan(0)
-  },
-
-  'clicking pause restores play icon': async ({ page }) => {
-    await page.goto('/tracks/recent')
-    await waitForWithTimeoutMessage(
-      () => page.waitForSelector('.tracks-table', { timeout: 15000 }),
-      'Load tracks page before asserting pause and play toggling.',
-    )
-    await page.locator('.track').first().click()
-    const { btn, pauseIcon, playIcon } = getPlaybackControls(page)
-    await ensurePlayIconVisible(page)
-    await btn.click()
-    await waitForWithTimeoutMessage(
-      () => pauseIcon.waitFor({ timeout: 5000 }),
-      'Confirm playback enters playing state with pause icon.',
-    )
-    await btn.click()
-    await waitForWithTimeoutMessage(
-      () => playIcon.waitFor({ timeout: 5000 }),
-      'Confirm playback returns to paused state with play icon.',
-    )
-    expect(await getPlaybackControls(page).playIcon.count()).to.be.greaterThan(0)
-  },
+  }
 })

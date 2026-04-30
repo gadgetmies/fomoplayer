@@ -67,7 +67,7 @@
   "devDependencies": {
     "@types/bluebird": "^3.5.36",
     "async-wait-until": "^2.0.12",
-    "cascade-test": "^0.2.3",
+    "cascade-test": "^0.4.1",
     "chai": "^6.2.2",
     "dotenv-cli": "^10.0.0",
     "playwright": "^1.59.1",

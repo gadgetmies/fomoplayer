@@ -27,11 +27,21 @@ const reserveRandomPort = async () =>
 
 module.exports.startServer = async () => {
   const port = await reserveRandomPort()
+  const baseUrl = `http://localhost:${port}`
 
   return new Promise((resolve, reject) => {
     const server = spawn('node', ['index.js'], {
       cwd: BACKEND_ROOT,
-      env: { ...process.env, NODE_ENV: 'test', API_PORT: String(port) },
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        API_PORT: String(port),
+        // The backend serves the built SPA from the same origin in tests, so
+        // browser requests carry Origin=<this port>. Pin FRONTEND_URL so the
+        // CORS allowlist accepts it instead of denying with the default 4004.
+        FRONTEND_URL: baseUrl,
+        API_URL: baseUrl,
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 
