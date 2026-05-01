@@ -192,7 +192,21 @@ const createAuthRouter = ({
     if (!Number.isInteger(callbackPort) || callbackPort < 1024 || callbackPort > 65535) {
       return res.status(400).json({ error: 'callbackPort must be an integer between 1024 and 65535' })
     }
-    return passport.authenticate('openidconnect', { state: { returnToCli: true, cliCallbackPort: callbackPort } })(req, res, next)
+    const codeChallenge = req.session?.cliCodeChallenge
+    const codeChallengeMethod = req.session?.cliCodeChallengeMethod
+    const state = req.session?.cliState
+    if (!codeChallenge || codeChallengeMethod !== 'S256' || !state) {
+      return res.status(400).json({ error: 'Session missing PKCE parameters' })
+    }
+    return passport.authenticate('openidconnect', {
+      state: {
+        returnToCli: true,
+        cliCallbackPort: callbackPort,
+        cliCodeChallenge: codeChallenge,
+        cliCodeChallengeMethod: codeChallengeMethod,
+        cliState: state,
+      },
+    })(req, res, next)
   })
 
   router.post('/login/cli/confirm', async (req, res) => {
@@ -502,6 +516,17 @@ const createAuthRouter = ({
       if (returnToCli) {
         const port = parseInt(cliCallbackPort, 10)
         if (!Number.isInteger(port) || port < 1024 || port > 65535) return redirectWithLoginFailed(res)
+        const cliCodeChallenge = info?.state?.cliCodeChallenge
+        const cliCodeChallengeMethod = info?.state?.cliCodeChallengeMethod
+        const cliState = info?.state?.cliState
+        if (!cliCodeChallenge || cliCodeChallengeMethod !== 'S256' || !cliState) {
+          logger.warn('CLI OIDC callback missing PKCE details in state')
+          return redirectWithLoginFailed(res)
+        }
+        req.session.cliCallbackPort = port
+        req.session.cliCodeChallenge = cliCodeChallenge
+        req.session.cliCodeChallengeMethod = cliCodeChallengeMethod
+        req.session.cliState = cliState
         return req.login(user, (loginErr) => {
           if (loginErr) {
             logger.error('req.login failed after CLI OIDC', { errorMessage: loginErr?.message })

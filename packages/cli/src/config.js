@@ -12,6 +12,6 @@ const setApiKey = (key) => conf.set('apiKey', key)
 const clearApiKey = () => conf.delete('apiKey')
 
 // Reads FOMOPLAYER_API_URL env or falls back to the production API URL
-const getApiUrl = () => process.env.FOMOPLAYER_API_URL || 'https://api.fomoplayer.com'
+const getApiUrl = () => process.env.FOMOPLAYER_API_URL || 'https://fomoplayer.com'
 
 module.exports = { getApiKey, setApiKey, clearApiKey, getApiUrl }
