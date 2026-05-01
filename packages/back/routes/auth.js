@@ -523,15 +523,15 @@ const createAuthRouter = ({
           logger.warn('CLI OIDC callback missing PKCE details in state')
           return redirectWithLoginFailed(res)
         }
-        req.session.cliCallbackPort = port
-        req.session.cliCodeChallenge = cliCodeChallenge
-        req.session.cliCodeChallengeMethod = cliCodeChallengeMethod
-        req.session.cliState = cliState
         return req.login(user, (loginErr) => {
           if (loginErr) {
             logger.error('req.login failed after CLI OIDC', { errorMessage: loginErr?.message })
             return redirectWithLoginFailed(res)
           }
+          req.session.cliCallbackPort = port
+          req.session.cliCodeChallenge = cliCodeChallenge
+          req.session.cliCodeChallengeMethod = cliCodeChallengeMethod
+          req.session.cliState = cliState
           return res.redirect(`${authRouteBaseUrl}/login/cli?callbackPort=${port}`)
         })
       }

@@ -19,17 +19,38 @@ const baseConfig = {
 
 const buildAppWithSession = (session = {}) => {
   const app = express()
-  const sessionStore = { ...session }
+  let sessionStore = { ...session }
   app.use((req, _, next) => {
-    req.session = sessionStore
+    const proxy = new Proxy(
+      {},
+      {
+        get: (_t, key) => sessionStore[key],
+        set: (_t, key, value) => {
+          sessionStore[key] = value
+          return true
+        },
+        deleteProperty: (_t, key) => {
+          delete sessionStore[key]
+          return true
+        },
+        has: (_t, key) => key in sessionStore,
+        ownKeys: () => Reflect.ownKeys(sessionStore),
+        getOwnPropertyDescriptor: (_t, key) => Object.getOwnPropertyDescriptor(sessionStore, key),
+      },
+    )
+    req.session = proxy
     const isAuthenticated = Boolean(session.userId)
     req.isAuthenticated = () => isAuthenticated
     if (isAuthenticated) req.user = { id: session.userId }
-    req.login = (_, cb) => cb()
+    // Simulate passport's session.regenerate() inside req.login() — wipes prior data.
+    req.login = (_, cb) => {
+      sessionStore = {}
+      cb()
+    }
     next()
   })
   app.use('/api/auth', createAuthRouter({ config: baseConfig }))
-  return { app, sessionStore }
+  return { app, getSession: () => sessionStore }
 }
 
 const withPatchedPassportAuthenticate = async (authenticateImpl, run) => {
@@ -116,7 +137,7 @@ test({
   },
 
   'GET /login/google/return restores CLI PKCE session and redirects back to /login/cli': async () => {
-    const { app, sessionStore } = buildAppWithSession({})
+    const { app, getSession } = buildAppWithSession({})
     const response = await withPatchedPassportAuthenticate((strategy, handler) => {
       return (req, res, next) => {
         expect(strategy).to.equal('openidconnect')
@@ -136,9 +157,40 @@ test({
 
     expect(response.status).to.equal(302)
     expect(response.headers.location).to.equal('https://fomoplayer.com/api/auth/login/cli?callbackPort=43110')
+    const sessionStore = getSession()
     expect(sessionStore.cliCallbackPort).to.equal(43110)
     expect(sessionStore.cliCodeChallenge).to.equal('challenge-from-oidc')
     expect(sessionStore.cliCodeChallengeMethod).to.equal('S256')
     expect(sessionStore.cliState).to.equal('state-from-oidc')
+  },
+
+  'GET /login/google/return CLI PKCE session survives passport session regeneration': async () => {
+    const { app, getSession } = buildAppWithSession({
+      cliCallbackPort: 43110,
+      cliCodeChallenge: 'pre-oidc-challenge',
+      cliCodeChallengeMethod: 'S256',
+      cliState: 'pre-oidc-state',
+    })
+    await withPatchedPassportAuthenticate((strategy, handler) => {
+      return (req, res, next) => {
+        return handler(null, { id: 42 }, {
+          state: {
+            returnToCli: true,
+            cliCallbackPort: '43110',
+            cliCodeChallenge: 'challenge-from-oidc',
+            cliCodeChallengeMethod: 'S256',
+            cliState: 'state-from-oidc',
+          },
+        })
+      }
+    }, async () =>
+      request(app).get('/api/auth/login/google/return').query({ code: 'oidc-code', state: 'opaque-state' }),
+    )
+
+    const sessionStore = getSession()
+    expect(sessionStore.cliCodeChallenge).to.equal('challenge-from-oidc')
+    expect(sessionStore.cliCodeChallengeMethod).to.equal('S256')
+    expect(sessionStore.cliState).to.equal('state-from-oidc')
+    expect(sessionStore.cliCallbackPort).to.equal(43110)
   },
 })

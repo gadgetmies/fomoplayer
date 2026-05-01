@@ -13,10 +13,14 @@ const LOGIN_TIMEOUT_MS = 120_000
  * { key }.
  *
  * @param {string} apiUrl  - Base URL of the fomoplayer API.
- * @param {function} openBrowser - Called with the login URL string.
+ * @param {function} openBrowser - Called with the login URL string. May be null
+ *   to skip auto-opening; in that case the user must paste the printed URL into
+ *   a browser themselves.
+ * @param {function} [printLine=console.log] - Used to print the auth URL and
+ *   copy-paste hint. Override in tests.
  * @returns {Promise<{ key: string }>}
  */
-async function login(apiUrl, openBrowser) {
+async function login(apiUrl, openBrowser, printLine = (msg) => console.log(msg)) {
   const codeVerifier = randomBytes(32).toString('base64url')
   const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url')
   const state = randomBytes(16).toString('base64url')
@@ -115,7 +119,22 @@ async function login(apiUrl, openBrowser) {
         settle(reject, new Error('Login timed out after 120 seconds'))
       }, LOGIN_TIMEOUT_MS)
 
-      openBrowser(loginUrl.toString()).catch((err) => settle(reject, err))
+      const urlString = loginUrl.toString()
+      printLine('')
+      printLine('To log in, open this URL in your browser:')
+      printLine('')
+      printLine(`  ${urlString}`)
+      printLine('')
+      printLine('If your browser does not open automatically, or you would prefer to use a different browser, copy and paste the URL above.')
+      printLine('Waiting for login to complete...')
+
+      if (openBrowser) {
+        Promise.resolve()
+          .then(() => openBrowser(urlString))
+          .catch(() => {
+            printLine('Could not open a browser automatically. Please use the URL above.')
+          })
+      }
     })
 
     server.on('error', (err) => settle(reject, err))

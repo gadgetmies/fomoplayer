@@ -70,7 +70,7 @@ test({
         }
       }
 
-      const result = await login(apiUrl, openBrowser)
+      const result = await login(apiUrl, openBrowser, () => {})
       return { server, apiUrl, result }
     },
     teardown: async ({ result }) => {
