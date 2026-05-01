@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLI Login Failed - Fomo Player</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #111; color: #eee; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .card { background: #1c1c1c; border: 1px solid #333; border-radius: 12px; padding: 2rem; max-width: 440px; width: 100%; text-align: center; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.75rem; }
+    p { color: #aaa; font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.5; }
+    .actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .btn { display: inline-block; border: none; border-radius: 8px; padding: 0.6rem 1.5rem; font-size: 0.9rem; cursor: pointer; font-weight: 600; text-decoration: none; }
+    .deny { background: #333; color: #aaa; }
+    .deny:hover { background: #444; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>CLI login failed</h1>
+    <p>We could not complete the CLI login flow. Please try again from your terminal.</p>
+    <div class="actions">
+      <a href="./cli" class="btn deny">Try again</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -9,6 +9,7 @@ const { parseOriginRegexes } = require('./cors-origin')
 const port = sharedConfig.API_PORT
 const frontendURL = resolveServiceURL(sharedConfig.FRONTEND_URL, sharedConfig.IP, sharedConfig.FRONTEND_PORT)
 const apiURL = resolveServiceURL(sharedConfig.API_URL, sharedConfig.IP, port, '/api')
+const authApiURL = process.env.AUTH_API_URL || `${frontendURL}/api`
 const additionalOrigins = process.env.ADDITIONAL_ORIGINS?.split(',').map((origin) => origin.trim()) || []
 const allowedOriginRegexes = parseOriginRegexes(process.env.ALLOWED_ORIGIN_REGEX)
 const allowedPreviewOriginRegexes = parseOriginRegexes(process.env.ALLOWED_PREVIEW_ORIGIN_REGEX)
@@ -25,6 +26,7 @@ const apiOrigin = safeOrigin(apiURL)
 const oidcHandoffUrl = process.env.OIDC_HANDOFF_URL || undefined
 const oidcHandoffAuthorityOrigin = oidcHandoffUrl ? safeOrigin(oidcHandoffUrl) : null
 const isPreviewEnv = process.env.PREVIEW_ENV === 'true'
+const sessionCookieDomain = process.env.SESSION_COOKIE_DOMAIN
 const previewAllowedGoogleSubs = (process.env.PREVIEW_ALLOWED_GOOGLE_SUBS || '')
   .split(',')
   .map((sub) => sub.trim())
@@ -52,12 +54,14 @@ module.exports = {
   allowedOriginRegexes: [...allowedOriginRegexes, ...allowedPreviewOriginRegexes],
   port,
   apiURL,
+  authApiURL,
   apiOrigin,
   frontendURL,
   googleClientId: process.env.GOOGLE_OIDC_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_OIDC_CLIENT_SECRET,
   googleOidcApiRedirect: process.env.GOOGLE_OIDC_API_REDIRECT,
   sessionSecret: process.env.SESSION_SECRET,
+  sessionCookieDomain,
   cryptoKey: process.env.CRYPTO_KEY,
   maxAccountCount: Number(process.env.MAX_ACCOUNT_COUNT),
   nodeEnv,

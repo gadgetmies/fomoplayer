@@ -60,7 +60,7 @@ module.exports = function passportSetup() {
         clientSecret: config.googleClientSecret,
         authorizationURL: 'https://accounts.google.com/o/oauth2/auth',
         tokenURL: 'https://www.googleapis.com/oauth2/v3/token',
-        callbackURL: config.googleOidcApiRedirect || `${config.apiURL}/auth/login/google/return`,
+        callbackURL: config.googleOidcApiRedirect || `${config.authApiURL || config.apiURL}/auth/login/google/return`,
         passReqToCallback: true,
       },
       async (req, issuer, profile, done) => {

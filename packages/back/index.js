@@ -46,7 +46,7 @@ const { logRequestError } = require('./routes/shared/error-logging')
 const { getCartDetails } = require('./routes/logic')
 const { createCorsOriginValidator } = require('./cors-origin')
 
-const { isPreviewEnv, isProduction } = config
+const { isPreviewEnv, isProduction, sessionCookieDomain } = config
 const cookieSecure = isPreviewEnv || isProduction
 
 const app = express()
@@ -67,6 +67,7 @@ app.use(
       httpOnly: true,
       secure: cookieSecure,
       sameSite: isPreviewEnv ? 'none' : 'lax',
+      domain: sessionCookieDomain,
     },
   }),
 )

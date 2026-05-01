@@ -4,7 +4,7 @@ if (process.env.SPOTIFY_ACCOUNTS_REDIRECT || process.env.SPOTIFY_API_REDIRECT ||
 
 const SpotifyWebApi = require('spotify-web-api-node')
 const logger = require('fomoplayer_shared').logger(__filename)
-const { apiURL } = require('../../config.js')
+const { authApiURL, apiURL } = require('../../config.js')
 const { queryAuthorization, upsertUserAuthorizationTokens } = require('../db')
 const R = require('ramda')
 const L = require('partial.lenses')
@@ -17,7 +17,7 @@ const clientId = process.env.SPOTIFY_CLIENT_ID
 const credentials = {
   clientId,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-  redirectUri: `${apiURL}/auth/spotify/callback`,
+  redirectUri: `${authApiURL || apiURL}/auth/spotify/callback`,
 }
 
 let suspendedUntil = undefined
