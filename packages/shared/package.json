@@ -16,6 +16,6 @@
     "partial.lenses": "^14.17.0",
     "colors": "^1.4.0",
     "bluebird": "^3.7.2",
-    "yargs": "^17.7.2"
+    "yargs": "^18.0.0"
   }
 }
