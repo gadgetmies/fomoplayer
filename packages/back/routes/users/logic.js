@@ -310,7 +310,7 @@ module.exports.setFollowStarred = async (userId, type, followId, starred) => {
 }
 
 module.exports.addPurchasedTracksToUser = async (userId, trackIds) => {
-  await addPurchasedTracksToUsers([userId], trackIds)
+  await addPurchasedTracksToUsers([userId], trackIds.map((trackId) => ({ trackId })))
 }
 
 const verifyFollowOwnership = async (userId, type, followId) => {
@@ -369,7 +369,10 @@ module.exports.removeAuthorization = async (userId, storeName) => {
 module.exports.addStoreTracksToUsers = async (storeUrl, tracks, userIds, sourceId, skipOld, type = 'tracks') => {
   let storedTracks = []
   if (!storeUrl) {
-    await addPurchasedTracksToUsers(userIds, tracks.map(R.prop('trackId')))
+    await addPurchasedTracksToUsers(
+      userIds,
+      tracks.map((t) => ({ trackId: t.trackId, purchased: t.purchased })),
+    )
   } else {
     const sourceId = await insertSource({
       operation: 'tracksHandler',
@@ -378,9 +381,6 @@ module.exports.addStoreTracksToUsers = async (storeUrl, tracks, userIds, sourceI
     })
 
     storedTracks = await addStoreTracksToUsers(storeUrl, tracks, userIds, sourceId, skipOld, type)
-    if (type === 'purchased') {
-      await addPurchasedTracksToUsers(userIds, storedTracks)
-    }
   }
   return storedTracks.map((trackId) => `${apiURL}/tracks/${trackId}`)
 }

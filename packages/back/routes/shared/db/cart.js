@@ -301,18 +301,44 @@ ON CONFLICT DO NOTHING
   return createdCart
 }
 
-module.exports.insertTracksToCart = async (cartId, trackIds) =>
-  pg.queryRowsAsync(
-    // language=PostgreSQL
-    sql`--insertTracksToCart
+module.exports.insertTracksToCart = async (cartId, items) => {
+  if (!items || items.length === 0) return
+
+  const withDate = items.filter((i) => i.addedAt)
+  const withoutDate = items.filter((i) => !i.addedAt)
+
+  if (withoutDate.length > 0) {
+    await pg.queryRowsAsync(
+      // language=PostgreSQL
+      sql`--insertTracksToCart (no date)
 INSERT INTO track__cart
   (cart_id, track_id)
 SELECT
   ${cartId}
 , track_id
-FROM unnest(${trackIds}:: INTEGER[]) AS track_id
+FROM unnest(${withoutDate.map((i) => i.trackId)}:: INTEGER[]) AS track_id
 ON CONFLICT ON CONSTRAINT track__cart_cart_id_track_id_key DO NOTHING`,
-  )
+    )
+  }
+
+  if (withDate.length > 0) {
+    const payload = withDate.map((i) => ({ track_id: i.trackId, added_at: i.addedAt }))
+    await pg.queryRowsAsync(
+      // language=PostgreSQL
+      sql`--insertTracksToCart (with date)
+INSERT INTO track__cart
+  (cart_id, track_id, track__cart_added)
+SELECT
+  ${cartId}
+, t.track_id
+, t.added_at
+FROM jsonb_to_recordset(${JSON.stringify(payload)} :: JSONB)
+  AS t(track_id INTEGER, added_at TIMESTAMPTZ)
+ON CONFLICT ON CONSTRAINT track__cart_cart_id_track_id_key
+DO UPDATE SET track__cart_added = EXCLUDED.track__cart_added`,
+    )
+  }
+}
 
 module.exports.deleteTracksFromCart = async (cartId, trackIds) =>
   pg.queryRowsAsync(

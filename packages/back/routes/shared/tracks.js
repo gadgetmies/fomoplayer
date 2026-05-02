@@ -11,6 +11,7 @@ const { addStoreTrack, ensureArtistExists, ensureReleaseExists, ensureLabelExist
 
 const {
   addPurchasedStoreTrackToUser,
+  addPurchasedTracksToUsers,
   addTrackToUser: addTrackToUserDb,
   artistOnLabelInIgnore,
   addTracksToUser,
@@ -97,6 +98,14 @@ const addStoreTracksToUsers = (module.exports.addStoreTracksToUsers = async (
       await addTracksToUser(tx, userId, storedTracks.map(R.prop('id')), sourceId)
       // TODO: this does not take into account the ignores: does it need to?
     })
+  }
+
+  if (type === 'purchased' && storedTracks.length > 0) {
+    const purchasedByUrl = new Map(tracks.map((t) => [t.url, t.purchased]))
+    const purchasedItems = storedTracks
+      .map(({ id, url }) => ({ trackId: id, purchased: purchasedByUrl.get(url) }))
+      .filter(({ trackId }) => trackId !== undefined)
+    await addPurchasedTracksToUsers(userIds, purchasedItems)
   }
 
   logger.debug(`Adding ${filteredTracks.length} new tracks to database`)

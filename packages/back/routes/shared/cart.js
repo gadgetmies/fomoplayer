@@ -64,9 +64,10 @@ const getCartStoreDetails = async (cartId, storeName) => {
   return cartStoreDetails.find(({ storeName: cartStoreName }) => cartStoreName === storeName)
 }
 
-const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId, trackIds) => {
+const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId, items) => {
   await verifyCartOwnership(userId, cartId)
-  await insertTracksToCart(cartId, trackIds)
+  const trackIds = items.map((i) => i.trackId)
+  await insertTracksToCart(cartId, items)
 
   setImmediate(async () => {
     const spotifyCartDetails = await getCartStoreDetails(cartId, spotifyStoreName)
@@ -95,7 +96,9 @@ const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userI
 
 module.exports.updateCartContents = async (userId, cartId, operations) => {
   const tracksToBeRemoved = operations.filter(R.propEq('remove', 'op')).map(R.prop('trackId'))
-  const tracksToBeAdded = operations.filter(R.propEq('add', 'op')).map(R.prop('trackId'))
+  const tracksToBeAdded = operations
+    .filter(R.propEq('add', 'op'))
+    .map(({ trackId, addedAt }) => ({ trackId, addedAt }))
 
   if (tracksToBeRemoved.length > 0) {
     await removeTracksFromCart(userId, cartId, tracksToBeRemoved)
@@ -107,7 +110,9 @@ module.exports.updateCartContents = async (userId, cartId, operations) => {
 
 module.exports.updateAllCartContents = async (userId, operations, excludePurchased = true) => {
   const tracksToBeRemoved = operations.filter(R.propEq('remove', 'op')).map(R.prop('trackId'))
-  const tracksToBeAdded = operations.filter(R.propEq('add', 'op')).map(R.prop('trackId'))
+  const tracksToBeAdded = operations
+    .filter(R.propEq('add', 'op'))
+    .map(({ trackId, addedAt }) => ({ trackId, addedAt }))
 
   const carts = await queryUserCartDetails(userId)
   for (const { id, is_purchased } of carts) {
@@ -154,7 +159,7 @@ module.exports.importPlaylistAsCart = async (userId, url) => {
   )
   const createdCart = await insertCart(userId, `${storeModule.logic.storeName}: ${title}`)
   logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}, cart: ${createdCart.id}`)
-  await insertTracksToCart(createdCart.id, storedTracks)
+  await insertTracksToCart(createdCart.id, storedTracks.map((trackId) => ({ trackId })))
   return createdCart
 }
 

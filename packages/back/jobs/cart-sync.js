@@ -55,7 +55,7 @@ module.exports.syncCarts = async () => {
           )
 
           const addedTracks = await addStoreTracksToUsers(storeUrl, newTrackInCart, [userId], null, false)
-          await addTracksToCart(userId, cartId, addedTracks)
+          await addTracksToCart(userId, cartId, addedTracks.map((trackId) => ({ trackId })))
         } catch (e) {
           logger.error(`Updating cart ${cartId} to match playlist ${cartStoreId} failed`, e)
           errors.push(e.toString())

@@ -4,17 +4,41 @@ const pg = require('fomoplayer_shared').db.pg
 const logger = require('fomoplayer_shared').logger(__filename)
 const BPromise = require('bluebird')
 
-module.exports.addPurchasedTracksToUsers = async (userIds, trackIds) => {
-  await pg.queryAsync(
-    // language=PostgreSQL
-    sql`-- addPurchasedTracksToUsers
-INSERT INTO track__cart (cart_id, track_id) 
+module.exports.addPurchasedTracksToUsers = async (userIds, items) => {
+  if (!items || items.length === 0) return
+
+  const withDate = items.filter((i) => i.purchased)
+  const withoutDate = items.filter((i) => !i.purchased)
+
+  if (withoutDate.length > 0) {
+    await pg.queryAsync(
+      // language=PostgreSQL
+      sql`-- addPurchasedTracksToUsers (no date)
+INSERT INTO track__cart (cart_id, track_id)
 SELECT cart_id, track_id
-FROM cart, unnest(${trackIds} :: BIGINT[]) AS tracks(track_id)
+FROM cart, unnest(${withoutDate.map((i) => i.trackId)} :: BIGINT[]) AS tracks(track_id)
 WHERE meta_account_user_id = ANY(${userIds}) AND cart_is_purchased
 ON CONFLICT DO NOTHING
 `,
-  )
+    )
+  }
+
+  if (withDate.length > 0) {
+    const payload = withDate.map((i) => ({ track_id: i.trackId, purchased: i.purchased }))
+    await pg.queryAsync(
+      // language=PostgreSQL
+      sql`-- addPurchasedTracksToUsers (with date)
+INSERT INTO track__cart (cart_id, track_id, track__cart_added)
+SELECT cart_id, t.track_id, t.purchased
+FROM cart,
+     jsonb_to_recordset(${JSON.stringify(payload)} :: JSONB)
+       AS t(track_id BIGINT, purchased TIMESTAMPTZ)
+WHERE meta_account_user_id = ANY(${userIds}) AND cart_is_purchased
+ON CONFLICT ON CONSTRAINT track__cart_cart_id_track_id_key
+DO UPDATE SET track__cart_added = EXCLUDED.track__cart_added
+`,
+    )
+  }
 }
 
 const composableSql = (parts, ...args) => {
