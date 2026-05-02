@@ -1,6 +1,7 @@
 import * as R from 'ramda'
 import React from 'react'
 
+import browser from '../browser'
 import Login from './Login.jsx'
 import BeatportPanel from './BeatportPanel.jsx'
 import BandcampPanel from './BandcampPanel.jsx'
@@ -8,8 +9,7 @@ import MultiStorePlayerPanel from './MultiStorePlayerPanel.jsx'
 import Error from './Error.jsx'
 import Status from './Status.jsx'
 
-const getCurrentUrl = (tabArray) => tabArray[0].url
-const getCurrentHostname = (tabArray) => getCurrentUrl(tabArray)
+const getCurrentHostname = (tabArray) => (tabArray[0] && tabArray[0].url) || ''
 
 export default class Root extends React.Component {
   constructor(props) {
@@ -23,71 +23,71 @@ export default class Root extends React.Component {
       error: null,
     }
 
-    const that = this
-    chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    browser.runtime.onMessage.addListener((message) => {
       if (message.type === 'login') {
-        that.setState({ loggedIn: message.success })
+        this.setState({ loggedIn: message.success })
       } else if (message.type === 'logout') {
-        that.setState({ loggedIn: false })
+        this.setState({ loggedIn: false })
       } else if (message.type === 'done') {
-        that.setRunning(false)
+        this.setRunning(false)
       } else if (message.type === 'error') {
-        that.setState({ error: message })
+        this.setState({ error: message })
       }
-
-      that.refresh()
+      this.refresh()
     })
 
     this.refresh = this.refresh.bind(this)
     this.setRunning = this.setRunning.bind(this)
+    this.handleReset = this.handleReset.bind(this)
     this.refresh()
   }
 
-  refresh() {
-    const that = this
+  async refresh() {
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+    const stored = await browser.storage.local.get([
+      'running',
+      'refreshToken',
+      'enabledStores',
+      'appUrl',
+      'error',
+      'operationStatus',
+      'operationProgress',
+    ])
+    const currentHostname = getCurrentHostname(tabs)
+    const resolvedAppUrl = stored.appUrl || DEFAULT_APP_URL
 
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabArray) {
-      chrome.storage.local.get(
-        ['running', 'refreshToken', 'enabledStores', 'appUrl', 'error', 'operationStatus', 'operationProgress'],
-        function ({ running, refreshToken, enabledStores, appUrl, error, operationStatus, operationProgress }) {
-          const currentHostname = getCurrentHostname(tabArray)
-          const resolvedAppUrl = appUrl || DEFAULT_APP_URL
+    const panels = [
+      { matcher: new RegExp(`^${resolvedAppUrl}`), component: MultiStorePlayerPanel },
+      { storeName: 'beatport', matcher: /^https:\/\/.*\.beatport\.com/, component: BeatportPanel },
+      { storeName: 'bandcamp', matcher: /^https:\/\/.*\.?bandcamp\.com/, component: BandcampPanel },
+    ]
 
-          const panels = [
-            {
-              matcher: new RegExp(`^${resolvedAppUrl}`),
-              component: MultiStorePlayerPanel,
-            },
-            {
-              storeName: 'beatport',
-              matcher: /^https:\/\/.*\.beatport\.com/,
-              component: BeatportPanel,
-            },
-            {
-              storeName: 'bandcamp',
-              matcher: /^https:\/\/.*\.?bandcamp\.com/,
-              component: BandcampPanel,
-            },
-          ]
-
-          that.setState({
-            loggedIn: refreshToken !== undefined,
-            currentHostname,
-            running,
-            enabledStores,
-            panels,
-            appUrl: resolvedAppUrl,
-            error,
-            operationStatus,
-            operationProgress,
-          })
-        },
-      )
+    this.setState({
+      loggedIn: stored.refreshToken !== undefined,
+      currentHostname,
+      running: stored.running,
+      enabledStores: stored.enabledStores,
+      panels,
+      appUrl: resolvedAppUrl,
+      error: stored.error,
+      operationStatus: stored.operationStatus,
+      operationProgress: stored.operationProgress,
     })
   }
 
-  setRunning(state) {
-    chrome.storage.local.set({ running: state }, () => this.setState({ running: state }))
+  async setRunning(state) {
+    await browser.storage.local.set({ running: state })
+    this.setState({ running: state })
+  }
+
+  async handleReset() {
+    try {
+      await browser.runtime.sendMessage({ type: 'logging-out' })
+    } catch (e) {
+      console.warn('Logout broadcast failed during reset', e)
+    }
+    await browser.storage.local.clear()
+    this.setState({ running: false, loggedIn: false })
   }
 
   render() {
@@ -110,9 +110,7 @@ export default class Root extends React.Component {
 
     return (
       <>
-        <button onClick={() => chrome.storage.local.clear(() => this.setState({ running: false, loggedIn: false }))}>
-          Reset
-        </button>
+        <button onClick={this.handleReset}>Reset</button>
         {this.state.error ? (
           <Error error={this.state.error} />
         ) : !this.state.loggedIn ? (

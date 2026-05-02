@@ -30,6 +30,12 @@ button {
   top: 0.7em;
 }
 
+.login-hint {
+  font-size: 0.7rem;
+  color: #888;
+  margin-bottom: 0.5em;
+}
+
 .login-input {
   box-sizing: border-box;
   background-color: white;

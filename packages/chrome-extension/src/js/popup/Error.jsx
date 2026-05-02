@@ -1,5 +1,6 @@
 import React from 'react'
 import newGithubIssueUrl from 'new-github-issue-url'
+import browser from '../browser'
 
 export default class Error extends React.Component {
   constructor(props) {
@@ -19,11 +20,11 @@ export default class Error extends React.Component {
 Details: ${this.props.error.stack}`,
     })
 
-    chrome.tabs.create({ url: issueUrl, active: true })
+    browser.tabs.create({ url: issueUrl, active: true })
   }
 
   clearError() {
-    chrome.runtime.sendMessage({ type: 'clearError' })
+    browser.runtime.sendMessage({ type: 'clearError' })
   }
 
   render() {

@@ -1,0 +1,11 @@
+{
+  "background": {
+    "scripts": ["background.bundle.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "fomoplayer-extension@fomoplayer.com",
+      "strict_min_version": "115.0"
+    }
+  }
+}

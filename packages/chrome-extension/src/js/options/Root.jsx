@@ -1,14 +1,14 @@
 import React from 'react'
+import browser from '../browser'
 
 export default class Root extends React.Component {
   constructor(props) {
     super(props)
     this.state = { enabledStores: {} }
 
-    const that = this
-    chrome.storage.local.get(['appUrl', 'enabledStores'], function ({ appUrl, enabledStores }) {
+    browser.storage.local.get(['appUrl', 'enabledStores']).then(({ appUrl, enabledStores }) => {
       const resolvedAppUrl = appUrl || DEFAULT_APP_URL
-      that.setState({
+      this.setState({
         appUrl: resolvedAppUrl,
         storedAppUrl: resolvedAppUrl,
         enabledStores: enabledStores || { beatport: true, bandcamp: true },
@@ -26,7 +26,7 @@ export default class Root extends React.Component {
   }
 
   saveAppUrl() {
-    chrome.storage.local.set({ appUrl: this.state.appUrl })
+    browser.storage.local.set({ appUrl: this.state.appUrl })
     this.setState({ storedAppUrl: this.state.appUrl })
   }
 
@@ -35,11 +35,11 @@ export default class Root extends React.Component {
   }
 
   toggleStore(store) {
-    return function (e) {
+    return (e) => {
       const enabledStores = { ...this.state.enabledStores, [store]: !!e.target.checked }
       this.setState({ enabledStores })
-      chrome.storage.local.set({ enabledStores })
-    }.bind(this)
+      browser.storage.local.set({ enabledStores })
+    }
   }
 
   render() {

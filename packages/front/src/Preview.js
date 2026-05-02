@@ -14,7 +14,7 @@ import CopyToClipboardButton from './CopyToClipboardButton'
 import ShareLink from './ShareLink'
 import { CartDropDownButton } from './CartDropDownButton'
 import Popup from './Popup'
-import { apiURL } from './config'
+import { apiURL, serviceURL } from './config'
 import { search } from './events'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(value, prop))
@@ -366,14 +366,14 @@ class Preview extends Component {
             )} - ${title}" in "${cartName}" on Fomo Player: ${`${cartLink}#${
               this.props.selectedCart?.tracks?.findIndex(({ id }) => id === currentTrack?.id) + 1
             }`}`,
-            'https://fomoplayer.com',
+            serviceURL,
           ]
         : [
             'Copy store links to clipboard',
             `Listen to "${namesToString(artistsAndRemixers)} - ${title}" on\n${currentTrack?.stores
               .map((store) => `${store.name}: ${store.url || store.release?.url}`)
               .join('\n')}`,
-            'https://fomoplayer.com',
+            serviceURL,
           ]
 
     const previews =

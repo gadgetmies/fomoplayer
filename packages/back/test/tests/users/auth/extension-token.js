@@ -191,7 +191,7 @@ test({
       .get('/api/auth/login/extension')
       .query({ extensionId: ALLOWED_EXTENSION_ID, code_challenge: 'cc', code_challenge_method: 'S256', state: 'st' })
     assert.strictEqual(response.status, 200)
-    assert.match(response.text, /Log in with Google/)
+    assert.match(response.text, /Continue with Google/)
     assert.match(response.text, /\/api\/auth\/login\/extension\/google/)
   },
 
@@ -434,5 +434,75 @@ test({
     })
     const response = await request(app).get('/api/auth/.well-known/jwks.json')
     assert.strictEqual(response.status, 404)
+  },
+
+  'GET /login/extension rejects redirect_uri that is not in the allowlist': async () => {
+    const { app } = buildApp({
+      config: {
+        ...baseConfig(generatePrivateKey()),
+        extensionOauthAllowedRedirectPatterns: [/^chrome-extension:\/\/[a-p]{32}\/auth-callback\.html$/],
+      },
+      extensionRefreshToken: fakeRefreshTokenStore(),
+      tokenServer: fakeTokenServer(),
+    })
+    const response = await request(app)
+      .get('/api/auth/login/extension')
+      .query({
+        extensionId: ALLOWED_EXTENSION_ID,
+        code_challenge: 'cc',
+        code_challenge_method: 'S256',
+        state: 'st',
+        redirect_uri: 'https://evil.example/callback',
+      })
+    assert.strictEqual(response.status, 400)
+    assert.match(response.text, /Unknown or invalid redirect_uri/)
+  },
+
+  'POST /extension/token rejects code when redirect_uri does not match the bound value': async () => {
+    let capturedCode
+    const issueCodeFn = (userId, codeChallenge, opts) => {
+      capturedCode = `code-${userId}`
+      issueCodeFn.lastBound = opts?.boundRedirectUri
+      return capturedCode
+    }
+    const consumeCodeFn = (code, codeVerifier, opts) => {
+      if (code !== capturedCode) return null
+      if (issueCodeFn.lastBound && issueCodeFn.lastBound !== opts?.redirectUri) return null
+      return { userId: 99 }
+    }
+    const allowedRedirect = `chrome-extension://${ALLOWED_EXTENSION_ID}/auth-callback.html`
+    const { app } = buildApp({
+      config: {
+        ...baseConfig(generatePrivateKey()),
+        extensionOauthAllowedRedirectPatterns: [/^chrome-extension:\/\/[a-p]{32}\/auth-callback\.html$/],
+      },
+      extensionRefreshToken: fakeRefreshTokenStore(),
+      tokenServer: fakeTokenServer(),
+      issueCodeFn,
+      consumeCodeFn,
+      session: { userId: 99 },
+    })
+    await request(app)
+      .get('/api/auth/login/extension')
+      .query({
+        extensionId: ALLOWED_EXTENSION_ID,
+        code_challenge: 'cc',
+        code_challenge_method: 'S256',
+        state: 'st',
+        redirect_uri: allowedRedirect,
+      })
+    await request(app).post('/api/auth/login/extension/confirm')
+    assert.strictEqual(issueCodeFn.lastBound, allowedRedirect)
+
+    const tampered = `chrome-extension://${'b'.repeat(32)}/auth-callback.html`
+    const response = await request(app)
+      .post('/api/auth/extension/token')
+      .send({
+        code: capturedCode,
+        code_verifier: 'verifier',
+        extensionId: ALLOWED_EXTENSION_ID,
+        redirect_uri: tampered,
+      })
+    assert.strictEqual(response.status, 401)
   },
 })

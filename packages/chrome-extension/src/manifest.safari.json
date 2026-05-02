@@ -1,0 +1,11 @@
+{
+  "background": {
+    "scripts": ["background.bundle.js"],
+    "persistent": false
+  },
+  "browser_specific_settings": {
+    "safari": {
+      "strict_min_version": "16.4"
+    }
+  }
+}

@@ -1,13 +1,18 @@
 {
   "name": "fomoplayer_chrome_extension",
-  "version": "0.0.2",
-  "description": "Multi store player chrome extension",
+  "version": "0.1.0",
+  "description": "Fomo Player browser extension",
   "engines": {
     "node": "22.x"
   },
   "scripts": {
-    "build": "node utils/build.js",
-    "start": "node utils/webserver.js"
+    "build": "yarn build:chrome && yarn build:firefox && yarn build:safari",
+    "build:chrome": "NODE_ENV=production BROWSER=chrome node utils/build.js",
+    "build:firefox": "NODE_ENV=production BROWSER=firefox node utils/build.js",
+    "build:safari": "NODE_ENV=production BROWSER=safari node utils/build.js",
+    "start": "BROWSER=${BROWSER:-chrome} node utils/webserver.js",
+    "lint:firefox": "web-ext lint --source-dir=build/firefox",
+    "test": "mocha 'test/**/*.spec.js'"
   },
   "dependencies": {
     "@hot-loader/react-dom": "^17.0.1",
@@ -18,12 +23,14 @@
     "ramda": "^0.27.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "typeface-lato": "^1.1.13"
+    "typeface-lato": "^1.1.13",
+    "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {
     "@babel/core": "^7.16.5",
     "@babel/preset-react": "^7.16.5",
     "babel-loader": "^9.2.1",
+    "chai": "^4.5.0",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^7.1.2",
@@ -31,8 +38,10 @@
     "fs-extra": "^10.0.0",
     "html-loader": "^3.0.1",
     "html-webpack-plugin": "^5.6.3",
+    "mocha": "^10.7.0",
     "react-hot-loader": "^4.13.0",
     "style-loader": "^3.3.1",
+    "web-ext": "^8.3.0",
     "webpack": "^5.76.0",
     "webpack-cli": "^4.9.1",
     "webpack-dev-server": "^5.0.4",

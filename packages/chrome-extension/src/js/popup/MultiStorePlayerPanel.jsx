@@ -1,4 +1,5 @@
 import React from 'react'
+import browser from '../browser'
 
 export default class MultiStorePlayerPanel extends React.Component {
   constructor(props) {
@@ -13,14 +14,14 @@ export default class MultiStorePlayerPanel extends React.Component {
           <button
             id="player-logout"
             disabled={this.props.running}
-            onClick={() => chrome.runtime.sendMessage({ type: 'logging-out' })}
+            onClick={() => browser.runtime.sendMessage({ type: 'logging-out' })}
           >
             Logout
           </button>
         </p>
         <p key={'player-open'}>
           {!this.props.isCurrent ? (
-            <button id="player-open" onClick={() => chrome.tabs.create({ active: true, url: this.props.appUrl })}>
+            <button id="player-open" onClick={() => browser.tabs.create({ active: true, url: this.props.appUrl })}>
               Open Player
             </button>
           ) : null}

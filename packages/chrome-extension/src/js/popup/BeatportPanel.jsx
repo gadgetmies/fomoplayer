@@ -1,236 +1,107 @@
 import React from 'react'
-import waitFunction from './wait.js'
+import browser from '../browser'
 
-const sendBeatportTracksScript = (urlTemplate, type, pageCount = 10) => `
-${waitFunction}
-var urlTemplate = ${urlTemplate}
-
-function sendError(errorText) {
-  chrome.runtime.sendMessage({type: 'error', message: 'Failed to send Beatport tracks', stack: errorText})
+const getActiveTabId = async () => {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
+  return tab?.id
 }
 
-function sendTracks(firstPage, lastPage) {
+const sendToActiveContent = async (message) => {
+  const tabId = await getActiveTabId()
+  if (typeof tabId !== 'number') return null
   try {
-    if (firstPage > lastPage) {
-      return
-    }
-    
-    chrome.runtime.sendMessage({type: 'operationStatus', text: 'Fetcing tracks', progress: firstPage / lastPage * 100})
-  
-    var iframe = document.getElementById('playables-frame') || document.createElement('iframe')
-    iframe.style.display = "none"
-    iframe.src = urlTemplate(firstPage)
-    iframe.id = 'playables-frame'
-    document.body.appendChild(iframe)
-  
-    var script = document.createElement('script')
-    script.text = \`
-      ${waitFunction}
-      wait(() => window.Playables, playables => {
-        try {
-          var script = document.getElementById('playables') || document.createElement('script')
-          script.type = 'text/plain'
-          script.id = 'playables'
-          script.text = JSON.stringify({type: '${type}', tracks: playables.tracks})
-          document.documentElement.appendChild(script)
-        } catch (e) {
-          var script = document.getElementById('error') || document.createElement('script')
-          script.type = 'text/plain'
-          script.id = 'error'
-          script.text = JSON.stringify(e.stack)
-          document.documentElement.appendChild(script)
-        }
-      })
-    \`
-    iframe.contentWindow.document.documentElement.appendChild(script)
-  
-    wait(() => iframe.contentWindow.document.getElementById('playables'), (result) => {
-      chrome.runtime.sendMessage({type: 'tracks', done: firstPage === lastPage, store: 'beatport', data: JSON.parse(result.text)})
-      sendTracks(firstPage+1, lastPage)
-    })   
-    wait(() => iframe.contentWindow.document.getElementById('error'), (result) => {
-      sendError(result.text)
-    })
+    return await browser.tabs.sendMessage(tabId, message)
   } catch (e) {
-    sendError(e.stack)
+    // Content script may not yet be loaded on a non-Beatport tab.
+    return null
   }
 }
-
-sendTracks(1, ${pageCount})
-`
-
-const sendBeatportArtistsAndLabelsScript = () => `
-${waitFunction}
-
-function sendError(errorText) {
-  chrome.runtime.sendMessage({type: 'error', message: 'Failed to send Beatport tracks', stack: errorText})
-}
-
-async function sendArtistsAndLabels() {
-  try {
-    chrome.runtime.sendMessage({type: 'operationStatus', text: 'Fetching artists and labels', progress: 20})
-    const myBeatportResponse = await fetch('https://www.beatport.com/api/my-beatport')
-    const artistsAndLabels = await myBeatportResponse.json()
-    const artistIds = artistsAndLabels.artists.map(({id, url, name}) => ({id, url, name}))
-    const labelIds = artistsAndLabels.labels.map(({id, url, name}) => ({id, url, name}))
-    chrome.runtime.sendMessage({type: 'artists', done: true, store: 'beatport', data: artistIds})
-    chrome.runtime.sendMessage({type: 'labels', done: true, store: 'beatport', data: labelIds})
-  } catch (e) {
-    sendError(e.stack)
-  }
-}
-
-sendArtistsAndLabels()
-`
-
-const sendBeatportMyLibraryScript = () => `
-${waitFunction}
-
-function sendError(errorText) {
-  chrome.runtime.sendMessage({type: 'error', message: 'Failed to send Beatport tracks', stack: errorText})
-}
-
-async function sendMyLibrary() {
-  try {
-    chrome.runtime.sendMessage({type: 'operationStatus', text: 'Fetching library', progress: 20})
-    const myBeatportResponse = await fetch('https://www.beatport.com/api/v4/my/downloads?page=1&per_page=500')
-    const myLibrary = await myBeatportResponse.json()
-    chrome.runtime.sendMessage({type: 'purchased', store: 'beatport', data: myLibrary.results})
-  } catch (e) {
-    sendError(e.stack)
-  }
-}
-
-sendMyLibrary()
-`
-
-const myBeatportUrlFn = 'page => `https://www.beatport.com/my-beatport?page=${page}&per-page=150`'
-const getCurrentUrl = (tabArray) => tabArray[0].url
 
 export default class BeatportPanel extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { loggedIn: false }
+    this.state = { loggedIn: false, hasPlayables: false }
   }
 
-  sendTracks(urlTemplate, type, pageCount) {
-    try {
-      this.props.setRunning(true)
-      chrome.tabs.executeScript({
-        code: sendBeatportTracksScript(urlTemplate, type, pageCount),
-      })
-    } catch (e) {
-      chrome.runtime.sendMessage({ type: 'error', message: 'Failed to send My Beatport tracks!', stack: e.stack })
-    }
+  async componentDidMount() {
+    const probe = await sendToActiveContent({ type: 'beatport:probe' })
+    if (probe) this.setState({ loggedIn: !!probe.loggedIn, hasPlayables: !!probe.hasPlayables })
   }
 
-  sendMyLibrary() {
+  async withRunning(action) {
+    this.props.setRunning(true)
     try {
-      this.props.setRunning(true)
-      chrome.tabs.executeScript({
-        code: sendBeatportMyLibraryScript(),
-      })
+      await action()
     } catch (e) {
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         type: 'error',
-        message: 'Failed to send My Library tracks!',
-        stack: e.stack,
+        message: 'Beatport panel action failed',
+        stack: e?.stack || String(e),
       })
     }
-  }
-
-  sendArtistsAndLabels() {
-    try {
-      this.props.setRunning(true)
-      chrome.tabs.executeScript({
-        code: sendBeatportArtistsAndLabelsScript(),
-      })
-    } catch (e) {
-      chrome.runtime.sendMessage({
-        type: 'error',
-        message: 'Failed to send My Beatport artists and labels!',
-        stack: e.stack,
-      })
-    }
-  }
-
-  componentDidMount() {
-    const that = this
-    chrome.tabs.executeScript(
-      {
-        code: `document.querySelector('.head-account-link[data-href="/account/profile"]') !== null`,
-      },
-      ([loggedIn]) => {
-        that.setState({ loggedIn })
-      },
-    )
-    chrome.tabs.executeScript(
-      {
-        code: `document.querySelector('.playable-play') !== null`,
-      },
-      ([hasPlayables]) => {
-        that.setState({ hasPlayables })
-      },
-    )
   }
 
   render() {
+    const { running, isCurrent } = this.props
+    const { loggedIn, hasPlayables } = this.state
+
     return (
       <div>
         <h2>Beatport</h2>
-        {!this.props.isCurrent ? (
+        {!isCurrent ? (
           <button
             id="beatport-open"
-            onClick={() => chrome.tabs.create({ active: true, url: `https://www.beatport.com` })}
+            onClick={() => browser.tabs.create({ active: true, url: 'https://www.beatport.com' })}
           >
             Open Beatport
           </button>
         ) : (
           <>
-            <p key={'beatport-current'}>
+            <p key="beatport-current">
               <button
                 id="beatport-current"
-                disabled={this.props.running || !this.state.hasPlayables}
-                onClick={() => {
-                  const that = this
-                  chrome.tabs.query({ active: true, currentWindow: true }, function (tabArray) {
-                    that.sendTracks(`() => "${getCurrentUrl(tabArray)}"`, 'tracks', 1)
-                  })
-                }}
+                disabled={running || !hasPlayables}
+                onClick={() =>
+                  this.withRunning(() => sendToActiveContent({ type: 'beatport:scrape-current-page' }))
+                }
               >
                 Send tracks from current page
               </button>
             </p>
             <h3>Sync (requires login)</h3>
-            <p key={'beatport-new-tracks'}>
+            <p key="beatport-new-tracks">
               <button
                 id="beatport-new-tracks"
-                disabled={this.props.running || !this.state.loggedIn}
-                onClick={() => {
-                  this.sendTracks(myBeatportUrlFn, 'tracks', 20)
-                }}
+                disabled={running || !loggedIn}
+                onClick={() =>
+                  this.withRunning(() =>
+                    sendToActiveContent({
+                      type: 'beatport:scrape-my-beatport',
+                      pageCount: 20,
+                      trackType: 'tracks',
+                    }),
+                  )
+                }
               >
                 My Beatport tracks
               </button>
             </p>
-            <p key={'beatport-new-artists-and-labels'}>
+            <p key="beatport-new-artists-and-labels">
               <button
                 id="beatport-new-artists-and-labels"
-                disabled={this.props.running || !this.state.loggedIn}
-                onClick={() => {
-                  this.sendArtistsAndLabels()
-                }}
+                disabled={running || !loggedIn}
+                onClick={() =>
+                  this.withRunning(() => sendToActiveContent({ type: 'beatport:scrape-artists-and-labels' }))
+                }
               >
                 My Beatport artists and labels
               </button>
             </p>
-            <p key={'beatport-downloaded'}>
+            <p key="beatport-downloaded">
               <button
                 id="beatport-downloaded"
-                disabled={this.props.running || !this.state.loggedIn}
-                onClick={() => {
-                  this.sendMyLibrary()
-                }}
+                disabled={running || !loggedIn}
+                onClick={() => this.withRunning(() => sendToActiveContent({ type: 'beatport:scrape-my-library' }))}
               >
                 My Library
               </button>

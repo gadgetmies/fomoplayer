@@ -10,17 +10,22 @@ const purgeExpired = (now = Date.now()) => {
   }
 }
 
-const issueCode = (userId, codeChallenge) => {
+const issueCode = (userId, codeChallenge, { boundRedirectUri } = {}) => {
   if (!userId || typeof codeChallenge !== 'string' || codeChallenge.length === 0) {
     throw new Error('issueCode requires userId and codeChallenge')
   }
   purgeExpired()
   const code = randomBytes(32).toString('base64url')
-  store.set(code, { userId, codeChallenge, expiresAt: Date.now() + CODE_TTL_MS })
+  store.set(code, {
+    userId,
+    codeChallenge,
+    boundRedirectUri: boundRedirectUri || null,
+    expiresAt: Date.now() + CODE_TTL_MS,
+  })
   return code
 }
 
-const consumeCode = (code, codeVerifier) => {
+const consumeCode = (code, codeVerifier, { redirectUri } = {}) => {
   if (typeof code !== 'string' || typeof codeVerifier !== 'string') return null
   const entry = store.get(code)
   if (!entry) return null
@@ -30,6 +35,8 @@ const consumeCode = (code, codeVerifier) => {
   const expected = Buffer.from(entry.codeChallenge)
   const actual = Buffer.from(createHash('sha256').update(codeVerifier).digest('base64url'))
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null
+
+  if (entry.boundRedirectUri && entry.boundRedirectUri !== redirectUri) return null
 
   return { userId: entry.userId }
 }

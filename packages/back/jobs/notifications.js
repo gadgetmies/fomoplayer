@@ -6,6 +6,7 @@ const { searchForTracks } = require('../routes/shared/db/search')
 const BPromise = require('bluebird')
 const { scheduleEmail } = require('../services/mailer')
 const { queryEntityDetails } = require('../routes/shared/db/entities')
+const { frontendURL } = require('../config')
 
 const logger = require('fomoplayer_shared').logger(__filename)
 
@@ -41,7 +42,7 @@ module.exports.updateNotifications = async () => {
         if (searchResults.length !== 0) {
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
           const trackDetails = await getTracksWithIds(searchResults.map(R.prop('track_id')))
-          const root = `https://fomoplayer.com`
+          const root = frontendURL
           const notificationsUrl = `${root}/settings/notifications`
           const newTracksDetails = trackDetails.map(
             ({ artists, title, version }) =>

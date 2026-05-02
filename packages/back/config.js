@@ -41,6 +41,21 @@ const extensionOauthAllowedIds = (process.env.EXTENSION_OAUTH_ALLOWED_IDS || '')
   .map((id) => id.trim())
   .filter((id) => id.length > 0)
 
+const DEFAULT_EXTENSION_REDIRECT_PATTERNS = [
+  '^https://[a-p]{32}\\.chromiumapp\\.org/?(\\?.*)?$',
+  '^chrome-extension://[a-p]{32}/auth-callback\\.html(\\?.*)?$',
+  '^moz-extension://[0-9a-fA-F-]{36}/auth-callback\\.html(\\?.*)?$',
+  '^safari-web-extension://[0-9A-Fa-f-]{36}/auth-callback\\.html(\\?.*)?$',
+]
+
+const extensionOauthAllowedRedirectPatterns = (
+  process.env.EXTENSION_OAUTH_ALLOWED_REDIRECT_PATTERNS || DEFAULT_EXTENSION_REDIRECT_PATTERNS.join(',')
+)
+  .split(',')
+  .map((pattern) => pattern.trim())
+  .filter((pattern) => pattern.length > 0)
+  .map((pattern) => new RegExp(pattern))
+
 const decodePem = (value) => (typeof value === 'string' ? value.replace(/\\n/g, '\n') : undefined)
 const internalAuthHandoffPrivateKey = decodePem(process.env.INTERNAL_AUTH_HANDOFF_PRIVATE_KEY) || undefined
 const internalAuthHandoffPublicKey = decodePem(process.env.INTERNAL_AUTH_HANDOFF_PUBLIC_KEY) || undefined
@@ -50,7 +65,11 @@ const internalAuthHandoffJwksUrl = process.env.INTERNAL_AUTH_HANDOFF_JWKS_URL ||
 const internalAuthApiAudience = process.env.INTERNAL_AUTH_API_AUDIENCE || undefined
 
 module.exports = {
-  allowedOrigins: [frontendURL, 'chrome-extension://biafmljflmgpbaghhebhmapgajdkdahn', ...additionalOrigins],
+  // Extension and per-deployment origins (chrome-extension://, moz-extension://,
+  // safari-web-extension://, preview-env hosts, etc.) come from the
+  // ADDITIONAL_ORIGINS or ALLOWED_ORIGIN_REGEX env vars — see
+  // packages/chrome-extension/README.md for the recommended regex shape.
+  allowedOrigins: [frontendURL, ...additionalOrigins],
   allowedOriginRegexes: [...allowedOriginRegexes, ...allowedPreviewOriginRegexes],
   port,
   apiURL,
@@ -73,6 +92,7 @@ module.exports = {
   oidcHandoffSecret: process.env.OIDC_HANDOFF_SECRET || undefined,
   githubActionsOidcRepo: process.env.GITHUB_ACTIONS_OIDC_REPO || undefined,
   extensionOauthAllowedIds,
+  extensionOauthAllowedRedirectPatterns,
   internalAuthHandoffPrivateKey,
   internalAuthHandoffPublicKey,
   internalAuthHandoffKeyId,
