@@ -59,10 +59,10 @@ export class PlayerHelp extends Component {
       content: (
         <p>
           The player can be controlled using media keys on your keyboard even when the player is running in the
-          background. To make the browsing experience smoother, the fast forward and rewind buttons do not skip complete
-          tracks, but instead seek the track back and forward. To jump to the next / previous track, you need to double
-          click those keys. There are also other useful shortcuts to make the use more efficient. You can see these by
-          hovering the keyboard icon in the top bar.
+          background. By default the fast forward and rewind buttons do not skip complete tracks, but instead seek the
+          track back and forward and double clicking those keys will jump to the next / previous track. This behavior
+          can be changed from the player settings. There are also other useful shortcuts to make the use more efficient.
+          You can see these by hovering the keyboard icon in the top bar.
         </p>
       ),
       locale: { last: 'Done' },

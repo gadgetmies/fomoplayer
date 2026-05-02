@@ -95,6 +95,17 @@ export class SettingsHelp extends Component {
           reasons the service will only modify playlists it has created.
         </p>
       ),
+    },
+    Player: {
+      target: '[data-help-id=player-tab]',
+      placement: 'bottom',
+      content: (
+        <p>
+          In the player tab you can configure the behavior of the media buttons on your device. You can choose between
+          the default behavior (single click to seek, double click to skip) and a skip behavior (single click to skip
+          to the next track or to the beginning/previous track).
+        </p>
+      ),
       locale: { last: 'Done' },
     },
   }
