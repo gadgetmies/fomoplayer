@@ -17,6 +17,21 @@ const sendToActiveContent = async (message) => {
   }
 }
 
+const LOGIN_CACHE_KEY = 'beatportLoginCache'
+const LOGIN_CACHE_TTL_MS = 60_000
+
+const readCachedLoggedIn = async () => {
+  try {
+    const stored = await browser.storage.local.get(LOGIN_CACHE_KEY)
+    const entry = stored?.[LOGIN_CACHE_KEY]
+    if (!entry || typeof entry.ts !== 'number') return null
+    if (Date.now() - entry.ts > LOGIN_CACHE_TTL_MS) return null
+    return Boolean(entry.loggedIn)
+  } catch {
+    return null
+  }
+}
+
 export default class BeatportPanel extends React.Component {
   constructor(props) {
     super(props)
@@ -24,6 +39,8 @@ export default class BeatportPanel extends React.Component {
   }
 
   async componentDidMount() {
+    const cached = await readCachedLoggedIn()
+    if (cached !== null) this.setState({ loggedIn: cached })
     const probe = await sendToActiveContent({ type: 'beatport:probe' })
     if (probe) this.setState({ loggedIn: !!probe.loggedIn, hasPlayables: !!probe.hasPlayables })
   }

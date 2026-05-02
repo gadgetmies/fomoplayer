@@ -67,28 +67,117 @@ const scrapeArtistsAndLabels = async () => {
   })
 }
 
-const scrapeMyLibrary = async () => {
-  await reportProgress('Fetching library', 20)
-  const response = await fetch('https://www.beatport.com/api/v4/my/downloads?page=1&per_page=500', {
-    credentials: 'include',
-  })
-  if (!response.ok) throw new Error(`v4/my/downloads failed: ${response.status}`)
+// Beatport retired the `/api/v4/my/downloads` REST endpoint on www; the
+// browser-side equivalent is the Next.js `getServerSideProps` data file for
+// the /library page, which embeds the React-Query dehydrated cache. It uses
+// the session cookie like any other www.beatport.com request, so no bearer
+// is needed.
+const LIBRARY_PER_PAGE = 100
+
+const getNextDataMeta = () => {
+  const el = document.getElementById('__NEXT_DATA__')
+  if (!el || !el.textContent) throw new Error('Beatport __NEXT_DATA__ script not found on page')
+  const data = JSON.parse(el.textContent)
+  if (!data?.buildId) throw new Error('Beatport __NEXT_DATA__ missing buildId')
+  return { buildId: data.buildId, locale: data.locale || 'en' }
+}
+
+const fetchLibraryPage = async ({ buildId, locale }, page) => {
+  const url = `/_next/data/${encodeURIComponent(buildId)}/${locale}/library.json?page=${page}&per_page=${LIBRARY_PER_PAGE}`
+  const response = await fetch(url, { credentials: 'include', cache: 'no-store' })
+  if (!response.ok) throw new Error(`library.json page ${page} failed: ${response.status}`)
   const body = await response.json()
+  const queries = body?.pageProps?.dehydratedState?.queries
+  const query = Array.isArray(queries) ? queries.find((q) => Array.isArray(q?.state?.data?.results)) : null
+  if (!query) throw new Error(`library.json page ${page} missing dehydrated download results`)
+  return query.state.data
+}
+
+const scrapeMyLibrary = async () => {
+  await reportProgress('Fetching library', 1)
+  const meta = getNextDataMeta()
+  const collected = []
+  for (let page = 1; ; page += 1) {
+    const data = await fetchLibraryPage(meta, page)
+    const results = Array.isArray(data.results) ? data.results : []
+    collected.push(...results)
+    const total = typeof data.count === 'number' && data.count > 0 ? data.count : collected.length
+    await reportProgress('Fetching library', Math.min(99, Math.round((collected.length / total) * 100)))
+    if (results.length === 0 || !data.next) break
+  }
   await browser.runtime.sendMessage({
     type: 'purchased',
     store: 'beatport',
-    data: body.results,
+    data: {
+      pageProps: {
+        dehydratedState: {
+          queries: [{ state: { data: { results: collected } } }],
+        },
+      },
+    },
   })
 }
 
-const probeLoggedIn = () => Boolean(document.querySelector('.head-account-link[data-href="/account/profile"]'))
+// Beatport's auth-required pages (e.g. /my-beatport) 307-redirect to
+// /?next=<path> when the session cookie is missing, and serve the page directly
+// when it is valid. A HEAD with redirect:'manual' lets us read that signal
+// without downloading a body: opaqueredirect => logged out, 200 => logged in.
+const fetchLoggedIn = async () => {
+  try {
+    const response = await fetch('/my-beatport', {
+      method: 'HEAD',
+      credentials: 'include',
+      redirect: 'manual',
+      cache: 'no-store',
+    })
+    return response.type === 'basic' && response.ok
+  } catch {
+    return false
+  }
+}
+
+// Cache the answer in extension storage so the popup can render the buttons in
+// their final state on first paint instead of waiting for a HEAD round-trip.
+const LOGIN_CACHE_KEY = 'beatportLoginCache'
+const LOGIN_CACHE_TTL_MS = 60_000
+
+const readLoginCache = async () => {
+  try {
+    const stored = await browser.storage.local.get(LOGIN_CACHE_KEY)
+    const entry = stored?.[LOGIN_CACHE_KEY]
+    if (!entry || typeof entry.ts !== 'number') return null
+    if (Date.now() - entry.ts > LOGIN_CACHE_TTL_MS) return null
+    return Boolean(entry.loggedIn)
+  } catch {
+    return null
+  }
+}
+
+const refreshLoginCache = async () => {
+  const loggedIn = await fetchLoggedIn()
+  try {
+    await browser.storage.local.set({ [LOGIN_CACHE_KEY]: { loggedIn, ts: Date.now() } })
+  } catch {}
+  return loggedIn
+}
+
+const probeLoggedIn = async () => {
+  const cached = await readLoginCache()
+  if (cached !== null) return cached
+  return refreshLoginCache()
+}
+
 const probeHasPlayables = () => Boolean(document.querySelector('.playable-play'))
+
+// Warm the cache as soon as the content script runs so the popup finds a fresh
+// answer waiting when the user clicks the toolbar icon.
+refreshLoginCache().catch(() => {})
 
 browser.runtime.onMessage.addListener(async (message) => {
   try {
     switch (message?.type) {
       case 'beatport:probe':
-        return { loggedIn: probeLoggedIn(), hasPlayables: probeHasPlayables() }
+        return { loggedIn: await probeLoggedIn(), hasPlayables: probeHasPlayables() }
       case 'beatport:scrape-current-page':
         await scrapeCurrentPage({ type: message.trackType || 'tracks' })
         return { ok: true }
