@@ -1,5 +1,5 @@
 {
-  "name": "fomoplayer_chrome_extension",
+  "name": "fomoplayer_browser_extension",
   "version": "0.1.0",
   "description": "Fomo Player browser extension",
   "engines": {

@@ -5,6 +5,17 @@ the data to the Fomo Player backend. One source tree builds for Chrome,
 Firefox, and Safari; the only difference is a small per-browser manifest
 overlay.
 
+## Supported browsers
+
+| Browser           | Build target          | Manifest overlay              | Distribution                                                                  |
+|-------------------|-----------------------|-------------------------------|-------------------------------------------------------------------------------|
+| Chrome / Chromium | `yarn build:chrome`   | `src/manifest.chrome.json`    | Load `build/chrome/` unpacked, or pack as a `.crx` for the Chrome Web Store.  |
+| Firefox           | `yarn build:firefox`  | `src/manifest.firefox.json`   | `web-ext run --source-dir=build/firefox` for dev, signed XPI via AMO.         |
+| Safari (≥ 16.4)   | `yarn build:safari`   | `src/manifest.safari.json`    | Run `xcrun safari-web-extension-converter build/safari` and ship via Xcode.   |
+
+Edge and other Chromium-based browsers can load the Chrome build unpacked but
+are not packaged for store distribution.
+
 ## Layout
 
 | Path                              | Purpose                                                      |

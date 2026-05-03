@@ -1,7 +1,7 @@
 {
   "name": "fomoplayer_shared",
   "version": "1.0.0",
-  "description": "Shared constants for keeping backend, frontend and Chrome Extension configs in sync",
+  "description": "Shared constants for keeping backend, frontend and browser extension configs in sync",
   "main": "index.js",
   "bin": {
     "get-frontend-port": "./get-frontend-port.js"

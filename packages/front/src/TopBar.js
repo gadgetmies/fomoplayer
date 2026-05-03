@@ -398,13 +398,13 @@ class TopBar extends Component {
                   &nbsp; Instructions
                 </ExternalLink>
                 <ExternalLink
-                  href={'https://github.com/gadgetmies/fomoplayer#chrome-extension'}
+                  href={'https://github.com/gadgetmies/fomoplayer#browser-extension'}
                   className={`pill pill-link pill-link-large`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <FontAwesomeIcon icon={['fab', 'chrome']} />
-                  &nbsp; Chrome Extension
+                  <FontAwesomeIcon icon={['fas', 'puzzle-piece']} />
+                  &nbsp; Browser Extension
                 </ExternalLink>
                 <ExternalLink
                   href={'https://github.com/gadgetmies/fomoplayer/issues'}

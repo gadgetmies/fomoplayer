@@ -9,7 +9,7 @@ const {
 const {
   spotifyTracksTransform,
   spotifyAlbumTracksTransform,
-} = require('fomoplayer_chrome_extension/src/js/transforms/spotify')
+} = require('fomoplayer_browser_extension/src/js/transforms/spotify')
 const R = require('ramda')
 const L = require('partial.lenses')
 const { processChunks } = require('../../shared/requests')

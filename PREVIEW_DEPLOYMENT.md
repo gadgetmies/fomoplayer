@@ -148,9 +148,14 @@ Do not convert PEM newlines to `\n` unless your runtime explicitly unescapes the
 - Preview access is checked against `PREVIEW_ALLOWED_GOOGLE_SUBS` before any account DB lookup/signup checks.
 - Landing-page `GET /api/sign-up-available` is short-circuited in preview and does not query account counts.
 
-## Chrome extension token exchange behavior
+## Browser extension token exchange behavior
 
-- Extension obtains a Google `id_token` via Chrome identity flow.
-- Extension exchanges it at `/api/auth/token/exchange-google`.
-- Backend returns a short-lived internal access token.
-- Extension uses internal bearer token for `/api/me/*` requests instead of using the Google token directly.
+The earlier `POST /api/auth/token/exchange-google` design (extension obtains a
+Google `id_token` directly via `chrome.identity.launchWebAuthFlow` and POSTs
+it to the backend) was Chrome-only and has been **superseded** by the
+browser extension PKCE flow that runs on Chrome, Firefox, and Safari.
+
+See [`docs/auth/oidc-login-flow.md`](docs/auth/oidc-login-flow.md) for the
+current flow — the extension never sees Google credentials, the OIDC dance
+is brokered end-to-end by the backend, and the terminal credentials are a
+short-lived internal access JWT plus a rotating refresh token.

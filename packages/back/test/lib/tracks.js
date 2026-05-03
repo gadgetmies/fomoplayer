@@ -11,8 +11,8 @@ const { queryLabelsForTracks, removeLabels } = require('./labels')
 const {
   beatportTracksTransform,
   beatportLibraryTransform,
-} = require('../../../chrome-extension/src/js/transforms/beatport.js')
-const { spotifyTracksTransform } = require('fomoplayer_chrome_extension/src/js/transforms/spotify')
+} = require('../../../browser-extension/src/js/transforms/beatport.js')
+const { spotifyTracksTransform } = require('fomoplayer_browser_extension/src/js/transforms/spotify')
 
 const addBeatportTracks = (module.exports.addTracks = async (tracks, skipOld, type = 'new', userIds) => {
   const sourceId = await insertSource({

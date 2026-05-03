@@ -2,9 +2,9 @@
 
 This document describes every login method available in Fomo Player: Google OIDC
 for browser sessions, the CLI PKCE flow for API key creation, the OIDC handoff
-flow for Railway PR-preview consumers, the Chrome extension PKCE flow for
-short-lived JWT issuance, and the GitHub Actions OIDC login used by the
-automated PR demo-test bot.
+flow for Railway PR-preview consumers, the browser extension PKCE flow
+(Chrome / Firefox / Safari) for short-lived JWT issuance, and the GitHub
+Actions OIDC login used by the automated PR demo-test bot.
 
 The authoritative source of truth is the code:
 
@@ -19,7 +19,7 @@ The authoritative source of truth is the code:
 - `packages/back/routes/shared/cli-auth-code.js` — In-memory PKCE
   authorization code store (`issueCode` / `consumeCode`, 5 min TTL, S256
   verification with `timingSafeEqual`). Shared by both the CLI flow and the
-  Chrome extension flow.
+  browser extension flow.
 - `packages/back/routes/shared/auth-handoff-token.js` — Handoff JWT mint /
   verify (HS256, 60 s TTL).
 - `packages/back/routes/shared/auth-handoff-jti.js` +
@@ -31,18 +31,18 @@ The authoritative source of truth is the code:
   JWT verification via JWKS (`verifyActionsToken`).
 - `packages/back/token-server.js` — Internal access JWT mint
   (`issueInternalToken`, RS256 / HS256) and verify (`verifyInternalToken`,
-  JWKS or static public key). Used by the Chrome extension flow to issue
+  JWKS or static public key). Used by the browser extension flow to issue
   short-lived bearer JWTs.
 - `packages/back/db/extension-refresh-token.js` +
   `migrations/sqls/20260501100000-add-extension-refresh-token-up.sql` —
-  Hashed-and-rotated refresh-token store for the Chrome extension flow.
+  Hashed-and-rotated refresh-token store for the browser extension flow.
 - `packages/back/config.js` — Reads `OIDC_HANDOFF_URL`, `OIDC_HANDOFF_SECRET`,
   `PREVIEW_ENV`, `GITHUB_ACTIONS_OIDC_REPO`, `EXTENSION_OAUTH_ALLOWED_IDS`,
   `INTERNAL_AUTH_HANDOFF_PRIVATE_KEY`, `INTERNAL_AUTH_HANDOFF_KEY_ID`,
   `INTERNAL_AUTH_HANDOFF_ISSUER`, `INTERNAL_AUTH_HANDOFF_JWKS_URL`,
   `INTERNAL_AUTH_API_AUDIENCE`, etc.
 - `packages/cli/src/auth.js` — CLI loopback login + handoff exchange.
-- `packages/chrome-extension/src/js/service_worker.js` — Extension PKCE
+- `packages/browser-extension/src/js/service_worker.js` — Extension PKCE
   login + token refresh.
 - `packages/front/src/UserLogin.js` + `packages/front/src/App.js` — Browser
   login link.
@@ -56,7 +56,7 @@ The authoritative source of truth is the code:
 > design (see `packages/back/test/tests/users/auth/token-exchange.js`) where
 > the extension obtained a Google `id_token` directly via
 > `chrome.identity.launchWebAuthFlow` and POSTed it to the backend in exchange
-> for an internal JWT. That design is **superseded** by the Chrome extension
+> for an internal JWT. That design is **superseded** by the browser extension
 > PKCE flow documented below — the extension never sees a Google credential
 > and the OIDC dance is brokered end-to-end by the backend. The
 > `token-exchange.js` test and the `service_worker.js` `exchange-google` call
@@ -93,14 +93,16 @@ There are five distinct login paths:
    credential is needed beyond the initial browser login that establishes the
    user session.
 
-4. **Chrome extension PKCE flow.** The Chrome extension uses the same PKCE
-   machinery as the CLI, but the redirect target is the extension's
-   synthetic redirect URI `https://<extensionId>.chromiumapp.org` (handled
-   by `chrome.identity.launchWebAuthFlow`) instead of a localhost loopback
-   port, and the terminal credentials are a short-lived **internal access
-   JWT** (signed by the backend, verified via JWKS) plus a long-lived,
-   single-use, rotating **refresh token**. The extension never sees a Google
-   credential — the OIDC dance happens end-to-end on the backend.
+4. **Browser extension PKCE flow.** The browser extension (Chrome, Firefox,
+   Safari) uses the same PKCE machinery as the CLI, but the redirect target
+   is the extension's own `auth-callback.html`, surfaced via
+   `browser.runtime.getURL('auth-callback.html')` and resolving to a
+   per-browser scheme (`chrome-extension://`, `moz-extension://`, or
+   `safari-web-extension://`) instead of a localhost loopback port. The
+   terminal credentials are a short-lived **internal access JWT** (signed
+   by the backend, verified via JWKS) plus a long-lived, single-use,
+   rotating **refresh token**. The extension never sees a Google credential
+   — the OIDC dance happens end-to-end on the backend.
 
 5. **GitHub Actions OIDC login.** Only available on preview environments
    (`PREVIEW_ENV=true` + `GITHUB_ACTIONS_OIDC_REPO` configured). A GitHub
@@ -332,15 +334,19 @@ session.
 
 ---
 
-## Chrome extension login flow
+## Browser extension login flow
 
-The Chrome extension uses the same **OAuth 2.0 Authorization Code with PKCE**
-machinery as the CLI (RFC 7636), but with two differences:
+The browser extension (Chrome / Firefox / Safari) uses the same
+**OAuth 2.0 Authorization Code with PKCE** machinery as the CLI (RFC 7636),
+but with two differences:
 
-1. The browser redirect target is the extension's synthetic redirect URI
-   `https://<extensionId>.chromiumapp.org`, surfaced to the extension by
-   `chrome.identity.launchWebAuthFlow`. There is no localhost loopback
-   listener — service workers cannot bind ports.
+1. The browser redirect target is the extension's own `auth-callback.html`,
+   resolved at runtime via `browser.runtime.getURL('auth-callback.html')`.
+   That URL has a per-browser scheme — `chrome-extension://<id>/…`,
+   `moz-extension://<UUID>/…`, or `safari-web-extension://<UUID>/…` — and
+   the page parses `?code` / `?state` from the URL and forwards them to
+   the service worker via `browser.runtime.sendMessage`. There is no
+   localhost loopback listener — service workers cannot bind ports.
 2. The terminal credentials are a short-lived **internal access JWT**
    (RS256, ~15 min, verified by the existing `jwt-internal` Passport
    strategy in `passport-setup.js` against the configured JWKS) plus a
@@ -355,7 +361,7 @@ happens end-to-end on the backend — the extension only ever talks to
 `/api/auth/login/extension` and `/api/auth/extension/token`. From the user's
 browser perspective, the only "Google" page that ever loads is the standard
 Google consent screen reached via the backend's existing `/login/google`
-redirect inside `chrome.identity.launchWebAuthFlow`'s window.
+redirect inside the auth tab the extension opened.
 
 ### Why the extension does not exchange Google ID tokens directly
 
@@ -384,10 +390,11 @@ keeps the Google credential entirely server-side, and reuses the existing
 
 ### Endpoints
 
-- `GET  /api/auth/login/extension` — entry point opened by
-  `chrome.identity.launchWebAuthFlow`. Validates the requesting `extensionId`
-  against the `EXTENSION_OAUTH_ALLOWED_IDS` allowlist (env-configured,
-  comma-separated Chrome extension IDs) and the PKCE parameters
+- `GET  /api/auth/login/extension` — entry point opened by the extension
+  in a new auth tab (`browser.tabs.create`). Validates the requesting
+  `extensionId` against the `EXTENSION_OAUTH_ALLOWED_IDS` allowlist
+  (env-configured, comma-separated browser extension IDs — Chrome, Firefox,
+  and Safari id formats are all supported) and the PKCE parameters
   (`code_challenge` non-empty, `code_challenge_method=S256`, `state`
   non-empty), stashes them in the session, and serves a consent / login
   HTML page. Mirrors `/login/cli`.
@@ -397,8 +404,10 @@ keeps the Google credential entirely server-side, and reuses the existing
 - `POST /api/auth/login/extension/confirm` — user clicks "Allow"; backend
   re-validates `extensionId` against the allowlist, calls
   `issueCode(userId, codeChallenge)` to mint a one-time auth code (5 min
-  TTL), clears session-stored params, and redirects the browser to
-  `https://<extensionId>.chromiumapp.org/?code=<code>&state=<state>`.
+  TTL), clears session-stored params, and redirects the browser to the
+  extension's `redirect_uri` — typically
+  `chrome-extension://<id>/auth-callback.html` (or the `moz-extension://`
+  / `safari-web-extension://` equivalent) — with `?code=<code>&state=<state>`.
 - `POST /api/auth/login/extension/deny` — user clicks "Deny"; serves a
   "closed window" HTML page. Mirrors `/login/cli/deny`.
 - `POST /api/auth/extension/token` — token endpoint, two modes:
@@ -448,11 +457,12 @@ configured consumer) can verify without the private key.
 ```
 1. Extension service worker generates codeVerifier (32 random bytes,
    base64url), codeChallenge = base64url(SHA256(codeVerifier)),
-   state (16 random bytes, base64url). Calls
-   chrome.identity.launchWebAuthFlow({
-     interactive: true,
+   state (16 random bytes, base64url). Resolves redirect_uri =
+   browser.runtime.getURL('auth-callback.html') and opens an auth tab via
+   browser.tabs.create({
      url: ${apiUrl}/api/auth/login/extension
-       ?extensionId=<chrome.runtime.id>
+       ?extensionId=<browser.runtime.id>
+       &redirect_uri=<encoded redirect_uri>
        &code_challenge=C
        &code_challenge_method=S256
        &state=S
@@ -460,27 +470,33 @@ configured consumer) can verify without the private key.
 
 2. Browser GET /login/extension (user has session):
    backend validates extensionId against EXTENSION_OAUTH_ALLOWED_IDS,
-   stores extensionId, C, S in session,
+   validates redirect_uri against EXTENSION_OAUTH_ALLOWED_REDIRECT_PATTERNS,
+   stores extensionId, redirect_uri, C, S in session,
    serves HTML consent page with Allow / Deny buttons.
 
 3a. User clicks Allow →
     POST /login/extension/confirm
-    backend re-validates extensionId, calls issueCode(userId, C)
-      → opaque single-use auth code with 5 min TTL
-    302 to https://<extensionId>.chromiumapp.org/?code=<code>&state=S
+    backend re-validates extensionId, calls issueCode(userId, C, redirect_uri)
+      → opaque single-use auth code with 5 min TTL, bound to redirect_uri
+    302 to <redirect_uri>?code=<code>&state=S
+    (e.g. chrome-extension://<id>/auth-callback.html?code=…&state=…,
+          moz-extension://<UUID>/auth-callback.html?…,
+          safari-web-extension://<UUID>/auth-callback.html?…)
 
 3b. User clicks Deny →
     POST /login/extension/deny
     backend serves "Access denied" page.
-    launchWebAuthFlow eventually closes; extension treats as cancellation.
+    User closes the tab; extension treats as cancellation.
 
-4. (Allow path) launchWebAuthFlow callback fires with the redirected URL.
-   Extension parses ?code and ?state, verifies state === S
-     (CSRF protection — rejects mismatch), then
-   POSTs { code, code_verifier } to POST /api/auth/extension/token:
-     backend calls consumeCode(code, codeVerifier):
+4. (Allow path) auth-callback.html loads inside the extension origin,
+   parses ?code and ?state from window.location, and forwards them to the
+   service worker via browser.runtime.sendMessage. The worker verifies
+   state === S (CSRF protection — rejects mismatch), then
+   POSTs { code, code_verifier, redirect_uri } to POST /api/auth/extension/token:
+     backend calls consumeCode(code, codeVerifier, redirect_uri):
        verifies base64url(SHA256(codeVerifier)) === stored codeChallenge
-         (timingSafeEqual), deletes code (single-use), checks 5 min TTL
+         (timingSafeEqual), checks redirect_uri matches the value bound
+         at issue time, deletes code (single-use), checks 5 min TTL
      mints internal access JWT (RS256, 15 min, sub=userId,
        aud=INTERNAL_AUTH_API_AUDIENCE, iss=INTERNAL_AUTH_HANDOFF_ISSUER,
        kid=INTERNAL_AUTH_HANDOFF_KEY_ID)
@@ -488,8 +504,8 @@ configured consumer) can verify without the private key.
        (user_id, extension_id, token_hash, expires_at = NOW() + 90 days)
      returns { access_token, refresh_token, expires_in: 900 }
 
-5. Extension stores refresh_token in chrome.storage.local and
-   { access_token, expires_at } in chrome.storage.session.
+5. Extension stores refresh_token in browser.storage.local and
+   { access_token, expires_at } in browser.storage.session.
    All API calls go out as Authorization: Bearer <access_token>.
 
 6. When the access token is near expiry (or the API returns 401):
@@ -501,11 +517,11 @@ configured consumer) can verify without the private key.
 ### Path B — user not yet logged in
 
 ```
-1. Extension launches launchWebAuthFlow as in Path A.
+1. Extension opens the auth tab as in Path A.
 
 2. Browser GET /login/extension (no session):
-   backend validates extensionId against the allowlist,
-   stores extensionId, C, S in session,
+   backend validates extensionId and redirect_uri against the allowlists,
+   stores extensionId, redirect_uri, C, S in session,
    serves HTML page with "Log in with Google" button.
 
 3. User clicks "Log in with Google" →
@@ -526,13 +542,15 @@ configured consumer) can verify without the private key.
 
 ### Extension-side storage
 
-- **Refresh token** in `chrome.storage.local` (persists across browser
+- **Refresh token** in `browser.storage.local` (persists across browser
   restarts, scoped to the extension; treat as a password). Cleared on
   explicit logout.
-- **Access token** + `expiresAt` in `chrome.storage.session` (in-memory
+- **Access token** + `expiresAt` in `browser.storage.session` (in-memory
   across MV3 service worker evictions, cleared when the browser closes).
   Survives service-worker termination; doesn't survive a browser restart,
-  which is fine because the refresh token re-mints it.
+  which is fine because the refresh token re-mints it. The
+  `webextension-polyfill` shim (`src/js/browser.js`) maps `browser.*` to
+  the appropriate native namespace on Chrome / Firefox / Safari.
 - The Google `id_token`, Google access token, and Google refresh token are
   **never** stored client-side. They live only on the backend, only for
   the duration of the OIDC return-handler call.
@@ -544,9 +562,10 @@ configured consumer) can verify without the private key.
   (only the opaque, single-use auth code does).
 - PKCE binds the redirect to the extension instance: an attacker observing
   the `?code=…` redirect cannot exchange it without `code_verifier`.
-- The `extensionId` allowlist (`EXTENSION_OAUTH_ALLOWED_IDS`) prevents an
-  unrelated extension from initiating the flow against Fomo Player's
-  consent page and getting a redirect to its own `chromiumapp.org` host.
+- The `extensionId` allowlist (`EXTENSION_OAUTH_ALLOWED_IDS`) plus the
+  `redirect_uri` regex allowlist (`EXTENSION_OAUTH_ALLOWED_REDIRECT_PATTERNS`)
+  prevent an unrelated extension from initiating the flow against Fomo
+  Player's consent page and getting a redirect to its own extension origin.
 - Refresh-token rotation + reuse detection means a stolen refresh token
   has a finite useful lifetime: the moment the legitimate extension uses
   its copy, the stolen one is invalidated (and vice-versa); reuse of
@@ -560,11 +579,14 @@ configured consumer) can verify without the private key.
 
 In addition to the variables that the regular OIDC flow already requires:
 
-- `EXTENSION_OAUTH_ALLOWED_IDS` — comma-separated list of Chrome extension
-  IDs (`<32 lowercase letters>`) permitted to initiate the flow.
-  Production should list only the published Web Store extension ID;
-  development can add an unpacked extension's ID alongside it. The flow
-  is unavailable when this is empty.
+- `EXTENSION_OAUTH_ALLOWED_IDS` — comma-separated list of browser
+  extension IDs permitted to initiate the flow. Chrome IDs are
+  `<32 lowercase a–p letters>`; Firefox IDs are gecko addon IDs
+  (`name@domain` or `{UUID}`); Safari IDs are the *Extension* target's
+  bundle identifier from Xcode (e.g. `com.example.fomoplayer.Extension`).
+  Production should list only the published store IDs for each browser
+  Fomo Player ships to; development can add an unpacked extension's ID
+  alongside them. The flow is unavailable when this is empty.
 - `INTERNAL_AUTH_HANDOFF_PRIVATE_KEY` — PEM-encoded RS256 private key used
   to sign internal access JWTs.
 - `INTERNAL_AUTH_HANDOFF_KEY_ID` — `kid` value embedded in the JWT header
@@ -676,7 +698,7 @@ When `PREVIEW_URL` is set, `test/lib/setup.js` automatically enables:
 The existing browser tests seed fixture tracks via direct DB access locally.
 In remote mode (`PREVIEW_URL` set), `test/lib/seed.js` instead POSTs the
 same transformed fixture data to the existing `POST /api/me/tracks` endpoint
-(the same path the Chrome extension uses), so the bot user's track list is
+(the same path the browser extension uses), so the bot user's track list is
 populated before assertions run. `test/lib/test-user.js` fetches the bot
 user's ID from `GET /api/auth/me`.
 
@@ -701,8 +723,9 @@ These are the environment variables that determine which flows are available:
   bot login endpoint to be registered.
 - `RAILWAY_SERVICE_NAME` + `RAILWAY_PROJECT_NAME` — read by
   `isSafeHandoffTarget` to validate consumer hostnames.
-- `EXTENSION_OAUTH_ALLOWED_IDS` — comma-separated Chrome extension IDs
-  permitted to start the extension PKCE flow. Empty disables the flow.
+- `EXTENSION_OAUTH_ALLOWED_IDS` — comma-separated browser extension IDs
+  (Chrome / Firefox / Safari) permitted to start the extension PKCE flow.
+  Empty disables the flow.
 - `INTERNAL_AUTH_HANDOFF_PRIVATE_KEY` / `INTERNAL_AUTH_HANDOFF_KEY_ID` —
   signing material for internal access JWTs minted by
   `/api/auth/extension/token`. Required on any backend that issues
@@ -785,9 +808,9 @@ Two roles, same codebase, different env values:
   - Browser login arriving directly at the authority: regular OIDC flow.
   - Browser login from a consumer preview: **handoff flow**.
   - CLI login pointed at the authority: **CLI PKCE flow** ending in an API key.
-  - Extension login pointed at the authority: **Chrome extension PKCE flow**
-    ending in an internal access JWT + refresh token (when `INTERNAL_AUTH_*`
-    keys and `EXTENSION_OAUTH_ALLOWED_IDS` are configured).
+  - Extension login pointed at the authority: **browser extension PKCE
+    flow** ending in an internal access JWT + refresh token (when
+    `INTERNAL_AUTH_*` keys and `EXTENSION_OAUTH_ALLOWED_IDS` are configured).
 
 #### Consumer (PR-preview backend on `…-pr-<N>.up.railway.app`)
 
@@ -820,8 +843,8 @@ Two roles, same codebase, different env values:
   is registered and the extension flow is operational.
 - **Browser login:** regular OIDC flow.
 - **CLI login:** CLI PKCE flow ending in an API key.
-- **Extension login:** Chrome extension PKCE flow ending in an internal
-  access JWT + refresh token.
+- **Extension login:** browser extension PKCE flow (Chrome / Firefox /
+  Safari) ending in an internal access JWT + refresh token.
 
 ---
 
@@ -844,16 +867,19 @@ cannot itself complete the Google OIDC dance — in this codebase that means
 **Railway PR-preview consumer backends running on dynamic hostnames that
 aren't registered as Google redirect URIs**.
 
-The CLI and Chrome extension flows are unrelated to the handoff machinery.
+The CLI and browser extension flows are unrelated to the handoff machinery.
 Both use OAuth2 Authorization Code with PKCE against the same Fomo Player
 backend that already runs the regular OIDC dance: the backend serves a
 browser confirmation page, issues an opaque single-use auth code on
 approval, and the client exchanges it (with the `code_verifier`) at a
 token endpoint. The CLI's redirect target is `http://localhost:<port>/`
 and its token endpoint mints a permanent `fp_<uuid>` API key. The
-extension's redirect target is `https://<extensionId>.chromiumapp.org`
-and its token endpoint mints a short-lived internal access JWT plus a
-rotating refresh token. Neither credential ever appears in a browser
+extension's redirect target is the extension's own
+`auth-callback.html` — `chrome-extension://<id>/auth-callback.html`,
+`moz-extension://<UUID>/auth-callback.html`, or
+`safari-web-extension://<UUID>/auth-callback.html` depending on the
+browser — and its token endpoint mints a short-lived internal access JWT
+plus a rotating refresh token. Neither credential ever appears in a browser
 URL — only the opaque auth code does. If the user is not yet logged in,
 each flow's confirmation page offers a "Log in with Google" button that
 completes the regular OIDC dance with a flow-specific marker in the OIDC

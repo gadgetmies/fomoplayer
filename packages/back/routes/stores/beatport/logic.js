@@ -6,7 +6,7 @@ const { processChunks } = require('../../shared/requests')
 const {
   beatportTracksTransform,
   beatportTrackTransform,
-} = require('fomoplayer_chrome_extension/src/js/transforms/beatport')
+} = require('fomoplayer_browser_extension/src/js/transforms/beatport')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)

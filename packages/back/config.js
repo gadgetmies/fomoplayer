@@ -67,7 +67,7 @@ module.exports = {
   // Extension and per-deployment origins (chrome-extension://, moz-extension://,
   // safari-web-extension://, preview-env hosts, etc.) come from the
   // ADDITIONAL_ORIGINS or ALLOWED_ORIGIN_REGEX env vars — see
-  // packages/chrome-extension/README.md for the recommended regex shape.
+  // packages/browser-extension/README.md for the recommended regex shape.
   allowedOrigins: [frontendURL, ...additionalOrigins],
   allowedOriginRegexes: [...allowedOriginRegexes, ...allowedPreviewOriginRegexes],
   port,

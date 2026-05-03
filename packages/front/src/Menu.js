@@ -52,13 +52,13 @@ export default class Menu extends Component {
               &nbsp; Instructions
             </ExternalLink>
             <ExternalLink
-              href={'https://github.com/gadgetmies/fomoplayer#chrome-extension'}
+              href={'https://github.com/gadgetmies/fomoplayer#browser-extension'}
               className={`button menu-item button-push_button-large button-push_button-menu link no-style-link`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FontAwesomeIcon icon={['fab', 'chrome']} />
-              &nbsp; Chrome Extension
+              <FontAwesomeIcon icon={['fas', 'puzzle-piece']} />
+              &nbsp; Browser Extension
             </ExternalLink>
             <ExternalLink
               href={'https://github.com/gadgetmies/fomoplayer/issues'}

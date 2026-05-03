@@ -1,6 +1,6 @@
 const { setupBeatportTracks } = require('./tracks')
 const { getBrowserContext } = require('./setup')
-const { beatportTracksTransform } = require('../../../chrome-extension/src/js/transforms/beatport')
+const { beatportTracksTransform } = require('../../../browser-extension/src/js/transforms/beatport')
 const { storeUrl: beatportUrl } = require('../../routes/stores/beatport/logic')
 
 const firstTrack = require('../fixtures/noisia_concussion_beatport.json')
