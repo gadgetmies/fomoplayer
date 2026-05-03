@@ -64,11 +64,11 @@ The login flow is:
 4. `auth-callback.html` reads the URL and `runtime.sendMessage`s the worker.
 5. Worker exchanges the code for tokens at `/api/auth/extension/token`.
 
-For the backend to accept a non-Chrome redirect URI it must be in the
-allowlist — set `EXTENSION_OAUTH_ALLOWED_REDIRECT_PATTERNS` (comma-separated
-regexes). The defaults already permit Chrome's `chromiumapp.org`, the
-extension's own `chrome-extension://`, `moz-extension://`, and
-`safari-web-extension://` `auth-callback.html`.
+`redirect_uri` is required. The shipped allowlist
+(`EXTENSION_OAUTH_ALLOWED_REDIRECT_PATTERNS`) covers `chrome-extension://`,
+`moz-extension://`, and `safari-web-extension://` `auth-callback.html`.
+Override it (comma-separated regexes) only if you ship from a different
+origin shape.
 
 ## Backend env required for the extension to talk to the backend
 
@@ -78,11 +78,11 @@ extension access tokens.
 
 | Env var | Required? | What for |
 |---|---|---|
-| `EXTENSION_OAUTH_ALLOWED_IDS` | yes | Comma-separated list of allowed Chrome extension IDs (32-char `[a-p]`). Add the stable id derived from your `EXTENSION_KEY`. |
+| `EXTENSION_OAUTH_ALLOWED_IDS` | yes | Comma-separated list of allowed extension IDs (the value `browser.runtime.id` returns for each browser you support). Chrome: 32-char `[a-p]` derived from `EXTENSION_KEY`. Firefox: the gecko id from `manifest.firefox.json` (`fomoplayer-extension@fomoplayer.com`) or a `{UUID}`. Safari: the macOS/iOS *Extension* target's bundle identifier from Xcode (e.g. `com.gadgetmies.fomoplayer.Extension`). |
 | `INTERNAL_AUTH_HANDOFF_PRIVATE_KEY` / `INTERNAL_AUTH_HANDOFF_ISSUER` / `INTERNAL_AUTH_API_AUDIENCE` | yes | RS256 key + JWT iss/aud claims for the extension access tokens. Without all three, every extension auth route returns 503 "Extension login is not configured on this backend". |
 | `ADDITIONAL_ORIGINS` | yes (CORS) | Comma-separated origins to allow through CORS. Add `chrome-extension://<id>` for every Chrome install you want to allow, and the `moz-extension://<UUID>` / `safari-web-extension://<UUID>` equivalents for Firefox / Safari. The hard-coded extension origin that used to live in `packages/back/config.js` was removed — every extension origin now must be supplied via env. |
 | `ALLOWED_ORIGIN_REGEX` | optional | Cleaner alternative to listing each id by hand: `^chrome-extension://[a-p]{32}$,^moz-extension://[0-9a-f-]{36}$,^safari-web-extension://[0-9A-Fa-f-]{36}$`. |
-| `EXTENSION_OAUTH_ALLOWED_REDIRECT_PATTERNS` | optional | Override the default redirect-URI regexes. The shipped defaults already cover Chrome / Firefox / Safari `auth-callback.html` and the legacy `chromiumapp.org` shape. |
+| `EXTENSION_OAUTH_ALLOWED_REDIRECT_PATTERNS` | optional | Override the default redirect-URI regexes. The shipped defaults cover Chrome / Firefox / Safari `auth-callback.html`. |
 
 ## Tests
 

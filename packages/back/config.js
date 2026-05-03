@@ -42,7 +42,6 @@ const extensionOauthAllowedIds = (process.env.EXTENSION_OAUTH_ALLOWED_IDS || '')
   .filter((id) => id.length > 0)
 
 const DEFAULT_EXTENSION_REDIRECT_PATTERNS = [
-  '^https://[a-p]{32}\\.chromiumapp\\.org/?(\\?.*)?$',
   '^chrome-extension://[a-p]{32}/auth-callback\\.html(\\?.*)?$',
   '^moz-extension://[0-9a-fA-F-]{36}/auth-callback\\.html(\\?.*)?$',
   '^safari-web-extension://[0-9A-Fa-f-]{36}/auth-callback\\.html(\\?.*)?$',

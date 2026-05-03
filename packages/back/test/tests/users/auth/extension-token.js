@@ -13,6 +13,8 @@ const generatePrivateKey = () => {
   return privateKey.export({ type: 'pkcs8', format: 'pem' })
 }
 
+const ALLOWED_REDIRECT_URI = `chrome-extension://${ALLOWED_EXTENSION_ID}/auth-callback.html`
+
 const baseConfig = (privateKeyPem) => ({
   frontendURL: 'https://fomoplayer.com',
   apiOrigin: 'https://fomoplayer.com',
@@ -21,6 +23,7 @@ const baseConfig = (privateKeyPem) => ({
   isPreviewEnv: false,
   previewAllowedGoogleSubs: [],
   extensionOauthAllowedIds: [ALLOWED_EXTENSION_ID],
+  extensionOauthAllowedRedirectPatterns: [/^chrome-extension:\/\/[a-p]{32}\/auth-callback\.html$/],
   internalAuthHandoffPrivateKey: privateKeyPem,
   internalAuthHandoffKeyId: 'test-kid',
   internalAuthHandoffIssuer: 'https://fomoplayer.com',
@@ -166,6 +169,19 @@ test({
     assert.strictEqual(response.status, 400)
   },
 
+  'GET /login/extension rejects missing redirect_uri': async () => {
+    const { app } = buildApp({
+      config: baseConfig(generatePrivateKey()),
+      extensionRefreshToken: fakeRefreshTokenStore(),
+      tokenServer: fakeTokenServer(),
+    })
+    const response = await request(app)
+      .get('/api/auth/login/extension')
+      .query({ extensionId: ALLOWED_EXTENSION_ID, code_challenge: 'cc', code_challenge_method: 'S256', state: 'st' })
+    assert.strictEqual(response.status, 400)
+    assert.match(response.body.error, /redirect_uri/)
+  },
+
   'GET /login/extension renders consent page when authenticated': async () => {
     const { app } = buildApp({
       config: baseConfig(generatePrivateKey()),
@@ -175,7 +191,13 @@ test({
     })
     const response = await request(app)
       .get('/api/auth/login/extension')
-      .query({ extensionId: ALLOWED_EXTENSION_ID, code_challenge: 'cc', code_challenge_method: 'S256', state: 'st' })
+      .query({
+        extensionId: ALLOWED_EXTENSION_ID,
+        code_challenge: 'cc',
+        code_challenge_method: 'S256',
+        state: 'st',
+        redirect_uri: ALLOWED_REDIRECT_URI,
+      })
     assert.strictEqual(response.status, 200)
     assert.match(response.text, /Grant extension access/)
     assert.match(response.text, /\/api\/auth\/login\/extension\/confirm/)
@@ -189,7 +211,13 @@ test({
     })
     const response = await request(app)
       .get('/api/auth/login/extension')
-      .query({ extensionId: ALLOWED_EXTENSION_ID, code_challenge: 'cc', code_challenge_method: 'S256', state: 'st' })
+      .query({
+        extensionId: ALLOWED_EXTENSION_ID,
+        code_challenge: 'cc',
+        code_challenge_method: 'S256',
+        state: 'st',
+        redirect_uri: ALLOWED_REDIRECT_URI,
+      })
     assert.strictEqual(response.status, 200)
     assert.match(response.text, /Continue with Google/)
     assert.match(response.text, /\/api\/auth\/login\/extension\/google/)
@@ -205,7 +233,7 @@ test({
     assert.strictEqual(response.status, 401)
   },
 
-  'POST /login/extension/confirm redirects to extension chromiumapp.org with code+state': async () => {
+  'POST /login/extension/confirm redirects to extension redirect_uri with code+state': async () => {
     let issuedCode = null
     const issueCodeFn = (userId, codeChallenge) => {
       issuedCode = `code-for-${userId}-${codeChallenge}`
@@ -222,16 +250,37 @@ test({
         extensionCodeChallenge: 'challenge-1',
         extensionCodeChallengeMethod: 'S256',
         extensionState: 'state-1',
+        extensionRedirectUri: ALLOWED_REDIRECT_URI,
       },
     })
     const response = await request(app).post('/api/auth/login/extension/confirm')
     assert.strictEqual(response.status, 302)
     const redirectUrl = new URL(response.headers.location)
-    assert.strictEqual(redirectUrl.host, `${ALLOWED_EXTENSION_ID}.chromiumapp.org`)
+    assert.strictEqual(redirectUrl.protocol, 'chrome-extension:')
+    assert.strictEqual(redirectUrl.pathname, '/auth-callback.html')
     assert.strictEqual(redirectUrl.searchParams.get('code'), issuedCode)
     assert.strictEqual(redirectUrl.searchParams.get('state'), 'state-1')
     assert.strictEqual(sessionStore.extensionId, undefined)
     assert.strictEqual(sessionStore.extensionCodeChallenge, undefined)
+    assert.strictEqual(sessionStore.extensionRedirectUri, undefined)
+  },
+
+  'POST /login/extension/confirm rejects when session has no redirect_uri': async () => {
+    const { app } = buildApp({
+      config: baseConfig(generatePrivateKey()),
+      extensionRefreshToken: fakeRefreshTokenStore(),
+      tokenServer: fakeTokenServer(),
+      session: {
+        userId: 42,
+        extensionId: ALLOWED_EXTENSION_ID,
+        extensionCodeChallenge: 'challenge-1',
+        extensionCodeChallengeMethod: 'S256',
+        extensionState: 'state-1',
+      },
+    })
+    const response = await request(app).post('/api/auth/login/extension/confirm')
+    assert.strictEqual(response.status, 400)
+    assert.match(response.body.error, /redirect_uri/)
   },
 
   'POST /extension/token returns access JWT and refresh token for valid code': async () => {
@@ -455,7 +504,7 @@ test({
         redirect_uri: 'https://evil.example/callback',
       })
     assert.strictEqual(response.status, 400)
-    assert.match(response.text, /Unknown or invalid redirect_uri/)
+    assert.match(response.text, /redirect_uri/)
   },
 
   'POST /extension/token rejects code when redirect_uri does not match the bound value': async () => {

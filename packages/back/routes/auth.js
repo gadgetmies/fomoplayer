@@ -20,7 +20,6 @@ const { verifyActionsToken: defaultVerifyActionsToken, GITHUB_ACTIONS_ISSUER } =
 const { evaluateSignUpPolicy, getRequestOrigin, isGoogleSubAllowed } = require('./shared/auth-flow')
 
 const GOOGLE_OIDC_ISSUER = 'accounts.google.com'
-const EXTENSION_ID_PATTERN = /^[a-p]{32}$/
 const logger = require('fomoplayer_shared').logger(__filename)
 const cliTemplateDir = path.resolve(__dirname, '../public/auth/cli')
 const cliTemplates = {
@@ -85,17 +84,13 @@ const createAuthRouter = ({
       internalAuthHandoffIssuer &&
       internalAuthApiAudience,
   )
-  const isExtensionIdAllowed = (extensionId) =>
-    typeof extensionId === 'string' &&
-    EXTENSION_ID_PATTERN.test(extensionId) &&
-    extensionAllowlist.has(extensionId)
+  const isExtensionIdAllowed = (extensionId) => extensionAllowlist.has(extensionId)
   const isAllowedExtensionRedirectUri = (redirectUri) =>
     typeof redirectUri === 'string' &&
     redirectUri.length <= 2048 &&
     extensionOauthAllowedRedirectPatterns.some((pattern) => pattern.test(redirectUri))
-  const buildExtensionRedirectUrl = (extensionId, code, state, redirectUri) => {
-    const baseUrl = redirectUri || `https://${extensionId}.chromiumapp.org/`
-    const url = new URL(baseUrl)
+  const buildExtensionRedirectUrl = (code, state, redirectUri) => {
+    const url = new URL(redirectUri)
     url.searchParams.set('code', code)
     url.searchParams.set('state', state)
     return url.toString()
@@ -313,16 +308,16 @@ const createAuthRouter = ({
       return res.status(400).json({ error: 'code_challenge (S256) and state are required' })
     }
 
-    if (requestedRedirectUri && !isAllowedExtensionRedirectUri(requestedRedirectUri)) {
-      logger.warn('Rejected extension login: redirect_uri not allowed', { requestedRedirectUri })
-      return res.status(400).json({ error: 'Unknown or invalid redirect_uri' })
+    if (!isAllowedExtensionRedirectUri(requestedRedirectUri)) {
+      logger.warn('Rejected extension login: redirect_uri missing or not allowed', { requestedRedirectUri })
+      return res.status(400).json({ error: 'Missing or invalid redirect_uri' })
     }
 
     req.session.extensionId = requestedExtensionId
     req.session.extensionCodeChallenge = codeChallenge
     req.session.extensionCodeChallengeMethod = codeChallengeMethod
     req.session.extensionState = state
-    req.session.extensionRedirectUri = requestedRedirectUri || null
+    req.session.extensionRedirectUri = requestedRedirectUri
 
     if (req.isAuthenticated()) {
       return res.status(200).type('html').send(extensionPageShell('Grant Extension Access',
@@ -365,13 +360,16 @@ const createAuthRouter = ({
     const extensionId = req.session?.extensionId
     const codeChallenge = req.session?.extensionCodeChallenge
     const state = req.session?.extensionState
+    const redirectUri = req.session?.extensionRedirectUri
     if (!isExtensionIdAllowed(extensionId)) {
       return res.status(400).json({ error: 'Session missing or invalid extensionId' })
     }
     if (!codeChallenge || !state) {
       return res.status(400).json({ error: 'Session missing PKCE parameters' })
     }
-    const redirectUri = req.session?.extensionRedirectUri || null
+    if (!isAllowedExtensionRedirectUri(redirectUri)) {
+      return res.status(400).json({ error: 'Session missing or invalid redirect_uri' })
+    }
     try {
       const code = issueCodeFn(req.user.id, codeChallenge, { boundRedirectUri: redirectUri })
       delete req.session.extensionId
@@ -379,7 +377,7 @@ const createAuthRouter = ({
       delete req.session.extensionCodeChallengeMethod
       delete req.session.extensionState
       delete req.session.extensionRedirectUri
-      return res.redirect(buildExtensionRedirectUrl(extensionId, code, state, redirectUri))
+      return res.redirect(buildExtensionRedirectUrl(code, state, redirectUri))
     } catch (e) {
       logger.error(`Extension login/confirm: issuing auth code failed: ${e}`)
       return redirectWithLoginFailed(res)
