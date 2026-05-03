@@ -39,6 +39,20 @@ DO UPDATE SET track__cart_added = EXCLUDED.track__cart_added
 `,
     )
   }
+
+  const heardPayload = items.map((i) => ({ track_id: i.trackId, purchased: i.purchased || null }))
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- addPurchasedTracksToUsers (mark heard)
+UPDATE user__track
+SET user__track_heard = COALESCE(t.purchased, NOW())
+FROM jsonb_to_recordset(${JSON.stringify(heardPayload)} :: JSONB)
+       AS t(track_id BIGINT, purchased TIMESTAMPTZ)
+WHERE user__track.track_id = t.track_id
+  AND user__track.meta_account_user_id = ANY(${userIds})
+  AND user__track.user__track_heard IS NULL
+`,
+  )
 }
 
 const composableSql = (parts, ...args) => {
@@ -55,7 +69,7 @@ const composableSql = (parts, ...args) => {
   }
 }
 
-module.exports.addPurchasedStoreTrackToUser = async (tx, userId, storeTrack) =>
+module.exports.addPurchasedStoreTrackToUser = async (tx, userId, storeTrack) => {
   await tx.queryAsync(
     // language=PostgreSQL
     sql`-- addPurchasedStoreTrackToUser
@@ -75,6 +89,20 @@ ON CONFLICT
     DO UPDATE SET track__cart_added = ${storeTrack.purchased}
 `,
   )
+
+  await tx.queryAsync(
+    // language=PostgreSQL
+    sql`-- addPurchasedStoreTrackToUser (mark heard)
+UPDATE user__track
+SET user__track_heard = COALESCE(${storeTrack.purchased} :: TIMESTAMPTZ, NOW())
+FROM store__track
+WHERE user__track.track_id = store__track.track_id
+  AND store__track.store__track_store_id = ${storeTrack.id}
+  AND user__track.meta_account_user_id = ${userId}
+  AND user__track.user__track_heard IS NULL
+`,
+  )
+}
 
 module.exports.queryStoreArtistIds = async (tx, artistId) => {
   return (
