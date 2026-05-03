@@ -1,4 +1,5 @@
-const normalizeOriginList = (origins = []) => origins.filter(Boolean)
+const normalizeOriginList = (origins = []) =>
+  origins.filter(Boolean).map((origin) => origin.toLowerCase())
 
 const parseOriginRegexes = (value) =>
   (value || '')
@@ -16,7 +17,8 @@ const createCorsOriginValidator = ({ allowedOrigins = [], allowedOriginRegexes =
       return
     }
 
-    if (exactOrigins.has(origin) || allowedOriginRegexes.some((regex) => regex.test(origin))) {
+    const normalizedOrigin = origin.toLowerCase()
+    if (exactOrigins.has(normalizedOrigin) || allowedOriginRegexes.some((regex) => regex.test(normalizedOrigin))) {
       callback(null, true)
       return
     }

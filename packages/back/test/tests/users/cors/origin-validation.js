@@ -49,4 +49,29 @@ test({
       /CORS origin denied: https:\/\/evil\.example\.com/,
     )
   },
+
+  'validator allows mixed-case origin against lowercased allowlist': async () => {
+    const validator = createCorsOriginValidator({
+      allowedOrigins: ['safari-web-extension://0504f00c-80ef-4657-a397-2b65004ad0d7'],
+    })
+    const allowed = await validateOrigin(
+      validator,
+      'safari-web-extension://0504F00C-80EF-4657-A397-2B65004AD0D7',
+    )
+    assert.strictEqual(allowed, true)
+  },
+
+  'validator allows mixed-case origin against lowercased regex': async () => {
+    const validator = createCorsOriginValidator({
+      allowedOrigins: [],
+      allowedOriginRegexes: parseOriginRegexes(
+        '^safari-web-extension://[0-9a-f-]{36}$',
+      ),
+    })
+    const allowed = await validateOrigin(
+      validator,
+      'safari-web-extension://0504F00C-80EF-4657-A397-2B65004AD0D7',
+    )
+    assert.strictEqual(allowed, true)
+  },
 })
