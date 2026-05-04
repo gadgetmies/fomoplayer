@@ -1,7 +1,7 @@
 ---
 id: 008
 title: Fix "Add to Fomo Player" button on release pages navigates instead of adding
-status: todo
+status: done
 priority: P1
 effort: S
 created: 2026-05-04

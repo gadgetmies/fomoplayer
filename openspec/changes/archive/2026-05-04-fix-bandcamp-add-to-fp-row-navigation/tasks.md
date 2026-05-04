@@ -10,5 +10,5 @@
 
 ## 3. Verify behaviour
 
-- [ ] 3.1 Manually load a Bandcamp release page with multiple tracks (e.g. `https://offishproductions.bandcamp.com/album/plot-holes-vol-4`), click "Add to Fomo Player" on a track, and confirm the page does not navigate and the track is added.
-- [ ] 3.2 Manually load a Bandcamp track page, click "Add to Fomo Player", and confirm it still works (no regression).
+- [x] 3.1 Manually load a Bandcamp release page with multiple tracks (e.g. `https://offishproductions.bandcamp.com/album/plot-holes-vol-4`), click "Add to Fomo Player" on a track, and confirm the page does not navigate and the track is added.
+- [x] 3.2 Manually load a Bandcamp track page, click "Add to Fomo Player", and confirm it still works (no regression).
