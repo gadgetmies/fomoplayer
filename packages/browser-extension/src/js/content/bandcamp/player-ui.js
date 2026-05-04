@@ -53,8 +53,12 @@ const STYLE = `
   .bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: #1da0c3; border-radius: 2px; }
   .queue-toggle { background: transparent; border: 1px solid #2c2c2c; color: #ddd; padding: 4px 10px; font-size: 11px; border-radius: 14px; cursor: pointer; }
   .queue-toggle:hover { background: #2c2c2c; }
-  .queue { background: #1a1a1a; color: #f1f1f1; border-top: 1px solid #2c2c2c; max-height: 220px; overflow-y: auto; padding: 6px 0; }
-  .queue.hidden { display: none; }
+  .queue-panel { background: #1a1a1a; color: #f1f1f1; border-top: 1px solid #2c2c2c; }
+  .queue-panel.hidden { display: none; }
+  .qlist { max-height: 220px; overflow-y: auto; padding: 6px 0; }
+  .qfooter { display: flex; justify-content: flex-end; padding: 6px 12px 8px; border-top: 1px solid #232323; }
+  .qclear { background: transparent; border: 1px solid #3c2424; color: #d97a7a; padding: 4px 10px; font-size: 11px; border-radius: 14px; cursor: pointer; }
+  .qclear:hover { background: #3c2424; color: #f1c0c0; }
   .qrow { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: center; padding: 4px 12px; font-size: 12px; cursor: pointer; }
   .qrow:hover { background: #232323; }
   .qrow.active { background: #20323a; }
@@ -76,7 +80,12 @@ const ICON = {
 const renderShell = (root) => {
   const html = `
     <style>${STYLE}</style>
-    <div class="queue hidden" data-q></div>
+    <div class="queue-panel hidden" data-queue-panel>
+      <div class="qlist" data-q></div>
+      <div class="qfooter">
+        <button class="qclear" data-queue-clear title="Clear queue">Clear queue</button>
+      </div>
+    </div>
     <div class="player hidden" data-player>
       <div class="meta">
         <div class="art" data-art></div>
@@ -97,7 +106,6 @@ const renderShell = (root) => {
           <span data-duration>0:00</span>
         </div>
         <button class="queue-toggle" data-queue-toggle title="Show queue" aria-label="Show queue">Show queue</button>
-        <button class="t" data-clear title="Clear queue">${ICON.close}</button>
       </div>
     </div>
   `
@@ -151,8 +159,10 @@ const ensureHost = () => {
   resetRenderCache()
   refs = {
     player: shadow.querySelector('[data-player]'),
+    queuePanel: shadow.querySelector('[data-queue-panel]'),
     queue: shadow.querySelector('[data-q]'),
     queueToggle: shadow.querySelector('[data-queue-toggle]'),
+    queueClear: shadow.querySelector('[data-queue-clear]'),
     art: shadow.querySelector('[data-art]'),
     title: shadow.querySelector('[data-title]'),
     artist: shadow.querySelector('[data-artist]'),
@@ -165,13 +175,12 @@ const ensureHost = () => {
     duration: shadow.querySelector('[data-duration]'),
     bar: shadow.querySelector('[data-bar]'),
     barFill: shadow.querySelector('[data-bar-fill]'),
-    clear: shadow.querySelector('[data-clear]'),
   }
   bindEvents()
 }
 
 const syncQueueToggleLabel = () => {
-  const visible = !refs.queue.classList.contains('hidden')
+  const visible = !refs.queuePanel.classList.contains('hidden')
   const label = visible ? 'Hide queue' : 'Show queue'
   refs.queueToggle.textContent = label
   refs.queueToggle.title = label
@@ -182,9 +191,13 @@ const bindEvents = () => {
   refs.play.addEventListener('click', () => sendToWorker({ type: 'audio:toggle' }))
   refs.prev.addEventListener('click', () => sendToWorker({ type: 'audio:prev' }))
   refs.next.addEventListener('click', () => sendToWorker({ type: 'audio:next' }))
-  refs.clear.addEventListener('click', () => sendToWorker({ type: 'audio:clear' }))
+  refs.queueClear.addEventListener('click', () => {
+    if (window.confirm('Clear the queue? This cannot be undone.')) {
+      sendToWorker({ type: 'audio:clear' })
+    }
+  })
   refs.queueToggle.addEventListener('click', () => {
-    refs.queue.classList.toggle('hidden')
+    refs.queuePanel.classList.toggle('hidden')
     syncQueueToggleLabel()
   })
   refs.bar.addEventListener('click', (e) => {
@@ -197,7 +210,7 @@ const bindEvents = () => {
 
 const renderEmptyState = () => {
   refs.player.classList.remove('hidden')
-  refs.queue.classList.add('hidden')
+  refs.queuePanel.classList.add('hidden')
   syncQueueToggleLabel()
   refs.title.textContent = 'Fomo Player'
   refs.artist.textContent = 'Click "Queue" next to a Bandcamp track or release'
