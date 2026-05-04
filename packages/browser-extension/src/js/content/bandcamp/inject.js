@@ -32,6 +32,9 @@ const ERROR_FLASH_MS = 1800
 const onReleasePage = () => Boolean(document.querySelector('#name-section'))
 const onDiscographyPage = () =>
   Boolean(document.querySelector('.music-grid, #music-grid, .leftMiddleColumns .music-grid-item'))
+// Bandcamp's per-user feed lives at `bandcamp.com/<user>/feed`. The path
+// can have a trailing slash; query / hash variants stay on the same path.
+const onFeedPage = () => /\/feed\/?$/.test(location.pathname)
 
 // `onClick` may return a Promise resolving to `{ ok, error }` (e.g., the
 // worker response from `bandcamp:enqueue`). The button shows a spinner and
@@ -279,6 +282,68 @@ const injectDiscographyButtons = () => {
   })
 }
 
+// Bandcamp feed entries link to `/album/...` or `/track/...`. Every other
+// entry type (community posts, "now following" notifications) is skipped
+// because there is no playable target. We pick the nearest stable
+// ancestor — feed markup uses class names that change over time, so we
+// climb to the first one we recognise and fall back to `<li>` otherwise.
+const FEED_CONTAINER_SELECTOR =
+  '.story-innards, .collection-item-container, .story-fan-collection-item, li'
+
+const findFeedContainer = (link) => {
+  const container = link.closest(FEED_CONTAINER_SELECTOR)
+  return container && container !== document.body ? container : null
+}
+
+const injectFeedButtons = () => {
+  const links = document.querySelectorAll('a[href*="/album/"], a[href*="/track/"]')
+  const seen = new Set()
+  links.forEach((link) => {
+    const container = findFeedContainer(link)
+    if (!container || seen.has(container)) return
+    seen.add(container)
+    if (container.querySelector(`[${INJECTED_ATTR}]`)) return
+    const href = link.getAttribute('href')
+    if (!href) return
+    const wrap = buttonContainer()
+    wrap.style.cssText += 'position: absolute; top: 6px; right: 6px; z-index: 5;'
+    if (getComputedStyle(container).position === 'static') {
+      container.style.position = 'relative'
+    }
+    const getReleases = async () => {
+      const release = await fetchReleaseTralbum(href)
+      return release ? [release] : []
+    }
+    wrap.appendChild(
+      cueButton({
+        label: 'Play',
+        onClick: async () => {
+          const releases = await getReleases()
+          if (releases.length === 0) return { ok: false, error: 'Could not load release' }
+          return sendToWorker({ type: 'bandcamp:enqueue', releases, playNow: true })
+        },
+      }),
+    )
+    wrap.appendChild(
+      cueButton({
+        label: 'Queue',
+        onClick: async () => {
+          const releases = await getReleases()
+          if (releases.length === 0) return { ok: false, error: 'Could not load release' }
+          return sendToWorker({ type: 'bandcamp:enqueue', releases })
+        },
+      }),
+    )
+    wrap.appendChild(
+      renderCartButton({
+        label: 'Add to Fomo Player',
+        getReleases,
+      }),
+    )
+    container.appendChild(wrap)
+  })
+}
+
 let observer
 let scheduled = false
 const reinjectSoon = () => {
@@ -292,6 +357,9 @@ const reinjectSoon = () => {
       }
       if (onDiscographyPage()) {
         injectDiscographyButtons()
+      }
+      if (onFeedPage()) {
+        injectFeedButtons()
       }
     } catch (e) {
       console.warn('Fomo Player bandcamp inject failed', e)

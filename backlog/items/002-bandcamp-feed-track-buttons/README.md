@@ -1,7 +1,7 @@
 ---
 id: 002
 title: Play / queue / add-to-cart buttons on Bandcamp feed
-status: todo
+status: done
 priority: P1
 effort: M
 created: 2026-05-04
