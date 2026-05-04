@@ -97,7 +97,9 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player' }) 
       .map((c) => `<div class="row" data-cart-id="${c.id}">${PLUS_ICON} ${escapeHtml(c.name)}</div>`)
       .join('')
     list.querySelectorAll('[data-cart-id]').forEach((row) => {
-      row.addEventListener('click', async () => {
+      row.addEventListener('click', async (e) => {
+        e.preventDefault()
+        e.stopPropagation()
         const cartId = Number(row.dataset.cartId)
         const releases = await getReleases()
         const result = await sendToWorker({ type: 'bandcamp:add-to-cart', cartId, releases })
@@ -112,6 +114,7 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player' }) 
   }
 
   shadow.querySelector('[data-toggle]').addEventListener('click', async (e) => {
+    e.preventDefault()
     e.stopPropagation()
     if (openHost === host) {
       closeOpen()
@@ -124,6 +127,7 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player' }) 
   })
 
   createBtn.addEventListener('click', async (e) => {
+    e.preventDefault()
     e.stopPropagation()
     const name = newInput.value.trim()
     if (!name) return
