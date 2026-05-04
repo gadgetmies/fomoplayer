@@ -50,7 +50,7 @@ const cueButton = ({ onClick, label = 'Queue' }) => {
   const shadow = host.attachShadow({ mode: 'open' })
   shadow.innerHTML = `
     <style>
-      :host { all: initial; display: inline-block; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+      :host { all: initial; display: inline-flex; align-items: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
       button {
         background: transparent; color: #0687f5; border: 1px solid #0687f5;
         font-size: 11px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
@@ -128,7 +128,7 @@ const cueButton = ({ onClick, label = 'Queue' }) => {
 const buttonContainer = () => {
   const wrap = document.createElement('span')
   wrap.setAttribute(INJECTED_ATTR, '1')
-  wrap.style.cssText = 'display: inline-flex; gap: 6px; vertical-align: middle;'
+  wrap.style.cssText = 'display: inline-flex; gap: 6px; align-items: center; vertical-align: middle;'
   return wrap
 }
 

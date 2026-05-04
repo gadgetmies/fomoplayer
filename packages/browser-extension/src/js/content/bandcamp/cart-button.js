@@ -22,7 +22,7 @@ const withTimeout = (promise, ms = REQUEST_TIMEOUT_MS) =>
   ])
 
 const STYLE = `
-  :host { all: initial; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: inline-block; position: relative; }
+  :host { all: initial; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: inline-flex; align-items: center; position: relative; }
   .root { display: inline-block; position: relative; }
   button.toggle {
     background: transparent; color: #0687f5; border: 1px solid #0687f5;
@@ -61,7 +61,7 @@ const STYLE = `
   .popup .new .create-error { font-size: 11px; color: #c63; padding: 4px 8px 0; flex: 1 0 100%; }
   .popup .status { font-size: 11px; color: #1a7d33; padding: 4px 8px; }
   .popup .error { font-size: 11px; color: #c63; padding: 4px 8px; }
-  svg { width: 11px; height: 11px; fill: currentColor; }
+  svg { width: 11px; height: 11px; fill: currentColor; display: block; vertical-align: middle; }
 ${SPINNER_CSS}
 `
 
