@@ -1,7 +1,7 @@
 ---
 id: 011
 title: Rename "Queue" button to "Open queue"
-status: todo
+status: done
 priority: P1
 effort: S
 created: 2026-05-04

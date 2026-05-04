@@ -8,4 +8,4 @@
 
 - [x] 2.1 Run `yarn test` in `packages/browser-extension/` — should pass.
 - [x] 2.2 Run a chrome build (`FRONTEND_URL=https://example.test yarn build:chrome`) — should succeed.
-- [ ] 2.3 Manually load the extension and confirm: button starts as "Show queue"; clicking shows the panel and flips the label to "Hide queue"; clicking again hides the panel and flips back to "Show queue"; per-track Bandcamp injection buttons still read "Queue" / "Queue track" / "Queue release".
+- [x] 2.3 Manually load the extension and confirm: button starts as "Show queue"; clicking shows the panel and flips the label to "Hide queue"; clicking again hides the panel and flips back to "Show queue"; per-track Bandcamp injection buttons still read "Queue" / "Queue track" / "Queue release".
