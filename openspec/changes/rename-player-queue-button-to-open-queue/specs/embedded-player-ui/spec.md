@@ -1,15 +1,22 @@
 ## ADDED Requirements
 
-### Requirement: Queue-toggle button is labelled "Open queue"
+### Requirement: Queue-toggle button label reflects panel visibility
 
-The button in the embedded player that toggles the queue panel SHALL display the text "Open queue". Its accessible name (`aria-label`) and hover tooltip (`title`) MUST also be "Open queue".
+The button in the embedded player that toggles the queue panel SHALL display "Show queue" while the queue panel is hidden and "Hide queue" while the queue panel is visible. Its accessible name (`aria-label`) and hover tooltip (`title`) MUST always match the visible text.
 
-#### Scenario: Visible label reads "Open queue"
+#### Scenario: Hidden panel — button reads "Show queue"
 
-- **WHEN** the embedded player is rendered on a Bandcamp page
-- **THEN** the queue-toggle button shows "Open queue" as its visible text.
+- **WHEN** the embedded player is rendered and the queue panel is hidden
+- **THEN** the toggle button's visible text, `title`, and `aria-label` all read "Show queue".
 
-#### Scenario: Accessible name and tooltip match the visible label
+#### Scenario: Visible panel — button reads "Hide queue"
 
-- **WHEN** an assistive technology focuses the queue-toggle button, or a sighted user hovers it
-- **THEN** the announced name and the hover tooltip both read "Open queue".
+- **WHEN** the user clicks the toggle button while the queue panel is hidden
+- **THEN** the queue panel becomes visible
+- **AND** the toggle button's visible text, `title`, and `aria-label` all read "Hide queue".
+
+#### Scenario: Re-hiding the panel restores "Show queue"
+
+- **WHEN** the user clicks the toggle button while the queue panel is visible, OR the player resets to its empty state
+- **THEN** the queue panel is hidden
+- **AND** the toggle button's visible text, `title`, and `aria-label` all read "Show queue".

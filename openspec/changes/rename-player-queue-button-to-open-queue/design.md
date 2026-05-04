@@ -1,28 +1,32 @@
 ## Context
 
-The browser extension renders a small embedded player on Bandcamp pages (`packages/browser-extension/src/js/content/bandcamp/player-ui.js`). Inside that player there is a button that opens a queue panel; today its visible text reads "Queue". On the same Bandcamp pages, the extension also injects per-track action buttons whose label is also "Queue" but whose action is "add this track to the queue". Same word, two opposite verbs.
+The browser extension renders a small embedded player on Bandcamp pages (`packages/browser-extension/src/js/content/bandcamp/player-ui.js`). Inside that player there is a button that toggles a queue panel; today its visible text reads "Queue". On the same Bandcamp pages, the extension also injects per-track action buttons whose label is also "Queue" but whose action is "add this track to the queue". Same word, two opposite verbs.
 
-This change is a label-only edit. The per-track injection buttons stay as-is.
+The queue panel's visibility is controlled by toggling a `hidden` class on the `[data-q]` element from the toggle button's click handler. The panel starts hidden, and `renderEmptyState` re-hides it.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- The queue-toggle button's visible label, accessible name, and tooltip all read "Open queue".
+- The toggle button reflects what the click will do: it reads "Show queue" while the panel is hidden, and "Hide queue" while it is visible.
+- The accessible name (`aria-label`) and tooltip (`title`) track the visible label.
 
 **Non-Goals:**
 - Re-labelling per-track Queue buttons on Bandcamp pages.
 - Re-styling the button or moving it.
-- Adding any new keyboard shortcuts or behaviours beyond the rename.
+- Adding new keyboard shortcuts or behaviours.
 
 ## Decisions
 
-**Use both `title` and `aria-label`, set to the same string as the visible text.**
-The current button has neither — the text content alone is the accessible name. Adding a redundant `aria-label` is normally an accessibility anti-pattern (it overrides the visible text for screen readers without any benefit), but the acceptance criterion explicitly asks for the aria-label and tooltip to agree with the visible label. Setting them all to the same value satisfies the criterion without surprising assistive tech: the screen-reader name still matches what users see, and the tooltip on hover spells out the same string.
+**Drive the label off the panel's `hidden` class.**
+The panel's visibility is already a single source of truth (the `hidden` class on `refs.queue`). Adding a small `syncQueueToggleLabel` helper that reads that class and writes the button's `textContent`, `title`, and `aria-label` keeps the label honest in every code path that toggles the panel — both the explicit toggle click and the implicit re-hide inside `renderEmptyState`.
 
 Alternatives considered:
-- *Visible text only, no `title` / `aria-label`.* Closer to ideal accessibility, but doesn't satisfy the acceptance criterion as written.
-- *Different aria-label (e.g. "Open queue panel").* Rejected — diverging from the visible label is what the criterion forbids.
+- *Mirror visibility in a separate variable.* Rejected — two sources of truth invites drift. The class is already authoritative.
+- *Listen for class changes via MutationObserver on the panel.* Rejected — overkill for a single helper call after each known toggle site.
+
+**Same string for textContent, title, and aria-label.**
+Setting `aria-label` redundantly against visible text is normally an accessibility anti-pattern, but the acceptance criterion explicitly requires the accessible name and tooltip to agree with the visible label. Using one string everywhere satisfies that criterion without surprising assistive tech.
 
 ## Risks / Trade-offs
 
-- [Risk: someone later reads the empty-state hint "Click 'Queue' next to a Bandcamp track or release" and renames the per-track buttons too] → Mitigation: proposal explicitly scopes the per-track buttons out; the spec scenario for the player view's queue-toggle pins the new label.
+- [Risk: a future code path toggles the panel without calling `syncQueueToggleLabel`, leaving the label stale] → Mitigation: there are only two toggle sites today (the click handler and `renderEmptyState`); both call the helper. A code reviewer can grep for `refs.queue.classList` to spot any new toggle site.

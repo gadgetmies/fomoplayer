@@ -1,11 +1,11 @@
 ## Why
 
-In the browser extension's embedded player UI, the button that opens the queue panel is labelled "Queue". The same word also labels the per-track buttons we inject into Bandcamp pages, where it means "add this track to the queue" (a verb). Two buttons with the same label and opposite meanings — one *opens* the queue, the others *append to* it — confuses users. Renaming the player-view button to "Open queue" disambiguates without disturbing the per-track add-to-queue affordances.
+In the browser extension's embedded player UI, the button that toggles the queue panel is labelled "Queue". The same word also labels the per-track buttons we inject into Bandcamp pages, where it means "add this track to the queue" (a verb). Two buttons with the same label and opposite meanings — one *toggles* the queue panel, the others *append to* it — confuses users. Relabelling the player-view button as "Show queue" / "Hide queue" — driven by the panel's current visibility — disambiguates and tells the user what clicking will do.
 
 ## What Changes
 
-- The player view's queue-toggle button label changes from "Queue" to "Open queue".
-- The button gains `title` and `aria-label` of "Open queue" so the accessible name agrees with the visible label.
+- The player-view queue-toggle button shows "Show queue" while the queue panel is hidden and "Hide queue" while it is visible.
+- The button's `title` and `aria-label` track the visible label.
 - The per-track Queue buttons injected on Bandcamp release/track/discography pages keep their current "Queue" / "Queue track" / "Queue release" labels — they mean "add to queue" and are out of scope.
 - The empty-state hint that reads `Click "Queue" next to a Bandcamp track or release` still refers to the (unchanged) per-track injection labels, so it stays as-is.
 
@@ -16,6 +16,6 @@ In the browser extension's embedded player UI, the button that opens the queue p
 
 ## Impact
 
-- `packages/browser-extension/src/js/content/bandcamp/player-ui.js` — the queue-toggle button markup.
+- `packages/browser-extension/src/js/content/bandcamp/player-ui.js` — the queue-toggle button markup, the toggle click handler, and the empty-state reset path.
 - No backend, API, or database changes.
 - No test fixtures reference the old label (verified by grep).

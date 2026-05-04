@@ -96,7 +96,7 @@ const renderShell = (root) => {
           <div class="bar" data-bar><div class="bar-fill" data-bar-fill></div></div>
           <span data-duration>0:00</span>
         </div>
-        <button class="queue-toggle" data-queue-toggle title="Open queue" aria-label="Open queue">Open queue</button>
+        <button class="queue-toggle" data-queue-toggle title="Show queue" aria-label="Show queue">Show queue</button>
         <button class="t" data-clear title="Clear queue">${ICON.close}</button>
       </div>
     </div>
@@ -170,6 +170,14 @@ const ensureHost = () => {
   bindEvents()
 }
 
+const syncQueueToggleLabel = () => {
+  const visible = !refs.queue.classList.contains('hidden')
+  const label = visible ? 'Hide queue' : 'Show queue'
+  refs.queueToggle.textContent = label
+  refs.queueToggle.title = label
+  refs.queueToggle.setAttribute('aria-label', label)
+}
+
 const bindEvents = () => {
   refs.play.addEventListener('click', () => sendToWorker({ type: 'audio:toggle' }))
   refs.prev.addEventListener('click', () => sendToWorker({ type: 'audio:prev' }))
@@ -177,6 +185,7 @@ const bindEvents = () => {
   refs.clear.addEventListener('click', () => sendToWorker({ type: 'audio:clear' }))
   refs.queueToggle.addEventListener('click', () => {
     refs.queue.classList.toggle('hidden')
+    syncQueueToggleLabel()
   })
   refs.bar.addEventListener('click', (e) => {
     if (!state.duration) return
@@ -189,6 +198,7 @@ const bindEvents = () => {
 const renderEmptyState = () => {
   refs.player.classList.remove('hidden')
   refs.queue.classList.add('hidden')
+  syncQueueToggleLabel()
   refs.title.textContent = 'Fomo Player'
   refs.artist.textContent = 'Click "Queue" next to a Bandcamp track or release'
   refs.release.textContent = ''
