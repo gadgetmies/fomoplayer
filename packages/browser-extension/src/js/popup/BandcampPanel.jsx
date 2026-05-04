@@ -83,6 +83,22 @@ export default class BandcampPanel extends React.Component {
     }
   }
 
+  async syncWishlist() {
+    this.props.setRunning(true)
+    try {
+      const result = await sendToActiveContent({ type: 'bandcamp:trigger-wishlist-sync' })
+      if (!result?.ok) throw new Error(result?.error || 'Wishlist sync failed')
+    } catch (e) {
+      browser.runtime.sendMessage({
+        type: 'error',
+        message: 'Bandcamp wishlist sync failed',
+        stack: e?.stack || String(e),
+      })
+    } finally {
+      this.props.setRunning(false)
+    }
+  }
+
   render() {
     const { running, isCurrent } = this.props
     const { loggedIn, hasPlayables, onSubdomain } = this.state
@@ -119,6 +135,16 @@ export default class BandcampPanel extends React.Component {
                 onClick={() => this.sendFeed()}
               >
                 Feed
+              </button>
+            </p>
+            <p>
+              <button
+                id="bandcamp-wishlist-sync"
+                disabled={running || !loggedIn}
+                onClick={() => this.syncWishlist()}
+                title="Open your wishlist page first, then click to mirror it into a Fomo Player cart."
+              >
+                Sync wishlist to Fomo Player cart
               </button>
             </p>
           </>

@@ -1,5 +1,6 @@
 {
   "background": {
     "service_worker": "background.bundle.js"
-  }
+  },
+  "permissions": ["offscreen"]
 }

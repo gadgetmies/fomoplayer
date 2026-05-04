@@ -49,6 +49,8 @@ const {
   updateAllCartContents,
 } = require('../shared/cart.js')
 
+const { getTrackIdMappingForStoreUrl } = require('../shared/tracks.js')
+
 const typeIs = require('type-is')
 const multer = require('multer')
 const path = require('path')
@@ -213,9 +215,23 @@ router.post('/ignores/releases', async ({ user: { id: authUserId }, body }, res)
 
 const tracksHandler =
   (type) =>
-  async ({ body: tracks, headers: { 'x-multi-store-player-store': storeUrl }, user: { id: userId } }, res) => {
+  async (
+    {
+      body: tracks,
+      headers: { 'x-multi-store-player-store': storeUrl },
+      user: { id: userId },
+      query: { skipOld, return: returnShape },
+    },
+    res,
+  ) => {
     res.connection.setTimeout(120000)
-    const addedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], null, true, type)
+    const skipOldFlag = skipOld === 'false' ? false : true
+    const addedTracks = await addStoreTracksToUsers(storeUrl, tracks, [userId], null, skipOldFlag, type)
+    if (returnShape === 'mapping') {
+      const storeTrackIds = tracks.map((t) => t && t.id).filter((id) => id !== undefined && id !== null)
+      const mapping = await getTrackIdMappingForStoreUrl(storeUrl, storeTrackIds)
+      return res.status(201).send({ trackIds: addedTracks, mapping })
+    }
     res.status(201).send(addedTracks)
   }
 

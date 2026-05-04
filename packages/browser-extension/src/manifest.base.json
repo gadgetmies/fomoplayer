@@ -27,11 +27,11 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; media-src 'self' https://*.bandcamp.com https://*.bcbits.com"
   },
   "web_accessible_resources": [
     {
-      "resources": ["auth-callback.html"],
+      "resources": ["auth-callback.html", "audio-player.html"],
       "matches": ["<all_urls>"]
     }
   ]

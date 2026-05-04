@@ -27,6 +27,27 @@ SELECT * FROM track_details(${trackIds})
     `,
   )
 
+module.exports.queryTrackIdMappingForStoreUrl = async (storeUrl, storeTrackIds) => {
+  if (!storeTrackIds || storeTrackIds.length === 0) return {}
+  const ids = storeTrackIds.map(String)
+  const rows = await pg.queryRowsAsync(
+    //language=PostgreSQL
+    sql`-- queryTrackIdMappingForStoreUrl
+      SELECT track_id, store__track_store_id AS store_track_id
+      FROM
+        track
+        NATURAL JOIN store__track
+        NATURAL JOIN store
+      WHERE store_url = ${storeUrl}
+        AND store__track_store_id = ANY (${ids})
+    `,
+  )
+  return rows.reduce((acc, { store_track_id, track_id }) => {
+    acc[store_track_id] = track_id
+    return acc
+  }, {})
+}
+
 module.exports.queryStoredTracksForUrls = async (urls) => {
   const [{ track_details }] = await pg.queryRowsAsync(
     //language=PostgreSQL

@@ -17,7 +17,7 @@ const {
   addTracksToUser,
 } = require('../users/db.js')
 const { apiURL } = require('../../config.js')
-const { queryTracksForStoreIds, queryTrackDetails, queryStoredTracksForUrls } = require('./db/tracks')
+const { queryTracksForStoreIds, queryTrackDetails, queryStoredTracksForUrls, queryTrackIdMappingForStoreUrl } = require('./db/tracks')
 const { queryLabelForRelease } = require('./db/release')
 
 const getUsersFollowingArtist = async (storeArtistId) => {
@@ -349,3 +349,4 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
 
 module.exports.getTracksForStoreIds = queryTracksForStoreIds
 module.exports.getTrackDetails = queryTrackDetails
+module.exports.getTrackIdMappingForStoreUrl = queryTrackIdMappingForStoreUrl
