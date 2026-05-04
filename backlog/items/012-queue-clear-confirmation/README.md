@@ -1,7 +1,7 @@
 ---
 id: 012
 title: Move clear-queue button into queue list and require confirmation
-status: todo
+status: done
 priority: P1
 effort: S
 created: 2026-05-04

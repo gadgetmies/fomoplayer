@@ -23,4 +23,4 @@
 
 - [x] 5.1 `yarn test` passes in `packages/browser-extension/`.
 - [x] 5.2 `FRONTEND_URL=https://example.test yarn build:chrome` succeeds.
-- [ ] 5.3 Manually verify on a Bandcamp page: the player row no longer has the X button; opening the queue shows a "Clear queue" button inside the panel; clicking it shows a confirmation prompt; cancelling leaves the queue intact; confirming empties the queue; rebuilding the queue (e.g. adding a track) does not remove the clear button.
+- [x] 5.3 Manually verify on a Bandcamp page: the player row no longer has the X button; opening the queue shows a "Clear queue" button inside the panel; clicking it shows a confirmation prompt; cancelling leaves the queue intact; confirming empties the queue; rebuilding the queue (e.g. adding a track) does not remove the clear button.
