@@ -144,6 +144,12 @@ const injectReleaseLevelButtons = async () => {
     const wrap = buttonContainer()
     wrap.appendChild(
       cueButton({
+        label: `Play ${releaseLabel}`,
+        onClick: () => sendToWorker({ type: 'bandcamp:enqueue', releases: [release], playNow: true }),
+      }),
+    )
+    wrap.appendChild(
+      cueButton({
         label: `Queue ${releaseLabel}`,
         onClick: () => sendToWorker({ type: 'bandcamp:enqueue', releases: [release] }),
       }),
@@ -166,6 +172,16 @@ const injectReleaseLevelButtons = async () => {
     const trackId = extractTrackIdFromRow(row, release)
     if (!trackId) return
     const wrap = buttonContainer()
+    wrap.appendChild(
+      cueButton({
+        label: 'Play',
+        onClick: () => {
+          const slim = releaseWithSingleTrack(release, trackId)
+          if (!slim) return { ok: false, error: 'Could not resolve track' }
+          return sendToWorker({ type: 'bandcamp:enqueue', releases: [slim], playNow: true })
+        },
+      }),
+    )
     wrap.appendChild(
       cueButton({
         label: 'Queue',
@@ -233,6 +249,16 @@ const injectDiscographyButtons = () => {
       const release = await fetchReleaseTralbum(href)
       return release ? [release] : []
     }
+    wrap.appendChild(
+      cueButton({
+        label: 'Play',
+        onClick: async () => {
+          const releases = await getReleases()
+          if (releases.length === 0) return { ok: false, error: 'Could not load release' }
+          return sendToWorker({ type: 'bandcamp:enqueue', releases, playNow: true })
+        },
+      }),
+    )
     wrap.appendChild(
       cueButton({
         label: 'Queue',
