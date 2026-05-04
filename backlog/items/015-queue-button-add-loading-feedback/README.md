@@ -63,6 +63,20 @@ on it" feedback.
   `packages/browser-extension/src/js/audio-player.js` — message handling
   for `bandcamp:enqueue` / `audio:enqueue` if the pending signal needs to
   ride the same path.
+- `packages/browser-extension/src/js/content/bandcamp/cart-button.js` —
+  item 010 already ports the frontend `Spinner` (`lds-ring`) markup +
+  CSS into a `spinnerHTML(color)` helper inside that file's shadow-DOM
+  `STYLE` block. **Before adding the same to `inject.js` /
+  `player-ui.js`, extract the spinner to a small shared module**
+  (e.g. `content/bandcamp/spinner.js` exporting `SPINNER_CSS` and
+  `spinnerHTML(color)`) and have `cart-button.js`, the Queue buttons,
+  and the queue-list pending row all consume it. Avoids three copies of
+  the same `lds-ring` keyframes drifting independently. Note that
+  `cart-button.js` lives in a shadow DOM (CSS must be inlined into its
+  `<style>`) but the Queue buttons in `inject.js` and `player-ui.js`
+  inject directly into the page DOM, so the shared module needs to
+  expose the CSS as a string callers can either inline (shadow) or
+  inject once into a `<style>` tag (page DOM).
 
 ## Out of scope
 

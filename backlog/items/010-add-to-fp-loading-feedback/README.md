@@ -1,7 +1,7 @@
 ---
 id: 010
 title: Loading and success feedback for "Add to Fomo Player"
-status: todo
+status: done
 priority: P1
 effort: S
 created: 2026-05-04
