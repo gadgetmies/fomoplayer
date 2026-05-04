@@ -45,9 +45,10 @@ const onFeedPage = () => /\/feed\/?$/.test(location.pathname)
 // The label stays in the DOM (visibility: hidden) while pending; the spinner
 // overlays absolutely. That keeps the button's footprint identical between
 // idle and loading so neighbouring controls don't shift.
-const cueButton = ({ onClick, label = 'Queue' }) => {
+const cueButton = ({ onClick, label = 'Queue', variant = 'default' }) => {
   const host = document.createElement('span')
   const shadow = host.attachShadow({ mode: 'open' })
+  const spinnerColor = variant === 'overlay' ? '#fff' : '#0687f5'
   shadow.innerHTML = `
     <style>
       :host { all: initial; display: inline-flex; align-items: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
@@ -61,6 +62,11 @@ const cueButton = ({ onClick, label = 'Queue' }) => {
       button[disabled] { cursor: progress; opacity: 0.85; }
       button[data-state="error"] { border-color: #c63; color: #c63; }
       button[data-state="loading"] [data-label] { visibility: hidden; }
+      button[data-variant="overlay"] {
+        background: #b40089; color: #fff; border-color: #530059;
+      }
+      button[data-variant="overlay"]:hover:not(:disabled) { background: #9f0076; color: #fff; }
+      button[data-variant="overlay"][data-state="error"] { background: #b40089; border-color: #c63; color: #c63; }
       [data-spinner] {
         position: absolute; top: 50%; left: 50%;
         transform: translate(-50%, -50%);
@@ -70,9 +76,9 @@ const cueButton = ({ onClick, label = 'Queue' }) => {
       [data-spinner] .loading-indicator { margin-left: 0; }
       ${SPINNER_CSS}
     </style>
-    <button>
+    <button data-variant="${variant}">
       <span data-label>${label}</span>
-      <span data-spinner aria-hidden="true">${spinnerHTML('#0687f5')}</span>
+      <span data-spinner aria-hidden="true">${spinnerHTML(spinnerColor)}</span>
     </button>
   `
   const buttonEl = shadow.querySelector('button')
@@ -245,6 +251,14 @@ const extractTrackIdFromRow = (row, release) => {
   return null
 }
 
+// Cover-overlay surfaces (discography tiles + feed entries) sit on top of
+// cover art. They use the Fomo Player magenta palette and a
+// semi-transparent dark backdrop so the buttons stay readable over any
+// image. Other surfaces (release-title section, per-track rows) leave
+// the wrap on the bare row layout with the Bandcamp-blue palette.
+const OVERLAY_WRAP_CSS =
+  'position: absolute; top: 6px; right: 6px; z-index: 5; background: rgba(0, 0, 0, 0.55); border-radius: 6px; padding: 4px 6px;'
+
 const injectDiscographyButtons = () => {
   const items = document.querySelectorAll('#music-grid > li, .music-grid-item')
   items.forEach((item) => {
@@ -253,7 +267,7 @@ const injectDiscographyButtons = () => {
     if (!link) return
     const href = link.getAttribute('href')
     const wrap = buttonContainer()
-    wrap.style.cssText += 'position: absolute; top: 6px; right: 6px; z-index: 5;'
+    wrap.style.cssText += OVERLAY_WRAP_CSS
     if (getComputedStyle(item).position === 'static') {
       item.style.position = 'relative'
     }
@@ -264,6 +278,7 @@ const injectDiscographyButtons = () => {
     wrap.appendChild(
       cueButton({
         label: 'Play',
+        variant: 'overlay',
         onClick: async () => {
           const releases = await getReleases()
           if (releases.length === 0) return { ok: false, error: 'Could not load release' }
@@ -274,6 +289,7 @@ const injectDiscographyButtons = () => {
     wrap.appendChild(
       cueButton({
         label: 'Queue',
+        variant: 'overlay',
         onClick: async () => {
           const releases = await getReleases()
           if (releases.length === 0) return { ok: false, error: 'Could not load release' }
@@ -283,7 +299,8 @@ const injectDiscographyButtons = () => {
     )
     wrap.appendChild(
       renderCartButton({
-        label: 'Add to Fomo Player',
+        label: 'Fomo',
+        variant: 'overlay',
         getReleases,
       }),
     )
@@ -315,7 +332,7 @@ const injectFeedButtons = () => {
     const href = link.getAttribute('href')
     if (!href) return
     const wrap = buttonContainer()
-    wrap.style.cssText += 'position: absolute; top: 6px; right: 6px; z-index: 5;'
+    wrap.style.cssText += OVERLAY_WRAP_CSS
     if (getComputedStyle(container).position === 'static') {
       container.style.position = 'relative'
     }
@@ -326,6 +343,7 @@ const injectFeedButtons = () => {
     wrap.appendChild(
       cueButton({
         label: 'Play',
+        variant: 'overlay',
         onClick: async () => {
           const releases = await getReleases()
           if (releases.length === 0) return { ok: false, error: 'Could not load release' }
@@ -336,6 +354,7 @@ const injectFeedButtons = () => {
     wrap.appendChild(
       cueButton({
         label: 'Queue',
+        variant: 'overlay',
         onClick: async () => {
           const releases = await getReleases()
           if (releases.length === 0) return { ok: false, error: 'Could not load release' }
@@ -345,7 +364,8 @@ const injectFeedButtons = () => {
     )
     wrap.appendChild(
       renderCartButton({
-        label: 'Add to Fomo Player',
+        label: 'Fomo',
+        variant: 'overlay',
         getReleases,
       }),
     )

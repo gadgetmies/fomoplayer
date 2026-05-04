@@ -30,6 +30,10 @@ const STYLE = `
     display: inline-flex; align-items: center; gap: 4px; line-height: 1.4;
   }
   button.toggle:hover { background: #0687f5; color: #fff; }
+  button.toggle[data-variant="overlay"] {
+    background: #b40089; color: #fff; border-color: #530059;
+  }
+  button.toggle[data-variant="overlay"]:hover { background: #9f0076; color: #fff; }
   .popup {
     position: absolute; right: 0; top: calc(100% + 4px);
     background: #fff; color: #222; border: 1px solid #ddd; border-radius: 4px;
@@ -86,13 +90,13 @@ document.addEventListener('click', (e) => {
   closeOpen()
 })
 
-export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player' }) => {
+export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player', variant = 'default' }) => {
   const host = document.createElement('span')
   const shadow = host.attachShadow({ mode: 'open' })
   shadow.innerHTML = `
     <style>${STYLE}</style>
     <div class="root">
-      <button class="toggle" data-toggle>${CART_ICON}<span>${label}</span></button>
+      <button class="toggle" data-toggle data-variant="${variant}">${CART_ICON}<span>${label}</span></button>
       <div class="popup hidden" data-popup>
         <div data-list><div class="empty">Loading carts…</div></div>
         <div class="new">

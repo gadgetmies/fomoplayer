@@ -1,7 +1,7 @@
 ---
 id: 016
 title: Restyle the cover-image overlay buttons (shorter label, FP colours, readable background)
-status: todo
+status: done
 priority: P2
 effort: S
 created: 2026-05-04

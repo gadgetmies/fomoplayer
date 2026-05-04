@@ -27,3 +27,17 @@ Working notebook for this item. Date entries so future sessions can skim.
 
 - _2026-05-04_ — Item filed in response to feedback that the overlay
   buttons crowd the cover art and the long label is hard to read.
+- _2026-05-05_ — Threaded a `variant: 'default' | 'overlay'` argument
+  through both `cueButton` (in
+  `packages/browser-extension/src/js/content/bandcamp/inject.js`) and
+  `renderCartButton` (in `cart-button.js`). The shadow CSS in each
+  factory now carries both palettes and switches via a
+  `data-variant="overlay"` attribute selector, so call sites pick the
+  palette without code duplication. The discography and feed
+  injectors pass `variant: 'overlay'`, label `'Fomo'` for the cart
+  toggle, and mount the wrap with a shared `OVERLAY_WRAP_CSS`
+  constant adding `background: rgba(0,0,0,0.55); border-radius: 6px;
+  padding: 4px 6px` to the existing absolute-positioning. Release-
+  title and per-track-row sites keep the default variant. Resolves
+  the open thread re: cart-button.js style sharing — the shadow
+  scope now hosts both variants together.
