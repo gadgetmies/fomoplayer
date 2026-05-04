@@ -8,6 +8,7 @@
 // the `pending` re-entry guard below — only the worker message and the
 // success microcopy differ for that path.
 import browser from '../../browser'
+import { SPINNER_CSS, spinnerHTML } from './spinner'
 
 const sendToWorker = (message) => browser.runtime.sendMessage(message).catch(() => null)
 
@@ -61,51 +62,13 @@ const STYLE = `
   .popup .status { font-size: 11px; color: #1a7d33; padding: 4px 8px; }
   .popup .error { font-size: 11px; color: #c63; padding: 4px 8px; }
   svg { width: 11px; height: 11px; fill: currentColor; }
-
-  /* Spinner ported verbatim from packages/front/src/SpinnerButton.css
-     (lds-ring keyframes + .loading-indicator markup); see Spinner.js. */
-  .loading-indicator {
-    display: inline-block;
-    position: relative;
-    margin-left: 0.25rem;
-  }
-  .loading-indicator__small {
-    width: 0.7rem;
-    height: 0.7rem;
-  }
-  .loading-indicator div {
-    box-sizing: border-box;
-    display: block;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-    border-color: #fff transparent transparent transparent;
-  }
-  .loading-indicator div:nth-child(1) { animation-delay: -0.45s; }
-  .loading-indicator div:nth-child(2) { animation-delay: -0.3s; }
-  .loading-indicator div:nth-child(3) { animation-delay: -0.15s; }
-  @keyframes lds-ring {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+${SPINNER_CSS}
 `
 
 const CART_ICON = '<svg viewBox="0 0 16 16"><path d="M2 2 H4 L5 5 H14 L13 11 H6 L5 5 M6 13 a1 1 0 1 0 2 0 a1 1 0 1 0 -2 0 M11 13 a1 1 0 1 0 2 0 a1 1 0 1 0 -2 0" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>'
 const PLUS_ICON = '<svg viewBox="0 0 16 16"><path d="M8 3 v10 M3 8 h10" stroke="currentColor" stroke-width="2" fill="none"/></svg>'
 const CHECK_ICON = '<svg viewBox="0 0 16 16"><path d="M3 8 l4 4 l6 -8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 const WARN_ICON = '<svg viewBox="0 0 16 16"><path d="M8 2 L15 14 H1 Z M8 6 v4 M8 12 v0.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-
-const spinnerHTML = (color) => {
-  const style = `border-color: ${color} transparent transparent transparent`
-  return (
-    `<div class="loading-indicator loading-indicator__small">` +
-    `<div style="${style}"></div><div style="${style}"></div><div style="${style}"></div><div style="${style}"></div>` +
-    `</div>`
-  )
-}
 
 let openHost = null
 

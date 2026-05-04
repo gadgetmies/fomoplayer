@@ -4,6 +4,8 @@
 import browser from '../../browser'
 import { readTralbumData, releaseWithSingleTrack, fetchReleaseTralbum } from './scrape'
 import { renderCartButton } from './cart-button'
+import { SPINNER_CSS, spinnerHTML } from './spinner'
+import { incrementPendingAdds, decrementPendingAdds } from './pending-adds'
 
 // Marker attribute used to skip re-injection when the MutationObserver
 // re-fires. Lowercase + hyphenated so it round-trips through `dataset` and
@@ -14,6 +16,16 @@ const INJECTED_ATTR = 'data-fp-injected'
 
 const sendToWorker = (message) => browser.runtime.sendMessage(message).catch(() => null)
 
+const REQUEST_TIMEOUT_MS = 30000
+
+const withTimeout = (promise, ms = REQUEST_TIMEOUT_MS) =>
+  Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve({ ok: false, error: 'Request timed out' }), ms)),
+  ])
+
+const ERROR_FLASH_MS = 1800
+
 // Both album (`/album/...`) and single-track (`/track/...`) pages render a
 // `#name-section` and expose `window.TralbumData`. Either signal is enough
 // to treat the page as a release-level page.
@@ -21,21 +33,91 @@ const onReleasePage = () => Boolean(document.querySelector('#name-section'))
 const onDiscographyPage = () =>
   Boolean(document.querySelector('.music-grid, #music-grid, .leftMiddleColumns .music-grid-item'))
 
+// `onClick` may return a Promise resolving to `{ ok, error }` (e.g., the
+// worker response from `bandcamp:enqueue`). The button shows a spinner and
+// disables itself for the lifetime of that promise, then either returns to
+// idle or briefly flashes an error indication. Pending counts are reported
+// to pending-adds.js so the embedded player can show an "Adding…" row.
+//
+// The label stays in the DOM (visibility: hidden) while pending; the spinner
+// overlays absolutely. That keeps the button's footprint identical between
+// idle and loading so neighbouring controls don't shift.
 const cueButton = ({ onClick, label = 'Queue' }) => {
   const host = document.createElement('span')
   const shadow = host.attachShadow({ mode: 'open' })
   shadow.innerHTML = `
     <style>
       :host { all: initial; display: inline-block; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-      button { background: transparent; color: #0687f5; border: 1px solid #0687f5; font-size: 11px; padding: 2px 8px; border-radius: 3px; cursor: pointer; line-height: 1.4; }
-      button:hover { background: #0687f5; color: #fff; }
+      button {
+        background: transparent; color: #0687f5; border: 1px solid #0687f5;
+        font-size: 11px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
+        line-height: 1.4; display: inline-flex; align-items: center; gap: 4px;
+        position: relative;
+      }
+      button:hover:not(:disabled) { background: #0687f5; color: #fff; }
+      button[disabled] { cursor: progress; opacity: 0.85; }
+      button[data-state="error"] { border-color: #c63; color: #c63; }
+      button[data-state="loading"] [data-label] { visibility: hidden; }
+      [data-spinner] {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        display: none;
+      }
+      button[data-state="loading"] [data-spinner] { display: inline-flex; align-items: center; justify-content: center; }
+      [data-spinner] .loading-indicator { margin-left: 0; }
+      ${SPINNER_CSS}
     </style>
-    <button>${label}</button>
+    <button>
+      <span data-label>${label}</span>
+      <span data-spinner aria-hidden="true">${spinnerHTML('#0687f5')}</span>
+    </button>
   `
-  shadow.querySelector('button').addEventListener('click', (e) => {
+  const buttonEl = shadow.querySelector('button')
+  let pending = false
+  let resetTimer = null
+
+  const setIdle = () => {
+    pending = false
+    buttonEl.disabled = false
+    delete buttonEl.dataset.state
+    buttonEl.title = ''
+  }
+
+  const setError = (errorText) => {
+    pending = false
+    buttonEl.disabled = false
+    buttonEl.dataset.state = 'error'
+    buttonEl.title = errorText || 'Failed to add to queue'
+    if (resetTimer) clearTimeout(resetTimer)
+    resetTimer = setTimeout(setIdle, ERROR_FLASH_MS)
+  }
+
+  buttonEl.addEventListener('click', async (e) => {
     e.preventDefault()
     e.stopPropagation()
-    onClick()
+    if (pending) return
+    if (resetTimer) {
+      clearTimeout(resetTimer)
+      resetTimer = null
+    }
+    pending = true
+    buttonEl.disabled = true
+    buttonEl.dataset.state = 'loading'
+    incrementPendingAdds()
+    try {
+      const result = await withTimeout(Promise.resolve().then(() => onClick()))
+      if (result && result.ok === false) {
+        console.warn('Fomo Player queue add failed', result.error)
+        setError(result.error)
+      } else {
+        setIdle()
+      }
+    } catch (err) {
+      console.warn('Fomo Player queue add threw', err)
+      setError(err?.message)
+    } finally {
+      decrementPendingAdds()
+    }
   })
   return host
 }
@@ -63,11 +145,7 @@ const injectReleaseLevelButtons = async () => {
     wrap.appendChild(
       cueButton({
         label: `Queue ${releaseLabel}`,
-        onClick: () =>
-          sendToWorker({
-            type: 'bandcamp:enqueue',
-            releases: [release],
-          }),
+        onClick: () => sendToWorker({ type: 'bandcamp:enqueue', releases: [release] }),
       }),
     )
     wrap.appendChild(
@@ -93,7 +171,8 @@ const injectReleaseLevelButtons = async () => {
         label: 'Queue',
         onClick: () => {
           const slim = releaseWithSingleTrack(release, trackId)
-          if (slim) sendToWorker({ type: 'bandcamp:enqueue', releases: [slim] })
+          if (!slim) return { ok: false, error: 'Could not resolve track' }
+          return sendToWorker({ type: 'bandcamp:enqueue', releases: [slim] })
         },
       }),
     )
@@ -159,8 +238,8 @@ const injectDiscographyButtons = () => {
         label: 'Queue',
         onClick: async () => {
           const releases = await getReleases()
-          if (releases.length === 0) return
-          sendToWorker({ type: 'bandcamp:enqueue', releases })
+          if (releases.length === 0) return { ok: false, error: 'Could not load release' }
+          return sendToWorker({ type: 'bandcamp:enqueue', releases })
         },
       }),
     )

@@ -1,7 +1,7 @@
 ---
 id: 015
 title: Loading feedback while adding tracks to the queue
-status: todo
+status: done
 priority: P1
 effort: S
 created: 2026-05-04
@@ -35,15 +35,15 @@ on it" feedback.
 
 ## Acceptance criteria
 
-- [ ] Clicking a Queue button immediately shows a spinner inside the
+- [x] Clicking a Queue button immediately shows a spinner inside the
       button and disables further clicks until the request settles.
-- [ ] The bottom of the queue list (`[data-q]`) shows a spinner / "Adding…"
+- [x] The bottom of the queue list (`[data-q]`) shows a spinner / "Adding…"
       row whenever at least one enqueue is in flight; the row disappears
       once all in-flight adds settle.
-- [ ] On failure, the button re-enables and a brief error indication is
+- [x] On failure, the button re-enables and a brief error indication is
       shown (status text in the player or a console warning is enough for
       this iteration — a full toast system is out of scope).
-- [ ] Two near-simultaneous Queue clicks on different tracks each show
+- [x] Two near-simultaneous Queue clicks on different tracks each show
       their own button spinner; the queue-list row stays as long as either
       is pending.
 

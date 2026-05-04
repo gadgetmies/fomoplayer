@@ -3,6 +3,8 @@
 // transport actions are sent back through the worker, which forwards to the
 // offscreen / background audio host.
 import browser from '../../browser'
+import { SPINNER_CSS, spinnerHTML } from './spinner'
+import { getPendingAdds, subscribePendingAdds } from './pending-adds'
 
 const HOST_ID = 'fomoplayer-bandcamp-player-host'
 
@@ -67,6 +69,11 @@ const STYLE = `
   .qrow .remove { background: transparent; border: none; color: #888; cursor: pointer; }
   .qrow .remove:hover { color: #f1f1f1; }
   .empty { padding: 8px 12px; color: #888; font-size: 12px; text-align: center; }
+  .qpending {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px; font-size: 12px; color: #aaa;
+  }
+  ${SPINNER_CSS}
 `
 
 const ICON = {
@@ -233,8 +240,13 @@ const updateActiveRow = () => {
   })
 }
 
+const pendingLabel = (count) => (count > 1 ? `Adding ${count} tracks…` : 'Adding…')
+
+const renderPendingRow = (count) =>
+  count > 0 ? `<div class="qpending" data-pending>${spinnerHTML('#1da0c3')}<span>${pendingLabel(count)}</span></div>` : ''
+
 const rebuildQueue = () => {
-  refs.queue.innerHTML = state.queue
+  const rowsHtml = state.queue
     .map(
       (q, i) => `
         <div class="qrow ${i === state.index ? 'active' : ''}" data-i="${i}">
@@ -248,6 +260,7 @@ const rebuildQueue = () => {
       `,
     )
     .join('')
+  refs.queue.innerHTML = rowsHtml + renderPendingRow(getPendingAdds())
   refs.queue.querySelectorAll('.qrow').forEach((row) => {
     row.addEventListener('click', (e) => {
       if (e.target.closest('[data-remove]')) return
@@ -262,6 +275,28 @@ const rebuildQueue = () => {
       sendToWorker({ type: 'audio:remove-at', index: idx })
     })
   })
+}
+
+// Refresh just the pending tail without rebuilding the whole list. Called
+// from the pending-adds subscription on every change so the spinner row
+// appears the instant a Queue button is clicked.
+const refreshPendingRow = () => {
+  if (!host || !refs.queue) return
+  const existing = refs.queue.querySelector('[data-pending]')
+  const count = getPendingAdds()
+  if (count <= 0) {
+    if (existing) existing.remove()
+    return
+  }
+  if (existing) {
+    const labelEl = existing.querySelector('span')
+    if (labelEl) labelEl.textContent = pendingLabel(count)
+    return
+  }
+  const node = document.createElement('div')
+  node.innerHTML = renderPendingRow(count)
+  const row = node.firstElementChild
+  if (row) refs.queue.appendChild(row)
 }
 
 const renderState = () => {
@@ -345,9 +380,14 @@ export const setVisible = (visible) => {
 }
 
 let listenerInstalled = false
+let pendingSubscriptionInstalled = false
 
 export const installPlayerUi = async () => {
   ensureHost()
+  if (!pendingSubscriptionInstalled) {
+    pendingSubscriptionInstalled = true
+    subscribePendingAdds(() => refreshPendingRow())
+  }
   // Pull initial state from the audio host.
   const response = await sendToWorker({ type: 'audio:get-state' })
   if (response?.state) {
