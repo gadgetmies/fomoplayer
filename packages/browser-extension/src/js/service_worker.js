@@ -211,11 +211,34 @@ const buildQueueItemsFromReleases = async (releases) => {
     const releaseArtUrl = release.art_id
       ? `https://f4.bcbits.com/img/a${release.art_id}_10.jpg`
       : null
+    // Bandcamp artist pages live at the same origin as the release; the
+    // tralbum payload exposes per-track relative links via `title_link`.
+    // Label URLs are best-effort — Bandcamp surfaces them on some releases
+    // but not others. When the label URL is missing or matches the artist
+    // URL we omit it so the UI doesn't render a redundant link.
+    let releaseOrigin = ''
+    try {
+      releaseOrigin = releaseUrl ? new URL(releaseUrl, 'https://bandcamp.com').origin : ''
+    } catch (_) {
+      releaseOrigin = ''
+    }
+    const artistUrl = releaseOrigin || ''
+    const rawLabelUrl = release.current?.label_url || release.label_url || null
+    const labelUrl = rawLabelUrl && rawLabelUrl !== artistUrl ? rawLabelUrl : null
     for (const track of release.trackinfo || []) {
       if (!track || !track.file) continue
       const audioUrl = track.file['mp3-128'] || track.file['mp3-v0'] || Object.values(track.file)[0]
       if (!audioUrl) continue
       const bandcampId = String(track.id ?? track.track_id ?? '')
+      let trackUrl = ''
+      if (track.title_link && releaseOrigin) {
+        try {
+          trackUrl = new URL(track.title_link, releaseOrigin).toString()
+        } catch (_) {
+          trackUrl = ''
+        }
+      }
+      if (!trackUrl) trackUrl = releaseUrl
       items.push({
         bandcampId,
         fomoplayerTrackId: bandcampId ? mapping[bandcampId] || null : null,
@@ -225,6 +248,9 @@ const buildQueueItemsFromReleases = async (releases) => {
         releaseTitle,
         releaseUrl,
         releaseArtUrl,
+        trackUrl,
+        artistUrl,
+        labelUrl,
         durationMs: Math.round((track.duration || 0) * 1000),
       })
     }

@@ -34,3 +34,16 @@ Working notebook for this item. Date entries so future sessions can skim.
 - _2026-05-04_ — Item filed in response to user feedback that the queue
   is a dead-end for following up on a queued track / release / artist /
   label.
+- _2026-05-05_ — Extended `buildQueueItemsFromReleases` in
+  `packages/browser-extension/src/js/service_worker.js` to derive
+  `trackUrl` (origin of `release.url` joined with `track.title_link`,
+  fallback `releaseUrl`), `artistUrl` (origin of `release.url`), and
+  `labelUrl` (best-effort `release.current?.label_url ||
+  release.label_url`, omitted when equal to `artistUrl`). The
+  embedded player's `rebuildQueue` (`player-ui.js`) renders the
+  links as a small muted row under the artist line via a new
+  `buildQueueLinks(q)` helper, and the row click handler picks up
+  an `if (e.target.closest('a')) return` guard alongside the
+  existing `[data-remove]` guard so plain link clicks navigate the
+  current tab and modifier-clicks open in new tabs without
+  triggering `audio:play-at`. Build (`yarn build:chrome`) passes.

@@ -66,6 +66,9 @@ const STYLE = `
   .qrow.active { background: #20323a; }
   .qrow .qtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .qrow .qartist { color: #888; font-size: 11px; }
+  .qrow .qlinks { font-size: 11px; color: #888; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+  .qrow .qlinks a { color: #b8b8b8; text-decoration: none; }
+  .qrow .qlinks a:hover { color: #f1f1f1; text-decoration: underline; }
   .qrow .remove { background: transparent; border: none; color: #888; cursor: pointer; }
   .qrow .remove:hover { color: #f1f1f1; }
   .empty { padding: 8px 12px; color: #888; font-size: 12px; text-align: center; }
@@ -245,25 +248,44 @@ const pendingLabel = (count) => (count > 1 ? `Adding ${count} tracks…` : 'Addi
 const renderPendingRow = (count) =>
   count > 0 ? `<div class="qpending" data-pending>${spinnerHTML('#1da0c3')}<span>${pendingLabel(count)}</span></div>` : ''
 
+const buildLinkHtml = (url, label) =>
+  url ? `<a href="${escapeHtml(url)}">${label}</a>` : ''
+
+const buildQueueLinks = (q) =>
+  [
+    buildLinkHtml(q.trackUrl, 'Track'),
+    buildLinkHtml(q.releaseUrl, 'Release'),
+    buildLinkHtml(q.artistUrl, 'Artist'),
+    buildLinkHtml(q.labelUrl, 'Label'),
+  ]
+    .filter(Boolean)
+    .join('')
+
 const rebuildQueue = () => {
   const rowsHtml = state.queue
-    .map(
-      (q, i) => `
+    .map((q, i) => {
+      const links = buildQueueLinks(q)
+      return `
         <div class="qrow ${i === state.index ? 'active' : ''}" data-i="${i}">
           <div>${i + 1}.</div>
           <div>
             <div class="qtitle">${escapeHtml(q.title || '')}</div>
             <div class="qartist">${escapeHtml(q.artist || '')}</div>
+            ${links ? `<div class="qlinks">${links}</div>` : ''}
           </div>
           <button class="remove" data-remove="${i}" title="Remove">${ICON.close}</button>
         </div>
-      `,
-    )
+      `
+    })
     .join('')
   refs.queue.innerHTML = rowsHtml + renderPendingRow(getPendingAdds())
   refs.queue.querySelectorAll('.qrow').forEach((row) => {
     row.addEventListener('click', (e) => {
       if (e.target.closest('[data-remove]')) return
+      // Plain link clicks navigate via the browser default; modifier
+      // clicks open in a new tab. Either way the row's play action
+      // must NOT fire.
+      if (e.target.closest('a')) return
       const idx = Number(row.dataset.i)
       sendToWorker({ type: 'audio:play-at', index: idx })
     })

@@ -9,14 +9,13 @@ _(none)_
 ## Todo
 
 1. [020 — Bandcamp logged-in detection is unreliable; sync controls always disabled](items/020-bandcamp-login-detection-bug/) — P1, bug, M
-2. [017 — Navigate to track / release / artist / label from queue rows](items/017-queue-row-navigation-links/) — P2, M
-3. [013 — Use Fomo Player colour scheme in extension](items/013-extension-fomoplayer-color-scheme/) — P2, M
-4. [019 — Watch mode for the browser-extension build](items/019-extension-build-watcher/) — P2, M (dev tooling)
-5. [007 — Heard status on Bandcamp; sync to Recently played](items/007-bandcamp-heard-status-sync/) — P2, L
-6. [003 — Route Bandcamp cover controls through extension player; add queue button](items/003-bandcamp-cover-controls-override/) — P2, L
-7. [014 — Increase progress bar click area for easier seeking](items/014-player-progress-bar-click-area/) — P3, S
-8. [006 — OS and keyboard media-key playback control](items/006-extension-media-key-support/) — P3, M
-9. [005 — Initial preview jump (toggleable, persisted, default off)](items/005-extension-initial-preview-jump/) — P3, L
+2. [013 — Use Fomo Player colour scheme in extension](items/013-extension-fomoplayer-color-scheme/) — P2, M
+3. [019 — Watch mode for the browser-extension build](items/019-extension-build-watcher/) — P2, M (dev tooling)
+4. [007 — Heard status on Bandcamp; sync to Recently played](items/007-bandcamp-heard-status-sync/) — P2, L
+5. [003 — Route Bandcamp cover controls through extension player; add queue button](items/003-bandcamp-cover-controls-override/) — P2, L
+6. [014 — Increase progress bar click area for easier seeking](items/014-player-progress-bar-click-area/) — P3, S
+7. [006 — OS and keyboard media-key playback control](items/006-extension-media-key-support/) — P3, M
+8. [005 — Initial preview jump (toggleable, persisted, default off)](items/005-extension-initial-preview-jump/) — P3, L
 
 ## Blocked
 
@@ -24,6 +23,7 @@ _(none)_
 
 ## Done
 
+- [017 — Navigate to track / release / artist / label from queue rows](items/017-queue-row-navigation-links/) — P2, M
 - [009 — "Add to Fomo Player" carts list shows current membership; click to remove](items/009-add-to-fp-shows-current-carts/) — P2, M
 - [016 — Restyle the cover-image overlay buttons (shorter label, FP colours, backdrop)](items/016-bandcamp-cover-overlay-button-styling/) — P2, S
 - [018 — Vertically align Queue and "Add to Fomo Player" buttons on Bandcamp](items/018-bandcamp-button-vertical-alignment/) — P2, S

@@ -1,7 +1,7 @@
 ---
 id: 017
 title: Navigate to track / release / artist / label from queue rows
-status: todo
+status: done
 priority: P2
 effort: M
 created: 2026-05-04
