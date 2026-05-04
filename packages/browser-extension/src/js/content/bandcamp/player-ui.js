@@ -269,6 +269,15 @@ const renderState = () => {
   const track = state.queue[state.index]
   const hasTrack = Boolean(track)
 
+  // Queue list mirrors state.queue regardless of whether a track is active —
+  // when the queue clears, the list must repaint to empty even though the
+  // track-level early return below skips track/transport rendering.
+  const queueSignature = state.queue.map((q) => q.bandcampId || q.audioUrl || '').join('|')
+  if (queueSignature !== lastRender.queueSignature) {
+    rebuildQueue()
+    lastRender.queueSignature = queueSignature
+  }
+
   if (hasTrack !== lastRender.hasTrack) {
     if (!hasTrack) renderEmptyState()
     else {
@@ -294,15 +303,6 @@ const renderState = () => {
     refs.play.innerHTML = state.playing ? ICON.pause : ICON.play
     refs.play.title = state.playing ? 'Pause' : 'Play'
     lastRender.playing = state.playing
-  }
-
-  // Queue contents — rebuild when track identities or length change. The
-  // active-row highlight is handled separately via class toggling so a
-  // simple seek inside the same track doesn't reflow the whole list.
-  const queueSignature = state.queue.map((q) => q.bandcampId || q.audioUrl || '').join('|')
-  if (queueSignature !== lastRender.queueSignature) {
-    rebuildQueue()
-    lastRender.queueSignature = queueSignature
   }
 
   if (state.index !== lastRender.index) {
