@@ -1,7 +1,7 @@
 ---
 id: 004
 title: Align data-fp-injected controls after .time span
-status: todo
+status: done
 priority: P2
 effort: S
 created: 2026-05-04

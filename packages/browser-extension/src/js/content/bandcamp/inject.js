@@ -128,7 +128,7 @@ const cueButton = ({ onClick, label = 'Queue' }) => {
 const buttonContainer = () => {
   const wrap = document.createElement('span')
   wrap.setAttribute(INJECTED_ATTR, '1')
-  wrap.style.cssText = 'display: inline-flex; gap: 6px; margin-left: 8px; vertical-align: middle;'
+  wrap.style.cssText = 'display: inline-flex; gap: 6px; vertical-align: middle;'
   return wrap
 }
 
@@ -204,7 +204,16 @@ const injectReleaseLevelButtons = async () => {
         },
       }),
     )
-    trackTitleCell.appendChild(wrap)
+    // Mount the wrap as the immediate next sibling of the row's `.time`
+    // span when present — Bandcamp's row layout aligns naturally to that
+    // anchor, so we don't need a left-margin shim. Older / unusual rows
+    // without `.time` fall back to appending into the title cell.
+    const timeSpan = row.querySelector('.time')
+    if (timeSpan) {
+      timeSpan.insertAdjacentElement('afterend', wrap)
+    } else {
+      trackTitleCell.appendChild(wrap)
+    }
     if (playButton) {
       // best-effort: keep play column tidy
     }
