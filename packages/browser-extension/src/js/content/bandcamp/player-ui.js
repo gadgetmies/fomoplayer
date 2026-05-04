@@ -96,7 +96,7 @@ const renderShell = (root) => {
           <div class="bar" data-bar><div class="bar-fill" data-bar-fill></div></div>
           <span data-duration>0:00</span>
         </div>
-        <button class="queue-toggle" data-queue-toggle>Queue</button>
+        <button class="queue-toggle" data-queue-toggle title="Open queue" aria-label="Open queue">Open queue</button>
         <button class="t" data-clear title="Clear queue">${ICON.close}</button>
       </div>
     </div>
