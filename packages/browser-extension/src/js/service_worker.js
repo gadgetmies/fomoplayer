@@ -315,7 +315,7 @@ const handleMessage = async (message) => {
     await ensureAudioHost()
     const audioMessage =
       message.type === 'bandcamp:enqueue'
-        ? { type: 'audio:enqueue', tracks: items }
+        ? { type: 'audio:enqueue', tracks: items, playNow: !!message.playNow }
         : {
             type: 'audio:set-queue',
             tracks: items,
@@ -335,7 +335,33 @@ const handleMessage = async (message) => {
   }
   if (message.type === 'bandcamp:get-carts') {
     const carts = await getUserCarts()
-    return { ok: true, carts }
+    const releases = message.releases || []
+    if (releases.length === 0) {
+      return { ok: true, carts }
+    }
+    // Resolve the requested release to FP track IDs, then fetch each cart's
+    // tracks in parallel to compute per-cart membership. Fan-out keeps the
+    // popup's open path to a single round-trip.
+    const items = await buildQueueItemsFromReleases(releases)
+    const requestedIds = new Set(items.map((i) => i.fomoplayerTrackId).filter(Boolean))
+    if (requestedIds.size === 0) {
+      return { ok: true, carts: carts.map((c) => ({ ...c, containsTrackIds: [] })) }
+    }
+    const annotated = await Promise.all(
+      (carts || []).map(async (cart) => {
+        try {
+          const detail = await apiFetch(`/api/me/carts/${cart.id}`)
+          const containsTrackIds = (detail?.tracks || [])
+            .map((t) => t.id)
+            .filter((id) => requestedIds.has(id))
+          return { ...cart, containsTrackIds }
+        } catch (e) {
+          console.warn('Failed to fetch cart detail', cart?.id, e?.message)
+          return { ...cart, containsTrackIds: [] }
+        }
+      }),
+    )
+    return { ok: true, carts: annotated }
   }
   if (message.type === 'bandcamp:create-cart') {
     const cart = await createUserCart(message.name)
@@ -347,7 +373,7 @@ const handleMessage = async (message) => {
     if (trackIds.length === 0) return { ok: false, error: 'Could not resolve any tracks' }
     const operations = trackIds.map((trackId) => ({ op: 'add', trackId, addedAt: new Date().toISOString() }))
     await updateCartContents(message.cartId, operations)
-    return { ok: true, addedCount: trackIds.length }
+    return { ok: true, addedCount: trackIds.length, addedTrackIds: trackIds }
   }
   if (message.type === 'bandcamp:remove-from-cart') {
     const operations = (message.trackIds || []).map((trackId) => ({ op: 'remove', trackId }))

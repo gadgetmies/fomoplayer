@@ -55,6 +55,9 @@ const STYLE = `
   .popup .row[data-state="success"] .row-text { color: #1a7d33; }
   .popup .row[data-state="error"] { background: #fbeceb; }
   .popup .row[data-state="error"] .row-text { color: #c63; }
+  .popup .row[data-membership="in-cart"][data-state="idle"] { background: #eef5ff; }
+  .popup .row[data-membership="in-cart"][data-state="idle"]:hover { background: #dde9fc; }
+  .popup .row[data-membership="in-cart"] .row-text { color: #1a4d7d; }
   .popup .empty { font-size: 12px; color: #777; padding: 6px 8px; text-align: center; }
   .popup .new { display: flex; gap: 4px; padding-top: 6px; border-top: 1px solid #eee; margin-top: 6px; align-items: flex-start; }
   .popup .new input { flex: 1; min-width: 0; font-size: 12px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 2px; }
@@ -71,6 +74,7 @@ ${SPINNER_CSS}
 
 const CART_ICON = '<svg viewBox="0 0 16 16"><path d="M2 2 H4 L5 5 H14 L13 11 H6 L5 5 M6 13 a1 1 0 1 0 2 0 a1 1 0 1 0 -2 0 M11 13 a1 1 0 1 0 2 0 a1 1 0 1 0 -2 0" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>'
 const PLUS_ICON = '<svg viewBox="0 0 16 16"><path d="M8 3 v10 M3 8 h10" stroke="currentColor" stroke-width="2" fill="none"/></svg>'
+const MINUS_ICON = '<svg viewBox="0 0 16 16"><path d="M3 8 h10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>'
 const CHECK_ICON = '<svg viewBox="0 0 16 16"><path d="M3 8 l4 4 l6 -8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 const WARN_ICON = '<svg viewBox="0 0 16 16"><path d="M8 2 L15 14 H1 Z M8 6 v4 M8 12 v0.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
@@ -129,14 +133,21 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player', va
   // method that flips data-state, swaps the leading icon, and shows or
   // hides an inline error message under the row text.
   //
-  // Item 009 reuses this helper unchanged for "remove from cart" rows —
-  // only the click handler (worker message + success microcopy) differs.
-  const makeRow = ({ cartId, name, idleIcon = PLUS_ICON, spinnerColor = '#0687f5' }) => {
+  // The row also tracks `containsTrackIds` (the FP track IDs from the
+  // current release that this cart already holds). When that array is
+  // non-empty the row paints the in-cart visual (minus icon + tinted
+  // background) and the click handler issues a remove instead of an
+  // add. `setMembership([...trackIds])` flips the visual in place and
+  // is called after a successful add or remove.
+  const makeRow = ({ cartId, name, containsTrackIds = [], spinnerColor = '#0687f5' }) => {
     const row = document.createElement('div')
     row.className = 'row'
     row.dataset.cartId = String(cartId)
     row.dataset.state = 'idle'
-    row.innerHTML = `<span class="row-icon">${idleIcon}</span><span class="row-text">${escapeHtml(name)}</span>`
+    row.containsTrackIds = Array.isArray(containsTrackIds) ? containsTrackIds.slice() : []
+    row.dataset.membership = row.containsTrackIds.length > 0 ? 'in-cart' : 'not-in-cart'
+    const initialIcon = row.containsTrackIds.length > 0 ? MINUS_ICON : PLUS_ICON
+    row.innerHTML = `<span class="row-icon">${initialIcon}</span><span class="row-text">${escapeHtml(name)}</span>`
 
     const iconEl = row.querySelector('.row-icon')
     const textEl = row.querySelector('.row-text')
@@ -155,16 +166,23 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player', va
       }
     }
 
+    const idleIconForMembership = () =>
+      row.containsTrackIds.length > 0 ? MINUS_ICON : PLUS_ICON
+
     row.setRowState = (state, errorText) => {
       row.dataset.state = state
       if (state === 'loading') iconEl.innerHTML = spinnerHTML(spinnerColor)
       else if (state === 'success') iconEl.innerHTML = CHECK_ICON
       else if (state === 'error') iconEl.innerHTML = WARN_ICON
-      else iconEl.innerHTML = idleIcon
+      else iconEl.innerHTML = idleIconForMembership()
       renderError(state === 'error' ? errorText || '' : '')
-      // textEl is referenced only to keep the helper's contract obvious;
-      // the muted-text class is driven by the [data-state] CSS rule.
       void textEl
+    }
+
+    row.setMembership = (trackIds) => {
+      row.containsTrackIds = Array.isArray(trackIds) ? trackIds.slice() : []
+      row.dataset.membership = row.containsTrackIds.length > 0 ? 'in-cart' : 'not-in-cart'
+      if (row.dataset.state === 'idle') iconEl.innerHTML = idleIconForMembership()
     }
 
     return row
@@ -214,9 +232,12 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player', va
       const releases = await getReleases()
       const result = await withTimeout(sendToWorker({ type: 'bandcamp:add-to-cart', cartId, releases }))
       if (result?.ok) {
+        // Flip membership in place — the user can immediately remove again
+        // or click another cart without reopening the dropdown.
+        row.setMembership(result.addedTrackIds || [])
         row.setRowState('success')
         setTimeout(() => {
-          if (openHost === host) closeOpen()
+          if (row.dataset.state === 'success') row.setRowState('idle')
         }, SUCCESS_HOLD_MS)
       } else {
         row.setRowState('error', result?.error || 'Failed to add to cart')
@@ -226,9 +247,43 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player', va
     }
   }
 
+  const runRemove = async (row, cartId) => {
+    if (pending.has(cartId)) return
+    if (row.dataset.state === 'error') row.setRowState('idle')
+    pending.add(cartId)
+    row.setRowState('loading')
+    const trackIds = row.containsTrackIds.slice()
+    try {
+      const result = await withTimeout(
+        sendToWorker({ type: 'bandcamp:remove-from-cart', cartId, trackIds }),
+      )
+      if (result?.ok) {
+        row.setMembership([])
+        row.setRowState('success')
+        setTimeout(() => {
+          if (row.dataset.state === 'success') row.setRowState('idle')
+        }, SUCCESS_HOLD_MS)
+      } else {
+        row.setRowState('error', result?.error || 'Failed to remove from cart')
+      }
+    } finally {
+      pending.delete(cartId)
+    }
+  }
+
   const loadCarts = async () => {
     list.innerHTML = '<div class="empty">Loading carts…</div>'
-    const response = await withTimeout(sendToWorker({ type: 'bandcamp:get-carts' }))
+    // Send the resolved releases so the worker can annotate carts with
+    // per-cart membership for the current track. `getReleases()` runs the
+    // same fetch-and-parse that the add path uses, so no new network is
+    // introduced — we just hoist it ahead of the user's first click.
+    let releases = []
+    try {
+      releases = await getReleases()
+    } catch (_) {
+      releases = []
+    }
+    const response = await withTimeout(sendToWorker({ type: 'bandcamp:get-carts', releases }))
     if (!response?.ok) {
       list.innerHTML = `<div class="error">${escapeHtml(response?.error || 'Failed to load carts')}</div>`
       return
@@ -240,11 +295,16 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player', va
     }
     list.innerHTML = ''
     for (const c of carts) {
-      const row = makeRow({ cartId: Number(c.id), name: c.name })
+      const row = makeRow({
+        cartId: Number(c.id),
+        name: c.name,
+        containsTrackIds: Array.isArray(c.containsTrackIds) ? c.containsTrackIds : [],
+      })
       row.addEventListener('click', (e) => {
         e.preventDefault()
         e.stopPropagation()
-        runAdd(row, Number(c.id))
+        if (row.containsTrackIds.length > 0) runRemove(row, Number(c.id))
+        else runAdd(row, Number(c.id))
       })
       list.appendChild(row)
     }

@@ -1,7 +1,7 @@
 ---
 id: 009
 title: "'Add to Fomo Player' carts list shows current membership; click to remove"
-status: todo
+status: done
 priority: P2
 effort: M
 created: 2026-05-04
