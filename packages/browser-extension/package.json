@@ -11,6 +11,10 @@
     "build:firefox": "NODE_ENV=production BROWSER=firefox node utils/build.js",
     "build:safari": "NODE_ENV=production BROWSER=safari node utils/build.js",
     "start": "BROWSER=${BROWSER:-chrome} node utils/webserver.js",
+    "watch": "node utils/watch.js",
+    "watch:chrome": "BROWSERS=chrome node utils/watch.js",
+    "watch:firefox": "BROWSERS=firefox node utils/watch.js",
+    "watch:all": "BROWSERS=chrome,firefox node utils/watch.js",
     "lint:firefox": "web-ext lint --source-dir=build/firefox",
     "test": "mocha 'test/**/*.spec.js'"
   },

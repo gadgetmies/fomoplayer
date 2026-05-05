@@ -50,6 +50,33 @@ is set by the build scripts so the bundle does not contain HMR / eval. To
 work on the popup with hot reload locally, run `BROWSER=chrome yarn start`
 with `FRONTEND_URL` pointed at your local backend.
 
+## Watch mode
+
+For tight iteration, run `yarn watch` to keep webpack rebuilding into
+`build/<browser>/` on every save. The watcher does **not** auto-reload
+the extension in your browser — after each rebuild you still hit the
+"reload" button on Chrome's `chrome://extensions/` page (or re-run
+`web-ext run --source-dir=build/firefox` if you killed it).
+
+```sh
+FRONTEND_URL=https://fomoplayer.com yarn watch              # default: chrome
+FRONTEND_URL=https://fomoplayer.com yarn watch:chrome       # → build/chrome/
+FRONTEND_URL=https://fomoplayer.com yarn watch:firefox      # → build/firefox/
+FRONTEND_URL=https://fomoplayer.com yarn watch:all          # both at once
+FRONTEND_URL=https://fomoplayer.com BROWSERS=chrome,firefox yarn watch
+```
+
+`BROWSERS` accepts a comma-separated list of `chrome` and / or
+`firefox`. Each rebuild's stats summary is prefixed with the target
+name (`[chrome] compiled successfully …`) so multi-target watching is
+followable.
+
+**Safari is intentionally unsupported in watch mode.** Loading an
+unpacked Safari Web Extension needs `xcrun safari-web-extension-converter`
+followed by an Xcode rebuild + re-sign + re-install, which a Node
+watcher cannot drive. Use the `yarn build:safari` flow above and the
+Xcode-based loop documented in the next section instead.
+
 ## Loading the extension during development
 
 - **Chrome / Edge:** open `chrome://extensions/`, enable Developer mode, click
