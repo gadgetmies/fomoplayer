@@ -40,7 +40,7 @@ input:disabled + .toggle-button_slider:before {
 }
 
 input:enabled:checked + .toggle-button_slider {
-  background-color: #b40089;
+  background-color: var(--fp-brand-primary);
 }
 
 input:disabled + .toggle-button_slider {

@@ -145,7 +145,7 @@
 }
 
 .sample-type-select--selected {
-  background-color: #b40089;
+  background-color: var(--fp-brand-primary);
 }
 
 .preview-wrapper {

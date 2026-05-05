@@ -1,5 +1,6 @@
 import React from 'react'
 import Progress from './Progress.jsx'
+import { colors } from 'fomoplayer_shared/theme'
 
 export default class Status extends React.Component {
   constructor(props) {
@@ -12,7 +13,12 @@ export default class Status extends React.Component {
         <h2>Processing</h2>
         {this.props.message}
         <br />
-        <Progress percent={this.props.progress} barColor="#b40089" bgColor="#222" style={{ margin: '0.5rem 0' }} />
+        <Progress
+          percent={this.props.progress}
+          barColor={colors.brandPrimary}
+          bgColor="#222"
+          style={{ margin: '0.5rem 0' }}
+        />
       </p>
     )
   }

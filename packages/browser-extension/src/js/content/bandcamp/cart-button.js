@@ -9,6 +9,7 @@
 // success microcopy differ for that path.
 import browser from '../../browser'
 import { SPINNER_CSS, spinnerHTML } from './spinner'
+import { colors } from 'fomoplayer_shared/theme'
 
 const sendToWorker = (message) => browser.runtime.sendMessage(message).catch(() => null)
 
@@ -25,11 +26,11 @@ const STYLE = `
   :host { all: initial; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: inline-flex; align-items: center; position: relative; }
   .root { display: inline-block; position: relative; }
   button.toggle {
-    background: transparent; color: #fff; border: 1px solid #b40089;
+    background: transparent; color: #fff; border: 1px solid ${colors.brandPrimary};
     font-size: 11px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
     display: inline-flex; align-items: center; gap: 4px; line-height: 1.4;
   }
-  button.toggle:hover { background: #b40089; color: #fff; }
+  button.toggle:hover { background: ${colors.brandPrimary}; color: #fff; }
   button.toggle[data-icon-only] { padding: 3px; gap: 0; }
   .popup {
     position: absolute; right: 0; top: calc(100% + 4px);

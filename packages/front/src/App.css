@@ -1,3 +1,4 @@
+@import './theme.css';
 @import './Login.css';
 @import './PageContainer.css';
 @import './TextInput.css';
@@ -220,7 +221,7 @@ input[type='range'] {
   margin: 5px;
   background: #222;
   border-radius: 0.25rem;
-  background-image: linear-gradient(rgb(180, 0, 137), rgb(180, 0, 137));
+  background-image: linear-gradient(var(--fp-brand-primary), var(--fp-brand-primary));
   background-repeat: no-repeat;
   transition:
     box-shadow 0.25s ease-in-out,

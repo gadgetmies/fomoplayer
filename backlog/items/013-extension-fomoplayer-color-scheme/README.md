@@ -1,7 +1,7 @@
 ---
 id: 013
 title: Use Fomo Player colour scheme in extension player and injected controls
-status: todo
+status: done
 priority: P2
 effort: M
 created: 2026-05-04

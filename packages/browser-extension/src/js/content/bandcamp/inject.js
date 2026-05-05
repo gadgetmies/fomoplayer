@@ -6,6 +6,7 @@ import { readTralbumData, releaseWithSingleTrack, fetchReleaseTralbum } from './
 import { renderCartButton } from './cart-button'
 import { SPINNER_CSS, spinnerHTML } from './spinner'
 import { incrementPendingAdds, decrementPendingAdds } from './pending-adds'
+import { colors } from 'fomoplayer_shared/theme'
 
 // Marker attribute used to skip re-injection when the MutationObserver
 // re-fires. Lowercase + hyphenated so it round-trips through `dataset` and
@@ -56,12 +57,12 @@ const cueButton = ({ onClick, label = 'Queue', iconOnly = false, icon = '' }) =>
     <style>
       :host { all: initial; display: inline-flex; align-items: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
       button {
-        background: transparent; color: #fff; border: 1px solid #b40089;
+        background: transparent; color: #fff; border: 1px solid ${colors.brandPrimary};
         font-size: 11px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
         line-height: 1.4; display: inline-flex; align-items: center; gap: 4px;
         position: relative;
       }
-      button:hover:not(:disabled) { background: #b40089; color: #fff; }
+      button:hover:not(:disabled) { background: ${colors.brandPrimary}; color: #fff; }
       button[disabled] { cursor: progress; opacity: 0.85; }
       button[data-state="error"] { background: transparent; border-color: #c63; color: #c63; }
       button[data-state="loading"] [data-label],
