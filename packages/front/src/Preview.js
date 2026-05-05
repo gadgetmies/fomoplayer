@@ -37,12 +37,14 @@ class Preview extends Component {
       previousDoubleClickStarted: false,
       cartFilter: '',
       embeddingMissing: true,
+      initialPositionSet: false,
     }
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
     }
 
     this.setVolume = this.setVolume.bind(this)
+    this.handleInitialPosition = this.handleInitialPosition.bind(this)
 
     const actionHandlers = [
       ['play', this.setPlaying.bind(this, true)],
@@ -89,6 +91,7 @@ class Preview extends Component {
       totalDuration: undefined,
       mp3Preview: preview,
       previewUrl: undefined,
+      initialPositionSet: false,
     })
 
     let url = preview.url
@@ -231,6 +234,27 @@ class Preview extends Component {
   setVolume(volume) {
     this.setState({ volume: volume * 100 })
     this.getPlayer().volume = volume
+  }
+
+  handleInitialPosition() {
+    if (this.state.initialPositionSet) return
+
+    const mp3Preview = this.state.mp3Preview
+    if (!mp3Preview) return
+
+    const shouldSkip = this.getShouldSkip()
+    const previewDetails = this.getPreviewDetails()
+
+    if (shouldSkip) {
+      this.setState({
+        position: previewDetails.start_ms,
+        initialPositionSet: true,
+      })
+      this.getPlayer().currentTime = (previewDetails.start_ms - mp3Preview.start_ms) / 1000
+    } else {
+      this.setState({ initialPositionSet: true })
+    }
+    this.play()
   }
 
   scan(step) {
@@ -616,20 +640,8 @@ class Preview extends Component {
                 onPlay={async () => {
                   await this.props.markHeard(currentTrack.id)
                 }}
-                onPlaying={() => {
-                  if (!shouldSkip && this.state.position === 0) {
-                    this.play()
-                  }
-                }}
-                onCanPlayThrough={() => {
-                  if (shouldSkip && this.state.position === 0) {
-                    this.setState({
-                      position: previewDetails.start_ms,
-                    })
-                    this.getPlayer().currentTime = (previewDetails.start_ms - mp3Preview.start_ms) / 1000
-                  }
-                  this.play()
-                }}
+                onPlaying={() => this.handleInitialPosition()}
+                onCanPlayThrough={() => this.handleInitialPosition()}
                 onPause={() => this.setPlaying(false)}
                 onTimeUpdate={({ currentTarget: { currentTime } }) => {
                   this.setState({ position: currentTime * 1000 })
