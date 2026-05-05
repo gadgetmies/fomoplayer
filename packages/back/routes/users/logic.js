@@ -59,7 +59,31 @@ const {
 const logger = require('fomoplayer_shared').logger(__filename)
 const { apiURL } = require('../../config')
 
-module.exports.getUserTracks = queryUserTracks
+module.exports.getUserTracks = async (...args) => {
+  const res = await queryUserTracks(...args)
+  process.nextTick(() => {
+    try {
+      const tracks = [...res.tracks.new, ...res.tracks.recentlyAdded, ...res.tracks.heard]
+      for (const track of tracks) {
+        for (const preview of track.previews) {
+          if (!preview.url || (preview.store === 'bandcamp' && !preview.url.includes('token='))) {
+            const storeModule = storeModules[preview.store]
+            if (storeModule && storeModule.logic.getPreviewDetails) {
+              storeModule.logic
+                .getPreviewDetails(preview.id)
+                .catch((e) =>
+                  logger.warn(`Failed to pre-fetch preview details for track ${track.id}, preview ${preview.id}: ${e.message}`),
+                )
+            }
+          }
+        }
+      }
+    } catch (e) {
+      logger.error('Pre-fetching preview details failed', e)
+    }
+  })
+  return res
+}
 module.exports.getUserArtistFollows = queryUserArtistFollows
 module.exports.getUserLabelFollows = queryUserLabelFollows
 module.exports.getUserPlaylistFollows = queryUserPlaylistFollows
