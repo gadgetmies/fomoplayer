@@ -285,23 +285,23 @@ Every Fomo Player button injected into Bandcamp (Play, Queue, and Add-to-Fomo ca
 
 ### Requirement: `[data-fp-injected]` wrap carries a legibility backdrop on every surface
 
-The `[data-fp-injected]` wrap that hosts the button trio SHALL include a semi-transparent dark rounded backdrop (`rgba(0, 0, 0, 0.45)`, `border-radius: 6px`, padding around the buttons) on every Bandcamp surface so the white-text-on-transparent buttons remain readable regardless of the underlying page chrome or cover art. The wrap MUST additionally apply `backdrop-filter: blur(6px)` (with the `-webkit-backdrop-filter` prefix for Safari) so the backdrop softens against light Bandcamp surfaces while staying legible on dark cover art. Browsers without `backdrop-filter` support MUST still see the dark wash alone — the prefixed and unprefixed declarations together cover Firefox, Chrome, and Safari without breaking older fallbacks.
+The `[data-fp-injected]` wrap that hosts the button trio SHALL include a semi-transparent dark rounded backdrop (`rgba(0, 0, 0, 0.45)`, `border-radius: 6px`, padding around the buttons) on every Bandcamp surface so the white-text-on-transparent buttons remain readable regardless of the underlying page chrome or cover art. The wrap's outer edge MUST be feathered with a soft outward halo (`box-shadow: 0 0 8px 2px rgba(0, 0, 0, 0.45)`) so the dark wash dissolves into the surrounding page rather than ending in a hard rectangle. The wrap MUST NOT use `backdrop-filter` to blur the page content behind the overlay — softening is applied at the overlay's perimeter only, never to what is underneath.
 
 #### Scenario: Wrap renders with the backdrop on every surface
 
 - **WHEN** the extension renders the `[data-fp-injected]` wrap on a release-page title section, per-track row, discography tile overlay, or feed entry
 - **THEN** the wrap shows a semi-transparent dark rounded backdrop behind the buttons.
 
-#### Scenario: Backdrop blur applies on supporting browsers
+#### Scenario: Outer edge feathers into the page
 
-- **WHEN** the wrap renders on a Bandcamp surface in Chrome, Firefox, or Safari
-- **THEN** the wrap's inline style declares `backdrop-filter: blur(6px)` and `-webkit-backdrop-filter: blur(6px)` so the backdrop carries through the underlying colour
-- **AND** the wash is `rgba(0, 0, 0, 0.45)` — visibly softer than the previous 0.55 wash so the blur is not fighting an opaque overlay
+- **WHEN** the wrap renders on any Bandcamp surface
+- **THEN** the wrap's inline style declares a `box-shadow` with a `rgba(0, 0, 0, 0.45)` colour, an 8px blur radius, and a 2px spread so the dark wash fades outward beyond the rounded rectangle's hard boundary
+- **AND** the wash itself remains `rgba(0, 0, 0, 0.45)` with `border-radius: 6px`
 
-#### Scenario: Browser without backdrop-filter support
+#### Scenario: Page content behind the overlay is not blurred
 
-- **WHEN** the wrap renders in a browser that ignores `backdrop-filter`
-- **THEN** the dark wash alone is visible, just as before — the buttons remain legible because the underlying `rgba(0, 0, 0, 0.45)` declaration still applies
+- **WHEN** the wrap renders on any Bandcamp surface
+- **THEN** the wrap's inline style does NOT include `backdrop-filter` or `-webkit-backdrop-filter` declarations — page content behind the overlay renders crisply, and only the overlay's perimeter is softened
 
 ### Requirement: Compact feed tiles render the trio as icons only
 
