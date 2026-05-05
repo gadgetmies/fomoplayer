@@ -45,28 +45,30 @@ const onFeedPage = () => /\/feed\/?$/.test(location.pathname)
 // The label stays in the DOM (visibility: hidden) while pending; the spinner
 // overlays absolutely. That keeps the button's footprint identical between
 // idle and loading so neighbouring controls don't shift.
-const cueButton = ({ onClick, label = 'Queue', variant = 'default' }) => {
+const cueButton = ({ onClick, label = 'Queue', iconOnly = false, icon = '' }) => {
   const host = document.createElement('span')
   const shadow = host.attachShadow({ mode: 'open' })
-  const spinnerColor = variant === 'overlay' ? '#fff' : '#0687f5'
+  const titleAttr = iconOnly ? ` title="${label.replace(/"/g, '&quot;')}"` : ''
+  const inner = iconOnly && icon
+    ? `<span data-icon aria-hidden="true">${icon}</span>`
+    : `<span data-label>${label}</span>`
   shadow.innerHTML = `
     <style>
       :host { all: initial; display: inline-flex; align-items: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
       button {
-        background: transparent; color: #0687f5; border: 1px solid #0687f5;
+        background: transparent; color: #fff; border: 1px solid #b40089;
         font-size: 11px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
         line-height: 1.4; display: inline-flex; align-items: center; gap: 4px;
         position: relative;
       }
-      button:hover:not(:disabled) { background: #0687f5; color: #fff; }
+      button:hover:not(:disabled) { background: #b40089; color: #fff; }
       button[disabled] { cursor: progress; opacity: 0.85; }
-      button[data-state="error"] { border-color: #c63; color: #c63; }
-      button[data-state="loading"] [data-label] { visibility: hidden; }
-      button[data-variant="overlay"] {
-        background: #b40089; color: #fff; border-color: #530059;
-      }
-      button[data-variant="overlay"]:hover:not(:disabled) { background: #9f0076; color: #fff; }
-      button[data-variant="overlay"][data-state="error"] { background: #b40089; border-color: #c63; color: #c63; }
+      button[data-state="error"] { background: transparent; border-color: #c63; color: #c63; }
+      button[data-state="loading"] [data-label],
+      button[data-state="loading"] [data-icon] { visibility: hidden; }
+      button[data-icon-only] { padding: 3px; }
+      button[data-icon-only] [data-icon] { display: inline-flex; align-items: center; justify-content: center; }
+      [data-icon] svg { display: block; width: 12px; height: 12px; fill: currentColor; }
       [data-spinner] {
         position: absolute; top: 50%; left: 50%;
         transform: translate(-50%, -50%);
@@ -76,9 +78,9 @@ const cueButton = ({ onClick, label = 'Queue', variant = 'default' }) => {
       [data-spinner] .loading-indicator { margin-left: 0; }
       ${SPINNER_CSS}
     </style>
-    <button data-variant="${variant}">
-      <span data-label>${label}</span>
-      <span data-spinner aria-hidden="true">${spinnerHTML(spinnerColor)}</span>
+    <button${iconOnly ? ' data-icon-only="1"' : ''}${titleAttr}>
+      ${inner}
+      <span data-spinner aria-hidden="true">${spinnerHTML('#fff')}</span>
     </button>
   `
   const buttonEl = shadow.querySelector('button')
@@ -134,7 +136,9 @@ const cueButton = ({ onClick, label = 'Queue', variant = 'default' }) => {
 const buttonContainer = () => {
   const wrap = document.createElement('span')
   wrap.setAttribute(INJECTED_ATTR, '1')
-  wrap.style.cssText = 'display: inline-flex; gap: 6px; align-items: center; vertical-align: middle;'
+  wrap.style.cssText =
+    'display: inline-flex; gap: 6px; align-items: center; vertical-align: middle; ' +
+    'background: rgba(0, 0, 0, 0.55); border-radius: 6px; padding: 4px 6px;'
   return wrap
 }
 
@@ -142,30 +146,24 @@ const injectReleaseLevelButtons = async () => {
   const release = await readTralbumData()
   if (!release || !Array.isArray(release.trackinfo)) return null
 
-  // `/track/...` pages render the same shell as `/album/...` pages but
-  // describe a single track. Reflect that in the labels so users don't see
-  // "Queue release" when looking at a single track.
-  const isSingleTrack = release.item_type === 'track' || /\/track\//.test(location.pathname)
-  const releaseLabel = isSingleTrack ? 'track' : 'release'
-
   const titleSection = document.querySelector('#name-section') || document.querySelector('h2.trackTitle')
   if (titleSection && !titleSection.querySelector(`[${INJECTED_ATTR}]`)) {
     const wrap = buttonContainer()
     wrap.appendChild(
       cueButton({
-        label: `Play ${releaseLabel}`,
+        label: 'Play',
         onClick: () => sendToWorker({ type: 'bandcamp:enqueue', releases: [release], playNow: true }),
       }),
     )
     wrap.appendChild(
       cueButton({
-        label: `Queue ${releaseLabel}`,
+        label: 'Queue',
         onClick: () => sendToWorker({ type: 'bandcamp:enqueue', releases: [release] }),
       }),
     )
     wrap.appendChild(
       renderCartButton({
-        label: `Add ${releaseLabel} to Fomo Player`,
+        label: 'Add to Fomo',
         getReleases: () => [release],
       }),
     )
@@ -203,26 +201,20 @@ const injectReleaseLevelButtons = async () => {
     )
     wrap.appendChild(
       renderCartButton({
-        label: 'Add to Fomo Player',
+        label: 'Add to Fomo',
         getReleases: () => {
           const slim = releaseWithSingleTrack(release, trackId)
           return slim ? [slim] : []
         },
       }),
     )
-    // Mount the wrap as the immediate next sibling of the row's `.time`
-    // span when present — Bandcamp's row layout aligns naturally to that
-    // anchor, so we don't need a left-margin shim. Older / unusual rows
-    // without `.time` fall back to appending into the title cell.
     const timeSpan = row.querySelector('.time')
     if (timeSpan) {
       timeSpan.insertAdjacentElement('afterend', wrap)
     } else {
       trackTitleCell.appendChild(wrap)
     }
-    if (playButton) {
-      // best-effort: keep play column tidy
-    }
+    void playButton
   })
 
   return release
@@ -251,13 +243,7 @@ const extractTrackIdFromRow = (row, release) => {
   return null
 }
 
-// Cover-overlay surfaces (discography tiles + feed entries) sit on top of
-// cover art. They use the Fomo Player magenta palette and a
-// semi-transparent dark backdrop so the buttons stay readable over any
-// image. Other surfaces (release-title section, per-track rows) leave
-// the wrap on the bare row layout with the Bandcamp-blue palette.
-const OVERLAY_WRAP_CSS =
-  'position: absolute; top: 6px; right: 6px; z-index: 5; background: rgba(0, 0, 0, 0.55); border-radius: 6px; padding: 4px 6px;'
+const OVERLAY_POSITION_CSS = 'position: absolute; top: 6px; right: 6px; z-index: 5;'
 
 const injectDiscographyButtons = () => {
   const items = document.querySelectorAll('#music-grid > li, .music-grid-item')
@@ -267,7 +253,7 @@ const injectDiscographyButtons = () => {
     if (!link) return
     const href = link.getAttribute('href')
     const wrap = buttonContainer()
-    wrap.style.cssText += OVERLAY_WRAP_CSS
+    wrap.style.cssText += OVERLAY_POSITION_CSS
     if (getComputedStyle(item).position === 'static') {
       item.style.position = 'relative'
     }
@@ -278,7 +264,6 @@ const injectDiscographyButtons = () => {
     wrap.appendChild(
       cueButton({
         label: 'Play',
-        variant: 'overlay',
         onClick: async () => {
           const releases = await getReleases()
           if (releases.length === 0) return { ok: false, error: 'Could not load release' }
@@ -289,7 +274,6 @@ const injectDiscographyButtons = () => {
     wrap.appendChild(
       cueButton({
         label: 'Queue',
-        variant: 'overlay',
         onClick: async () => {
           const releases = await getReleases()
           if (releases.length === 0) return { ok: false, error: 'Could not load release' }
@@ -299,8 +283,7 @@ const injectDiscographyButtons = () => {
     )
     wrap.appendChild(
       renderCartButton({
-        label: 'Fomo',
-        variant: 'overlay',
+        label: 'Add to Fomo',
         getReleases,
       }),
     )
@@ -308,33 +291,35 @@ const injectDiscographyButtons = () => {
   })
 }
 
-// Bandcamp feed entries link to `/album/...` or `/track/...`. Every other
-// entry type (community posts, "now following" notifications) is skipped
-// because there is no playable target. We pick the nearest stable
-// ancestor — feed markup uses class names that change over time, so we
-// climb to the first one we recognise and fall back to `<li>` otherwise.
-const FEED_CONTAINER_SELECTOR =
-  '.story-innards, .collection-item-container, .story-fan-collection-item, li'
+const PLAY_ICON_SVG =
+  '<svg viewBox="0 0 16 16"><path d="M3 2 L13 8 L3 14 Z" fill="currentColor"/></svg>'
+const PLUS_ICON_SVG =
+  '<svg viewBox="0 0 16 16"><path d="M8 3 v10 M3 8 h10" stroke="currentColor" stroke-width="2" fill="none"/></svg>'
 
-const findFeedContainer = (link) => {
-  const container = link.closest(FEED_CONTAINER_SELECTOR)
-  return container && container !== document.body ? container : null
+const FEED_TILE_ANCESTOR_SELECTOR =
+  'li, .story-innards, .collection-item-container, .story-fan-collection-item, [data-tralbum-id]'
+
+const findFeedHrefForAux = (mount) => {
+  if (mount.tagName === 'A') {
+    const h = mount.getAttribute('href') || ''
+    if (h.includes('/album/') || h.includes('/track/')) return h
+  }
+  const item = mount.closest(FEED_TILE_ANCESTOR_SELECTOR) || mount.parentElement
+  const link = item?.querySelector('a[href*="/album/"], a[href*="/track/"]')
+  return link?.getAttribute('href') || null
 }
 
 const injectFeedButtons = () => {
-  const links = document.querySelectorAll('a[href*="/album/"], a[href*="/track/"]')
-  const seen = new Set()
-  links.forEach((link) => {
-    const container = findFeedContainer(link)
-    if (!container || seen.has(container)) return
-    seen.add(container)
-    if (container.querySelector(`[${INJECTED_ATTR}]`)) return
-    const href = link.getAttribute('href')
+  const mounts = document.querySelectorAll('.track_play_auxiliary')
+  mounts.forEach((mount) => {
+    if (mount.querySelector(`[${INJECTED_ATTR}]`)) return
+    const href = findFeedHrefForAux(mount)
     if (!href) return
+    const compact = Boolean(mount.closest('#new-releases-vm'))
     const wrap = buttonContainer()
-    wrap.style.cssText += OVERLAY_WRAP_CSS
-    if (getComputedStyle(container).position === 'static') {
-      container.style.position = 'relative'
+    wrap.style.cssText += OVERLAY_POSITION_CSS
+    if (getComputedStyle(mount).position === 'static') {
+      mount.style.position = 'relative'
     }
     const getReleases = async () => {
       const release = await fetchReleaseTralbum(href)
@@ -343,7 +328,8 @@ const injectFeedButtons = () => {
     wrap.appendChild(
       cueButton({
         label: 'Play',
-        variant: 'overlay',
+        iconOnly: compact,
+        icon: PLAY_ICON_SVG,
         onClick: async () => {
           const releases = await getReleases()
           if (releases.length === 0) return { ok: false, error: 'Could not load release' }
@@ -354,7 +340,8 @@ const injectFeedButtons = () => {
     wrap.appendChild(
       cueButton({
         label: 'Queue',
-        variant: 'overlay',
+        iconOnly: compact,
+        icon: PLUS_ICON_SVG,
         onClick: async () => {
           const releases = await getReleases()
           if (releases.length === 0) return { ok: false, error: 'Could not load release' }
@@ -364,12 +351,12 @@ const injectFeedButtons = () => {
     )
     wrap.appendChild(
       renderCartButton({
-        label: 'Fomo',
-        variant: 'overlay',
+        label: 'Add to Fomo',
+        iconOnly: compact,
         getReleases,
       }),
     )
-    container.appendChild(wrap)
+    mount.appendChild(wrap)
   })
 }
 

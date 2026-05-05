@@ -151,12 +151,12 @@ The release-level Fomo Player button group SHALL include a "Play" control alongs
 
 #### Scenario: Title-section Play on a multi-track album
 
-- **WHEN** the user clicks the title-section "Play release" control on a Bandcamp album page that has multiple tracks
+- **WHEN** the user clicks the title-section "Play" control on a Bandcamp album page that has multiple tracks
 - **THEN** every track of the album is appended to the queue in source order, the first appended track becomes active, and playback starts.
 
 #### Scenario: Title-section Play on a single-track page
 
-- **WHEN** the user clicks the title-section "Play track" control on a Bandcamp `/track/...` page
+- **WHEN** the user clicks the title-section "Play" control on a Bandcamp `/track/...` page
 - **THEN** the single track is appended to the queue, becomes active, and playback starts.
 
 #### Scenario: Release Play preserves prior queue contents
@@ -247,7 +247,7 @@ The Play, Queue, and Add-to-Fomo-Player buttons inside a single `[data-fp-inject
 
 #### Scenario: Release-title buttons line up
 
-- **WHEN** the extension renders the release-title `Play release` / `Queue release` / `Add release to Fomo Player` trio
+- **WHEN** the extension renders the release-title `Play` / `Queue` / `Add to Fomo` trio
 - **THEN** the visual centres of all three buttons sit on the same horizontal line within 1px.
 
 #### Scenario: Discography-overlay buttons line up
@@ -260,47 +260,51 @@ The Play, Queue, and Add-to-Fomo-Player buttons inside a single `[data-fp-inject
 - **WHEN** the cart-toggle button renders with its SVG cart icon next to its label
 - **THEN** the SVG is anchored such that the button's intrinsic vertical centre matches the cue-button siblings (no baseline-induced offset).
 
-### Requirement: Cover-overlay cart button reads "Fomo"
+### Requirement: Cart toggle reads "Add to Fomo" on every surface
 
-On Bandcamp surfaces that overlay the Fomo Player button trio on top of cover art (the discography grid `#music-grid` tiles and the feed entries), the cart-toggle button SHALL render with the label "Fomo" next to its cart icon, instead of "Add to Fomo Player". Other surfaces (release-page title section, per-track rows) MUST continue to render the cart toggle with the original "Add release to Fomo Player" / "Add to Fomo Player" label.
+The cart-toggle button SHALL render with the label "Add to Fomo" next to its cart icon on every Bandcamp surface (release-page title section, per-track rows, discography overlays, and the feed). On compact feed tiles where the trio is rendered icon-only, the label MUST be hidden (the cart icon alone stands in) but the accessible name MUST still resolve to "Add to Fomo" so screen readers and tooltips remain meaningful.
 
-#### Scenario: Cover-overlay cart label is "Fomo"
+#### Scenario: Cart label reads "Add to Fomo" on a release row
 
-- **WHEN** the extension renders the cart-toggle on a Bandcamp discography cover overlay or feed entry overlay
-- **THEN** the button shows the cart icon followed by the label "Fomo".
+- **WHEN** the extension renders the cart-toggle on a Bandcamp release page's title section, per-track row, discography tile overlay, or full feed entry
+- **THEN** the button shows the cart icon followed by the label "Add to Fomo".
 
-#### Scenario: Release-page cart label is unchanged
+#### Scenario: Compact feed tiles use the cart icon alone
 
-- **WHEN** the extension renders the cart-toggle in a Bandcamp release page's title section or per-track row
-- **THEN** the button shows the cart icon followed by the original "Add … to Fomo Player" label.
+- **WHEN** the extension renders the cart-toggle on a `#new-releases-vm` feed tile
+- **THEN** the button shows the cart icon with no visible label, and its accessible name (tooltip / `title`) reads "Add to Fomo".
 
-### Requirement: Cover-overlay buttons use the Fomo Player magenta palette
+### Requirement: Bandcamp button trio shares a unified palette
 
-The Play, Queue, and "Fomo" buttons rendered on a Bandcamp cover overlay (discography grid tiles and feed entries) SHALL use the Fomo Player primary palette: background `#b40089`, border `#530059`, hover background `#9f0076`, text `#fff`. Buttons rendered on non-overlay surfaces (release-page title section, per-track rows) MUST continue to use the existing Bandcamp-blue palette (`#0687f5`).
+Every Fomo Player button injected into Bandcamp (Play, Queue, and Add-to-Fomo cart toggle, on every surface) SHALL render in a single unified palette: transparent background, `1px` `#b40089` border, `#fff` text in idle state, with hover filling the button `#b40089` and keeping text `#fff`. Loading and error indications stay layered on top of this palette.
 
-#### Scenario: Overlay buttons render with the magenta palette
+#### Scenario: Buttons render with the unified palette
 
-- **WHEN** the extension renders the Fomo Player button trio on a Bandcamp discography tile or feed entry overlay
-- **THEN** each button's idle state uses the magenta palette and its hover state uses `#9f0076`.
+- **WHEN** the extension renders the Fomo Player button trio on any Bandcamp surface
+- **THEN** each button's idle state shows a transparent fill with a `#b40089` border and white text, and hovering fills the button `#b40089`.
 
-#### Scenario: Non-overlay buttons stay on Bandcamp blue
+### Requirement: `[data-fp-injected]` wrap carries a legibility backdrop on every surface
 
-- **WHEN** the extension renders the Fomo Player button trio on a release-page title section or per-track row
-- **THEN** each button's idle state continues to use the Bandcamp-blue palette unchanged from the previous behaviour.
+The `[data-fp-injected]` wrap that hosts the button trio SHALL include a semi-transparent dark rounded backdrop (`rgba(0, 0, 0, 0.55)`, `border-radius: 6px`, padding around the buttons) on every Bandcamp surface so the white-text-on-transparent buttons remain readable regardless of the underlying page chrome or cover art.
 
-### Requirement: Cover-overlay wrap has a legibility backdrop
+#### Scenario: Wrap renders with the backdrop on every surface
 
-The `[data-fp-injected]` wrap mounted on a Bandcamp cover overlay (discography grid tiles and feed entries) SHALL include a semi-transparent dark backdrop (rounded pill spanning the wrap) so the button trio remains readable against any cover art behind it. Non-overlay wraps MUST NOT carry that backdrop.
-
-#### Scenario: Overlay wrap renders with a backdrop
-
-- **WHEN** the extension renders the `[data-fp-injected]` wrap on a Bandcamp discography tile or feed entry overlay
+- **WHEN** the extension renders the `[data-fp-injected]` wrap on a release-page title section, per-track row, discography tile overlay, or feed entry
 - **THEN** the wrap shows a semi-transparent dark rounded backdrop behind the buttons.
 
-#### Scenario: Non-overlay wraps have no backdrop
+### Requirement: Compact feed tiles render the trio as icons only
 
-- **WHEN** the extension renders the `[data-fp-injected]` wrap in a release-page title section or per-track row
-- **THEN** the wrap has no background fill — the buttons sit directly in the row layout as before.
+On `#new-releases-vm` feed tiles — Bandcamp's compact "from artists you follow" panel — the button trio SHALL render icon-only (a play triangle, a plus, and the cart icon), with text labels suppressed so the buttons fit the tile's narrow horizontal space. On every other Bandcamp surface — including the full-width `#stories` feed entries — text labels MUST remain visible.
+
+#### Scenario: Compact tiles drop the labels
+
+- **WHEN** the extension renders the button trio on a `#new-releases-vm` feed tile
+- **THEN** the Play button shows a play-triangle icon, the Queue button shows a plus icon, the cart toggle shows the cart icon, and no text label is visible on any of them.
+
+#### Scenario: Full-width feed entries keep the labels
+
+- **WHEN** the extension renders the button trio on a `#stories` feed entry
+- **THEN** the buttons show their text labels ("Play", "Queue", "Add to Fomo") next to or in place of icons, just as on the release page and discography tiles.
 
 ### Requirement: Cart dropdown surfaces current cart membership for the release
 

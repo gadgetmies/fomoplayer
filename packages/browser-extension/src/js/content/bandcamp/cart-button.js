@@ -25,15 +25,12 @@ const STYLE = `
   :host { all: initial; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: inline-flex; align-items: center; position: relative; }
   .root { display: inline-block; position: relative; }
   button.toggle {
-    background: transparent; color: #0687f5; border: 1px solid #0687f5;
+    background: transparent; color: #fff; border: 1px solid #b40089;
     font-size: 11px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
     display: inline-flex; align-items: center; gap: 4px; line-height: 1.4;
   }
-  button.toggle:hover { background: #0687f5; color: #fff; }
-  button.toggle[data-variant="overlay"] {
-    background: #b40089; color: #fff; border-color: #530059;
-  }
-  button.toggle[data-variant="overlay"]:hover { background: #9f0076; color: #fff; }
+  button.toggle:hover { background: #b40089; color: #fff; }
+  button.toggle[data-icon-only] { padding: 3px; gap: 0; }
   .popup {
     position: absolute; right: 0; top: calc(100% + 4px);
     background: #fff; color: #222; border: 1px solid #ddd; border-radius: 4px;
@@ -94,13 +91,15 @@ document.addEventListener('click', (e) => {
   closeOpen()
 })
 
-export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player', variant = 'default' }) => {
+export const renderCartButton = ({ getReleases, label = 'Add to Fomo', iconOnly = false }) => {
   const host = document.createElement('span')
   const shadow = host.attachShadow({ mode: 'open' })
+  const titleAttr = iconOnly ? ` title="${label.replace(/"/g, '&quot;')}"` : ''
+  const labelHtml = iconOnly ? '' : `<span>${label}</span>`
   shadow.innerHTML = `
     <style>${STYLE}</style>
     <div class="root">
-      <button class="toggle" data-toggle data-variant="${variant}">${CART_ICON}<span>${label}</span></button>
+      <button class="toggle" data-toggle${iconOnly ? ' data-icon-only="1"' : ''}${titleAttr}>${CART_ICON}${labelHtml}</button>
       <div class="popup hidden" data-popup>
         <div data-list><div class="empty">Loading carts…</div></div>
         <div class="new">
@@ -129,16 +128,6 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player', va
     if (text) setTimeout(() => (statusBox.innerHTML = ''), 4000)
   }
 
-  // Builds a cart row with an attached `setRowState(state, errorText?)`
-  // method that flips data-state, swaps the leading icon, and shows or
-  // hides an inline error message under the row text.
-  //
-  // The row also tracks `containsTrackIds` (the FP track IDs from the
-  // current release that this cart already holds). When that array is
-  // non-empty the row paints the in-cart visual (minus icon + tinted
-  // background) and the click handler issues a remove instead of an
-  // add. `setMembership([...trackIds])` flips the visual in place and
-  // is called after a successful add or remove.
   const makeRow = ({ cartId, name, containsTrackIds = [], spinnerColor = '#0687f5' }) => {
     const row = document.createElement('div')
     row.className = 'row'
@@ -232,8 +221,6 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player', va
       const releases = await getReleases()
       const result = await withTimeout(sendToWorker({ type: 'bandcamp:add-to-cart', cartId, releases }))
       if (result?.ok) {
-        // Flip membership in place — the user can immediately remove again
-        // or click another cart without reopening the dropdown.
         row.setMembership(result.addedTrackIds || [])
         row.setRowState('success')
         setTimeout(() => {
@@ -273,10 +260,6 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player', va
 
   const loadCarts = async () => {
     list.innerHTML = '<div class="empty">Loading carts…</div>'
-    // Send the resolved releases so the worker can annotate carts with
-    // per-cart membership for the current track. `getReleases()` runs the
-    // same fetch-and-parse that the add path uses, so no new network is
-    // introduced — we just hoist it ahead of the user's first click.
     let releases = []
     try {
       releases = await getReleases()

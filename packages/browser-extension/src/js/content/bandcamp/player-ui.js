@@ -255,8 +255,8 @@ const buildQueueLinks = (q) =>
   [
     buildLinkHtml(q.trackUrl, 'Track'),
     buildLinkHtml(q.releaseUrl, 'Release'),
-    buildLinkHtml(q.artistUrl, 'Artist'),
-    buildLinkHtml(q.labelUrl, 'Label'),
+    buildLinkHtml(q.artistUrl, 'Catalog'),
+    buildLinkHtml(q.labelUrl, 'Catalog'),
   ]
     .filter(Boolean)
     .join('')
@@ -282,9 +282,6 @@ const rebuildQueue = () => {
   refs.queue.querySelectorAll('.qrow').forEach((row) => {
     row.addEventListener('click', (e) => {
       if (e.target.closest('[data-remove]')) return
-      // Plain link clicks navigate via the browser default; modifier
-      // clicks open in a new tab. Either way the row's play action
-      // must NOT fire.
       if (e.target.closest('a')) return
       const idx = Number(row.dataset.i)
       sendToWorker({ type: 'audio:play-at', index: idx })

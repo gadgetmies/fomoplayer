@@ -211,11 +211,6 @@ const buildQueueItemsFromReleases = async (releases) => {
     const releaseArtUrl = release.art_id
       ? `https://f4.bcbits.com/img/a${release.art_id}_10.jpg`
       : null
-    // Bandcamp artist pages live at the same origin as the release; the
-    // tralbum payload exposes per-track relative links via `title_link`.
-    // Label URLs are best-effort — Bandcamp surfaces them on some releases
-    // but not others. When the label URL is missing or matches the artist
-    // URL we omit it so the UI doesn't render a redundant link.
     let releaseOrigin = ''
     try {
       releaseOrigin = releaseUrl ? new URL(releaseUrl, 'https://bandcamp.com').origin : ''
@@ -365,9 +360,6 @@ const handleMessage = async (message) => {
     if (releases.length === 0) {
       return { ok: true, carts }
     }
-    // Resolve the requested release to FP track IDs, then fetch each cart's
-    // tracks in parallel to compute per-cart membership. Fan-out keeps the
-    // popup's open path to a single round-trip.
     const items = await buildQueueItemsFromReleases(releases)
     const requestedIds = new Set(items.map((i) => i.fomoplayerTrackId).filter(Boolean))
     if (requestedIds.size === 0) {

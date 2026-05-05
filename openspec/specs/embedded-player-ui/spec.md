@@ -1,5 +1,7 @@
 # Embedded player UI
 
+## Purpose
+
 The in-page Fomo Player UI the browser extension injects into Bandcamp pages — its labels, controls, and accessibility wiring.
 
 ## Requirements
@@ -58,9 +60,9 @@ Activating the "Clear queue" control SHALL require an explicit confirmation step
 - **WHEN** the user clicks "Clear queue" and cancels the prompt
 - **THEN** no `audio:clear` action is dispatched and the queue and current playback remain unchanged.
 
-### Requirement: Queue rows expose Track, Release, and Artist navigation links
+### Requirement: Queue rows expose Track, Release, and Catalog navigation links
 
-Each row in the embedded player's queue panel SHALL render Track, Release, and Artist links as ordinary `<a href="…">` elements pointing at the source store's track / release / artist pages. The links MUST navigate the current tab on plain click and respect standard "open in new tab" modifier clicks (Cmd/Ctrl-click, middle-click, right-click context menu).
+Each row in the embedded player's queue panel SHALL render Track, Release, and Catalog links as ordinary `<a href="…">` elements. The Track and Release links point at the source store's track and release pages; the Catalog link points at the artist's source-store page. Each link MUST navigate the current tab on plain click and respect standard "open in new tab" modifier clicks (Cmd/Ctrl-click, middle-click, right-click context menu).
 
 #### Scenario: Plain click navigates the current tab
 
@@ -69,26 +71,26 @@ Each row in the embedded player's queue panel SHALL render Track, Release, and A
 
 #### Scenario: Modifier-click opens a new tab
 
-- **WHEN** the user middle-clicks or Cmd/Ctrl-clicks a queue row's "Release" or "Artist" link
+- **WHEN** the user middle-clicks or Cmd/Ctrl-clicks a queue row's "Release" or "Catalog" link
 - **THEN** the browser opens that page in a new tab without affecting the current tab or the embedded player's playback state.
 
-### Requirement: Optional Label link is rendered only when distinct
+### Requirement: Second Catalog link points at the label when distinct
 
-When a queued track has a label URL different from its artist URL, the row SHALL render a Label link alongside Track / Release / Artist. When no label URL is available — or when the label URL equals the artist URL — the row MUST omit the Label link entirely rather than render an inert or empty placeholder.
+When a queued track has a label URL different from its artist URL, the row SHALL render a second "Catalog" link alongside the artist Catalog link. The second link's `href` points at the label's source-store page; both links share the same visible label text "Catalog". When no label URL is available — or when the label URL equals the artist URL — the row MUST omit the second Catalog link entirely rather than render an inert or empty placeholder.
 
-#### Scenario: Label distinct from artist renders the link
+#### Scenario: Label distinct from artist renders a second Catalog link
 
 - **WHEN** the queue row's track carries a `labelUrl` that differs from its `artistUrl`
-- **THEN** the row renders a Label link in addition to Track, Release, and Artist.
+- **THEN** the row renders two "Catalog" links: one whose `href` is the artist URL and one whose `href` is the label URL.
 
-#### Scenario: Missing or redundant label URL omits the link
+#### Scenario: Missing or redundant label URL omits the second Catalog link
 
 - **WHEN** the queue row's track has no `labelUrl`, or its `labelUrl` matches its `artistUrl`
-- **THEN** the row renders only Track, Release, and Artist — there is no Label affordance on the row.
+- **THEN** the row renders Track, Release, and exactly one Catalog link — no second Catalog affordance on the row.
 
 ### Requirement: Link clicks do not start playback or change the active track
 
-Clicking a queue row's Track / Release / Artist / Label link MUST NOT change the active track or start playback. The row's existing "play this track" behaviour SHALL remain intact for clicks elsewhere on the row, and the remove (X) button SHALL continue to work as before.
+Clicking any of the queue row's Track / Release / Catalog links MUST NOT change the active track or start playback. The row's existing "play this track" behaviour SHALL remain intact for clicks elsewhere on the row, and the remove (X) button SHALL continue to work as before.
 
 #### Scenario: Link click leaves playback alone
 
