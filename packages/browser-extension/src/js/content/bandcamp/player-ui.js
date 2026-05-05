@@ -52,8 +52,9 @@ const STYLE = `
   svg { width: 16px; height: 16px; fill: currentColor; }
   .right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; }
   .progress { flex: 1; min-width: 100px; max-width: 320px; display: flex; align-items: center; gap: 6px; font-size: 11px; color: #b8b8b8; }
-  .bar { flex: 1; height: 4px; background: #2c2c2c; border-radius: 2px; cursor: pointer; position: relative; }
-  .bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: ${colors.brandPrimary}; border-radius: 2px; }
+  .bar { flex: 1; height: 16px; cursor: pointer; position: relative; background: transparent; }
+  .bar::before { content: ''; position: absolute; left: 0; right: 0; height: 4px; top: 50%; transform: translateY(-50%); background: #2c2c2c; border-radius: 2px; }
+  .bar-fill { position: absolute; left: 0; height: 4px; top: 50%; transform: translateY(-50%); background: ${colors.brandPrimary}; border-radius: 2px; }
   .queue-toggle { background: transparent; border: 1px solid #2c2c2c; color: #ddd; padding: 4px 10px; font-size: 11px; border-radius: 14px; cursor: pointer; }
   .queue-toggle:hover { background: #2c2c2c; }
   .queue-panel { background: #1a1a1a; color: #f1f1f1; border-top: 1px solid #2c2c2c; }
