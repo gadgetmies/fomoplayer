@@ -127,7 +127,7 @@ export default class BandcampPanel extends React.Component {
               </button>
               <br />
             </p>
-            <h3>Sync (Requires login)</h3>
+            <h3>Sync{loggedIn ? '' : ' (Requires login)'}</h3>
             <p>
               <button
                 id="bandcamp-feed"

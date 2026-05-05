@@ -1,7 +1,7 @@
 ---
 id: 020
 title: Bandcamp logged-in detection is unreliable; sync controls always disabled
-status: todo
+status: done
 priority: P1
 effort: M
 created: 2026-05-05

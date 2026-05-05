@@ -52,7 +52,16 @@ const scrapeFeed = async ({ pageCount }) => {
   }
 }
 
-const probeLoggedIn = () => Boolean(document.querySelector('.userpic'))
+// Bandcamp's hydrated menubar exposes a "Log in" link
+// (`a[href*="/login?from=menubar"]`) only when no fan is signed in. The
+// link's absence is the most reliable cross-page signal: it works on
+// every bandcamp.com surface where the menubar is rendered (homepage,
+// release page, artist subdomain, fan dashboard, discover, feed). We
+// don't rely on the server-rendered `#pagedata` blob — its `identities`
+// object is empty on cached / homepage responses even for signed-in
+// fans — and the `.userpic` element only ships on a small subset of
+// pages.
+const probeLoggedIn = () => !document.querySelector('a[href*="/login?from=menubar"]')
 const probeHasPlayables = () => Boolean(document.querySelector('.track_list.track_table'))
 const probeOnSubdomain = () => {
   try {
