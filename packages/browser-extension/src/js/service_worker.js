@@ -12,6 +12,7 @@ import {
   startExtensionLogin,
 } from './auth'
 import { ensureAudioHost, forwardToAudioHost, hasOwnDocument } from './audio-host'
+import { assertJsonContentType, parseFeedPage } from './content/bandcamp/feed-parse'
 // Importing audio-player has no effect in a service-worker (no DOM) but
 // installs the audio host inside the Firefox background page.
 import './audio-player'
@@ -111,6 +112,40 @@ let currentBandcampReleaseIndex = 0
 let bandcampReleases = []
 let bandcampTabId
 let beatportTracksCache = []
+
+const ingestBandcampFeedReleases = async ({ data, done }) => {
+  bandcampReleases = bandcampReleases.concat(data)
+  if (done) await fetchNextBandcampItem()
+}
+
+const scrapeFeedFromWorker = async ({ pageCount = 5 } = {}) => {
+  let olderThan = Date.now()
+  const collectionResponse = await fetch('https://bandcamp.com/api/fan/2/collection_summary', {
+    credentials: 'include',
+  })
+  if (!collectionResponse.ok) {
+    throw new Error(`collection_summary failed: ${collectionResponse.status}`)
+  }
+  const fanId = (await collectionResponse.json()).fan_id
+
+  for (let page = 1; page <= pageCount; page += 1) {
+    const feedResponse = await fetch('https://bandcamp.com/fan_dash_feed_updates', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `fan_id=${fanId}&older_than=${olderThan}`,
+    })
+    if (!feedResponse.ok) {
+      throw new Error(`fan_dash_feed_updates failed: ${feedResponse.status}`)
+    }
+    assertJsonContentType(feedResponse.headers.get('content-type'))
+    const feed = await feedResponse.json()
+    await setStatus('Fetching releases', Math.round((page / pageCount) * 100))
+    const { releases, nextOlderThan } = parseFeedPage(feed)
+    await ingestBandcampFeedReleases({ data: releases, done: page === pageCount })
+    olderThan = nextOlderThan
+  }
+}
 
 const fetchBandcampReleaseInTab = async () => {
   if (typeof bandcampTabId !== 'number') return
@@ -402,6 +437,15 @@ const handleMessage = async (message) => {
   if (message.type === 'bandcamp:wishlist-sync') {
     const summary = await reconcileWishlistCart(message.releases || [])
     return { ok: true, ...summary }
+  }
+  if (message.type === 'bandcamp:scrape-feed') {
+    try {
+      await scrapeFeedFromWorker({ pageCount: message.pageCount || 5 })
+      return { ok: true }
+    } catch (e) {
+      await handleError({ message: e?.message || 'Bandcamp feed sync failed', stack: e?.stack || String(e) })
+      return { ok: false, error: e?.message }
+    }
   }
   if (message.type === 'operationStatus') {
     await setStatus(message.text, message.progress)

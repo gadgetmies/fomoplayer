@@ -8,51 +8,13 @@ import browser from '../browser'
 import { installPlayerUi, setVisible } from './bandcamp/player-ui'
 import { installInjections, removeInjections } from './bandcamp/inject'
 import { collectWishlistReleases, isOnWishlist } from './bandcamp/wishlist'
-import { assertJsonContentType, parseFeedPage } from './bandcamp/feed-parse'
 
 const reportError = (message, error) =>
   browser.runtime
     .sendMessage({ type: 'error', message, stack: error?.stack || String(error) })
     .catch(() => {})
 
-const reportProgress = (text, progress) =>
-  browser.runtime.sendMessage({ type: 'operationStatus', text, progress }).catch(() => {})
-
 const sendToWorker = (message) => browser.runtime.sendMessage(message).catch(() => null)
-
-const scrapeFeed = async ({ pageCount }) => {
-  let olderThan = Date.now()
-  const collectionResponse = await fetch('https://bandcamp.com/api/fan/2/collection_summary', {
-    credentials: 'include',
-  })
-  if (!collectionResponse.ok) {
-    throw new Error(`collection_summary failed: ${collectionResponse.status}`)
-  }
-  const fanId = (await collectionResponse.json()).fan_id
-
-  for (let page = 1; page <= pageCount; page += 1) {
-    const feedResponse = await fetch('https://bandcamp.com/fan_dash_feed_updates', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `fan_id=${fanId}&older_than=${olderThan}`,
-    })
-    if (!feedResponse.ok) {
-      throw new Error(`fan_dash_feed_updates failed: ${feedResponse.status}`)
-    }
-    assertJsonContentType(feedResponse.headers.get('content-type'))
-    const feed = await feedResponse.json()
-    await reportProgress('Fetching releases', Math.round((page / pageCount) * 100))
-    const { releases, nextOlderThan } = parseFeedPage(feed)
-    await browser.runtime.sendMessage({
-      type: 'releases',
-      store: 'bandcamp',
-      done: page === pageCount,
-      data: releases,
-    })
-    olderThan = nextOlderThan
-  }
-}
 
 // Bandcamp's hydrated menubar exposes a "Log in" link
 // (`a[href*="/login?from=menubar"]`) only when no fan is signed in. The
@@ -96,8 +58,7 @@ browser.runtime.onMessage.addListener(async (message) => {
       case 'bandcamp:scrape-current-page':
         return { ok: false, error: 'Use scripting.executeScript from worker for current-page scrape' }
       case 'bandcamp:scrape-feed':
-        await scrapeFeed({ pageCount: message.pageCount || 5 })
-        return { ok: true }
+        return sendToWorker({ type: 'bandcamp:scrape-feed', pageCount: message.pageCount || 5 })
       case 'bandcamp:trigger-wishlist-sync':
         return syncWishlistFromPage()
       default:
