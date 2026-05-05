@@ -8,23 +8,17 @@ import Track from './Track'
 import Spinner from './Spinner'
 import { Link, withRouter } from 'react-router-dom'
 import ToggleButton from './ToggleButton'
-import SearchBar from './SearchBar'
+import GlobalSearchBar from './GlobalSearchBar'
 import Popup from './Popup'
 import { isMobile } from 'react-device-detect'
+import { trackMatchesAllTerms } from './searchTerms'
+import { requestJSONwithCredentials } from './request-json-with-credentials'
 
-const filterMatches = (filter, { artists, title, keys, labels, releases }) => {
-  const trackDetailsString = [
-    ...artists.map(R.prop('name')),
-    title,
-    ...keys.map(R.prop('key')),
-    ...releases.map(R.prop('name')),
-    ...labels.map(R.prop('name')),
-  ]
-    .join(' ')
-    .toLowerCase()
+const trackPassesEnabledStores = (track, enabledStores) =>
+  enabledStores?.some((storeName) => track.stores?.find(R.propEq(storeName, 'name')))
 
-  return trackDetailsString.includes(filter)
-}
+const filterCartTracks = (tracks, terms, enabledStores) =>
+  tracks.filter((track) => trackPassesEnabledStores(track, enabledStores) && trackMatchesAllTerms(track, terms))
 
 class Tracks extends Component {
   constructor(props) {
@@ -37,9 +31,11 @@ class Tracks extends Component {
       createdNotifications: new Set(),
       modifyingNotification: false,
       cartFilter: '',
-      trackListFilter: '',
-      trackListFilterDebounced: '',
+      trackListFilterTerms: [],
+      trackListFilterInputValue: '',
+      trackListFilterEffectiveTerms: [],
       trackListFilterDebounce: undefined,
+      trackListFilterGenres: [],
       visibleStartIndex: 0,
       visibleEndIndex: 50,
       pullDistance: 0,
@@ -70,44 +66,24 @@ class Tracks extends Component {
   }
    */
 
+  getCartFilteredTracks() {
+    return this.props.listState === 'carts'
+      ? filterCartTracks(this.props.tracks, this.state.trackListFilterEffectiveTerms, this.props.enabledStores)
+      : this.props.tracks
+  }
+
   componentDidMount() {
     window.addEventListener('resize', this.handleResize)
-    
+
     if (this.tbodyRef.current) {
       const scrollTop = this.tbodyRef.current.scrollTop
       const clientHeight = this.tbodyRef.current.clientHeight
-      const tracks = this.props.listState === 'carts'
-        ? this.props.tracks.filter(
-            ({ artists, title, labels, keys, releases, stores }) =>
-              (!this.state.trackListFilterDebounced ||
-                filterMatches(this.state.trackListFilterDebounced, {
-                  artists,
-                  title,
-                  keys,
-                  labels,
-                  releases,
-                })) &&
-              this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
-          )
-        : this.props.tracks
+      const tracks = this.getCartFilteredTracks()
       this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
     }
-    
+
     setTimeout(() => {
-      const tracks = this.props.listState === 'carts'
-        ? this.props.tracks.filter(
-            ({ artists, title, labels, keys, releases, stores }) =>
-              (!this.state.trackListFilterDebounced ||
-                filterMatches(this.state.trackListFilterDebounced, {
-                  artists,
-                  title,
-                  keys,
-                  labels,
-                  releases,
-                })) &&
-              this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
-          )
-        : this.props.tracks
+      const tracks = this.getCartFilteredTracks()
       this.measureTrackHeights(tracks)
       if (this.tbodyRef.current) {
         const scrollTop = this.tbodyRef.current.scrollTop
@@ -116,70 +92,34 @@ class Tracks extends Component {
       }
       this.tryAutoLoadMoreWithoutScroll(tracks.length)
     }, 0)
+
+    requestJSONwithCredentials({ path: '/genres' })
+      .then((genres) => this.setState({ trackListFilterGenres: genres || [] }))
+      .catch(() => {})
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (
       prevProps.tracks !== this.props.tracks ||
       prevProps.listState !== this.props.listState ||
-      prevState.trackListFilterDebounced !== this.state.trackListFilterDebounced ||
+      prevState.trackListFilterEffectiveTerms !== this.state.trackListFilterEffectiveTerms ||
       prevProps.enabledStores !== this.props.enabledStores ||
       prevState.visibleStartIndex !== this.state.visibleStartIndex ||
       prevState.visibleEndIndex !== this.state.visibleEndIndex
     ) {
       setTimeout(() => {
-        const tracks = this.props.listState === 'carts'
-          ? this.props.tracks.filter(
-              ({ artists, title, labels, keys, releases, stores }) =>
-                (!this.state.trackListFilterDebounced ||
-                  filterMatches(this.state.trackListFilterDebounced, {
-                    artists,
-                    title,
-                    keys,
-                    labels,
-                    releases,
-                  })) &&
-                this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
-            )
-          : this.props.tracks
+        const tracks = this.getCartFilteredTracks()
         this.measureTrackHeights(tracks)
         if (this.tbodyRef.current) {
           const scrollTop = this.tbodyRef.current.scrollTop
           const clientHeight = this.tbodyRef.current.clientHeight
-          const tracks = this.props.listState === 'carts'
-            ? this.props.tracks.filter(
-                ({ artists, title, labels, keys, releases, stores }) =>
-                  (!this.state.trackListFilterDebounced ||
-                    filterMatches(this.state.trackListFilterDebounced, {
-                      artists,
-                      title,
-                      keys,
-                      labels,
-                      releases,
-                    })) &&
-                  this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
-              )
-            : this.props.tracks
           this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
         }
         this.tryAutoLoadMoreWithoutScroll(tracks.length)
       }, 0)
     }
 
-    const tracks = this.props.listState === 'carts'
-      ? this.props.tracks.filter(
-          ({ artists, title, labels, keys, releases, stores }) =>
-            (!this.state.trackListFilterDebounced ||
-              filterMatches(this.state.trackListFilterDebounced, {
-                artists,
-                title,
-                keys,
-                labels,
-                releases,
-              })) &&
-            this.props.enabledStores?.some((storeName) => stores.find(R.propEq('name', storeName))),
-        )
-      : this.props.tracks
+    const tracks = this.getCartFilteredTracks()
     const tracksLengthChanged = prevProps.tracks.length !== this.props.tracks.length
     if (tracksLengthChanged || prevProps.loadingMore !== this.props.loadingMore || prevProps.hasMore !== this.props.hasMore) {
       this.tryAutoLoadMoreWithoutScroll(tracks.length)
@@ -299,42 +239,15 @@ class Tracks extends Component {
     if (this.resizeTimeout) {
       clearTimeout(this.resizeTimeout)
     }
-    
+
     this.resizeTimeout = setTimeout(() => {
       this.trackHeights.clear()
-      const tracks = this.props.listState === 'carts'
-        ? this.props.tracks.filter(
-            ({ artists, title, labels, keys, releases, stores }) =>
-              (!this.state.trackListFilterDebounced ||
-                filterMatches(this.state.trackListFilterDebounced, {
-                  artists,
-                  title,
-                  keys,
-                  labels,
-                  releases,
-                })) &&
-              this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
-          )
-        : this.props.tracks
+      const tracks = this.getCartFilteredTracks()
       this.measureTrackHeights(tracks)
-      
+
       if (this.tbodyRef.current) {
         const scrollTop = this.tbodyRef.current.scrollTop
         const clientHeight = this.tbodyRef.current.clientHeight
-        const tracks = this.props.listState === 'carts'
-          ? this.props.tracks.filter(
-              ({ artists, title, labels, keys, releases, stores }) =>
-                (!this.state.trackListFilterDebounced ||
-                  filterMatches(this.state.trackListFilterDebounced, {
-                    artists,
-                    title,
-                    keys,
-                    labels,
-                    releases,
-                  })) &&
-                this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
-            )
-          : this.props.tracks
         this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
         this.tryAutoLoadMoreWithoutScroll(tracks.length)
       }
@@ -394,20 +307,7 @@ class Tracks extends Component {
     const scrollingDown = scrollTop > this.lastScrollTop
     this.lastScrollTop = scrollTop
 
-    const tracks = this.props.listState === 'carts'
-      ? this.props.tracks.filter(
-          ({ artists, title, labels, keys, releases, stores }) =>
-            (!this.state.trackListFilterDebounced ||
-              filterMatches(this.state.trackListFilterDebounced, {
-                artists,
-                title,
-                keys,
-                labels,
-                releases,
-              })) &&
-            this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
-        )
-      : this.props.tracks
+    const tracks = this.getCartFilteredTracks()
 
     this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
 
@@ -485,6 +385,67 @@ class Tracks extends Component {
 
   onCartFilterChange(filter) {
     this.setState({ cartFilter: filter })
+  }
+
+  computeEffectiveTrackListTerms(committedTerms, inputValue) {
+    const trimmed = (inputValue || '').trim()
+    const partial = trimmed ? [{ type: 'text', value: trimmed }] : []
+    return [...committedTerms, ...partial]
+  }
+
+  handleTrackListFilterChange(committedTerms, inputValue) {
+    if (this.state.trackListFilterDebounce) {
+      clearTimeout(this.state.trackListFilterDebounce)
+    }
+
+    const effectiveTerms = this.computeEffectiveTrackListTerms(committedTerms, inputValue)
+
+    if (effectiveTerms.length === 0) {
+      this.setState({
+        trackListFilterTerms: committedTerms,
+        trackListFilterInputValue: inputValue,
+        trackListFilterEffectiveTerms: [],
+        trackListFilterDebounce: undefined,
+      })
+      return
+    }
+
+    const timeout = setTimeout(() => {
+      this.setState({
+        trackListFilterEffectiveTerms: effectiveTerms,
+        trackListFilterDebounce: undefined,
+      })
+    }, 300)
+
+    this.setState({
+      trackListFilterTerms: committedTerms,
+      trackListFilterInputValue: inputValue,
+      trackListFilterDebounce: timeout,
+    })
+  }
+
+  handleTrackListFilterSearch(committedTerms, inputValue) {
+    if (this.state.trackListFilterDebounce) {
+      clearTimeout(this.state.trackListFilterDebounce)
+    }
+    this.setState({
+      trackListFilterTerms: committedTerms,
+      trackListFilterInputValue: inputValue,
+      trackListFilterEffectiveTerms: this.computeEffectiveTrackListTerms(committedTerms, inputValue),
+      trackListFilterDebounce: undefined,
+    })
+  }
+
+  handleTrackListFilterClear() {
+    if (this.state.trackListFilterDebounce) {
+      clearTimeout(this.state.trackListFilterDebounce)
+    }
+    this.setState({
+      trackListFilterTerms: [],
+      trackListFilterInputValue: '',
+      trackListFilterEffectiveTerms: [],
+      trackListFilterDebounce: undefined,
+    })
   }
 
   renderTracks(tracks) {
@@ -720,48 +681,16 @@ class Tracks extends Component {
                 >
                   {this.props.mode === 'app' ? (
                     <>
-                      <SearchBar
+                      <GlobalSearchBar
                         placeholder={'Filter'}
-                        value={this.state.trackListFilter}
-                        loading={this.state.trackListFilterDebounce}
+                        terms={this.state.trackListFilterTerms}
+                        loading={this.state.trackListFilterDebounce !== undefined}
                         className={'cart-filter'}
-                        style={{ maxWidth: '50ch' }}
                         styles={'large'}
-                        onChange={(_, filter) => {
-                          // TODO: replace aborted and debounce with flatmapLatest
-                          if (this.state.trackListFilterDebounce) {
-                            clearTimeout(this.state.trackListFilterDebounce)
-                            this.setState({ trackListFilterDebounce: undefined })
-                          }
-
-                          this.setState({ trackListFilter: filter })
-
-                          if (filter === '') {
-                            this.setState({ trackListFilterDebounce: undefined, trackListFilterDebounced: '' })
-                            clearTimeout(this.state.trackListFilterDebounce)
-                            return
-                          }
-
-                          const timeout = setTimeout(
-                            function (filter) {
-                              if (this.state.trackListFilter !== filter) {
-                                return
-                              }
-
-                              clearTimeout(this.state.trackListFilterDebounce)
-                              this.setState({ trackListFilterDebounce: undefined, trackListFilterDebounced: filter })
-                            }.bind(this, filter),
-                            500,
-                          )
-                          this.setState({ trackListFilterDebounce: timeout })
-                        }}
-                        onClearSearch={() => {
-                          this.setState({
-                            trackListFilter: '',
-                            trackListFilterDebounced: '',
-                            trackListFilterDebounce: undefined,
-                          })
-                        }}
+                        genres={this.state.trackListFilterGenres}
+                        onChange={this.handleTrackListFilterChange.bind(this)}
+                        onSearch={this.handleTrackListFilterSearch.bind(this)}
+                        onClearSearch={this.handleTrackListFilterClear.bind(this)}
                       />
                       <span className={'cart-details'}>
                         Tracks in cart: {this.props.selectedCart?.track_count}
@@ -955,17 +884,10 @@ class Tracks extends Component {
             {!this.props.fetchingCartDetails &&
               this.renderTracks(
                 this.props.listState === 'carts'
-                  ? tracks.filter(
-                      ({ artists, title, labels, keys, releases, stores }) =>
-                        (!this.state.trackListFilterDebounced ||
-                          filterMatches(this.state.trackListFilterDebounced, {
-                            artists,
-                            title,
-                            keys,
-                            labels,
-                            releases,
-                          })) &&
-                        this.props.enabledStores?.some((storeName) => stores.find(R.propEq(storeName, 'name'))),
+                  ? filterCartTracks(
+                      tracks,
+                      this.state.trackListFilterEffectiveTerms,
+                      this.props.enabledStores,
                     )
                   : tracks,
               )}
