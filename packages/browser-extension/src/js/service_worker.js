@@ -118,6 +118,38 @@ const ingestBandcampFeedReleases = async ({ data, done }) => {
   if (done) await fetchNextBandcampItem()
 }
 
+// Read the body once and parse from text so we can re-log the raw payload
+// when the parser rejects the shape. Without this, a shape mismatch from
+// the worker fetch produces a typed error in the popup but no way to
+// inspect what Bandcamp actually returned — which is the only useful
+// signal when the endpoint silently changes shape on us.
+const fetchJsonForLogging = async (response, label) => {
+  const contentType = response.headers.get('content-type')
+  const rawBody = await response.text()
+  try {
+    assertJsonContentType(contentType)
+  } catch (e) {
+    console.warn(
+      `[bandcamp:scrape-feed] ${label}: non-JSON response`,
+      'status=', response.status,
+      'content-type=', contentType,
+      'body=', rawBody.slice(0, 2000),
+    )
+    throw e
+  }
+  try {
+    return JSON.parse(rawBody)
+  } catch (e) {
+    console.warn(
+      `[bandcamp:scrape-feed] ${label}: JSON.parse failed`,
+      'status=', response.status,
+      'content-type=', contentType,
+      'body=', rawBody.slice(0, 2000),
+    )
+    throw e
+  }
+}
+
 const scrapeFeedFromWorker = async ({ pageCount = 5 } = {}) => {
   let olderThan = Date.now()
   const collectionResponse = await fetch('https://bandcamp.com/api/fan/2/collection_summary', {
@@ -126,7 +158,12 @@ const scrapeFeedFromWorker = async ({ pageCount = 5 } = {}) => {
   if (!collectionResponse.ok) {
     throw new Error(`collection_summary failed: ${collectionResponse.status}`)
   }
-  const fanId = (await collectionResponse.json()).fan_id
+  const collectionBody = await fetchJsonForLogging(collectionResponse, 'collection_summary')
+  const fanId = collectionBody.fan_id
+  if (!fanId) {
+    console.warn('[bandcamp:scrape-feed] collection_summary returned no fan_id; full body=', collectionBody)
+    throw new Error('Bandcamp collection_summary returned no fan_id — likely logged out from worker context.')
+  }
 
   for (let page = 1; page <= pageCount; page += 1) {
     const feedResponse = await fetch('https://bandcamp.com/fan_dash_feed_updates', {
@@ -138,12 +175,23 @@ const scrapeFeedFromWorker = async ({ pageCount = 5 } = {}) => {
     if (!feedResponse.ok) {
       throw new Error(`fan_dash_feed_updates failed: ${feedResponse.status}`)
     }
-    assertJsonContentType(feedResponse.headers.get('content-type'))
-    const feed = await feedResponse.json()
+    const feed = await fetchJsonForLogging(feedResponse, `fan_dash_feed_updates page=${page}`)
     await setStatus('Fetching releases', Math.round((page / pageCount) * 100))
-    const { releases, nextOlderThan } = parseFeedPage(feed)
-    await ingestBandcampFeedReleases({ data: releases, done: page === pageCount })
-    olderThan = nextOlderThan
+    let parseResult
+    try {
+      parseResult = parseFeedPage(feed)
+    } catch (e) {
+      console.warn(
+        `[bandcamp:scrape-feed] parseFeedPage rejected page=${page}; top-level keys=`,
+        Object.keys(feed || {}),
+        'fan_id used=', fanId,
+        'feed.stories keys=', feed?.stories ? Object.keys(feed.stories) : '(no stories)',
+        'full body=', JSON.stringify(feed).slice(0, 2000),
+      )
+      throw e
+    }
+    await ingestBandcampFeedReleases({ data: parseResult.releases, done: page === pageCount })
+    olderThan = parseResult.nextOlderThan
   }
 }
 

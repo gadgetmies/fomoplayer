@@ -140,7 +140,7 @@ const buttonContainer = () => {
   wrap.style.cssText =
     'display: inline-flex; gap: 6px; align-items: center; vertical-align: middle; ' +
     'background: rgba(0, 0, 0, 0.45); border-radius: 6px; padding: 4px 6px; ' +
-    'backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);'
+    'box-shadow: 0 0 8px 2px rgba(0, 0, 0, 0.45);'
   return wrap
 }
 
