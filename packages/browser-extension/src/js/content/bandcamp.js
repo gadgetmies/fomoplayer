@@ -8,6 +8,7 @@ import browser from '../browser'
 import { installPlayerUi, setVisible } from './bandcamp/player-ui'
 import { installInjections, removeInjections } from './bandcamp/inject'
 import { collectWishlistReleases, isOnWishlist } from './bandcamp/wishlist'
+import { assertJsonContentType, parseFeedPage } from './bandcamp/feed-parse'
 
 const reportError = (message, error) =>
   browser.runtime
@@ -39,16 +40,17 @@ const scrapeFeed = async ({ pageCount }) => {
     if (!feedResponse.ok) {
       throw new Error(`fan_dash_feed_updates failed: ${feedResponse.status}`)
     }
+    assertJsonContentType(feedResponse.headers.get('content-type'))
     const feed = await feedResponse.json()
     await reportProgress('Fetching releases', Math.round((page / pageCount) * 100))
-    const newReleases = feed.stories.entries.filter(({ story_type: storyType }) => storyType === 'nr')
+    const { releases, nextOlderThan } = parseFeedPage(feed)
     await browser.runtime.sendMessage({
       type: 'releases',
       store: 'bandcamp',
       done: page === pageCount,
-      data: newReleases,
+      data: releases,
     })
-    olderThan = feed.stories.oldest_story_date
+    olderThan = nextOlderThan
   }
 }
 
