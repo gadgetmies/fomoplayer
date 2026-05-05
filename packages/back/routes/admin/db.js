@@ -8,7 +8,7 @@ const BPromise = require('bluebird')
 module.exports.mergeTracks = async ({ trackToBeDeleted, trackToKeep }) => {
   await pg.queryAsync(sql`
 -- Merge tracks
-SELECT merge_tracks(${trackToBeDeleted}, ${trackToKeep});
+SELECT merge_tracks(${trackToKeep}, ${trackToBeDeleted});
   `)
 }
 
@@ -433,6 +433,75 @@ module.exports.upsertAudioSampleFingerprints = async (sampleId, fingerprints) =>
       )
     }
   })
+}
+
+module.exports.getSuspectedDuplicates = async (type) => {
+  if (type === 'artist') {
+    return await pg.queryRowsAsync(sql`
+      SELECT suspected_duplicate_artist_id AS id,
+             a1.artist_id AS id1, a1.artist_name AS name1,
+             a2.artist_id AS id2, a2.artist_name AS name2
+      FROM suspected_duplicate_artist
+      JOIN artist a1 ON artist_id_1 = a1.artist_id
+      JOIN artist a2 ON artist_id_2 = a2.artist_id
+      WHERE suspected_duplicate_artist_status = 'new'
+    `)
+  } else if (type === 'track') {
+    return await pg.queryRowsAsync(sql`
+      SELECT suspected_duplicate_track_id AS id,
+             t1.track_id AS id1, t1.track_title AS title1, t1.track_version AS version1,
+             t2.track_id AS id2, t2.track_title AS title2, t2.track_version AS version2,
+             (SELECT JSON_AGG(JSON_BUILD_OBJECT('name', artist_name, 'role', track__artist_role))
+              FROM track__artist NATURAL JOIN artist WHERE track_id = t1.track_id) AS artists1,
+             (SELECT JSON_AGG(JSON_BUILD_OBJECT('name', artist_name, 'role', track__artist_role))
+              FROM track__artist NATURAL JOIN artist WHERE track_id = t2.track_id) AS artists2
+      FROM suspected_duplicate_track
+      JOIN track t1 ON track_id_1 = t1.track_id
+      JOIN track t2 ON track_id_2 = t2.track_id
+      WHERE suspected_duplicate_track_status = 'new'
+    `)
+  } else if (type === 'release') {
+    return await pg.queryRowsAsync(sql`
+      SELECT suspected_duplicate_release_id AS id,
+             r1.release_id AS id1, r1.release_name AS name1,
+             r2.release_id AS id2, r2.release_name AS name2,
+             (SELECT JSON_AGG(artist_name) FROM release__track NATURAL JOIN track__artist NATURAL JOIN artist WHERE release_id = r1.release_id) AS artists1,
+             (SELECT JSON_AGG(artist_name) FROM release__track NATURAL JOIN track__artist NATURAL JOIN artist WHERE release_id = r2.release_id) AS artists2
+      FROM suspected_duplicate_release
+      JOIN release r1 ON release_id_1 = r1.release_id
+      JOIN release r2 ON release_id_2 = r2.release_id
+      WHERE suspected_duplicate_release_status = 'new'
+    `)
+  }
+}
+
+module.exports.mergeDuplicate = async (type, keptId, deletedId) => {
+  const functionName = type === 'artist' ? 'merge_artists' : type === 'track' ? 'merge_tracks' : 'merge_releases'
+  await pg.queryAsync(`SELECT ${functionName}($1, $2)`, [keptId, deletedId])
+
+  const cacheTable = `suspected_duplicate_${type}`
+  const id1 = `${type}_id_1`
+  const id2 = `${type}_id_2`
+  const status = `suspected_duplicate_${type}_status`
+
+  await pg.queryAsync(`
+    UPDATE ${cacheTable}
+    SET ${status} = 'merged'
+    WHERE (${id1} = $1 AND ${id2} = $2) OR (${id1} = $2 AND ${id2} = $1)
+  `, [keptId, deletedId])
+}
+
+module.exports.ignoreDuplicate = async (type, id1, id2) => {
+  const cacheTable = `suspected_duplicate_${type}`
+  const col1 = `${type}_id_1`
+  const col2 = `${type}_id_2`
+  const status = `suspected_duplicate_${type}_status`
+
+  await pg.queryAsync(`
+    UPDATE ${cacheTable}
+    SET ${status} = 'ignored'
+    WHERE ${col1} = $1 AND ${col2} = $2
+  `, [id1, id2])
 }
 
 module.exports.findExactMatchForSample = async (sampleId, threshold = 0.5) => {
