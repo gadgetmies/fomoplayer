@@ -26,8 +26,8 @@ const STYLE = `
   :host { all: initial; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: inline-flex; align-items: center; position: relative; }
   .root { display: inline-block; position: relative; }
   button.toggle {
-    background: transparent; color: #fff; border: 1px solid ${colors.brandPrimary};
-    font-size: 11px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
+    background: rgba(0, 0, 0, 0.75); color: #fff; border: 1px solid transparent;
+    font-size: 11px; padding: 2px 8px; border-radius: 2px; cursor: pointer;
     display: inline-flex; align-items: center; gap: 4px; line-height: 1.4;
   }
   button.toggle:hover { background: ${colors.brandPrimary}; color: #fff; }

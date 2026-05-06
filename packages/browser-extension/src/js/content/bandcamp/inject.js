@@ -57,14 +57,14 @@ const cueButton = ({ onClick, label = 'Queue', iconOnly = false, icon = '' }) =>
     <style>
       :host { all: initial; display: inline-flex; align-items: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
       button {
-        background: transparent; color: #fff; border: 1px solid ${colors.brandPrimary};
-        font-size: 11px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
+        background: rgba(0, 0, 0, 0.75); color: #fff; border: 1px solid transparent;
+        font-size: 11px; padding: 2px 8px; border-radius: 2px; cursor: pointer;
         line-height: 1.4; display: inline-flex; align-items: center; gap: 4px;
         position: relative;
       }
       button:hover:not(:disabled) { background: ${colors.brandPrimary}; color: #fff; }
       button[disabled] { cursor: progress; opacity: 0.85; }
-      button[data-state="error"] { background: transparent; border-color: #c63; color: #c63; }
+      button[data-state="error"] { background: rgba(0, 0, 0, 0.75); border-color: #c63; color: #c63; }
       button[data-state="loading"] [data-label],
       button[data-state="loading"] [data-icon] { visibility: hidden; }
       button[data-icon-only] { padding: 3px; }
