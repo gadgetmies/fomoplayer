@@ -151,7 +151,14 @@ const fetchJsonForLogging = async (response, label) => {
 }
 
 const scrapeFeedFromWorker = async ({ pageCount = 5 } = {}) => {
-  let olderThan = Date.now()
+  // Bandcamp's fan_dash_feed_updates expects older_than as a Unix timestamp
+  // in SECONDS, not milliseconds. The endpoint feeds the value into a MySQL
+  // DATETIME, and a millisecond value reads as a year far in the future
+  // (`Mysql2.Error: Incorrect DATETIME value: '58315-...'`), which returns a
+  // 200 JSON error envelope with no `stories` key. The original
+  // content-script code also sent ms; the bug was masked until Bandcamp
+  // started reporting the MySQL exception in the response body.
+  let olderThan = Math.floor(Date.now() / 1000)
   const collectionResponse = await fetch('https://bandcamp.com/api/fan/2/collection_summary', {
     credentials: 'include',
   })
