@@ -79,30 +79,37 @@ lexicographically, and the prefix space is dense enough that you can
 always slot a new entry between any two existing ones with **one rename**
 — no cascade.
 
-Current `todo/` (highest priority first):
+Example `todo/` listing (highest priority first):
 
 ```
-b-024-bandcamp-feed-sync-stories-undefined
-d-007-bandcamp-heard-status-sync
-f-003-bandcamp-cover-controls-override
-h-021-bandcamp-feed-sync-from-subdomain
-j-022-bandcamp-search-discover-buttons
-l-014-player-progress-bar-click-area
-n-023-bandcamp-overlay-backdrop-blur
-p-006-extension-media-key-support
-r-005-extension-initial-preview-jump
+b-024-some-task
+d-007-another-task
+f-003-yet-another-task
+h-021-…
+…
 ```
+
+Run `ls backlog/todo/` to see the live state.
 
 Picking a prefix when reordering:
 
 - **Move to top:** pick a string less than the current first prefix. Above
-  `b`, use `a`. Above `a`, use a two-char `am` (or any `a?` where `?` is a
-  letter — strings sort with `a` before `aa` before `am` before `b`).
+  `b`, use `a`. The prefix `a` is the floor — there is no lowercase-letter
+  prefix that sorts below `a-` in the symlink filename, because the `-`
+  separator (`0x2D`) sorts before any letter (`0x61+`), so `a-…` < `aL-…`
+  for every letter `L`. To raise an item above the current `a-` slot,
+  rename the existing `a-…` symlink to a higher prefix (`b-`, `c-`, etc.,
+  bisecting as needed) so the new item can take the `a-` slot.
 - **Move to bottom:** pick a string greater than the current last. After
-  `r`, use `t`, `v`, `x`, `z`. After `z`, use `za`, `zm`, `zz`.
+  `r`, use `t`, `v`, `x`, `z`. After `z`, append a letter — `za`, `zm`,
+  `zz` — which works because the `-` separator sorts before any letter,
+  so `z-…` < `za-…` < `zm-…` < `zz-…`.
 - **Insert between two neighbours:** pick any string lexicographically
   between them. Between `b` and `d`, use `c`. Between `b` and `c`, use
-  `bm`. Between `b` and `bm`, use `bg`. The space is infinite.
+  `bm` — `b-…` < `bm-…` because `-` < `m` at position 1, and `bm-…` <
+  `c-…` because `b` < `c` at position 0. Between `b` and `bm`, use `bg`.
+  The space is infinite *between* letters; it is one-sided at the very
+  top.
 
 Convention: keep prefixes lowercase letters only. When you need to bisect
 between two adjacent letters, append a middle letter (`m` is a fine
