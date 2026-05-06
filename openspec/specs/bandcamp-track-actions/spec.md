@@ -285,23 +285,22 @@ Every Fomo Player button injected into Bandcamp (Play, Queue, and Add-to-Fomo ca
 
 ### Requirement: `[data-fp-injected]` wrap carries a legibility backdrop on every surface
 
-The `[data-fp-injected]` wrap that hosts the button trio SHALL include a semi-transparent dark rounded backdrop (`rgba(0, 0, 0, 0.45)`, `border-radius: 6px`, padding around the buttons) on every Bandcamp surface so the white-text-on-transparent buttons remain readable regardless of the underlying page chrome or cover art. The wrap's outer edge MUST be feathered with a soft outward halo (`box-shadow: 0 0 8px 2px rgba(0, 0, 0, 0.45)`) so the dark wash dissolves into the surrounding page rather than ending in a hard rectangle. The wrap MUST NOT use `backdrop-filter` to blur the page content behind the overlay — softening is applied at the overlay's perimeter only, never to what is underneath.
+The `[data-fp-injected]` wrap that hosts the button trio MUST render with a transparent body and only a soft drop shadow behind it (`box-shadow: 0 2px 12px 4px rgba(0, 0, 0, 0.45)` with `border-radius: 6px`). The wrap MUST NOT paint a semi-transparent dark wash, a `backdrop-filter` blur on the page content underneath, or any other visible rectangle in front of the page chrome — softening is provided by the diffuse drop shadow alone, and the buttons rely on their own brand-coloured border for definition.
 
-#### Scenario: Wrap renders with the backdrop on every surface
+#### Scenario: Wrap renders with the drop shadow on every surface
 
 - **WHEN** the extension renders the `[data-fp-injected]` wrap on a release-page title section, per-track row, discography tile overlay, or feed entry
-- **THEN** the wrap shows a semi-transparent dark rounded backdrop behind the buttons.
+- **THEN** the wrap's inline style declares `box-shadow: 0 2px 12px 4px rgba(0, 0, 0, 0.45)` and `border-radius: 6px`, painting a soft-edged dark drop shadow behind the container
 
-#### Scenario: Outer edge feathers into the page
-
-- **WHEN** the wrap renders on any Bandcamp surface
-- **THEN** the wrap's inline style declares a `box-shadow` with a `rgba(0, 0, 0, 0.45)` colour, an 8px blur radius, and a 2px spread so the dark wash fades outward beyond the rounded rectangle's hard boundary
-- **AND** the wash itself remains `rgba(0, 0, 0, 0.45)` with `border-radius: 6px`
-
-#### Scenario: Page content behind the overlay is not blurred
+#### Scenario: Wrap has no visible body
 
 - **WHEN** the wrap renders on any Bandcamp surface
-- **THEN** the wrap's inline style does NOT include `backdrop-filter` or `-webkit-backdrop-filter` declarations — page content behind the overlay renders crisply, and only the overlay's perimeter is softened
+- **THEN** the wrap's inline style does NOT include a `background` declaration painting a semi-transparent dark colour, and does NOT include `backdrop-filter` / `-webkit-backdrop-filter` declarations — page content directly underneath the buttons is visible without any wash or blur on top of it
+
+#### Scenario: Drop shadow is diffuse, not a hard halo
+
+- **WHEN** the wrap renders on any Bandcamp surface
+- **THEN** the `box-shadow` value uses a 12px blur radius and a 4px spread so the shadow fades softly into the page rather than painting a sharp-edged halo
 
 ### Requirement: Compact feed tiles render the trio as icons only
 
