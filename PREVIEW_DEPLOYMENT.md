@@ -64,26 +64,25 @@ backend has no Railway-specific assumptions and self-hosted deployments
 can configure their own naming pattern (or list of explicit origins) the
 same way.
 
-When the env var is **unset or empty**, every handoff target is rejected
-with:
+When `OIDC_HANDOFF_SECRET` is set but `ALLOWED_PREVIEW_ORIGIN_REGEX` is
+empty, the backend **fails to start** — `packages/back/config.js`
+throws at module load with a message naming the missing env var:
 
 ```
-"reason":"handoff-target-unsafe","subReason":"allowlist-not-configured"
+Error: Handoff issuer enabled (OIDC_HANDOFF_SECRET set, apiOrigin known) but ALLOWED_PREVIEW_ORIGIN_REGEX is empty. ...
 ```
 
-The user lands on `https://<previewbase>/?loginFailed=true` and the
-previewbase emits a one-shot `logger.warn` at startup when
-`OIDC_HANDOFF_SECRET` is set but `ALLOWED_PREVIEW_ORIGIN_REGEX` is
-empty:
+Fail-fast on the deploy is the signal that operators need to set the
+allowlist. Once the env var is configured but the requested target's
+origin doesn't match any pattern at runtime, the request is rejected
+with the structured log entry:
 
 ```
-"Handoff issuer enabled but ALLOWED_PREVIEW_ORIGIN_REGEX is empty; handoff requests will be rejected with reason: handoff-target-unsafe / subReason: allowlist-not-configured until configured"
+"reason":"handoff-target-unsafe","subReason":"origin-not-allowed"
 ```
 
-When the env var is set but the requested target's origin doesn't match
-any pattern, the failure log carries
-`subReason: 'origin-not-allowed'` instead, distinguishing operational
-misconfiguration from rejected probe attempts.
+distinguishing rejected probe attempts from operational
+misconfiguration.
 
 ## PR-preview consumer configuration (handoff target)
 
@@ -97,6 +96,11 @@ in the handoff:
   there is no separate `OIDC_HANDOFF_URL`.
 - `OIDC_HANDOFF_SECRET` — must match the authority's. Used to verify
   the handoff token at the consumer's `/login/google/handoff` endpoint.
+  The backend **fails to start** if `AUTH_API_URL` points to a
+  different origin than this backend's `apiOrigin` (i.e. it's
+  configured as a handoff consumer) but `OIDC_HANDOFF_SECRET` is
+  missing — the misconfiguration would otherwise produce
+  `"Unable to verify authorization request state."` at runtime.
 - `ALLOWED_PREVIEW_ORIGIN_REGEX` — only required on the authority. A
   consumer doesn't mint handoff tokens, so it doesn't need an allowlist.
 

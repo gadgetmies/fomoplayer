@@ -27,6 +27,12 @@ The authoritative source of truth is the code:
   appState }` (HS256, `aud=oidc-state`, 10 min TTL) into the OIDC `state`
   parameter itself, eliminating the dependency on express-session for
   state delivery across the Google round trip.
+- `packages/back/routes/shared/auth-config-validator.js` —
+  `validateAuthConfig` is invoked by `packages/back/config.js` at module
+  load and throws when the handoff env vars are inconsistent (handoff
+  issuer role enabled with no preview-origin allowlist, or consumer-shaped
+  `AUTH_API_URL` with no `OIDC_HANDOFF_SECRET`). Fail-fast: the backend
+  refuses to start instead of warning at runtime.
 - `packages/back/routes/shared/auth-handoff-jti.js` +
   `migrations/sqls/20260331110000-add-auth-handoff-jti-up.sql` — Replay
   protection (one-time-use `jti` table).
@@ -328,13 +334,18 @@ failure class without reading code. The `subReason` split distinguishes
 operational misconfiguration (`allowlist-not-configured`) from genuine
 probe / attack attempts (`origin-not-allowed`).
 
-Additionally, when the auth router is constructed with handoff-issuer role
-enabled (`canMintHandoff = true`) but `ALLOWED_PREVIEW_ORIGIN_REGEX` is
-empty, the backend emits one `logger.warn` at startup naming the
-consequence ("handoff requests will be rejected with reason:
-handoff-target-unsafe / subReason: allowlist-not-configured until
-configured"). This surfaces the misconfiguration in deploy logs without
-waiting for a real login attempt.
+Additionally, the auth config is **fail-fast**: `packages/back/config.js`
+throws at module load when either of these holds:
+
+- handoff-issuer role enabled (`OIDC_HANDOFF_SECRET` set, `apiOrigin` known)
+  but `ALLOWED_PREVIEW_ORIGIN_REGEX` is empty;
+- the backend looks like a handoff consumer (`AUTH_API_URL` resolves to a
+  different origin than `apiOrigin`) but `OIDC_HANDOFF_SECRET` is unset.
+
+Both surface the misconfiguration at deploy time rather than as a
+runtime login failure. The validation lives in
+`packages/back/routes/shared/auth-config-validator.js` and is also
+unit-tested in `packages/back/test/tests/users/auth/config-handoff-fail-fast.js`.
 
 ---
 
@@ -821,11 +832,11 @@ These are the environment variables that determine which flows are available:
   `ALLOWED_ORIGIN_REGEX` into `config.allowedOriginRegexes`) **and**
   gates the handoff target check on the authority via
   `evaluateHandoffTarget`. On a backend that acts as a handoff *issuer*
-  (`canMintHandoff = true`), an empty value causes every handoff target
-  to be rejected with `subReason: 'allowlist-not-configured'`; the
-  backend emits a one-shot `logger.warn` at startup in that case.
-  Dev/test set their own value or pass `allowedPreviewOriginRegexes`
-  directly to `createAuthRouter`.
+  (`canMintHandoff = true`), an empty value causes
+  `packages/back/config.js` to throw at startup. Dev/test set their own
+  value via `.env.test` (or `.env.ci`) or pass
+  `allowedPreviewOriginRegexes` directly to `createAuthRouter` for
+  in-process tests.
 - `EXTENSION_OAUTH_ALLOWED_IDS` — comma-separated browser extension IDs
   (Chrome / Firefox / Safari) permitted to start the extension PKCE flow.
   Empty disables the flow.

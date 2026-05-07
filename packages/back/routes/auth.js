@@ -107,12 +107,6 @@ const createAuthRouter = ({
   )
   const canMintHandoff = Boolean(oidcHandoffSecret && apiOrigin)
 
-  if (canMintHandoff && allowedPreviewOriginRegexes.length === 0) {
-    logger.warn(
-      'Handoff issuer enabled but ALLOWED_PREVIEW_ORIGIN_REGEX is empty; handoff requests will be rejected with reason: handoff-target-unsafe / subReason: allowlist-not-configured until configured',
-    )
-  }
-
   const redirectWithLoginFailed = (res) => res.redirect(loginFailedUrl)
   const safeFrontendRedirect = (res, returnPath) => {
     const safePath = isSafeRedirectPath(returnPath, frontendURL) ? returnPath : ''

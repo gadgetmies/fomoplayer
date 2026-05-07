@@ -214,69 +214,6 @@ test({
     },
   },
 
-  'authority startup: warns when handoff issuer is enabled but allowlist is empty': {
-    setup: async () => {
-      const { entries, logger } = captureLogs()
-      const app = express()
-      app.use(
-        '/api/auth',
-        createAuthRouter({
-          config: authorityConfig({ allowedPreviewOriginRegexes: [] }),
-          logger,
-        }),
-      )
-      void app
-      return { entries }
-    },
-    'emits one startup warning': async ({ entries }) => {
-      const warnings = entries.filter(
-        (e) => e.level === 'warn' && /ALLOWED_PREVIEW_ORIGIN_REGEX/.test(e.message ?? ''),
-      )
-      expect(warnings.length, 'expected exactly one allowlist startup warning').to.equal(1)
-    },
-  },
-
-  'authority startup: silent when allowlist is configured': {
-    setup: async () => {
-      const { entries, logger } = captureLogs()
-      const app = express()
-      app.use(
-        '/api/auth',
-        createAuthRouter({ config: authorityConfig(), logger }),
-      )
-      void app
-      return { entries }
-    },
-    'no allowlist startup warning': async ({ entries }) => {
-      const warnings = entries.filter(
-        (e) => e.level === 'warn' && /ALLOWED_PREVIEW_ORIGIN_REGEX/.test(e.message ?? ''),
-      )
-      expect(warnings.length).to.equal(0)
-    },
-  },
-
-  'authority startup: silent when handoff issuer is not enabled (no secret)': {
-    setup: async () => {
-      const { entries, logger } = captureLogs()
-      const app = express()
-      app.use(
-        '/api/auth',
-        createAuthRouter({
-          config: authorityConfig({ oidcHandoffSecret: undefined, allowedPreviewOriginRegexes: [] }),
-          logger,
-        }),
-      )
-      void app
-      return { entries }
-    },
-    'no allowlist warning when canMintHandoff is false': async ({ entries }) => {
-      const warnings = entries.filter(
-        (e) => e.level === 'warn' && /ALLOWED_PREVIEW_ORIGIN_REGEX/.test(e.message ?? ''),
-      )
-      expect(warnings.length).to.equal(0)
-    },
-  },
-
   'consumer /login/google: 302s to authority with returnPath and handoffTarget set to request origin': {
     setup: async () => {
       const { app } = buildConsumerApp()
@@ -297,4 +234,5 @@ test({
       expect(location.searchParams.get('handoffTarget')).to.equal(CONSUMER_ORIGIN)
     },
   },
+
 })

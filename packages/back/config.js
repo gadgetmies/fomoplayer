@@ -5,6 +5,7 @@ require('dotenv').config({ path: `.env.${nodeEnv}` })
 const resolveServiceURL = require('fomoplayer_shared').resolveServiceURL
 const sharedConfig = require('fomoplayer_shared/config')(nodeEnv).config
 const { parseOriginRegexes } = require('./cors-origin')
+const { validateAuthConfig } = require('./routes/shared/auth-config-validator')
 
 const port = sharedConfig.API_PORT
 const frontendURL = resolveServiceURL(sharedConfig.FRONTEND_URL, sharedConfig.IP, sharedConfig.FRONTEND_PORT)
@@ -26,6 +27,15 @@ const apiOrigin = safeOrigin(apiURL)
 const authApiOrigin = safeOrigin(authApiURL)
 const oidcHandoffAuthorityOrigin = authApiOrigin
 const oidcHandoffUrl = authApiURL ? `${authApiURL}/auth/login/google` : undefined
+const oidcHandoffSecret = process.env.OIDC_HANDOFF_SECRET || undefined
+
+validateAuthConfig({
+  oidcHandoffSecret,
+  apiOrigin,
+  oidcHandoffAuthorityOrigin,
+  allowedPreviewOriginRegexes,
+})
+
 const isPreviewEnv = process.env.PREVIEW_ENV === 'true'
 const sessionCookieDomain = process.env.SESSION_COOKIE_DOMAIN
 const previewAllowedGoogleSubs = (process.env.PREVIEW_ALLOWED_GOOGLE_SUBS || '')
@@ -89,7 +99,7 @@ module.exports = {
   previewAllowedGoogleSubs,
   oidcHandoffUrl,
   oidcHandoffAuthorityOrigin,
-  oidcHandoffSecret: process.env.OIDC_HANDOFF_SECRET || undefined,
+  oidcHandoffSecret,
   allowedPreviewOriginRegexes,
   githubActionsOidcRepo: process.env.GITHUB_ACTIONS_OIDC_REPO || undefined,
   extensionOauthAllowedIds,

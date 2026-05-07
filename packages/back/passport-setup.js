@@ -14,27 +14,6 @@ const { deleteInviteCode } = require('./db/account')
 const { isGoogleSubAllowed } = require('./routes/shared/auth-flow')
 const { StatelessStateStore } = require('./routes/shared/oidc-state-store')
 
-const parseOidcState = (req) => {
-  const rawState = req?.query?.state
-  if (!rawState) {
-    return undefined
-  }
-
-  if (typeof rawState === 'object') {
-    return rawState
-  }
-
-  if (typeof rawState === 'string') {
-    try {
-      return JSON.parse(rawState)
-    } catch (_) {
-      return undefined
-    }
-  }
-
-  return undefined
-}
-
 module.exports = function passportSetup() {
   if (process.env.NODE_ENV !== 'production') {
     const checkCredentials = async (username, password, done) => {
