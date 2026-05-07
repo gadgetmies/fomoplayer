@@ -45,12 +45,11 @@
       (`handoff-target-unsafe` with `subReason`, `handoff-mint-failed`,
       `oidc-identity-missing`).
 
-## 4. Handoff allowlist via env var + diagnostic context
+## 4. Reuse existing config: `ALLOWED_PREVIEW_ORIGIN_REGEX` and `AUTH_API_URL`
 
-- [x] 4.1 Add `HANDOFF_TARGET_ORIGIN_REGEX` parsing to
-      `packages/back/config.js` (reuse `parseOriginRegexes` from
-      `cors-origin.js`). Expose as
-      `config.handoffTargetOriginRegexes`.
+- [x] 4.1 Expose `allowedPreviewOriginRegexes` (already parsed for CORS)
+      on the config object so the auth router can read it for handoff
+      gating. Drop any standalone `HANDOFF_TARGET_ORIGIN_REGEX` parsing.
 - [x] 4.2 Refactor `packages/back/routes/shared/safe-redirect.js` so
       `evaluateHandoffTarget(url, allowedOriginRegexes)` is pure (no
       `process.env.*` reads) and returns a stable
@@ -58,18 +57,23 @@
       `allowlist-not-configured` / `origin-not-allowed` /
       `missing-or-invalid-url`. `isSafeHandoffTarget` becomes a thin
       wrapper.
-- [x] 4.3 Thread `config.handoffTargetOriginRegexes` through every
+- [x] 4.3 Thread `config.allowedPreviewOriginRegexes` through every
       `evaluateHandoffTarget` callsite in `packages/back/routes/auth.js`.
-- [x] 4.4 Update the existing `safe-redirect-path.js` cascade-tests to
+- [x] 4.4 In `packages/back/config.js`, derive `oidcHandoffUrl` as
+      `${authApiURL}/auth/login/google` and
+      `oidcHandoffAuthorityOrigin` as the origin of `authApiURL`. Drop
+      the standalone `OIDC_HANDOFF_URL` env var read; the consumer's
+      `AUTH_API_URL` is the single source of truth.
+- [x] 4.5 Update the existing `safe-redirect-path.js` cascade-tests to
       use the new signature and the new subReason names; preserve
       behaviour of all path-checking cases.
 
 ## 5. Startup warning for missing handoff allowlist on the issuer
 
 - [x] 5.1 In `createAuthRouter`, detect
-      `canMintHandoff && handoffTargetOriginRegexes.length === 0` and
+      `canMintHandoff && allowedPreviewOriginRegexes.length === 0` and
       emit a single startup `logger.warn` referencing
-      `HANDOFF_TARGET_ORIGIN_REGEX` and the resulting failure
+      `ALLOWED_PREVIEW_ORIGIN_REGEX` and the resulting failure
       `reason: handoff-target-unsafe / subReason: allowlist-not-configured`.
 - [x] 5.2 Ensure the warning is gated only on `canMintHandoff`, so
       backends that don't act as handoff issuers (no
@@ -89,7 +93,7 @@
       assert the response still 302s to the consumer's handoff URL and
       `req.login` is not invoked for the user a second time on the
       authority.
-- [x] 6.3 Add a scenario where `handoffTargetOriginRegexes` is empty and
+- [x] 6.3 Add a scenario where `allowedPreviewOriginRegexes` is empty and
       confirm the warn log carries
       `reason: 'handoff-target-unsafe', subReason: 'allowlist-not-configured'`.
       Add a parallel scenario where the regex doesn't match the
@@ -106,10 +110,14 @@
 ## 7. Documentation update
 
 - [x] 7.1 In `PREVIEW_DEPLOYMENT.md`, add a "Handoff target allowlist"
-      subsection under the OIDC / handoff section documenting
-      `HANDOFF_TARGET_ORIGIN_REGEX`, including an example regex shape
-      for Railway-hosted PR previews and the structured failure-log
-      values that fire when the allowlist is missing or doesn't match.
+      subsection under the OIDC / handoff section documenting that the
+      authority reuses `ALLOWED_PREVIEW_ORIGIN_REGEX` for the handoff
+      gate, including an example regex shape for Railway-hosted PR
+      previews and the structured failure-log values that fire when
+      the allowlist is missing or doesn't match. Also document the
+      consumer side: `AUTH_API_URL` (handoff URL is derived from it),
+      `OIDC_HANDOFF_SECRET`, and self-referential `AUTH_API_URL`
+      detection.
 - [x] 7.2 Cross-link the new section from the existing handoff
       configuration section so future readers see it on first scan.
 - [x] 7.3 Update `docs/auth/oidc-login-flow.md`: add
@@ -120,7 +128,8 @@
       `subReason` log values, replace the
       `RAILWAY_SERVICE_NAME` / `RAILWAY_PROJECT_NAME` references in the
       per-environment-configuration section with
-      `HANDOFF_TARGET_ORIGIN_REGEX`.
+      `ALLOWED_PREVIEW_ORIGIN_REGEX`, and replace `OIDC_HANDOFF_URL`
+      references with `AUTH_API_URL`.
 
 ## 8. Manual verification (post-merge, on Railway)
 
@@ -131,15 +140,15 @@
 > bug occurs in the wild). Run these manual checks after the change is
 > merged and Railway picks up the new previewbase build.
 
-- [ ] 8.1 With `HANDOFF_TARGET_ORIGIN_REGEX` set on the previewbase, log
-      in from a PR preview that has no previewbase session. Confirm the
-      user lands authenticated on the PR preview origin on the requested
-      `returnPath`.
+- [ ] 8.1 With `ALLOWED_PREVIEW_ORIGIN_REGEX` set on the previewbase,
+      log in from a PR preview that has no previewbase session. Confirm
+      the user lands authenticated on the PR preview origin on the
+      requested `returnPath`.
 - [ ] 8.2 With the previewbase already holding a session for the same
       Google account, log in again from a PR preview. Confirm the user
       lands authenticated on the PR preview origin (not the previewbase),
       and that the previewbase session is still independently alive.
-- [ ] 8.3 Temporarily unset `HANDOFF_TARGET_ORIGIN_REGEX` on the
+- [ ] 8.3 Temporarily unset `ALLOWED_PREVIEW_ORIGIN_REGEX` on the
       previewbase, attempt a PR preview login, and confirm the previewbase
       logs include
       `reason: 'handoff-target-unsafe', subReason: 'allowlist-not-configured'`.

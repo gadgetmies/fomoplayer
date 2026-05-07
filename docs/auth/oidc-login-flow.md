@@ -32,8 +32,10 @@ The authoritative source of truth is the code:
   protection (one-time-use `jti` table).
 - `packages/back/routes/shared/safe-redirect.js` — `isSafeHandoffTarget`
   validates that a handoff target's origin matches at least one of the
-  regexes supplied by the caller (sourced from `config.handoffTargetOriginRegexes`,
-  parsed from the `HANDOFF_TARGET_ORIGIN_REGEX` env var);
+  regexes supplied by the caller (sourced from
+  `config.allowedPreviewOriginRegexes`, parsed from the
+  `ALLOWED_PREVIEW_ORIGIN_REGEX` env var — same regex list that
+  authorizes preview origins for CORS).
   `evaluateHandoffTarget` is the diagnostic-friendly variant that returns
   `{ ok, subReason }` with `subReason` ∈ `allowlist-not-configured` |
   `origin-not-allowed` | `missing-or-invalid-url`.
@@ -46,7 +48,7 @@ The authoritative source of truth is the code:
 - `packages/back/db/extension-refresh-token.js` +
   `migrations/sqls/20260501100000-add-extension-refresh-token-up.sql` —
   Hashed-and-rotated refresh-token store for the browser extension flow.
-- `packages/back/config.js` — Reads `OIDC_HANDOFF_URL`, `OIDC_HANDOFF_SECRET`,
+- `packages/back/config.js` — Reads `AUTH_API_URL` (handoff URL is derived as `${AUTH_API_URL}/auth/login/google`), `OIDC_HANDOFF_SECRET`,
   `PREVIEW_ENV`, `GITHUB_ACTIONS_OIDC_REPO`, `EXTENSION_OAUTH_ALLOWED_IDS`,
   `INTERNAL_AUTH_HANDOFF_PRIVATE_KEY`, `INTERNAL_AUTH_HANDOFF_KEY_ID`,
   `INTERNAL_AUTH_HANDOFF_ISSUER`, `INTERNAL_AUTH_HANDOFF_JWKS_URL`,
@@ -172,20 +174,29 @@ const shouldDelegateToAuthority = () => {
 }
 ```
 
+The handoff URL `oidcHandoffUrl` is derived as
+`${authApiURL}/auth/login/google`, where `authApiURL` comes from the
+`AUTH_API_URL` env var (or defaults to `${frontendURL}/api`). There is
+no separate `OIDC_HANDOFF_URL` env var — the consumer's
+`AUTH_API_URL=https://<authority>/api` doubles as both the auth API
+base for cross-backend operations *and* the handoff delegation target.
+
 | Value | True when | Meaning |
 |---|---|---|
-| `shouldDelegateToAuthority()` | `OIDC_HANDOFF_URL` is set, points to a different origin than this backend, **and** `OIDC_HANDOFF_SECRET` is set | This backend is a **consumer** — it will redirect `/login/google` to the authority and accept handoff at `/login/google/handoff` |
-| `isSelfReferentialHandoffUrl` | `OIDC_HANDOFF_URL` resolves to the same origin as `apiOrigin` | This backend is the **authority**; delegation is skipped (PR previews inherit this var, so it has to be detected at runtime) |
+| `shouldDelegateToAuthority()` | `AUTH_API_URL` resolves to a different origin than this backend's `apiOrigin`, **and** `OIDC_HANDOFF_SECRET` is set | This backend is a **consumer** — it will redirect `/login/google` to the authority and accept handoff at `/login/google/handoff` |
+| `isSelfReferentialHandoffUrl` | `AUTH_API_URL`'s origin equals `apiOrigin` (or is unset) | This backend is the **authority**; delegation is skipped |
 | `canMintHandoff` | `OIDC_HANDOFF_SECRET` is set and `apiOrigin` is known | This backend can sign handoff tokens (required for both browser-handoff to consumer previews **and** for CLI login) |
 
-`isSafeHandoffTarget` (`packages/back/routes/shared/safe-redirect.js`) gates
-which target origins the authority will mint a handoff for. The allowlist is
-configured per environment via `HANDOFF_TARGET_ORIGIN_REGEX` (comma-separated
-regex list, each pattern auto-anchored to `^…$`). Operators set this to a
-pattern that matches their PR-preview origin shape, e.g.
-`^https://<service>-<project>-pr-\d+\.up\.railway\.app$` for Railway. The
-allowlist is configuration rather than code so self-hosted deployments and
-non-Railway hosts can be supported without a code change.
+`isSafeHandoffTarget` (`packages/back/routes/shared/safe-redirect.js`)
+gates which target origins the authority will mint a handoff for. It
+reuses `config.allowedPreviewOriginRegexes` — the same list parsed from
+`ALLOWED_PREVIEW_ORIGIN_REGEX` that already authorizes preview origins
+for CORS — so operators don't configure two parallel allowlists.
+Operators set this to a pattern that matches their PR-preview origin
+shape, e.g. `^https://<service>-<project>-pr-\d+\.up\.railway\.app$`
+for Railway. The allowlist is configuration rather than code so
+self-hosted and non-Railway deployments can be supported without a
+code change.
 
 ---
 
@@ -217,8 +228,9 @@ valid `inviteCode` is on the session; both denials end up redirecting to
 
 ### Handoff flow (preview consumer → authority)
 
-When the preview backend has `OIDC_HANDOFF_URL` (authority's
-`/api/auth/login/google`) and `OIDC_HANDOFF_SECRET` set:
+When the preview backend has `AUTH_API_URL` (the authority's `/api`
+base — handoff URL is derived as
+`${AUTH_API_URL}/auth/login/google`) and `OIDC_HANDOFF_SECRET` set:
 
 ```
 1. Browser ──GET https://pr-N…/api/auth/login/google?returnPath=…──▶ Preview (consumer)
@@ -301,7 +313,7 @@ enumeration:
 
 | `reason` | When |
 |---|---|
-| `handoff-target-unsafe` | Pre-OIDC or post-OIDC, `evaluateHandoffTarget` rejected the target. Always carries a `subReason`: `allowlist-not-configured` (`HANDOFF_TARGET_ORIGIN_REGEX` is empty on the authority) or `origin-not-allowed` (target origin doesn't match any configured regex). |
+| `handoff-target-unsafe` | Pre-OIDC or post-OIDC, `evaluateHandoffTarget` rejected the target. Always carries a `subReason`: `allowlist-not-configured` (`ALLOWED_PREVIEW_ORIGIN_REGEX` is empty on the authority) or `origin-not-allowed` (target origin doesn't match any configured regex). |
 | `handoff-mint-failed` | `mintHandoffToken` threw, or `canMintHandoff` is false (missing secret/apiOrigin on the authority). |
 | `oidc-identity-missing` | Authenticated `req.user` lacks `oidcIdentity.issuer` / `oidcIdentity.subject`. |
 
@@ -317,7 +329,7 @@ operational misconfiguration (`allowlist-not-configured`) from genuine
 probe / attack attempts (`origin-not-allowed`).
 
 Additionally, when the auth router is constructed with handoff-issuer role
-enabled (`canMintHandoff = true`) but `HANDOFF_TARGET_ORIGIN_REGEX` is
+enabled (`canMintHandoff = true`) but `ALLOWED_PREVIEW_ORIGIN_REGEX` is
 empty, the backend emits one `logger.warn` at startup naming the
 consequence ("handoff requests will be rejected with reason:
 handoff-target-unsafe / subReason: allowlist-not-configured until
@@ -787,8 +799,12 @@ user's ID from `GET /api/auth/me`.
 
 These are the environment variables that determine which flows are available:
 
-- `OIDC_HANDOFF_URL` — if set and points to a different origin than this
-  backend, this backend acts as a **consumer**.
+- `AUTH_API_URL` — if set and resolves to a different origin than this
+  backend's `apiOrigin`, this backend acts as a **consumer** and
+  delegates `/login/google` to `${AUTH_API_URL}/auth/login/google`.
+  When unset or self-referential, the backend authenticates with Google
+  directly. The same env var is used for any other cross-backend auth
+  API call from the consumer.
 - `OIDC_HANDOFF_SECRET` — required to mint or verify handoff tokens. Must be
   identical on authority and all consumers (and on the same backend that
   exposes the CLI exchange endpoint).
@@ -800,14 +816,16 @@ These are the environment variables that determine which flows are available:
 - `GITHUB_ACTIONS_OIDC_REPO` — the `owner/repo` string that GitHub Actions
   OIDC tokens must claim. Required alongside `PREVIEW_ENV=true` for the
   bot login endpoint to be registered.
-- `HANDOFF_TARGET_ORIGIN_REGEX` — comma-separated regex list of acceptable
-  handoff target origins. Read by `evaluateHandoffTarget` /
-  `isSafeHandoffTarget` to validate consumer hostnames. On a backend that
-  acts as a handoff *issuer* (`canMintHandoff = true`), an empty value
-  causes every handoff target to be rejected with
-  `subReason: 'allowlist-not-configured'`; the backend emits a one-shot
-  `logger.warn` at startup in that case. Dev/test set their own value or
-  pass `handoffTargetOriginRegexes` directly to `createAuthRouter`.
+- `ALLOWED_PREVIEW_ORIGIN_REGEX` — comma-separated regex list of preview
+  origins. Authorizes preview origins for CORS (merged with
+  `ALLOWED_ORIGIN_REGEX` into `config.allowedOriginRegexes`) **and**
+  gates the handoff target check on the authority via
+  `evaluateHandoffTarget`. On a backend that acts as a handoff *issuer*
+  (`canMintHandoff = true`), an empty value causes every handoff target
+  to be rejected with `subReason: 'allowlist-not-configured'`; the
+  backend emits a one-shot `logger.warn` at startup in that case.
+  Dev/test set their own value or pass `allowedPreviewOriginRegexes`
+  directly to `createAuthRouter`.
 - `EXTENSION_OAUTH_ALLOWED_IDS` — comma-separated browser extension IDs
   (Chrome / Firefox / Safari) permitted to start the extension PKCE flow.
   Empty disables the flow.
@@ -828,7 +846,6 @@ Defaults from `packages/back/.env.development`:
 GOOGLE_OIDC_CLIENT_ID=foo
 GOOGLE_OIDC_CLIENT_SECRET=bar
 GOOGLE_OIDC_API_REDIRECT=
-OIDC_HANDOFF_URL=
 OIDC_HANDOFF_SECRET=
 PREVIEW_ENV=
 GOOGLE_OIDC_MOCK=
@@ -854,7 +871,6 @@ INTERNAL_AUTH_API_AUDIENCE=http://localhost:5000/api
 
 ```
 GOOGLE_OIDC_MOCK=true
-OIDC_HANDOFF_URL=
 OIDC_HANDOFF_SECRET=test-handoff-secret
 PREVIEW_ENV=
 GITHUB_ACTIONS_OIDC_REPO=
@@ -882,13 +898,16 @@ Two roles, same codebase, different env values:
 - `GOOGLE_OIDC_API_REDIRECT=https://<authority-host>/api/auth/login/google/return`
   (registered in Google).
 - `OIDC_HANDOFF_SECRET` set.
-- `OIDC_HANDOFF_URL` may either be unset or point to the authority itself —
-  if it points to the authority's own origin, `isSelfReferentialHandoffUrl`
-  is `true` and delegation is skipped.
+- `AUTH_API_URL` either unset or pointing to the authority itself —
+  when it resolves to the authority's own origin (the typical case
+  since the authority IS the auth API),
+  `isSelfReferentialHandoffUrl` is `true` and delegation is skipped.
 - `PREVIEW_ENV=true` so session cookies are cross-site.
-- `HANDOFF_TARGET_ORIGIN_REGEX` set to a regex that matches every PR
-  preview origin the authority is willing to mint handoffs for, e.g.
-  `^https://<service>-<project>-pr-\d+\.up\.railway\.app$` for Railway.
+- `ALLOWED_PREVIEW_ORIGIN_REGEX` set to a regex that matches every PR
+  preview origin the authority is willing to mint handoffs for (the
+  same regex already used to authorize PR preview origins for CORS),
+  e.g. `^https://<service>-<project>-pr-\d+\.up\.railway\.app$` for
+  Railway.
 - `GITHUB_ACTIONS_OIDC_REPO` — set if bot login is needed on the authority
   (typically not required; bot targets individual PR preview consumers).
 - **Flows used:**
@@ -901,14 +920,17 @@ Two roles, same codebase, different env values:
 
 #### Consumer (PR-preview backend on `…-pr-<N>.up.railway.app`)
 
-- `OIDC_HANDOFF_URL=https://<authority-host>/api/auth/login/google`.
+- `AUTH_API_URL=https://<authority-host>/api`. The handoff URL is
+  derived as `${AUTH_API_URL}/auth/login/google`.
 - `OIDC_HANDOFF_SECRET` matches the authority.
-- `apiOrigin` differs from `oidcHandoffAuthorityOrigin` →
+- `apiOrigin` differs from `authApiOrigin` →
   `shouldDelegateToAuthority()` = true.
 - No Google OIDC client credentials needed.
 - `PREVIEW_ENV=true`.
-- `HANDOFF_TARGET_ORIGIN_REGEX` is **not required** on the consumer — the
-  consumer doesn't mint handoffs, only the authority does.
+- `ALLOWED_PREVIEW_ORIGIN_REGEX` is **not required** on the consumer —
+  the consumer doesn't mint handoffs, only the authority does. (The
+  consumer may still need `ALLOWED_PREVIEW_ORIGIN_REGEX` for its own
+  CORS handling; the two uses share the same env var.)
 - `GITHUB_ACTIONS_OIDC_REPO=<owner>/<repo>` — enables the bot login endpoint.
 - **Flows used:**
   - Browser login: **handoff flow** (consumer → authority → consumer).

@@ -61,7 +61,7 @@ const createAuthRouter = ({
     oidcHandoffUrl,
     oidcHandoffSecret,
     oidcHandoffAuthorityOrigin,
-    handoffTargetOriginRegexes = [],
+    allowedPreviewOriginRegexes = [],
     isPreviewEnv,
     previewAllowedGoogleSubs,
     maxAccountCount,
@@ -107,9 +107,9 @@ const createAuthRouter = ({
   )
   const canMintHandoff = Boolean(oidcHandoffSecret && apiOrigin)
 
-  if (canMintHandoff && handoffTargetOriginRegexes.length === 0) {
+  if (canMintHandoff && allowedPreviewOriginRegexes.length === 0) {
     logger.warn(
-      'Handoff issuer enabled but HANDOFF_TARGET_ORIGIN_REGEX is empty; handoff requests will be rejected with reason: handoff-target-unsafe / subReason: allowlist-not-configured until configured',
+      'Handoff issuer enabled but ALLOWED_PREVIEW_ORIGIN_REGEX is empty; handoff requests will be rejected with reason: handoff-target-unsafe / subReason: allowlist-not-configured until configured',
     )
   }
 
@@ -153,7 +153,7 @@ const createAuthRouter = ({
     const requestedHandoffTarget = req.query.handoffTarget
     let handoffTarget
     if (requestedHandoffTarget) {
-      const evaluation = evaluateHandoffTarget(requestedHandoffTarget, handoffTargetOriginRegexes)
+      const evaluation = evaluateHandoffTarget(requestedHandoffTarget, allowedPreviewOriginRegexes)
       if (!evaluation.ok) {
         logger.warn('Rejected unsafe handoffTarget at /login/google', {
           reason: 'handoff-target-unsafe',
@@ -600,7 +600,7 @@ const createAuthRouter = ({
           return redirectWithLoginFailed(res)
         }
 
-        const evaluation = evaluateHandoffTarget(handoffTarget, handoffTargetOriginRegexes)
+        const evaluation = evaluateHandoffTarget(handoffTarget, allowedPreviewOriginRegexes)
         if (!evaluation.ok) {
           logger.warn('Handoff requested but cannot be fulfilled', {
             reason: 'handoff-target-unsafe',

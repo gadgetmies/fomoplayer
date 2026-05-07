@@ -55,7 +55,7 @@ introduces one.
   test covers the existing-previewbase-session case using an in-process
   Express app, mirroring `handoff-login-signup-policy.js`.
 - `PREVIEW_DEPLOYMENT.md` documents that the previewbase needs
-  `HANDOFF_TARGET_ORIGIN_REGEX` set to a regex matching its allowed
+  `ALLOWED_PREVIEW_ORIGIN_REGEX` set to a regex matching its allowed
   consumer origins, and explains why.
 
 **Non-Goals:**
@@ -165,7 +165,7 @@ previewbase's return path gains a structured log with a stable string
 `reason` value:
 
 - `handoff-target-unsafe` — `evaluateHandoffTarget(handoffTarget,
-  handoffTargetOriginRegexes)` returned `{ ok: false }`. Sub-reason
+  allowedPreviewOriginRegexes)` returned `{ ok: false }`. Sub-reason
   logged: `allowlist-not-configured` (the allowlist is empty) vs
   `origin-not-allowed` (origin doesn't match any pattern) vs
   `missing-or-invalid-url`.
@@ -191,45 +191,62 @@ misconfiguration (`allowlist-not-configured`) from genuine probe attempts
 **Alternative considered:** Free-text log messages. Rejected because they
 make grepping/aggregation brittle.
 
-### Decision 4 — Configure the allowlist via `HANDOFF_TARGET_ORIGIN_REGEX`, not Railway env
+### Decision 4 — Reuse existing config: `ALLOWED_PREVIEW_ORIGIN_REGEX` and `AUTH_API_URL`
 
-**Choice:** Source the allowed handoff target origins from a single env
-var `HANDOFF_TARGET_ORIGIN_REGEX` (comma-separated regex list, parsed by
-the existing `parseOriginRegexes` helper that already drives
-`ALLOWED_ORIGIN_REGEX`). The auth router takes the parsed regex list via
-`config.handoffTargetOriginRegexes` and forwards it to
-`evaluateHandoffTarget(url, allowedOriginRegexes)`. The function reads no
-`process.env.*` itself.
+**Choice:** Configure handoff via env vars that already exist in the
+codebase rather than adding new ones:
 
-When the auth router is constructed with `canMintHandoff = true` but the
-regex list is empty, emit one `logger.warn` at startup naming the
-consequence (`"handoff requests will be rejected with reason:
-handoff-target-unsafe / subReason: allowlist-not-configured until
-configured"`). Do *not* abort startup — local dev and tests that don't
-exercise the handoff path still need to boot.
+- **Handoff target allowlist** reuses `ALLOWED_PREVIEW_ORIGIN_REGEX`.
+  `evaluateHandoffTarget(url, allowedOriginRegexes)` takes the regex
+  list as a parameter; the auth router sources it from
+  `config.allowedPreviewOriginRegexes` (already parsed by
+  `parseOriginRegexes` for CORS use). The function reads no
+  `process.env.*` itself.
+- **Handoff URL** is derived from `AUTH_API_URL`. Consumers already set
+  `AUTH_API_URL=https://<authority>/api` to point cross-backend auth
+  calls at the authority; the handoff URL becomes
+  `${AUTH_API_URL}/auth/login/google` and the authority origin is the
+  origin of `AUTH_API_URL`. There is no separate `OIDC_HANDOFF_URL`.
+- **Consumer-ness detection** keys on `AUTH_API_URL` resolving to a
+  different origin than this backend's `apiOrigin`, plus
+  `OIDC_HANDOFF_SECRET` being set. Self-referential `AUTH_API_URL`
+  (or unset) means the backend is the authority and skips delegation.
 
-**Why:** Encoding `^<service>-<project>-pr-\d+\.up\.railway\.app$` in
-code with `RAILWAY_*` env interpolation made the codebase Railway-specific
-for no benefit. A regex env var:
-- works on any host (Railway, fly.io, self-hosted) without code changes;
-- mirrors the existing `ALLOWED_ORIGIN_REGEX` configuration pattern, which
-  operators already understand;
-- keeps the boundary check pure (testable without setting/unsetting
-  `process.env`).
+When the auth router is constructed with `canMintHandoff = true` but
+`config.allowedPreviewOriginRegexes` is empty, emit one
+`logger.warn` at startup naming the consequence (`"handoff requests
+will be rejected with reason: handoff-target-unsafe / subReason:
+allowlist-not-configured until configured"`). Do *not* abort startup —
+local dev and tests that don't exercise the handoff path still need to
+boot.
 
-**Alternative considered (1):** Keep Railway env interpolation as a
-fallback when `HANDOFF_TARGET_ORIGIN_REGEX` is unset. Rejected — it
-preserves Railway-specific behavior in code and makes the test surface
-larger. Operators on Railway can construct the regex from
-`${{RAILWAY_SERVICE_NAME}}-${{RAILWAY_PROJECT_NAME}}-pr-\d+...` in their
-Railway environment configuration; the regex shape is documented in
-`PREVIEW_DEPLOYMENT.md`.
+**Why:**
 
-**Alternative considered (2):** Two env vars — one for an exact-origin
-allowlist (`HANDOFF_TARGET_ORIGINS`) and one for regexes
-(`HANDOFF_TARGET_ORIGIN_REGEX`). Rejected — operators can express exact
-origins as anchored regexes (`^https://exact\.example\.com$`) without
-adding a second config surface.
+The Railway-specific allowlist (built in code from
+`RAILWAY_SERVICE_NAME` + `RAILWAY_PROJECT_NAME`) made the codebase
+Railway-specific for no benefit. The first consolidation introduced a
+new env var (`HANDOFF_TARGET_ORIGIN_REGEX`) but operators were already
+setting `ALLOWED_PREVIEW_ORIGIN_REGEX` for CORS — two parallel
+allowlists for the same set of preview origins is busywork and a
+drift risk. Reusing one regex list closes that gap.
+
+The same logic applies to `OIDC_HANDOFF_URL`: PR previews already set
+`AUTH_API_URL` to the authority, so the handoff URL was always
+`${AUTH_API_URL}/auth/login/google` in practice. Two env vars that
+must agree are one too many — drop the redundant one.
+
+CORS allowlist and handoff allowlist are technically different
+security boundaries, but in practice the same set of origins should
+appear in both for any sane PR preview deployment, and the handoff
+has its own additional gate (the shared `OIDC_HANDOFF_SECRET`) that
+prevents an arbitrary CORS-allowed origin from receiving
+authentication tokens it can actually use.
+
+**Alternative considered:** Keep `HANDOFF_TARGET_ORIGIN_REGEX` as a
+separate var so operators can configure CORS and handoff allowlists
+independently. Rejected — the boundaries we're protecting in this
+codebase are the same set of origins (PR previews), and the second
+gate (`OIDC_HANDOFF_SECRET`) already provides defense-in-depth.
 
 ### Decision 5 — Test the happy path against an in-process Express app, mirroring existing patterns
 
@@ -299,7 +316,7 @@ from a route-level test.
 - After deploy, manually exercise both PR-preview-cold and
   PR-preview-with-existing-previewbase-session flows once and confirm the
   new structured logs appear with the expected `reason` values when
-  intentionally misconfigured (e.g. clear `HANDOFF_TARGET_ORIGIN_REGEX`
+  intentionally misconfigured (e.g. clear `ALLOWED_PREVIEW_ORIGIN_REGEX`
   on the previewbase and watch for
   `subReason: 'allowlist-not-configured'` in the logs).
 - Rollback by reverting the commit; previously-issued signed-state tokens

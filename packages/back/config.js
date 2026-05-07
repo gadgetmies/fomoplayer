@@ -13,7 +13,6 @@ const authApiURL = process.env.AUTH_API_URL || `${frontendURL}/api`
 const additionalOrigins = process.env.ADDITIONAL_ORIGINS?.split(',').map((origin) => origin.trim()) || []
 const allowedOriginRegexes = parseOriginRegexes(process.env.ALLOWED_ORIGIN_REGEX)
 const allowedPreviewOriginRegexes = parseOriginRegexes(process.env.ALLOWED_PREVIEW_ORIGIN_REGEX)
-const handoffTargetOriginRegexes = parseOriginRegexes(process.env.HANDOFF_TARGET_ORIGIN_REGEX)
 
 const safeOrigin = (url) => {
   try {
@@ -24,8 +23,9 @@ const safeOrigin = (url) => {
 }
 
 const apiOrigin = safeOrigin(apiURL)
-const oidcHandoffUrl = process.env.OIDC_HANDOFF_URL || undefined
-const oidcHandoffAuthorityOrigin = oidcHandoffUrl ? safeOrigin(oidcHandoffUrl) : null
+const authApiOrigin = safeOrigin(authApiURL)
+const oidcHandoffAuthorityOrigin = authApiOrigin
+const oidcHandoffUrl = authApiURL ? `${authApiURL}/auth/login/google` : undefined
 const isPreviewEnv = process.env.PREVIEW_ENV === 'true'
 const sessionCookieDomain = process.env.SESSION_COOKIE_DOMAIN
 const previewAllowedGoogleSubs = (process.env.PREVIEW_ALLOWED_GOOGLE_SUBS || '')
@@ -90,7 +90,7 @@ module.exports = {
   oidcHandoffUrl,
   oidcHandoffAuthorityOrigin,
   oidcHandoffSecret: process.env.OIDC_HANDOFF_SECRET || undefined,
-  handoffTargetOriginRegexes,
+  allowedPreviewOriginRegexes,
   githubActionsOidcRepo: process.env.GITHUB_ACTIONS_OIDC_REPO || undefined,
   extensionOauthAllowedIds,
   extensionOauthAllowedRedirectPatterns,

@@ -163,9 +163,9 @@ Startup MUST NOT abort.
 #### Scenario: Authority startup warns when allowlist is empty
 
 - **WHEN** the previewbase boots with handoff issuer config but
-  `HANDOFF_TARGET_ORIGIN_REGEX` is empty
+  `ALLOWED_PREVIEW_ORIGIN_REGEX` is empty
 - **THEN** a single `logger.warn` mentioning
-  `HANDOFF_TARGET_ORIGIN_REGEX` is emitted at startup, and the server
+  `ALLOWED_PREVIEW_ORIGIN_REGEX` is emitted at startup, and the server
   continues listening
 
 #### Scenario: Authority startup is silent when allowlist is configured
@@ -183,14 +183,14 @@ Startup MUST NOT abort.
 
 ### Requirement: Documented previewbase configuration
 
-`PREVIEW_DEPLOYMENT.md` MUST document `HANDOFF_TARGET_ORIGIN_REGEX` as
+`PREVIEW_DEPLOYMENT.md` MUST document `ALLOWED_PREVIEW_ORIGIN_REGEX` as
 the env var that gates which handoff target origins the previewbase will
 accept, including a one-line explanation of what breaks if it is empty.
 
 #### Scenario: Required env var is documented
 
 - **WHEN** a developer reads `PREVIEW_DEPLOYMENT.md`
-- **THEN** they find `HANDOFF_TARGET_ORIGIN_REGEX` listed under
+- **THEN** they find `ALLOWED_PREVIEW_ORIGIN_REGEX` listed under
   previewbase configuration, with the consequence of leaving it empty
   ("every handoff target is rejected with
   `subReason: allowlist-not-configured`") and an example regex shape

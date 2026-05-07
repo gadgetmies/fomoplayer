@@ -21,7 +21,7 @@ const authorityConfig = (overrides = {}) => ({
   allowedOrigins: [],
   allowedOriginRegexes: [],
   oidcHandoffSecret: HANDOFF_SECRET,
-  handoffTargetOriginRegexes: PR_PREVIEW_REGEXES,
+  allowedPreviewOriginRegexes: PR_PREVIEW_REGEXES,
   maxAccountCount: 5,
   isPreviewEnv: true,
   isProduction: false,
@@ -174,7 +174,7 @@ test({
     setup: async () => {
       registerStrategy({ info: { state: {} } })
       const { app, entries } = buildAuthorityApp({
-        config: authorityConfig({ handoffTargetOriginRegexes: [] }),
+        config: authorityConfig({ allowedPreviewOriginRegexes: [] }),
       })
       const response = await request(app).get(
         `/api/auth/login/google?returnPath=%2F&handoffTarget=${encodeURIComponent(CONSUMER_ORIGIN)}`,
@@ -221,7 +221,7 @@ test({
       app.use(
         '/api/auth',
         createAuthRouter({
-          config: authorityConfig({ handoffTargetOriginRegexes: [] }),
+          config: authorityConfig({ allowedPreviewOriginRegexes: [] }),
           logger,
         }),
       )
@@ -230,7 +230,7 @@ test({
     },
     'emits one startup warning': async ({ entries }) => {
       const warnings = entries.filter(
-        (e) => e.level === 'warn' && /HANDOFF_TARGET_ORIGIN_REGEX/.test(e.message ?? ''),
+        (e) => e.level === 'warn' && /ALLOWED_PREVIEW_ORIGIN_REGEX/.test(e.message ?? ''),
       )
       expect(warnings.length, 'expected exactly one allowlist startup warning').to.equal(1)
     },
@@ -249,7 +249,7 @@ test({
     },
     'no allowlist startup warning': async ({ entries }) => {
       const warnings = entries.filter(
-        (e) => e.level === 'warn' && /HANDOFF_TARGET_ORIGIN_REGEX/.test(e.message ?? ''),
+        (e) => e.level === 'warn' && /ALLOWED_PREVIEW_ORIGIN_REGEX/.test(e.message ?? ''),
       )
       expect(warnings.length).to.equal(0)
     },
@@ -262,7 +262,7 @@ test({
       app.use(
         '/api/auth',
         createAuthRouter({
-          config: authorityConfig({ oidcHandoffSecret: undefined, handoffTargetOriginRegexes: [] }),
+          config: authorityConfig({ oidcHandoffSecret: undefined, allowedPreviewOriginRegexes: [] }),
           logger,
         }),
       )
@@ -271,7 +271,7 @@ test({
     },
     'no allowlist warning when canMintHandoff is false': async ({ entries }) => {
       const warnings = entries.filter(
-        (e) => e.level === 'warn' && /HANDOFF_TARGET_ORIGIN_REGEX/.test(e.message ?? ''),
+        (e) => e.level === 'warn' && /ALLOWED_PREVIEW_ORIGIN_REGEX/.test(e.message ?? ''),
       )
       expect(warnings.length).to.equal(0)
     },
