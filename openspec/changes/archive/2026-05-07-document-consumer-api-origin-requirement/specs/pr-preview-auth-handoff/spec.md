@@ -1,6 +1,6 @@
 ## MODIFIED Requirements
 
-### Requirement: Documented previewbase and consumer configuration
+### Requirement: Documented previewbase configuration
 
 `PREVIEW_DEPLOYMENT.md` MUST document both halves of the handoff
 deployment contract:
