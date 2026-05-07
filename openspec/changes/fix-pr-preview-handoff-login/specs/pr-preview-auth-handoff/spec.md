@@ -29,22 +29,39 @@ MUST redirect the browser to the authority's
 
 When `GET /api/auth/login/google` arrives on the authority with a
 `handoffTarget` query parameter, the authority MUST verify the target with
-`isSafeHandoffTarget` and, if accepted, propagate it through the OIDC round
-trip such that it is recoverable on `/api/auth/login/google/return` even if
-the session-backed `state` entry is lost.
+the configured allowlist and, if accepted, propagate it through the OIDC
+round trip such that it is recoverable on `/api/auth/login/google/return`
+without depending on `req.session` surviving the round trip.
+
+The authority MUST configure the underlying `passport-openidconnect`
+strategy with a state store whose `store(req, ctx, appState, meta, cb)` /
+`verify(req, handle, cb)` implementation does not read or write
+`req.session`. The default `SessionStateStore` is replaced by
+`StatelessStateStore` (signs `{ ctx, appState }` as a JWT keyed on
+`config.sessionSecret`, `aud=oidc-state`, 10 min TTL, used as the OIDC
+`state` query parameter directly).
 
 #### Scenario: Safe handoffTarget is accepted and preserved
 
 - **WHEN** the authority receives
   `/login/google?returnPath=%2F&handoffTarget=https://<safe-pr-preview>`
 - **THEN** the authority initiates the OIDC flow with a `state` value that,
-  on return, yields `{ returnPath: '/', handoffTarget: 'https://<safe-pr-preview>' }`
-  even when passport's session-backed state lookup returns nothing
+  on return, yields
+  `{ returnPath: '/', handoffTarget: 'https://<safe-pr-preview>' }`
+  with `req.session` empty across the round trip
+
+#### Scenario: State delivery does not depend on req.session
+
+- **WHEN** the authority's `/login/google/return` is invoked with a valid
+  state JWT and `req.session = {}`
+- **THEN** `passport.authenticate` does not produce a "Unable to verify
+  authorization request state." failure and the handoff branch executes
+  normally
 
 #### Scenario: Unsafe handoffTarget is rejected before OIDC
 
 - **WHEN** the authority receives a `handoffTarget` for which
-  `isSafeHandoffTarget` returns false
+  `evaluateHandoffTarget` returns `{ ok: false }`
 - **THEN** the authority redirects to `${frontendURL}/?loginFailed=true` and
   emits a structured warning log identifying the rejection
 
@@ -81,19 +98,10 @@ Every `redirectWithLoginFailed` invoked from the handoff branch on
 `/login/google/return` (and `/login/google` pre-OIDC rejection) MUST be
 accompanied by a structured `logger.warn` call that includes a `reason`
 field drawn from a stable enumeration:
-`state-missing-handoff-target`, `handoff-target-unsafe`,
-`handoff-mint-failed`, `oidc-identity-missing`. When `reason` is
-`handoff-target-unsafe`, the log MUST also include a `subReason` of
-`allowlist-not-configured`, `origin-not-allowed`, or
+`handoff-target-unsafe`, `handoff-mint-failed`, `oidc-identity-missing`.
+When `reason` is `handoff-target-unsafe`, the log MUST also include a
+`subReason` of `allowlist-not-configured`, `origin-not-allowed`, or
 `missing-or-invalid-url`.
-
-#### Scenario: State without handoffTarget is logged as state-missing-handoff-target
-
-- **WHEN** `/login/google/return` resolves a state with no `handoffTarget`
-  in a request that originally carried one (i.e. the signed-state fallback
-  also fails to decode it)
-- **THEN** a `logger.warn` fires with `reason: 'state-missing-handoff-target'`
-  and the response is a 302 to `${frontendURL}/?loginFailed=true`
 
 #### Scenario: Empty allowlist is logged as allowlist-not-configured
 

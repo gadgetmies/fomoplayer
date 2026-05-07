@@ -39,6 +39,8 @@ test({
       googleClientSecret: 'google-client-secret',
       googleOidcApiRedirect: 'https://api.example.com/auth/login/google/return',
       apiURL: 'https://api.example.com/api',
+      apiOrigin: 'https://api.example.com',
+      sessionSecret: 'test-session-secret',
       maxAccountCount: 100,
       internalAuthHandoffIssuer: 'https://api.example.com',
       internalAuthHandoffJwksUrl: 'https://api.example.com/auth/.well-known/jwks.json',

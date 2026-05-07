@@ -1,15 +1,28 @@
 ## Why
 
-Logging in from a PR preview environment (e.g. `https://fomoplayer-<service>-<project>-pr-NNN.up.railway.app`) is broken. The PR preview is configured as a handoff *consumer* and the previewbase acts as the OIDC *authority*, but the round trip never completes back to the PR preview. Two reproducible failure modes both indicate the previewbase's OIDC return is failing to deliver the handoff redirect: when the user is already logged into the previewbase, they remain on the previewbase with no PR-preview session; when they are not, the previewbase callback ends at `/?loginFailed=true` instead of redirecting to the consumer's `/login/google/handoff` endpoint. The root cause appears to be a combination of the previewbase's session-backed `state` not surviving the Google round trip on the previewbase host and missing/incorrect Railway env vars (`RAILWAY_SERVICE_NAME`, `RAILWAY_PROJECT_NAME`) that gate `isSafeHandoffTarget`. Today we cannot tell which guard tripped without server-side instrumentation.
+Logging in from a PR preview environment (e.g. `https://fomoplayer-<service>-<project>-pr-NNN.up.railway.app`) is broken. The PR preview is configured as a handoff *consumer* and the previewbase acts as the OIDC *authority*, but the round trip never completes back to the PR preview. Two reproducible failure modes both indicate the previewbase's OIDC return is failing to deliver the handoff redirect: when the user is already logged into the previewbase, they remain on the previewbase with no PR-preview session; when they are not, the previewbase callback ends at `/?loginFailed=true` instead of redirecting to the consumer's `/login/google/handoff` endpoint.
+
+Field-confirmed root cause: passport-openidconnect's default
+`SessionStateStore` rejects the OIDC return with `"Unable to verify
+authorization request state."` because the session row that stores
+`{ returnPath, handoffTarget }` does not survive the Google round trip.
+The strategy fails *before* our return handler runs, so any logic added
+in the return handler — including the cookie sidechannel from the first
+iteration of this change — never executes. A secondary contributing
+factor is that the original allowlist construction (Railway env vars
+interpolated into a regex in code) made the authority Railway-specific
+and silently rejected every target host when the env was misconfigured;
+operators couldn't tell which guard tripped without server-side
+instrumentation.
 
 ## What Changes
 
 - Make the cross-origin handoff round trip complete end-to-end so a user starting from a PR preview ends authenticated on the originating PR preview origin, on `returnPath`.
 - Cover both cold-start and the case where the previewbase already has a session for that user — the presence of an existing previewbase session must not swallow the handoff. The previewbase must not call `req.login` on itself when `handoffTarget` is set.
-- Harden `state` propagation across the previewbase OIDC round trip so `handoffTarget` is never silently lost (e.g. fall back to a signed/encrypted state value if the session-backed state is missing on return).
+- Replace passport-openidconnect's session-backed state store with a stateless signed-JWT store registered via the strategy's `store:` option. The OIDC `state` query parameter becomes the signed payload itself, so state delivery does not depend on express-session, the session cookie surviving cross-site OIDC return, or pg-session row availability. CSRF protection is preserved through HMAC signature + `aud=oidc-state` + `exp`.
 - Replace the Railway-specific hostname allowlist (built in code from `RAILWAY_SERVICE_NAME` + `RAILWAY_PROJECT_NAME`) with a generic `HANDOFF_TARGET_ORIGIN_REGEX` env var (comma-separated regex list, parsed the same way as `ALLOWED_ORIGIN_REGEX`). Operators express the allowed origins in environment configuration; the code carries no Railway naming assumptions.
-- Add diagnostic logging on the previewbase side that names which branch failed (state lost, handoff target rejected, allowlist not configured, allowlist mismatch, mint failed, identity missing) so future regressions are debuggable from logs alone.
-- Add an automated cascade-test for the handoff happy path covering both cold-start and existing-session scenarios.
+- Add diagnostic logging on the previewbase side that names which branch failed (handoff target rejected with allowlist-not-configured / origin-not-allowed, mint failed, identity missing) so future regressions are debuggable from logs alone.
+- Add automated cascade-tests for the stateless state store (12 unit tests) and the handoff happy path on the authority's `/login/google/return` (cold-start and existing-session scenarios).
 - Document the required previewbase env (`HANDOFF_TARGET_ORIGIN_REGEX`, plus the handoff secret/authority origin) so misconfigured deployments fail loudly rather than silently rejecting every PR preview hostname.
 
 ## Capabilities
@@ -22,9 +35,11 @@ Logging in from a PR preview environment (e.g. `https://fomoplayer-<service>-<pr
 
 ## Impact
 
-- `packages/back/routes/auth.js` — `/login/google`, `/login/google/return`, `/login/google/handoff` all touched. The authority-side branch must prefer the handoff path over `req.login` when `handoffTarget` is present, regardless of any pre-existing session, and must fall back to a signed state if the session-stored state is empty on return.
+- `packages/back/passport-setup.js` — pass a `StatelessStateStore` instance as the `store:` option on the OpenIDStrategy. CLI and extension OIDC flows go through the same store; their `state: { returnToCli, ... }` / `state: { returnToExtension, ... }` payloads continue to round-trip via the JWT-encoded state.
+- `packages/back/routes/shared/oidc-state-store.js` (new) — `StatelessStateStore` class implementing the passport-openidconnect store interface (`store(req, ctx, appState, meta, cb)` / `verify(req, handle, cb)`). Signs `{ ctx, appState }` with `config.sessionSecret` and `aud=oidc-state`, 10 min TTL.
+- `packages/back/routes/auth.js` — `/login/google`, `/login/google/return`, `/login/google/handoff`. The authority-side branch unconditionally takes the handoff path when `handoffTarget` is present in `info.state`, regardless of any pre-existing session.
 - `packages/back/routes/shared/safe-redirect.js` — `isSafeHandoffTarget` becomes a thin wrapper around `evaluateHandoffTarget(url, allowedOriginRegexes)`. The allowlist comes from the caller (sourced from `config.handoffTargetOriginRegexes`) instead of `process.env.RAILWAY_SERVICE_NAME` / `RAILWAY_PROJECT_NAME`, so the code has no Railway-specific assumptions.
 - `packages/back/config.js` — adds `handoffTargetOriginRegexes`, parsed from `HANDOFF_TARGET_ORIGIN_REGEX` via `parseOriginRegexes` (same shape as `ALLOWED_ORIGIN_REGEX`).
-- `packages/back/test/tests/users/auth/` — new cascade-test covering the handoff happy path against an in-process Express app, plus a regression test for the existing-previewbase-session case.
-- `PREVIEW_DEPLOYMENT.md` and `docs/auth/oidc-login-flow.md` — describe the new `HANDOFF_TARGET_ORIGIN_REGEX` env var, what configures it, and the structured failure logs.
-- No DB schema, frontend, or extension changes. CLI and extension login flows are out of scope.
+- `packages/back/test/tests/users/auth/` — new cascade-tests for the stateless state store (`oidc-state-store.js`) and the handoff happy path / existing-session regression / consumer delegation / structured failure logs / startup warning (`handoff-login-return.js`).
+- `PREVIEW_DEPLOYMENT.md` and `docs/auth/oidc-login-flow.md` — describe the stateless state store, the new `HANDOFF_TARGET_ORIGIN_REGEX` env var, and the structured failure logs.
+- No DB schema, frontend, or extension changes. CLI and extension login flows are out of scope (their existing state shapes ride the new state store transparently).

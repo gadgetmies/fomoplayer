@@ -48,9 +48,9 @@ introduces one.
   `handoffTarget` is set on the return, the previewbase mints a token and
   redirects to the consumer instead of calling `req.login` on itself.
 - Each rejection branch on the previewbase emits a distinct, structured log
-  line that names the tripped guard (`state-missing-handoff-target`,
-  `handoff-target-unsafe` with `subReason: allowlist-not-configured` or
-  `origin-not-allowed`, `handoff-mint-failed`, `oidc-identity-missing`).
+  line that names the tripped guard (`handoff-target-unsafe` with
+  `subReason: allowlist-not-configured` or `origin-not-allowed`,
+  `handoff-mint-failed`, `oidc-identity-missing`).
 - A cascade-test covers the handoff happy path (cold-start) and a regression
   test covers the existing-previewbase-session case using an in-process
   Express app, mirroring `handoff-login-signup-policy.js`.
@@ -90,34 +90,73 @@ secondary redirect after login. Rejected because (a) it leaks a session the
 user did not ask for and (b) it depends on the same fragile session state to
 trigger the secondary redirect.
 
-### Decision 2 — Carry `handoffTarget` in a signed state token, not just session
+### Decision 2 — Replace passport's session-backed state store with a stateless signed-JWT store
 
-**Choice:** Sign `{ returnPath, handoffTarget }` with the existing handoff
-secret (HS256, 5-minute TTL, dedicated audience like `oidc-state`) and use it
-as the OIDC `state` value when delegating from the consumer or originating on
-the previewbase. On return, prefer the signed token; fall back to passport's
-`info.state` only if the signed payload is absent or invalid (logged
-explicitly).
+**Choice:** Configure `passport-openidconnect`'s OpenIDStrategy with the
+`store:` option pointing at a custom `StatelessStateStore`. The store
+implements the strategy's two-method interface
+(`store(req, ctx, appState, meta, cb)` and `verify(req, handle, cb)`) by
+signing `{ ctx, appState }` as a JWT with `config.sessionSecret`, HS256,
+`aud=oidc-state`, 10 min TTL. The JWT *is* the OIDC `state` query
+parameter — no session lookup is required on either side.
 
-**Why:** Passport's session-backed state stores `{ returnPath, handoffTarget }`
-under a session key and only sends an opaque lookup id to Google. Railway's
-edge plus the way the session cookie is scoped on `up.railway.app` makes
-losing the session entry across the round trip plausible (and matches the
-observed symptom of `info.state` arriving empty). A signed self-contained
-state value removes session persistence as a single point of failure without
-giving up CSRF protection — the signature plus `aud`/`exp` claims serve the
-same purpose.
+**Why:** This is the actual fix for the observed bug. The original
+attempt to side-channel `handoffTarget` in a cookie was *also* defeated
+because passport-openidconnect's default `SessionStateStore.verify`
+fails *before* our return handler runs, with `"Unable to verify
+authorization request state."`, when `req.session[<key>]` is empty. By
+the time our `(err, user, info)` callback fires, `user = false` and the
+strategy is already pointing at the failure path. The cookie was dead
+code in the failure case.
 
-**Alternative considered:** Switch to a stateless OIDC `state` derived from a
-random nonce stored in the cookie session only. Rejected because it does not
-fix the underlying "session entry missing" symptom; it just renames the
-storage. Reusing the existing handoff signing infrastructure adds zero new
-dependencies.
+`StatelessStateStore` decouples state delivery from express-session
+entirely. The state survives any scenario where the OIDC redirect
+itself reaches the backend, because Google echoes the JWT verbatim in
+the `state` query parameter. Session loss, pg-session row eviction,
+and `SameSite` rejections of the session cookie on the cross-site OIDC
+return all become non-issues for state delivery.
 
-**Edge:** Don't break CLI / extension flows. `state` for those branches keeps
-its current shape (`returnToCli` / `returnToExtension`) and stays
-session-backed. The signed-state fallback applies only when `handoffTarget`
-is in scope.
+**CSRF properties:**
+- Original session-backed handle: random 24-byte string, single-use
+  (deleted on lookup). Forgery requires guessing the random value.
+- Stateless signed JWT: HMAC-signed with a server-side secret +
+  `aud=oidc-state` + `exp`. Forgery requires the secret. Replay within
+  the TTL is bounded by Google's single-use authorization `code` —
+  resubmitting the same `(code, state)` pair fails on the second
+  submit, so the practical attack surface is no larger than before.
+
+**Alternatives considered:**
+
+1. *Catch the "state verification failed" passport error in the return
+   handler and proceed with the cookie's payload via a manual OIDC code
+   exchange.* Rejected — re-implementing parts of
+   passport-openidconnect (token endpoint call, ID-token verification)
+   is invasive and error-prone, and we'd run two parallel state
+   verification mechanisms.
+2. *Keep the cookie sidechannel and disable passport's state check via
+   `state: false` in strategy options.* Rejected — disabling the state
+   check globally affects CLI and extension flows that rely on
+   `info.state` to route the return-handler branches. We'd need to
+   manually re-verify state for all flows.
+3. *Switch to a different OIDC library that lets us decline state
+   storage per-call.* Rejected as too disruptive; passport-openidconnect
+   already exposes the `store:` extension point.
+
+**Side-effect on CLI / extension flows:** Their `state: { returnToCli,
+... }` / `state: { returnToExtension, ... }` payloads now ride the JWT
+the same way handoff state does. No code change needed in those flows;
+they just stop depending on session for OIDC state delivery, which is
+strictly a robustness improvement. Other session-stored keys
+(`req.session.cliCallbackPort`, `req.session.extensionId`, etc.) are
+unaffected — they're written and read on the same backend instance and
+don't cross the OIDC round trip.
+
+**Secret choice:** `config.sessionSecret` is reused. It's already
+deployed on every backend, scoped exactly the same way as the original
+session-backed state, and rotating it invalidates outstanding state
+JWTs the same way it invalidates outstanding session cookies. Using a
+dedicated `OIDC_STATE_SECRET` would add another env var without
+changing the rotation story.
 
 ### Decision 3 — Emit one structured `logger.warn` per failure branch, with a stable `reason` field
 
@@ -125,8 +164,6 @@ is in scope.
 previewbase's return path gains a structured log with a stable string
 `reason` value:
 
-- `state-missing-handoff-target` — `info.state` produced no `handoffTarget`
-  and no signed-state fallback decoded.
 - `handoff-target-unsafe` — `evaluateHandoffTarget(handoffTarget,
   handoffTargetOriginRegexes)` returned `{ ok: false }`. Sub-reason
   logged: `allowlist-not-configured` (the allowlist is empty) vs
@@ -134,6 +171,16 @@ previewbase's return path gains a structured log with a stable string
   `missing-or-invalid-url`.
 - `handoff-mint-failed` — the call to `mintHandoffTokenFn` threw.
 - `oidc-identity-missing` — `user.oidcIdentity.{issuer,subject}` absent.
+
+State-verification failures (tampered, expired, or malformed `state`
+JWT) are reported by `passport-openidconnect` itself before reaching
+this branch — they surface as the existing
+`OIDC authentication produced no user` log line with
+`failureInfo.message` set by `StatelessStateStore.verify`. No
+`state-missing-handoff-target` reason is needed anymore: with the
+stateless store, the state either verifies (and `appState` carries
+`handoffTarget`) or it doesn't (and the strategy fails before our
+handoff branch runs).
 
 **Why:** The acceptance criteria explicitly require log-only debuggability.
 A stable enumerated `reason` lets us grep one string and identify the

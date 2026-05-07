@@ -22,10 +22,11 @@ The authoritative source of truth is the code:
   browser extension flow.
 - `packages/back/routes/shared/auth-handoff-token.js` — Handoff JWT mint /
   verify (HS256, 60 s TTL).
-- `packages/back/routes/shared/oidc-state-token.js` — Signed self-contained
-  OIDC state token (HS256, `aud=oidc-state`, 5 min TTL) used as a sidechannel
-  to carry `{ returnPath, handoffTarget }` across the Google round trip in a
-  cookie, independent of express-session.
+- `packages/back/routes/shared/oidc-state-store.js` —
+  `StatelessStateStore` for `passport-openidconnect`. Signs `{ ctx,
+  appState }` (HS256, `aud=oidc-state`, 10 min TTL) into the OIDC `state`
+  parameter itself, eliminating the dependency on express-session for
+  state delivery across the Google round trip.
 - `packages/back/routes/shared/auth-handoff-jti.js` +
   `migrations/sqls/20260331110000-add-auth-handoff-jti-up.sql` — Replay
   protection (one-time-use `jti` table).
@@ -226,40 +227,34 @@ When the preview backend has `OIDC_HANDOFF_URL` (authority's
        ?returnPath=…&handoffTarget=https://pr-N…──▶ Browser
 3. Browser ──GET /login/google?…&handoffTarget=…──▶ Authority
 4. Authority validates handoffTarget via evaluateHandoffTarget
-5. Authority signs an OIDC state token via signOidcState
-       ({ returnPath, handoffTarget }, aud=oidc-state, 5 min TTL)
-   and writes it as the fp_handoff_state cookie (HttpOnly, Secure,
-   SameSite=None in preview, Path=/api/auth/login/google).
-6. Authority ──passport.authenticate('openidconnect',
+5. Authority ──passport.authenticate('openidconnect',
        state={returnPath, handoffTarget})──▶ Google
-7. Google ──/api/auth/login/google/return──▶ Authority
-   Browser sends fp_handoff_state alongside the session cookie.
-8. Authority resolves { returnPath, handoffTarget } by:
-       • verifyOidcState on the fp_handoff_state cookie (preferred), then
-       • info.state from passport's session-backed state (fallback).
+   (StatelessStateStore.store signs { ctx, appState } as a JWT
+    and the JWT is the literal `state` query parameter sent to Google.)
+6. Google ──/api/auth/login/google/return?code=…&state=<JWT>──▶ Authority
+7. StatelessStateStore.verify decodes the JWT (signature check + aud + exp)
+   and yields appState = { returnPath, handoffTarget }.
    When handoffTarget is set, the authority MUST take the handoff branch
    and MUST NOT call req.login on itself, regardless of any pre-existing
    authority session for the same user.
-9. Authority verifies the OIDC user, looks it up in its own DB, mints
-   handoff JWT (iss = authorityOrigin, aud = handoffTarget origin,
-   sub = google sub, oidcIssuer = accounts.google.com), clears the
-   fp_handoff_state cookie.
-10. Authority ──302 to ${handoffTarget}/api/auth/login/google/handoff
+8. Authority looks up the OIDC user in its own DB and mints the handoff
+   JWT (iss = authorityOrigin, aud = handoffTarget origin,
+   sub = google sub, oidcIssuer = accounts.google.com).
+9. Authority ──302 to ${handoffTarget}/api/auth/login/google/handoff
         ?token=…&returnPath=…──▶ Browser
-11. Browser ──GET /api/auth/login/google/handoff?token=…──▶ Consumer
-12. Consumer verifies JWT (issuer=authority, audience=apiOrigin),
+10. Browser ──GET /api/auth/login/google/handoff?token=…──▶ Consumer
+11. Consumer verifies JWT (issuer=authority, audience=apiOrigin),
     consumes jti (replay protection), looks up or creates account
     in its own DB (consumer applies its own sign-up policy / invite-code
     check), then req.login(user) → consumer session cookie.
-13. Consumer ──302 to ${consumerFrontendURL}${returnPath}──▶ Browser
+12. Consumer ──302 to ${consumerFrontendURL}${returnPath}──▶ Browser
 ```
 
 Important details:
 
 - The preview consumer must have its **own** `OIDC_HANDOFF_SECRET` matching
   the authority's. The token is verified locally; no network call back to
-  the authority is made. The same secret also signs the authority's
-  `fp_handoff_state` cookie, so it doubles as the OIDC-state HMAC key.
+  the authority is made.
 - The preview consumer never talks to Google. Only the authority has a
   Google OAuth client and a registered redirect URI.
 - **`req.login` on the authority is unconditionally skipped when
@@ -269,22 +264,34 @@ Important details:
   user's intended destination in a handoff flow, so it does not establish
   a session for them. The authority's *existing* session (if any) is left
   untouched.
-- The `fp_handoff_state` cookie is the resilience mechanism for the
-  "session lost across the Google round trip" failure mode. Passport's
-  built-in `state` is session-backed (only an opaque lookup key reaches
-  Google), so any session loss between steps 6 and 7 makes `info.state`
-  empty on return. The cookie is signed (HS256, 5 min TTL, single-use
-  `jti`) and independent of express-session, so it survives that path.
-  When both sources disagree, the cookie wins; when both are absent in a
-  request that should have carried `handoffTarget`, the authority logs
-  `reason: 'state-missing-handoff-target'` and fails closed.
+- **State delivery does not depend on express-session.** The default
+  `passport-openidconnect` SessionStateStore stores `{ returnPath,
+  handoffTarget }` in `req.session[<key>]` and only sends an opaque
+  handle to Google; on return it looks up the entry by handle. If the
+  session entry is missing on return — because Railway's edge dropped
+  the session cookie, the cookie's `SameSite`/`Secure` settings rejected
+  it on the cross-site OIDC return, or pg-session's row was evicted —
+  passport rejects with "Unable to verify authorization request state."
+  before our return handler runs. `StatelessStateStore` replaces that
+  with a self-contained signed JWT that *is* the OIDC `state` parameter,
+  so Google echoes the entire state payload back. The state survives any
+  scenario where the OIDC redirect itself reaches the backend.
+- CSRF protection is preserved: the JWT is HMAC-signed with
+  `config.sessionSecret` and carries `iss`, `aud=oidc-state`, and a
+  10-minute `exp`. An attacker who hasn't got the secret cannot forge a
+  valid handle. Replay within the TTL is not exploitable in practice
+  because Google's authorization `code` is single-use — replaying the
+  same `(code, state)` pair fails on the second submit.
 - Sign-up policy runs on the consumer (it has the consumer's user table) —
   the authority's user record is irrelevant here. The consumer's
   `req.session.inviteCode` is consulted just like in the regular flow.
 - Cross-site session cookies. When `PREVIEW_ENV=true`,
   `packages/back/index.js` sets `cookie.secure=true` and
-  `cookie.sameSite='none'` so the session cookie set in step 12 survives
-  the cross-origin redirect.
+  `cookie.sameSite='none'` so the session cookie set on the consumer in
+  step 11 survives the cross-origin redirect. (The authority's session
+  cookie is no longer needed for OIDC state delivery, but is still used
+  to remember CLI / extension `req.session.cli*` / `req.session.extension*`
+  state on the same backend.)
 
 ### Diagnostic logging on the authority
 
@@ -295,9 +302,14 @@ enumeration:
 | `reason` | When |
 |---|---|
 | `handoff-target-unsafe` | Pre-OIDC or post-OIDC, `evaluateHandoffTarget` rejected the target. Always carries a `subReason`: `allowlist-not-configured` (`HANDOFF_TARGET_ORIGIN_REGEX` is empty on the authority) or `origin-not-allowed` (target origin doesn't match any configured regex). |
-| `state-missing-handoff-target` | Cookie was present but failed to decode (or both sources resolved no `handoffTarget`) — i.e. the request looked like a handoff attempt but the target couldn't be recovered. |
 | `handoff-mint-failed` | `mintHandoffToken` threw, or `canMintHandoff` is false (missing secret/apiOrigin on the authority). |
 | `oidc-identity-missing` | Authenticated `req.user` lacks `oidcIdentity.issuer` / `oidcIdentity.subject`. |
+
+State-verification failures (tampered, expired, or mismatched `state`
+JWT) come from `passport-openidconnect` itself and surface as the
+existing `OIDC authentication produced no user` log line with
+`failureInfo.message` set to `Unable to verify authorization request
+state.` or `Invalid authorization request state.`.
 
 The enumerated `reason` lets operators grep one log line and identify the
 failure class without reading code. The `subReason` split distinguishes

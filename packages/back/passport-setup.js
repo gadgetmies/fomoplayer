@@ -12,6 +12,7 @@ const sql = require('sql-template-strings')
 const { queryAccountCount } = require('./routes/db')
 const { deleteInviteCode } = require('./db/account')
 const { isGoogleSubAllowed } = require('./routes/shared/auth-flow')
+const { StatelessStateStore } = require('./routes/shared/oidc-state-store')
 
 const parseOidcState = (req) => {
   const rawState = req?.query?.state
@@ -53,6 +54,7 @@ module.exports = function passportSetup() {
   if (!googleOidcConfigured) {
     logger.info('Google OIDC client credentials not configured; skipping OIDC strategy registration')
   } else {
+    const stateStoreIssuer = config.apiOrigin || config.frontendURL || 'fomoplayer'
     passport.use(new OpenIDStrategy(
       {
         issuer: googleOpenIDIssuer,
@@ -62,6 +64,10 @@ module.exports = function passportSetup() {
         tokenURL: 'https://www.googleapis.com/oauth2/v3/token',
         callbackURL: config.googleOidcApiRedirect || `${config.authApiURL || config.apiURL}/auth/login/google/return`,
         passReqToCallback: true,
+        store: new StatelessStateStore({
+          secret: config.sessionSecret,
+          issuer: stateStoreIssuer,
+        }),
       },
       async (req, issuer, profile, done) => {
         try {

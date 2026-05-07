@@ -6,7 +6,6 @@ const CustomStrategy = require('passport-custom').Strategy
 const request = require('supertest')
 const { test } = require('cascade-test')
 const { createAuthRouter } = require('../../../../routes/auth')
-const { signOidcState } = require('../../../../routes/shared/oidc-state-token')
 
 const FRONTEND_URL = 'https://previewbase.fomoplayer.test'
 const AUTHORITY_ORIGIN = 'https://previewbase.fomoplayer.test'
@@ -79,8 +78,6 @@ const buildAuthorityApp = ({
   preLoggedInUser = null,
   config = authorityConfig(),
   mintToken = 'mint-token-1',
-  signOidcStateFn,
-  verifyOidcStateFn,
 } = {}) => {
   const { entries, logger } = captureLogs()
   let loginCalled = 0
@@ -103,8 +100,6 @@ const buildAuthorityApp = ({
       config,
       mintHandoffTokenFn: () => ({ token: mintToken, jti: 'mint-jti-1' }),
       logger,
-      ...(signOidcStateFn ? { signOidcStateFn } : {}),
-      ...(verifyOidcStateFn ? { verifyOidcStateFn } : {}),
     }),
   )
   return { app, entries, getLoginCallCount: () => loginCalled }
@@ -172,51 +167,6 @@ test({
     },
     'does NOT call req.login a second time on authority for the consumer flow': async ({ loginCalls }) => {
       expect(loginCalls).to.equal(0)
-    },
-  },
-
-  'authority with signed-state cookie but lost passport state: still mints handoff': {
-    setup: async () => {
-      registerStrategy({ info: { state: undefined } })
-      const cookieToken = signOidcState({
-        secret: HANDOFF_SECRET,
-        issuer: AUTHORITY_ORIGIN,
-        returnPath: '/from-cookie',
-        handoffTarget: CONSUMER_ORIGIN,
-      }).token
-      const { app, entries, getLoginCallCount } = buildAuthorityApp()
-      const response = await request(app)
-        .get('/api/auth/login/google/return?code=abc')
-        .set('Cookie', `fp_handoff_state=${cookieToken}`)
-      return { response, entries, loginCalls: getLoginCallCount() }
-    },
-    'recovers handoffTarget and returnPath from signed cookie': async ({ response }) => {
-      expect(response.status).to.equal(302)
-      expect(response.headers.location).to.include(`${CONSUMER_ORIGIN}/api/auth/login/google/handoff`)
-      expect(response.headers.location).to.include('returnPath=%2Ffrom-cookie')
-    },
-    'does not call req.login on authority': async ({ loginCalls }) => {
-      expect(loginCalls).to.equal(0)
-    },
-  },
-
-  'authority with corrupted signed-state cookie and no passport state: logs state-missing-handoff-target': {
-    setup: async () => {
-      registerStrategy({ info: { state: {} } })
-      const { app, entries } = buildAuthorityApp()
-      const response = await request(app)
-        .get('/api/auth/login/google/return?code=abc')
-        .set('Cookie', 'fp_handoff_state=this-is-not-a-jwt')
-      return { response, entries }
-    },
-    'redirects to login failed': async ({ response }) => {
-      expect(response.status).to.equal(302)
-      expect(response.headers.location).to.equal(LOGIN_FAILED_URL)
-    },
-    'logs reason state-missing-handoff-target': async ({ entries }) => {
-      const match = entries.find((e) => e.meta?.reason === 'state-missing-handoff-target')
-      expect(match, 'expected a state-missing-handoff-target log entry').to.exist
-      expect(match.level).to.equal('warn')
     },
   },
 

@@ -15,11 +15,6 @@ const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = requ
 const { upsertUserAuthorizationTokens } = require('./db')
 const { isSafeRedirectPath, evaluateHandoffTarget } = require('./shared/safe-redirect')
 const { mintHandoffToken: defaultMintHandoffToken, verifyHandoffToken: defaultVerifyHandoffToken } = require('./shared/auth-handoff-token')
-const {
-  signOidcState: defaultSignOidcState,
-  verifyOidcState: defaultVerifyOidcState,
-  OIDC_STATE_TTL_SECONDS,
-} = require('./shared/oidc-state-token')
 const { issueCode: defaultIssueCode, consumeCode: defaultConsumeCode } = require('./shared/cli-auth-code')
 const { verifyActionsToken: defaultVerifyActionsToken, GITHUB_ACTIONS_ISSUER } = require('./shared/github-actions-oidc')
 const { evaluateSignUpPolicy, getRequestOrigin, isGoogleSubAllowed } = require('./shared/auth-flow')
@@ -49,8 +44,6 @@ const createAuthRouter = ({
   config = defaultConfig,
   mintHandoffTokenFn = defaultMintHandoffToken,
   verifyHandoffTokenFn = defaultVerifyHandoffToken,
-  signOidcStateFn = defaultSignOidcState,
-  verifyOidcStateFn = defaultVerifyOidcState,
   logger = defaultLogger,
   issueCodeFn = defaultIssueCode,
   consumeCodeFn = defaultConsumeCode,
@@ -113,43 +106,6 @@ const createAuthRouter = ({
     oidcHandoffUrl && oidcHandoffAuthorityOrigin && oidcHandoffSecret,
   )
   const canMintHandoff = Boolean(oidcHandoffSecret && apiOrigin)
-  const HANDOFF_STATE_COOKIE_NAME = 'fp_handoff_state'
-  const handoffStateCookiePath = (() => {
-    const fallback = `${authRouteBaseUrl}/login/google`
-    try {
-      return `${new URL(authRouteBaseUrl).pathname}/login/google`
-    } catch {
-      return fallback
-    }
-  })()
-  const handoffStateCookieOptions = () => ({
-    httpOnly: true,
-    secure: Boolean(config.isProduction || config.isPreviewEnv),
-    sameSite: config.isPreviewEnv ? 'none' : 'lax',
-    path: handoffStateCookiePath,
-    maxAge: OIDC_STATE_TTL_SECONDS * 1000,
-  })
-  const setHandoffStateCookie = (res, token) =>
-    res.cookie(HANDOFF_STATE_COOKIE_NAME, token, handoffStateCookieOptions())
-  const clearHandoffStateCookie = (res) =>
-    res.clearCookie(HANDOFF_STATE_COOKIE_NAME, { path: handoffStateCookiePath })
-  const readHandoffStateCookie = (req) => {
-    const raw = req?.headers?.cookie
-    if (!raw) return null
-    const prefix = `${HANDOFF_STATE_COOKIE_NAME}=`
-    for (const part of raw.split(';')) {
-      const trimmed = part.trim()
-      if (trimmed.startsWith(prefix)) {
-        const value = trimmed.slice(prefix.length)
-        try {
-          return decodeURIComponent(value)
-        } catch {
-          return value || null
-        }
-      }
-    }
-    return null
-  }
 
   if (canMintHandoff && handoffTargetOriginRegexes.length === 0) {
     logger.warn(
@@ -157,10 +113,7 @@ const createAuthRouter = ({
     )
   }
 
-  const redirectWithLoginFailed = (res) => {
-    clearHandoffStateCookie(res)
-    return res.redirect(loginFailedUrl)
-  }
+  const redirectWithLoginFailed = (res) => res.redirect(loginFailedUrl)
   const safeFrontendRedirect = (res, returnPath) => {
     const safePath = isSafeRedirectPath(returnPath, frontendURL) ? returnPath : ''
     return res.redirect(`${frontendURL}${safePath}`)
@@ -210,22 +163,6 @@ const createAuthRouter = ({
         return redirectWithLoginFailed(res)
       }
       handoffTarget = requestedHandoffTarget
-    }
-
-    if (handoffTarget && oidcHandoffSecret && apiOrigin) {
-      try {
-        const { token } = signOidcStateFn({
-          secret: oidcHandoffSecret,
-          issuer: apiOrigin,
-          returnPath,
-          handoffTarget,
-        })
-        setHandoffStateCookie(res, token)
-      } catch (e) {
-        logger.error('Failed to sign OIDC state cookie', {
-          errorMessage: e?.message ?? String(e),
-        })
-      }
     }
 
     return passport.authenticate('openidconnect', {
@@ -616,24 +553,7 @@ const createAuthRouter = ({
       }
 
       const passportState = info?.state ?? {}
-      const { returnToCli, cliCallbackPort, returnToExtension } = passportState
-
-      const cookieToken = readHandoffStateCookie(req)
-      let signedStatePayload = null
-      let signedStatePresent = false
-      let signedStateDecoded = false
-      if (cookieToken && oidcHandoffSecret && apiOrigin) {
-        signedStatePresent = true
-        signedStatePayload = verifyOidcStateFn({
-          token: cookieToken,
-          secret: oidcHandoffSecret,
-          issuer: apiOrigin,
-        })
-        signedStateDecoded = Boolean(signedStatePayload)
-      }
-
-      const returnPath = signedStatePayload?.returnPath ?? passportState.returnPath
-      const handoffTarget = signedStatePayload?.handoffTarget ?? passportState.handoffTarget
+      const { returnToCli, cliCallbackPort, returnToExtension, returnPath, handoffTarget } = passportState
 
       if (returnToCli) {
         const port = parseInt(cliCallbackPort, 10)
@@ -668,19 +588,9 @@ const createAuthRouter = ({
         })
       }
 
-      const wantsHandoff = Boolean(handoffTarget) || (signedStatePresent && !signedStateDecoded)
+      const wantsHandoff = Boolean(handoffTarget)
 
       if (wantsHandoff) {
-        if (!handoffTarget) {
-          logger.warn('Handoff requested but state did not yield a handoffTarget', {
-            reason: 'state-missing-handoff-target',
-            signedStatePresent,
-            signedStateDecoded,
-            passportStateHadHandoffTarget: Boolean(passportState.handoffTarget),
-          })
-          return redirectWithLoginFailed(res)
-        }
-
         if (!canMintHandoff) {
           logger.warn('Handoff requested but cannot be fulfilled', {
             reason: 'handoff-mint-failed',
@@ -730,11 +640,9 @@ const createAuthRouter = ({
         consumeUrl.searchParams.set('token', token)
         if (returnPath) consumeUrl.searchParams.set('returnPath', returnPath)
 
-        clearHandoffStateCookie(res)
         return res.redirect(consumeUrl.toString())
       }
 
-      clearHandoffStateCookie(res)
       return req.login(user, (loginErr) => {
         if (loginErr) {
           logger.error('req.login failed after OIDC authentication', {
