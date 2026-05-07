@@ -139,9 +139,15 @@ const setQueue = async ({ tracks, startIndex = 0, autoplay = true }) => {
   }
 }
 
-const enqueue = async ({ tracks, playIfIdle = true }) => {
+const enqueue = async ({ tracks, playIfIdle = true, playNow = false }) => {
+  const insertAt = state.queue.length
   state.queue = state.queue.concat(tracks)
-  if (state.index < 0 && playIfIdle) {
+  if (playNow && tracks && tracks.length > 0) {
+    state.index = insertAt
+    state.position = 0
+    await loadCurrent()
+    await playCurrent()
+  } else if (state.index < 0 && playIfIdle) {
     state.index = 0
     await loadCurrent()
     await playCurrent()

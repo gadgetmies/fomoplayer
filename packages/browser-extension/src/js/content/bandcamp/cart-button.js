@@ -9,6 +9,7 @@
 // success microcopy differ for that path.
 import browser from '../../browser'
 import { SPINNER_CSS, spinnerHTML } from './spinner'
+import { colors } from 'fomoplayer_shared/theme'
 
 const sendToWorker = (message) => browser.runtime.sendMessage(message).catch(() => null)
 
@@ -22,14 +23,15 @@ const withTimeout = (promise, ms = REQUEST_TIMEOUT_MS) =>
   ])
 
 const STYLE = `
-  :host { all: initial; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: inline-block; position: relative; }
+  :host { all: initial; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: inline-flex; align-items: center; position: relative; }
   .root { display: inline-block; position: relative; }
   button.toggle {
-    background: transparent; color: #0687f5; border: 1px solid #0687f5;
-    font-size: 11px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
+    background: rgba(0, 0, 0, 0.75); color: #fff; border: 1px solid transparent;
+    font-size: 11px; padding: 2px 8px; border-radius: 2px; cursor: pointer;
     display: inline-flex; align-items: center; gap: 4px; line-height: 1.4;
   }
-  button.toggle:hover { background: #0687f5; color: #fff; }
+  button.toggle:hover { background: ${colors.brandPrimary}; color: #fff; }
+  button.toggle[data-icon-only] { padding: 3px; gap: 0; }
   .popup {
     position: absolute; right: 0; top: calc(100% + 4px);
     background: #fff; color: #222; border: 1px solid #ddd; border-radius: 4px;
@@ -51,6 +53,9 @@ const STYLE = `
   .popup .row[data-state="success"] .row-text { color: #1a7d33; }
   .popup .row[data-state="error"] { background: #fbeceb; }
   .popup .row[data-state="error"] .row-text { color: #c63; }
+  .popup .row[data-membership="in-cart"][data-state="idle"] { background: #eef5ff; }
+  .popup .row[data-membership="in-cart"][data-state="idle"]:hover { background: #dde9fc; }
+  .popup .row[data-membership="in-cart"] .row-text { color: #1a4d7d; }
   .popup .empty { font-size: 12px; color: #777; padding: 6px 8px; text-align: center; }
   .popup .new { display: flex; gap: 4px; padding-top: 6px; border-top: 1px solid #eee; margin-top: 6px; align-items: flex-start; }
   .popup .new input { flex: 1; min-width: 0; font-size: 12px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 2px; }
@@ -61,12 +66,13 @@ const STYLE = `
   .popup .new .create-error { font-size: 11px; color: #c63; padding: 4px 8px 0; flex: 1 0 100%; }
   .popup .status { font-size: 11px; color: #1a7d33; padding: 4px 8px; }
   .popup .error { font-size: 11px; color: #c63; padding: 4px 8px; }
-  svg { width: 11px; height: 11px; fill: currentColor; }
+  svg { width: 11px; height: 11px; fill: currentColor; display: block; vertical-align: middle; }
 ${SPINNER_CSS}
 `
 
 const CART_ICON = '<svg viewBox="0 0 16 16"><path d="M2 2 H4 L5 5 H14 L13 11 H6 L5 5 M6 13 a1 1 0 1 0 2 0 a1 1 0 1 0 -2 0 M11 13 a1 1 0 1 0 2 0 a1 1 0 1 0 -2 0" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>'
 const PLUS_ICON = '<svg viewBox="0 0 16 16"><path d="M8 3 v10 M3 8 h10" stroke="currentColor" stroke-width="2" fill="none"/></svg>'
+const MINUS_ICON = '<svg viewBox="0 0 16 16"><path d="M3 8 h10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>'
 const CHECK_ICON = '<svg viewBox="0 0 16 16"><path d="M3 8 l4 4 l6 -8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 const WARN_ICON = '<svg viewBox="0 0 16 16"><path d="M8 2 L15 14 H1 Z M8 6 v4 M8 12 v0.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
@@ -86,13 +92,15 @@ document.addEventListener('click', (e) => {
   closeOpen()
 })
 
-export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player' }) => {
+export const renderCartButton = ({ getReleases, label = 'Add to Fomo', iconOnly = false }) => {
   const host = document.createElement('span')
   const shadow = host.attachShadow({ mode: 'open' })
+  const titleAttr = iconOnly ? ` title="${label.replace(/"/g, '&quot;')}"` : ''
+  const labelHtml = iconOnly ? '' : `<span>${label}</span>`
   shadow.innerHTML = `
     <style>${STYLE}</style>
     <div class="root">
-      <button class="toggle" data-toggle>${CART_ICON}<span>${label}</span></button>
+      <button class="toggle" data-toggle${iconOnly ? ' data-icon-only="1"' : ''}${titleAttr}>${CART_ICON}${labelHtml}</button>
       <div class="popup hidden" data-popup>
         <div data-list><div class="empty">Loading carts…</div></div>
         <div class="new">
@@ -121,18 +129,15 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player' }) 
     if (text) setTimeout(() => (statusBox.innerHTML = ''), 4000)
   }
 
-  // Builds a cart row with an attached `setRowState(state, errorText?)`
-  // method that flips data-state, swaps the leading icon, and shows or
-  // hides an inline error message under the row text.
-  //
-  // Item 009 reuses this helper unchanged for "remove from cart" rows —
-  // only the click handler (worker message + success microcopy) differs.
-  const makeRow = ({ cartId, name, idleIcon = PLUS_ICON, spinnerColor = '#0687f5' }) => {
+  const makeRow = ({ cartId, name, containsTrackIds = [], spinnerColor = '#0687f5' }) => {
     const row = document.createElement('div')
     row.className = 'row'
     row.dataset.cartId = String(cartId)
     row.dataset.state = 'idle'
-    row.innerHTML = `<span class="row-icon">${idleIcon}</span><span class="row-text">${escapeHtml(name)}</span>`
+    row.containsTrackIds = Array.isArray(containsTrackIds) ? containsTrackIds.slice() : []
+    row.dataset.membership = row.containsTrackIds.length > 0 ? 'in-cart' : 'not-in-cart'
+    const initialIcon = row.containsTrackIds.length > 0 ? MINUS_ICON : PLUS_ICON
+    row.innerHTML = `<span class="row-icon">${initialIcon}</span><span class="row-text">${escapeHtml(name)}</span>`
 
     const iconEl = row.querySelector('.row-icon')
     const textEl = row.querySelector('.row-text')
@@ -151,16 +156,23 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player' }) 
       }
     }
 
+    const idleIconForMembership = () =>
+      row.containsTrackIds.length > 0 ? MINUS_ICON : PLUS_ICON
+
     row.setRowState = (state, errorText) => {
       row.dataset.state = state
       if (state === 'loading') iconEl.innerHTML = spinnerHTML(spinnerColor)
       else if (state === 'success') iconEl.innerHTML = CHECK_ICON
       else if (state === 'error') iconEl.innerHTML = WARN_ICON
-      else iconEl.innerHTML = idleIcon
+      else iconEl.innerHTML = idleIconForMembership()
       renderError(state === 'error' ? errorText || '' : '')
-      // textEl is referenced only to keep the helper's contract obvious;
-      // the muted-text class is driven by the [data-state] CSS rule.
       void textEl
+    }
+
+    row.setMembership = (trackIds) => {
+      row.containsTrackIds = Array.isArray(trackIds) ? trackIds.slice() : []
+      row.dataset.membership = row.containsTrackIds.length > 0 ? 'in-cart' : 'not-in-cart'
+      if (row.dataset.state === 'idle') iconEl.innerHTML = idleIconForMembership()
     }
 
     return row
@@ -210,9 +222,10 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player' }) 
       const releases = await getReleases()
       const result = await withTimeout(sendToWorker({ type: 'bandcamp:add-to-cart', cartId, releases }))
       if (result?.ok) {
+        row.setMembership(result.addedTrackIds || [])
         row.setRowState('success')
         setTimeout(() => {
-          if (openHost === host) closeOpen()
+          if (row.dataset.state === 'success') row.setRowState('idle')
         }, SUCCESS_HOLD_MS)
       } else {
         row.setRowState('error', result?.error || 'Failed to add to cart')
@@ -222,9 +235,39 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player' }) 
     }
   }
 
+  const runRemove = async (row, cartId) => {
+    if (pending.has(cartId)) return
+    if (row.dataset.state === 'error') row.setRowState('idle')
+    pending.add(cartId)
+    row.setRowState('loading')
+    const trackIds = row.containsTrackIds.slice()
+    try {
+      const result = await withTimeout(
+        sendToWorker({ type: 'bandcamp:remove-from-cart', cartId, trackIds }),
+      )
+      if (result?.ok) {
+        row.setMembership([])
+        row.setRowState('success')
+        setTimeout(() => {
+          if (row.dataset.state === 'success') row.setRowState('idle')
+        }, SUCCESS_HOLD_MS)
+      } else {
+        row.setRowState('error', result?.error || 'Failed to remove from cart')
+      }
+    } finally {
+      pending.delete(cartId)
+    }
+  }
+
   const loadCarts = async () => {
     list.innerHTML = '<div class="empty">Loading carts…</div>'
-    const response = await withTimeout(sendToWorker({ type: 'bandcamp:get-carts' }))
+    let releases = []
+    try {
+      releases = await getReleases()
+    } catch (_) {
+      releases = []
+    }
+    const response = await withTimeout(sendToWorker({ type: 'bandcamp:get-carts', releases }))
     if (!response?.ok) {
       list.innerHTML = `<div class="error">${escapeHtml(response?.error || 'Failed to load carts')}</div>`
       return
@@ -236,11 +279,16 @@ export const renderCartButton = ({ getReleases, label = 'Add to Fomo Player' }) 
     }
     list.innerHTML = ''
     for (const c of carts) {
-      const row = makeRow({ cartId: Number(c.id), name: c.name })
+      const row = makeRow({
+        cartId: Number(c.id),
+        name: c.name,
+        containsTrackIds: Array.isArray(c.containsTrackIds) ? c.containsTrackIds : [],
+      })
       row.addEventListener('click', (e) => {
         e.preventDefault()
         e.stopPropagation()
-        runAdd(row, Number(c.id))
+        if (row.containsTrackIds.length > 0) runRemove(row, Number(c.id))
+        else runAdd(row, Number(c.id))
       })
       list.appendChild(row)
     }

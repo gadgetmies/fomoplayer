@@ -34,7 +34,7 @@ const readTralbumDataFromActive = async () => {
 export default class BandcampPanel extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { loggedIn: false, hasPlayables: false, onSubdomain: false }
+    this.state = { loggedIn: false, hasPlayables: false }
   }
 
   async componentDidMount() {
@@ -43,7 +43,6 @@ export default class BandcampPanel extends React.Component {
       this.setState({
         loggedIn: !!probe.loggedIn,
         hasPlayables: !!probe.hasPlayables,
-        onSubdomain: !!probe.onSubdomain,
       })
     }
   }
@@ -72,7 +71,7 @@ export default class BandcampPanel extends React.Component {
   async sendFeed() {
     this.props.setRunning(true)
     try {
-      await sendToActiveContent({ type: 'bandcamp:scrape-feed', pageCount: 5 })
+      await browser.runtime.sendMessage({ type: 'bandcamp:scrape-feed', pageCount: 5 })
     } catch (e) {
       browser.runtime.sendMessage({
         type: 'error',
@@ -101,7 +100,7 @@ export default class BandcampPanel extends React.Component {
 
   render() {
     const { running, isCurrent } = this.props
-    const { loggedIn, hasPlayables, onSubdomain } = this.state
+    const { loggedIn, hasPlayables } = this.state
 
     return (
       <div>
@@ -127,11 +126,11 @@ export default class BandcampPanel extends React.Component {
               </button>
               <br />
             </p>
-            <h3>Sync (Requires login)</h3>
+            <h3>Sync{loggedIn ? '' : ' (Requires login)'}</h3>
             <p>
               <button
                 id="bandcamp-feed"
-                disabled={running || !loggedIn || onSubdomain}
+                disabled={running || !loggedIn}
                 onClick={() => this.sendFeed()}
               >
                 Feed

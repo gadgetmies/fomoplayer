@@ -20,23 +20,26 @@ const isSafeRedirectPath = (url, trustedOrigins) => {
   return url.startsWith('/')
 }
 
-const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
-const isSafeHandoffTarget = (url) => {
-  if (!url) return false
-  const service = process.env.RAILWAY_SERVICE_NAME
-  const project = process.env.RAILWAY_PROJECT_NAME
-  if (!service || !project) return false
-  const pattern = new RegExp(
-    `^${escapeRegex(service)}-${escapeRegex(project)}-pr-\\d+\\.up\\.railway\\.app$`,
-    'i',
-  )
-  try {
-    const { protocol, hostname } = new URL(url)
-    return protocol === 'https:' && pattern.test(hostname)
-  } catch {
-    return false
+const evaluateHandoffTarget = (url, allowedOriginRegexes = []) => {
+  if (!url) return { ok: false, subReason: 'missing-or-invalid-url' }
+  if (!Array.isArray(allowedOriginRegexes) || allowedOriginRegexes.length === 0) {
+    return { ok: false, subReason: 'allowlist-not-configured' }
   }
+  let parsed
+  try {
+    parsed = new URL(url)
+  } catch {
+    return { ok: false, subReason: 'missing-or-invalid-url' }
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return { ok: false, subReason: 'origin-not-allowed' }
+  }
+  const matches = allowedOriginRegexes.some((regex) => regex.test(parsed.origin))
+  if (!matches) return { ok: false, subReason: 'origin-not-allowed' }
+  return { ok: true }
 }
 
-module.exports = { isSafeRedirectPath, isSafeHandoffTarget }
+const isSafeHandoffTarget = (url, allowedOriginRegexes) =>
+  evaluateHandoffTarget(url, allowedOriginRegexes).ok
+
+module.exports = { isSafeRedirectPath, isSafeHandoffTarget, evaluateHandoffTarget }

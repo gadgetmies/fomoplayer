@@ -39,6 +39,77 @@ Use these variables to make dynamic PR preview domains work without per-PR code 
   - Required when `PREVIEW_ENV=true`; backend startup fails when missing/empty.
 - `INTERNAL_AUTH_HANDOFF_SECRET`: Deprecated/ignored in current JWKS-only handoff implementation.
 
+See also: [Handoff target allowlist (PR-preview handoff authority)](#handoff-target-allowlist-pr-preview-handoff-authority)
+below for the env var the previewbase needs when it acts as the handoff
+authority for PR previews.
+
+## Handoff target allowlist (PR-preview handoff authority)
+
+When the previewbase service acts as the OIDC *authority* for PR-preview
+backends (consumers), the previewbase reuses the existing
+`ALLOWED_PREVIEW_ORIGIN_REGEX` env var to decide which target origins
+are allowed to receive minted handoff tokens. The same regex list that
+already authorizes preview origins for CORS gates the handoff target
+check — operators don't need to configure two parallel allowlists.
+
+For Railway-hosted PR previews, set it to the Railway PR-preview
+hostname shape (substituting your Railway service / project names):
+
+```
+ALLOWED_PREVIEW_ORIGIN_REGEX=^https://<service>-<project>-pr-\d+\.up\.railway\.app$
+```
+
+The regex lives in environment configuration rather than in code so the
+backend has no Railway-specific assumptions and self-hosted deployments
+can configure their own naming pattern (or list of explicit origins) the
+same way.
+
+When `OIDC_HANDOFF_SECRET` is set but `ALLOWED_PREVIEW_ORIGIN_REGEX` is
+empty, the backend **fails to start** — `packages/back/config.js`
+throws at module load with a message naming the missing env var:
+
+```
+Error: Handoff issuer enabled (OIDC_HANDOFF_SECRET set, apiOrigin known) but ALLOWED_PREVIEW_ORIGIN_REGEX is empty. ...
+```
+
+Fail-fast on the deploy is the signal that operators need to set the
+allowlist. Once the env var is configured but the requested target's
+origin doesn't match any pattern at runtime, the request is rejected
+with the structured log entry:
+
+```
+"reason":"handoff-target-unsafe","subReason":"origin-not-allowed"
+```
+
+distinguishing rejected probe attempts from operational
+misconfiguration.
+
+## PR-preview consumer configuration (handoff target)
+
+A PR-preview backend (consumer) needs three pieces of env to participate
+in the handoff:
+
+- `AUTH_API_URL` — set to the previewbase's `/api` base
+  (e.g. `https://<previewbase>/api`). The consumer's `/login/google`
+  redirects to `${AUTH_API_URL}/auth/login/google` to start the OIDC
+  flow on the authority. The handoff URL is derived from `AUTH_API_URL`;
+  there is no separate `OIDC_HANDOFF_URL`.
+- `OIDC_HANDOFF_SECRET` — must match the authority's. Used to verify
+  the handoff token at the consumer's `/login/google/handoff` endpoint.
+  The backend **fails to start** if `AUTH_API_URL` points to a
+  different origin than this backend's `apiOrigin` (i.e. it's
+  configured as a handoff consumer) but `OIDC_HANDOFF_SECRET` is
+  missing — the misconfiguration would otherwise produce
+  `"Unable to verify authorization request state."` at runtime.
+- `ALLOWED_PREVIEW_ORIGIN_REGEX` — only required on the authority. A
+  consumer doesn't mint handoff tokens, so it doesn't need an allowlist.
+
+When `AUTH_API_URL` resolves to the same origin as the consumer's own
+`apiOrigin`, the runtime detects that as self-referential and skips
+delegation (the backend authenticates with Google directly). This is
+how the same image runs as authority and as consumer with only env-var
+differences.
+
 ## Standalone preview auth debugging (no production dependency)
 
 Use this when you want to test the full auth flow inside a single preview environment.

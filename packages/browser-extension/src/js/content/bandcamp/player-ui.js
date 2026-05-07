@@ -5,6 +5,7 @@
 import browser from '../../browser'
 import { SPINNER_CSS, spinnerHTML } from './spinner'
 import { getPendingAdds, subscribePendingAdds } from './pending-adds'
+import { colors } from 'fomoplayer_shared/theme'
 
 const HOST_ID = 'fomoplayer-bandcamp-player-host'
 
@@ -45,14 +46,15 @@ const STYLE = `
   }
   button.t:hover:not(:disabled) { background: #2c2c2c; }
   button.t:disabled { opacity: 0.4; cursor: default; }
-  button.play { width: 40px; height: 40px; background: #1da0c3; }
-  button.play:hover:not(:disabled) { background: #2bb1d4; }
+  button.play { width: 40px; height: 40px; background: ${colors.brandPrimary}; }
+  button.play:hover:not(:disabled) { background: ${colors.brandPrimaryHover}; }
   button.play svg { fill: #fff; }
   svg { width: 16px; height: 16px; fill: currentColor; }
   .right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; }
   .progress { flex: 1; min-width: 100px; max-width: 320px; display: flex; align-items: center; gap: 6px; font-size: 11px; color: #b8b8b8; }
-  .bar { flex: 1; height: 4px; background: #2c2c2c; border-radius: 2px; cursor: pointer; position: relative; }
-  .bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: #1da0c3; border-radius: 2px; }
+  .bar { flex: 1; height: 16px; cursor: pointer; position: relative; background: transparent; }
+  .bar::before { content: ''; position: absolute; left: 0; right: 0; height: 4px; top: 50%; transform: translateY(-50%); background: #2c2c2c; border-radius: 2px; }
+  .bar-fill { position: absolute; left: 0; height: 4px; top: 50%; transform: translateY(-50%); background: ${colors.brandPrimary}; border-radius: 2px; }
   .queue-toggle { background: transparent; border: 1px solid #2c2c2c; color: #ddd; padding: 4px 10px; font-size: 11px; border-radius: 14px; cursor: pointer; }
   .queue-toggle:hover { background: #2c2c2c; }
   .queue-panel { background: #1a1a1a; color: #f1f1f1; border-top: 1px solid #2c2c2c; }
@@ -63,9 +65,12 @@ const STYLE = `
   .qclear:hover { background: #3c2424; color: #f1c0c0; }
   .qrow { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: center; padding: 4px 12px; font-size: 12px; cursor: pointer; }
   .qrow:hover { background: #232323; }
-  .qrow.active { background: #20323a; }
+  .qrow.active { background: ${colors.brandPrimaryActiveTint}; }
   .qrow .qtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .qrow .qartist { color: #888; font-size: 11px; }
+  .qrow .qlinks { font-size: 11px; color: #888; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+  .qrow .qlinks a { color: #b8b8b8; text-decoration: none; }
+  .qrow .qlinks a:hover { color: #f1f1f1; text-decoration: underline; }
   .qrow .remove { background: transparent; border: none; color: #888; cursor: pointer; }
   .qrow .remove:hover { color: #f1f1f1; }
   .empty { padding: 8px 12px; color: #888; font-size: 12px; text-align: center; }
@@ -243,27 +248,43 @@ const updateActiveRow = () => {
 const pendingLabel = (count) => (count > 1 ? `Adding ${count} tracks…` : 'Adding…')
 
 const renderPendingRow = (count) =>
-  count > 0 ? `<div class="qpending" data-pending>${spinnerHTML('#1da0c3')}<span>${pendingLabel(count)}</span></div>` : ''
+  count > 0 ? `<div class="qpending" data-pending>${spinnerHTML(colors.brandPrimary)}<span>${pendingLabel(count)}</span></div>` : ''
+
+const buildLinkHtml = (url, label) =>
+  url ? `<a href="${escapeHtml(url)}">${label}</a>` : ''
+
+const buildQueueLinks = (q) =>
+  [
+    buildLinkHtml(q.trackUrl, 'Track'),
+    buildLinkHtml(q.releaseUrl, 'Release'),
+    buildLinkHtml(q.artistUrl, 'Catalog'),
+    buildLinkHtml(q.labelUrl, 'Catalog'),
+  ]
+    .filter(Boolean)
+    .join('')
 
 const rebuildQueue = () => {
   const rowsHtml = state.queue
-    .map(
-      (q, i) => `
+    .map((q, i) => {
+      const links = buildQueueLinks(q)
+      return `
         <div class="qrow ${i === state.index ? 'active' : ''}" data-i="${i}">
           <div>${i + 1}.</div>
           <div>
             <div class="qtitle">${escapeHtml(q.title || '')}</div>
             <div class="qartist">${escapeHtml(q.artist || '')}</div>
+            ${links ? `<div class="qlinks">${links}</div>` : ''}
           </div>
           <button class="remove" data-remove="${i}" title="Remove">${ICON.close}</button>
         </div>
-      `,
-    )
+      `
+    })
     .join('')
   refs.queue.innerHTML = rowsHtml + renderPendingRow(getPendingAdds())
   refs.queue.querySelectorAll('.qrow').forEach((row) => {
     row.addEventListener('click', (e) => {
       if (e.target.closest('[data-remove]')) return
+      if (e.target.closest('a')) return
       const idx = Number(row.dataset.i)
       sendToWorker({ type: 'audio:play-at', index: idx })
     })

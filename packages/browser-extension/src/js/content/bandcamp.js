@@ -14,45 +14,18 @@ const reportError = (message, error) =>
     .sendMessage({ type: 'error', message, stack: error?.stack || String(error) })
     .catch(() => {})
 
-const reportProgress = (text, progress) =>
-  browser.runtime.sendMessage({ type: 'operationStatus', text, progress }).catch(() => {})
-
 const sendToWorker = (message) => browser.runtime.sendMessage(message).catch(() => null)
 
-const scrapeFeed = async ({ pageCount }) => {
-  let olderThan = Date.now()
-  const collectionResponse = await fetch('https://bandcamp.com/api/fan/2/collection_summary', {
-    credentials: 'include',
-  })
-  if (!collectionResponse.ok) {
-    throw new Error(`collection_summary failed: ${collectionResponse.status}`)
-  }
-  const fanId = (await collectionResponse.json()).fan_id
-
-  for (let page = 1; page <= pageCount; page += 1) {
-    const feedResponse = await fetch('https://bandcamp.com/fan_dash_feed_updates', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `fan_id=${fanId}&older_than=${olderThan}`,
-    })
-    if (!feedResponse.ok) {
-      throw new Error(`fan_dash_feed_updates failed: ${feedResponse.status}`)
-    }
-    const feed = await feedResponse.json()
-    await reportProgress('Fetching releases', Math.round((page / pageCount) * 100))
-    const newReleases = feed.stories.entries.filter(({ story_type: storyType }) => storyType === 'nr')
-    await browser.runtime.sendMessage({
-      type: 'releases',
-      store: 'bandcamp',
-      done: page === pageCount,
-      data: newReleases,
-    })
-    olderThan = feed.stories.oldest_story_date
-  }
-}
-
-const probeLoggedIn = () => Boolean(document.querySelector('.userpic'))
+// Bandcamp's hydrated menubar exposes a "Log in" link
+// (`a[href*="/login?from=menubar"]`) only when no fan is signed in. The
+// link's absence is the most reliable cross-page signal: it works on
+// every bandcamp.com surface where the menubar is rendered (homepage,
+// release page, artist subdomain, fan dashboard, discover, feed). We
+// don't rely on the server-rendered `#pagedata` blob — its `identities`
+// object is empty on cached / homepage responses even for signed-in
+// fans — and the `.userpic` element only ships on a small subset of
+// pages.
+const probeLoggedIn = () => !document.querySelector('a[href*="/login?from=menubar"]')
 const probeHasPlayables = () => Boolean(document.querySelector('.track_list.track_table'))
 const probeOnSubdomain = () => {
   try {
@@ -85,8 +58,7 @@ browser.runtime.onMessage.addListener(async (message) => {
       case 'bandcamp:scrape-current-page':
         return { ok: false, error: 'Use scripting.executeScript from worker for current-page scrape' }
       case 'bandcamp:scrape-feed':
-        await scrapeFeed({ pageCount: message.pageCount || 5 })
-        return { ok: true }
+        return sendToWorker({ type: 'bandcamp:scrape-feed', pageCount: message.pageCount || 5 })
       case 'bandcamp:trigger-wishlist-sync':
         return syncWishlistFromPage()
       default:

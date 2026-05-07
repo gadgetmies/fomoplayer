@@ -16,6 +16,7 @@ import { CartDropDownButton } from './CartDropDownButton'
 import Popup from './Popup'
 import { apiURL, serviceURL } from './config'
 import { search } from './events'
+import { colors } from 'fomoplayer_shared/theme'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(value, prop))
 
@@ -947,7 +948,7 @@ class Preview extends Component {
           <Progress
             className="volume-slider"
             percent={this.state.volume}
-            barColor="#b40089"
+            barColor={colors.brandPrimary}
             bgColor="transparent"
             style={{ padding: '0 8px', boxSizing: 'border-box' }}
             vertical={false}

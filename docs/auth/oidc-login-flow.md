@@ -22,11 +22,29 @@ The authoritative source of truth is the code:
   browser extension flow.
 - `packages/back/routes/shared/auth-handoff-token.js` — Handoff JWT mint /
   verify (HS256, 60 s TTL).
+- `packages/back/routes/shared/oidc-state-store.js` —
+  `StatelessStateStore` for `passport-openidconnect`. Signs `{ ctx,
+  appState }` (HS256, `aud=oidc-state`, 10 min TTL) into the OIDC `state`
+  parameter itself, eliminating the dependency on express-session for
+  state delivery across the Google round trip.
+- `packages/back/routes/shared/auth-config-validator.js` —
+  `validateAuthConfig` is invoked by `packages/back/config.js` at module
+  load and throws when the handoff env vars are inconsistent (handoff
+  issuer role enabled with no preview-origin allowlist, or consumer-shaped
+  `AUTH_API_URL` with no `OIDC_HANDOFF_SECRET`). Fail-fast: the backend
+  refuses to start instead of warning at runtime.
 - `packages/back/routes/shared/auth-handoff-jti.js` +
   `migrations/sqls/20260331110000-add-auth-handoff-jti-up.sql` — Replay
   protection (one-time-use `jti` table).
 - `packages/back/routes/shared/safe-redirect.js` — `isSafeHandoffTarget`
-  validates that handoff target hostnames match Railway's PR-preview pattern.
+  validates that a handoff target's origin matches at least one of the
+  regexes supplied by the caller (sourced from
+  `config.allowedPreviewOriginRegexes`, parsed from the
+  `ALLOWED_PREVIEW_ORIGIN_REGEX` env var — same regex list that
+  authorizes preview origins for CORS).
+  `evaluateHandoffTarget` is the diagnostic-friendly variant that returns
+  `{ ok, subReason }` with `subReason` ∈ `allowlist-not-configured` |
+  `origin-not-allowed` | `missing-or-invalid-url`.
 - `packages/back/routes/shared/github-actions-oidc.js` — GitHub Actions OIDC
   JWT verification via JWKS (`verifyActionsToken`).
 - `packages/back/token-server.js` — Internal access JWT mint
@@ -36,7 +54,7 @@ The authoritative source of truth is the code:
 - `packages/back/db/extension-refresh-token.js` +
   `migrations/sqls/20260501100000-add-extension-refresh-token-up.sql` —
   Hashed-and-rotated refresh-token store for the browser extension flow.
-- `packages/back/config.js` — Reads `OIDC_HANDOFF_URL`, `OIDC_HANDOFF_SECRET`,
+- `packages/back/config.js` — Reads `AUTH_API_URL` (handoff URL is derived as `${AUTH_API_URL}/auth/login/google`), `OIDC_HANDOFF_SECRET`,
   `PREVIEW_ENV`, `GITHUB_ACTIONS_OIDC_REPO`, `EXTENSION_OAUTH_ALLOWED_IDS`,
   `INTERNAL_AUTH_HANDOFF_PRIVATE_KEY`, `INTERNAL_AUTH_HANDOFF_KEY_ID`,
   `INTERNAL_AUTH_HANDOFF_ISSUER`, `INTERNAL_AUTH_HANDOFF_JWKS_URL`,
@@ -162,17 +180,29 @@ const shouldDelegateToAuthority = () => {
 }
 ```
 
+The handoff URL `oidcHandoffUrl` is derived as
+`${authApiURL}/auth/login/google`, where `authApiURL` comes from the
+`AUTH_API_URL` env var (or defaults to `${frontendURL}/api`). There is
+no separate `OIDC_HANDOFF_URL` env var — the consumer's
+`AUTH_API_URL=https://<authority>/api` doubles as both the auth API
+base for cross-backend operations *and* the handoff delegation target.
+
 | Value | True when | Meaning |
 |---|---|---|
-| `shouldDelegateToAuthority()` | `OIDC_HANDOFF_URL` is set, points to a different origin than this backend, **and** `OIDC_HANDOFF_SECRET` is set | This backend is a **consumer** — it will redirect `/login/google` to the authority and accept handoff at `/login/google/handoff` |
-| `isSelfReferentialHandoffUrl` | `OIDC_HANDOFF_URL` resolves to the same origin as `apiOrigin` | This backend is the **authority**; delegation is skipped (PR previews inherit this var, so it has to be detected at runtime) |
+| `shouldDelegateToAuthority()` | `AUTH_API_URL` resolves to a different origin than this backend's `apiOrigin`, **and** `OIDC_HANDOFF_SECRET` is set | This backend is a **consumer** — it will redirect `/login/google` to the authority and accept handoff at `/login/google/handoff` |
+| `isSelfReferentialHandoffUrl` | `AUTH_API_URL`'s origin equals `apiOrigin` (or is unset) | This backend is the **authority**; delegation is skipped |
 | `canMintHandoff` | `OIDC_HANDOFF_SECRET` is set and `apiOrigin` is known | This backend can sign handoff tokens (required for both browser-handoff to consumer previews **and** for CLI login) |
 
-`isSafeHandoffTarget` (`packages/back/routes/shared/safe-redirect.js`) gates
-which target origins the authority will mint a handoff for. It enforces that
-the host matches the Railway PR-preview pattern
-`<RAILWAY_SERVICE_NAME>-<RAILWAY_PROJECT_NAME>-pr-<n>.up.railway.app` and is
-served over `https`.
+`isSafeHandoffTarget` (`packages/back/routes/shared/safe-redirect.js`)
+gates which target origins the authority will mint a handoff for. It
+reuses `config.allowedPreviewOriginRegexes` — the same list parsed from
+`ALLOWED_PREVIEW_ORIGIN_REGEX` that already authorizes preview origins
+for CORS — so operators don't configure two parallel allowlists.
+Operators set this to a pattern that matches their PR-preview origin
+shape, e.g. `^https://<service>-<project>-pr-\d+\.up\.railway\.app$`
+for Railway. The allowlist is configuration rather than code so
+self-hosted and non-Railway deployments can be supported without a
+code change.
 
 ---
 
@@ -204,8 +234,9 @@ valid `inviteCode` is on the session; both denials end up redirecting to
 
 ### Handoff flow (preview consumer → authority)
 
-When the preview backend has `OIDC_HANDOFF_URL` (authority's
-`/api/auth/login/google`) and `OIDC_HANDOFF_SECRET` set:
+When the preview backend has `AUTH_API_URL` (the authority's `/api`
+base — handoff URL is derived as
+`${AUTH_API_URL}/auth/login/google`) and `OIDC_HANDOFF_SECRET` set:
 
 ```
 1. Browser ──GET https://pr-N…/api/auth/login/google?returnPath=…──▶ Preview (consumer)
@@ -213,21 +244,28 @@ When the preview backend has `OIDC_HANDOFF_URL` (authority's
    ──302 to https://authority/api/auth/login/google
        ?returnPath=…&handoffTarget=https://pr-N…──▶ Browser
 3. Browser ──GET /login/google?…&handoffTarget=…──▶ Authority
-4. Authority validates handoffTarget via isSafeHandoffTarget
+4. Authority validates handoffTarget via evaluateHandoffTarget
 5. Authority ──passport.authenticate('openidconnect',
        state={returnPath, handoffTarget})──▶ Google
-6. Google ──/api/auth/login/google/return──▶ Authority
-7. Authority verifies, looks up user (its own DB), mints handoff JWT:
-       iss = authorityOrigin, aud = handoffTarget origin,
-       sub = google sub, oidcIssuer = accounts.google.com
-8. Authority ──302 to ${handoffTarget}/api/auth/login/google/handoff
-       ?token=…&returnPath=…──▶ Browser
-9. Browser ──GET /api/auth/login/google/handoff?token=…──▶ Consumer
-10. Consumer verifies JWT (issuer=authority, audience=apiOrigin),
+   (StatelessStateStore.store signs { ctx, appState } as a JWT
+    and the JWT is the literal `state` query parameter sent to Google.)
+6. Google ──/api/auth/login/google/return?code=…&state=<JWT>──▶ Authority
+7. StatelessStateStore.verify decodes the JWT (signature check + aud + exp)
+   and yields appState = { returnPath, handoffTarget }.
+   When handoffTarget is set, the authority MUST take the handoff branch
+   and MUST NOT call req.login on itself, regardless of any pre-existing
+   authority session for the same user.
+8. Authority looks up the OIDC user in its own DB and mints the handoff
+   JWT (iss = authorityOrigin, aud = handoffTarget origin,
+   sub = google sub, oidcIssuer = accounts.google.com).
+9. Authority ──302 to ${handoffTarget}/api/auth/login/google/handoff
+        ?token=…&returnPath=…──▶ Browser
+10. Browser ──GET /api/auth/login/google/handoff?token=…──▶ Consumer
+11. Consumer verifies JWT (issuer=authority, audience=apiOrigin),
     consumes jti (replay protection), looks up or creates account
     in its own DB (consumer applies its own sign-up policy / invite-code
-    check), then req.login(user) → consumer session cookie
-11. Consumer ──302 to ${consumerFrontendURL}${returnPath}──▶ Browser
+    check), then req.login(user) → consumer session cookie.
+12. Consumer ──302 to ${consumerFrontendURL}${returnPath}──▶ Browser
 ```
 
 Important details:
@@ -237,13 +275,77 @@ Important details:
   the authority is made.
 - The preview consumer never talks to Google. Only the authority has a
   Google OAuth client and a registered redirect URI.
+- **`req.login` on the authority is unconditionally skipped when
+  `handoffTarget` is set.** This is the fix for the "user already logged
+  in to the previewbase ends up authenticated against the previewbase
+  instead of the PR preview" failure mode: the authority is never the
+  user's intended destination in a handoff flow, so it does not establish
+  a session for them. The authority's *existing* session (if any) is left
+  untouched.
+- **State delivery does not depend on express-session.** The default
+  `passport-openidconnect` SessionStateStore stores `{ returnPath,
+  handoffTarget }` in `req.session[<key>]` and only sends an opaque
+  handle to Google; on return it looks up the entry by handle. If the
+  session entry is missing on return — because Railway's edge dropped
+  the session cookie, the cookie's `SameSite`/`Secure` settings rejected
+  it on the cross-site OIDC return, or pg-session's row was evicted —
+  passport rejects with "Unable to verify authorization request state."
+  before our return handler runs. `StatelessStateStore` replaces that
+  with a self-contained signed JWT that *is* the OIDC `state` parameter,
+  so Google echoes the entire state payload back. The state survives any
+  scenario where the OIDC redirect itself reaches the backend.
+- CSRF protection is preserved: the JWT is HMAC-signed with
+  `config.sessionSecret` and carries `iss`, `aud=oidc-state`, and a
+  10-minute `exp`. An attacker who hasn't got the secret cannot forge a
+  valid handle. Replay within the TTL is not exploitable in practice
+  because Google's authorization `code` is single-use — replaying the
+  same `(code, state)` pair fails on the second submit.
 - Sign-up policy runs on the consumer (it has the consumer's user table) —
   the authority's user record is irrelevant here. The consumer's
   `req.session.inviteCode` is consulted just like in the regular flow.
 - Cross-site session cookies. When `PREVIEW_ENV=true`,
   `packages/back/index.js` sets `cookie.secure=true` and
-  `cookie.sameSite='none'` so the session cookie set in step 10 survives
-  the cross-origin redirect.
+  `cookie.sameSite='none'` so the session cookie set on the consumer in
+  step 11 survives the cross-origin redirect. (The authority's session
+  cookie is no longer needed for OIDC state delivery, but is still used
+  to remember CLI / extension `req.session.cli*` / `req.session.extension*`
+  state on the same backend.)
+
+### Diagnostic logging on the authority
+
+Each early `redirectWithLoginFailed` on the handoff branch is preceded by
+a structured `logger.warn` with a stable `reason` string from this
+enumeration:
+
+| `reason` | When |
+|---|---|
+| `handoff-target-unsafe` | Pre-OIDC or post-OIDC, `evaluateHandoffTarget` rejected the target. Always carries a `subReason`: `allowlist-not-configured` (`ALLOWED_PREVIEW_ORIGIN_REGEX` is empty on the authority) or `origin-not-allowed` (target origin doesn't match any configured regex). |
+| `handoff-mint-failed` | `mintHandoffToken` threw, or `canMintHandoff` is false (missing secret/apiOrigin on the authority). |
+| `oidc-identity-missing` | Authenticated `req.user` lacks `oidcIdentity.issuer` / `oidcIdentity.subject`. |
+
+State-verification failures (tampered, expired, or mismatched `state`
+JWT) come from `passport-openidconnect` itself and surface as the
+existing `OIDC authentication produced no user` log line with
+`failureInfo.message` set to `Unable to verify authorization request
+state.` or `Invalid authorization request state.`.
+
+The enumerated `reason` lets operators grep one log line and identify the
+failure class without reading code. The `subReason` split distinguishes
+operational misconfiguration (`allowlist-not-configured`) from genuine
+probe / attack attempts (`origin-not-allowed`).
+
+Additionally, the auth config is **fail-fast**: `packages/back/config.js`
+throws at module load when either of these holds:
+
+- handoff-issuer role enabled (`OIDC_HANDOFF_SECRET` set, `apiOrigin` known)
+  but `ALLOWED_PREVIEW_ORIGIN_REGEX` is empty;
+- the backend looks like a handoff consumer (`AUTH_API_URL` resolves to a
+  different origin than `apiOrigin`) but `OIDC_HANDOFF_SECRET` is unset.
+
+Both surface the misconfiguration at deploy time rather than as a
+runtime login failure. The validation lives in
+`packages/back/routes/shared/auth-config-validator.js` and is also
+unit-tested in `packages/back/test/tests/users/auth/config-handoff-fail-fast.js`.
 
 ---
 
@@ -708,8 +810,12 @@ user's ID from `GET /api/auth/me`.
 
 These are the environment variables that determine which flows are available:
 
-- `OIDC_HANDOFF_URL` — if set and points to a different origin than this
-  backend, this backend acts as a **consumer**.
+- `AUTH_API_URL` — if set and resolves to a different origin than this
+  backend's `apiOrigin`, this backend acts as a **consumer** and
+  delegates `/login/google` to `${AUTH_API_URL}/auth/login/google`.
+  When unset or self-referential, the backend authenticates with Google
+  directly. The same env var is used for any other cross-backend auth
+  API call from the consumer.
 - `OIDC_HANDOFF_SECRET` — required to mint or verify handoff tokens. Must be
   identical on authority and all consumers (and on the same backend that
   exposes the CLI exchange endpoint).
@@ -721,8 +827,16 @@ These are the environment variables that determine which flows are available:
 - `GITHUB_ACTIONS_OIDC_REPO` — the `owner/repo` string that GitHub Actions
   OIDC tokens must claim. Required alongside `PREVIEW_ENV=true` for the
   bot login endpoint to be registered.
-- `RAILWAY_SERVICE_NAME` + `RAILWAY_PROJECT_NAME` — read by
-  `isSafeHandoffTarget` to validate consumer hostnames.
+- `ALLOWED_PREVIEW_ORIGIN_REGEX` — comma-separated regex list of preview
+  origins. Authorizes preview origins for CORS (merged with
+  `ALLOWED_ORIGIN_REGEX` into `config.allowedOriginRegexes`) **and**
+  gates the handoff target check on the authority via
+  `evaluateHandoffTarget`. On a backend that acts as a handoff *issuer*
+  (`canMintHandoff = true`), an empty value causes
+  `packages/back/config.js` to throw at startup. Dev/test set their own
+  value via `.env.test` (or `.env.ci`) or pass
+  `allowedPreviewOriginRegexes` directly to `createAuthRouter` for
+  in-process tests.
 - `EXTENSION_OAUTH_ALLOWED_IDS` — comma-separated browser extension IDs
   (Chrome / Firefox / Safari) permitted to start the extension PKCE flow.
   Empty disables the flow.
@@ -743,7 +857,6 @@ Defaults from `packages/back/.env.development`:
 GOOGLE_OIDC_CLIENT_ID=foo
 GOOGLE_OIDC_CLIENT_SECRET=bar
 GOOGLE_OIDC_API_REDIRECT=
-OIDC_HANDOFF_URL=
 OIDC_HANDOFF_SECRET=
 PREVIEW_ENV=
 GOOGLE_OIDC_MOCK=
@@ -769,7 +882,6 @@ INTERNAL_AUTH_API_AUDIENCE=http://localhost:5000/api
 
 ```
 GOOGLE_OIDC_MOCK=true
-OIDC_HANDOFF_URL=
 OIDC_HANDOFF_SECRET=test-handoff-secret
 PREVIEW_ENV=
 GITHUB_ACTIONS_OIDC_REPO=
@@ -797,11 +909,16 @@ Two roles, same codebase, different env values:
 - `GOOGLE_OIDC_API_REDIRECT=https://<authority-host>/api/auth/login/google/return`
   (registered in Google).
 - `OIDC_HANDOFF_SECRET` set.
-- `OIDC_HANDOFF_URL` may either be unset or point to the authority itself —
-  if it points to the authority's own origin, `isSelfReferentialHandoffUrl`
-  is `true` and delegation is skipped.
+- `AUTH_API_URL` either unset or pointing to the authority itself —
+  when it resolves to the authority's own origin (the typical case
+  since the authority IS the auth API),
+  `isSelfReferentialHandoffUrl` is `true` and delegation is skipped.
 - `PREVIEW_ENV=true` so session cookies are cross-site.
-- `RAILWAY_SERVICE_NAME` / `RAILWAY_PROJECT_NAME` populated by Railway.
+- `ALLOWED_PREVIEW_ORIGIN_REGEX` set to a regex that matches every PR
+  preview origin the authority is willing to mint handoffs for (the
+  same regex already used to authorize PR preview origins for CORS),
+  e.g. `^https://<service>-<project>-pr-\d+\.up\.railway\.app$` for
+  Railway.
 - `GITHUB_ACTIONS_OIDC_REPO` — set if bot login is needed on the authority
   (typically not required; bot targets individual PR preview consumers).
 - **Flows used:**
@@ -814,13 +931,17 @@ Two roles, same codebase, different env values:
 
 #### Consumer (PR-preview backend on `…-pr-<N>.up.railway.app`)
 
-- `OIDC_HANDOFF_URL=https://<authority-host>/api/auth/login/google`.
+- `AUTH_API_URL=https://<authority-host>/api`. The handoff URL is
+  derived as `${AUTH_API_URL}/auth/login/google`.
 - `OIDC_HANDOFF_SECRET` matches the authority.
-- `apiOrigin` differs from `oidcHandoffAuthorityOrigin` →
+- `apiOrigin` differs from `authApiOrigin` →
   `shouldDelegateToAuthority()` = true.
 - No Google OIDC client credentials needed.
 - `PREVIEW_ENV=true`.
-- `RAILWAY_SERVICE_NAME` / `RAILWAY_PROJECT_NAME` populated.
+- `ALLOWED_PREVIEW_ORIGIN_REGEX` is **not required** on the consumer —
+  the consumer doesn't mint handoffs, only the authority does. (The
+  consumer may still need `ALLOWED_PREVIEW_ORIGIN_REGEX` for its own
+  CORS handling; the two uses share the same env var.)
 - `GITHUB_ACTIONS_OIDC_REPO=<owner>/<repo>` — enables the bot login endpoint.
 - **Flows used:**
   - Browser login: **handoff flow** (consumer → authority → consumer).

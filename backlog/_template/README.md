@@ -1,11 +1,8 @@
 ---
 id: 000
 title: Replace with title
-status: todo
-priority: P2
 effort: M
 created: 2026-05-04
-depends-on: []
 ---
 
 # {{title}}

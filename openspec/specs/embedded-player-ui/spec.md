@@ -1,9 +1,9 @@
 # Embedded player UI
 
+## Purpose
+
 The in-page Fomo Player UI the browser extension injects into Bandcamp pages — its labels, controls, and accessibility wiring.
-
 ## Requirements
-
 ### Requirement: Queue-toggle button label reflects panel visibility
 
 The button in the embedded player that toggles the queue panel SHALL display "Show queue" while the queue panel is hidden and "Hide queue" while the queue panel is visible. Its accessible name (`aria-label`) and hover tooltip (`title`) MUST always match the visible text.
@@ -57,3 +57,97 @@ Activating the "Clear queue" control SHALL require an explicit confirmation step
 
 - **WHEN** the user clicks "Clear queue" and cancels the prompt
 - **THEN** no `audio:clear` action is dispatched and the queue and current playback remain unchanged.
+
+### Requirement: Queue rows expose Track, Release, and Catalog navigation links
+
+Each row in the embedded player's queue panel SHALL render Track, Release, and Catalog links as ordinary `<a href="…">` elements. The Track and Release links point at the source store's track and release pages; the Catalog link points at the artist's source-store page. Each link MUST navigate the current tab on plain click and respect standard "open in new tab" modifier clicks (Cmd/Ctrl-click, middle-click, right-click context menu).
+
+#### Scenario: Plain click navigates the current tab
+
+- **WHEN** the user clicks a queue row's "Track" link with no modifier key
+- **THEN** the browser navigates the current tab to the track's source page.
+
+#### Scenario: Modifier-click opens a new tab
+
+- **WHEN** the user middle-clicks or Cmd/Ctrl-clicks a queue row's "Release" or "Catalog" link
+- **THEN** the browser opens that page in a new tab without affecting the current tab or the embedded player's playback state.
+
+### Requirement: Second Catalog link points at the label when distinct
+
+When a queued track has a label URL different from its artist URL, the row SHALL render a second "Catalog" link alongside the artist Catalog link. The second link's `href` points at the label's source-store page; both links share the same visible label text "Catalog". When no label URL is available — or when the label URL equals the artist URL — the row MUST omit the second Catalog link entirely rather than render an inert or empty placeholder.
+
+#### Scenario: Label distinct from artist renders a second Catalog link
+
+- **WHEN** the queue row's track carries a `labelUrl` that differs from its `artistUrl`
+- **THEN** the row renders two "Catalog" links: one whose `href` is the artist URL and one whose `href` is the label URL.
+
+#### Scenario: Missing or redundant label URL omits the second Catalog link
+
+- **WHEN** the queue row's track has no `labelUrl`, or its `labelUrl` matches its `artistUrl`
+- **THEN** the row renders Track, Release, and exactly one Catalog link — no second Catalog affordance on the row.
+
+### Requirement: Link clicks do not start playback or change the active track
+
+Clicking any of the queue row's Track / Release / Catalog links MUST NOT change the active track or start playback. The row's existing "play this track" behaviour SHALL remain intact for clicks elsewhere on the row, and the remove (X) button SHALL continue to work as before.
+
+#### Scenario: Link click leaves playback alone
+
+- **WHEN** the user clicks any of the row's navigation links
+- **THEN** the embedded player does not dispatch `audio:play-at` and the active track / playing state stays as it was.
+
+#### Scenario: Click on the rest of the row still plays
+
+- **WHEN** the user clicks the row outside any link or the remove button
+- **THEN** the embedded player dispatches `audio:play-at` for that row's index, just as before.
+
+#### Scenario: Remove button still works
+
+- **WHEN** the user clicks the row's remove (X) button
+- **THEN** the row is removed from the queue and no link or play action is triggered.
+
+### Requirement: Progress bar exposes an enlarged click hit area
+
+The embedded player's progress bar SHALL accept seek clicks across a
+hit area visibly taller than the visible 4px band. The hit area MUST
+be at least 12px tall and centred vertically on the visible band, so
+clicks landing immediately above or below the painted stripe still
+seek the track.
+
+#### Scenario: Click immediately above the visible band
+
+- **WHEN** the user clicks the progress bar at a vertical offset 4px
+  above the visible stripe (within the hit area but outside the
+  painted 4px band)
+- **THEN** the embedded player seeks to the position corresponding
+  to the click's horizontal location and dispatches the
+  `audio:seek` action
+
+#### Scenario: Click on the visible band
+
+- **WHEN** the user clicks the progress bar inside the painted 4px
+  band
+- **THEN** the embedded player seeks to the corresponding position
+  exactly as before — no behavioural change for users who land the
+  visible band
+
+### Requirement: Visible appearance of the progress bar is unchanged
+
+The painted progress band SHALL remain a 4px-tall horizontal stripe
+with the existing background and brand-coloured fill. The enlarged
+hit area MUST NOT introduce visible borders, backgrounds, or
+spacing that shift neighbouring controls.
+
+#### Scenario: Visual height matches the previous implementation
+
+- **WHEN** the embedded player is rendered
+- **THEN** the painted progress stripe has the same 4px height,
+  background colour (`#2c2c2c`), and brand-coloured fill it had
+  before this change
+
+#### Scenario: Neighbouring time labels do not shift
+
+- **WHEN** the embedded player renders the player-view row
+- **THEN** the current-time and duration spans flanking the bar
+  occupy the same positions they did before — the larger hit area
+  does not push them apart
+

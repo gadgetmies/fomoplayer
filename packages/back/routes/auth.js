@@ -13,14 +13,14 @@ const defaultExtensionRefreshToken = require('../db/extension-refresh-token')
 const defaultTokenServer = require('../token-server')
 const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/shared/spotify')
 const { upsertUserAuthorizationTokens } = require('./db')
-const { isSafeRedirectPath, isSafeHandoffTarget } = require('./shared/safe-redirect')
+const { isSafeRedirectPath, evaluateHandoffTarget } = require('./shared/safe-redirect')
 const { mintHandoffToken: defaultMintHandoffToken, verifyHandoffToken: defaultVerifyHandoffToken } = require('./shared/auth-handoff-token')
 const { issueCode: defaultIssueCode, consumeCode: defaultConsumeCode } = require('./shared/cli-auth-code')
 const { verifyActionsToken: defaultVerifyActionsToken, GITHUB_ACTIONS_ISSUER } = require('./shared/github-actions-oidc')
 const { evaluateSignUpPolicy, getRequestOrigin, isGoogleSubAllowed } = require('./shared/auth-flow')
 
 const GOOGLE_OIDC_ISSUER = 'accounts.google.com'
-const logger = require('fomoplayer_shared').logger(__filename)
+const defaultLogger = require('fomoplayer_shared').logger(__filename)
 const cliTemplateDir = path.resolve(__dirname, '../public/auth/cli')
 const cliTemplates = {
   login: fs.readFileSync(path.join(cliTemplateDir, 'login.html'), 'utf8'),
@@ -44,6 +44,7 @@ const createAuthRouter = ({
   config = defaultConfig,
   mintHandoffTokenFn = defaultMintHandoffToken,
   verifyHandoffTokenFn = defaultVerifyHandoffToken,
+  logger = defaultLogger,
   issueCodeFn = defaultIssueCode,
   consumeCodeFn = defaultConsumeCode,
   verifyActionsTokenFn = defaultVerifyActionsToken,
@@ -60,6 +61,7 @@ const createAuthRouter = ({
     oidcHandoffUrl,
     oidcHandoffSecret,
     oidcHandoffAuthorityOrigin,
+    allowedPreviewOriginRegexes = [],
     isPreviewEnv,
     previewAllowedGoogleSubs,
     maxAccountCount,
@@ -104,6 +106,7 @@ const createAuthRouter = ({
     oidcHandoffUrl && oidcHandoffAuthorityOrigin && oidcHandoffSecret,
   )
   const canMintHandoff = Boolean(oidcHandoffSecret && apiOrigin)
+
   const redirectWithLoginFailed = (res) => res.redirect(loginFailedUrl)
   const safeFrontendRedirect = (res, returnPath) => {
     const safePath = isSafeRedirectPath(returnPath, frontendURL) ? returnPath : ''
@@ -142,11 +145,18 @@ const createAuthRouter = ({
     }
 
     const requestedHandoffTarget = req.query.handoffTarget
-    const handoffTarget =
-      requestedHandoffTarget && isSafeHandoffTarget(requestedHandoffTarget) ? requestedHandoffTarget : undefined
-    if (requestedHandoffTarget && !handoffTarget) {
-      logger.warn('Rejected unsafe handoffTarget at /login/google', { requestedHandoffTarget })
-      return redirectWithLoginFailed(res)
+    let handoffTarget
+    if (requestedHandoffTarget) {
+      const evaluation = evaluateHandoffTarget(requestedHandoffTarget, allowedPreviewOriginRegexes)
+      if (!evaluation.ok) {
+        logger.warn('Rejected unsafe handoffTarget at /login/google', {
+          reason: 'handoff-target-unsafe',
+          subReason: evaluation.subReason,
+          requestedHandoffTarget,
+        })
+        return redirectWithLoginFailed(res)
+      }
+      handoffTarget = requestedHandoffTarget
     }
 
     return passport.authenticate('openidconnect', {
@@ -536,7 +546,8 @@ const createAuthRouter = ({
         return redirectWithLoginFailed(res)
       }
 
-      const { returnPath, handoffTarget, returnToCli, cliCallbackPort, returnToExtension } = info?.state ?? {}
+      const passportState = info?.state ?? {}
+      const { returnToCli, cliCallbackPort, returnToExtension, returnPath, handoffTarget } = passportState
 
       if (returnToCli) {
         const port = parseInt(cliCallbackPort, 10)
@@ -574,17 +585,30 @@ const createAuthRouter = ({
       const wantsHandoff = Boolean(handoffTarget)
 
       if (wantsHandoff) {
-        if (!canMintHandoff || !isSafeHandoffTarget(handoffTarget)) {
-          logger.warn('Handoff requested but cannot be fulfilled; falling back to login failure', {
+        if (!canMintHandoff) {
+          logger.warn('Handoff requested but cannot be fulfilled', {
+            reason: 'handoff-mint-failed',
+            subReason: 'cannot-mint',
             canMintHandoff,
-            handoffTargetValid: isSafeHandoffTarget(handoffTarget),
+          })
+          return redirectWithLoginFailed(res)
+        }
+
+        const evaluation = evaluateHandoffTarget(handoffTarget, allowedPreviewOriginRegexes)
+        if (!evaluation.ok) {
+          logger.warn('Handoff requested but cannot be fulfilled', {
+            reason: 'handoff-target-unsafe',
+            subReason: evaluation.subReason,
+            handoffTarget,
           })
           return redirectWithLoginFailed(res)
         }
 
         const oidcIdentity = user?.oidcIdentity
         if (!oidcIdentity?.issuer || !oidcIdentity?.subject) {
-          logger.error('OIDC identity missing on user after auth; cannot mint handoff token')
+          logger.warn('OIDC identity missing on user after auth; cannot mint handoff token', {
+            reason: 'oidc-identity-missing',
+          })
           return redirectWithLoginFailed(res)
         }
 
@@ -599,7 +623,10 @@ const createAuthRouter = ({
             oidcSubject: oidcIdentity.subject,
           }))
         } catch (e) {
-          logger.error(`Minting handoff token failed: ${e.toString()}`)
+          logger.warn('Minting handoff token failed', {
+            reason: 'handoff-mint-failed',
+            errorMessage: e?.message ?? String(e),
+          })
           return redirectWithLoginFailed(res)
         }
 

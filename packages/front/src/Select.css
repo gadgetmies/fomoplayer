@@ -1,5 +1,5 @@
 :root {
-  --select-focus: #b40089;
+  --select-focus: var(--fp-brand-primary);
   --select-color: white;
 }
 

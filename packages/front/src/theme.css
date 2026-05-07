@@ -1,0 +1,30 @@
+/*
+ * Fomo Player brand-primary CSS custom properties for the front-end.
+ *
+ * Canonical source: ../../shared/theme.js (`colors` export). This file
+ * mirrors those values so the front-end's CSS pipeline (CRA's
+ * ModuleScopePlugin disallows `@import`-ing CSS files whose realpath
+ * is outside `src/`) can still consume them. The extension's webpack
+ * pipeline, which has no ModuleScopePlugin, imports
+ * `fomoplayer_shared/theme.css` directly.
+ *
+ * Any palette tweak must update three files in lockstep:
+ * - packages/shared/theme.js (`colors`)
+ * - packages/shared/theme.css (`:root --fp-...`)
+ * - packages/front/src/theme.css (this file)
+ *
+ * Front-end JS code that needs a colour string (e.g. props passed to a
+ * `<Progress barColor=...>`) should import `colors` from
+ * `fomoplayer_shared/theme` rather than re-declare the literal here.
+ */
+
+:root {
+  --fp-brand-primary: #b40089;
+  --fp-brand-primary-hover: #9f0076;
+  --fp-brand-primary-border: #530059;
+  --fp-brand-primary-active: #6e0069;
+  --fp-brand-primary-disabled: #b5b5b5;
+  --fp-brand-primary-disabled-border: #7c7c7c;
+  --fp-brand-primary-active-ring: rgba(180, 0, 137, 0.25);
+  --fp-brand-primary-active-tint: rgba(180, 0, 137, 0.18);
+}

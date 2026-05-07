@@ -1,0 +1,23 @@
+/*
+ * Fomo Player brand-primary token cluster.
+ *
+ * Mirror file: ./theme.js — keep these CSS custom properties and the
+ * `colors.brandPrimary*` keys exported there in sync. Any palette
+ * tweak must update both files.
+ *
+ * CSS context: front-end stylesheets and the browser-extension popup
+ * CSS pull this in via `@import 'fomoplayer_shared/theme.css'`. The
+ * variables resolve under `:root` so any descendant rule can use
+ * `var(--fp-brand-primary)` and friends.
+ */
+
+:root {
+  --fp-brand-primary: #b40089;
+  --fp-brand-primary-hover: #9f0076;
+  --fp-brand-primary-border: #530059;
+  --fp-brand-primary-active: #6e0069;
+  --fp-brand-primary-disabled: #b5b5b5;
+  --fp-brand-primary-disabled-border: #7c7c7c;
+  --fp-brand-primary-active-ring: rgba(180, 0, 137, 0.25);
+  --fp-brand-primary-active-tint: rgba(180, 0, 137, 0.18);
+}

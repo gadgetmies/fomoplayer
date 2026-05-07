@@ -12,6 +12,7 @@ import {
   startExtensionLogin,
 } from './auth'
 import { ensureAudioHost, forwardToAudioHost, hasOwnDocument } from './audio-host'
+import { assertJsonContentType, parseFeedPage } from './content/bandcamp/feed-parse'
 // Importing audio-player has no effect in a service-worker (no DOM) but
 // installs the audio host inside the Firefox background page.
 import './audio-player'
@@ -112,6 +113,95 @@ let bandcampReleases = []
 let bandcampTabId
 let beatportTracksCache = []
 
+const ingestBandcampFeedReleases = async ({ data, done }) => {
+  bandcampReleases = bandcampReleases.concat(data)
+  if (done) await fetchNextBandcampItem()
+}
+
+// Read the body once and parse from text so we can re-log the raw payload
+// when the parser rejects the shape. Without this, a shape mismatch from
+// the worker fetch produces a typed error in the popup but no way to
+// inspect what Bandcamp actually returned — which is the only useful
+// signal when the endpoint silently changes shape on us.
+const fetchJsonForLogging = async (response, label) => {
+  const contentType = response.headers.get('content-type')
+  const rawBody = await response.text()
+  try {
+    assertJsonContentType(contentType)
+  } catch (e) {
+    console.warn(
+      `[bandcamp:scrape-feed] ${label}: non-JSON response`,
+      'status=', response.status,
+      'content-type=', contentType,
+      'body=', rawBody.slice(0, 2000),
+    )
+    throw e
+  }
+  try {
+    return JSON.parse(rawBody)
+  } catch (e) {
+    console.warn(
+      `[bandcamp:scrape-feed] ${label}: JSON.parse failed`,
+      'status=', response.status,
+      'content-type=', contentType,
+      'body=', rawBody.slice(0, 2000),
+    )
+    throw e
+  }
+}
+
+const scrapeFeedFromWorker = async ({ pageCount = 5 } = {}) => {
+  // Bandcamp's fan_dash_feed_updates expects older_than as a Unix timestamp
+  // in SECONDS, not milliseconds. The endpoint feeds the value into a MySQL
+  // DATETIME, and a millisecond value reads as a year far in the future
+  // (`Mysql2.Error: Incorrect DATETIME value: '58315-...'`), which returns a
+  // 200 JSON error envelope with no `stories` key. The original
+  // content-script code also sent ms; the bug was masked until Bandcamp
+  // started reporting the MySQL exception in the response body.
+  let olderThan = Math.floor(Date.now() / 1000)
+  const collectionResponse = await fetch('https://bandcamp.com/api/fan/2/collection_summary', {
+    credentials: 'include',
+  })
+  if (!collectionResponse.ok) {
+    throw new Error(`collection_summary failed: ${collectionResponse.status}`)
+  }
+  const collectionBody = await fetchJsonForLogging(collectionResponse, 'collection_summary')
+  const fanId = collectionBody.fan_id
+  if (!fanId) {
+    console.warn('[bandcamp:scrape-feed] collection_summary returned no fan_id; full body=', collectionBody)
+    throw new Error('Bandcamp collection_summary returned no fan_id — likely logged out from worker context.')
+  }
+
+  for (let page = 1; page <= pageCount; page += 1) {
+    const feedResponse = await fetch('https://bandcamp.com/fan_dash_feed_updates', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `fan_id=${fanId}&older_than=${olderThan}`,
+    })
+    if (!feedResponse.ok) {
+      throw new Error(`fan_dash_feed_updates failed: ${feedResponse.status}`)
+    }
+    const feed = await fetchJsonForLogging(feedResponse, `fan_dash_feed_updates page=${page}`)
+    await setStatus('Fetching releases', Math.round((page / pageCount) * 100))
+    let parseResult
+    try {
+      parseResult = parseFeedPage(feed)
+    } catch (e) {
+      console.warn(
+        `[bandcamp:scrape-feed] parseFeedPage rejected page=${page}; top-level keys=`,
+        Object.keys(feed || {}),
+        'fan_id used=', fanId,
+        'feed.stories keys=', feed?.stories ? Object.keys(feed.stories) : '(no stories)',
+        'full body=', JSON.stringify(feed).slice(0, 2000),
+      )
+      throw e
+    }
+    await ingestBandcampFeedReleases({ data: parseResult.releases, done: page === pageCount })
+    olderThan = parseResult.nextOlderThan
+  }
+}
+
 const fetchBandcampReleaseInTab = async () => {
   if (typeof bandcampTabId !== 'number') return
   const waitForTralbumData = () =>
@@ -211,11 +301,29 @@ const buildQueueItemsFromReleases = async (releases) => {
     const releaseArtUrl = release.art_id
       ? `https://f4.bcbits.com/img/a${release.art_id}_10.jpg`
       : null
+    let releaseOrigin = ''
+    try {
+      releaseOrigin = releaseUrl ? new URL(releaseUrl, 'https://bandcamp.com').origin : ''
+    } catch (_) {
+      releaseOrigin = ''
+    }
+    const artistUrl = releaseOrigin || ''
+    const rawLabelUrl = release.current?.label_url || release.label_url || null
+    const labelUrl = rawLabelUrl && rawLabelUrl !== artistUrl ? rawLabelUrl : null
     for (const track of release.trackinfo || []) {
       if (!track || !track.file) continue
       const audioUrl = track.file['mp3-128'] || track.file['mp3-v0'] || Object.values(track.file)[0]
       if (!audioUrl) continue
       const bandcampId = String(track.id ?? track.track_id ?? '')
+      let trackUrl = ''
+      if (track.title_link && releaseOrigin) {
+        try {
+          trackUrl = new URL(track.title_link, releaseOrigin).toString()
+        } catch (_) {
+          trackUrl = ''
+        }
+      }
+      if (!trackUrl) trackUrl = releaseUrl
       items.push({
         bandcampId,
         fomoplayerTrackId: bandcampId ? mapping[bandcampId] || null : null,
@@ -225,6 +333,9 @@ const buildQueueItemsFromReleases = async (releases) => {
         releaseTitle,
         releaseUrl,
         releaseArtUrl,
+        trackUrl,
+        artistUrl,
+        labelUrl,
         durationMs: Math.round((track.duration || 0) * 1000),
       })
     }
@@ -315,7 +426,7 @@ const handleMessage = async (message) => {
     await ensureAudioHost()
     const audioMessage =
       message.type === 'bandcamp:enqueue'
-        ? { type: 'audio:enqueue', tracks: items }
+        ? { type: 'audio:enqueue', tracks: items, playNow: !!message.playNow }
         : {
             type: 'audio:set-queue',
             tracks: items,
@@ -335,7 +446,30 @@ const handleMessage = async (message) => {
   }
   if (message.type === 'bandcamp:get-carts') {
     const carts = await getUserCarts()
-    return { ok: true, carts }
+    const releases = message.releases || []
+    if (releases.length === 0) {
+      return { ok: true, carts }
+    }
+    const items = await buildQueueItemsFromReleases(releases)
+    const requestedIds = new Set(items.map((i) => i.fomoplayerTrackId).filter(Boolean))
+    if (requestedIds.size === 0) {
+      return { ok: true, carts: carts.map((c) => ({ ...c, containsTrackIds: [] })) }
+    }
+    const annotated = await Promise.all(
+      (carts || []).map(async (cart) => {
+        try {
+          const detail = await apiFetch(`/api/me/carts/${cart.id}`)
+          const containsTrackIds = (detail?.tracks || [])
+            .map((t) => t.id)
+            .filter((id) => requestedIds.has(id))
+          return { ...cart, containsTrackIds }
+        } catch (e) {
+          console.warn('Failed to fetch cart detail', cart?.id, e?.message)
+          return { ...cart, containsTrackIds: [] }
+        }
+      }),
+    )
+    return { ok: true, carts: annotated }
   }
   if (message.type === 'bandcamp:create-cart') {
     const cart = await createUserCart(message.name)
@@ -347,7 +481,7 @@ const handleMessage = async (message) => {
     if (trackIds.length === 0) return { ok: false, error: 'Could not resolve any tracks' }
     const operations = trackIds.map((trackId) => ({ op: 'add', trackId, addedAt: new Date().toISOString() }))
     await updateCartContents(message.cartId, operations)
-    return { ok: true, addedCount: trackIds.length }
+    return { ok: true, addedCount: trackIds.length, addedTrackIds: trackIds }
   }
   if (message.type === 'bandcamp:remove-from-cart') {
     const operations = (message.trackIds || []).map((trackId) => ({ op: 'remove', trackId }))
@@ -358,6 +492,15 @@ const handleMessage = async (message) => {
   if (message.type === 'bandcamp:wishlist-sync') {
     const summary = await reconcileWishlistCart(message.releases || [])
     return { ok: true, ...summary }
+  }
+  if (message.type === 'bandcamp:scrape-feed') {
+    try {
+      await scrapeFeedFromWorker({ pageCount: message.pageCount || 5 })
+      return { ok: true }
+    } catch (e) {
+      await handleError({ message: e?.message || 'Bandcamp feed sync failed', stack: e?.stack || String(e) })
+      return { ok: false, error: e?.message }
+    }
   }
   if (message.type === 'operationStatus') {
     await setStatus(message.text, message.progress)

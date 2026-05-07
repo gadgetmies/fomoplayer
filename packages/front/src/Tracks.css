@@ -146,7 +146,7 @@
 }
 
 .filter-active {
-  background-color: #b40089;
+  background-color: var(--fp-brand-primary);
   padding: 5px 10px;
   border-radius: 5px;
 }
