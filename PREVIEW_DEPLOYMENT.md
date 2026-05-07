@@ -5,7 +5,15 @@ Use these variables to make dynamic PR preview domains work without per-PR code 
 ## Recommended (same domain, path-based routing)
 
 - Serve frontend and API from the same host, with API under `/api`.
-- Do not set `API_URL` for preview/prod frontend builds.
+- For the **frontend build** (not the backend service): do not set
+  `API_URL`. Without it, the frontend bundle uses relative `/api`
+  automatically.
+- This guidance applies only to the **frontend build**. The **backend
+  service** separately requires `API_URL` (or `IP`+`PORT`) to resolve to
+  its public origin, because the OIDC handoff token's audience check
+  compares against `config.apiOrigin` — see
+  [PR-preview consumer configuration (handoff target)](#pr-preview-consumer-configuration-handoff-target)
+  below.
 - Frontend will use relative `/api` automatically when no explicit API URL is configured.
 
 ## Backend CORS variables
@@ -86,9 +94,23 @@ misconfiguration.
 
 ## PR-preview consumer configuration (handoff target)
 
-A PR-preview backend (consumer) needs three pieces of env to participate
+A PR-preview backend (consumer) needs four pieces of env to participate
 in the handoff:
 
+- `API_URL` (or `IP`+`PORT`) on the **backend service** — must resolve
+  to the consumer's *public* origin. The handoff token's audience is
+  bound to the consumer's public origin at mint time
+  (`audience = new URL(handoffTarget).origin`, where `handoffTarget`
+  comes from the consumer's request origin) and verified against
+  `config.apiOrigin` at the consumer's `/login/google/handoff` endpoint.
+  If `apiOrigin` doesn't match the consumer's public origin — e.g.
+  because `API_URL` was left unset on the backend service and
+  `apiOrigin` falls back to `http://localhost:${PORT}` — the audience
+  check rejects every otherwise-valid token silently and the user lands
+  on `?loginFailed=true` with no visible cause. This is independent of
+  the "do not set `API_URL`" guidance for the **frontend build** at the
+  top of this document; the two are separate surfaces and the backend
+  service needs `API_URL` set even when the frontend build doesn't.
 - `AUTH_API_URL` — set to the previewbase's `/api` base
   (e.g. `https://<previewbase>/api`). The consumer's `/login/google`
   redirects to `${AUTH_API_URL}/auth/login/google` to start the OIDC

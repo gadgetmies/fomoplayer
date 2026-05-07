@@ -931,6 +931,15 @@ Two roles, same codebase, different env values:
 
 #### Consumer (PR-preview backend on `…-pr-<N>.up.railway.app`)
 
+- `API_URL` (or `IP`+`PORT`) set on the **backend service** so
+  `apiOrigin` resolves to the consumer's public origin (e.g.
+  `https://<service>-<project>-pr-<N>.up.railway.app`). The handoff
+  token's audience is bound to that origin at mint and verified against
+  `config.apiOrigin` at `/login/google/handoff`; a mismatch (typically
+  caused by leaving `API_URL` unset on the backend, which falls back to
+  `http://localhost:${PORT}`) rejects every otherwise-valid token
+  silently. See "PR-preview consumer configuration (handoff target)" in
+  `PREVIEW_DEPLOYMENT.md` for the operator-facing detail.
 - `AUTH_API_URL=https://<authority-host>/api`. The handoff URL is
   derived as `${AUTH_API_URL}/auth/login/google`.
 - `OIDC_HANDOFF_SECRET` matches the authority.
