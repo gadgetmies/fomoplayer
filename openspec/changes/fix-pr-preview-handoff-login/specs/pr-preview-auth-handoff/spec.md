@@ -1,0 +1,189 @@
+## ADDED Requirements
+
+### Requirement: Consumer delegates `/login/google` to the authority with `handoffTarget`
+
+When a backend is configured as a handoff *consumer* (`oidcHandoffUrl`,
+`oidcHandoffAuthorityOrigin`, and `oidcHandoffSecret` are all set, and
+`oidcHandoffAuthorityOrigin !== apiOrigin`), `GET /api/auth/login/google`
+MUST redirect the browser to the authority's
+`/api/auth/login/google` URL, forwarding `returnPath` and adding
+`handoffTarget` set to the consumer's request origin
+(`getRequestOrigin(req)`).
+
+#### Scenario: Consumer redirects to authority with handoff target
+
+- **WHEN** a request arrives at `GET /api/auth/login/google?returnPath=%2F`
+  on a consumer backend whose `apiOrigin` differs from
+  `oidcHandoffAuthorityOrigin`
+- **THEN** the response is a 302 to
+  `<oidcHandoffUrl>?returnPath=%2F&handoffTarget=<consumer-origin>`
+
+#### Scenario: Self-referential authority does not delegate
+
+- **WHEN** the same request arrives on a backend where
+  `oidcHandoffAuthorityOrigin === apiOrigin`
+- **THEN** the consumer-delegation branch MUST NOT run; the request proceeds
+  to the local `passport.authenticate('openidconnect', ...)` flow
+
+### Requirement: Authority preserves `handoffTarget` across the OIDC round trip
+
+When `GET /api/auth/login/google` arrives on the authority with a
+`handoffTarget` query parameter, the authority MUST verify the target with
+`isSafeHandoffTarget` and, if accepted, propagate it through the OIDC round
+trip such that it is recoverable on `/api/auth/login/google/return` even if
+the session-backed `state` entry is lost.
+
+#### Scenario: Safe handoffTarget is accepted and preserved
+
+- **WHEN** the authority receives
+  `/login/google?returnPath=%2F&handoffTarget=https://<safe-pr-preview>`
+- **THEN** the authority initiates the OIDC flow with a `state` value that,
+  on return, yields `{ returnPath: '/', handoffTarget: 'https://<safe-pr-preview>' }`
+  even when passport's session-backed state lookup returns nothing
+
+#### Scenario: Unsafe handoffTarget is rejected before OIDC
+
+- **WHEN** the authority receives a `handoffTarget` for which
+  `isSafeHandoffTarget` returns false
+- **THEN** the authority redirects to `${frontendURL}/?loginFailed=true` and
+  emits a structured warning log identifying the rejection
+
+### Requirement: Authority `/login/google/return` MUST take the handoff branch when `handoffTarget` is set
+
+On the OIDC return, when the resolved state contains a non-empty
+`handoffTarget`, the authority MUST mint a handoff token and redirect to the
+consumer's `/api/auth/login/google/handoff` endpoint. The authority MUST NOT
+call `req.login` to establish a local session for the user, regardless of any
+pre-existing session on the authority for the same user.
+
+#### Scenario: Cold-start handoff happy path
+
+- **WHEN** the authority's `/login/google/return` is invoked with no
+  pre-existing session and the resolved state contains a valid
+  `handoffTarget` and a fresh OIDC user with `oidcIdentity`
+- **THEN** the response is a 302 to
+  `<handoffTarget>/api/auth/login/google/handoff?token=<minted>&returnPath=<encoded>`
+- **AND** `req.login` is NOT called on the authority
+
+#### Scenario: Existing-authority-session handoff happy path
+
+- **WHEN** the authority's `/login/google/return` is invoked while the
+  authority already has a logged-in session for the same user, and the
+  resolved state contains a valid `handoffTarget`
+- **THEN** the response is a 302 to the consumer's handoff URL just as in
+  the cold-start case
+- **AND** the authority's existing session is unaffected; no new
+  authority-side login is performed for the consumer flow
+
+### Requirement: Authority emits a stable `reason` string for each handoff failure
+
+Every `redirectWithLoginFailed` invoked from the handoff branch on
+`/login/google/return` (and `/login/google` pre-OIDC rejection) MUST be
+accompanied by a structured `logger.warn` call that includes a `reason`
+field drawn from a stable enumeration:
+`state-missing-handoff-target`, `handoff-target-unsafe`,
+`handoff-mint-failed`, `oidc-identity-missing`. When `reason` is
+`handoff-target-unsafe`, the log MUST also include a `subReason` of
+`allowlist-not-configured`, `origin-not-allowed`, or
+`missing-or-invalid-url`.
+
+#### Scenario: State without handoffTarget is logged as state-missing-handoff-target
+
+- **WHEN** `/login/google/return` resolves a state with no `handoffTarget`
+  in a request that originally carried one (i.e. the signed-state fallback
+  also fails to decode it)
+- **THEN** a `logger.warn` fires with `reason: 'state-missing-handoff-target'`
+  and the response is a 302 to `${frontendURL}/?loginFailed=true`
+
+#### Scenario: Empty allowlist is logged as allowlist-not-configured
+
+- **WHEN** `evaluateHandoffTarget` rejects a target because
+  `config.handoffTargetOriginRegexes` is empty
+- **THEN** a `logger.warn` fires with
+  `reason: 'handoff-target-unsafe'` and `subReason: 'allowlist-not-configured'`
+
+#### Scenario: Origin mismatch is logged as origin-not-allowed
+
+- **WHEN** `evaluateHandoffTarget` rejects a target because the origin
+  doesn't match any configured regex
+- **THEN** a `logger.warn` fires with
+  `reason: 'handoff-target-unsafe'` and `subReason: 'origin-not-allowed'`
+
+#### Scenario: Mint failure is logged as handoff-mint-failed
+
+- **WHEN** `mintHandoffTokenFn` throws inside the handoff branch
+- **THEN** a `logger.warn` (or `logger.error`) fires with
+  `reason: 'handoff-mint-failed'` including the error message
+
+#### Scenario: Missing OIDC identity is logged as oidc-identity-missing
+
+- **WHEN** the authenticated user lacks `oidcIdentity.issuer` or
+  `oidcIdentity.subject` at the handoff branch
+- **THEN** a `logger.warn` fires with `reason: 'oidc-identity-missing'`
+
+### Requirement: Consumer `/login/google/handoff` consumes the token and establishes a local session
+
+When the consumer receives `GET /api/auth/login/google/handoff?token=...`,
+it MUST verify the token signature, audience (`apiOrigin`), issuer
+(`oidcHandoffAuthorityOrigin`), and `jti` single-use property, then look up
+or create the account and call `req.login` to establish the consumer-side
+session. After login, it MUST redirect to `returnPath` if it is a safe
+relative path on the consumer's frontend.
+
+#### Scenario: Valid token logs the user in on the consumer
+
+- **WHEN** the consumer receives a valid handoff token whose payload's
+  `oidcIssuer` and `sub` resolve to an existing account
+- **THEN** the consumer establishes a session for that user and redirects
+  to `<frontendURL><returnPath>`
+
+#### Scenario: Replayed token is rejected
+
+- **WHEN** the same valid handoff token is presented twice
+- **THEN** the second request 302s to `${frontendURL}/?loginFailed=true`
+  and a warning log records `Handoff token replay rejected`
+
+### Requirement: Authority-side startup warning when handoff allowlist is empty
+
+When a backend boots with the handoff *issuer* role configured
+(`canMintHandoff = true`) but `config.handoffTargetOriginRegexes` is
+empty, the backend MUST emit one `logger.warn` at startup naming the
+consequence (handoff requests will be rejected with
+`reason: handoff-target-unsafe / subReason: allowlist-not-configured`).
+Startup MUST NOT abort.
+
+#### Scenario: Authority startup warns when allowlist is empty
+
+- **WHEN** the previewbase boots with handoff issuer config but
+  `HANDOFF_TARGET_ORIGIN_REGEX` is empty
+- **THEN** a single `logger.warn` mentioning
+  `HANDOFF_TARGET_ORIGIN_REGEX` is emitted at startup, and the server
+  continues listening
+
+#### Scenario: Authority startup is silent when allowlist is configured
+
+- **WHEN** the previewbase boots with at least one regex in
+  `config.handoffTargetOriginRegexes`
+- **THEN** no startup warning about the allowlist is emitted
+
+#### Scenario: Authority startup is silent when handoff issuer is not enabled
+
+- **WHEN** the previewbase boots without `OIDC_HANDOFF_SECRET` set
+  (`canMintHandoff = false`), regardless of whether the allowlist is
+  configured
+- **THEN** no startup warning about the allowlist is emitted
+
+### Requirement: Documented previewbase configuration
+
+`PREVIEW_DEPLOYMENT.md` MUST document `HANDOFF_TARGET_ORIGIN_REGEX` as
+the env var that gates which handoff target origins the previewbase will
+accept, including a one-line explanation of what breaks if it is empty.
+
+#### Scenario: Required env var is documented
+
+- **WHEN** a developer reads `PREVIEW_DEPLOYMENT.md`
+- **THEN** they find `HANDOFF_TARGET_ORIGIN_REGEX` listed under
+  previewbase configuration, with the consequence of leaving it empty
+  ("every handoff target is rejected with
+  `subReason: allowlist-not-configured`") and an example regex shape
+  for Railway-hosted PR previews

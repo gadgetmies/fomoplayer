@@ -13,6 +13,7 @@ const authApiURL = process.env.AUTH_API_URL || `${frontendURL}/api`
 const additionalOrigins = process.env.ADDITIONAL_ORIGINS?.split(',').map((origin) => origin.trim()) || []
 const allowedOriginRegexes = parseOriginRegexes(process.env.ALLOWED_ORIGIN_REGEX)
 const allowedPreviewOriginRegexes = parseOriginRegexes(process.env.ALLOWED_PREVIEW_ORIGIN_REGEX)
+const handoffTargetOriginRegexes = parseOriginRegexes(process.env.HANDOFF_TARGET_ORIGIN_REGEX)
 
 const safeOrigin = (url) => {
   try {
@@ -89,6 +90,7 @@ module.exports = {
   oidcHandoffUrl,
   oidcHandoffAuthorityOrigin,
   oidcHandoffSecret: process.env.OIDC_HANDOFF_SECRET || undefined,
+  handoffTargetOriginRegexes,
   githubActionsOidcRepo: process.env.GITHUB_ACTIONS_OIDC_REPO || undefined,
   extensionOauthAllowedIds,
   extensionOauthAllowedRedirectPatterns,

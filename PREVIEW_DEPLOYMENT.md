@@ -39,6 +39,54 @@ Use these variables to make dynamic PR preview domains work without per-PR code 
   - Required when `PREVIEW_ENV=true`; backend startup fails when missing/empty.
 - `INTERNAL_AUTH_HANDOFF_SECRET`: Deprecated/ignored in current JWKS-only handoff implementation.
 
+See also: [Handoff target allowlist (PR-preview handoff authority)](#handoff-target-allowlist-pr-preview-handoff-authority)
+below for the env var the previewbase needs when it acts as the handoff
+authority for PR previews.
+
+## Handoff target allowlist (PR-preview handoff authority)
+
+When the previewbase service acts as the OIDC *authority* for PR-preview
+backends (consumers), the previewbase **must** have an allowlist of
+acceptable handoff target origins configured:
+
+- `HANDOFF_TARGET_ORIGIN_REGEX`: Comma-separated regex list (the same
+  parsing as `ALLOWED_ORIGIN_REGEX`). The OIDC return handler accepts a
+  `handoffTarget` origin only if it matches at least one of these
+  regexes. Each pattern is auto-anchored (`^…$`) so partial matches are
+  not possible.
+
+For Railway-hosted PR previews, set it to the Railway PR-preview hostname
+shape (substituting your Railway service / project names):
+
+```
+HANDOFF_TARGET_ORIGIN_REGEX=^https://<service>-<project>-pr-\d+\.up\.railway\.app$
+```
+
+The regex lives in environment configuration rather than in code so the
+backend has no Railway-specific assumptions and self-hosted deployments
+can configure their own naming pattern (or list of explicit origins) the
+same way.
+
+When the env var is **unset or empty**, every handoff target is rejected
+with:
+
+```
+"reason":"handoff-target-unsafe","subReason":"allowlist-not-configured"
+```
+
+The user lands on `https://<previewbase>/?loginFailed=true` and the
+previewbase emits a one-shot `logger.warn` at startup when
+`OIDC_HANDOFF_SECRET` is set but `HANDOFF_TARGET_ORIGIN_REGEX` is empty:
+
+```
+"Handoff issuer enabled but HANDOFF_TARGET_ORIGIN_REGEX is empty; handoff requests will be rejected with reason: handoff-target-unsafe / subReason: allowlist-not-configured until configured"
+```
+
+When the env var is set but the requested target's origin doesn't match
+any pattern, the failure log carries
+`subReason: 'origin-not-allowed'` instead, distinguishing operational
+misconfiguration from rejected probe attempts.
+
 ## Standalone preview auth debugging (no production dependency)
 
 Use this when you want to test the full auth flow inside a single preview environment.

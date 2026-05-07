@@ -1,11 +1,13 @@
 const assert = require('assert')
 const { test } = require('cascade-test')
 
-const { isSafeRedirectPath, isSafeHandoffTarget } = require('../../../../routes/shared/safe-redirect')
+const { isSafeRedirectPath, isSafeHandoffTarget, evaluateHandoffTarget } = require('../../../../routes/shared/safe-redirect')
 
 const BASE = 'https://app.example.com'
 const PREVIEW_A = 'https://preview-a.example.com'
 const PREVIEW_B = 'https://preview-b.example.com'
+
+const PR_PREVIEW_REGEXES = [/^https:\/\/fomoplayer-fomoplayer-pr-\d+\.up\.railway\.app$/i]
 
 test({
   'relative path is allowed': () => {
@@ -57,80 +59,141 @@ test({
   },
 })
 
-const withRailwayEnv = (fn) => {
-  process.env.RAILWAY_SERVICE_NAME = 'fomoplayer'
-  process.env.RAILWAY_PROJECT_NAME = 'fomoplayer'
-  try {
-    fn()
-  } finally {
-    delete process.env.RAILWAY_SERVICE_NAME
-    delete process.env.RAILWAY_PROJECT_NAME
-  }
-}
-
 test({
-  'isSafeHandoffTarget — valid Railway PR URL is accepted': () => {
-    withRailwayEnv(() => {
-      assert.strictEqual(isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-158.up.railway.app'), true)
-    })
+  'isSafeHandoffTarget — accepts URL whose origin matches a configured regex': () => {
+    assert.strictEqual(
+      isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-158.up.railway.app', PR_PREVIEW_REGEXES),
+      true,
+    )
   },
 
-  'isSafeHandoffTarget — any PR number is accepted': () => {
-    withRailwayEnv(() => {
-      assert.strictEqual(isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-1.up.railway.app'), true)
-      assert.strictEqual(isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-99999.up.railway.app'), true)
-    })
+  'isSafeHandoffTarget — any PR number matches the example regex': () => {
+    assert.strictEqual(
+      isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-1.up.railway.app', PR_PREVIEW_REGEXES),
+      true,
+    )
+    assert.strictEqual(
+      isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-99999.up.railway.app', PR_PREVIEW_REGEXES),
+      true,
+    )
   },
 
-  'isSafeHandoffTarget — non-PR Railway URL is rejected': () => {
-    withRailwayEnv(() => {
-      assert.strictEqual(isSafeHandoffTarget('https://fomoplayer-fomoplayer.up.railway.app'), false)
-    })
+  'isSafeHandoffTarget — non-PR Railway URL is rejected by the example regex': () => {
+    assert.strictEqual(
+      isSafeHandoffTarget('https://fomoplayer-fomoplayer.up.railway.app', PR_PREVIEW_REGEXES),
+      false,
+    )
   },
 
   'isSafeHandoffTarget — different project name is rejected': () => {
-    withRailwayEnv(() => {
-      assert.strictEqual(isSafeHandoffTarget('https://other-project-pr-1.up.railway.app'), false)
-    })
+    assert.strictEqual(
+      isSafeHandoffTarget('https://other-project-pr-1.up.railway.app', PR_PREVIEW_REGEXES),
+      false,
+    )
   },
 
   'isSafeHandoffTarget — pattern is anchored: cannot prepend to bypass': () => {
-    withRailwayEnv(() => {
-      assert.strictEqual(
-        isSafeHandoffTarget('https://evil.fomoplayer-fomoplayer-pr-1.up.railway.app'),
-        false,
-      )
-    })
+    assert.strictEqual(
+      isSafeHandoffTarget('https://evil.fomoplayer-fomoplayer-pr-1.up.railway.app', PR_PREVIEW_REGEXES),
+      false,
+    )
   },
 
   'isSafeHandoffTarget — pattern is anchored: cannot append to bypass': () => {
-    withRailwayEnv(() => {
-      assert.strictEqual(
-        isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-1.up.railway.app.evil.com'),
-        false,
-      )
-    })
+    assert.strictEqual(
+      isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-1.up.railway.app.evil.com', PR_PREVIEW_REGEXES),
+      false,
+    )
   },
 
-  'isSafeHandoffTarget — http:// is rejected (https only)': () => {
-    withRailwayEnv(() => {
-      assert.strictEqual(isSafeHandoffTarget('http://fomoplayer-fomoplayer-pr-1.up.railway.app'), false)
-    })
+  'isSafeHandoffTarget — http:// is rejected by an https-only regex': () => {
+    assert.strictEqual(
+      isSafeHandoffTarget('http://fomoplayer-fomoplayer-pr-1.up.railway.app', PR_PREVIEW_REGEXES),
+      false,
+    )
   },
 
   'isSafeHandoffTarget — non-integer PR suffix is rejected': () => {
-    withRailwayEnv(() => {
-      assert.strictEqual(isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-abc.up.railway.app'), false)
-    })
+    assert.strictEqual(
+      isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-abc.up.railway.app', PR_PREVIEW_REGEXES),
+      false,
+    )
   },
 
-  'isSafeHandoffTarget — returns false when Railway env vars are absent': () => {
-    assert.strictEqual(isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-1.up.railway.app'), false)
+  'isSafeHandoffTarget — empty allowlist rejects every URL': () => {
+    assert.strictEqual(
+      isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-1.up.railway.app', []),
+      false,
+    )
+    assert.strictEqual(
+      isSafeHandoffTarget('https://fomoplayer-fomoplayer-pr-1.up.railway.app'),
+      false,
+    )
   },
 
-  'isSafeHandoffTarget — null is rejected': () => {
-    withRailwayEnv(() => {
-      assert.strictEqual(isSafeHandoffTarget(null), false)
-    })
+  'isSafeHandoffTarget — null URL is rejected': () => {
+    assert.strictEqual(isSafeHandoffTarget(null, PR_PREVIEW_REGEXES), false)
+  },
+})
+
+test({
+  'evaluateHandoffTarget — accepts a URL matching the configured regex': () => {
+    assert.deepStrictEqual(
+      evaluateHandoffTarget('https://fomoplayer-fomoplayer-pr-1.up.railway.app', PR_PREVIEW_REGEXES),
+      { ok: true },
+    )
+  },
+
+  'evaluateHandoffTarget — flags allowlist-not-configured when regex list is empty': () => {
+    assert.deepStrictEqual(
+      evaluateHandoffTarget('https://fomoplayer-fomoplayer-pr-1.up.railway.app', []),
+      { ok: false, subReason: 'allowlist-not-configured' },
+    )
+  },
+
+  'evaluateHandoffTarget — flags allowlist-not-configured when regex list is undefined': () => {
+    assert.deepStrictEqual(
+      evaluateHandoffTarget('https://fomoplayer-fomoplayer-pr-1.up.railway.app'),
+      { ok: false, subReason: 'allowlist-not-configured' },
+    )
+  },
+
+  'evaluateHandoffTarget — flags origin-not-allowed when regex matches nothing': () => {
+    assert.deepStrictEqual(
+      evaluateHandoffTarget('https://other-project-pr-1.up.railway.app', PR_PREVIEW_REGEXES),
+      { ok: false, subReason: 'origin-not-allowed' },
+    )
+  },
+
+  'evaluateHandoffTarget — flags origin-not-allowed for http when regex requires https': () => {
+    assert.deepStrictEqual(
+      evaluateHandoffTarget('http://fomoplayer-fomoplayer-pr-1.up.railway.app', PR_PREVIEW_REGEXES),
+      { ok: false, subReason: 'origin-not-allowed' },
+    )
+  },
+
+  'evaluateHandoffTarget — flags missing URL': () => {
+    assert.deepStrictEqual(
+      evaluateHandoffTarget(null, PR_PREVIEW_REGEXES),
+      { ok: false, subReason: 'missing-or-invalid-url' },
+    )
+  },
+
+  'evaluateHandoffTarget — flags malformed URL when regex is set': () => {
+    assert.deepStrictEqual(
+      evaluateHandoffTarget('not a url', PR_PREVIEW_REGEXES),
+      { ok: false, subReason: 'missing-or-invalid-url' },
+    )
+  },
+
+  'evaluateHandoffTarget — accepts the first matching regex from a list': () => {
+    const regexes = [
+      /^https:\/\/staging\.example\.com$/,
+      /^https:\/\/fomoplayer-fomoplayer-pr-\d+\.up\.railway\.app$/i,
+    ]
+    assert.deepStrictEqual(
+      evaluateHandoffTarget('https://fomoplayer-fomoplayer-pr-7.up.railway.app', regexes),
+      { ok: true },
+    )
   },
 })
