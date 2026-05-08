@@ -758,15 +758,15 @@ WITH
           LIMIT ${sql`${limits.heard}`} OFFSET ${sql`${offsets.heard}`}
       )
         , recently_added AS (
-          SELECT track_id
-               , MAX(track_added)
+          SELECT DISTINCT track_id
+               , track_added
           FROM logged_user
             NATURAL JOIN user__track
             NATURAL JOIN track
             NATURAL JOIN store__track
             NATURAL JOIN stores
           WHERE (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP))
-          GROUP BY 1
+          ORDER BY track_added DESC NULLS LAST
           LIMIT ${sql`${limits.recent}`} OFFSET ${sql`${offsets.recent}`}
       )
          , limited_tracks AS (
@@ -824,7 +824,7 @@ WITH
           FROM (
                    SELECT * FROM tracks_with_details
                    JOIN recently_added ON (id = track_id)
-                   ORDER BY added DESC
+                   ORDER BY recently_added.track_added DESC
                ) t
       )
       SELECT JSON_BUILD_OBJECT(
