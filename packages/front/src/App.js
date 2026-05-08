@@ -909,8 +909,8 @@ class App extends Component {
             <LocationWatcher onLocationChange={this.syncStateWithLocation.bind(this)} />
             {this.state.loading ? (
               <div className="loading-overlay">
-                <div className="loading-message">{this.state.launchMessage}</div>
-                <Spinner />
+                <div className="loading-message">{this.state.launchMessage.text}</div>
+                <div className="loading-emoji">{this.state.launchMessage.emoji}</div>
               </div>
             ) : !this.state.loggedIn ? (
               this.state.mode === 'list' ? (
