@@ -1535,35 +1535,24 @@ class Settings extends Component {
               <h4>Media button behavior</h4>
               <p>
                 Configure how the next and previous media buttons on your device (keyboard, headphones, etc.) behave.
+                With the toggle off, a single press seeks within the current track and a double press skips to the next
+                or previous track. With the toggle on, a single press skips tracks. This setting is stored on this
+                device, so it can be configured separately for each device you use.
               </p>
-              <div className="select-button select-button--container state-select-button--container noselect">
-                <input
-                  type="radio"
-                  id="media-button-behavior-seek"
-                  name="media-button-behavior"
-                  checked={this.state.mediaButtonBehavior === 'seek'}
-                  onChange={() => {
-                    localStorage.setItem('mediaButtonBehavior', 'seek')
-                    this.setState({ mediaButtonBehavior: 'seek' })
-                  }}
-                />
-                <label className="select_button-button" htmlFor="media-button-behavior-seek">
-                  Seek (double click to skip)
+              <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
+                <label htmlFor="media-button-behavior" className="noselect">
+                  Skip tracks on single press:
                 </label>
-                <input
-                  type="radio"
-                  id="media-button-behavior-skip"
-                  name="media-button-behavior"
+                <ToggleButton
+                  id="media-button-behavior"
                   checked={this.state.mediaButtonBehavior === 'skip'}
-                  onChange={() => {
-                    localStorage.setItem('mediaButtonBehavior', 'skip')
-                    this.setState({ mediaButtonBehavior: 'skip' })
+                  onChange={(state) => {
+                    const behavior = state ? 'skip' : 'seek'
+                    localStorage.setItem('mediaButtonBehavior', behavior)
+                    this.setState({ mediaButtonBehavior: behavior })
                   }}
                 />
-                <label className="select_button-button" htmlFor="media-button-behavior-skip">
-                  Skip
-                </label>
-              </div>
+              </p>
             </>
           ) : null}
           {this.state.page === 'integrations' ? (
