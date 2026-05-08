@@ -25,7 +25,10 @@
     "ui:test": "yarn workspace fomoplayer_integration_tests test",
     "ciui:test": "yarn workspace fomoplayer_integration_tests ci:test",
     "build": "yarn workspace fomoplayer_front build",
-    "db:backup": "heroku pg:backups:capture"
+    "db:backup": "heroku pg:backups:capture",
+    "backlog:sync": "node scripts/backlog-sync sync",
+    "backlog:sync:init": "node scripts/backlog-sync init",
+    "backlog:sync:status": "node scripts/backlog-sync status"
   },
   "repository": {
     "type": "git",
