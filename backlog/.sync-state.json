@@ -1,0 +1,4912 @@
+{
+  "version": 1,
+  "lastSync": "2026-05-08T21:24:26.448Z",
+  "items": {
+    "100": {
+      "fsKind": "tasks",
+      "fsId": "100",
+      "fsSlug": "mobile-signup-and-waiting-list",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscJCg",
+      "ghIssueNumber": 321,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9DE",
+      "lastSyncedFs": {
+        "title": "Sign-up + waiting-list screen",
+        "bodyHash": "da13bb154016fc93368a4e43bde5ceea941d7e92701e25637063775985d06c46",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Sign-up + waiting-list screen",
+        "bodyHash": "da13bb154016fc93368a4e43bde5ceea941d7e92701e25637063775985d06c46",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "101": {
+      "fsKind": "tasks",
+      "fsId": "101",
+      "fsSlug": "mobile-email-verification-screen",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscK1g",
+      "ghIssueNumber": 322,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9Eg",
+      "lastSyncedFs": {
+        "title": "Email verification result screen",
+        "bodyHash": "41b8f193a6a9a7cdd8b984f24a2e788571338d9fdbfddef2eab356757df6d7de",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Email verification result screen",
+        "bodyHash": "41b8f193a6a9a7cdd8b984f24a2e788571338d9fdbfddef2eab356757df6d7de",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "102": {
+      "fsKind": "tasks",
+      "fsId": "102",
+      "fsSlug": "mobile-onboarding-tour",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscMNw",
+      "ghIssueNumber": 323,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9Fo",
+      "lastSyncedFs": {
+        "title": "Onboarding tour (gestures + lock-screen + search-subscribe)",
+        "bodyHash": "a768dfd1b6fa55a54ab6d1e69e49e1f9bb6baa79f39f890cdf6adeba06318cfc",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Onboarding tour (gestures + lock-screen + search-subscribe)",
+        "bodyHash": "a768dfd1b6fa55a54ab6d1e69e49e1f9bb6baa79f39f890cdf6adeba06318cfc",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "103": {
+      "fsKind": "tasks",
+      "fsId": "103",
+      "fsSlug": "mobile-offline-mutation-queue",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscOQw",
+      "ghIssueNumber": 324,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9HE",
+      "lastSyncedFs": {
+        "title": "Offline mutation queue + replay-on-reconnect",
+        "bodyHash": "ea1cfeee8eb1c3e5527887528af5cffec81a55217dc80980cb3710805ed3a66d",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Offline mutation queue + replay-on-reconnect",
+        "bodyHash": "ea1cfeee8eb1c3e5527887528af5cffec81a55217dc80980cb3710805ed3a66d",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "L"
+      }
+    },
+    "104": {
+      "fsKind": "tasks",
+      "fsId": "104",
+      "fsSlug": "mobile-accessibility-audit",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscQGg",
+      "ghIssueNumber": 325,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9Ig",
+      "lastSyncedFs": {
+        "title": "Accessibility audit & remediation",
+        "bodyHash": "74b2e70a2b7b6a5defef263e38a9eee55270e6713d5d31f519711e7a46398e6b",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Accessibility audit & remediation",
+        "bodyHash": "74b2e70a2b7b6a5defef263e38a9eee55270e6713d5d31f519711e7a46398e6b",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "L"
+      }
+    },
+    "105": {
+      "fsKind": "tasks",
+      "fsId": "105",
+      "fsSlug": "mobile-telemetry-and-crash-reporting",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscROw",
+      "ghIssueNumber": 326,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9Jk",
+      "lastSyncedFs": {
+        "title": "Telemetry & crash reporting",
+        "bodyHash": "c637c09446373109a4a6a670f7094c68ab4838fa81295f72774b36cffdd88e69",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Telemetry & crash reporting",
+        "bodyHash": "c637c09446373109a4a6a670f7094c68ab4838fa81295f72774b36cffdd88e69",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "106": {
+      "fsKind": "tasks",
+      "fsId": "106",
+      "fsSlug": "mobile-store-distribution",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscSvA",
+      "ghIssueNumber": 327,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9K8",
+      "lastSyncedFs": {
+        "title": "TestFlight / Play Internal pipelines + store metadata",
+        "bodyHash": "b62424b705369e96daacbbdeb6d7f7a9cee3251ec01eef2a0f3a68e29737f8a0",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "TestFlight / Play Internal pipelines + store metadata",
+        "bodyHash": "b62424b705369e96daacbbdeb6d7f7a9cee3251ec01eef2a0f3a68e29737f8a0",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "L"
+      }
+    },
+    "107": {
+      "fsKind": "tasks",
+      "fsId": "107",
+      "fsSlug": "scroll-to-current-button-not-centered",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscUig",
+      "ghIssueNumber": 328,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9Ms",
+      "lastSyncedFs": {
+        "title": "\"Scroll to current\" button at the top of the tracks table is not centered",
+        "bodyHash": "89eb9174deb3c7e23246bd7cc2e4ab529ba01b00728b8986a887a3f7691feaea",
+        "status": "todo",
+        "priorityPrefix": "h",
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "\"Scroll to current\" button at the top of the tracks table is not centered",
+        "bodyHash": "89eb9174deb3c7e23246bd7cc2e4ab529ba01b00728b8986a887a3f7691feaea",
+        "status": "Backlog",
+        "priorityPrefix": "h",
+        "effort": "S"
+      }
+    },
+    "108": {
+      "fsKind": "tasks",
+      "fsId": "108",
+      "fsSlug": "incorrect-artists-in-data",
+      "ghIssueId": "I_kwDOEZgYB88AAAABAOfOjQ",
+      "ghIssueNumber": 162,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgqr6ZI",
+      "lastSyncedFs": {
+        "title": "Incorrect artists in data",
+        "bodyHash": "c24ea61f7521c5fa302dc01a914706553d30fdcca99b0aa01575e52cb8712435",
+        "status": "todo",
+        "priorityPrefix": "k",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Incorrect artists in data",
+        "bodyHash": "c24ea61f7521c5fa302dc01a914706553d30fdcca99b0aa01575e52cb8712435",
+        "status": "Backlog",
+        "priorityPrefix": "k",
+        "effort": null
+      }
+    },
+    "109": {
+      "fsKind": "tasks",
+      "fsId": "109",
+      "fsSlug": "entity-name-separators-are-missing-in-preview",
+      "ghIssueId": "I_kwDOEZgYB88AAAABAOeASA",
+      "ghIssueNumber": 159,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgqr5Ps",
+      "lastSyncedFs": {
+        "title": "Entity name separators are missing in preview",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Entity name separators are missing in preview",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "110": {
+      "fsKind": "tasks",
+      "fsId": "110",
+      "fsSlug": "arrow-key-navigation-does-not-work-inside-the-search-bar",
+      "ghIssueId": "I_kwDOEZgYB88AAAABAOeNCg",
+      "ghIssueNumber": 160,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgqr5cs",
+      "lastSyncedFs": {
+        "title": "Arrow key navigation does not work inside the search bar",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "kf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Arrow key navigation does not work inside the search bar",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "kf",
+        "effort": null
+      }
+    },
+    "111": {
+      "fsKind": "tasks",
+      "fsId": "111",
+      "fsSlug": "search-bar-extends-vertically",
+      "ghIssueId": "I_kwDOEZgYB88AAAABAOeTDQ",
+      "ghIssueNumber": 161,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgqr5h4",
+      "lastSyncedFs": {
+        "title": "Search bar extends vertically",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "ki",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Search bar extends vertically",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "ki",
+        "effort": null
+      }
+    },
+    "112": {
+      "fsKind": "tasks",
+      "fsId": "112",
+      "fsSlug": "improve-performance-of-track-search",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWloQ",
+      "ghIssueNumber": 175,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgKhf1U",
+      "lastSyncedFs": {
+        "title": "Improve performance of track search",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "kl",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Improve performance of track search",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "kl",
+        "effort": null
+      }
+    },
+    "113": {
+      "fsKind": "tasks",
+      "fsId": "113",
+      "fsSlug": "duplicate-tracks-pause-playback",
+      "ghIssueId": "MDU6SXNzdWU5Nzc4MDE2NzU=",
+      "ghIssueNumber": 39,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwUk",
+      "lastSyncedFs": {
+        "title": "Duplicate tracks pause playback",
+        "bodyHash": "c886648ea222050b69c7934fd88e69f4b1eb6007292a3cd78b7e9c39e505f734",
+        "status": "todo",
+        "priorityPrefix": "ko",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Duplicate tracks pause playback",
+        "bodyHash": "c886648ea222050b69c7934fd88e69f4b1eb6007292a3cd78b7e9c39e505f734",
+        "status": "Backlog",
+        "priorityPrefix": "ko",
+        "effort": null
+      }
+    },
+    "114": {
+      "fsKind": "tasks",
+      "fsId": "114",
+      "fsSlug": "add-filter-for-follows",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWl-Q",
+      "ghIssueNumber": 176,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYO6g",
+      "lastSyncedFs": {
+        "title": "Add filter for follows",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "kr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Add filter for follows",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "kr",
+        "effort": null
+      }
+    },
+    "115": {
+      "fsKind": "tasks",
+      "fsId": "115",
+      "fsSlug": "search-by-field",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWmuQ",
+      "ghIssueNumber": 177,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYPsg",
+      "lastSyncedFs": {
+        "title": "Search by field",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Search by field",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "116": {
+      "fsKind": "tasks",
+      "fsId": "116",
+      "fsSlug": "implement-a-confirmation-button-e-g-for-delete-operations",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWm_Q",
+      "ghIssueNumber": 178,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYO7k",
+      "lastSyncedFs": {
+        "title": "Implement a confirmation button (e.g. for delete operations)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement a confirmation button (e.g. for delete operations)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "117": {
+      "fsKind": "tasks",
+      "fsId": "117",
+      "fsSlug": "playlist-sharing",
+      "ghIssueId": "I_kwDOEZgYB8553EUS",
+      "ghIssueNumber": 99,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYPgQ",
+      "lastSyncedFs": {
+        "title": "Playlist sharing",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "lf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Playlist sharing",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "lf",
+        "effort": null
+      }
+    },
+    "118": {
+      "fsKind": "tasks",
+      "fsId": "118",
+      "fsSlug": "cart-filter",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWnPw",
+      "ghIssueNumber": 179,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgKiUfg",
+      "lastSyncedFs": {
+        "title": "Cart filter",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "li",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Cart filter",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "li",
+        "effort": null
+      }
+    },
+    "119": {
+      "fsKind": "tasks",
+      "fsId": "119",
+      "fsSlug": "fetch-user-collection-from-bandcamp",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWoBg",
+      "ghIssueNumber": 180,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgKlIFA",
+      "lastSyncedFs": {
+        "title": "Fetch user collection from Bandcamp",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "ll",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fetch user collection from Bandcamp",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "ll",
+        "effort": null
+      }
+    },
+    "120": {
+      "fsKind": "tasks",
+      "fsId": "120",
+      "fsSlug": "only-a-single-track-from-release-added-to-database",
+      "ghIssueId": "I_kwDOEZgYB85kGTSw",
+      "ghIssueNumber": 86,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgGR7Yw",
+      "lastSyncedFs": {
+        "title": "Only a single track from release added to database",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "lo",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Only a single track from release added to database",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "lo",
+        "effort": null
+      }
+    },
+    "121": {
+      "fsKind": "tasks",
+      "fsId": "121",
+      "fsSlug": "fetch-user-follows-from-bandcamp",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWoRA",
+      "ghIssueNumber": 181,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgKlIEw",
+      "lastSyncedFs": {
+        "title": "Fetch user follows from Bandcamp",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "lr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fetch user follows from Bandcamp",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "lr",
+        "effort": null
+      }
+    },
+    "122": {
+      "fsKind": "tasks",
+      "fsId": "122",
+      "fsSlug": "get-recommendations-feature",
+      "ghIssueId": "I_kwDOEZgYB85oC-Ds",
+      "ghIssueNumber": 91,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgHMaBE",
+      "lastSyncedFs": {
+        "title": "\"Get recommendations\" feature",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "\"Get recommendations\" feature",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "123": {
+      "fsKind": "tasks",
+      "fsId": "123",
+      "fsSlug": "make-it-possible-to-review-ignored-tracks",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWofQ",
+      "ghIssueNumber": 182,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwWM",
+      "lastSyncedFs": {
+        "title": "Make it possible to review ignored tracks",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "mc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Make it possible to review ignored tracks",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "mc",
+        "effort": null
+      }
+    },
+    "124": {
+      "fsKind": "tasks",
+      "fsId": "124",
+      "fsSlug": "replace-google-openid-with-auth0",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWoxA",
+      "ghIssueNumber": 183,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwV8",
+      "lastSyncedFs": {
+        "title": "Replace Google OpenID with Auth0",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "mf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Replace Google OpenID with Auth0",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "mf",
+        "effort": null
+      }
+    },
+    "125": {
+      "fsKind": "tasks",
+      "fsId": "125",
+      "fsSlug": "show-automatically-ignored-count-to-user",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWo-w",
+      "ghIssueNumber": 184,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwWI",
+      "lastSyncedFs": {
+        "title": "Show automatically ignored count to user",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "mi",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Show automatically ignored count to user",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "mi",
+        "effort": null
+      }
+    },
+    "126": {
+      "fsKind": "tasks",
+      "fsId": "126",
+      "fsSlug": "implement-infinite-scroll",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWpNg",
+      "ghIssueNumber": 185,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwWE",
+      "lastSyncedFs": {
+        "title": "Implement infinite scroll",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "ml",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement infinite scroll",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "ml",
+        "effort": null
+      }
+    },
+    "127": {
+      "fsKind": "tasks",
+      "fsId": "127",
+      "fsSlug": "implement-preview-waveform-rendering-and-caching-on-the-back",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWpdw",
+      "ghIssueNumber": 186,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwWA",
+      "lastSyncedFs": {
+        "title": "Implement preview waveform rendering and caching on the backend",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "mo",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement preview waveform rendering and caching on the backend",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "mo",
+        "effort": null
+      }
+    },
+    "128": {
+      "fsKind": "tasks",
+      "fsId": "128",
+      "fsSlug": "implement-a-more-visible-menu",
+      "ghIssueId": "I_kwDOEZgYB85MD4-g",
+      "ghIssueNumber": 52,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwSI",
+      "lastSyncedFs": {
+        "title": "Implement a more visible menu",
+        "bodyHash": "af0238371a43f5cc9ac3f5f4918927a073bce2f33af5fda0d908194c70c6db97",
+        "status": "todo",
+        "priorityPrefix": "mr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement a more visible menu",
+        "bodyHash": "af0238371a43f5cc9ac3f5f4918927a073bce2f33af5fda0d908194c70c6db97",
+        "status": "Backlog",
+        "priorityPrefix": "mr",
+        "effort": null
+      }
+    },
+    "129": {
+      "fsKind": "tasks",
+      "fsId": "129",
+      "fsSlug": "implement-a-feature-for-unmarking-tracks-as-heard",
+      "ghIssueId": "MDU6SXNzdWU5NzYxNDA2NjA=",
+      "ghIssueNumber": 12,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVo",
+      "lastSyncedFs": {
+        "title": "Implement a feature for unmarking tracks as heard",
+        "bodyHash": "de0b9ae2511f044af6640f8b0030c7cbde4d93f0f5119a3d398979f41d702633",
+        "status": "todo",
+        "priorityPrefix": "n",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement a feature for unmarking tracks as heard",
+        "bodyHash": "de0b9ae2511f044af6640f8b0030c7cbde4d93f0f5119a3d398979f41d702633",
+        "status": "Backlog",
+        "priorityPrefix": "n",
+        "effort": null
+      }
+    },
+    "130": {
+      "fsKind": "tasks",
+      "fsId": "130",
+      "fsSlug": "cache-track-details",
+      "ghIssueId": "I_kwDOEZgYB85MC-Kg",
+      "ghIssueNumber": 50,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwSM",
+      "lastSyncedFs": {
+        "title": "Cache track details",
+        "bodyHash": "e3c93146541303f208b4f1589bf37abfc9c9ff03dc35c40487fcc0d35ea8bd71",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Cache track details",
+        "bodyHash": "e3c93146541303f208b4f1589bf37abfc9c9ff03dc35c40487fcc0d35ea8bd71",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "131": {
+      "fsKind": "tasks",
+      "fsId": "131",
+      "fsSlug": "implement-user-actions-based-score-system",
+      "ghIssueId": "MDU6SXNzdWU5NzY0NTM1OTA=",
+      "ghIssueNumber": 22,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwSQ",
+      "lastSyncedFs": {
+        "title": "Implement user actions based score system",
+        "bodyHash": "7e1b8d89dcd43fa0a8377d01a895947316b683e8f591e64ffac2002d62c28eb3",
+        "status": "todo",
+        "priorityPrefix": "nf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement user actions based score system",
+        "bodyHash": "7e1b8d89dcd43fa0a8377d01a895947316b683e8f591e64ffac2002d62c28eb3",
+        "status": "Backlog",
+        "priorityPrefix": "nf",
+        "effort": null
+      }
+    },
+    "132": {
+      "fsKind": "tasks",
+      "fsId": "132",
+      "fsSlug": "search-and-follow-related-artists",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWpsw",
+      "ghIssueNumber": 187,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYP4M",
+      "lastSyncedFs": {
+        "title": "Search and follow related artists",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "ni",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Search and follow related artists",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "ni",
+        "effort": null
+      }
+    },
+    "133": {
+      "fsKind": "tasks",
+      "fsId": "133",
+      "fsSlug": "follow-browse-users",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWp4Q",
+      "ghIssueNumber": 188,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYP1c",
+      "lastSyncedFs": {
+        "title": "Follow / browse users",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "nl",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Follow / browse users",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "nl",
+        "effort": null
+      }
+    },
+    "134": {
+      "fsKind": "tasks",
+      "fsId": "134",
+      "fsSlug": "implement-setting-for-selecting-preview-preference",
+      "ghIssueId": "MDU6SXNzdWU5NzY0NTM4OTE=",
+      "ghIssueNumber": 23,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwSU",
+      "lastSyncedFs": {
+        "title": "Implement setting for selecting preview preference",
+        "bodyHash": "04f91de66ec747d1890496e642cb351da46c4560cfe346821a15ea7356a3a449",
+        "status": "todo",
+        "priorityPrefix": "no",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement setting for selecting preview preference",
+        "bodyHash": "04f91de66ec747d1890496e642cb351da46c4560cfe346821a15ea7356a3a449",
+        "status": "Backlog",
+        "priorityPrefix": "no",
+        "effort": null
+      }
+    },
+    "135": {
+      "fsKind": "tasks",
+      "fsId": "135",
+      "fsSlug": "prevent-track-table-button-expansion",
+      "ghIssueId": "MDU6SXNzdWU5NzY0NTQzNDg=",
+      "ghIssueNumber": 24,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwSY",
+      "lastSyncedFs": {
+        "title": "Prevent track table button expansion",
+        "bodyHash": "59eb3ea82be886913936ad1d6407ae4b545e195ca6fc1288a56fb002d1f452d3",
+        "status": "todo",
+        "priorityPrefix": "nr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Prevent track table button expansion",
+        "bodyHash": "59eb3ea82be886913936ad1d6407ae4b545e195ca6fc1288a56fb002d1f452d3",
+        "status": "Backlog",
+        "priorityPrefix": "nr",
+        "effort": null
+      }
+    },
+    "136": {
+      "fsKind": "tasks",
+      "fsId": "136",
+      "fsSlug": "give-feedback-after-follow-is-added",
+      "ghIssueId": "MDU6SXNzdWU5NzY0NTQ0OTU=",
+      "ghIssueNumber": 25,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwSc",
+      "lastSyncedFs": {
+        "title": "Give feedback after follow is added",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "o",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Give feedback after follow is added",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "o",
+        "effort": null
+      }
+    },
+    "137": {
+      "fsKind": "tasks",
+      "fsId": "137",
+      "fsSlug": "implement-monitoring",
+      "ghIssueId": "MDU6SXNzdWU5NzY0NTQ3NjA=",
+      "ghIssueNumber": 26,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwSg",
+      "lastSyncedFs": {
+        "title": "Implement monitoring",
+        "bodyHash": "842c7396f6e92e39a8f82a75c3a8b0133a40e3c62fa933003c0d490ae2ca9bfd",
+        "status": "todo",
+        "priorityPrefix": "oc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement monitoring",
+        "bodyHash": "842c7396f6e92e39a8f82a75c3a8b0133a40e3c62fa933003c0d490ae2ca9bfd",
+        "status": "Backlog",
+        "priorityPrefix": "oc",
+        "effort": null
+      }
+    },
+    "138": {
+      "fsKind": "tasks",
+      "fsId": "138",
+      "fsSlug": "implement-track-sharing-view",
+      "ghIssueId": "MDU6SXNzdWU5NzY0NTU2NzQ=",
+      "ghIssueNumber": 27,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwSs",
+      "lastSyncedFs": {
+        "title": "Implement track sharing view",
+        "bodyHash": "9f8c5af2ba865896b1c6fac41655e25bec49d9fde2fa67a7ff4df5a9fff08cb0",
+        "status": "todo",
+        "priorityPrefix": "of",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement track sharing view",
+        "bodyHash": "9f8c5af2ba865896b1c6fac41655e25bec49d9fde2fa67a7ff4df5a9fff08cb0",
+        "status": "Backlog",
+        "priorityPrefix": "of",
+        "effort": null
+      }
+    },
+    "139": {
+      "fsKind": "tasks",
+      "fsId": "139",
+      "fsSlug": "scanning-not-possible-if-waveform-image-is-broken",
+      "ghIssueId": "MDU6SXNzdWU5Nzg0NDU4Mjc=",
+      "ghIssueNumber": 40,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwSw",
+      "lastSyncedFs": {
+        "title": "Scanning not possible if waveform image is broken",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "oi",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Scanning not possible if waveform image is broken",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "oi",
+        "effort": null
+      }
+    },
+    "140": {
+      "fsKind": "tasks",
+      "fsId": "140",
+      "fsSlug": "implement-more-fine-grained-ignore-popup",
+      "ghIssueId": "I_kwDOEZgYB85KGAbk",
+      "ghIssueNumber": 43,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwS0",
+      "lastSyncedFs": {
+        "title": "Implement more fine grained ignore popup",
+        "bodyHash": "d4d40ee751c58fdd06ec27cc66c2a09ff2058f614b6c787742c210ced8a4c9d1",
+        "status": "todo",
+        "priorityPrefix": "ol",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement more fine grained ignore popup",
+        "bodyHash": "d4d40ee751c58fdd06ec27cc66c2a09ff2058f614b6c787742c210ced8a4c9d1",
+        "status": "Backlog",
+        "priorityPrefix": "ol",
+        "effort": null
+      }
+    },
+    "141": {
+      "fsKind": "tasks",
+      "fsId": "141",
+      "fsSlug": "persist-track-details-in-a-column-in-track-table",
+      "ghIssueId": "I_kwDOEZgYB85L1Joj",
+      "ghIssueNumber": 46,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwS4",
+      "lastSyncedFs": {
+        "title": "Persist track details in a column in track table",
+        "bodyHash": "985482adae2061823b2e877c45c0bc41d7bf75c794b5d3cf2424b4f83cb09392",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Persist track details in a column in track table",
+        "bodyHash": "985482adae2061823b2e877c45c0bc41d7bf75c794b5d3cf2424b4f83cb09392",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "142": {
+      "fsKind": "tasks",
+      "fsId": "142",
+      "fsSlug": "deprecate-password-logins",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWqIA",
+      "ghIssueNumber": 189,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwS8",
+      "lastSyncedFs": {
+        "title": "Deprecate password logins",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "or",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Deprecate password logins",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "or",
+        "effort": null
+      }
+    },
+    "143": {
+      "fsKind": "tasks",
+      "fsId": "143",
+      "fsSlug": "implement-quick-preview-mode",
+      "ghIssueId": "MDU6SXNzdWU5NzYxNDA1NDI=",
+      "ghIssueNumber": 11,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTA",
+      "lastSyncedFs": {
+        "title": "Implement quick preview mode",
+        "bodyHash": "49d1609ff984226de091116716246ca90a2fdb51fa9ad9321399d20dca2b5b9a",
+        "status": "todo",
+        "priorityPrefix": "pc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement quick preview mode",
+        "bodyHash": "49d1609ff984226de091116716246ca90a2fdb51fa9ad9321399d20dca2b5b9a",
+        "status": "Backlog",
+        "priorityPrefix": "pc",
+        "effort": null
+      }
+    },
+    "144": {
+      "fsKind": "tasks",
+      "fsId": "144",
+      "fsSlug": "implement-soundcloud-integration",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWqWg",
+      "ghIssueNumber": 190,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTE",
+      "lastSyncedFs": {
+        "title": "Implement SoundCloud integration",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "pf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement SoundCloud integration",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "pf",
+        "effort": null
+      }
+    },
+    "145": {
+      "fsKind": "tasks",
+      "fsId": "145",
+      "fsSlug": "prevent-clicking-beyond-waveform",
+      "ghIssueId": "MDU6SXNzdWU5NzYxMzk5NzE=",
+      "ghIssueNumber": 10,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTM",
+      "lastSyncedFs": {
+        "title": "Prevent clicking beyond waveform",
+        "bodyHash": "1a7d1511120b7b959cb1788a4520a57a309eaf9eba3a145f9fc267d3f244901d",
+        "status": "todo",
+        "priorityPrefix": "pi",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Prevent clicking beyond waveform",
+        "bodyHash": "1a7d1511120b7b959cb1788a4520a57a309eaf9eba3a145f9fc267d3f244901d",
+        "status": "Backlog",
+        "priorityPrefix": "pi",
+        "effort": null
+      }
+    },
+    "146": {
+      "fsKind": "tasks",
+      "fsId": "146",
+      "fsSlug": "implement-a-version-that-is-easy-to-run-locally-i-e-without",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWqpA",
+      "ghIssueNumber": 191,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTQ",
+      "lastSyncedFs": {
+        "title": "Implement a version that is easy to run locally (i.e. without oauth setup)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "pl",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement a version that is easy to run locally (i.e. without oauth setup)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "pl",
+        "effort": null
+      }
+    },
+    "147": {
+      "fsKind": "tasks",
+      "fsId": "147",
+      "fsSlug": "do-not-fetch-bandcamp-release-details-if-details-for-the-rel",
+      "ghIssueId": "MDU6SXNzdWU5NzY3MTc5MzI=",
+      "ghIssueNumber": 34,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTU",
+      "lastSyncedFs": {
+        "title": "Do not fetch Bandcamp release details if details for the release url exist in database",
+        "bodyHash": "46ad66d1273861578f21647718a7d6f17ea86af2540e4eacc3cdc49fb0ad7dee",
+        "status": "todo",
+        "priorityPrefix": "po",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Do not fetch Bandcamp release details if details for the release url exist in database",
+        "bodyHash": "46ad66d1273861578f21647718a7d6f17ea86af2540e4eacc3cdc49fb0ad7dee",
+        "status": "Backlog",
+        "priorityPrefix": "po",
+        "effort": null
+      }
+    },
+    "148": {
+      "fsKind": "tasks",
+      "fsId": "148",
+      "fsSlug": "show-track-duration-in-track-table-and-or-in-preview",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWq8A",
+      "ghIssueNumber": 192,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTY",
+      "lastSyncedFs": {
+        "title": "Show track duration in track table and / or in preview",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "pr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Show track duration in track table and / or in preview",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "pr",
+        "effort": null
+      }
+    },
+    "149": {
+      "fsKind": "tasks",
+      "fsId": "149",
+      "fsSlug": "show-update-notification-banner-for-user",
+      "ghIssueId": "MDU6SXNzdWU5NzYxMzkzODQ=",
+      "ghIssueNumber": 8,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTc",
+      "lastSyncedFs": {
+        "title": "Show update notification banner for user",
+        "bodyHash": "33ee271318023f9593de914520a5c44424efa18f9588d176a8400659f6f5b0c7",
+        "status": "todo",
+        "priorityPrefix": "q",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Show update notification banner for user",
+        "bodyHash": "33ee271318023f9593de914520a5c44424efa18f9588d176a8400659f6f5b0c7",
+        "status": "Backlog",
+        "priorityPrefix": "q",
+        "effort": null
+      }
+    },
+    "150": {
+      "fsKind": "tasks",
+      "fsId": "150",
+      "fsSlug": "resume-playback-on-double-click",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWrOg",
+      "ghIssueNumber": 193,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTg",
+      "lastSyncedFs": {
+        "title": "Resume playback on (double) click",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "qc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Resume playback on (double) click",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "qc",
+        "effort": null
+      }
+    },
+    "151": {
+      "fsKind": "tasks",
+      "fsId": "151",
+      "fsSlug": "show-default-waveform-image-if-waveform-not-available",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWraw",
+      "ghIssueNumber": 194,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTk",
+      "lastSyncedFs": {
+        "title": "Show default waveform image if waveform not available",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "qf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Show default waveform image if waveform not available",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "qf",
+        "effort": null
+      }
+    },
+    "152": {
+      "fsKind": "tasks",
+      "fsId": "152",
+      "fsSlug": "remove-track-from-ui-when-it-is-ignored",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWrpw",
+      "ghIssueNumber": 195,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTs",
+      "lastSyncedFs": {
+        "title": "Remove track from UI when it is ignored",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "qi",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Remove track from UI when it is ignored",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "qi",
+        "effort": null
+      }
+    },
+    "153": {
+      "fsKind": "tasks",
+      "fsId": "153",
+      "fsSlug": "add-feature-for-linking-openid-to-login",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWr5Q",
+      "ghIssueNumber": 196,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwTw",
+      "lastSyncedFs": {
+        "title": "Add feature for linking OpenID to login",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "ql",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Add feature for linking OpenID to login",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "ql",
+        "effort": null
+      }
+    },
+    "154": {
+      "fsKind": "tasks",
+      "fsId": "154",
+      "fsSlug": "adding-spotify-artist-follow-fails",
+      "ghIssueId": "I_kwDOEZgYB86crKrI",
+      "ghIssueNumber": 142,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgUaiWI",
+      "lastSyncedFs": {
+        "title": "Adding Spotify artist follow fails",
+        "bodyHash": "c44f057f62e193bdfb529137096e5f7c7607c7930ed5736b21957a851aa354ca",
+        "status": "todo",
+        "priorityPrefix": "qo",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Adding Spotify artist follow fails",
+        "bodyHash": "c44f057f62e193bdfb529137096e5f7c7607c7930ed5736b21957a851aa354ca",
+        "status": "Backlog",
+        "priorityPrefix": "qo",
+        "effort": null
+      }
+    },
+    "155": {
+      "fsKind": "tasks",
+      "fsId": "155",
+      "fsSlug": "skip-tracks-where-preview-returns-404-or-try-to-fetch-anothe",
+      "ghIssueId": "I_kwDOEZgYB86WWDAw",
+      "ghIssueNumber": 134,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgS-SkY",
+      "lastSyncedFs": {
+        "title": "Skip tracks where preview returns 404 (or try to fetch another preview)",
+        "bodyHash": "d43209568b634a545c4c3e97cee5b563b8d05e21c55d3ba5da8565f7c1f4ff56",
+        "status": "todo",
+        "priorityPrefix": "qr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Skip tracks where preview returns 404 (or try to fetch another preview)",
+        "bodyHash": "d43209568b634a545c4c3e97cee5b563b8d05e21c55d3ba5da8565f7c1f4ff56",
+        "status": "Backlog",
+        "priorityPrefix": "qr",
+        "effort": null
+      }
+    },
+    "156": {
+      "fsKind": "tasks",
+      "fsId": "156",
+      "fsSlug": "move-mark-as-purchased-button-to-the-top-of-the-cart-drop-do",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWsLg",
+      "ghIssueNumber": 197,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgRBj4E",
+      "lastSyncedFs": {
+        "title": "Move mark as purchased button to the top of the cart drop down",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "rc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Move mark as purchased button to the top of the cart drop down",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "rc",
+        "effort": null
+      }
+    },
+    "157": {
+      "fsKind": "tasks",
+      "fsId": "157",
+      "fsSlug": "marking-as-purchased-fails-if-spotify-sync-is-enabled",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWsZw",
+      "ghIssueNumber": 198,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgRBjl4",
+      "lastSyncedFs": {
+        "title": "Marking as purchased fails if Spotify sync is enabled",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "rf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Marking as purchased fails if Spotify sync is enabled",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "rf",
+        "effort": null
+      }
+    },
+    "158": {
+      "fsKind": "tasks",
+      "fsId": "158",
+      "fsSlug": "return-search-details-artist-label-name-for-id-in-search-rep",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWsqQ",
+      "ghIssueNumber": 199,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgQR_R8",
+      "lastSyncedFs": {
+        "title": "Return search details (artist & label name for id) in search reply",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "ri",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Return search details (artist & label name for id) in search reply",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "ri",
+        "effort": null
+      }
+    },
+    "159": {
+      "fsKind": "tasks",
+      "fsId": "159",
+      "fsSlug": "create-notification-from-text-selection-in-chrome",
+      "ghIssueId": "I_kwDOEZgYB86MYL8T",
+      "ghIssueNumber": 124,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgQGxmg",
+      "lastSyncedFs": {
+        "title": "Create notification from text selection in Chrome",
+        "bodyHash": "a7ea6c4a1ca21d491127d9563697ed1f58fe820ca164a55e5c55e09b1c59a9c3",
+        "status": "todo",
+        "priorityPrefix": "rl",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Create notification from text selection in Chrome",
+        "bodyHash": "a7ea6c4a1ca21d491127d9563697ed1f58fe820ca164a55e5c55e09b1c59a9c3",
+        "status": "Backlog",
+        "priorityPrefix": "rl",
+        "effort": null
+      }
+    },
+    "160": {
+      "fsKind": "tasks",
+      "fsId": "160",
+      "fsSlug": "artist-label-link-click-adds-two-states-to-history",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWs6Q",
+      "ghIssueNumber": 200,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgPFdbo",
+      "lastSyncedFs": {
+        "title": "Artist / label link click adds two states to history",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "ro",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Artist / label link click adds two states to history",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "ro",
+        "effort": null
+      }
+    },
+    "161": {
+      "fsKind": "tasks",
+      "fsId": "161",
+      "fsSlug": "fix-import-follows-from-spotify",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWtIg",
+      "ghIssueNumber": 201,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgPFcfI",
+      "lastSyncedFs": {
+        "title": "Fix import follows from Spotify",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "rr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fix import follows from Spotify",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "rr",
+        "effort": null
+      }
+    },
+    "162": {
+      "fsKind": "tasks",
+      "fsId": "162",
+      "fsSlug": "artist-follow-score-does-not-seem-to-work",
+      "ghIssueId": "I_kwDOEZgYB8556qb1",
+      "ghIssueNumber": 100,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLZPcc",
+      "lastSyncedFs": {
+        "title": "Artist follow score does not seem to work",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "s",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Artist follow score does not seem to work",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "s",
+        "effort": null
+      }
+    },
+    "163": {
+      "fsKind": "tasks",
+      "fsId": "163",
+      "fsSlug": "fix-bottom-margin-on-iphone",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWtXQ",
+      "ghIssueNumber": 202,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYQAk",
+      "lastSyncedFs": {
+        "title": "Fix bottom margin on iPhone",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "sc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fix bottom margin on iPhone",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "sc",
+        "effort": null
+      }
+    },
+    "164": {
+      "fsKind": "tasks",
+      "fsId": "164",
+      "fsSlug": "disable-spotify-features-if-client-details-are-not-provided",
+      "ghIssueId": "MDU6SXNzdWU5NzY3MjA0Mzc=",
+      "ghIssueNumber": 36,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwU8",
+      "lastSyncedFs": {
+        "title": "Disable Spotify features if client details are not provided",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "sf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Disable Spotify features if client details are not provided",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "sf",
+        "effort": null
+      }
+    },
+    "165": {
+      "fsKind": "tasks",
+      "fsId": "165",
+      "fsSlug": "bandcamp-to-beatport-preview-switch-breaks-the-waveform-3540",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWtlA",
+      "ghIssueNumber": 203,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwUg",
+      "lastSyncedFs": {
+        "title": "Bandcamp to Beatport preview switch breaks the waveform (35406)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "si",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Bandcamp to Beatport preview switch breaks the waveform (35406)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "si",
+        "effort": null
+      }
+    },
+    "166": {
+      "fsKind": "tasks",
+      "fsId": "166",
+      "fsSlug": "wrong-cart-selected-when-switching-between-tabs",
+      "ghIssueId": "I_kwDOEZgYB85MO44T",
+      "ghIssueNumber": 56,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwUM",
+      "lastSyncedFs": {
+        "title": "Wrong cart selected when switching between tabs",
+        "bodyHash": "ad66df37e4ba2df963df518c8efcd876a866a0511b8f916ddcff7ef2fc69bd8f",
+        "status": "todo",
+        "priorityPrefix": "sl",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Wrong cart selected when switching between tabs",
+        "bodyHash": "ad66df37e4ba2df963df518c8efcd876a866a0511b8f916ddcff7ef2fc69bd8f",
+        "status": "Backlog",
+        "priorityPrefix": "sl",
+        "effort": null
+      }
+    },
+    "167": {
+      "fsKind": "tasks",
+      "fsId": "167",
+      "fsSlug": "disable-db-migrate-logging-when-running-tests",
+      "ghIssueId": "MDU6SXNzdWU5NzY3MTk3NTE=",
+      "ghIssueNumber": 35,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVA",
+      "lastSyncedFs": {
+        "title": "Disable db-migrate logging when running tests",
+        "bodyHash": "efe9ea20f479bb4a288cc2ce79291ada5cf4d05999f3a123b6642b1e76f50e79",
+        "status": "todo",
+        "priorityPrefix": "so",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Disable db-migrate logging when running tests",
+        "bodyHash": "efe9ea20f479bb4a288cc2ce79291ada5cf4d05999f3a123b6642b1e76f50e79",
+        "status": "Backlog",
+        "priorityPrefix": "so",
+        "effort": null
+      }
+    },
+    "168": {
+      "fsKind": "tasks",
+      "fsId": "168",
+      "fsSlug": "fix-issues-in-adding-beatport-releases",
+      "ghIssueId": "I_kwDOEZgYB85MIX40",
+      "ghIssueNumber": 54,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwUY",
+      "lastSyncedFs": {
+        "title": "Fix issues in adding Beatport releases",
+        "bodyHash": "fab945c1b479775c091934846c054fcf753ea4ac516d4c0b7224cf48f0edb596",
+        "status": "todo",
+        "priorityPrefix": "sr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fix issues in adding Beatport releases",
+        "bodyHash": "fab945c1b479775c091934846c054fcf753ea4ac516d4c0b7224cf48f0edb596",
+        "status": "Backlog",
+        "priorityPrefix": "sr",
+        "effort": null
+      }
+    },
+    "169": {
+      "fsKind": "tasks",
+      "fsId": "169",
+      "fsSlug": "implement-ignore-tracks-by-genre",
+      "ghIssueId": "I_kwDOEZgYB85QneMY",
+      "ghIssueNumber": 60,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwT4",
+      "lastSyncedFs": {
+        "title": "Implement ignore tracks by genre",
+        "bodyHash": "d12d707f3893d70e0956fe064f8f1f9fb88659046c1b7665784ed1c5eba8a8df",
+        "status": "todo",
+        "priorityPrefix": "tc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement ignore tracks by genre",
+        "bodyHash": "d12d707f3893d70e0956fe064f8f1f9fb88659046c1b7665784ed1c5eba8a8df",
+        "status": "Backlog",
+        "priorityPrefix": "tc",
+        "effort": null
+      }
+    },
+    "170": {
+      "fsKind": "tasks",
+      "fsId": "170",
+      "fsSlug": "highlight-starred-artists-in-tracklist",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWt1Q",
+      "ghIssueNumber": 204,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgFcEZU",
+      "lastSyncedFs": {
+        "title": "Highlight starred artists in tracklist",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "tf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Highlight starred artists in tracklist",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "tf",
+        "effort": null
+      }
+    },
+    "171": {
+      "fsKind": "tasks",
+      "fsId": "171",
+      "fsSlug": "close-help-when-moving-to-another-view",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWuHg",
+      "ghIssueNumber": 205,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYO-k",
+      "lastSyncedFs": {
+        "title": "Close help when moving to another view",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "ti",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Close help when moving to another view",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "ti",
+        "effort": null
+      }
+    },
+    "172": {
+      "fsKind": "tasks",
+      "fsId": "172",
+      "fsSlug": "add-skip-button-to-help",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWuXg",
+      "ghIssueNumber": 206,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYO9M",
+      "lastSyncedFs": {
+        "title": "Add skip button to help",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "tl",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Add skip button to help",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "tl",
+        "effort": null
+      }
+    },
+    "173": {
+      "fsKind": "tasks",
+      "fsId": "173",
+      "fsSlug": "fix-bandcamp-artist-identification",
+      "ghIssueId": "I_kwDOEZgYB85grzuE",
+      "ghIssueNumber": 77,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgFcCk0",
+      "lastSyncedFs": {
+        "title": "Fix Bandcamp artist identification",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "to",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fix Bandcamp artist identification",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "to",
+        "effort": null
+      }
+    },
+    "174": {
+      "fsKind": "tasks",
+      "fsId": "174",
+      "fsSlug": "export-new-tracks-playlist-to-spotify-to-improve-spotify-tra",
+      "ghIssueId": "I_kwDOEZgYB850pMPH",
+      "ghIssueNumber": 97,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgKGg04",
+      "lastSyncedFs": {
+        "title": "Export new tracks playlist to Spotify to improve Spotify training",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "tr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Export new tracks playlist to Spotify to improve Spotify training",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "tr",
+        "effort": null
+      }
+    },
+    "175": {
+      "fsKind": "tasks",
+      "fsId": "175",
+      "fsSlug": "incoming-request-rate-limiting",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWung",
+      "ghIssueNumber": 207,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYwzY",
+      "lastSyncedFs": {
+        "title": "Incoming request rate limiting",
+        "bodyHash": "83434c355896ea542fb2f40d7da92a17aabfe66b8bb1a79c429a14aa2b807d6d",
+        "status": "todo",
+        "priorityPrefix": "u",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Incoming request rate limiting",
+        "bodyHash": "83434c355896ea542fb2f40d7da92a17aabfe66b8bb1a79c429a14aa2b807d6d",
+        "status": "Backlog",
+        "priorityPrefix": "u",
+        "effort": null
+      }
+    },
+    "176": {
+      "fsKind": "tasks",
+      "fsId": "176",
+      "fsSlug": "fetch-all-tracks-from-releases-with-followed-artist",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWu4g",
+      "ghIssueNumber": 208,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgGJMfE",
+      "lastSyncedFs": {
+        "title": "Fetch all tracks from releases with followed artist",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "uc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fetch all tracks from releases with followed artist",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "uc",
+        "effort": null
+      }
+    },
+    "177": {
+      "fsKind": "tasks",
+      "fsId": "177",
+      "fsSlug": "fix-remix-artists",
+      "ghIssueId": "I_kwDOEZgYB85hinlb",
+      "ghIssueNumber": 81,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgFpB0k",
+      "lastSyncedFs": {
+        "title": "Fix (* Remix) artists",
+        "bodyHash": "4dd7eda491a6f1865d8d3ab739772a3798c370812b3ded497e01f267e905d447",
+        "status": "todo",
+        "priorityPrefix": "uf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fix (* Remix) artists",
+        "bodyHash": "4dd7eda491a6f1865d8d3ab739772a3798c370812b3ded497e01f267e905d447",
+        "status": "Backlog",
+        "priorityPrefix": "uf",
+        "effort": null
+      }
+    },
+    "178": {
+      "fsKind": "tasks",
+      "fsId": "178",
+      "fsSlug": "player-does-not-show-remixer-names-if-version-is-not-set",
+      "ghIssueId": "I_kwDOEZgYB85h0HCi",
+      "ghIssueNumber": 82,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgFtahw",
+      "lastSyncedFs": {
+        "title": "Player does not show remixer names if version is not set",
+        "bodyHash": "a7a00ed09f297444ca5df5135fe3be64cdf7b0afd2b0fcc05364d5d0f85ae6c7",
+        "status": "todo",
+        "priorityPrefix": "ui",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Player does not show remixer names if version is not set",
+        "bodyHash": "a7a00ed09f297444ca5df5135fe3be64cdf7b0afd2b0fcc05364d5d0f85ae6c7",
+        "status": "Backlog",
+        "priorityPrefix": "ui",
+        "effort": null
+      }
+    },
+    "179": {
+      "fsKind": "tasks",
+      "fsId": "179",
+      "fsSlug": "cart-and-open-share-popups-are-shown-at-an-incorrect-positio",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWveA",
+      "ghIssueNumber": 209,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwUA",
+      "lastSyncedFs": {
+        "title": "Cart and open / share popups are shown at an incorrect position (relative wrapper needs to be moved)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "ul",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Cart and open / share popups are shown at an incorrect position (relative wrapper needs to be moved)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "ul",
+        "effort": null
+      }
+    },
+    "180": {
+      "fsKind": "tasks",
+      "fsId": "180",
+      "fsSlug": "fix-spotify-store-track-and-preview-duplication",
+      "ghIssueId": "I_kwDOEZgYB85MInQN",
+      "ghIssueNumber": 55,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwUU",
+      "lastSyncedFs": {
+        "title": "Fix Spotify store track (and preview) duplication",
+        "bodyHash": "ac11b34179f864dec7168bd092a374fb608134c50f9ffc4de77f696587fe30b9",
+        "status": "todo",
+        "priorityPrefix": "uo",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fix Spotify store track (and preview) duplication",
+        "bodyHash": "ac11b34179f864dec7168bd092a374fb608134c50f9ffc4de77f696587fe30b9",
+        "status": "Backlog",
+        "priorityPrefix": "uo",
+        "effort": null
+      }
+    },
+    "181": {
+      "fsKind": "tasks",
+      "fsId": "181",
+      "fsSlug": "cancel-preview-requests-if-track-is-changed",
+      "ghIssueId": "MDU6SXNzdWU5NzY5NTcwMDQ=",
+      "ghIssueNumber": 37,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwUo",
+      "lastSyncedFs": {
+        "title": "Cancel preview requests if track is changed",
+        "bodyHash": "4793974759aadcacded9687830c0048137edf483ecbf8ca40d734fad965eb7f3",
+        "status": "todo",
+        "priorityPrefix": "ur",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Cancel preview requests if track is changed",
+        "bodyHash": "4793974759aadcacded9687830c0048137edf483ecbf8ca40d734fad965eb7f3",
+        "status": "Backlog",
+        "priorityPrefix": "ur",
+        "effort": null
+      }
+    },
+    "182": {
+      "fsKind": "tasks",
+      "fsId": "182",
+      "fsSlug": "verify-that-bandcamp-follows-are-highlighted-correctly-as-fa",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWvvg",
+      "ghIssueNumber": 210,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwUw",
+      "lastSyncedFs": {
+        "title": "Verify that Bandcamp follows are highlighted correctly (as far as possible) in the UI",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "vc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Verify that Bandcamp follows are highlighted correctly (as far as possible) in the UI",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "vc",
+        "effort": null
+      }
+    },
+    "183": {
+      "fsKind": "tasks",
+      "fsId": "183",
+      "fsSlug": "reuse-bandcamp-session-id",
+      "ghIssueId": "MDU6SXNzdWU5NzY5NzYxODE=",
+      "ghIssueNumber": 38,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwU4",
+      "lastSyncedFs": {
+        "title": "Reuse Bandcamp session id",
+        "bodyHash": "ad8ea4153ad87d9340d554a32e55d881bdebf4e55681b61507bb56a224676463",
+        "status": "todo",
+        "priorityPrefix": "vf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Reuse Bandcamp session id",
+        "bodyHash": "ad8ea4153ad87d9340d554a32e55d881bdebf4e55681b61507bb56a224676463",
+        "status": "Backlog",
+        "priorityPrefix": "vf",
+        "effort": null
+      }
+    },
+    "184": {
+      "fsKind": "tasks",
+      "fsId": "184",
+      "fsSlug": "follow-status-emphasis-too-weak-on-mobile",
+      "ghIssueId": "MDU6SXNzdWU5NzY2NjA4ODM=",
+      "ghIssueNumber": 32,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVE",
+      "lastSyncedFs": {
+        "title": "Follow status emphasis too weak on mobile",
+        "bodyHash": "b15d3234ee40bbdedee9c39491c5aaab76a5d1b064118150ab96bbeb8d847cb9",
+        "status": "todo",
+        "priorityPrefix": "vi",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Follow status emphasis too weak on mobile",
+        "bodyHash": "b15d3234ee40bbdedee9c39491c5aaab76a5d1b064118150ab96bbeb8d847cb9",
+        "status": "Backlog",
+        "priorityPrefix": "vi",
+        "effort": null
+      }
+    },
+    "185": {
+      "fsKind": "tasks",
+      "fsId": "185",
+      "fsSlug": "refresh-list-button-drops-to-new-line-on-mobile",
+      "ghIssueId": "MDU6SXNzdWU5NzY2NTk4NDA=",
+      "ghIssueNumber": 31,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVI",
+      "lastSyncedFs": {
+        "title": "Refresh list button drops to new line on mobile",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "vl",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Refresh list button drops to new line on mobile",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "vl",
+        "effort": null
+      }
+    },
+    "186": {
+      "fsKind": "tasks",
+      "fsId": "186",
+      "fsSlug": "follow-unfollow-topic-goes-under-the-close-popup-button",
+      "ghIssueId": "MDU6SXNzdWU5NzY2NjE0OTM=",
+      "ghIssueNumber": 33,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVM",
+      "lastSyncedFs": {
+        "title": "Follow / unfollow topic goes under the close popup button",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "vo",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Follow / unfollow topic goes under the close popup button",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "vo",
+        "effort": null
+      }
+    },
+    "187": {
+      "fsKind": "tasks",
+      "fsId": "187",
+      "fsSlug": "pull-refresh-to-track-table",
+      "ghIssueId": "MDU6SXNzdWU5NzY2NTY1MDI=",
+      "ghIssueNumber": 28,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVQ",
+      "lastSyncedFs": {
+        "title": "Pull refresh to track table",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "vr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Pull refresh to track table",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "vr",
+        "effort": null
+      }
+    },
+    "188": {
+      "fsKind": "tasks",
+      "fsId": "188",
+      "fsSlug": "slide-out-options-for-tracks-rows",
+      "ghIssueId": "MDU6SXNzdWU5NzY2NTY3NDk=",
+      "ghIssueNumber": 29,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVU",
+      "lastSyncedFs": {
+        "title": "Slide out options for tracks rows",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "w",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Slide out options for tracks rows",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "w",
+        "effort": null
+      }
+    },
+    "189": {
+      "fsKind": "tasks",
+      "fsId": "189",
+      "fsSlug": "implement-unit-tests",
+      "ghIssueId": "MDU6SXNzdWU5NzYxNDI4NTE=",
+      "ghIssueNumber": 17,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVc",
+      "lastSyncedFs": {
+        "title": "Implement unit tests",
+        "bodyHash": "ffca86aaef7a458432e45e7a43b73230914b972d773b77ecdc4e0545c7a59deb",
+        "status": "todo",
+        "priorityPrefix": "wc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement unit tests",
+        "bodyHash": "ffca86aaef7a458432e45e7a43b73230914b972d773b77ecdc4e0545c7a59deb",
+        "status": "Backlog",
+        "priorityPrefix": "wc",
+        "effort": null
+      }
+    },
+    "190": {
+      "fsKind": "tasks",
+      "fsId": "190",
+      "fsSlug": "jump-to-next-preview-if-the-current-does-not-work",
+      "ghIssueId": "MDU6SXNzdWU5NzYxNDIxODU=",
+      "ghIssueNumber": 14,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVg",
+      "lastSyncedFs": {
+        "title": "Jump to next preview if the current does not work",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Jump to next preview if the current does not work",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "191": {
+      "fsKind": "tasks",
+      "fsId": "191",
+      "fsSlug": "fix-new-tracks-calculation",
+      "ghIssueId": "MDU6SXNzdWU5NzYxMzk1MzY=",
+      "ghIssueNumber": 9,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVk",
+      "lastSyncedFs": {
+        "title": "Fix new tracks calculation",
+        "bodyHash": "8dc871c30096c292e5127fa73c87375522c59f4a4795797c8ffdb8fb747ba3b6",
+        "status": "todo",
+        "priorityPrefix": "wi",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fix new tracks calculation",
+        "bodyHash": "8dc871c30096c292e5127fa73c87375522c59f4a4795797c8ffdb8fb747ba3b6",
+        "status": "Backlog",
+        "priorityPrefix": "wi",
+        "effort": null
+      }
+    },
+    "192": {
+      "fsKind": "tasks",
+      "fsId": "192",
+      "fsSlug": "track-is-missing-remixer-details",
+      "ghIssueId": "I_kwDOEZgYB85gr-J5",
+      "ghIssueNumber": 78,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgFcEqY",
+      "lastSyncedFs": {
+        "title": "Track is missing remixer details",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "wl",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Track is missing remixer details",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "wl",
+        "effort": null
+      }
+    },
+    "193": {
+      "fsKind": "tasks",
+      "fsId": "193",
+      "fsSlug": "add-playback-inactivity-timeout",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWwCw",
+      "ghIssueNumber": 211,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLaeqg",
+      "lastSyncedFs": {
+        "title": "Add playback inactivity timeout",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "wo",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Add playback inactivity timeout",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "wo",
+        "effort": null
+      }
+    },
+    "194": {
+      "fsKind": "tasks",
+      "fsId": "194",
+      "fsSlug": "add-follows-to-spotify-when-following-them-on-fomo",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWwlw",
+      "ghIssueNumber": 212,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLflkw",
+      "lastSyncedFs": {
+        "title": "Add follows to Spotify when following them on Fomo",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "wr",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Add follows to Spotify when following them on Fomo",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "wr",
+        "effort": null
+      }
+    },
+    "195": {
+      "fsKind": "tasks",
+      "fsId": "195",
+      "fsSlug": "search-for-artists-releases-on-all-platforms-in-order-to-fol",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWw0w",
+      "ghIssueNumber": 213,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLfmDQ",
+      "lastSyncedFs": {
+        "title": "Search for artists releases on all platforms (in order to follow if interested)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "x",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Search for artists releases on all platforms (in order to follow if interested)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "x",
+        "effort": null
+      }
+    },
+    "196": {
+      "fsKind": "tasks",
+      "fsId": "196",
+      "fsSlug": "search-matching-tracks-from-bandcamp",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWxHA",
+      "ghIssueNumber": 214,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLltV0",
+      "lastSyncedFs": {
+        "title": "Search matching tracks from Bandcamp",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "xc",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Search matching tracks from Bandcamp",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "xc",
+        "effort": null
+      }
+    },
+    "197": {
+      "fsKind": "tasks",
+      "fsId": "197",
+      "fsSlug": "migrate-from-create-react-app-to-vite",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWxfg",
+      "ghIssueNumber": 215,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLnuNw",
+      "lastSyncedFs": {
+        "title": "Migrate from create-react-app to vite",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "xf",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Migrate from create-react-app to vite",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "xf",
+        "effort": null
+      }
+    },
+    "198": {
+      "fsKind": "tasks",
+      "fsId": "198",
+      "fsSlug": "implement-active-button-style-for-toggle-buttons",
+      "ghIssueId": "I_kwDOEZgYB86JPpi4",
+      "ghIssueNumber": 122,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgPFcL0",
+      "lastSyncedFs": {
+        "title": "Implement \"active\" button style for toggle buttons",
+        "bodyHash": "45f93507a07d29949815d7c01052c2c8db860173d7d7cd80d60dc1a33290f63f",
+        "status": "todo",
+        "priorityPrefix": "xi",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement \"active\" button style for toggle buttons",
+        "bodyHash": "45f93507a07d29949815d7c01052c2c8db860173d7d7cd80d60dc1a33290f63f",
+        "status": "Backlog",
+        "priorityPrefix": "xi",
+        "effort": null
+      }
+    },
+    "199": {
+      "fsKind": "tasks",
+      "fsId": "199",
+      "fsSlug": "show-mark-as-purchased-button-in-cart-menu-in-all-views",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWxwQ",
+      "ghIssueNumber": 216,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgRBjyQ",
+      "lastSyncedFs": {
+        "title": "Show mark as purchased button in cart menu in all views",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "xl",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Show mark as purchased button in cart menu in all views",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "xl",
+        "effort": null
+      }
+    },
+    "200": {
+      "fsKind": "tasks",
+      "fsId": "200",
+      "fsSlug": "artist-follow-sometimes-does-not-work-e-g-monty-1187-from-tr",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWyCA",
+      "ghIssueNumber": 217,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgWhezU",
+      "lastSyncedFs": {
+        "title": "Artist follow sometimes does not work (e.g. Monty / 1187 from track follow popup)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "todo",
+        "priorityPrefix": "xo",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Artist follow sometimes does not work (e.g. Monty / 1187 from track follow popup)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Backlog",
+        "priorityPrefix": "xo",
+        "effort": null
+      }
+    },
+    "201": {
+      "fsKind": "tasks",
+      "fsId": "201",
+      "fsSlug": "implement-api-tests",
+      "ghIssueId": "MDU6SXNzdWU5NzYxNDI2MDc=",
+      "ghIssueNumber": 16,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwWU",
+      "lastSyncedFs": {
+        "title": "Implement API tests",
+        "bodyHash": "b812a5d6fe66bf5056c396aea24fcf4b67a0467f47c05cd1e8b94d67418e1c61",
+        "status": "in-progress",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement API tests",
+        "bodyHash": "b812a5d6fe66bf5056c396aea24fcf4b67a0467f47c05cd1e8b94d67418e1c61",
+        "status": "In progress",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "202": {
+      "fsKind": "tasks",
+      "fsId": "202",
+      "fsSlug": "implement-tests-for-url-follows",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWyUQ",
+      "ghIssueNumber": 218,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLbJqk",
+      "lastSyncedFs": {
+        "title": "Implement tests for URL follows",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-progress",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement tests for URL follows",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In progress",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "203": {
+      "fsKind": "tasks",
+      "fsId": "203",
+      "fsSlug": "show-store-artists-and-store-labels-in-ignore-popup",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWyiA",
+      "ghIssueNumber": 219,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLrms8",
+      "lastSyncedFs": {
+        "title": "Show store artists and store labels in ignore popup",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-progress",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Show store artists and store labels in ignore popup",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In progress",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "204": {
+      "fsKind": "tasks",
+      "fsId": "204",
+      "fsSlug": "implement-tests-for-watches",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWytg",
+      "ghIssueNumber": 220,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwU0",
+      "lastSyncedFs": {
+        "title": "Implement tests for watches",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-progress",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement tests for watches",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In progress",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "205": {
+      "fsKind": "tasks",
+      "fsId": "205",
+      "fsSlug": "store-track-genres-in-database",
+      "ghIssueId": "I_kwDOEZgYB85QneN1",
+      "ghIssueNumber": 61,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwT0",
+      "lastSyncedFs": {
+        "title": "Store track genres in database",
+        "bodyHash": "580165cbf39307161db11bd7d34c857eb7b1c8bf037e9dd7d2b683f0938f1121",
+        "status": "in-progress",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Store track genres in database",
+        "bodyHash": "580165cbf39307161db11bd7d34c857eb7b1c8bf037e9dd7d2b683f0938f1121",
+        "status": "In progress",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "206": {
+      "fsKind": "tasks",
+      "fsId": "206",
+      "fsSlug": "create-figma-style-guide-and-refresh-layouts",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWy-A",
+      "ghIssueNumber": 221,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYwpY",
+      "lastSyncedFs": {
+        "title": "Create Figma style guide and refresh layouts",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-progress",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Create Figma style guide and refresh layouts",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In progress",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "207": {
+      "fsKind": "tasks",
+      "fsId": "207",
+      "fsSlug": "fix-url-follows",
+      "ghIssueId": "I_kwDOEZgYB8553Aps",
+      "ghIssueNumber": 98,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYOss",
+      "lastSyncedFs": {
+        "title": "Fix url follows",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-progress",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fix url follows",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In progress",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "208": {
+      "fsKind": "tasks",
+      "fsId": "208",
+      "fsSlug": "implement-ui-tests",
+      "ghIssueId": "MDU6SXNzdWU5NzYxNDI1MDI=",
+      "ghIssueNumber": 15,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDqwVY",
+      "lastSyncedFs": {
+        "title": "Implement UI tests",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-progress",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Implement UI tests",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In progress",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "209": {
+      "fsKind": "tasks",
+      "fsId": "209",
+      "fsSlug": "ui-revamp",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWzMQ",
+      "ghIssueNumber": 222,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLrmgE",
+      "lastSyncedFs": {
+        "title": "UI revamp",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-progress",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "UI revamp",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In progress",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "210": {
+      "fsKind": "tasks",
+      "fsId": "210",
+      "fsSlug": "create-storybook-for-the-ui-components",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWzcw",
+      "ghIssueNumber": 223,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLhZUY",
+      "lastSyncedFs": {
+        "title": "Create Storybook for the UI components",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-progress",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Create Storybook for the UI components",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In progress",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "211": {
+      "fsKind": "tasks",
+      "fsId": "211",
+      "fsSlug": "encode-in-search-links-included-in-emails",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsWzvw",
+      "ghIssueNumber": 224,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLfkBs",
+      "lastSyncedFs": {
+        "title": "Encode & in search links included in emails",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "to-be-verified",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Encode & in search links included in emails",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "To be verified",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "212": {
+      "fsKind": "tasks",
+      "fsId": "212",
+      "fsSlug": "add-ignored-field-to-user-track",
+      "ghIssueId": "I_kwDOEZgYB856iBeD",
+      "ghIssueNumber": 102,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLipK4",
+      "lastSyncedFs": {
+        "title": "Add ignored field to user__track",
+        "bodyHash": "8a4a55d02c4ac4552681d48aa6f6105fdb49294c7c212fcc306e4f798682d3b9",
+        "status": "to-be-verified",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Add ignored field to user__track",
+        "bodyHash": "8a4a55d02c4ac4552681d48aa6f6105fdb49294c7c212fcc306e4f798682d3b9",
+        "status": "To be verified",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "213": {
+      "fsKind": "tasks",
+      "fsId": "213",
+      "fsSlug": "browser-is-redirected-to-new-after-login-instead-of-the-orig",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsW0Gg",
+      "ghIssueNumber": 225,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDsuT4",
+      "lastSyncedFs": {
+        "title": "Browser is redirected to /new after login instead of the original page they requested",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "to-be-verified",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Browser is redirected to /new after login instead of the original page they requested",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "To be verified",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "214": {
+      "fsKind": "tasks",
+      "fsId": "214",
+      "fsSlug": "don-t-apply-store-filters-in-lists-other-than-the-carts",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsW0RQ",
+      "ghIssueNumber": 226,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYP0E",
+      "lastSyncedFs": {
+        "title": "Don''''''''''''''''t apply store filters in lists other than the carts",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "to-be-verified",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Don''''''''''''''''t apply store filters in lists other than the carts",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "To be verified",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "215": {
+      "fsKind": "tasks",
+      "fsId": "215",
+      "fsSlug": "store-api-request-rate-limiting-esp-spotify-429",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsW0kA",
+      "ghIssueNumber": 227,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYwz0",
+      "lastSyncedFs": {
+        "title": "Store API request rate limiting (esp. Spotify 429)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "to-be-verified",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Store API request rate limiting (esp. Spotify 429)",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "To be verified",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "216": {
+      "fsKind": "tasks",
+      "fsId": "216",
+      "fsSlug": "fix-bandcamp-follow",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsW05w",
+      "ghIssueNumber": 228,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLYOy0",
+      "lastSyncedFs": {
+        "title": "Fix Bandcamp follow",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "to-be-verified",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fix Bandcamp follow",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "To be verified",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "217": {
+      "fsKind": "tasks",
+      "fsId": "217",
+      "fsSlug": "bandcamp-updates-fail-with-error-null-value-in-column-store",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsW1Iw",
+      "ghIssueNumber": 229,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgDtLpc",
+      "lastSyncedFs": {
+        "title": "Bandcamp updates fail with: [error: null value in column \"store__track_released\" violates not-null constraint]",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "to-be-verified",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Bandcamp updates fail with: [error: null value in column \"store__track_released\" violates not-null constraint]",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "To be verified",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "218": {
+      "fsKind": "tasks",
+      "fsId": "218",
+      "fsSlug": "import-follows-from-spotify",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsW1XA",
+      "ghIssueNumber": 230,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgJv9yo",
+      "lastSyncedFs": {
+        "title": "Import follows from Spotify",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "validated",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Import follows from Spotify",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "Validated",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "219": {
+      "fsKind": "tasks",
+      "fsId": "219",
+      "fsSlug": "fix-bandcamp-playlist-follows",
+      "ghIssueId": "I_kwDOEZgYB856DPBq",
+      "ghIssueNumber": 101,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLbJs8",
+      "lastSyncedFs": {
+        "title": "Fix Bandcamp playlist follows",
+        "bodyHash": "f60d12d9052ff36079dc28182f91de700a5e918b5130a8c86633fdd518055eb8",
+        "status": "in-production",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Fix Bandcamp playlist follows",
+        "bodyHash": "f60d12d9052ff36079dc28182f91de700a5e918b5130a8c86633fdd518055eb8",
+        "status": "In production / to be monitored",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "220": {
+      "fsKind": "tasks",
+      "fsId": "220",
+      "fsSlug": "ui-crashes-when-navigating-to-recently-added-played-after-fi",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsW1lg",
+      "ghIssueNumber": 231,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLZO70",
+      "lastSyncedFs": {
+        "title": "UI crashes when navigating to recently added / played after first sign in",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-production",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "UI crashes when navigating to recently added / played after first sign in",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In production / to be monitored",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "221": {
+      "fsKind": "tasks",
+      "fsId": "221",
+      "fsSlug": "search-for-tracks-from-all-stores-for-followed-and-carted-tr",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsW17w",
+      "ghIssueNumber": 232,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgKGgxI",
+      "lastSyncedFs": {
+        "title": "Search for tracks from all stores for followed and carted tracks",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-production",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Search for tracks from all stores for followed and carted tracks",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In production / to be monitored",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "222": {
+      "fsKind": "tasks",
+      "fsId": "222",
+      "fsSlug": "import-spotify-playlist-handling-in-ui-fails",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsW2PA",
+      "ghIssueNumber": 233,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgLagmg",
+      "lastSyncedFs": {
+        "title": "Import Spotify playlist handling in UI fails",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "in-production",
+        "priorityPrefix": "m",
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "Import Spotify playlist handling in UI fails",
+        "bodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "status": "In production / to be monitored",
+        "priorityPrefix": "m",
+        "effort": null
+      }
+    },
+    "001": {
+      "fsKind": "tasks",
+      "fsId": "001",
+      "fsSlug": "bandcamp-track-row-play-button",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaHrA",
+      "ghIssueNumber": 234,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7Hc",
+      "lastSyncedFs": {
+        "title": "Play button next to queue button on Bandcamp track rows",
+        "bodyHash": "03a101b70c3cb6acafaf013a61f96d8d6cba8cec3e603457b7f3fc0a72fc1769",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Play button next to queue button on Bandcamp track rows",
+        "bodyHash": "03a101b70c3cb6acafaf013a61f96d8d6cba8cec3e603457b7f3fc0a72fc1769",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "002": {
+      "fsKind": "tasks",
+      "fsId": "002",
+      "fsSlug": "bandcamp-feed-track-buttons",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaJuw",
+      "ghIssueNumber": 235,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7LI",
+      "lastSyncedFs": {
+        "title": "Play / queue / add-to-cart buttons on Bandcamp feed",
+        "bodyHash": "e6fd8fbcd60524a2a8375e829a823e71115405d57ba424d002f3e366e41fd4cb",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Play / queue / add-to-cart buttons on Bandcamp feed",
+        "bodyHash": "e6fd8fbcd60524a2a8375e829a823e71115405d57ba424d002f3e366e41fd4cb",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "003": {
+      "fsKind": "tasks",
+      "fsId": "003",
+      "fsSlug": "bandcamp-cover-controls-override",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaLJw",
+      "ghIssueNumber": 236,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7N0",
+      "lastSyncedFs": {
+        "title": "Route Bandcamp cover controls through extension player; add queue button",
+        "bodyHash": "59e00e23b6a57ce522e67dbd72308bd81f00b126faf1d3c57fb9e3aa8cfe4206",
+        "status": "todo",
+        "priorityPrefix": "f",
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Route Bandcamp cover controls through extension player; add queue button",
+        "bodyHash": "59e00e23b6a57ce522e67dbd72308bd81f00b126faf1d3c57fb9e3aa8cfe4206",
+        "status": "Backlog",
+        "priorityPrefix": "f",
+        "effort": "L"
+      }
+    },
+    "004": {
+      "fsKind": "tasks",
+      "fsId": "004",
+      "fsSlug": "bandcamp-injected-controls-alignment",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaMaw",
+      "ghIssueNumber": 237,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7PE",
+      "lastSyncedFs": {
+        "title": "Align data-fp-injected controls after .time span",
+        "bodyHash": "d4ccdeb3cacc7088ab67edc697a41c86bd54005f74563e062e6a95dbb646afd2",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Align data-fp-injected controls after .time span",
+        "bodyHash": "d4ccdeb3cacc7088ab67edc697a41c86bd54005f74563e062e6a95dbb646afd2",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "005": {
+      "fsKind": "tasks",
+      "fsId": "005",
+      "fsSlug": "extension-initial-preview-jump",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaOEQ",
+      "ghIssueNumber": 238,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7Qc",
+      "lastSyncedFs": {
+        "title": "Initial preview jump (toggleable, persisted, default off)",
+        "bodyHash": "56089df0b0d73207119329afc907d7828fc6fc47fae38e63a0e48e0e8dc2538c",
+        "status": "todo",
+        "priorityPrefix": "r",
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Initial preview jump (toggleable, persisted, default off)",
+        "bodyHash": "56089df0b0d73207119329afc907d7828fc6fc47fae38e63a0e48e0e8dc2538c",
+        "status": "Backlog",
+        "priorityPrefix": "r",
+        "effort": "L"
+      }
+    },
+    "006": {
+      "fsKind": "tasks",
+      "fsId": "006",
+      "fsSlug": "extension-media-key-support",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaPuQ",
+      "ghIssueNumber": 239,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7SE",
+      "lastSyncedFs": {
+        "title": "OS and keyboard media-key playback control",
+        "bodyHash": "9c182941e5e4708c2fc05eb549b426911c82272c50801c22afbf1f48260daf8d",
+        "status": "todo",
+        "priorityPrefix": "p",
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "OS and keyboard media-key playback control",
+        "bodyHash": "9c182941e5e4708c2fc05eb549b426911c82272c50801c22afbf1f48260daf8d",
+        "status": "Backlog",
+        "priorityPrefix": "p",
+        "effort": "M"
+      }
+    },
+    "007": {
+      "fsKind": "tasks",
+      "fsId": "007",
+      "fsSlug": "bandcamp-heard-status-sync",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaRbg",
+      "ghIssueNumber": 240,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7TQ",
+      "lastSyncedFs": {
+        "title": "Visualise heard status on Bandcamp; sync to Fomo Player Recently Played",
+        "bodyHash": "aeb27fab3581306aec02babe483a1f273874383b0fe77bbb71b0841febff20fd",
+        "status": "todo",
+        "priorityPrefix": "d",
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Visualise heard status on Bandcamp; sync to Fomo Player Recently Played",
+        "bodyHash": "aeb27fab3581306aec02babe483a1f273874383b0fe77bbb71b0841febff20fd",
+        "status": "Backlog",
+        "priorityPrefix": "d",
+        "effort": "L"
+      }
+    },
+    "008": {
+      "fsKind": "tasks",
+      "fsId": "008",
+      "fsSlug": "add-to-fp-button-navigates-bug",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaS7g",
+      "ghIssueNumber": 241,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7UI",
+      "lastSyncedFs": {
+        "title": "Fix \"Add to Fomo Player\" button on release pages navigates instead of adding",
+        "bodyHash": "6e3111977e31c504c1d8ab38305cef3dedd3c0c3d993fffb886e7b12fd6cebc6",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Fix \"Add to Fomo Player\" button on release pages navigates instead of adding",
+        "bodyHash": "6e3111977e31c504c1d8ab38305cef3dedd3c0c3d993fffb886e7b12fd6cebc6",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "009": {
+      "fsKind": "tasks",
+      "fsId": "009",
+      "fsSlug": "add-to-fp-shows-current-carts",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaUhQ",
+      "ghIssueNumber": 242,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7Vk",
+      "lastSyncedFs": {
+        "title": "'Add to Fomo Player' carts list shows current membership; click to remove",
+        "bodyHash": "70d4a5b36d7e1ab37cb0d0a2dd4b44d616bc7b069389f408dbfb2cb449f74250",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "'Add to Fomo Player' carts list shows current membership; click to remove",
+        "bodyHash": "70d4a5b36d7e1ab37cb0d0a2dd4b44d616bc7b069389f408dbfb2cb449f74250",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "010": {
+      "fsKind": "tasks",
+      "fsId": "010",
+      "fsSlug": "add-to-fp-loading-feedback",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaWJA",
+      "ghIssueNumber": 243,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7W8",
+      "lastSyncedFs": {
+        "title": "Loading and success feedback for \"Add to Fomo Player\"",
+        "bodyHash": "695904e5c9d4c1d3309be8288466f44b08c642811ffea07300adbbad46ff25fa",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Loading and success feedback for \"Add to Fomo Player\"",
+        "bodyHash": "695904e5c9d4c1d3309be8288466f44b08c642811ffea07300adbbad46ff25fa",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "011": {
+      "fsKind": "tasks",
+      "fsId": "011",
+      "fsSlug": "player-queue-button-label",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaYPg",
+      "ghIssueNumber": 244,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7X8",
+      "lastSyncedFs": {
+        "title": "Rename \"Queue\" button to \"Open queue\"",
+        "bodyHash": "30c99ac7edc8260da2dfd413280bf18ca6da263e47e9182c33c29c0407df07ed",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Rename \"Queue\" button to \"Open queue\"",
+        "bodyHash": "30c99ac7edc8260da2dfd413280bf18ca6da263e47e9182c33c29c0407df07ed",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "012": {
+      "fsKind": "tasks",
+      "fsId": "012",
+      "fsSlug": "queue-clear-confirmation",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaZ_g",
+      "ghIssueNumber": 245,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7ZM",
+      "lastSyncedFs": {
+        "title": "Move clear-queue button into queue list and require confirmation",
+        "bodyHash": "c5d8d2660e4020a128d0efe99f457799534f7b921edc3937a5961e94ef5cc694",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Move clear-queue button into queue list and require confirmation",
+        "bodyHash": "c5d8d2660e4020a128d0efe99f457799534f7b921edc3937a5961e94ef5cc694",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "013": {
+      "fsKind": "tasks",
+      "fsId": "013",
+      "fsSlug": "extension-fomoplayer-color-scheme",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsabQQ",
+      "ghIssueNumber": 246,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7Z8",
+      "lastSyncedFs": {
+        "title": "Use Fomo Player colour scheme in extension player and injected controls",
+        "bodyHash": "86ac86800dd74b7331d19fd04393ab75d12b158d6a8bacd5a447daf5fdc86ab8",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Use Fomo Player colour scheme in extension player and injected controls",
+        "bodyHash": "86ac86800dd74b7331d19fd04393ab75d12b158d6a8bacd5a447daf5fdc86ab8",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "014": {
+      "fsKind": "tasks",
+      "fsId": "014",
+      "fsSlug": "player-progress-bar-click-area",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsadNw",
+      "ghIssueNumber": 247,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7bU",
+      "lastSyncedFs": {
+        "title": "Increase progress bar click area for easier seeking",
+        "bodyHash": "1187c5b2da3b18a2f1aa2e7a907859547bba5c5b0c68420117c9e153e13a7fa5",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Increase progress bar click area for easier seeking",
+        "bodyHash": "1187c5b2da3b18a2f1aa2e7a907859547bba5c5b0c68420117c9e153e13a7fa5",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "015": {
+      "fsKind": "tasks",
+      "fsId": "015",
+      "fsSlug": "queue-button-add-loading-feedback",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaeiQ",
+      "ghIssueNumber": 248,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7cw",
+      "lastSyncedFs": {
+        "title": "Loading feedback while adding tracks to the queue",
+        "bodyHash": "6a1abf4214896e5888571c0b0be8505e8968468e75ef5e87b19f0c048e44640b",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Loading feedback while adding tracks to the queue",
+        "bodyHash": "6a1abf4214896e5888571c0b0be8505e8968468e75ef5e87b19f0c048e44640b",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "016": {
+      "fsKind": "tasks",
+      "fsId": "016",
+      "fsSlug": "bandcamp-cover-overlay-button-styling",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsagEw",
+      "ghIssueNumber": 249,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7eY",
+      "lastSyncedFs": {
+        "title": "Restyle the cover-image overlay buttons (shorter label, FP colours, readable background)",
+        "bodyHash": "54976231b29c0b5e38bed8f016c721bed36798e0a863ca4c69778641fbb6b7ed",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Restyle the cover-image overlay buttons (shorter label, FP colours, readable background)",
+        "bodyHash": "54976231b29c0b5e38bed8f016c721bed36798e0a863ca4c69778641fbb6b7ed",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "017": {
+      "fsKind": "tasks",
+      "fsId": "017",
+      "fsSlug": "queue-row-navigation-links",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaiUQ",
+      "ghIssueNumber": 250,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7fc",
+      "lastSyncedFs": {
+        "title": "Navigate to track / release / artist / label from queue rows",
+        "bodyHash": "a4b29aded531b4e30d00534e7b10c2e981cc6ef43acb24019e8155168b8b66a9",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Navigate to track / release / artist / label from queue rows",
+        "bodyHash": "a4b29aded531b4e30d00534e7b10c2e981cc6ef43acb24019e8155168b8b66a9",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "018": {
+      "fsKind": "tasks",
+      "fsId": "018",
+      "fsSlug": "bandcamp-button-vertical-alignment",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaj0w",
+      "ghIssueNumber": 251,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7hE",
+      "lastSyncedFs": {
+        "title": "Vertically align Queue and \"Add to Fomo Player\" buttons on Bandcamp",
+        "bodyHash": "63f17f54d635dde4c78d9fd11991724e3cf3838ea430b4d3312ddb9d90fe582f",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Vertically align Queue and \"Add to Fomo Player\" buttons on Bandcamp",
+        "bodyHash": "63f17f54d635dde4c78d9fd11991724e3cf3838ea430b4d3312ddb9d90fe582f",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "019": {
+      "fsKind": "tasks",
+      "fsId": "019",
+      "fsSlug": "extension-build-watcher",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsalRw",
+      "ghIssueNumber": 252,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7iE",
+      "lastSyncedFs": {
+        "title": "Watch mode for the browser-extension build",
+        "bodyHash": "bfac561459108fe36fe53675a06e9cd88d4c0b98a4a77123e047c5cc384f9793",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Watch mode for the browser-extension build",
+        "bodyHash": "bfac561459108fe36fe53675a06e9cd88d4c0b98a4a77123e047c5cc384f9793",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "020": {
+      "fsKind": "tasks",
+      "fsId": "020",
+      "fsSlug": "bandcamp-login-detection-bug",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsamvA",
+      "ghIssueNumber": 253,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7js",
+      "lastSyncedFs": {
+        "title": "Bandcamp logged-in detection is unreliable; sync controls always disabled",
+        "bodyHash": "eea12e5ff5ef9d9dd7793c41a153291eeca7ede7b7c4b05ce3c32fbb8d6c6bbe",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Bandcamp logged-in detection is unreliable; sync controls always disabled",
+        "bodyHash": "eea12e5ff5ef9d9dd7793c41a153291eeca7ede7b7c4b05ce3c32fbb8d6c6bbe",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "021": {
+      "fsKind": "tasks",
+      "fsId": "021",
+      "fsSlug": "bandcamp-feed-sync-from-subdomain",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsao1g",
+      "ghIssueNumber": 254,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7lo",
+      "lastSyncedFs": {
+        "title": "Refactor Bandcamp feed sync so it can run from any Bandcamp subdomain",
+        "bodyHash": "625a93cc7523cf3cc5b8ab0954cab52c98b68b123cb1f0aebb690989b6de5415",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Refactor Bandcamp feed sync so it can run from any Bandcamp subdomain",
+        "bodyHash": "625a93cc7523cf3cc5b8ab0954cab52c98b68b123cb1f0aebb690989b6de5415",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "022": {
+      "fsKind": "tasks",
+      "fsId": "022",
+      "fsSlug": "bandcamp-search-discover-buttons",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaqLA",
+      "ghIssueNumber": 255,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7nU",
+      "lastSyncedFs": {
+        "title": "Inject Play / Queue / Add-to-Fomo on Bandcamp search and discover surfaces",
+        "bodyHash": "6594ed9cbd5bbed8c76333c369a78c286603fe1094557676158fd667679f79f0",
+        "status": "todo",
+        "priorityPrefix": "j",
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Inject Play / Queue / Add-to-Fomo on Bandcamp search and discover surfaces",
+        "bodyHash": "6594ed9cbd5bbed8c76333c369a78c286603fe1094557676158fd667679f79f0",
+        "status": "Backlog",
+        "priorityPrefix": "j",
+        "effort": "M"
+      }
+    },
+    "023": {
+      "fsKind": "tasks",
+      "fsId": "023",
+      "fsSlug": "bandcamp-overlay-backdrop-blur",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsarpA",
+      "ghIssueNumber": 256,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7o4",
+      "lastSyncedFs": {
+        "title": "Blur the dark backdrop behind the Bandcamp overlay button trio",
+        "bodyHash": "68f15560c81c2f9168bb198e28cfce441103365afabcc43a50f837b8599a3d09",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Blur the dark backdrop behind the Bandcamp overlay button trio",
+        "bodyHash": "68f15560c81c2f9168bb198e28cfce441103365afabcc43a50f837b8599a3d09",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "024": {
+      "fsKind": "tasks",
+      "fsId": "024",
+      "fsSlug": "bandcamp-feed-sync-stories-undefined",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsatlg",
+      "ghIssueNumber": 257,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7qk",
+      "lastSyncedFs": {
+        "title": "Bandcamp feed sync throws \"Cannot read properties of undefined (reading 'entries')\"",
+        "bodyHash": "6b6d28a86ad79f852d21d57c5642839dbedf1f93ca37e7896924b82d5f772207",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Bandcamp feed sync throws \"Cannot read properties of undefined (reading 'entries')\"",
+        "bodyHash": "6b6d28a86ad79f852d21d57c5642839dbedf1f93ca37e7896924b82d5f772207",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "025": {
+      "fsKind": "tasks",
+      "fsId": "025",
+      "fsSlug": "bandcamp-feed-include-followed-artist-releases",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsavBQ",
+      "ghIssueNumber": 258,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7rw",
+      "lastSyncedFs": {
+        "title": "Include \"New Releases from artists you follow\" in Bandcamp feed sync",
+        "bodyHash": "b37588cd8c07866570d2ba028f1feeb00c33241a393be5f40e261d5d3c266165",
+        "status": "todo",
+        "priorityPrefix": "c",
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Include \"New Releases from artists you follow\" in Bandcamp feed sync",
+        "bodyHash": "b37588cd8c07866570d2ba028f1feeb00c33241a393be5f40e261d5d3c266165",
+        "status": "Backlog",
+        "priorityPrefix": "c",
+        "effort": "M"
+      }
+    },
+    "026": {
+      "fsKind": "tasks",
+      "fsId": "026",
+      "fsSlug": "extension-popup-font-decode-failure",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsawgQ",
+      "ghIssueNumber": 259,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7tk",
+      "lastSyncedFs": {
+        "title": "Browser-extension fonts fail to load with \"Failed to decode downloaded font\"",
+        "bodyHash": "01c7f682fbbd7153e4e40f142c1f06904dbabe55d877076c41a20303f91e2a13",
+        "status": "todo",
+        "priorityPrefix": "e",
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Browser-extension fonts fail to load with \"Failed to decode downloaded font\"",
+        "bodyHash": "01c7f682fbbd7153e4e40f142c1f06904dbabe55d877076c41a20303f91e2a13",
+        "status": "Backlog",
+        "priorityPrefix": "e",
+        "effort": "S"
+      }
+    },
+    "027": {
+      "fsKind": "tasks",
+      "fsId": "027",
+      "fsSlug": "bandcamp-watch-rate-limits-and-batch-size",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsaxwA",
+      "ghIssueNumber": 260,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7uc",
+      "lastSyncedFs": {
+        "title": "Bandcamp watch updates hit API rate limits — add batch-size param + reduce per-item requests",
+        "bodyHash": "da9b56fef3e7942722fb01268f06d756c8730a4ad0a4b163aed4faab8481623b",
+        "status": "todo",
+        "priorityPrefix": "b",
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Bandcamp watch updates hit API rate limits — add batch-size param + reduce per-item requests",
+        "bodyHash": "da9b56fef3e7942722fb01268f06d756c8730a4ad0a4b163aed4faab8481623b",
+        "status": "Backlog",
+        "priorityPrefix": "b",
+        "effort": "L"
+      }
+    },
+    "028": {
+      "fsKind": "tasks",
+      "fsId": "028",
+      "fsSlug": "popup-root-panel-key-warning",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsa0Fw",
+      "ghIssueNumber": 261,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7v8",
+      "lastSyncedFs": {
+        "title": "Popup Root warns \"Each child in a list should have a unique 'key' prop\"",
+        "bodyHash": "6cb34c2d2d05ad93b272870e1760aeb0e1e9f801bd8542e5168d44fac24c345a",
+        "status": "todo",
+        "priorityPrefix": "eg",
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Popup Root warns \"Each child in a list should have a unique 'key' prop\"",
+        "bodyHash": "6cb34c2d2d05ad93b272870e1760aeb0e1e9f801bd8542e5168d44fac24c345a",
+        "status": "Backlog",
+        "priorityPrefix": "eg",
+        "effort": "S"
+      }
+    },
+    "029": {
+      "fsKind": "tasks",
+      "fsId": "029",
+      "fsSlug": "popup-status-invalid-html-nesting",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsa1tg",
+      "ghIssueNumber": 262,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7xM",
+      "lastSyncedFs": {
+        "title": "Popup Status component nests <h2> inside <p> — invalid HTML",
+        "bodyHash": "cce64d162b273058f78903bc8dfc2c7e4b8c970f57339a6ad6b3fc6770ba358f",
+        "status": "todo",
+        "priorityPrefix": "em",
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Popup Status component nests <h2> inside <p> — invalid HTML",
+        "bodyHash": "cce64d162b273058f78903bc8dfc2c7e4b8c970f57339a6ad6b3fc6770ba358f",
+        "status": "Backlog",
+        "priorityPrefix": "em",
+        "effort": "S"
+      }
+    },
+    "030": {
+      "fsKind": "tasks",
+      "fsId": "030",
+      "fsSlug": "recently-added-cte-missing-order-by",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsa3UA",
+      "ghIssueNumber": 263,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7yc",
+      "lastSyncedFs": {
+        "title": "\"Recently added\" CTE applies LIMIT without ORDER BY — newly ingested tracks rarely surface",
+        "bodyHash": "145bd46e8137be1a94f3721438cf92bfae683c7d22638d4f41a8af4ffa4dd65a",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "\"Recently added\" CTE applies LIMIT without ORDER BY — newly ingested tracks rarely surface",
+        "bodyHash": "145bd46e8137be1a94f3721438cf92bfae683c7d22638d4f41a8af4ffa4dd65a",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "031": {
+      "fsKind": "tasks",
+      "fsId": "031",
+      "fsSlug": "pr-preview-handoff-login-fix",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsa5Aw",
+      "ghIssueNumber": 264,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7zk",
+      "lastSyncedFs": {
+        "title": "Fix handoff login from PR preview environments",
+        "bodyHash": "21cc6aaf559d62803ad01bc72d075915b32873e9ac8811f4e0148a1057284c13",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Fix handoff login from PR preview environments",
+        "bodyHash": "21cc6aaf559d62803ad01bc72d075915b32873e9ac8811f4e0148a1057284c13",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "032": {
+      "fsKind": "tasks",
+      "fsId": "032",
+      "fsSlug": "restore-desktop-refresh-button",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsa6pw",
+      "ghIssueNumber": 265,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL70o",
+      "lastSyncedFs": {
+        "title": "Restore the refresh button on desktop",
+        "bodyHash": "b15844ea101a14fc702e20499352518e61948cb3479c1e7b8c2541d9d3f413f2",
+        "status": "todo",
+        "priorityPrefix": "bm",
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Restore the refresh button on desktop",
+        "bodyHash": "b15844ea101a14fc702e20499352518e61948cb3479c1e7b8c2541d9d3f413f2",
+        "status": "Backlog",
+        "priorityPrefix": "bm",
+        "effort": "S"
+      }
+    },
+    "033": {
+      "fsKind": "tasks",
+      "fsId": "033",
+      "fsSlug": "carts-table-infinite-scroll",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsa8TA",
+      "ghIssueNumber": 266,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL72Q",
+      "lastSyncedFs": {
+        "title": "Implement infinite scroll in the carts table",
+        "bodyHash": "e1d624a637c16b49b5e0e9fc5181b4544b2933c58729cc34e3258f6610381713",
+        "status": "todo",
+        "priorityPrefix": "cm",
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Implement infinite scroll in the carts table",
+        "bodyHash": "e1d624a637c16b49b5e0e9fc5181b4544b2933c58729cc34e3258f6610381713",
+        "status": "Backlog",
+        "priorityPrefix": "cm",
+        "effort": "M"
+      }
+    },
+    "034": {
+      "fsKind": "tasks",
+      "fsId": "034",
+      "fsSlug": "notification-tracks-view",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsa-tw",
+      "ghIssueNumber": 267,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL74c",
+      "lastSyncedFs": {
+        "title": "Notification tracks view (unlistened tracks matching active notifications)",
+        "bodyHash": "8e606ef5c6413c918c48f60c27c14c4f120f45a1dd841c8963c554d3b2ada1de",
+        "status": "todo",
+        "priorityPrefix": "g",
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Notification tracks view (unlistened tracks matching active notifications)",
+        "bodyHash": "8e606ef5c6413c918c48f60c27c14c4f120f45a1dd841c8963c554d3b2ada1de",
+        "status": "Backlog",
+        "priorityPrefix": "g",
+        "effort": "M"
+      }
+    },
+    "035": {
+      "fsKind": "tasks",
+      "fsId": "035",
+      "fsSlug": "document-consumer-api-origin-requirement",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbAaQ",
+      "ghIssueNumber": 268,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL754",
+      "lastSyncedFs": {
+        "title": "Document that the consumer's apiOrigin must equal its public origin",
+        "bodyHash": "b9af9c1e7e8889acd9e444119ec8bf8bf1936c4a9da9611a09595d9e654ad43d",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Document that the consumer's apiOrigin must equal its public origin",
+        "bodyHash": "b9af9c1e7e8889acd9e444119ec8bf8bf1936c4a9da9611a09595d9e654ad43d",
+        "status": "done",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "036": {
+      "fsKind": "tasks",
+      "fsId": "036",
+      "fsSlug": "oidc-state-jwt-jti-single-use",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbCOQ",
+      "ghIssueNumber": 269,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL77Y",
+      "lastSyncedFs": {
+        "title": "Make the OIDC state JWT single-use via jti consumption",
+        "bodyHash": "d2f97772b436de7b7fe01423d9b03685b85994866bd09a9365d380345032778b",
+        "status": "todo",
+        "priorityPrefix": "t",
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Make the OIDC state JWT single-use via jti consumption",
+        "bodyHash": "d2f97772b436de7b7fe01423d9b03685b85994866bd09a9365d380345032778b",
+        "status": "Backlog",
+        "priorityPrefix": "t",
+        "effort": "S"
+      }
+    },
+    "037": {
+      "fsKind": "tasks",
+      "fsId": "037",
+      "fsSlug": "remove-legacy-api-keys-exchange-handoff",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbDtg",
+      "ghIssueNumber": 270,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL79U",
+      "lastSyncedFs": {
+        "title": "Remove the legacy /api-keys/exchange-handoff endpoint",
+        "bodyHash": "5768f773c893c4ca0add19a7d308a5a350db0b1a5dcdd8a92d13cfe08f2f7e94",
+        "status": "todo",
+        "priorityPrefix": "v",
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Remove the legacy /api-keys/exchange-handoff endpoint",
+        "bodyHash": "5768f773c893c4ca0add19a7d308a5a350db0b1a5dcdd8a92d13cfe08f2f7e94",
+        "status": "Backlog",
+        "priorityPrefix": "v",
+        "effort": "S"
+      }
+    },
+    "038": {
+      "fsKind": "tasks",
+      "fsId": "038",
+      "fsSlug": "follow-search-no-backend-requests",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbFCw",
+      "ghIssueNumber": 271,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL7_Q",
+      "lastSyncedFs": {
+        "title": "\\\"Search by name or URL to follow\\\" field doesn't trigger backend requests",
+        "bodyHash": "c080027192cc64d207c61324f278b857d8c6ec9eb6f9eb0f86fa2fdcee149f38",
+        "status": "dropped",
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "\\\"Search by name or URL to follow\\\" field doesn't trigger backend requests",
+        "bodyHash": "c080027192cc64d207c61324f278b857d8c6ec9eb6f9eb0f86fa2fdcee149f38",
+        "status": "dropped",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "039": {
+      "fsKind": "stories",
+      "fsId": "039",
+      "fsSlug": "mobile-bootstrap-app-shell",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscXLg",
+      "ghIssueNumber": 329,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9OQ",
+      "lastSyncedFs": {
+        "title": "mobile-bootstrap-app-shell",
+        "bodyHash": "fc56671dfa79c9e758e2c5f5cad8c3a92b21c4ea7ae4dfb925cbb5e4225d30bc",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-bootstrap-app-shell",
+        "bodyHash": "fc56671dfa79c9e758e2c5f5cad8c3a92b21c4ea7ae4dfb925cbb5e4225d30bc",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "040": {
+      "fsKind": "stories",
+      "fsId": "040",
+      "fsSlug": "mobile-shared-api-client",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscYZQ",
+      "ghIssueNumber": 330,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9PY",
+      "lastSyncedFs": {
+        "title": "mobile-shared-api-client",
+        "bodyHash": "fccf936a07fd3d8c01c7aa1d77e68307b8e99d781ca48c91e97cd84e81c899e5",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-shared-api-client",
+        "bodyHash": "fccf936a07fd3d8c01c7aa1d77e68307b8e99d781ca48c91e97cd84e81c899e5",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "041": {
+      "fsKind": "stories",
+      "fsId": "041",
+      "fsSlug": "mobile-auth-session",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscZcA",
+      "ghIssueNumber": 331,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9QU",
+      "lastSyncedFs": {
+        "title": "mobile-auth-session",
+        "bodyHash": "689f26b3d3c45d7a9d7cf1d6a1fe901fd52a58da1f383563cb30ee0aae9e4828",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-auth-session",
+        "bodyHash": "689f26b3d3c45d7a9d7cf1d6a1fe901fd52a58da1f383563cb30ee0aae9e4828",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "042": {
+      "fsKind": "stories",
+      "fsId": "042",
+      "fsSlug": "mobile-track-lists-and-row-actions",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscbVQ",
+      "ghIssueNumber": 332,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9R8",
+      "lastSyncedFs": {
+        "title": "mobile-track-lists-and-row-actions",
+        "bodyHash": "82dd2025ffb5c0bbd49282170869b64ec13f07bab121cd43f7417cd0fc13a1ec",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-track-lists-and-row-actions",
+        "bodyHash": "82dd2025ffb5c0bbd49282170869b64ec13f07bab121cd43f7417cd0fc13a1ec",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "043": {
+      "fsKind": "stories",
+      "fsId": "043",
+      "fsSlug": "mobile-audio-and-now-playing",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsccig",
+      "ghIssueNumber": 333,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9S4",
+      "lastSyncedFs": {
+        "title": "mobile-audio-and-now-playing",
+        "bodyHash": "866c9a6e93fbe69dba52675adb31b6407245c498641d95a392626dae0b030ad5",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-audio-and-now-playing",
+        "bodyHash": "866c9a6e93fbe69dba52675adb31b6407245c498641d95a392626dae0b030ad5",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "044": {
+      "fsKind": "stories",
+      "fsId": "044",
+      "fsSlug": "mobile-search",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscdlg",
+      "ghIssueNumber": 334,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9UQ",
+      "lastSyncedFs": {
+        "title": "mobile-search",
+        "bodyHash": "47324eaab0bd0f3d7299113cf59f6176d8e7bdba2ed450ab4caad8d244ea21e1",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-search",
+        "bodyHash": "47324eaab0bd0f3d7299113cf59f6176d8e7bdba2ed450ab4caad8d244ea21e1",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "045": {
+      "fsKind": "stories",
+      "fsId": "045",
+      "fsSlug": "mobile-carts",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscfGg",
+      "ghIssueNumber": 335,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9Vc",
+      "lastSyncedFs": {
+        "title": "mobile-carts",
+        "bodyHash": "306fdc4aa3b0ff9e60c459e3afac9003d49387f049b09b0ee8a6b78c689ed5f2",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-carts",
+        "bodyHash": "306fdc4aa3b0ff9e60c459e3afac9003d49387f049b09b0ee8a6b78c689ed5f2",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "046": {
+      "fsKind": "stories",
+      "fsId": "046",
+      "fsSlug": "mobile-follows-and-ignores",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscgBw",
+      "ghIssueNumber": 336,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9WY",
+      "lastSyncedFs": {
+        "title": "mobile-follows-and-ignores",
+        "bodyHash": "ff71d1686e225942610360bd241de8c56fb85d3ef7fd5e03e9aa3bbbb33061b9",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-follows-and-ignores",
+        "bodyHash": "ff71d1686e225942610360bd241de8c56fb85d3ef7fd5e03e9aa3bbbb33061b9",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "047": {
+      "fsKind": "stories",
+      "fsId": "047",
+      "fsSlug": "mobile-settings",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBschhw",
+      "ghIssueNumber": 337,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9Xg",
+      "lastSyncedFs": {
+        "title": "mobile-settings",
+        "bodyHash": "b260123a8628121aa93add69dcf30fe86d523ac147c1ead44f0dce9e9e58a2d4",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-settings",
+        "bodyHash": "b260123a8628121aa93add69dcf30fe86d523ac147c1ead44f0dce9e9e58a2d4",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "048": {
+      "fsKind": "stories",
+      "fsId": "048",
+      "fsSlug": "mobile-push-notifications",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscicw",
+      "ghIssueNumber": 338,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9Yc",
+      "lastSyncedFs": {
+        "title": "mobile-push-notifications",
+        "bodyHash": "a88ef337b8987ff7fbae22dea2ad643e1e161bcfe8117c648fbad7ecd01fcccb",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-push-notifications",
+        "bodyHash": "a88ef337b8987ff7fbae22dea2ad643e1e161bcfe8117c648fbad7ecd01fcccb",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "049": {
+      "fsKind": "stories",
+      "fsId": "049",
+      "fsSlug": "mobile-onboarding-and-signup",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsckFA",
+      "ghIssueNumber": 339,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9Zc",
+      "lastSyncedFs": {
+        "title": "mobile-onboarding-and-signup",
+        "bodyHash": "4f7f94923c2d170d20cd6f6a08d961e7cb9acfc074854a10a495958ddc213eb2",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-onboarding-and-signup",
+        "bodyHash": "4f7f94923c2d170d20cd6f6a08d961e7cb9acfc074854a10a495958ddc213eb2",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "050": {
+      "fsKind": "stories",
+      "fsId": "050",
+      "fsSlug": "mobile-cross-cutting",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscllw",
+      "ghIssueNumber": 340,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9as",
+      "lastSyncedFs": {
+        "title": "mobile-cross-cutting",
+        "bodyHash": "c14f7361fb9df7d1a12a645018cbbb09d0261de3c3778619c4f467da43ce6e24",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-cross-cutting",
+        "bodyHash": "c14f7361fb9df7d1a12a645018cbbb09d0261de3c3778619c4f467da43ce6e24",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    },
+    "051": {
+      "fsKind": "tasks",
+      "fsId": "051",
+      "fsSlug": "mobile-create-expo-workspace",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbGZw",
+      "ghIssueNumber": 272,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8BA",
+      "lastSyncedFs": {
+        "title": "Create packages/mobile Expo workspace",
+        "bodyHash": "36d9e1d49061360f7d5b748bddda587ac8f06ea05fd45e15d1833463399f96af",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Create packages/mobile Expo workspace",
+        "bodyHash": "36d9e1d49061360f7d5b748bddda587ac8f06ea05fd45e15d1833463399f96af",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "052": {
+      "fsKind": "tasks",
+      "fsId": "052",
+      "fsSlug": "mobile-bottom-tab-navigator",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbHsw",
+      "ghIssueNumber": 273,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8C4",
+      "lastSyncedFs": {
+        "title": "Bottom-tab navigator skeleton",
+        "bodyHash": "5cdc6e7cf869acf91609fb0884529ed3e2f7dad22f98f07ed0c48816a8623ff3",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Bottom-tab navigator skeleton",
+        "bodyHash": "5cdc6e7cf869acf91609fb0884529ed3e2f7dad22f98f07ed0c48816a8623ff3",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "053": {
+      "fsKind": "tasks",
+      "fsId": "053",
+      "fsSlug": "mobile-port-theme-tokens",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbI5A",
+      "ghIssueNumber": 274,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8D8",
+      "lastSyncedFs": {
+        "title": "Port theme tokens to React Native",
+        "bodyHash": "50c7c145612217a45ea1857d53bd58ec62f5067db4bbffe62e173b44ed670510",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Port theme tokens to React Native",
+        "bodyHash": "50c7c145612217a45ea1857d53bd58ec62f5067db4bbffe62e173b44ed670510",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "054": {
+      "fsKind": "tasks",
+      "fsId": "054",
+      "fsSlug": "mobile-ci-pipeline",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbKjw",
+      "ghIssueNumber": 275,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8Fg",
+      "lastSyncedFs": {
+        "title": "CI for mobile (typecheck + lint + test + EAS smoke)",
+        "bodyHash": "d61c46249ef227e6914eac70e5d0eecf5e2de8ac6f35e08a86802ff0f140ca0a",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "CI for mobile (typecheck + lint + test + EAS smoke)",
+        "bodyHash": "d61c46249ef227e6914eac70e5d0eecf5e2de8ac6f35e08a86802ff0f140ca0a",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "055": {
+      "fsKind": "tasks",
+      "fsId": "055",
+      "fsSlug": "mobile-icon-splash-launch",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbLcw",
+      "ghIssueNumber": 276,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8G0",
+      "lastSyncedFs": {
+        "title": "App icon, splash, launch screens (iOS + Android)",
+        "bodyHash": "a9f0f224e2ab4bfebceefbe3e2793a0c34c5c06553d3c3be4df5432022b4c886",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "App icon, splash, launch screens (iOS + Android)",
+        "bodyHash": "a9f0f224e2ab4bfebceefbe3e2793a0c34c5c06553d3c3be4df5432022b4c886",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "056": {
+      "fsKind": "tasks",
+      "fsId": "056",
+      "fsSlug": "mobile-api-url-injection",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbMiQ",
+      "ghIssueNumber": 277,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8IQ",
+      "lastSyncedFs": {
+        "title": "Build-time API URL injection (no hardcoded hosts)",
+        "bodyHash": "f2120860d5784c41f6fdfb2f51e387bbf9c99a49c9341d5f6dc7334099888f12",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Build-time API URL injection (no hardcoded hosts)",
+        "bodyHash": "f2120860d5784c41f6fdfb2f51e387bbf9c99a49c9341d5f6dc7334099888f12",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "057": {
+      "fsKind": "tasks",
+      "fsId": "057",
+      "fsSlug": "shared-extract-api-client",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbNiQ",
+      "ghIssueNumber": 278,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8Jo",
+      "lastSyncedFs": {
+        "title": "Extract API client + types into a shared package",
+        "bodyHash": "5117d3e54cd6a13bfa76495cb5a2b2cea6a68833522e9b272ba2a5e599c60410",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Extract API client + types into a shared package",
+        "bodyHash": "5117d3e54cd6a13bfa76495cb5a2b2cea6a68833522e9b272ba2a5e599c60410",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "L"
+      }
+    },
+    "058": {
+      "fsKind": "tasks",
+      "fsId": "058",
+      "fsSlug": "mobile-wire-tanstack-query",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbPHQ",
+      "ghIssueNumber": 279,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8Lc",
+      "lastSyncedFs": {
+        "title": "Wire TanStack Query in mobile with global error handling",
+        "bodyHash": "bd51b8ac033fd8f4d0298f52b2e74453bb44909e06d00c777d90efbdd31f3da3",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Wire TanStack Query in mobile with global error handling",
+        "bodyHash": "bd51b8ac033fd8f4d0298f52b2e74453bb44909e06d00c777d90efbdd31f3da3",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "059": {
+      "fsKind": "tasks",
+      "fsId": "059",
+      "fsSlug": "shared-api-types",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbQaw",
+      "ghIssueNumber": 280,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8N0",
+      "lastSyncedFs": {
+        "title": "Define API types for the full feature surface",
+        "bodyHash": "928da0a2c12370748d877b0065355695c415c27e3f8e5553860d7805d1389a29",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Define API types for the full feature surface",
+        "bodyHash": "928da0a2c12370748d877b0065355695c415c27e3f8e5553860d7805d1389a29",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "060": {
+      "fsKind": "tasks",
+      "fsId": "060",
+      "fsSlug": "mobile-native-oidc-flow",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbReA",
+      "ghIssueNumber": 281,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8QM",
+      "lastSyncedFs": {
+        "title": "Native OIDC flow against `/auth/login/google`",
+        "bodyHash": "85cdc79790c1e2ba0b10d05763412a64e06ba2ad23cf2ccac113fb572f9f9704",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Native OIDC flow against `/auth/login/google`",
+        "bodyHash": "85cdc79790c1e2ba0b10d05763412a64e06ba2ad23cf2ccac113fb572f9f9704",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "L"
+      }
+    },
+    "061": {
+      "fsKind": "tasks",
+      "fsId": "061",
+      "fsSlug": "backend-mobile-handoff-endpoints",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbUmA",
+      "ghIssueNumber": 282,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8Rg",
+      "lastSyncedFs": {
+        "title": "Backend mobile handoff endpoints",
+        "bodyHash": "875aca4ce83c8c55526bc6a5ff5e86e4077696cdac7610484e56416195b7129f",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Backend mobile handoff endpoints",
+        "bodyHash": "875aca4ce83c8c55526bc6a5ff5e86e4077696cdac7610484e56416195b7129f",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "062": {
+      "fsKind": "tasks",
+      "fsId": "062",
+      "fsSlug": "mobile-session-persistence",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbVow",
+      "ghIssueNumber": 283,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8So",
+      "lastSyncedFs": {
+        "title": "Secure session persistence + biometric resume",
+        "bodyHash": "fdcbe02c1a887d2ca18c694a7fece2252c1315a871eaa2a714f72905c480617b",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Secure session persistence + biometric resume",
+        "bodyHash": "fdcbe02c1a887d2ca18c694a7fece2252c1315a871eaa2a714f72905c480617b",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "063": {
+      "fsKind": "tasks",
+      "fsId": "063",
+      "fsSlug": "mobile-401-and-logout",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbWtA",
+      "ghIssueNumber": 284,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8UI",
+      "lastSyncedFs": {
+        "title": "401 interception + logout flow",
+        "bodyHash": "9e70807fa0432e91b797079eb6cc3296bd15ebbb02d63efd89dbc7d87491f80f",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "401 interception + logout flow",
+        "bodyHash": "9e70807fa0432e91b797079eb6cc3296bd15ebbb02d63efd89dbc7d87491f80f",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "064": {
+      "fsKind": "tasks",
+      "fsId": "064",
+      "fsSlug": "mobile-email-verification-deep-link",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbYEg",
+      "ghIssueNumber": 285,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8W8",
+      "lastSyncedFs": {
+        "title": "Email verification deep link",
+        "bodyHash": "d1fb3b713d33134b5f0d89350461e07d5cd42f05b18489ad4f460b8f3ce75e74",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Email verification deep link",
+        "bodyHash": "d1fb3b713d33134b5f0d89350461e07d5cd42f05b18489ad4f460b8f3ce75e74",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "065": {
+      "fsKind": "tasks",
+      "fsId": "065",
+      "fsSlug": "mobile-track-list-screens",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbZ3Q",
+      "ghIssueNumber": 286,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8YQ",
+      "lastSyncedFs": {
+        "title": "List screens for new / recent / heard with infinite query",
+        "bodyHash": "098f96e3a0f9e8964da16c20355d97b60dd912fb9bb8b4c7d92825153cd6ba73",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "List screens for new / recent / heard with infinite query",
+        "bodyHash": "098f96e3a0f9e8964da16c20355d97b60dd912fb9bb8b4c7d92825153cd6ba73",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "066": {
+      "fsKind": "tasks",
+      "fsId": "066",
+      "fsSlug": "mobile-list-states",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsba7A",
+      "ghIssueNumber": 287,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8Y0",
+      "lastSyncedFs": {
+        "title": "Pull-to-refresh + load-more + empty/error states",
+        "bodyHash": "ebf72800315c6adab41a8c25e4e7cd5f21351b4afd36b67fbab134939fe48744",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Pull-to-refresh + load-more + empty/error states",
+        "bodyHash": "ebf72800315c6adab41a8c25e4e7cd5f21351b4afd36b67fbab134939fe48744",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "067": {
+      "fsKind": "tasks",
+      "fsId": "067",
+      "fsSlug": "mobile-track-row-component",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbcVA",
+      "ghIssueNumber": 288,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8Z8",
+      "lastSyncedFs": {
+        "title": "Track row component",
+        "bodyHash": "c86a7ebb98ed9be93bd4f4c98cca9e9e15067e02b1f224606ea53b5026db170e",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Track row component",
+        "bodyHash": "c86a7ebb98ed9be93bd4f4c98cca9e9e15067e02b1f224606ea53b5026db170e",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "068": {
+      "fsKind": "tasks",
+      "fsId": "068",
+      "fsSlug": "mobile-row-swipe-actions",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbdrg",
+      "ghIssueNumber": 289,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8a8",
+      "lastSyncedFs": {
+        "title": "Per-row swipe actions (cart + heard)",
+        "bodyHash": "6274939f8ff6a20766f91621bcf2db61118f2ceb06b4d82218abf954f7564543",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Per-row swipe actions (cart + heard)",
+        "bodyHash": "6274939f8ff6a20766f91621bcf2db61118f2ceb06b4d82218abf954f7564543",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "069": {
+      "fsKind": "tasks",
+      "fsId": "069",
+      "fsSlug": "mobile-sort-filter-sheet",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbfgg",
+      "ghIssueNumber": 290,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8b4",
+      "lastSyncedFs": {
+        "title": "Sort & filter bottom sheet",
+        "bodyHash": "150a36bdcea9ab445161a23c1cad31f2a0c936f621465051c661b6a6e040f491",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Sort & filter bottom sheet",
+        "bodyHash": "150a36bdcea9ab445161a23c1cad31f2a0c936f621465051c661b6a6e040f491",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "070": {
+      "fsKind": "tasks",
+      "fsId": "070",
+      "fsSlug": "mobile-row-action-sheet",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbgwg",
+      "ghIssueNumber": 291,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8c8",
+      "lastSyncedFs": {
+        "title": "Long-press action sheet",
+        "bodyHash": "fc04c6a8cc8e54db47fe4282583c3ce5a0707d4100f520da09bf9cee81883090",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Long-press action sheet",
+        "bodyHash": "fc04c6a8cc8e54db47fe4282583c3ce5a0707d4100f520da09bf9cee81883090",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "071": {
+      "fsKind": "tasks",
+      "fsId": "071",
+      "fsSlug": "mobile-audio-engine",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbiLQ",
+      "ghIssueNumber": 292,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8d0",
+      "lastSyncedFs": {
+        "title": "Audio engine using `expo-av` or `react-native-track-player`",
+        "bodyHash": "94dbe308961709a67914510d469f081eb9e6a22e570ca4a75b4f286fdd94a8d3",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Audio engine using `expo-av` or `react-native-track-player`",
+        "bodyHash": "94dbe308961709a67914510d469f081eb9e6a22e570ca4a75b4f286fdd94a8d3",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "L"
+      }
+    },
+    "072": {
+      "fsKind": "tasks",
+      "fsId": "072",
+      "fsSlug": "mobile-queue-and-skip",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbjOg",
+      "ghIssueNumber": 293,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8ew",
+      "lastSyncedFs": {
+        "title": "Queue model + prev/next + auto-skip on missing preview",
+        "bodyHash": "a17483195452a575d13ffd01f51fb5b89043ebdde63e2d2b1195c86d81ca0207",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Queue model + prev/next + auto-skip on missing preview",
+        "bodyHash": "a17483195452a575d13ffd01f51fb5b89043ebdde63e2d2b1195c86d81ca0207",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "073": {
+      "fsKind": "tasks",
+      "fsId": "073",
+      "fsSlug": "mobile-remote-controls",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbk8g",
+      "ghIssueNumber": 294,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8f0",
+      "lastSyncedFs": {
+        "title": "Lock-screen / Control Center / notification controls",
+        "bodyHash": "eeb7951d9961be62d72162528d5dc558ba52dd76d5dfa51db579713d04192eee",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Lock-screen / Control Center / notification controls",
+        "bodyHash": "eeb7951d9961be62d72162528d5dc558ba52dd76d5dfa51db579713d04192eee",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "L"
+      }
+    },
+    "074": {
+      "fsKind": "tasks",
+      "fsId": "074",
+      "fsSlug": "mobile-mini-player",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbmCA",
+      "ghIssueNumber": 295,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8go",
+      "lastSyncedFs": {
+        "title": "Mini-player component",
+        "bodyHash": "c8682d8f585329cc9d64c19bcde67d219cf0cd136cbdf32c2aa6fa4833e4334a",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Mini-player component",
+        "bodyHash": "c8682d8f585329cc9d64c19bcde67d219cf0cd136cbdf32c2aa6fa4833e4334a",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "075": {
+      "fsKind": "tasks",
+      "fsId": "075",
+      "fsSlug": "mobile-now-playing-screen",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbngQ",
+      "ghIssueNumber": 296,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8hY",
+      "lastSyncedFs": {
+        "title": "Full-screen Now Playing",
+        "bodyHash": "dc56468d4bc917be37bae6a90e30e006c8687ddfd1c7cfd8dcd659825bca1b39",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Full-screen Now Playing",
+        "bodyHash": "dc56468d4bc917be37bae6a90e30e006c8687ddfd1c7cfd8dcd659825bca1b39",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "076": {
+      "fsKind": "tasks",
+      "fsId": "076",
+      "fsSlug": "mobile-bandcamp-full-track-and-mark-heard",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbpDg",
+      "ghIssueNumber": 297,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8i8",
+      "lastSyncedFs": {
+        "title": "Bandcamp full-track behaviour + mark-heard-on-play",
+        "bodyHash": "7edbeafac567f32adaf06de0c42078c84b3b894f22601e8bd4ead6ae7ed7ada5",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Bandcamp full-track behaviour + mark-heard-on-play",
+        "bodyHash": "7edbeafac567f32adaf06de0c42078c84b3b894f22601e8bd4ead6ae7ed7ada5",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "077": {
+      "fsKind": "tasks",
+      "fsId": "077",
+      "fsSlug": "mobile-search-screen",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbqvA",
+      "ghIssueNumber": 298,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8j8",
+      "lastSyncedFs": {
+        "title": "Search screen with pill input",
+        "bodyHash": "7cc8ccd24460147fcca2a7b6d02c65eb4454aeb627559368aa27d8102eec5f84",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Search screen with pill input",
+        "bodyHash": "7cc8ccd24460147fcca2a7b6d02c65eb4454aeb627559368aa27d8102eec5f84",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "078": {
+      "fsKind": "tasks",
+      "fsId": "078",
+      "fsSlug": "mobile-entity-suggestions",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbr8g",
+      "ghIssueNumber": 299,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8lI",
+      "lastSyncedFs": {
+        "title": "Entity suggestions panel",
+        "bodyHash": "713453793381dd9f970c63508281126db4a57efcd227a596375c1e85e307b5f3",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Entity suggestions panel",
+        "bodyHash": "713453793381dd9f970c63508281126db4a57efcd227a596375c1e85e307b5f3",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "079": {
+      "fsKind": "tasks",
+      "fsId": "079",
+      "fsSlug": "mobile-recent-saved-searches",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbs-w",
+      "ghIssueNumber": 300,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8lk",
+      "lastSyncedFs": {
+        "title": "Recent + saved searches",
+        "bodyHash": "705bc728efc210e231eb70c5bca4dd2fa000ead6d500c5c7699053bb042f0c2e",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Recent + saved searches",
+        "bodyHash": "705bc728efc210e231eb70c5bca4dd2fa000ead6d500c5c7699053bb042f0c2e",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "080": {
+      "fsKind": "tasks",
+      "fsId": "080",
+      "fsSlug": "mobile-search-subscribe-shortcut",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbuFA",
+      "ghIssueNumber": 301,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8mY",
+      "lastSyncedFs": {
+        "title": "Notification subscribe shortcut from search",
+        "bodyHash": "99085ed9f7d48e0b2aa50777b2346a831ba55198b5e41cd40ffc646d6365639b",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Notification subscribe shortcut from search",
+        "bodyHash": "99085ed9f7d48e0b2aa50777b2346a831ba55198b5e41cd40ffc646d6365639b",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "081": {
+      "fsKind": "tasks",
+      "fsId": "081",
+      "fsSlug": "mobile-cart-list",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbv0A",
+      "ghIssueNumber": 302,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8nk",
+      "lastSyncedFs": {
+        "title": "Cart list screen + create cart",
+        "bodyHash": "5756cdc8d5bb008094b14f36399a983986defce96433a6d3e56bedd658d63b57",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Cart list screen + create cart",
+        "bodyHash": "5756cdc8d5bb008094b14f36399a983986defce96433a6d3e56bedd658d63b57",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "082": {
+      "fsKind": "tasks",
+      "fsId": "082",
+      "fsSlug": "mobile-cart-detail",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbxEA",
+      "ghIssueNumber": 303,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8o4",
+      "lastSyncedFs": {
+        "title": "Cart detail + swipe-to-remove + mark-purchased",
+        "bodyHash": "76fc1b96b7c2ad499d22210278c90e48a77e3d6ce52bd46df403a11d2a60dabd",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Cart detail + swipe-to-remove + mark-purchased",
+        "bodyHash": "76fc1b96b7c2ad499d22210278c90e48a77e3d6ce52bd46df403a11d2a60dabd",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "083": {
+      "fsKind": "tasks",
+      "fsId": "083",
+      "fsSlug": "mobile-cart-share-deep-links",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbyNg",
+      "ghIssueNumber": 304,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8qo",
+      "lastSyncedFs": {
+        "title": "Native share sheet + universal/app links",
+        "bodyHash": "ba83df695d6798655d8a819a5438326a063d70ad75c6ef3c6ca55478f47f3fc8",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Native share sheet + universal/app links",
+        "bodyHash": "ba83df695d6798655d8a819a5438326a063d70ad75c6ef3c6ca55478f47f3fc8",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "084": {
+      "fsKind": "tasks",
+      "fsId": "084",
+      "fsSlug": "mobile-public-cart-screen",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsbz4A",
+      "ghIssueNumber": 305,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8sc",
+      "lastSyncedFs": {
+        "title": "Public cart screen (no auth)",
+        "bodyHash": "f17bfca32857e0f0959d5faca7738dbca5d27f317f468185735da16b4018bf86",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Public cart screen (no auth)",
+        "bodyHash": "f17bfca32857e0f0959d5faca7738dbca5d27f317f468185735da16b4018bf86",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "085": {
+      "fsKind": "tasks",
+      "fsId": "085",
+      "fsSlug": "mobile-import-playlist",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsb0_A",
+      "ghIssueNumber": 306,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8t0",
+      "lastSyncedFs": {
+        "title": "Import playlist flow",
+        "bodyHash": "b11ea483a4d9174b8f45408bcedf3b7d9154ce2f91dba1a4e02810eb9bab69e9",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Import playlist flow",
+        "bodyHash": "b11ea483a4d9174b8f45408bcedf3b7d9154ce2f91dba1a4e02810eb9bab69e9",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "086": {
+      "fsKind": "tasks",
+      "fsId": "086",
+      "fsSlug": "mobile-follows-list",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsb2Pg",
+      "ghIssueNumber": 307,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8us",
+      "lastSyncedFs": {
+        "title": "Follows list (artists / labels / playlists)",
+        "bodyHash": "a1797a4907ea314b8470741b054337326502ac4e5306a555bcc9a8528bdc642b",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Follows list (artists / labels / playlists)",
+        "bodyHash": "a1797a4907ea314b8470741b054337326502ac4e5306a555bcc9a8528bdc642b",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "087": {
+      "fsKind": "tasks",
+      "fsId": "087",
+      "fsSlug": "mobile-ignores-list",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsb3Ug",
+      "ghIssueNumber": 308,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8wg",
+      "lastSyncedFs": {
+        "title": "Ignores list (artists / labels / releases)",
+        "bodyHash": "b624835b72ff7efcb5aa651f6bd714a876a79f40bc97fa3d2200b72e23a7dfbb",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Ignores list (artists / labels / releases)",
+        "bodyHash": "b624835b72ff7efcb5aa651f6bd714a876a79f40bc97fa3d2200b72e23a7dfbb",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "088": {
+      "fsKind": "tasks",
+      "fsId": "088",
+      "fsSlug": "mobile-follow-sheet",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsb4_w",
+      "ghIssueNumber": 309,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8yI",
+      "lastSyncedFs": {
+        "title": "Follow sheet from row long-press",
+        "bodyHash": "d5d6dc3c4d6b7651e54c1ae9196711f3887204ea8217326469a911f115632bb0",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Follow sheet from row long-press",
+        "bodyHash": "d5d6dc3c4d6b7651e54c1ae9196711f3887204ea8217326469a911f115632bb0",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "089": {
+      "fsKind": "tasks",
+      "fsId": "089",
+      "fsSlug": "mobile-spotify-integration",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsb6cg",
+      "ghIssueNumber": 310,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8z4",
+      "lastSyncedFs": {
+        "title": "Spotify integration auth",
+        "bodyHash": "bfddadb2ed9fceed97812499de359df09df45bb813e7b17aa8c34a88b5a6178b",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Spotify integration auth",
+        "bodyHash": "bfddadb2ed9fceed97812499de359df09df45bb813e7b17aa8c34a88b5a6178b",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "090": {
+      "fsKind": "tasks",
+      "fsId": "090",
+      "fsSlug": "mobile-settings-root",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsb7mw",
+      "ghIssueNumber": 311,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL81o",
+      "lastSyncedFs": {
+        "title": "Settings root list & navigation",
+        "bodyHash": "0cb677029c66d3c5294972d2845855f7605f5e16a8ef9501565f0dc1229d6bf5",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Settings root list & navigation",
+        "bodyHash": "0cb677029c66d3c5294972d2845855f7605f5e16a8ef9501565f0dc1229d6bf5",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "091": {
+      "fsKind": "tasks",
+      "fsId": "091",
+      "fsSlug": "mobile-settings-sorting",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsb80A",
+      "ghIssueNumber": 312,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL83E",
+      "lastSyncedFs": {
+        "title": "Sorting / score weights",
+        "bodyHash": "ce31b47cb0764a41d46be298169b294089d995abe332b3c246403041afb78a82",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Sorting / score weights",
+        "bodyHash": "ce31b47cb0764a41d46be298169b294089d995abe332b3c246403041afb78a82",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "092": {
+      "fsKind": "tasks",
+      "fsId": "092",
+      "fsSlug": "mobile-settings-notifications",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsb-Zw",
+      "ghIssueNumber": 313,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL84Q",
+      "lastSyncedFs": {
+        "title": "Notifications screen",
+        "bodyHash": "286b22896a103af0bae4dd7805f3bfc560cc4b2f38139ea1ae63cb1b50e00ed5",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Notifications screen",
+        "bodyHash": "286b22896a103af0bae4dd7805f3bfc560cc4b2f38139ea1ae63cb1b50e00ed5",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "093": {
+      "fsKind": "tasks",
+      "fsId": "093",
+      "fsSlug": "mobile-settings-collection",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBsb_cg",
+      "ghIssueNumber": 314,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL86M",
+      "lastSyncedFs": {
+        "title": "Collection (heard tracks bulk actions)",
+        "bodyHash": "19890ac32b1eafed2490256ea4c6e5443063859a4a5cbe4624598d7399a91f86",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Collection (heard tracks bulk actions)",
+        "bodyHash": "19890ac32b1eafed2490256ea4c6e5443063859a4a5cbe4624598d7399a91f86",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "094": {
+      "fsKind": "tasks",
+      "fsId": "094",
+      "fsSlug": "mobile-settings-integrations",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscA1Q",
+      "ghIssueNumber": 315,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL87s",
+      "lastSyncedFs": {
+        "title": "Integrations & API keys",
+        "bodyHash": "755ceef6afdafa24ec353f262b754b6d4b48bd9fc36cf660bed395d81ea9f62b",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Integrations & API keys",
+        "bodyHash": "755ceef6afdafa24ec353f262b754b6d4b48bd9fc36cf660bed395d81ea9f62b",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "095": {
+      "fsKind": "tasks",
+      "fsId": "095",
+      "fsSlug": "mobile-settings-account",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscCZw",
+      "ghIssueNumber": 316,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL89I",
+      "lastSyncedFs": {
+        "title": "Account screen",
+        "bodyHash": "d4ca08aa6b61012eb63d412aae5f1b3193c9c4940acfa443b267298509b1c92c",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Account screen",
+        "bodyHash": "d4ca08aa6b61012eb63d412aae5f1b3193c9c4940acfa443b267298509b1c92c",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "096": {
+      "fsKind": "tasks",
+      "fsId": "096",
+      "fsSlug": "backend-push-tokens-and-dispatch",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscDig",
+      "ghIssueNumber": 317,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8-k",
+      "lastSyncedFs": {
+        "title": "Backend — push tokens + APNs/FCM dispatch",
+        "bodyHash": "4dcd2acaf91ce79d7b7112d09181611e88eafc0390fe573bb14e7647b4f0af36",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "L"
+      },
+      "lastSyncedGh": {
+        "title": "Backend — push tokens + APNs/FCM dispatch",
+        "bodyHash": "4dcd2acaf91ce79d7b7112d09181611e88eafc0390fe573bb14e7647b4f0af36",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "L"
+      }
+    },
+    "097": {
+      "fsKind": "tasks",
+      "fsId": "097",
+      "fsSlug": "mobile-push-registration-and-optin",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscFLQ",
+      "ghIssueNumber": 318,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL8_s",
+      "lastSyncedFs": {
+        "title": "Mobile — push registration + opt-in screen",
+        "bodyHash": "c627248942eb621fb37203e74ba2ba4f11d5b05bbf3219e9ed40484f1bbadd4b",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "M"
+      },
+      "lastSyncedGh": {
+        "title": "Mobile — push registration + opt-in screen",
+        "bodyHash": "c627248942eb621fb37203e74ba2ba4f11d5b05bbf3219e9ed40484f1bbadd4b",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "M"
+      }
+    },
+    "098": {
+      "fsKind": "tasks",
+      "fsId": "098",
+      "fsSlug": "mobile-notification-deep-link",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscGRQ",
+      "ghIssueNumber": 319,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9A4",
+      "lastSyncedFs": {
+        "title": "Notification deep-link handler",
+        "bodyHash": "97eddfcad72d660e521c782fe025ae54658a5af6e4f92e85a93ac65865e046f5",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Notification deep-link handler",
+        "bodyHash": "97eddfcad72d660e521c782fe025ae54658a5af6e4f92e85a93ac65865e046f5",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "099": {
+      "fsKind": "tasks",
+      "fsId": "099",
+      "fsSlug": "mobile-per-search-push-toggle",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscH6Q",
+      "ghIssueNumber": 320,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9CI",
+      "lastSyncedFs": {
+        "title": "Per-search subscribe / unsubscribe UI",
+        "bodyHash": "11b892844d3a4f7f0781b3d57fc043ec220e7bb744bbf1dfb98da1dcb19faf94",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": "S"
+      },
+      "lastSyncedGh": {
+        "title": "Per-search subscribe / unsubscribe UI",
+        "bodyHash": "11b892844d3a4f7f0781b3d57fc043ec220e7bb744bbf1dfb98da1dcb19faf94",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": "S"
+      }
+    },
+    "mobile-app": {
+      "fsKind": "epics",
+      "fsId": null,
+      "fsSlug": "mobile-app",
+      "ghIssueId": "I_kwDOEZgYB88AAAABBscmiQ",
+      "ghIssueNumber": 341,
+      "ghProjectItemId": "PVTI_lAHOBD6i184AI_T1zgsL9b4",
+      "lastSyncedFs": {
+        "title": "mobile-app",
+        "bodyHash": "cbb2e9ae0ff17bcf5b7cd05ac84536424e796ee7f15b87ca1bb2546a33f2023a",
+        "status": null,
+        "priorityPrefix": null,
+        "effort": null
+      },
+      "lastSyncedGh": {
+        "title": "mobile-app",
+        "bodyHash": "cbb2e9ae0ff17bcf5b7cd05ac84536424e796ee7f15b87ca1bb2546a33f2023a",
+        "status": "Not prioritized",
+        "priorityPrefix": null,
+        "effort": null
+      }
+    }
+  }
+}

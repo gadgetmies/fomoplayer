@@ -45,11 +45,21 @@ backlog/
 │       ├── README.md    # the wider goal, why
 │       └── …            # symlinks to member stories under stories/
 ├── todo/                # priority-ordered symlinks (fractional-indexed)
+├── not-prioritized/     # acknowledged ideas not yet ranked into todo/
 ├── in-progress/         # active work
 ├── blocked/             # waiting on something external
+├── to-be-verified/      # implementation done; awaiting verification
+├── validated/           # verified; awaiting deploy
+├── in-production/       # deployed; in monitoring window
 ├── done/                # archive of completed stories and tasks
 └── dropped/             # archive of stories and tasks that won't be done
 ```
+
+The status folders mirror the GitHub Project ("Main") status taxonomy
+so that the in-repo backlog and the project board can be synced
+two-way (see `docs/backlog-sync.md`). `done/` and `dropped/` are
+filesystem-only archives; on the GitHub side they correspond to closed
+issues (`completed` and `not_planned` state reasons respectively).
 
 `tasks/` and `stories/` share one numeric id space — every task or story
 gets the next free `NNN`. Folder context (`tasks/NNN-…` vs `stories/NNN-…`)
@@ -73,7 +83,8 @@ own symlink to `done/` at that point — it doesn't happen automatically.
 
 ## Priority — fractional indexing
 
-Symlinks under `todo/`, `in-progress/`, and `blocked/` carry a short
+Symlinks under `todo/`, `not-prioritized/`, `in-progress/`, `blocked/`,
+`to-be-verified/`, `validated/`, and `in-production/` carry a short
 **ordering prefix** (e.g. `f-`) followed by the id and slug. They sort
 lexicographically, and the prefix space is dense enough that you can
 always slot a new entry between any two existing ones with **one rename**
