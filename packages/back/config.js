@@ -13,7 +13,9 @@ const apiURL = resolveServiceURL(sharedConfig.API_URL, sharedConfig.IP, port, '/
 const authApiURL = process.env.AUTH_API_URL || `${frontendURL}/api`
 const additionalOrigins = process.env.ADDITIONAL_ORIGINS?.split(',').map((origin) => origin.trim()) || []
 const allowedOriginRegexes = parseOriginRegexes(process.env.ALLOWED_ORIGIN_REGEX)
-const allowedPreviewOriginRegexes = parseOriginRegexes(process.env.ALLOWED_PREVIEW_ORIGIN_REGEX)
+
+const isPreviewEnv = process.env.PREVIEW_ENV === 'true'
+const allowedPreviewOriginRegexes = isPreviewEnv ? parseOriginRegexes(process.env.ALLOWED_PREVIEW_ORIGIN_REGEX) : []
 
 const safeOrigin = (url) => {
   try {
@@ -25,9 +27,9 @@ const safeOrigin = (url) => {
 
 const apiOrigin = safeOrigin(apiURL)
 const authApiOrigin = safeOrigin(authApiURL)
-const oidcHandoffAuthorityOrigin = authApiOrigin
-const oidcHandoffUrl = authApiURL ? `${authApiURL}/auth/login/google` : undefined
-const oidcHandoffSecret = process.env.OIDC_HANDOFF_SECRET || undefined
+const oidcHandoffAuthorityOrigin = isPreviewEnv ? authApiOrigin : undefined
+const oidcHandoffUrl = isPreviewEnv && authApiURL ? `${authApiURL}/auth/login/google` : undefined
+const oidcHandoffSecret = isPreviewEnv ? (process.env.OIDC_HANDOFF_SECRET || undefined) : undefined
 
 validateAuthConfig({
   oidcHandoffSecret,
@@ -36,7 +38,6 @@ validateAuthConfig({
   allowedPreviewOriginRegexes,
 })
 
-const isPreviewEnv = process.env.PREVIEW_ENV === 'true'
 const sessionCookieDomain = process.env.SESSION_COOKIE_DOMAIN
 const previewAllowedGoogleSubs = (process.env.PREVIEW_ALLOWED_GOOGLE_SUBS || '')
   .split(',')

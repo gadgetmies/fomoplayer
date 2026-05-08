@@ -25,7 +25,7 @@ const reserveRandomPort = async () =>
     server.on('error', reject)
   })
 
-module.exports.startServer = async () => {
+module.exports.startServer = async ({ env: envOverrides = {} } = {}) => {
   const port = await reserveRandomPort()
   const baseUrl = `http://localhost:${port}`
 
@@ -41,6 +41,7 @@ module.exports.startServer = async () => {
         // CORS allowlist accepts it instead of denying with the default 4004.
         FRONTEND_URL: baseUrl,
         API_URL: baseUrl,
+        ...envOverrides,
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     })

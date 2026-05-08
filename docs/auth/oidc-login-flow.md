@@ -878,6 +878,64 @@ INTERNAL_AUTH_API_AUDIENCE=http://localhost:5000/api
 - **Bot login:** not available (`PREVIEW_ENV` not set).
 - Session cookie: `secure=false`, `SameSite=lax`.
 
+#### Why the handoff flow is dormant in local dev
+
+`packages/back/config.js` gates all handoff configuration on
+`PREVIEW_ENV=true`. When `PREVIEW_ENV` is unset (the local-dev default),
+the exported `oidcHandoffSecret`, `oidcHandoffUrl`,
+`oidcHandoffAuthorityOrigin`, and `allowedPreviewOriginRegexes` are
+forced to `undefined` / `[]` regardless of what the underlying env vars
+hold. This means:
+
+- `validateAuthConfig` does not throw the
+  "AUTH_API_URL resolves to … which differs from this backend's
+  apiOrigin" or "ALLOWED_PREVIEW_ORIGIN_REGEX is empty" errors at
+  startup, even when running the backend on a different port from the
+  frontend (so the default `AUTH_API_URL = ${frontendURL}/api`
+  fallback resolves to a different origin than `apiOrigin`).
+- Any leftover `OIDC_HANDOFF_SECRET` or `ALLOWED_PREVIEW_ORIGIN_REGEX`
+  values inherited from a previous deploy-config session in your shell
+  are ignored, so they do not silently activate handoff branches.
+
+#### Testing handoff locally
+
+You opt into handoff by setting `PREVIEW_ENV=true` together with the
+same env vars a real preview deployment would set. Two scenarios:
+
+**Local backend acting as a handoff *consumer* against a remote
+(or local) authority.** Set:
+
+```
+PREVIEW_ENV=true
+PREVIEW_ALLOWED_GOOGLE_SUBS=<your Google sub>
+AUTH_API_URL=https://<authority-host>/api
+OIDC_HANDOFF_SECRET=<same secret as the authority>
+```
+
+The authority must include your local origin in its
+`ALLOWED_PREVIEW_ORIGIN_REGEX` — for example
+`^http://localhost:\d+$` to allow any localhost port. Without this,
+the authority rejects your local origin with
+`reason: handoff-target-unsafe / subReason: origin-not-allowed`.
+
+**Local backend acting as a handoff *authority* for a remote consumer
+or another local backend.** Set:
+
+```
+PREVIEW_ENV=true
+PREVIEW_ALLOWED_GOOGLE_SUBS=<your Google sub>
+OIDC_HANDOFF_SECRET=<shared secret>
+ALLOWED_PREVIEW_ORIGIN_REGEX=<regex that matches the consumer origin>
+GOOGLE_OIDC_API_REDIRECT=http://localhost:<port>/api/auth/login/google/return
+```
+
+The consumer must point its `AUTH_API_URL` at your local backend and
+share `OIDC_HANDOFF_SECRET`.
+
+In both cases, leave the env vars unset (or `PREVIEW_ENV=`) when you
+go back to ordinary local dev — handoff goes dormant and the
+validator stops complaining about mismatched origins.
+
 ### Tests (`NODE_ENV=test`, `packages/back/.env.test`)
 
 ```

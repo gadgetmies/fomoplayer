@@ -21,7 +21,17 @@ const mintToken = (apiOrigin) =>
 
 test({
   setup: async () => {
-    const { server, port } = await startServer()
+    // The /api-keys/exchange-handoff endpoint requires canMintHandoff = true,
+    // which under the PREVIEW_ENV gate at config.js only activates when
+    // PREVIEW_ENV=true. PREVIEW_ALLOWED_GOOGLE_SUBS is required alongside
+    // (the existing config check throws when PREVIEW_ENV=true and the
+    // allowlist is empty).
+    const { server, port } = await startServer({
+      env: {
+        PREVIEW_ENV: 'true',
+        PREVIEW_ALLOWED_GOOGLE_SUBS: OIDC_SUBJECT,
+      },
+    })
     const baseUrl = `http://localhost:${port}`
     const user = await account.findOrCreateByIdentifier(OIDC_ISSUER, OIDC_SUBJECT)
     return { server, baseUrl, userId: user.id }

@@ -94,9 +94,20 @@ misconfiguration.
 
 ## PR-preview consumer configuration (handoff target)
 
-A PR-preview backend (consumer) needs four pieces of env to participate
-in the handoff:
+A PR-preview backend (consumer) needs five pieces of env to
+participate in the handoff (`PREVIEW_ENV` plus the four origin /
+secret values below):
 
+- `PREVIEW_ENV=true` — required for the consumer (and the authority).
+  All handoff configuration in `packages/back/config.js` is gated on
+  this flag; with it unset, `oidcHandoffSecret`, `oidcHandoffUrl`,
+  `oidcHandoffAuthorityOrigin`, and `allowedPreviewOriginRegexes` are
+  forced to `undefined` / `[]` regardless of the underlying env vars,
+  and the consumer-delegation branch on `/login/google` never runs.
+  PR previews on Railway inherit this from the previewbase's
+  environment, so it is normally already set; this entry exists so a
+  hand-rolled deployment doesn't silently end up with the handoff
+  flow off.
 - `API_URL` (or `IP`+`PORT`) on the **backend service** — must resolve
   to the consumer's *public* origin. The handoff token's audience is
   bound to the consumer's public origin at mint time
