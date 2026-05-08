@@ -8,6 +8,7 @@ import './App.css'
 import Settings from './Settings.js'
 import Spinner from './Spinner.js'
 import Admin from './Admin.js'
+import { launchMessages } from './launchMessages'
 
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
 import config from './config.js'
@@ -106,6 +107,7 @@ class App extends Component {
     const initialListState = searchTerms.length > 0 && isSearchPath ? 'search' : (listState || 'new')
 
     this.state = {
+      launchMessage: launchMessages[Math.floor(Math.random() * launchMessages.length)],
       carts: [],
       stores: [],
       scoreWeights: {},
@@ -907,7 +909,7 @@ class App extends Component {
             <LocationWatcher onLocationChange={this.syncStateWithLocation.bind(this)} />
             {this.state.loading ? (
               <div className="loading-overlay">
-                🚀 Launching app
+                <div className="loading-message">{this.state.launchMessage}</div>
                 <Spinner />
               </div>
             ) : !this.state.loggedIn ? (
