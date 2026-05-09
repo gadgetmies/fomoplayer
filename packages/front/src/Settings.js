@@ -1532,16 +1532,16 @@ class Settings extends Component {
           ) : null}
           {this.state.page === 'player' ? (
             <>
-              <h4>Media button behavior</h4>
+              <h4>Fast forward button behaviour</h4>
               <p>
                 Configure how the next and previous media buttons on your device (keyboard, headphones, etc.) behave.
-                With the toggle off, a single press seeks within the current track and a double press skips to the next
-                or previous track. With the toggle on, a single press skips tracks. This setting is stored on this
-                device, so it can be configured separately for each device you use.
+                In <em>Seek</em> mode a single press seeks within the current track and a double press skips to the
+                next or previous track. In <em>Skip</em> mode a single press skips tracks. This setting is stored on
+                this device, so it can be configured separately for each device you use.
               </p>
               <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
                 <label htmlFor="media-button-behavior" className="noselect">
-                  Skip tracks on single press:
+                  Fast forward button behaviour:
                 </label>
                 <ToggleButton
                   id="media-button-behavior"
@@ -1552,6 +1552,7 @@ class Settings extends Component {
                     this.setState({ mediaButtonBehavior: behavior })
                   }}
                 />
+                <span className="noselect">{this.state.mediaButtonBehavior === 'skip' ? 'Skip' : 'Seek'}</span>
               </p>
             </>
           ) : null}
