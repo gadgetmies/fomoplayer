@@ -40,10 +40,9 @@ affordance.
 
 ### Requirement: Refresh affordances share a single in-flight state
 
-Both the desktop refresh button and the touch pull-to-refresh gesture
-SHALL drive the same refresh action and observe the same in-flight
-flag, so that a refresh started by one affordance is reflected by the
-other.
+The desktop refresh button and the pull-to-refresh gesture SHALL drive
+the same refresh action and observe the same in-flight flag, so that
+a refresh started by one affordance is reflected by the other.
 
 #### Scenario: Both affordances call the same refresh path
 
