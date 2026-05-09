@@ -12,6 +12,22 @@ import SearchBar from './SearchBar'
 import Popup from './Popup'
 import { isMobile } from 'react-device-detect'
 
+const DESKTOP_REFRESH_MEDIA_QUERY = '(hover: hover) and (pointer: fine)'
+
+const matchDesktopRefreshMediaQuery = () => {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null
+  try {
+    return window.matchMedia(DESKTOP_REFRESH_MEDIA_QUERY)
+  } catch (_e) {
+    return null
+  }
+}
+
+const evaluateDesktopRefreshGate = (mql) => {
+  if (!mql || typeof mql.matches !== 'boolean') return true
+  return mql.matches
+}
+
 const filterMatches = (filter, { artists, title, keys, labels, releases }) => {
   const trackDetailsString = [
     ...artists.map(R.prop('name')),
@@ -44,12 +60,16 @@ class Tracks extends Component {
       visibleEndIndex: 50,
       pullDistance: 0,
       pullingToRefresh: false,
+      showDesktopRefresh: evaluateDesktopRefreshGate(matchDesktopRefreshMediaQuery()),
     }
     this.handleScroll = this.handleScroll.bind(this)
     this.handleResize = this.handleResize.bind(this)
     this.handleTouchStart = this.handleTouchStart.bind(this)
     this.handleTouchMove = this.handleTouchMove.bind(this)
     this.handleTouchEnd = this.handleTouchEnd.bind(this)
+    this.handleDesktopRefreshMediaChange = this.handleDesktopRefreshMediaChange.bind(this)
+    this.refreshTracks = this.refreshTracks.bind(this)
+    this.desktopRefreshMediaQuery = null
     this.lastScrollTop = 0
     this.trackHeight = 34
     this.overscan = 10
@@ -72,7 +92,21 @@ class Tracks extends Component {
 
   componentDidMount() {
     window.addEventListener('resize', this.handleResize)
-    
+
+    this.desktopRefreshMediaQuery = matchDesktopRefreshMediaQuery()
+    if (this.desktopRefreshMediaQuery) {
+      const next = evaluateDesktopRefreshGate(this.desktopRefreshMediaQuery)
+      if (next !== this.state.showDesktopRefresh) {
+        this.setState({ showDesktopRefresh: next })
+      }
+      if (typeof this.desktopRefreshMediaQuery.addEventListener === 'function') {
+        this.desktopRefreshMediaQuery.addEventListener('change', this.handleDesktopRefreshMediaChange)
+      } else if (typeof this.desktopRefreshMediaQuery.addListener === 'function') {
+        this.desktopRefreshMediaQuery.addListener(this.handleDesktopRefreshMediaChange)
+      }
+    }
+
+
     if (this.tbodyRef.current) {
       const scrollTop = this.tbodyRef.current.scrollTop
       const clientHeight = this.tbodyRef.current.clientHeight
@@ -193,6 +227,21 @@ class Tracks extends Component {
     }
     if (this.resizeTimeout) {
       clearTimeout(this.resizeTimeout)
+    }
+    if (this.desktopRefreshMediaQuery) {
+      if (typeof this.desktopRefreshMediaQuery.removeEventListener === 'function') {
+        this.desktopRefreshMediaQuery.removeEventListener('change', this.handleDesktopRefreshMediaChange)
+      } else if (typeof this.desktopRefreshMediaQuery.removeListener === 'function') {
+        this.desktopRefreshMediaQuery.removeListener(this.handleDesktopRefreshMediaChange)
+      }
+      this.desktopRefreshMediaQuery = null
+    }
+  }
+
+  handleDesktopRefreshMediaChange(event) {
+    const next = typeof event?.matches === 'boolean' ? event.matches : evaluateDesktopRefreshGate(this.desktopRefreshMediaQuery)
+    if (next !== this.state.showDesktopRefresh) {
+      this.setState({ showDesktopRefresh: next })
     }
   }
 
@@ -1031,6 +1080,24 @@ class Tracks extends Component {
               </tr>
             </tfoot>
           )}
+          {!this.props.preview &&
+            this.state.showDesktopRefresh &&
+            ['new', 'recent', 'heard'].includes(this.props.listState) && (
+              <tfoot>
+                <tr style={{ display: 'flex', justifyContent: 'center', background: 'rgb(34, 34, 34)' }}>
+                  <td style={{ display: 'flex', gap: 16, margin: 4 }}>
+                    <SpinnerButton
+                      size={isMobile ? 'small' : 'large'}
+                      loading={this.state.updatingTracks}
+                      disabled={this.state.updatingTracks || this.props.loadingMore}
+                      onClick={this.refreshTracks}
+                      label={'Refresh'}
+                      loadingLabel={'Refreshing'}
+                    />
+                  </td>
+                </tr>
+              </tfoot>
+            )}
         </table>
       </div>
     )
