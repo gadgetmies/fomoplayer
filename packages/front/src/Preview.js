@@ -13,6 +13,7 @@ import { followableNameLinks, namesToString, trackArtistsAndTitle } from './trac
 import CopyToClipboardButton from './CopyToClipboardButton'
 import ShareLink from './ShareLink'
 import { CartDropDownButton } from './CartDropDownButton'
+import { MEDIA_BUTTON_BEHAVIOR_KEY, MEDIA_BUTTON_BEHAVIOR_SKIP } from './mediaButtonBehavior'
 import Popup from './Popup'
 import { apiURL, serviceURL } from './config'
 import { search } from './events'
@@ -258,8 +259,8 @@ class Preview extends Component {
   }
 
   async handleNextClick() {
-    const behavior = localStorage.getItem('mediaButtonBehavior')
-    if (behavior === 'skip') {
+    const behavior = localStorage.getItem(MEDIA_BUTTON_BEHAVIOR_KEY)
+    if (behavior === MEDIA_BUTTON_BEHAVIOR_SKIP) {
       await this.props.onNext()
     } else {
       if (this.state.nextDoubleClickStarted) {
@@ -277,8 +278,8 @@ class Preview extends Component {
   }
 
   async handlePreviousClick() {
-    const behavior = localStorage.getItem('mediaButtonBehavior')
-    if (behavior === 'skip') {
+    const behavior = localStorage.getItem(MEDIA_BUTTON_BEHAVIOR_KEY)
+    if (behavior === MEDIA_BUTTON_BEHAVIOR_SKIP) {
       if (this.getPlayer().currentTime > 2) {
         this.getPlayer().currentTime = 0
       } else {

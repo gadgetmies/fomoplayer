@@ -13,6 +13,11 @@ import FollowItemButton from './FollowItemButton'
 import { NavLink, withRouter } from 'react-router-dom'
 import { apiURL } from './config'
 import ExternalLink from './ExternalLink'
+import {
+  MEDIA_BUTTON_BEHAVIOR_KEY,
+  MEDIA_BUTTON_BEHAVIOR_SEEK,
+  MEDIA_BUTTON_BEHAVIOR_SKIP,
+} from './mediaButtonBehavior'
 import Onboarding from './Onboarding'
 import { SettingsHelp } from './SettingsHelp'
 import ImportPlaylistButton from './ImportPlaylistButton'
@@ -140,7 +145,7 @@ class Settings extends Component {
       editingCartNameId: null,
       cartNameEditorValue: '',
       cloningCartId: null,
-      mediaButtonBehavior: localStorage.getItem('mediaButtonBehavior') || 'seek',
+      mediaButtonBehavior: localStorage.getItem(MEDIA_BUTTON_BEHAVIOR_KEY) || MEDIA_BUTTON_BEHAVIOR_SEEK,
       audioSamples: [],
       uploadingAudioSample: false,
       deletingAudioSample: null,
@@ -1545,14 +1550,16 @@ class Settings extends Component {
                 </label>
                 <ToggleButton
                   id="media-button-behavior"
-                  checked={this.state.mediaButtonBehavior === 'skip'}
+                  checked={this.state.mediaButtonBehavior === MEDIA_BUTTON_BEHAVIOR_SKIP}
                   onChange={(state) => {
-                    const behavior = state ? 'skip' : 'seek'
-                    localStorage.setItem('mediaButtonBehavior', behavior)
+                    const behavior = state ? MEDIA_BUTTON_BEHAVIOR_SKIP : MEDIA_BUTTON_BEHAVIOR_SEEK
+                    localStorage.setItem(MEDIA_BUTTON_BEHAVIOR_KEY, behavior)
                     this.setState({ mediaButtonBehavior: behavior })
                   }}
                 />
-                <span className="noselect">{this.state.mediaButtonBehavior === 'skip' ? 'Skip' : 'Seek'}</span>
+                <span className="noselect">
+                  {this.state.mediaButtonBehavior === MEDIA_BUTTON_BEHAVIOR_SKIP ? 'Skip' : 'Seek'}
+                </span>
               </p>
             </>
           ) : null}
