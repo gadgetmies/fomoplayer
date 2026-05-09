@@ -140,6 +140,7 @@ class Settings extends Component {
       editingCartNameId: null,
       cartNameEditorValue: '',
       cloningCartId: null,
+      mediaButtonBehavior: localStorage.getItem('mediaButtonBehavior') || 'seek',
       audioSamples: [],
       uploadingAudioSample: false,
       deletingAudioSample: null,
@@ -587,6 +588,20 @@ class Settings extends Component {
                   </label>
                 </>
               )}
+              <input
+                type="radio"
+                id="settings-state-player"
+                name="settings-state"
+                checked={this.state.page === 'player'}
+                onChange={() => this.onShowPage('player')}
+              />
+              <label
+                className="select_button-button select_button-button__large"
+                htmlFor="settings-state-player"
+                data-help-id="player-tab"
+              >
+                Player
+              </label>
             </div>
           </div>
           {this.state.page === 'following' ? (
@@ -1513,6 +1528,32 @@ class Settings extends Component {
                 {this.markHeardButton('Tracks older than two years', '2 years')}
               </p>
               <p className="input-layout">{this.markHeardButton('All tracks', '0')}</p>
+            </>
+          ) : null}
+          {this.state.page === 'player' ? (
+            <>
+              <h4>Fast forward button behaviour</h4>
+              <p>
+                Configure how the next and previous media buttons on your device (keyboard, headphones, etc.) behave.
+                In <em>Seek</em> mode a single press seeks within the current track and a double press skips to the
+                next or previous track. In <em>Skip</em> mode a single press skips tracks. This setting is stored on
+                this device, so it can be configured separately for each device you use.
+              </p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
+                <label htmlFor="media-button-behavior" className="noselect">
+                  Fast forward button behaviour:
+                </label>
+                <ToggleButton
+                  id="media-button-behavior"
+                  checked={this.state.mediaButtonBehavior === 'skip'}
+                  onChange={(state) => {
+                    const behavior = state ? 'skip' : 'seek'
+                    localStorage.setItem('mediaButtonBehavior', behavior)
+                    this.setState({ mediaButtonBehavior: behavior })
+                  }}
+                />
+                <span className="noselect">{this.state.mediaButtonBehavior === 'skip' ? 'Skip' : 'Seek'}</span>
+              </p>
             </>
           ) : null}
           {this.state.page === 'integrations' ? (
