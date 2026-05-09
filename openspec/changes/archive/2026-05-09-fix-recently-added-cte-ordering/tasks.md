@@ -13,20 +13,22 @@
 
 ## 2. Fix the inner CTE
 
-- [ ] 2.1 In `packages/back/routes/users/db.js:760-771`, replace the
+- [x] 2.1 In `packages/back/routes/users/db.js:760-771`, replace the
       `SELECT track_id, MAX(track_added) … GROUP BY 1` body with
       `SELECT DISTINCT track_id, track_added` and add
       `ORDER BY track_added DESC NULLS LAST` immediately before the
       `LIMIT / OFFSET`. Keep the joins through `store__track NATURAL
       JOIN stores` — they implement the per-call `stores` filter.
+      Shipped in commit `bee8cb8d`.
 
 ## 3. Tighten the outer sort
 
-- [ ] 3.1 In `packages/back/routes/users/db.js:822-829`, change
+- [x] 3.1 In `packages/back/routes/users/db.js:822-829`, change
       `ORDER BY added DESC` to
       `ORDER BY recently_added.track_added DESC` so within-day
       ordering uses the full timestamp from the inner CTE rather than
       the date-resolution `added` projection from `track_details`.
+      Shipped in commit `bee8cb8d`.
 
 ## 4. Add the regression test
 
@@ -76,9 +78,10 @@
       meaningfully heavier than the comparable `new_tracks` sort.
       Plan shape: Limit → Unique → Sort (quicksort, 25kB) → Hash Joins.
       Same shape `new_tracks` produces. No regression expected.
-- [ ] 5.3 Manually verify in the popup / web "Recently added" view
+- [x] 5.3 Manually verify in the popup / web "Recently added" view
       that a freshly-ingested track surfaces at the top after a
       Bandcamp Feed sync (the original reproducer).
+      User-verified 2026-05-09.
 
 ## 6. Backlog hygiene
 

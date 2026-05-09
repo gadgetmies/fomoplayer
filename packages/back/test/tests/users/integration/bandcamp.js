@@ -44,6 +44,10 @@ test({
       const generator = bandcampLogic.getArtistTracks({ url: noisiaUrl })
       let yields = 0
       for await (const { tracks, errors } of generator) {
+        // The generator yields a summary `{ tracks: [], errors: [] }` once
+        // before the per-release stream so callers can surface skip-unchanged
+        // counts; downstream consumers no-op on empty `tracks`. Skip it here.
+        if (tracks.length === 0 && errors.length === 0) continue
         assert.equal(errors.length, 0)
         assert.equal(bandcampInterceptor.getMockedRequests().length, 2 + yields)
         assert.notEqual(
@@ -73,6 +77,7 @@ test({
       const generator = bandcampLogic.getLabelTracks({ url: visionUrl })
       let yields = 0
       for await (const { tracks, errors } of generator) {
+        if (tracks.length === 0 && errors.length === 0) continue
         assert.equal(errors.length, 0)
         assert.equal(bandcampInterceptor.getMockedRequests().length, 2 + yields)
         assert.notEqual(

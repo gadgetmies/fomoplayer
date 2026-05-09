@@ -13,7 +13,7 @@ const {
   static: { getTagsFromUrl, getTagName, isRateLimited },
 } = require('./bandcamp-api.js')
 
-const { queryAlbumUrl } = require('./db.js')
+const { queryAlbumUrl, queryKnownReleaseUrls } = require('./db.js')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 let storeDbId = null
@@ -136,13 +136,23 @@ const getTracksFromReleases = async (releaseUrls) => {
   return { errors, tracks: transformed }
 }
 
+const filterToUnknownUrls = async (urls) => {
+  if (!urls || urls.length === 0) return { unknownUrls: [], skipped: 0 }
+  const storeId = await getStoreDbId()
+  const known = await queryKnownReleaseUrls(storeId, urls)
+  const unknownUrls = urls.filter((u) => !known.has(u))
+  return { unknownUrls, skipped: known.size }
+}
+
 module.exports.getArtistTracks = async function* ({ url }) {
   try {
     const { releaseUrls } = await getArtistAsync(url)
-    logger.debug(`Found ${releaseUrls.length} releases for artist ${url}`)
-    logger.debug('Processing releases', releaseUrls)
-    // TODO: figure out how to get rid of the duplication
-    for (const releaseUrl of releaseUrls) {
+    const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
+    logger.debug(
+      `Artist ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
+    )
+    yield { tracks: [], errors: [], skipped, totalReleases: releaseUrls.length }
+    for (const releaseUrl of unknownUrls) {
       if (isRateLimited()) {
         logger.error('Rate limit reached, stopping iteration for artist tracks')
         return
@@ -170,9 +180,12 @@ module.exports.getArtistTracks = async function* ({ url }) {
 module.exports.getLabelTracks = async function* ({ url }) {
   try {
     const { releaseUrls } = await getLabelAsync(url)
-    logger.debug(`Found ${releaseUrls.length} releases for label ${url}`)
-    logger.debug('Processing releases', releaseUrls)
-    for (const releaseUrl of releaseUrls) {
+    const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
+    logger.debug(
+      `Label ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
+    )
+    yield { tracks: [], errors: [], skipped, totalReleases: releaseUrls.length }
+    for (const releaseUrl of unknownUrls) {
       if (isRateLimited()) {
         logger.error('Rate limit reached, stopping iteration for label tracks')
         return

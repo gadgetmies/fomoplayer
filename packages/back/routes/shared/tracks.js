@@ -182,7 +182,7 @@ const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld 
   })
 }
 
-module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
+module.exports.updateArtistTracks = async (storeUrl, details, sourceId, metrics = {}) => {
   const storeModule = getStoreModule(storeUrl)
   const users = await getUsersFollowingArtist(details.storeArtistId)
   let combinedErrors = []
@@ -190,10 +190,13 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
   logger.debug(`Processing tracks for artist: ${details.url}`)
   try {
     const generator = await storeModule.logic.getArtistTracks(details)
-    for await (const { tracks, errors } of generator) {
+    for await (const { tracks, errors, skipped = 0, totalReleases = 0 } of generator) {
       if (errors.length > 0) {
         logger.error(`Errors in fetching tracks for artist (${details.url}): ${JSON.stringify(errors)}`)
       }
+
+      if (skipped) metrics.skipped = (metrics.skipped || 0) + skipped
+      if (totalReleases) metrics.totalReleases = (metrics.totalReleases || 0) + totalReleases
 
       logger.debug(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
 
@@ -240,7 +243,7 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId) => {
   return combinedErrors
 }
 
-module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
+module.exports.updateLabelTracks = async (storeUrl, details, sourceId, metrics = {}) => {
   logger.debug(`Updating label tracks: ${details.url}`)
   const storeModule = getStoreModule(storeUrl)
   let users
@@ -257,10 +260,13 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId) => {
   let combinedErrors = []
   try {
     const generator = storeModule.logic.getLabelTracks(details)
-    for await (const { tracks, errors } of generator) {
+    for await (const { tracks, errors, skipped = 0, totalReleases = 0 } of generator) {
       if (errors.length > 0) {
         logger.error(`Errors in fetching tracks for label (${details.url}): ${JSON.stringify(errors)}`)
       }
+
+      if (skipped) metrics.skipped = (metrics.skipped || 0) + skipped
+      if (totalReleases) metrics.totalReleases = (metrics.totalReleases || 0) + totalReleases
 
       logger.debug(`Found ${tracks.length} tracks for ${JSON.stringify(details)}`)
 

@@ -195,6 +195,8 @@ const resetRequestCount = () => {
   requestCount = 0
 }
 
+const getRequestCount = () => requestCount
+
 module.exports = {
   ...BPromise.promisifyAll({
     getRelease,
@@ -210,5 +212,6 @@ module.exports = {
     getTagName,
     isRateLimited,
     resetRequestCount,
+    getRequestCount,
   },
 }

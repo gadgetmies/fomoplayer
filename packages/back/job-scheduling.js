@@ -3,7 +3,10 @@ const pg = require('fomoplayer_shared').db.pg
 const { scheduleJob } = require('node-schedule')
 const fetchBeatportWatches = require('./jobs/watches/fetch-beatport-watches')
 const fetchSpotifyWatches = require('./jobs/watches/fetch-spotify-watches')
-const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')
+const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')({
+  batchSize: 20,
+  refreshInterval: '6 hours',
+})
 const { sendNextEmailBatch } = require('./services/mailer')
 const { updateNotifications } = require('./jobs/notifications')
 const { updateTrackDetails } = require('./jobs/track_details')

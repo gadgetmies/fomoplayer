@@ -33,3 +33,17 @@ WHERE
 `,
     )
     .then(([{ store__track_store_id }]) => store__track_store_id)
+
+module.exports.queryKnownReleaseUrls = async (storeId, urls) => {
+  if (!urls || urls.length === 0) return new Set()
+  const rows = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryKnownReleaseUrls
+SELECT store__release_url AS url
+FROM   store__release
+WHERE  store_id            = ${storeId}
+  AND  store__release_url  = ANY(${urls})
+`,
+  )
+  return new Set(rows.map((r) => r.url))
+}
