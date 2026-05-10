@@ -12,7 +12,15 @@ import {
   startExtensionLogin,
 } from './auth'
 import { ensureAudioHost, forwardToAudioHost, hasOwnDocument } from './audio-host'
-import { assertJsonContentType, parseFeedPage } from './content/bandcamp/feed-parse'
+import {
+  assertJsonContentType,
+  mergeReleases,
+  parseFeedPage,
+  parseFollowedArtistsPanel,
+  parsePagedataUsername,
+  partitionBandcampHosted,
+  usernameFromBandcampUrl,
+} from './content/bandcamp/feed-parse'
 // Importing audio-player has no effect in a service-worker (no DOM) but
 // installs the audio host inside the Firefox background page.
 import './audio-player'
@@ -172,6 +180,105 @@ const scrapeFeedFromWorker = async ({ pageCount = 5 } = {}) => {
     throw new Error('Bandcamp collection_summary returned no fan_id — likely logged out from worker context.')
   }
 
+  const nested = collectionBody && collectionBody.collection_summary
+  let username =
+    (nested && nested.username) ||
+    usernameFromBandcampUrl(nested && nested.url) ||
+    (collectionBody && collectionBody.fan && collectionBody.fan.username) ||
+    (collectionBody && collectionBody.username) ||
+    null
+  if (!username) {
+    console.info(
+      '[bandcamp:scrape-feed] collection_summary did not expose username; falling back to pagedata.',
+      'collection_summary top-level keys=', Object.keys(collectionBody || {}),
+      'collection_summary nested fan keys=', collectionBody && collectionBody.fan
+        ? Object.keys(collectionBody.fan)
+        : '(no fan)',
+      'collection_summary nested collection_summary keys=', nested && typeof nested === 'object'
+        ? Object.keys(nested)
+        : '(no nested collection_summary)',
+    )
+    const dashboardCandidates = [
+      'https://bandcamp.com/',
+      // login redirects to /<username> when already logged in; even when
+      // the response body doesn't expose pagedata, response.url after the
+      // redirect carries the username we need.
+      'https://bandcamp.com/login',
+    ]
+    const probeReports = []
+    for (const candidateUrl of dashboardCandidates) {
+      try {
+        const candidateResponse = await fetch(candidateUrl, { credentials: 'include' })
+        const candidateBody = await candidateResponse.text()
+        const candidateUsername =
+          parsePagedataUsername(candidateBody) || usernameFromBandcampUrl(candidateResponse.url)
+        const report = {
+          url: candidateUrl,
+          status: candidateResponse.status,
+          finalUrl: candidateResponse.url,
+          contentType: candidateResponse.headers.get('content-type'),
+          bodyBytes: candidateBody.length,
+          hasPagedata: candidateBody.includes('id="pagedata"'),
+          hasIdentities: candidateBody.includes('"identities"'),
+          parsedUsername: candidateUsername,
+        }
+        probeReports.push(report)
+        console.info('[bandcamp:scrape-feed] username probe:', report)
+        if (candidateUsername) {
+          username = candidateUsername
+          break
+        }
+      } catch (e) {
+        const report = { url: candidateUrl, error: (e && e.message) || String(e) }
+        probeReports.push(report)
+        console.warn('[bandcamp:scrape-feed] username probe threw:', report)
+      }
+    }
+    if (!username) {
+      const summaryShape = {
+        topKeys: Object.keys(collectionBody || {}),
+        nestedFanKeys: collectionBody && collectionBody.fan ? Object.keys(collectionBody.fan) : null,
+        nestedCollectionSummaryKeys:
+          nested && typeof nested === 'object' ? Object.keys(nested) : null,
+      }
+      throw new Error(
+        `Bandcamp could not determine a logged-in username — likely logged out from worker context. ` +
+          `collection_summary=${JSON.stringify(summaryShape)} ` +
+          `probes=${JSON.stringify(probeReports)}`,
+      )
+    }
+  }
+
+  const panelUrl = `https://bandcamp.com/${encodeURIComponent(username)}/feed`
+  const panelResponse = await fetch(panelUrl, {
+    credentials: 'include',
+  })
+  if (!panelResponse.ok) {
+    throw new Error(`${panelUrl} (followed-artists panel) failed: ${panelResponse.status}`)
+  }
+  const panelHtml = await panelResponse.text()
+  let panelReleases
+  try {
+    panelReleases = parseFollowedArtistsPanel(panelHtml)
+  } catch (e) {
+    console.warn(
+      '[bandcamp:scrape-feed] parseFollowedArtistsPanel rejected; status=',
+      panelResponse.status,
+      'content-type=', panelResponse.headers.get('content-type'),
+      'body head=', panelHtml.slice(0, 2000),
+    )
+    throw e
+  }
+  const panelPartition = partitionBandcampHosted(panelReleases)
+  if (panelPartition.dropped.length > 0) {
+    console.warn(
+      `[bandcamp:scrape-feed] panel: dropped ${panelPartition.dropped.length} custom-domain release(s) (manifest only permits *.bandcamp.com); urls=`,
+      panelPartition.dropped.slice(0, 10).map((r) => r && r.item_url),
+    )
+  }
+  await ingestBandcampFeedReleases({ data: panelPartition.kept, done: false })
+  let accumulated = mergeReleases([], panelPartition.kept)
+
   for (let page = 1; page <= pageCount; page += 1) {
     const feedResponse = await fetch('https://bandcamp.com/fan_dash_feed_updates', {
       method: 'POST',
@@ -197,7 +304,17 @@ const scrapeFeedFromWorker = async ({ pageCount = 5 } = {}) => {
       )
       throw e
     }
-    await ingestBandcampFeedReleases({ data: parseResult.releases, done: page === pageCount })
+    const fanDashPartition = partitionBandcampHosted(parseResult.releases)
+    if (fanDashPartition.dropped.length > 0) {
+      console.warn(
+        `[bandcamp:scrape-feed] fan_dash_feed_updates page=${page}: dropped ${fanDashPartition.dropped.length} custom-domain release(s); urls=`,
+        fanDashPartition.dropped.slice(0, 10).map((r) => r && r.item_url),
+      )
+    }
+    const beforeMerge = accumulated.length
+    accumulated = mergeReleases(accumulated, fanDashPartition.kept)
+    const newOnly = accumulated.slice(beforeMerge)
+    await ingestBandcampFeedReleases({ data: newOnly, done: page === pageCount })
     olderThan = parseResult.nextOlderThan
   }
 }
