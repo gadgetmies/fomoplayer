@@ -46,22 +46,24 @@ const SearchBarBase = ({
         autoComplete="off"
         spellCheck={false}
       />
-      {childrenAfterInput}
-      {loading ? (
-        <Spinner className="search-input-icon" />
-      ) : hasContent ? (
-        <FontAwesomeIcon
-          onClick={(e) => {
-            e.stopPropagation()
-            onClearSearch?.()
-          }}
-          className="search-input-icon clear-search"
-          icon="times-circle"
-        />
-      ) : (
-        <FontAwesomeIcon className="search-input-icon" icon="search" />
-      )}
+      <span className="search-input-icon">
+        {loading ? (
+          <Spinner />
+        ) : hasContent ? (
+          <FontAwesomeIcon
+            onClick={(e) => {
+              e.stopPropagation()
+              onClearSearch?.()
+            }}
+            className="clear-search"
+            icon="times-circle"
+          />
+        ) : (
+          <FontAwesomeIcon icon="search" />
+        )}
+      </span>
     </div>
+    {childrenAfterInput}
   </div>
 )
 

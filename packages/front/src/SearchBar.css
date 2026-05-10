@@ -1,23 +1,30 @@
 .search-input-icon {
-  position: absolute;
+  position: sticky;
   right: 0;
+  align-self: center;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 16px;
   opacity: 0.5;
-  margin-right: 8px;
-  transform: translateY(-50%);
-  top: 50%;
+  z-index: 2;
+  line-height: 0;
+}
+
+.search_bar_pills .search-input-icon {
+  align-self: center;
+  height: 34px;
+  background-color: #050505;
+}
+
+.search-input-icon > * {
+  margin: 0 !important;
 }
 
 .clear-search {
   cursor: pointer;
-}
-
-.search + .clear-search {
-  display: none;
-}
-
-.search_bar:focus-within .clear-search,
-.search_bar:hover .clear-search {
-  display: block;
 }
 
 .search-input {
@@ -31,19 +38,28 @@
   box-sizing: border-box;
   position: relative;
   width: 100%;
+  min-width: 0;
   display: flex;
 }
 
 .search_bar_pills {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 4px;
-  padding: 4px 36px 4px 6px; /* right padding leaves room for the clear icon */
-  min-height: 34px;
+  padding: 0 0 0 6px;
+  height: 34px;
   border-radius: 0.25rem;
   cursor: text;
   background-color: #050505;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  min-width: 0;
+}
+
+.search_bar_pills::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── Pills ─────────────────────────────────────────────────────────────────── */
@@ -53,13 +69,17 @@
   align-items: center;
   gap: 4px;
   border-radius: 0.9em;
-  padding: 1px 4px 1px 8px;
+  padding: 0 4px 0 8px;
   font-size: 0.85em;
   white-space: nowrap;
   max-width: 220px;
   background-color: #2a2a2a;
   border: 1px solid #444;
   color: #eee;
+  flex-shrink: 0;
+  height: 22px;
+  box-sizing: border-box;
+  line-height: 1;
 }
 
 .search_pill_selected {
@@ -182,8 +202,10 @@
 /* ── Inline text input inside the pill bar ─────────────────────────────────── */
 
 .search_input_pills {
-  flex: 1;
+  flex: 0 1 auto;
+  width: 60px;
   min-width: 60px;
+  field-sizing: content;
   border: none !important;
   background: transparent !important;
   padding: 0 2px !important;
@@ -200,11 +222,7 @@
 
 .search {
   border-radius: 0.25rem;
-  padding-right: 32px;
   text-overflow: ellipsis;
-}
-
-.search {
   min-width: 32px;
   width: 100%;
 }
@@ -226,6 +244,7 @@
   display: flex;
   flex: 1;
   position: relative;
+  min-width: 0;
 }
 
 @media (max-width: 590px) {

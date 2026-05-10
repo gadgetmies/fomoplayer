@@ -1,7 +1,10 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import SearchBarBase from './SearchBarBase'
 import { parseSingleTerm } from './searchTerms'
+import { requestJSONwithCredentials } from './request-json-with-credentials'
+
+const ENTITY_TYPES = ['artist', 'label', 'release', 'track']
 
 const getTermLabel = (term) => {
   switch (term.type) {
@@ -14,7 +17,11 @@ const getTermLabel = (term) => {
     case 'genre':
       return term.name ?? `${term.id}`
     case 'track':
-      return term.similar ? `~${term.name ?? term.id}` : term.name ?? `${term.id}`
+      return term.similar ? `~${term.name ?? term.id ?? ''}` : term.name ?? `${term.id ?? ''}`
+    case 'artist':
+    case 'label':
+    case 'release':
+      return term.name ?? `${term.id ?? ''}`
     default:
       return term.name ?? term.value
   }
@@ -39,8 +46,30 @@ const GlobalSearchBar = ({
   const [selectedPillEnd, setSelectedPillEnd] = useState(null)
   const inputRef = useRef(null)
   const selectAllPressedRef = useRef(false)
+  const entitySearchSeqRef = useRef(0)
+  const entityResolveInFlightRef = useRef(new Set())
+  const inputValueRef = useRef('')
+  const [entityResults, setEntityResults] = useState([])
+  const [entitySearchType, setEntitySearchType] = useState(null)
+  const [selectedEntityIndex, setSelectedEntityIndex] = useState(-1)
 
-  const focusInput = () => inputRef.current?.focus()
+  inputValueRef.current = inputValue
+
+  const scrollInputIntoView = () => {
+    const input = inputRef.current
+    if (!input) return
+    const bar = input.parentElement
+    if (bar) bar.scrollLeft = bar.scrollWidth
+  }
+
+  const focusInput = () => {
+    inputRef.current?.focus()
+    scrollInputIntoView()
+  }
+
+  useEffect(() => {
+    scrollInputIntoView()
+  }, [terms.length, inputValue])
   const clearPillSelection = () => {
     setSelectedPillStart(null)
     setSelectedPillEnd(null)
@@ -55,12 +84,143 @@ const GlobalSearchBar = ({
     ? genres.filter((g) => !genreSearchText || g.name.toLowerCase().includes(genreSearchText.toLowerCase()))
     : []
 
+  const entityPrefixMatch = inputValue.match(/^(artist|label|release|track):(~?)(.+)$/i)
+  const entitySearchPrefix = entityPrefixMatch?.[1].toLowerCase() ?? null
+  const entitySearchSimilar = entityPrefixMatch?.[2] === '~'
+  const entitySearchText = entityPrefixMatch?.[3] ?? null
+  const entitySearchIsId = entitySearchText !== null && /^\d+$/.test(entitySearchText)
+  const showEntityPopup =
+    entitySearchPrefix !== null &&
+    entitySearchText !== null &&
+    !entitySearchIsId &&
+    entitySearchType === entitySearchPrefix &&
+    entityResults.length > 0
+
+  useEffect(() => {
+    if (entitySearchPrefix === null || entitySearchText === null || entitySearchIsId) {
+      setEntityResults([])
+      setEntitySearchType(null)
+      setSelectedEntityIndex(-1)
+      return
+    }
+    const seq = ++entitySearchSeqRef.current
+    const handle = setTimeout(async () => {
+      try {
+        const results = await requestJSONwithCredentials({
+          path: `/entities/search?type=${entitySearchPrefix}&q=${encodeURIComponent(entitySearchText)}`,
+        })
+        if (seq !== entitySearchSeqRef.current) return
+        setEntityResults(Array.isArray(results) ? results : [])
+        setEntitySearchType(entitySearchPrefix)
+        setSelectedEntityIndex(-1)
+      } catch {
+        if (seq !== entitySearchSeqRef.current) return
+        setEntityResults([])
+        setEntitySearchType(null)
+      }
+    }, 200)
+    return () => clearTimeout(handle)
+  }, [entitySearchPrefix, entitySearchText, entitySearchIsId])
+
+  useEffect(() => {
+    let cancelled = false
+    const namelessIdTerms = terms
+      .map((t, i) => ({ t, i }))
+      .filter(({ t }) => ENTITY_TYPES.includes(t.type) && t.id !== undefined && t.id !== null && !t.name)
+    const nameOnlyTerms = terms
+      .map((t, i) => ({ t, i }))
+      .filter(({ t }) => ENTITY_TYPES.includes(t.type) && (t.id === undefined || t.id === null) && t.name)
+
+    const todo = []
+
+    namelessIdTerms.forEach(({ t }) => {
+      const key = `${t.type}:id:${t.id}`
+      if (entityResolveInFlightRef.current.has(key)) return
+      entityResolveInFlightRef.current.add(key)
+      todo.push(
+        (async () => {
+          try {
+            if (t.type === 'track') {
+              const tracks = await requestJSONwithCredentials({
+                path: `/tracks/?q=${encodeURIComponent(`track:${t.id}`)}&limit=1&offset=0`,
+              })
+              const track = tracks?.[0]
+              if (!track) return null
+              const trackVersion = track.version ? ` (${track.version})` : ''
+              return { match: (term) => term.type === 'track' && term.id === t.id, name: `${track.title}${trackVersion}` }
+            }
+            const data = await requestJSONwithCredentials({ path: `/${t.type}s/${t.id}` })
+            return data?.name
+              ? { match: (term) => term.type === t.type && term.id === t.id, name: data.name }
+              : null
+          } catch {
+            return null
+          } finally {
+            entityResolveInFlightRef.current.delete(key)
+          }
+        })(),
+      )
+    })
+
+    nameOnlyTerms.forEach(({ t }) => {
+      const key = `${t.type}:name:${t.name.toLowerCase()}`
+      if (entityResolveInFlightRef.current.has(key)) return
+      entityResolveInFlightRef.current.add(key)
+      todo.push(
+        (async () => {
+          try {
+            const results = await requestJSONwithCredentials({
+              path: `/entities/search?type=${t.type}&q=${encodeURIComponent(t.name)}&limit=5`,
+            })
+            const exact = (results || []).find((r) => r.name.toLowerCase() === t.name.toLowerCase()) || (results || [])[0]
+            if (!exact) return null
+            return {
+              match: (term) =>
+                term.type === t.type && (term.id === undefined || term.id === null) && term.name === t.name,
+              id: exact.id,
+              name: exact.name,
+            }
+          } catch {
+            return null
+          } finally {
+            entityResolveInFlightRef.current.delete(key)
+          }
+        })(),
+      )
+    })
+
+    if (todo.length === 0) return
+    Promise.all(todo).then((updates) => {
+      if (cancelled) return
+      const filtered = updates.filter(Boolean)
+      if (filtered.length === 0) return
+      const updatedTerms = terms.map((term) => {
+        const u = filtered.find((x) => x.match(term))
+        if (!u) return term
+        const next = { ...term }
+        if (u.id !== undefined) next.id = u.id
+        if (u.name !== undefined) next.name = u.name
+        const similarPrefix = term.type === 'track' && term.similar ? '~' : ''
+        next.value = `${term.type}:${similarPrefix}${next.id ?? next.name}`
+        return next
+      })
+      onChange(updatedTerms, inputValueRef.current)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [terms])
+
   const clearEverything = () => {
     selectAllPressedRef.current = false
     clearPillSelection()
     setInputValue('')
     setInQuote(false)
     setSelectedGenreIndex(-1)
+    setSelectedEntityIndex(-1)
+    setEntityResults([])
+    setEntitySearchType(null)
     onClearSearch()
   }
 
@@ -69,6 +229,24 @@ const GlobalSearchBar = ({
     const newTerms = [...terms, newTerm]
     setInputValue('')
     setSelectedGenreIndex(-1)
+    onChange(newTerms, '')
+    focusInput()
+  }
+
+  const commitEntity = (entity) => {
+    const similarPrefix = entitySearchPrefix === 'track' && entitySearchSimilar ? '~' : ''
+    const newTerm = {
+      type: entitySearchPrefix,
+      value: `${entitySearchPrefix}:${similarPrefix}${entity.id}`,
+      id: entity.id,
+      name: entity.name,
+      ...(entitySearchPrefix === 'track' && entitySearchSimilar ? { similar: true } : {}),
+    }
+    const newTerms = [...terms, newTerm]
+    setInputValue('')
+    setSelectedEntityIndex(-1)
+    setEntityResults([])
+    setEntitySearchType(null)
     onChange(newTerms, '')
     focusInput()
   }
@@ -104,8 +282,10 @@ const GlobalSearchBar = ({
       return
     }
 
-    if (!inQuote && value.endsWith(' ') && value.trim() && !value.trim().match(/^genre:/i)) {
-      const newTerm = parseSingleTerm(value.trim())
+    const trimmed = value.trim()
+    const isGenrePrefix = /^genre:/i.test(trimmed)
+    if (!inQuote && value.endsWith(' ') && trimmed && !isGenrePrefix) {
+      const newTerm = parseSingleTerm(trimmed)
       const newTerms = [...terms, newTerm]
       setInputValue('')
       onChange(newTerms, '')
@@ -196,6 +376,31 @@ const GlobalSearchBar = ({
       if (e.key === 'Enter' && selectedGenreIndex >= 0) {
         e.preventDefault()
         commitGenre(filteredGenres[selectedGenreIndex])
+        return
+      }
+    }
+
+    if (showEntityPopup) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelectedEntityIndex((i) => Math.min(i + 1, entityResults.length - 1))
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelectedEntityIndex((i) => Math.max(i - 1, 0))
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setEntityResults([])
+        setEntitySearchType(null)
+        setSelectedEntityIndex(-1)
+        return
+      }
+      if (e.key === 'Enter' && selectedEntityIndex >= 0) {
+        e.preventDefault()
+        commitEntity(entityResults[selectedEntityIndex])
         return
       }
     }
@@ -315,6 +520,21 @@ const GlobalSearchBar = ({
                 }}
               >
                 {genre.name}
+              </div>
+            ))}
+          </div>
+        ) : showEntityPopup ? (
+          <div className="search_genre_popup">
+            {entityResults.map((entity, i) => (
+              <div
+                key={`${entitySearchPrefix}-${entity.id}`}
+                className={`search_genre_option${i === selectedEntityIndex ? ' search_genre_option_selected' : ''}`}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  commitEntity(entity)
+                }}
+              >
+                {entity.name}
               </div>
             ))}
           </div>

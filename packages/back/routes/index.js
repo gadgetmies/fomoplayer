@@ -9,6 +9,9 @@ const logRouter = require('./log/index.js')
 const { queryGenres } = require('./db')
 const logger = require('fomoplayer_shared').logger(__filename)
 const { getEntityDetails, getEmbeddingImage } = require('./logic')
+const { queryEntityName, searchEntitiesByName } = require('./shared/db/entities')
+
+const ENTITY_TYPES = ['artist', 'label', 'release', 'track']
 
 router.use(bodyParser.json())
 
@@ -47,6 +50,18 @@ router.get('/artists/:id', async ({ params: { id } }, res) => {
 
 router.get('/labels/:id', async ({ params: { id } }, res) => {
   res.send(await getEntityDetails('label', id))
+})
+
+router.get('/releases/:id', async ({ params: { id } }, res) => {
+  const row = await queryEntityName('release', id)
+  if (!row) return res.status(404).send({})
+  res.send(row)
+})
+
+router.get('/entities/search', async ({ query: { type, q, limit } }, res) => {
+  if (!ENTITY_TYPES.includes(type)) return res.status(400).send({ error: 'Invalid type' })
+  const lim = Math.min(parseInt(limit, 10) || 10, 50)
+  res.send(await searchEntitiesByName(type, q, lim))
 })
 
 router.get('/genres', async (req, res) => {

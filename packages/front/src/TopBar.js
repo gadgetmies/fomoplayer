@@ -75,64 +75,13 @@ class TopBar extends Component {
     return this.props.notifications.filter(R.propEq(searchString?.toLocaleLowerCase(), 'text'))
   }
 
-  // Fetch display names for entity pills that were committed without one (e.g. typed
-  // manually as "artist:50" or restored from a URL that predates the names param).
-  async resolveEntityNames(committedTerms) {
-    const nameless = committedTerms.filter((t) => t.type !== 'text' && !t.name)
-    if (nameless.length === 0) return
-
-    const nameMap = {}
-
-    // Resolve genre names locally from the genres list
-    nameless
-      .filter((t) => t.type === 'genre')
-      .forEach((t) => {
-        const genre = (this.state.genres || []).find((g) => g.id === t.id)
-        if (genre) nameMap[t.value] = genre.name
-      })
-
-    // Resolve artist and label names via API
-    const resolved = await Promise.all(
-      nameless
-        .filter((t) => t.type === 'artist' || t.type === 'label' || t.type === 'track')
-        .map(async (term) => {
-          try {
-            if (term.type === 'track') {
-              const tracks = await requestJSONwithCredentials({
-                path: `/tracks/?q=${encodeURIComponent(`track:${term.id}`)}&limit=1&offset=0`,
-              })
-              const track = tracks?.[0]
-              if (!track) return null
-              const trackVersion = track.version ? ` (${track.version})` : ''
-              return { termValue: term.value, name: `${track.title}${trackVersion}` }
-            }
-            const data = await requestJSONwithCredentials({ path: `/${term.type}s/${term.id}` })
-            return data?.name ? { termValue: term.value, name: data.name } : null
-          } catch {
-            return null
-          }
-        }),
-    )
-    resolved.forEach((r) => r && (nameMap[r.termValue] = r.name))
-
-    if (Object.keys(nameMap).length === 0) return
-
-    this.setState((prev) => ({
-      committedTerms: prev.committedTerms.map((t) => (nameMap[t.value] ? { ...t, name: nameMap[t.value] } : t)),
-    }))
-  }
-
   componentDidMount() {
-    // Resolve names for any entity terms that were restored from the URL.
-    this.resolveEntityNames(this.state.committedTerms)
     requestJSONwithCredentials({ path: '/genres' })
-      .then((genres) => {
-        this.setState({ genres }, () => this.resolveEntityNames(this.state.committedTerms))
-      })
+      .then((genres) => this.setState({ genres }))
       .catch((e) => console.error('Failed to fetch genres', e))
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
     if (prevProps.searchTerms !== this.props.searchTerms) {
       // Only sync entity terms from props. Text terms must never flow back into
       // committedTerms from App state — that would promote in-progress typed text
@@ -144,14 +93,6 @@ class TopBar extends Component {
         const committedTextTerms = this.state.committedTerms.filter((t) => t.type === 'text')
         this.setState({ committedTerms: [...incomingEntityTerms, ...committedTextTerms] })
       }
-    }
-
-    // Resolve names for newly-added nameless entity pills.
-    if (prevState.committedTerms !== this.state.committedTerms) {
-      const prevNameless = prevState.committedTerms.filter((t) => t.type !== 'text' && !t.name)
-      const currNameless = this.state.committedTerms.filter((t) => t.type !== 'text' && !t.name)
-      const hasNew = currNameless.some((t) => !prevNameless.find((p) => p.value === t.value))
-      if (hasNew) this.resolveEntityNames(this.state.committedTerms)
     }
   }
 

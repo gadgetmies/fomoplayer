@@ -68,9 +68,11 @@ const parseFilterTerm = (type, value, raw) => {
         const idValue = value.slice(1)
         const id = parseInt(idValue, 10)
         if (!isNaN(id) && String(id) === idValue) return { type, value: raw, id, similar: true }
+        if (idValue) return { type, value: raw, name: idValue, similar: true }
       }
       const id = parseInt(value, 10)
       if (!isNaN(id) && String(id) === value) return { type, value: raw, id }
+      if (value && type !== 'genre') return { type, value: raw, name: value }
       break
     }
     case 'bpm': {
@@ -124,20 +126,28 @@ export const parseSearchTerms = (searchString) => {
   return terms
 }
 
+const ENTITY_TYPES_FOR_SERIALIZATION = ['artist', 'label', 'release', 'track', 'genre']
+
+const termToString = (term) => {
+  if (term.type === 'text') return /\s/.test(term.value) ? `"${term.value}"` : term.value
+  if (ENTITY_TYPES_FOR_SERIALIZATION.includes(term.type)) {
+    if (term.id !== undefined && term.id !== null) {
+      return term.type === 'track' && term.similar ? `${term.type}:~${term.id}` : `${term.type}:${term.id}`
+    }
+    if (term.name) {
+      const escaped = /\s/.test(term.name) ? `"${term.name}"` : term.name
+      return term.type === 'track' && term.similar ? `${term.type}:~${escaped}` : `${term.type}:${escaped}`
+    }
+  }
+  return term.value
+}
+
 export const searchTermsToString = (searchTerms, preserveTrailingSpace = false) => {
   if (!searchTerms || searchTerms.length === 0) {
     return ''
   }
 
-  const result = searchTerms
-    .map((term) => {
-      const value = term.value
-      if (term.type === 'text' && /\s/.test(value)) {
-        return `"${value}"`
-      }
-      return value
-    })
-    .join(' ')
+  const result = searchTerms.map(termToString).join(' ')
 
   return preserveTrailingSpace ? result : result.trim()
 }

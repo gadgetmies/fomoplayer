@@ -23,6 +23,13 @@ module.exports.searchForTracks = async (
 
   const queryString = originalQueryString.replace(/(\S+:\S+)\s*/g, '').trim()
 
+  const hasUnresolvedEntityFilter = fieldFilters.some(([key, value]) => {
+    if (!['artist', 'label', 'release', 'track', 'genre'].includes(key)) return false
+    const numericPart = value.startsWith('~') ? value.slice(1) : value
+    return !/^\d+$/.test(numericPart)
+  })
+  if (hasUnresolvedEntityFilter) return []
+
   const idFilters = fieldFilters.filter(
     ([key, value]) => ['artist', 'label', 'release', 'track'].includes(key) && /^\d+$/.test(value),
   )

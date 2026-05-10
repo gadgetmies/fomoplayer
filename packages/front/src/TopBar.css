@@ -10,6 +10,7 @@
 
 .menu_search {
   height: 100%;
+  min-width: 0;
 }
 
 .top_bar-item_margin {
