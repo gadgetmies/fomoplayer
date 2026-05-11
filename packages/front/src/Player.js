@@ -193,9 +193,11 @@ class Player extends Component {
 
   isCurrentInDefaultCart() {
     const currentTrack = this.props.currentTrack
-    return currentTrack && this.getDefaultCart()
-      ? this.getDefaultCart().tracks?.find(R.propEq(currentTrack.id, 'id'))
-      : null
+    const defaultCart = this.getDefaultCart()
+    if (!currentTrack || !defaultCart) return null
+    const liveRow = this.getTracks().find(R.propEq(currentTrack.id, 'id'))
+    const carts = (liveRow && liveRow.carts) || currentTrack.carts || []
+    return carts.some((c) => c && c.uuid === defaultCart.uuid) ? true : null
   }
 
   getDefaultCart() {
@@ -255,14 +257,16 @@ class Player extends Component {
     const tracks = this.getTracks()
     const currentTrack = this.props.currentTrack
     const hasSelectedTrack = Boolean(currentTrack && tracks.some(({ id }) => id === currentTrack.id))
+    const liveCurrentRow = currentTrack ? tracks.find(({ id }) => id === currentTrack.id) : null
+    const currentCarts = (liveCurrentRow && liveCurrentRow.carts) || (currentTrack && currentTrack.carts) || []
     const inCarts = currentTrack
-      ? this.props.carts.filter((cart) => cart.tracks?.find(R.propEq(currentTrack.id, 'id')))
+      ? this.props.carts.filter((cart) => currentCarts.some((c) => c && c.uuid === cart.uuid))
       : []
     const selectedCartId = this.props.selectedCart?.id
     const selectedCartIsPurchased = this.props.selectedCart?.is_purchased
     const defaultCart = this.props.carts.find(R.prop('is_default'))
     const inDefaultCart =
-      defaultCart && currentTrack ? defaultCart.tracks?.find(R.propEq(currentTrack.id, 'id')) !== undefined : false
+      !!(defaultCart && currentTrack && currentCarts.some((c) => c && c.uuid === defaultCart.uuid))
     const inCurrentCart = inCarts.find(({ id }) => id === selectedCartId)
 
     return (

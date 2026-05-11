@@ -7,7 +7,6 @@ const {
   updateCartProperties,
   insertTracksToCart,
   deleteTracksFromCart,
-  queryDefaultCartId,
   queryCartOwner,
   insertCartStoreDetails,
   deleteCartStoreDetails,
@@ -134,13 +133,8 @@ const verifyCartOwnership = async (userId, cartId) => {
 }
 
 module.exports.getCartDetails = async (userId, cartId, stores, tracksFilter) => {
-  let realCartId = cartId
-  if (cartId === 'default') {
-    realCartId = await queryDefaultCartId(userId)
-  } else {
-    await verifyCartOwnership(userId, realCartId)
-  }
-  return await queryCartDetails(realCartId, stores, tracksFilter)
+  await verifyCartOwnership(userId, cartId)
+  return await queryCartDetails(cartId, stores, tracksFilter)
 }
 
 module.exports.insertCartStoreDetails = insertCartStoreDetails

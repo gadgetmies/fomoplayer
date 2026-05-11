@@ -49,6 +49,8 @@ const {
   updateAllCartContents,
 } = require('../shared/cart.js')
 
+const { queryDefaultCartId } = require('../shared/db/cart.js')
+
 const { getTrackIdMappingForStoreUrl } = require('../shared/tracks.js')
 
 const typeIs = require('type-is')
@@ -348,10 +350,14 @@ router.get(
     user: { id: userId },
     params: { id: cartId },
     query: { offset: tracksOffset, limit: tracksLimit, store: stores },
-    res
-  }) => {
+  }, res) => {
+    let resolvedId = cartId
+    if (cartId === 'default') {
+      resolvedId = await queryDefaultCartId(userId)
+      if (!resolvedId) return res.status(404).send()
+    }
     res.send(
-      await getCartDetails(userId, cartId, stores, { offset: parseInt(tracksOffset), limit: parseInt(tracksLimit) }),
+      await getCartDetails(userId, resolvedId, stores, { offset: parseInt(tracksOffset), limit: parseInt(tracksLimit) }),
     )
   },
 )

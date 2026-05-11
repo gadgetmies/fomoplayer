@@ -45,6 +45,8 @@ library.add(fas, far, fab)
 const logoutPath = '/auth/logout'
 const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
+const CART_TRACKS_PAGE_SIZE = 20
+
 const buildLoginReturnPath = () => {
   const params = new URLSearchParams(window.location.search)
   params.delete('loginFailed')
@@ -56,6 +58,74 @@ const deduplicateTracks = (existingTracks, newTracks) => {
   const existingIds = new Set(existingTracks.map(track => track.id))
   const uniqueNewTracks = newTracks.filter(track => !existingIds.has(track.id))
   return [...existingTracks, ...uniqueNewTracks]
+}
+
+// Returns a new track row with `carts` patched: { uuid } appended (op === 'add')
+// or filtered out (op === 'remove'). Idempotent — adding an already-present
+// uuid is a no-op, removing an absent uuid is a no-op. Always returns a fresh
+// object so React state updates are observable; `carts` is always normalised
+// to an array (defaults to [] if absent or non-array on input).
+export const patchTrackCarts = (track, cartUuid, op) => {
+  if (!track || typeof track !== 'object') return track
+  const existing = Array.isArray(track.carts) ? track.carts : []
+  if (op === 'add') {
+    if (existing.some((c) => c && c.uuid === cartUuid)) return { ...track, carts: existing }
+    return { ...track, carts: existing.concat({ uuid: cartUuid }) }
+  }
+  if (op === 'remove') {
+    if (!existing.some((c) => c && c.uuid === cartUuid)) return { ...track, carts: existing }
+    return { ...track, carts: existing.filter((c) => !c || c.uuid !== cartUuid) }
+  }
+  return track
+}
+
+// Walks every track-row-bearing slice of state, applies patchTrackCarts to
+// rows whose id matches `trackId`, and returns the patched slices. Slices that
+// don't contain the affected track are returned unchanged (referentially
+// equal) so React reconciliation skips them.
+export const patchTrackCartMembership = (slices, trackId, cartUuid, op) => {
+  const patchArray = (arr) => {
+    if (!Array.isArray(arr)) return arr
+    let changed = false
+    const out = arr.map((t) => {
+      if (!t || t.id !== trackId) return t
+      const patched = patchTrackCarts(t, cartUuid, op)
+      if (patched !== t) changed = true
+      return patched
+    })
+    return changed ? out : arr
+  }
+  return {
+    new: patchArray(slices.new),
+    heard: patchArray(slices.heard),
+    recentlyAdded: patchArray(slices.recentlyAdded),
+    searchResults: patchArray(slices.searchResults),
+    selectedCartTracks: patchArray(slices.selectedCartTracks),
+  }
+}
+
+// Merges PATCH /carts/:id/tracks response onto an existing cart record without
+// replacing the in-memory `tracks` array wholesale. The PATCH response carries
+// the cart's first page; we keep the user's already-loaded tracks (which may
+// extend past the first page after infinite-scroll) and splice the single
+// added/removed row in place. Top-level metadata (name, store_details,
+// track_count, etc.) is taken from the PATCH response.
+export const mergeCartDetailsPreservingTracks = (existing, response, { addedTrackId, removedTrackId } = {}) => {
+  const existingTracks = (existing && existing.tracks) || []
+  let nextTracks = existingTracks
+  if (removedTrackId != null) {
+    const idx = existingTracks.findIndex((t) => t && t.id === removedTrackId)
+    if (idx !== -1) {
+      nextTracks = existingTracks.slice(0, idx).concat(existingTracks.slice(idx + 1))
+    }
+  } else if (addedTrackId != null) {
+    const responseTracks = (response && response.tracks) || []
+    const newRow = responseTracks.find((t) => t && t.id === addedTrackId)
+    if (newRow && !existingTracks.some((t) => t && t.id === addedTrackId)) {
+      nextTracks = [newRow].concat(existingTracks)
+    }
+  }
+  return { ...existing, ...response, tracks: nextTracks }
 }
 
 const Root = (props) => <div className="root" style={{ height: '100vh' }} {...props} />
@@ -137,6 +207,7 @@ class App extends Component {
       loadingMore: false,
       trackOffsets: { new: 0, heard: 0, recent: 0, search: 0 },
       pagination: null,
+      cartPagination: null,
       notHeardBefore: null,
     }
 
@@ -149,7 +220,7 @@ class App extends Component {
   }
 
   hasMoreTracks() {
-    const { listState, pagination, trackOffsets, searchResults } = this.state
+    const { listState, pagination, trackOffsets, searchResults, cartPagination } = this.state
     if (listState === 'search') {
       return searchResults.length % (this.state.searchFilters.limit || 100) === 0 && searchResults.length > 0
     } else if (['new', 'heard', 'recent'].includes(listState) && pagination) {
@@ -158,19 +229,52 @@ class App extends Component {
       if (categoryPagination) {
         return categoryPagination.offset + categoryPagination.count < categoryPagination.total
       }
+    } else if (listState === 'carts') {
+      return cartPagination ? cartPagination.offset + cartPagination.count < cartPagination.total : false
     }
     return true
   }
 
   async loadMoreTracks() {
-    const { listState, loadingMore } = this.state
-    if (loadingMore || !this.hasMoreTracks()) return
+    const { listState, loadingMore, cartPagination, selectedCartUuid, selectedCart } = this.state
+    if (!this.hasMoreTracks()) return
 
     if (listState === 'search') {
+      if (loadingMore) return
       await this.search(this.state.searchTerms, this.state.searchFilters, true)
     } else if (['new', 'heard', 'recent'].includes(listState)) {
+      if (loadingMore) return
       this.setState({ loadingMore: true })
       await this.updateTracks(true)
+    } else if (listState === 'carts') {
+      if (!cartPagination || cartPagination.loadingMore || !selectedCartUuid || !selectedCart) return
+      this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
+      const nextOffset = cartPagination.offset + cartPagination.count
+      const response = await requestJSONwithCredentials({
+        path: `/carts/${selectedCartUuid}?offset=${nextOffset}&limit=${CART_TRACKS_PAGE_SIZE}`,
+      })
+      const appendedTracks = response.tracks || []
+      const carts = this.state.carts.slice()
+      const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
+      if (cartIndex !== -1) {
+        const existingTracks = carts[cartIndex].tracks || []
+        carts[cartIndex] = {
+          ...carts[cartIndex],
+          tracks: existingTracks.concat(appendedTracks),
+          track_count: response.track_count != null ? response.track_count : carts[cartIndex].track_count,
+        }
+      }
+      const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
+      this.setState({
+        carts,
+        selectedCart: updatedSelectedCart,
+        cartPagination: {
+          offset: 0,
+          count: cartPagination.count + appendedTracks.length,
+          total: response.track_count != null ? response.track_count : cartPagination.total,
+          loadingMore: false,
+        },
+      })
     }
   }
 
@@ -178,7 +282,6 @@ class App extends Component {
     await Promise.all([
       this.updateTracks(),
       this.updateCarts(),
-      this.updateDefaultCart(),
       this.updateScoreWeights(),
       this.updateFollows(),
       this.updateNotifications(),
@@ -348,16 +451,6 @@ class App extends Component {
     })
   }
 
-  async updateDefaultCart() {
-    const defaultCart = await requestJSONwithCredentials({
-      path: `/me/carts/default`,
-    })
-    let updatedCarts = this.state.carts.slice()
-    const defaultCartIndex = updatedCarts.findIndex(({ is_default }) => is_default)
-    defaultCartIndex !== -1 ? (updatedCarts[defaultCartIndex] = defaultCart) : updatedCarts.push(defaultCart)
-    this.setState({ carts: updatedCarts })
-  }
-
   async updateScoreWeights() {
     const scoreWeights = await requestJSONwithCredentials({
       path: '/me/score-weights',
@@ -372,7 +465,7 @@ class App extends Component {
       body: [{ op: 'add', trackId }],
     })
 
-    this.updateCart(cartDetails)
+    this.applyCartMutation(cartDetails, { trackId, cartId, op: 'add' })
   }
 
   async removeFromCart(cartId, trackId) {
@@ -382,7 +475,70 @@ class App extends Component {
       body: [{ op: 'remove', trackId }],
     })
 
-    this.updateCart(cartDetails)
+    this.applyCartMutation(cartDetails, { trackId, cartId, op: 'remove' })
+  }
+
+  applyCartMutation(cartDetails, { trackId, cartId, op }) {
+    const trackSlices = this.state.tracksData.tracks
+    const cartUuid = cartDetails && cartDetails.uuid
+      ? cartDetails.uuid
+      : (this.state.carts.find((c) => c.id === cartId) || {}).uuid
+    const patched = patchTrackCartMembership(
+      {
+        new: trackSlices.new,
+        heard: trackSlices.heard,
+        recentlyAdded: trackSlices.recentlyAdded,
+        searchResults: this.state.searchResults,
+        selectedCartTracks: this.state.selectedCart && this.state.selectedCart.tracks,
+      },
+      trackId,
+      cartUuid,
+      op,
+    )
+
+    const cartIndex = this.state.carts.findIndex(R.propEq(cartDetails.id, 'id'))
+    const partialState = {}
+
+    if (cartIndex !== -1) {
+      const existingCart = this.state.carts[cartIndex]
+      const existingTracksForMerge =
+        this.state.selectedCart && this.state.selectedCart.id === cartDetails.id
+          ? patched.selectedCartTracks
+          : existingCart.tracks
+      const merged = mergeCartDetailsPreservingTracks(
+        { ...existingCart, tracks: existingTracksForMerge },
+        cartDetails,
+        {
+          addedTrackId: op === 'add' ? trackId : undefined,
+          removedTrackId: op === 'remove' ? trackId : undefined,
+        },
+      )
+      const clonedCarts = this.state.carts.slice()
+      clonedCarts[cartIndex] = merged
+      partialState.carts = clonedCarts
+      if (this.state.selectedCart && this.state.selectedCart.id === merged.id) {
+        partialState.selectedCart = merged
+        if (this.state.cartPagination) {
+          const total =
+            merged.track_count != null
+              ? merged.track_count
+              : this.state.cartPagination.total + (op === 'add' ? 1 : -1)
+          const count = merged.tracks ? merged.tracks.length : this.state.cartPagination.count
+          partialState.cartPagination = { ...this.state.cartPagination, total, count }
+        }
+      }
+    }
+
+    if (patched.new !== trackSlices.new || patched.heard !== trackSlices.heard || patched.recentlyAdded !== trackSlices.recentlyAdded) {
+      partialState.tracksData = {
+        ...this.state.tracksData,
+        tracks: { new: patched.new, heard: patched.heard, recentlyAdded: patched.recentlyAdded },
+      }
+    }
+    if (patched.heard !== trackSlices.heard) partialState.heardTracks = patched.heard
+    if (patched.searchResults !== this.state.searchResults) partialState.searchResults = patched.searchResults
+
+    if (Object.keys(partialState).length > 0) this.setState(partialState)
   }
 
   async onMarkPurchased(trackId) {
@@ -403,18 +559,6 @@ class App extends Component {
       console.error(`Marking track as purchased failed: ${e.toString()}`)
     }
     this.setState({ processingCart: false, processingTrack: null })
-  }
-
-  updateCart(cartDetails) {
-    const index = this.state.carts.findIndex(R.propEq(cartDetails.id, 'id'))
-    if (index === -1) return
-    const clonedCarts = this.state.carts.slice()
-    clonedCarts[index] = cartDetails
-    const selectedCart =
-      this.state.selectedCartUuid === cartDetails.uuid || this.state.selectedCart?.id === cartDetails.id
-        ? cartDetails
-        : this.state.selectedCart
-    this.setState({ carts: clonedCarts, selectedCart })
   }
 
   async updateFollows() {
@@ -830,10 +974,11 @@ class App extends Component {
   }
 
   async selectCart(selectedCartUuid, filter) {
-    this.setState({ selectedCartUuid, fetchingCartDetails: true })
-    const cartDetails = await requestJSONwithCredentials({
-      path: `/carts/${selectedCartUuid}${filter ? filter : ''}`,
-    })
+    this.setState({ selectedCartUuid, fetchingCartDetails: true, cartPagination: null })
+    const baseQuery = `offset=0&limit=${CART_TRACKS_PAGE_SIZE}`
+    const filterQuery = filter ? filter.replace(/^[?&]/, '') : ''
+    const path = `/carts/${selectedCartUuid}?${baseQuery}${filterQuery ? `&${filterQuery}` : ''}`
+    const cartDetails = await requestJSONwithCredentials({ path })
     let updatedCarts = this.state.carts.slice()
     let cartIndex = updatedCarts.findIndex(({ uuid }) => uuid === selectedCartUuid)
     if (cartIndex === -1) {
@@ -847,6 +992,12 @@ class App extends Component {
       carts: updatedCarts,
       selectedCart: updatedCarts[cartIndex],
       fetchingCartDetails: false,
+      cartPagination: {
+        offset: 0,
+        count: (cartDetails.tracks || []).length,
+        total: cartDetails.track_count || 0,
+        loadingMore: false,
+      },
     })
   }
 
@@ -1120,7 +1271,11 @@ class App extends Component {
                           tracks={this.state.tracksData.tracks}
                           markHeard={this.markHeard.bind(this)}
                           tracksOffset={this.state.tracksOffset}
-                          loadingMore={this.state.loadingMore}
+                          loadingMore={
+                            listState === 'carts'
+                              ? !!(this.state.cartPagination && this.state.cartPagination.loadingMore)
+                              : this.state.loadingMore
+                          }
                           hasMore={this.hasMoreTracks()}
                           onAddToCart={this.addToCart.bind(this)}
                           onClosePopups={this.closePopups.bind(this)}

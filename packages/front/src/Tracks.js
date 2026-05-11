@@ -132,6 +132,12 @@ class Tracks extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
+    const prevSelectedCartUuid = prevProps.selectedCart?.uuid
+    const nextSelectedCartUuid = this.props.selectedCart?.uuid
+    if (prevSelectedCartUuid !== nextSelectedCartUuid && this.props.listState === 'carts') {
+      this.handleTrackListFilterClear()
+    }
+
     if (
       prevProps.tracks !== this.props.tracks ||
       prevProps.listState !== this.props.listState ||
@@ -535,11 +541,13 @@ class Tracks extends Component {
               heard,
               stores,
               version,
+              carts: trackCartsRaw,
             } = track
+            const trackCarts = trackCartsRaw || []
 
             const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
             const storePreviews = previews.filter(({ store }) => storeSlugs.includes(store))
-            const inCarts = this.props.carts.filter((cart) => cart.tracks?.find(R.propEq(id, 'id')))
+            const inCarts = this.props.carts.filter((cart) => trackCarts.some((c) => c && c.uuid === cart.uuid))
             const selectedCartId = this.props.selectedCart?.id
             return (
               <Track
@@ -577,7 +585,7 @@ class Tracks extends Component {
                 enabledStores={this.props.enabledStores}
                 enabledStoreSearch={this.props.enabledStoreSearch}
                 selectedCart={this.props.selectedCart}
-                inDefaultCart={defaultCart ? defaultCart.tracks?.find(R.propEq(id, 'id')) !== undefined : false}
+                inDefaultCart={defaultCart ? trackCarts.some((c) => c && c.uuid === defaultCart.uuid) : false}
                 inCurrentCart={inCarts.find(({ id }) => id === selectedCartId) !== undefined}
                 inCarts={inCarts}
                 popupAbove={tracks.length > 10 && tracks.length - actualIndex < 10}

@@ -515,6 +515,18 @@ WITH
     WHERE
         cart_is_purchased
 )
+  , user_track_carts AS (
+    SELECT
+        track_id
+      , JSON_AGG(JSON_BUILD_OBJECT('uuid', cart_uuid)) AS carts
+    FROM
+        track__cart
+            NATURAL JOIN cart
+            NATURAL JOIN logged_user
+    WHERE
+        cart_deleted IS NULL
+    GROUP BY track_id
+)
   , user_tracks_meta AS (
     SELECT
         COUNT(*)                                          AS total
@@ -792,15 +804,17 @@ WITH
                , track_details->'remixers' AS remixers
                , track_details->'keys' AS keys
                , track_details->'genres' AS genres
-               , track_details->'previews' AS previews 
+               , track_details->'previews' AS previews
                , track_details->'stores' AS stores
                , cast(track_details->>'released' AS DATE) AS released
                , cast(track_details->>'published' AS DATE) AS published
                , track_details->'releases' AS releases
                , track_details->'source_details' AS source_details
+               , COALESCE(user_track_carts.carts, '[]'::JSON) AS carts
           FROM limited_tracks lt
                    NATURAL JOIN track_details
                    NATURAL LEFT JOIN heard_tracks
+                   NATURAL LEFT JOIN user_track_carts
       )
          , new_tracks_with_details AS (
           SELECT JSON_AGG(t) AS new_tracks

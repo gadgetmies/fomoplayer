@@ -174,12 +174,14 @@ module.exports.queryCartDetails = async (
        GROUP BY 1)
        , cart_tracks AS (SELECT DISTINCT ON (track__cart_added, track_id) track_id
                               , track_details
+                              , cart_id
+                              , track__cart_added
                          FROM
                            track__cart
                            NATURAL JOIN track_details
                            NATURAL JOIN store__track
                            NATURAL JOIN store
-                         WHERE cart_id = ${cartId} AND 
+                         WHERE cart_id = ${cartId} AND
                                (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))`
   if (tracksFilter?.since) {
     query.append(sql` AND track__cart_added > ${tracksFilter.since}::TIMESTAMPTZ`)
@@ -190,10 +192,18 @@ module.exports.queryCartDetails = async (
     sql`
   ORDER BY track__cart_added DESC
                          LIMIT ${limit} OFFSET ${offset})
+       , user_track_carts AS (
+                SELECT track_id, JSON_AGG(JSON_BUILD_OBJECT('uuid', cart_uuid)) AS carts
+                FROM track__cart
+                NATURAL JOIN cart
+                WHERE cart.meta_account_user_id = (SELECT meta_account_user_id FROM cart WHERE cart_id = ${cartId})
+                  AND cart_deleted IS NULL
+                GROUP BY track_id)
        , td AS (SELECT DISTINCT ON (track_id) td.*
                                             , user__track_heard AS heard
                                             , track_id          AS id
-                                            , cart_id
+                                            , track__cart_added
+                                            , COALESCE(user_track_carts.carts, '[]'::JSON) AS carts
                 FROM
                   cart_tracks
                   NATURAL JOIN JSON_TO_RECORD(track_details) AS td ( track_id INT, title TEXT, duration INT, added DATE
@@ -201,12 +211,9 @@ module.exports.queryCartDetails = async (
                                                                    , remixers JSON, releases JSON, keys JSON
                                                                    , genres JSON, previews JSON, stores JSON
                                                                    , released DATE, published DATE)
-                  NATURAL JOIN track__cart
-                  NATURAL LEFT JOIN user__track)
-       , tracks AS (SELECT JSON_AGG(td ORDER BY track__cart_added DESC) AS tracks
-                    FROM
-                      td
-                      NATURAL JOIN track__cart)
+                  NATURAL LEFT JOIN user__track
+                  NATURAL LEFT JOIN user_track_carts)
+       , tracks AS (SELECT JSON_AGG(td ORDER BY track__cart_added DESC) AS tracks FROM td)
     SELECT cart_id                                                                AS id
          , cart_name                                                              AS name
          , cart_is_default IS NOT NULL                                            AS is_default

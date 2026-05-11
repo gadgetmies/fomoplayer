@@ -196,7 +196,8 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
     query.append(sql`--searchForTracks
 SELECT track_id          AS id
      , td.*
-     , user__track_heard AS heard`)
+     , user__track_heard AS heard
+     , COALESCE(user_track_carts.carts, '[]'::JSON) AS carts`)
 
     if (similaritySearchTrackId) {
       query.append(sql`, similarity `)
@@ -211,8 +212,14 @@ FROM
                                            , source_details JSON)
        USING (track_id)
   NATURAL LEFT JOIN (
-    user__track NATURAL JOIN logged_user 
+    user__track NATURAL JOIN logged_user
   )
+  LEFT JOIN (
+    SELECT track_id, JSON_AGG(JSON_BUILD_OBJECT('uuid', cart_uuid)) AS carts
+    FROM track__cart NATURAL JOIN cart
+    WHERE cart.meta_account_user_id = ${userId} AND cart_deleted IS NULL
+    GROUP BY track_id
+  ) user_track_carts USING (track_id)
 `)
 
     if (similaritySearchTrackId) {
