@@ -1026,6 +1026,14 @@ class App extends Component {
     this.closePopups()
   }
 
+  async refreshList() {
+    if (this.state.listState === 'carts' && this.state.selectedCartUuid) {
+      await this.selectCart(this.state.selectedCartUuid)
+    } else {
+      await this.updateTracks()
+    }
+  }
+
   render() {
     const googleLoginPath = `${config.apiURL}/auth/login/google?returnPath=${encodeURIComponent(buildLoginReturnPath())}`
 
@@ -1286,7 +1294,7 @@ class App extends Component {
                           onSetCurrentTrack={this.setCurrentTrack.bind(this)}
                           onSetListState={this.setListState.bind(this)}
                           onUpdateCarts={this.updateCarts.bind(this)}
-                          onUpdateTracksClicked={this.updateTracks.bind(this)}
+                          onUpdateTracksClicked={this.refreshList.bind(this)}
                           onAddEntityToSearch={this.addEntityToSearch.bind(this)}
                           style={{ display: !settingsVisible ? 'flex' : 'none' }}
                         />

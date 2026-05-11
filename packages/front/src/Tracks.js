@@ -379,7 +379,7 @@ class Tracks extends Component {
   }
 
   isPullToRefreshAvailable() {
-    return ['new', 'recent', 'heard'].includes(this.props.listState) && !this.props.preview
+    return ['new', 'recent', 'heard', 'carts'].includes(this.props.listState) && !this.props.preview
   }
 
   handleTouchStart(event) {
