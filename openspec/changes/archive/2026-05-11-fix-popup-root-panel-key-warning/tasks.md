@@ -32,9 +32,9 @@
 
 ## 4. Land the change
 
-- [ ] 4.1 Commit the Root.jsx edit together with the OpenSpec change
+- [x] 4.1 Commit the Root.jsx edit together with the OpenSpec change
       and the backlog status move (per project commit policy: one
       commit per task, all related files together).
-- [ ] 4.2 Archive the OpenSpec change.
-- [ ] 4.3 Move the backlog symlink from `in-progress/` to `done/`
+- [x] 4.2 Archive the OpenSpec change.
+- [x] 4.3 Move the backlog symlink from `in-progress/` to `done/`
       (drop the ordering prefix).
