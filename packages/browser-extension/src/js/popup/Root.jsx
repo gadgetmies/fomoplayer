@@ -57,7 +57,7 @@ export default class Root extends React.Component {
     const resolvedAppUrl = stored.appUrl || DEFAULT_APP_URL
 
     const panels = [
-      { matcher: new RegExp(`^${resolvedAppUrl}`), component: MultiStorePlayerPanel },
+      { storeName: 'fomoplayer', matcher: new RegExp(`^${resolvedAppUrl}`), component: MultiStorePlayerPanel },
       { storeName: 'beatport', matcher: /^https:\/\/.*\.beatport\.com/, component: BeatportPanel },
       { storeName: 'bandcamp', matcher: /^https:\/\/.*\.?bandcamp\.com/, component: BandcampPanel },
     ]
@@ -121,7 +121,11 @@ export default class Root extends React.Component {
               <Status message={this.state.operationStatus} progress={this.state.operationProgress} />
             ) : null}
             {components.map((component) =>
-              React.createElement(component.component, { isCurrent: component === current, ...panelProps }),
+              React.createElement(component.component, {
+                key: component.storeName,
+                isCurrent: component === current,
+                ...panelProps,
+              }),
             )}
           </>
         )}
