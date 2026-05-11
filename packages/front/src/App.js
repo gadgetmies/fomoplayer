@@ -203,7 +203,6 @@ class App extends Component {
       selectedCartUuid: undefined,
       selectedCart: undefined,
       mode: undefined,
-      tracksOffset: 0,
       loadingMore: false,
       trackOffsets: { new: 0, heard: 0, recent: 0, search: 0 },
       pagination: null,
@@ -309,9 +308,8 @@ class App extends Component {
 
     if (isCartPath && pathParts.length > 1 && pathParts[1] !== '') {
       const cartUuid = pathParts[1]
-      const filter = location.search
       // TODO: this causes a race condition with the initial cart fetch causing only the selected cart to be visible in the UI
-      cartSelectPromise = this.selectCart(cartUuid, filter)
+      cartSelectPromise = this.selectCart(cartUuid)
 
       const initialPosition = parseInt(location.hash.substring(1)) || undefined
       sharedStates = { initialPosition }
@@ -413,11 +411,6 @@ class App extends Component {
       ) {
         nextState.selectedCartUuid = selectedCartUuid
         nextState.selectedCart = selectedCart
-        shouldSetState = true
-      }
-      const tracksOffset = parseInt(searchParams.get('offset') || 0)
-      if (tracksOffset !== this.state.tracksOffset) {
-        nextState.tracksOffset = tracksOffset
         shouldSetState = true
       }
     }
@@ -973,11 +966,9 @@ class App extends Component {
     })
   }
 
-  async selectCart(selectedCartUuid, filter) {
+  async selectCart(selectedCartUuid) {
     this.setState({ selectedCartUuid, fetchingCartDetails: true, cartPagination: null })
-    const baseQuery = `offset=0&limit=${CART_TRACKS_PAGE_SIZE}`
-    const filterQuery = filter ? filter.replace(/^[?&]/, '') : ''
-    const path = `/carts/${selectedCartUuid}?${baseQuery}${filterQuery ? `&${filterQuery}` : ''}`
+    const path = `/carts/${selectedCartUuid}?offset=0&limit=${CART_TRACKS_PAGE_SIZE}`
     const cartDetails = await requestJSONwithCredentials({ path })
     let updatedCarts = this.state.carts.slice()
     let cartIndex = updatedCarts.findIndex(({ uuid }) => uuid === selectedCartUuid)
@@ -1270,7 +1261,6 @@ class App extends Component {
                           totalTracks={this.state.tracksData.meta.totalTracks}
                           tracks={this.state.tracksData.tracks}
                           markHeard={this.markHeard.bind(this)}
-                          tracksOffset={this.state.tracksOffset}
                           loadingMore={
                             listState === 'carts'
                               ? !!(this.state.cartPagination && this.state.cartPagination.loadingMore)
