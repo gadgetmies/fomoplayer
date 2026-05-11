@@ -12,6 +12,7 @@
 // extensions page after each rebuild — there is no auto-reload here.
 
 const path = require('path')
+const { spawnSync } = require('child_process')
 const webpack = require('webpack')
 
 const SUPPORTED = ['chrome', 'firefox']
@@ -64,6 +65,17 @@ const prefixLines = (text, prefix) =>
     .map((line) => (line.length > 0 ? `${prefix}${line}` : line))
     .join('\n')
 
+const verifierPath = path.join(__dirname, 'verify-font-assets.js')
+
+const verifyFonts = (browser) => {
+  const result = spawnSync(process.execPath, [verifierPath, '--browser', browser], { encoding: 'utf8' })
+  const out = (result.stdout || '') + (result.stderr || '')
+  if (out) process.stdout.write(prefixLines(out.trimEnd(), `[${browser}] `) + '\n')
+  if (result.status !== 0) {
+    process.stdout.write(prefixLines('verify-font-assets failed — see message above', `[${browser}] `) + '\n')
+  }
+}
+
 const printStats = (stats) => {
   const children = stats.stats || [stats]
   for (const child of children) {
@@ -76,6 +88,7 @@ const printStats = (stats) => {
       errorDetails: true,
     })
     process.stdout.write(prefixLines(summary, `[${name}] `) + '\n')
+    if (!child.hasErrors() && SUPPORTED.includes(name)) verifyFonts(name)
   }
 }
 

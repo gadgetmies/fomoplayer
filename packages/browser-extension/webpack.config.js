@@ -80,9 +80,9 @@ const options = {
       },
       {
         test: new RegExp('.(' + fileExtensions.join('|') + ')$'),
-        loader: 'file-loader',
-        options: {
-          name: '[name].[ext]',
+        type: 'asset/resource',
+        generator: {
+          filename: '[name][ext]',
         },
       },
       {

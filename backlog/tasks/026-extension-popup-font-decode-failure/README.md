@@ -7,6 +7,33 @@ created: 2026-05-06
 
 # Browser-extension fonts fail to load with "Failed to decode downloaded font"
 
+## Diagnosis
+
+Confirmed cause: the webpack 5 asset-modules vs `file-loader`
+double-pipeline conflict (failure mode #4 in the original notes
+below). `file-loader` was registered for the font extensions and
+emitted the binary correctly as `lato-latin-*.woff2`, while
+css-loader's `url()` resolution went through webpack's built-in
+asset modules and emitted a JavaScript shim (`export default _…`,
+64 bytes) under a content-hashed name (e.g.
+`45390e2f480aa2e30c0b.woff2`). The CSS referenced the hashed
+name, so Chrome received JS bytes when it expected a woff2 and
+the decode failed. Verified with `xxd` on the original build
+directory.
+
+## Fix
+
+Implemented in OpenSpec change `fix-extension-popup-font-decode`.
+The single change in `webpack.config.js` replaces the `file-loader`
+rule for `fileExtensions` with webpack 5's built-in
+`type: 'asset/resource'` (and `generator.filename: '[name][ext]'`
+to preserve the named-file convention). A new
+`utils/verify-font-assets.js` runs after each build (and watch
+rebuild) and fails fast if any emitted woff/woff2 lacks the
+expected magic bytes, so the regression cannot return silently.
+`web_accessible_resources` did not need any change — popup and
+options pages load fonts same-origin.
+
 ## Why
 
 The Chrome extension's popup / options pages report:
