@@ -6,7 +6,7 @@ import SpinnerButton from './SpinnerButton'
 import './Select.css'
 import Track from './Track'
 import Spinner from './Spinner'
-import { Link, withRouter } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import ToggleButton from './ToggleButton'
 import GlobalSearchBar from './GlobalSearchBar'
 import Popup from './Popup'
@@ -426,17 +426,6 @@ class Tracks extends Component {
     parent.scrollBy({ top: currentRect.y - parentRect.y, behavior: 'smooth' })
   }
 
-  adjustOffset(offset) {
-    const { history } = this.props
-    const {
-      location: { pathname },
-    } = history
-    const updatedOffset = this.props.tracksOffset + offset
-    const filter = `?offset=${updatedOffset}`
-    history.push(pathname + filter)
-    this.props.onSelectCart(this.props.selectedCart.uuid, filter)
-  }
-
   onCartFilterChange(filter) {
     this.setState({ cartFilter: filter })
   }
@@ -708,8 +697,6 @@ class Tracks extends Component {
         <th>{tracks.length} results</th>
       ) : null
 
-    const multiplePages = this.props.selectedCart?.track_count > 200
-
     return (
       <div
         style={{
@@ -750,11 +737,6 @@ class Tracks extends Component {
                       />
                       <span className={'cart-details'}>
                         Tracks in cart: {this.props.selectedCart?.track_count}
-                        {multiplePages &&
-                          ` (showing ${this.props.tracksOffset + 1} - ${Math.min(
-                            this.props.tracksOffset + tracks.length,
-                            this.props.selectedCart?.track_count,
-                          )})`}
                       </span>
                     </>
                   ) : (
@@ -987,28 +969,6 @@ class Tracks extends Component {
               </td>
             </tr>
           </tbody>
-          {!this.props.preview && this.props.listState === 'carts' && multiplePages && (
-            <tfoot>
-              <tr style={{ display: 'flex', justifyContent: 'center', background: 'rgb(34, 34, 34)' }}>
-                <td style={{ display: 'flex', gap: 16, margin: 4 }}>
-                  <SpinnerButton
-                    size={isMobile ? 'small' : 'large'}
-                    loading={this.state.updatingTracks}
-                    disabled={this.props.tracksOffset === 0}
-                    onClick={this.adjustOffset.bind(this, -200)}
-                    label={'Previous page'}
-                  />
-                  <SpinnerButton
-                    size={isMobile ? 'small' : 'large'}
-                    loading={this.state.updatingTracks}
-                    disabled={tracks.length < 200}
-                    onClick={this.adjustOffset.bind(this, 200)}
-                    label={'Next page'}
-                  />
-                </td>
-              </tr>
-            </tfoot>
-          )}
           {!this.props.preview &&
             this.state.showDesktopRefresh &&
             ['new', 'recent', 'heard'].includes(this.props.listState) && (
@@ -1033,4 +993,4 @@ class Tracks extends Component {
   }
 }
 
-export default withRouter(Tracks)
+export default Tracks
