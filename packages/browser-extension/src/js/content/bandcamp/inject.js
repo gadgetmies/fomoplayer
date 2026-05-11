@@ -6,6 +6,7 @@ import { readTralbumData, releaseWithSingleTrack, fetchReleaseTralbum } from './
 import { renderCartButton } from './cart-button'
 import { SPINNER_CSS, spinnerHTML } from './spinner'
 import { incrementPendingAdds, decrementPendingAdds } from './pending-adds'
+import { paintHeardIndicators } from './heard-indicator'
 import { colors } from 'fomoplayer_shared/theme'
 
 // Marker attribute used to skip re-injection when the MutationObserver
@@ -145,7 +146,8 @@ const buttonContainer = () => {
 
 const injectReleaseLevelButtons = async () => {
   const release = await readTralbumData()
-  if (!release || !Array.isArray(release.trackinfo)) return null
+  if (!release || !Array.isArray(release.trackinfo)) return { release: null, newRowsByBandcampId: new Map() }
+  const newRowsByBandcampId = new Map()
 
   const titleSection = document.querySelector('#name-section') || document.querySelector('h2.trackTitle')
   if (titleSection && !titleSection.querySelector(`[${INJECTED_ATTR}]`)) {
@@ -215,10 +217,11 @@ const injectReleaseLevelButtons = async () => {
     } else {
       trackTitleCell.appendChild(wrap)
     }
+    newRowsByBandcampId.set(String(trackId), wrap)
     void playButton
   })
 
-  return release
+  return { release, newRowsByBandcampId }
 }
 
 const extractTrackIdFromRow = (row, release) => {
@@ -363,20 +366,35 @@ const injectFeedButtons = () => {
 
 let observer
 let scheduled = false
+const seenHeardLookupIds = new Set()
 const reinjectSoon = () => {
   if (scheduled) return
   scheduled = true
   setTimeout(async () => {
     scheduled = false
     try {
+      let newRowsByBandcampId = new Map()
       if (onReleasePage()) {
-        await injectReleaseLevelButtons()
+        const result = await injectReleaseLevelButtons()
+        if (result?.newRowsByBandcampId) newRowsByBandcampId = result.newRowsByBandcampId
       }
       if (onDiscographyPage()) {
         injectDiscographyButtons()
       }
       if (onFeedPage()) {
         injectFeedButtons()
+      }
+      const unseenEntries = [...newRowsByBandcampId.entries()].filter(
+        ([id]) => !seenHeardLookupIds.has(id),
+      )
+      if (unseenEntries.length > 0) {
+        const containers = new Map(unseenEntries)
+        const idsToLookup = unseenEntries.map(([id]) => id)
+        for (const id of idsToLookup) seenHeardLookupIds.add(id)
+        const response = await sendToWorker({ type: 'bandcamp:heard-lookup', ids: idsToLookup })
+        if (response && response.ok && response.lookup) {
+          paintHeardIndicators(containers, response.lookup)
+        }
       }
     } catch (e) {
       console.warn('Fomo Player bandcamp inject failed', e)

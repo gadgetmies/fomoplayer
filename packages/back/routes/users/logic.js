@@ -41,6 +41,7 @@ const {
   deleteArtistIgnoreFromUser,
   setAllHeard,
   setTrackHeard,
+  queryHeardStatusForStoreIds,
   setFollowStarred,
   queryUserScoreWeights,
   updateUserScoreWeights,
@@ -91,6 +92,7 @@ module.exports.getTracksM3u = (userId) =>
 
 module.exports.setTrackHeard = setTrackHeard
 module.exports.setAllHeard = setAllHeard
+module.exports.getHeardStatusForStoreIds = queryHeardStatusForStoreIds
 
 module.exports.addArtistOnLabelToIgnore = addArtistOnLabelToIgnore
 module.exports.artistOnLabelInIgnore = artistOnLabelInIgnore

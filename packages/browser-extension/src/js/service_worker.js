@@ -561,6 +561,22 @@ const handleMessage = async (message) => {
     await reportTrackHeard(message.track)
     return { ok: true }
   }
+  if (message.type === 'bandcamp:heard-lookup') {
+    const ids = Array.isArray(message.ids) ? message.ids.map(String) : []
+    if (ids.length === 0) return { ok: true, lookup: {} }
+    try {
+      const result = await apiFetch('/api/me/tracks/heard-lookup', {
+        method: 'POST',
+        body: { store: 'bandcamp', ids },
+      })
+      return { ok: true, lookup: result?.lookup || {} }
+    } catch (e) {
+      if (/Not authenticated/.test(e?.message || '')) {
+        return { ok: true, lookup: {} }
+      }
+      return { ok: false, error: e?.message || 'Heard lookup failed' }
+    }
+  }
   if (message.type === 'bandcamp:get-carts') {
     const carts = await getUserCarts()
     const releases = message.releases || []

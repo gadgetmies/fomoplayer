@@ -23,6 +23,7 @@ const {
   removePlaylistFollowFromUser,
   setAllHeard,
   setTrackHeard,
+  getHeardStatusForStoreIds,
   addArtistFollows,
   addLabelFollows,
   addPlaylistFollows,
@@ -61,6 +62,7 @@ const os = require('os')
 const uuid = require('uuid').v4
 
 const { storeName: spotifyStoreName } = require('../shared/spotify')
+const { storeUrl: bandcampStoreUrl } = require('../stores/bandcamp/logic')
 const { enableCartSync, removeCartSync, importPlaylistAsCart } = require('../shared/cart')
 const { getMinioClient, getBucketName, getStorageUrl } = require('../shared/minio')
 const {
@@ -143,6 +145,19 @@ router.get(
 router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
   getTracksM3u(userId).tap((m3u) => res.send(m3u)),
 )
+
+router.post('/tracks/heard-lookup', async ({ user: { id: userId }, body }, res) => {
+  const store = body?.store
+  const ids = body?.ids
+  if (store !== 'bandcamp') {
+    return res.status(400).json({ error: "Unsupported store; expected 'bandcamp'" })
+  }
+  if (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string')) {
+    return res.status(400).json({ error: 'ids must be an array of strings' })
+  }
+  const lookup = await getHeardStatusForStoreIds(userId, bandcampStoreUrl, ids)
+  res.json({ lookup })
+})
 
 router.post('/tracks/:id', async ({ user: { id: userId }, params: { id }, body: { heard } }, res) => {
   const result = await setTrackHeard(id, userId, heard)

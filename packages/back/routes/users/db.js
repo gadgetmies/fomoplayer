@@ -1038,6 +1038,34 @@ UPDATE user__track SET user__track_heard = NULL
 WHERE meta_account_user_id = ${userId} AND user__track_heard >= ${since}
 `)
 
+module.exports.queryHeardStatusForStoreIds = async (userId, storeUrl, storeTrackIds) => {
+  const result = Object.fromEntries(storeTrackIds.map((id) => [String(id), null]))
+  if (storeTrackIds.length === 0) return result
+  const ids = storeTrackIds.map(String)
+  const rows = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryHeardStatusForStoreIds
+SELECT store__track.store__track_store_id AS store_track_id
+     , track.track_id AS track_id
+     , user__track.user__track_heard AS heard
+FROM store
+       NATURAL JOIN store__track
+       NATURAL JOIN track
+       JOIN user__track ON user__track.track_id = track.track_id
+WHERE store.store_url = ${storeUrl}
+  AND store__track.store__track_store_id = ANY (${ids})
+  AND user__track.meta_account_user_id = ${userId}
+`,
+  )
+  for (const row of rows) {
+    result[row.store_track_id] = {
+      trackId: Number(row.track_id),
+      heard: row.heard ? row.heard.toISOString() : null,
+    }
+  }
+  return result
+}
+
 module.exports.addTrackToUser = async (tx, userId, trackId, sourceId) => {
   await tx.queryAsync(
     // language=PostgreSQL

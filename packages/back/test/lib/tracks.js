@@ -4,6 +4,7 @@ const { pg } = require('./db')
 const { insertSource } = require('../../jobs/watches/shared/db')
 const { storeUrl: beatportUrl } = require('../../routes/stores/beatport/logic.js')
 const { storeUrl: spotifyUrl } = require('../../routes/stores/spotify/logic.js')
+const { storeUrl: bandcampUrl } = require('../../routes/stores/bandcamp/logic.js')
 const { addStoreTracksToUsers } = require('../../routes/shared/tracks.js')
 const { queryArtistsForTracks, removeArtists } = require('./artists.js')
 const { queryReleasesForTracks, removeReleases } = require('./releases')
@@ -55,6 +56,16 @@ const removeTracks = (module.exports.removeTracks = async (trackIds) =>
 DELETE from track WHERE track_id = ANY(${trackIds})
 `,
   ))
+
+module.exports.addBandcampTracks = async (tracks, userIds, { skipOld = false, type = 'new' } = {}) => {
+  const sourceId = await insertSource({
+    operation: 'tracksHandlerTest',
+    type,
+    storeUrl: bandcampUrl,
+  })
+  const addedTracks = await addStoreTracksToUsers(bandcampUrl, tracks, userIds, sourceId, skipOld, type)
+  return { sourceId, addedTracks }
+}
 
 module.exports.addNewSpotifyTracksToDb = async (tracks, skipOld = false, userIds) => {
   const sourceId = await insertSource({

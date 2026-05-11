@@ -1,5 +1,6 @@
 {
-  "dev": {
+  "defaultEnv": "explicit-env-required",
+  "development": {
     "driver": "pg",
     "host": "localhost",
     "database": "multi-store-player"

@@ -8,6 +8,7 @@
 // bundle but `audio` resolves to null and we no-op; the worker delegates to
 // an offscreen document loaded with this same bundle that has a real DOM.
 import browser from './browser'
+import { attachHeardReporting } from './heard-reporting'
 
 const STATE_KEY = 'bandcampAudioState'
 
@@ -242,19 +243,12 @@ const clearQueue = async () => {
   await persist()
 }
 
-const reportHeard = (track) => {
-  browser.runtime
-    .sendMessage({ type: 'bandcamp:report-heard', track })
-    .catch(() => {})
-}
-
 if (audio) {
+  attachHeardReporting(audio, currentTrack, (msg) => browser.runtime.sendMessage(msg))
   audio.addEventListener('play', () => {
     state.playing = true
     state.loading = false
     broadcast()
-    const track = currentTrack()
-    if (track) reportHeard(track)
   })
   audio.addEventListener('pause', () => {
     state.playing = false
