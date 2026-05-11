@@ -2,12 +2,7 @@
 
 ### Requirement: Status indicator markup SHALL be valid HTML
 
-The popup `Status` component (`packages/browser-extension/src/js/popup/Status.jsx`)
-SHALL render its children (heading, message text, progress bar) inside a
-block-level container that accepts block-level descendants. The wrapper
-element MUST NOT be a `<p>` (or any other phrasing-content-only element),
-so the HTML parser does not auto-close it on encountering the inner
-`<h2>` and React does not emit a `validateDOMNesting` warning.
+The popup `Status` component (`packages/browser-extension/src/js/popup/Status.jsx`) SHALL render its children (heading, message text, progress bar) inside a block-level container that accepts block-level descendants. The wrapper element MUST NOT be a `<p>` (or any other phrasing-content-only element), so the HTML parser does not auto-close it on encountering the inner `<h2>` and React does not emit a `validateDOMNesting` warning.
 
 #### Scenario: Mounting Status produces no validateDOMNesting warning
 
@@ -30,11 +25,7 @@ so the HTML parser does not auto-close it on encountering the inner
 
 ### Requirement: Status indicator visual layout SHALL be preserved
 
-Replacing the `Status` wrapper element MUST NOT change the visible
-layout of the indicator: the heading, message line, and progress bar
-MUST occupy the same vertical positions and carry the same vertical
-spacing they did before the fix, so users perceive no shift when the
-indicator mounts.
+Replacing the `Status` wrapper element MUST NOT change the visible layout of the indicator: the heading, message line, and progress bar MUST occupy the same vertical positions and carry the same vertical spacing they did before the fix, so users perceive no shift when the indicator mounts.
 
 #### Scenario: No visual regression on Bandcamp Feed sync
 
