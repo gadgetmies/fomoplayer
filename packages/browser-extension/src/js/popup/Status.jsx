@@ -9,17 +9,16 @@ export default class Status extends React.Component {
 
   render() {
     return (
-      <p>
+      <div>
         <h2>Processing</h2>
         {this.props.message}
-        <br />
         <Progress
           percent={this.props.progress}
           barColor={colors.brandPrimary}
           bgColor="#222"
           style={{ margin: '0.5rem 0' }}
         />
-      </p>
+      </div>
     )
   }
 }
