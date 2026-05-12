@@ -7,6 +7,7 @@
 import browser from '../browser'
 import { installPlayerUi, setVisible } from './bandcamp/player-ui'
 import { installInjections, removeInjections } from './bandcamp/inject'
+import { install as installHideNativePlay } from './bandcamp/hide-native-play'
 import { collectWishlistReleases, isOnWishlist } from './bandcamp/wishlist'
 
 const reportError = (message, error) =>
@@ -86,6 +87,7 @@ const refreshAuthVisibility = async () => {
 }
 
 ;(async () => {
+  installHideNativePlay().catch((e) => reportError('Bandcamp hide-native-play install failed', e))
   await refreshAuthVisibility()
   // Re-check when the worker reports a login or when storage tokens change.
   browser.runtime.onMessage.addListener((message) => {

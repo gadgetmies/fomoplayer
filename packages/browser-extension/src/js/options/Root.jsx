@@ -4,21 +4,31 @@ import browser from '../browser'
 export default class Root extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { enabledStores: {} }
+    this.state = { enabledStores: {}, hideBandcampNativePlay: true }
 
-    browser.storage.local.get(['appUrl', 'enabledStores']).then(({ appUrl, enabledStores }) => {
-      const resolvedAppUrl = appUrl || DEFAULT_APP_URL
-      this.setState({
-        appUrl: resolvedAppUrl,
-        storedAppUrl: resolvedAppUrl,
-        enabledStores: enabledStores || { beatport: true, bandcamp: true },
+    browser.storage.local
+      .get(['appUrl', 'enabledStores', 'hideBandcampNativePlay'])
+      .then(({ appUrl, enabledStores, hideBandcampNativePlay }) => {
+        const resolvedAppUrl = appUrl || DEFAULT_APP_URL
+        this.setState({
+          appUrl: resolvedAppUrl,
+          storedAppUrl: resolvedAppUrl,
+          enabledStores: enabledStores || { beatport: true, bandcamp: true },
+          hideBandcampNativePlay: hideBandcampNativePlay === undefined ? true : !!hideBandcampNativePlay,
+        })
       })
-    })
 
     this.toggleStore = this.toggleStore.bind(this)
+    this.toggleHideBandcampNativePlay = this.toggleHideBandcampNativePlay.bind(this)
     this.restoreAppUrl = this.restoreAppUrl.bind(this)
     this.saveAppUrl = this.saveAppUrl.bind(this)
     this.updateAppUrl = this.updateAppUrl.bind(this)
+  }
+
+  toggleHideBandcampNativePlay(e) {
+    const hideBandcampNativePlay = !!e.target.checked
+    this.setState({ hideBandcampNativePlay })
+    browser.storage.local.set({ hideBandcampNativePlay })
   }
 
   restoreAppUrl() {
@@ -81,6 +91,20 @@ export default class Root extends React.Component {
             />
             <label htmlFor="beatport-checkbox" className="noselect">
               <span>Beatport</span>
+            </label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Bandcamp</legend>
+          <div className="checkbox">
+            <input
+              id="hide-bandcamp-native-play-checkbox"
+              type="checkbox"
+              onChange={this.toggleHideBandcampNativePlay}
+              checked={this.state.hideBandcampNativePlay}
+            />
+            <label htmlFor="hide-bandcamp-native-play-checkbox" className="noselect">
+              <span>Hide Bandcamp's native play button</span>
             </label>
           </div>
         </fieldset>
