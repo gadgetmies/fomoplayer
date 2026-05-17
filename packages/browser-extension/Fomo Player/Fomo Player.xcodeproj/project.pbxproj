@@ -1,0 +1,1161 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		6A1B9F282FBA15B4003C9725 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1B9F272FBA15B4003C9725 /* AppDelegate.swift */; };
+		6A1B9F2A2FBA15B4003C9725 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1B9F292FBA15B4003C9725 /* SceneDelegate.swift */; };
+		6A1B9F2D2FBA15B4003C9725 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F2B2FBA15B4003C9725 /* LaunchScreen.storyboard */; };
+		6A1B9F302FBA15B4003C9725 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F2E2FBA15B4003C9725 /* Main.storyboard */; };
+		6A1B9F392FBA15B4003C9725 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1B9F382FBA15B4003C9725 /* AppDelegate.swift */; };
+		6A1B9F3C2FBA15B4003C9725 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F3A2FBA15B4003C9725 /* Main.storyboard */; };
+		6A1B9F432FBA15B4003C9725 /* Fomo Player Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6A1B9F422FBA15B4003C9725 /* Fomo Player Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		6A1B9F4D2FBA15B4003C9725 /* Fomo Player Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6A1B9F4C2FBA15B4003C9725 /* Fomo Player Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		6A1B9F522FBA15B4003C9725 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F172FBA15B3003C9725 /* Main.html */; };
+		6A1B9F532FBA15B4003C9725 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F172FBA15B3003C9725 /* Main.html */; };
+		6A1B9F542FBA15B4003C9725 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F192FBA15B3003C9725 /* Icon.png */; };
+		6A1B9F552FBA15B4003C9725 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F192FBA15B3003C9725 /* Icon.png */; };
+		6A1B9F562FBA15B4003C9725 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F1A2FBA15B3003C9725 /* Style.css */; };
+		6A1B9F572FBA15B4003C9725 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F1A2FBA15B3003C9725 /* Style.css */; };
+		6A1B9F582FBA15B4003C9725 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F1B2FBA15B3003C9725 /* Script.js */; };
+		6A1B9F592FBA15B4003C9725 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F1B2FBA15B3003C9725 /* Script.js */; };
+		6A1B9F5A2FBA15B4003C9725 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1B9F1C2FBA15B3003C9725 /* ViewController.swift */; };
+		6A1B9F5B2FBA15B4003C9725 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1B9F1C2FBA15B3003C9725 /* ViewController.swift */; };
+		6A1B9F5C2FBA15B4003C9725 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F1D2FBA15B4003C9725 /* Assets.xcassets */; };
+		6A1B9F5D2FBA15B4003C9725 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F1D2FBA15B4003C9725 /* Assets.xcassets */; };
+		6A1B9F5E2FBA15B4003C9725 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1B9F1F2FBA15B4003C9725 /* SafariWebExtensionHandler.swift */; };
+		6A1B9F5F2FBA15B4003C9725 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1B9F1F2FBA15B4003C9725 /* SafariWebExtensionHandler.swift */; };
+		6A1B9F932FBA15B4003C9725 /* lato-latin-100italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F712FBA15B4003C9725 /* lato-latin-100italic.woff */; };
+		6A1B9F942FBA15B4003C9725 /* lato-latin-900.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F722FBA15B4003C9725 /* lato-latin-900.woff */; };
+		6A1B9F952FBA15B4003C9725 /* lato-latin-400.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F732FBA15B4003C9725 /* lato-latin-400.woff2 */; };
+		6A1B9F962FBA15B4003C9725 /* lato-latin-700italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F742FBA15B4003C9725 /* lato-latin-700italic.woff */; };
+		6A1B9F972FBA15B4003C9725 /* lato-latin-700.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F752FBA15B4003C9725 /* lato-latin-700.woff */; };
+		6A1B9F982FBA15B4003C9725 /* content-beatport.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F762FBA15B4003C9725 /* content-beatport.bundle.js */; };
+		6A1B9F992FBA15B4003C9725 /* audio-player.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F772FBA15B4003C9725 /* audio-player.bundle.js */; };
+		6A1B9F9A2FBA15B4003C9725 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F782FBA15B4003C9725 /* popup.html */; };
+		6A1B9F9B2FBA15B4003C9725 /* auth-callback.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F792FBA15B4003C9725 /* auth-callback.bundle.js */; };
+		6A1B9F9C2FBA15B4003C9725 /* lato-latin-300.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7A2FBA15B4003C9725 /* lato-latin-300.woff */; };
+		6A1B9F9D2FBA15B4003C9725 /* background.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7B2FBA15B4003C9725 /* background.bundle.js */; };
+		6A1B9F9E2FBA15B4003C9725 /* lato-latin-700.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7C2FBA15B4003C9725 /* lato-latin-700.woff2 */; };
+		6A1B9F9F2FBA15B4003C9725 /* popup.bundle.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7D2FBA15B4003C9725 /* popup.bundle.js.LICENSE.txt */; };
+		6A1B9FA02FBA15B4003C9725 /* lato-latin-100.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7E2FBA15B4003C9725 /* lato-latin-100.woff */; };
+		6A1B9FA12FBA15B4003C9725 /* lato-latin-100italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7F2FBA15B4003C9725 /* lato-latin-100italic.woff2 */; };
+		6A1B9FA22FBA15B4003C9725 /* auth-callback.html in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F802FBA15B4003C9725 /* auth-callback.html */; };
+		6A1B9FA32FBA15B4003C9725 /* lato-latin-300.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F812FBA15B4003C9725 /* lato-latin-300.woff2 */; };
+		6A1B9FA42FBA15B4003C9725 /* lato-latin-400.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F822FBA15B4003C9725 /* lato-latin-400.woff */; };
+		6A1B9FA52FBA15B4003C9725 /* lato-latin-900italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F832FBA15B4003C9725 /* lato-latin-900italic.woff */; };
+		6A1B9FA62FBA15B4003C9725 /* lato-latin-400italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F842FBA15B4003C9725 /* lato-latin-400italic.woff2 */; };
+		6A1B9FA72FBA15B4003C9725 /* audio-player.html in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F852FBA15B4003C9725 /* audio-player.html */; };
+		6A1B9FA82FBA15B4003C9725 /* lato-latin-300italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F862FBA15B4003C9725 /* lato-latin-300italic.woff2 */; };
+		6A1B9FA92FBA15B4003C9725 /* options.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F872FBA15B4003C9725 /* options.bundle.js */; };
+		6A1B9FAA2FBA15B4003C9725 /* options.bundle.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F882FBA15B4003C9725 /* options.bundle.js.LICENSE.txt */; };
+		6A1B9FAB2FBA15B4003C9725 /* lato-latin-700italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F892FBA15B4003C9725 /* lato-latin-700italic.woff2 */; };
+		6A1B9FAC2FBA15B4003C9725 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8A2FBA15B4003C9725 /* manifest.json */; };
+		6A1B9FAD2FBA15B4003C9725 /* options.html in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8B2FBA15B4003C9725 /* options.html */; };
+		6A1B9FAE2FBA15B4003C9725 /* lato-latin-900.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8C2FBA15B4003C9725 /* lato-latin-900.woff2 */; };
+		6A1B9FAF2FBA15B4003C9725 /* lato-latin-900italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8D2FBA15B4003C9725 /* lato-latin-900italic.woff2 */; };
+		6A1B9FB02FBA15B4003C9725 /* lato-latin-100.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8E2FBA15B4003C9725 /* lato-latin-100.woff2 */; };
+		6A1B9FB12FBA15B4003C9725 /* content-bandcamp.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8F2FBA15B4003C9725 /* content-bandcamp.bundle.js */; };
+		6A1B9FB22FBA15B4003C9725 /* lato-latin-400italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F902FBA15B4003C9725 /* lato-latin-400italic.woff */; };
+		6A1B9FB32FBA15B4003C9725 /* lato-latin-300italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F912FBA15B4003C9725 /* lato-latin-300italic.woff */; };
+		6A1B9FB42FBA15B4003C9725 /* popup.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F922FBA15B4003C9725 /* popup.bundle.js */; };
+		6A1B9FB52FBA15B4003C9725 /* lato-latin-100italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F712FBA15B4003C9725 /* lato-latin-100italic.woff */; };
+		6A1B9FB62FBA15B4003C9725 /* lato-latin-900.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F722FBA15B4003C9725 /* lato-latin-900.woff */; };
+		6A1B9FB72FBA15B4003C9725 /* lato-latin-400.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F732FBA15B4003C9725 /* lato-latin-400.woff2 */; };
+		6A1B9FB82FBA15B4003C9725 /* lato-latin-700italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F742FBA15B4003C9725 /* lato-latin-700italic.woff */; };
+		6A1B9FB92FBA15B4003C9725 /* lato-latin-700.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F752FBA15B4003C9725 /* lato-latin-700.woff */; };
+		6A1B9FBA2FBA15B4003C9725 /* content-beatport.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F762FBA15B4003C9725 /* content-beatport.bundle.js */; };
+		6A1B9FBB2FBA15B4003C9725 /* audio-player.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F772FBA15B4003C9725 /* audio-player.bundle.js */; };
+		6A1B9FBC2FBA15B4003C9725 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F782FBA15B4003C9725 /* popup.html */; };
+		6A1B9FBD2FBA15B4003C9725 /* auth-callback.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F792FBA15B4003C9725 /* auth-callback.bundle.js */; };
+		6A1B9FBE2FBA15B4003C9725 /* lato-latin-300.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7A2FBA15B4003C9725 /* lato-latin-300.woff */; };
+		6A1B9FBF2FBA15B4003C9725 /* background.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7B2FBA15B4003C9725 /* background.bundle.js */; };
+		6A1B9FC02FBA15B4003C9725 /* lato-latin-700.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7C2FBA15B4003C9725 /* lato-latin-700.woff2 */; };
+		6A1B9FC12FBA15B4003C9725 /* popup.bundle.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7D2FBA15B4003C9725 /* popup.bundle.js.LICENSE.txt */; };
+		6A1B9FC22FBA15B4003C9725 /* lato-latin-100.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7E2FBA15B4003C9725 /* lato-latin-100.woff */; };
+		6A1B9FC32FBA15B4003C9725 /* lato-latin-100italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F7F2FBA15B4003C9725 /* lato-latin-100italic.woff2 */; };
+		6A1B9FC42FBA15B4003C9725 /* auth-callback.html in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F802FBA15B4003C9725 /* auth-callback.html */; };
+		6A1B9FC52FBA15B4003C9725 /* lato-latin-300.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F812FBA15B4003C9725 /* lato-latin-300.woff2 */; };
+		6A1B9FC62FBA15B4003C9725 /* lato-latin-400.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F822FBA15B4003C9725 /* lato-latin-400.woff */; };
+		6A1B9FC72FBA15B4003C9725 /* lato-latin-900italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F832FBA15B4003C9725 /* lato-latin-900italic.woff */; };
+		6A1B9FC82FBA15B4003C9725 /* lato-latin-400italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F842FBA15B4003C9725 /* lato-latin-400italic.woff2 */; };
+		6A1B9FC92FBA15B4003C9725 /* audio-player.html in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F852FBA15B4003C9725 /* audio-player.html */; };
+		6A1B9FCA2FBA15B4003C9725 /* lato-latin-300italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F862FBA15B4003C9725 /* lato-latin-300italic.woff2 */; };
+		6A1B9FCB2FBA15B4003C9725 /* options.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F872FBA15B4003C9725 /* options.bundle.js */; };
+		6A1B9FCC2FBA15B4003C9725 /* options.bundle.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F882FBA15B4003C9725 /* options.bundle.js.LICENSE.txt */; };
+		6A1B9FCD2FBA15B4003C9725 /* lato-latin-700italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F892FBA15B4003C9725 /* lato-latin-700italic.woff2 */; };
+		6A1B9FCE2FBA15B4003C9725 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8A2FBA15B4003C9725 /* manifest.json */; };
+		6A1B9FCF2FBA15B4003C9725 /* options.html in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8B2FBA15B4003C9725 /* options.html */; };
+		6A1B9FD02FBA15B4003C9725 /* lato-latin-900.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8C2FBA15B4003C9725 /* lato-latin-900.woff2 */; };
+		6A1B9FD12FBA15B4003C9725 /* lato-latin-900italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8D2FBA15B4003C9725 /* lato-latin-900italic.woff2 */; };
+		6A1B9FD22FBA15B4003C9725 /* lato-latin-100.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8E2FBA15B4003C9725 /* lato-latin-100.woff2 */; };
+		6A1B9FD32FBA15B4003C9725 /* content-bandcamp.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F8F2FBA15B4003C9725 /* content-bandcamp.bundle.js */; };
+		6A1B9FD42FBA15B4003C9725 /* lato-latin-400italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F902FBA15B4003C9725 /* lato-latin-400italic.woff */; };
+		6A1B9FD52FBA15B4003C9725 /* lato-latin-300italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F912FBA15B4003C9725 /* lato-latin-300italic.woff */; };
+		6A1B9FD62FBA15B4003C9725 /* popup.bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = 6A1B9F922FBA15B4003C9725 /* popup.bundle.js */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6A1B9F442FBA15B4003C9725 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6A1B9F112FBA15B2003C9725 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6A1B9F412FBA15B4003C9725;
+			remoteInfo = "Fomo Player Extension (iOS)";
+		};
+		6A1B9F4E2FBA15B4003C9725 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6A1B9F112FBA15B2003C9725 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6A1B9F4B2FBA15B4003C9725;
+			remoteInfo = "Fomo Player Extension (macOS)";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		6A1B9F652FBA15B4003C9725 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				6A1B9F432FBA15B4003C9725 /* Fomo Player Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A1B9F6C2FBA15B4003C9725 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				6A1B9F4D2FBA15B4003C9725 /* Fomo Player Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		6A1B9F182FBA15B3003C9725 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		6A1B9F192FBA15B3003C9725 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		6A1B9F1A2FBA15B3003C9725 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		6A1B9F1B2FBA15B3003C9725 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		6A1B9F1C2FBA15B3003C9725 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		6A1B9F1D2FBA15B4003C9725 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6A1B9F1F2FBA15B4003C9725 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		6A1B9F242FBA15B4003C9725 /* Fomo Player.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Fomo Player.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A1B9F272FBA15B4003C9725 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		6A1B9F292FBA15B4003C9725 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		6A1B9F2C2FBA15B4003C9725 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		6A1B9F2F2FBA15B4003C9725 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		6A1B9F312FBA15B4003C9725 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6A1B9F362FBA15B4003C9725 /* Fomo Player.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Fomo Player.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A1B9F382FBA15B4003C9725 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		6A1B9F3B2FBA15B4003C9725 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		6A1B9F3D2FBA15B4003C9725 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6A1B9F422FBA15B4003C9725 /* Fomo Player Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Fomo Player Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A1B9F472FBA15B4003C9725 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6A1B9F4C2FBA15B4003C9725 /* Fomo Player Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Fomo Player Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A1B9F512FBA15B4003C9725 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6A1B9F712FBA15B4003C9725 /* lato-latin-100italic.woff */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-100italic.woff"; path = "../../build/safari/lato-latin-100italic.woff"; sourceTree = "<group>"; };
+		6A1B9F722FBA15B4003C9725 /* lato-latin-900.woff */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-900.woff"; path = "../../build/safari/lato-latin-900.woff"; sourceTree = "<group>"; };
+		6A1B9F732FBA15B4003C9725 /* lato-latin-400.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-400.woff2"; path = "../../build/safari/lato-latin-400.woff2"; sourceTree = "<group>"; };
+		6A1B9F742FBA15B4003C9725 /* lato-latin-700italic.woff */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-700italic.woff"; path = "../../build/safari/lato-latin-700italic.woff"; sourceTree = "<group>"; };
+		6A1B9F752FBA15B4003C9725 /* lato-latin-700.woff */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-700.woff"; path = "../../build/safari/lato-latin-700.woff"; sourceTree = "<group>"; };
+		6A1B9F762FBA15B4003C9725 /* content-beatport.bundle.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = "content-beatport.bundle.js"; path = "../../build/safari/content-beatport.bundle.js"; sourceTree = "<group>"; };
+		6A1B9F772FBA15B4003C9725 /* audio-player.bundle.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = "audio-player.bundle.js"; path = "../../build/safari/audio-player.bundle.js"; sourceTree = "<group>"; };
+		6A1B9F782FBA15B4003C9725 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = popup.html; path = ../../build/safari/popup.html; sourceTree = "<group>"; };
+		6A1B9F792FBA15B4003C9725 /* auth-callback.bundle.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = "auth-callback.bundle.js"; path = "../../build/safari/auth-callback.bundle.js"; sourceTree = "<group>"; };
+		6A1B9F7A2FBA15B4003C9725 /* lato-latin-300.woff */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-300.woff"; path = "../../build/safari/lato-latin-300.woff"; sourceTree = "<group>"; };
+		6A1B9F7B2FBA15B4003C9725 /* background.bundle.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.bundle.js; path = ../../build/safari/background.bundle.js; sourceTree = "<group>"; };
+		6A1B9F7C2FBA15B4003C9725 /* lato-latin-700.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-700.woff2"; path = "../../build/safari/lato-latin-700.woff2"; sourceTree = "<group>"; };
+		6A1B9F7D2FBA15B4003C9725 /* popup.bundle.js.LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = popup.bundle.js.LICENSE.txt; path = ../../build/safari/popup.bundle.js.LICENSE.txt; sourceTree = "<group>"; };
+		6A1B9F7E2FBA15B4003C9725 /* lato-latin-100.woff */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-100.woff"; path = "../../build/safari/lato-latin-100.woff"; sourceTree = "<group>"; };
+		6A1B9F7F2FBA15B4003C9725 /* lato-latin-100italic.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-100italic.woff2"; path = "../../build/safari/lato-latin-100italic.woff2"; sourceTree = "<group>"; };
+		6A1B9F802FBA15B4003C9725 /* auth-callback.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = "auth-callback.html"; path = "../../build/safari/auth-callback.html"; sourceTree = "<group>"; };
+		6A1B9F812FBA15B4003C9725 /* lato-latin-300.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-300.woff2"; path = "../../build/safari/lato-latin-300.woff2"; sourceTree = "<group>"; };
+		6A1B9F822FBA15B4003C9725 /* lato-latin-400.woff */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-400.woff"; path = "../../build/safari/lato-latin-400.woff"; sourceTree = "<group>"; };
+		6A1B9F832FBA15B4003C9725 /* lato-latin-900italic.woff */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-900italic.woff"; path = "../../build/safari/lato-latin-900italic.woff"; sourceTree = "<group>"; };
+		6A1B9F842FBA15B4003C9725 /* lato-latin-400italic.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-400italic.woff2"; path = "../../build/safari/lato-latin-400italic.woff2"; sourceTree = "<group>"; };
+		6A1B9F852FBA15B4003C9725 /* audio-player.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = "audio-player.html"; path = "../../build/safari/audio-player.html"; sourceTree = "<group>"; };
+		6A1B9F862FBA15B4003C9725 /* lato-latin-300italic.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-300italic.woff2"; path = "../../build/safari/lato-latin-300italic.woff2"; sourceTree = "<group>"; };
+		6A1B9F872FBA15B4003C9725 /* options.bundle.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = options.bundle.js; path = ../../build/safari/options.bundle.js; sourceTree = "<group>"; };
+		6A1B9F882FBA15B4003C9725 /* options.bundle.js.LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = options.bundle.js.LICENSE.txt; path = ../../build/safari/options.bundle.js.LICENSE.txt; sourceTree = "<group>"; };
+		6A1B9F892FBA15B4003C9725 /* lato-latin-700italic.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-700italic.woff2"; path = "../../build/safari/lato-latin-700italic.woff2"; sourceTree = "<group>"; };
+		6A1B9F8A2FBA15B4003C9725 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../build/safari/manifest.json; sourceTree = "<group>"; };
+		6A1B9F8B2FBA15B4003C9725 /* options.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = options.html; path = ../../build/safari/options.html; sourceTree = "<group>"; };
+		6A1B9F8C2FBA15B4003C9725 /* lato-latin-900.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-900.woff2"; path = "../../build/safari/lato-latin-900.woff2"; sourceTree = "<group>"; };
+		6A1B9F8D2FBA15B4003C9725 /* lato-latin-900italic.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-900italic.woff2"; path = "../../build/safari/lato-latin-900italic.woff2"; sourceTree = "<group>"; };
+		6A1B9F8E2FBA15B4003C9725 /* lato-latin-100.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-100.woff2"; path = "../../build/safari/lato-latin-100.woff2"; sourceTree = "<group>"; };
+		6A1B9F8F2FBA15B4003C9725 /* content-bandcamp.bundle.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = "content-bandcamp.bundle.js"; path = "../../build/safari/content-bandcamp.bundle.js"; sourceTree = "<group>"; };
+		6A1B9F902FBA15B4003C9725 /* lato-latin-400italic.woff */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-400italic.woff"; path = "../../build/safari/lato-latin-400italic.woff"; sourceTree = "<group>"; };
+		6A1B9F912FBA15B4003C9725 /* lato-latin-300italic.woff */ = {isa = PBXFileReference; lastKnownFileType = file; name = "lato-latin-300italic.woff"; path = "../../build/safari/lato-latin-300italic.woff"; sourceTree = "<group>"; };
+		6A1B9F922FBA15B4003C9725 /* popup.bundle.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = popup.bundle.js; path = ../../build/safari/popup.bundle.js; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		6A1B9F212FBA15B4003C9725 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A1B9F332FBA15B4003C9725 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A1B9F3F2FBA15B4003C9725 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A1B9F492FBA15B4003C9725 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		6A1B9F102FBA15B2003C9725 = {
+			isa = PBXGroup;
+			children = (
+				6A1B9F152FBA15B3003C9725 /* Shared (App) */,
+				6A1B9F1E2FBA15B4003C9725 /* Shared (Extension) */,
+				6A1B9F262FBA15B4003C9725 /* iOS (App) */,
+				6A1B9F372FBA15B4003C9725 /* macOS (App) */,
+				6A1B9F462FBA15B4003C9725 /* iOS (Extension) */,
+				6A1B9F502FBA15B4003C9725 /* macOS (Extension) */,
+				6A1B9F252FBA15B4003C9725 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6A1B9F152FBA15B3003C9725 /* Shared (App) */ = {
+			isa = PBXGroup;
+			children = (
+				6A1B9F1C2FBA15B3003C9725 /* ViewController.swift */,
+				6A1B9F1D2FBA15B4003C9725 /* Assets.xcassets */,
+				6A1B9F162FBA15B3003C9725 /* Resources */,
+			);
+			path = "Shared (App)";
+			sourceTree = "<group>";
+		};
+		6A1B9F162FBA15B3003C9725 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				6A1B9F172FBA15B3003C9725 /* Main.html */,
+				6A1B9F192FBA15B3003C9725 /* Icon.png */,
+				6A1B9F1A2FBA15B3003C9725 /* Style.css */,
+				6A1B9F1B2FBA15B3003C9725 /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		6A1B9F1E2FBA15B4003C9725 /* Shared (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				6A1B9F702FBA15B4003C9725 /* Resources */,
+				6A1B9F1F2FBA15B4003C9725 /* SafariWebExtensionHandler.swift */,
+			);
+			path = "Shared (Extension)";
+			sourceTree = "<group>";
+		};
+		6A1B9F252FBA15B4003C9725 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6A1B9F242FBA15B4003C9725 /* Fomo Player.app */,
+				6A1B9F362FBA15B4003C9725 /* Fomo Player.app */,
+				6A1B9F422FBA15B4003C9725 /* Fomo Player Extension.appex */,
+				6A1B9F4C2FBA15B4003C9725 /* Fomo Player Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6A1B9F262FBA15B4003C9725 /* iOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				6A1B9F272FBA15B4003C9725 /* AppDelegate.swift */,
+				6A1B9F292FBA15B4003C9725 /* SceneDelegate.swift */,
+				6A1B9F2B2FBA15B4003C9725 /* LaunchScreen.storyboard */,
+				6A1B9F2E2FBA15B4003C9725 /* Main.storyboard */,
+				6A1B9F312FBA15B4003C9725 /* Info.plist */,
+			);
+			path = "iOS (App)";
+			sourceTree = "<group>";
+		};
+		6A1B9F372FBA15B4003C9725 /* macOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				6A1B9F382FBA15B4003C9725 /* AppDelegate.swift */,
+				6A1B9F3A2FBA15B4003C9725 /* Main.storyboard */,
+				6A1B9F3D2FBA15B4003C9725 /* Info.plist */,
+			);
+			path = "macOS (App)";
+			sourceTree = "<group>";
+		};
+		6A1B9F462FBA15B4003C9725 /* iOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				6A1B9F472FBA15B4003C9725 /* Info.plist */,
+			);
+			path = "iOS (Extension)";
+			sourceTree = "<group>";
+		};
+		6A1B9F502FBA15B4003C9725 /* macOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				6A1B9F512FBA15B4003C9725 /* Info.plist */,
+			);
+			path = "macOS (Extension)";
+			sourceTree = "<group>";
+		};
+		6A1B9F702FBA15B4003C9725 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				6A1B9F712FBA15B4003C9725 /* lato-latin-100italic.woff */,
+				6A1B9F722FBA15B4003C9725 /* lato-latin-900.woff */,
+				6A1B9F732FBA15B4003C9725 /* lato-latin-400.woff2 */,
+				6A1B9F742FBA15B4003C9725 /* lato-latin-700italic.woff */,
+				6A1B9F752FBA15B4003C9725 /* lato-latin-700.woff */,
+				6A1B9F762FBA15B4003C9725 /* content-beatport.bundle.js */,
+				6A1B9F772FBA15B4003C9725 /* audio-player.bundle.js */,
+				6A1B9F782FBA15B4003C9725 /* popup.html */,
+				6A1B9F792FBA15B4003C9725 /* auth-callback.bundle.js */,
+				6A1B9F7A2FBA15B4003C9725 /* lato-latin-300.woff */,
+				6A1B9F7B2FBA15B4003C9725 /* background.bundle.js */,
+				6A1B9F7C2FBA15B4003C9725 /* lato-latin-700.woff2 */,
+				6A1B9F7D2FBA15B4003C9725 /* popup.bundle.js.LICENSE.txt */,
+				6A1B9F7E2FBA15B4003C9725 /* lato-latin-100.woff */,
+				6A1B9F7F2FBA15B4003C9725 /* lato-latin-100italic.woff2 */,
+				6A1B9F802FBA15B4003C9725 /* auth-callback.html */,
+				6A1B9F812FBA15B4003C9725 /* lato-latin-300.woff2 */,
+				6A1B9F822FBA15B4003C9725 /* lato-latin-400.woff */,
+				6A1B9F832FBA15B4003C9725 /* lato-latin-900italic.woff */,
+				6A1B9F842FBA15B4003C9725 /* lato-latin-400italic.woff2 */,
+				6A1B9F852FBA15B4003C9725 /* audio-player.html */,
+				6A1B9F862FBA15B4003C9725 /* lato-latin-300italic.woff2 */,
+				6A1B9F872FBA15B4003C9725 /* options.bundle.js */,
+				6A1B9F882FBA15B4003C9725 /* options.bundle.js.LICENSE.txt */,
+				6A1B9F892FBA15B4003C9725 /* lato-latin-700italic.woff2 */,
+				6A1B9F8A2FBA15B4003C9725 /* manifest.json */,
+				6A1B9F8B2FBA15B4003C9725 /* options.html */,
+				6A1B9F8C2FBA15B4003C9725 /* lato-latin-900.woff2 */,
+				6A1B9F8D2FBA15B4003C9725 /* lato-latin-900italic.woff2 */,
+				6A1B9F8E2FBA15B4003C9725 /* lato-latin-100.woff2 */,
+				6A1B9F8F2FBA15B4003C9725 /* content-bandcamp.bundle.js */,
+				6A1B9F902FBA15B4003C9725 /* lato-latin-400italic.woff */,
+				6A1B9F912FBA15B4003C9725 /* lato-latin-300italic.woff */,
+				6A1B9F922FBA15B4003C9725 /* popup.bundle.js */,
+			);
+			name = Resources;
+			path = "Shared (Extension)";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6A1B9F232FBA15B4003C9725 /* Fomo Player (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A1B9F662FBA15B4003C9725 /* Build configuration list for PBXNativeTarget "Fomo Player (iOS)" */;
+			buildPhases = (
+				6A1B9F202FBA15B4003C9725 /* Sources */,
+				6A1B9F212FBA15B4003C9725 /* Frameworks */,
+				6A1B9F222FBA15B4003C9725 /* Resources */,
+				6A1B9F652FBA15B4003C9725 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6A1B9F452FBA15B4003C9725 /* PBXTargetDependency */,
+			);
+			name = "Fomo Player (iOS)";
+			packageProductDependencies = (
+			);
+			productName = "Fomo Player (iOS)";
+			productReference = 6A1B9F242FBA15B4003C9725 /* Fomo Player.app */;
+			productType = "com.apple.product-type.application";
+		};
+		6A1B9F352FBA15B4003C9725 /* Fomo Player (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A1B9F6D2FBA15B4003C9725 /* Build configuration list for PBXNativeTarget "Fomo Player (macOS)" */;
+			buildPhases = (
+				6A1B9F322FBA15B4003C9725 /* Sources */,
+				6A1B9F332FBA15B4003C9725 /* Frameworks */,
+				6A1B9F342FBA15B4003C9725 /* Resources */,
+				6A1B9F6C2FBA15B4003C9725 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6A1B9F4F2FBA15B4003C9725 /* PBXTargetDependency */,
+			);
+			name = "Fomo Player (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "Fomo Player (macOS)";
+			productReference = 6A1B9F362FBA15B4003C9725 /* Fomo Player.app */;
+			productType = "com.apple.product-type.application";
+		};
+		6A1B9F412FBA15B4003C9725 /* Fomo Player Extension (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A1B9F622FBA15B4003C9725 /* Build configuration list for PBXNativeTarget "Fomo Player Extension (iOS)" */;
+			buildPhases = (
+				6A1B9F3E2FBA15B4003C9725 /* Sources */,
+				6A1B9F3F2FBA15B4003C9725 /* Frameworks */,
+				6A1B9F402FBA15B4003C9725 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Fomo Player Extension (iOS)";
+			packageProductDependencies = (
+			);
+			productName = "Fomo Player Extension (iOS)";
+			productReference = 6A1B9F422FBA15B4003C9725 /* Fomo Player Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		6A1B9F4B2FBA15B4003C9725 /* Fomo Player Extension (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A1B9F692FBA15B4003C9725 /* Build configuration list for PBXNativeTarget "Fomo Player Extension (macOS)" */;
+			buildPhases = (
+				6A1B9F482FBA15B4003C9725 /* Sources */,
+				6A1B9F492FBA15B4003C9725 /* Frameworks */,
+				6A1B9F4A2FBA15B4003C9725 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Fomo Player Extension (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "Fomo Player Extension (macOS)";
+			productReference = 6A1B9F4C2FBA15B4003C9725 /* Fomo Player Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6A1B9F112FBA15B2003C9725 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					6A1B9F232FBA15B4003C9725 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					6A1B9F352FBA15B4003C9725 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					6A1B9F412FBA15B4003C9725 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					6A1B9F4B2FBA15B4003C9725 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+				};
+			};
+			buildConfigurationList = 6A1B9F142FBA15B2003C9725 /* Build configuration list for PBXProject "Fomo Player" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 6A1B9F102FBA15B2003C9725;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 6A1B9F252FBA15B4003C9725 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6A1B9F232FBA15B4003C9725 /* Fomo Player (iOS) */,
+				6A1B9F352FBA15B4003C9725 /* Fomo Player (macOS) */,
+				6A1B9F412FBA15B4003C9725 /* Fomo Player Extension (iOS) */,
+				6A1B9F4B2FBA15B4003C9725 /* Fomo Player Extension (macOS) */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6A1B9F222FBA15B4003C9725 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A1B9F542FBA15B4003C9725 /* Icon.png in Resources */,
+				6A1B9F2D2FBA15B4003C9725 /* LaunchScreen.storyboard in Resources */,
+				6A1B9F522FBA15B4003C9725 /* Main.html in Resources */,
+				6A1B9F582FBA15B4003C9725 /* Script.js in Resources */,
+				6A1B9F5C2FBA15B4003C9725 /* Assets.xcassets in Resources */,
+				6A1B9F302FBA15B4003C9725 /* Main.storyboard in Resources */,
+				6A1B9F562FBA15B4003C9725 /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A1B9F342FBA15B4003C9725 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A1B9F552FBA15B4003C9725 /* Icon.png in Resources */,
+				6A1B9F572FBA15B4003C9725 /* Style.css in Resources */,
+				6A1B9F3C2FBA15B4003C9725 /* Main.storyboard in Resources */,
+				6A1B9F592FBA15B4003C9725 /* Script.js in Resources */,
+				6A1B9F5D2FBA15B4003C9725 /* Assets.xcassets in Resources */,
+				6A1B9F532FBA15B4003C9725 /* Main.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A1B9F402FBA15B4003C9725 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A1B9FC72FBA15B4003C9725 /* lato-latin-900italic.woff in Resources */,
+				6A1B9FC92FBA15B4003C9725 /* audio-player.html in Resources */,
+				6A1B9FCB2FBA15B4003C9725 /* options.bundle.js in Resources */,
+				6A1B9FBA2FBA15B4003C9725 /* content-beatport.bundle.js in Resources */,
+				6A1B9FD62FBA15B4003C9725 /* popup.bundle.js in Resources */,
+				6A1B9FC62FBA15B4003C9725 /* lato-latin-400.woff in Resources */,
+				6A1B9FD42FBA15B4003C9725 /* lato-latin-400italic.woff in Resources */,
+				6A1B9FD32FBA15B4003C9725 /* content-bandcamp.bundle.js in Resources */,
+				6A1B9FCD2FBA15B4003C9725 /* lato-latin-700italic.woff2 in Resources */,
+				6A1B9FD52FBA15B4003C9725 /* lato-latin-300italic.woff in Resources */,
+				6A1B9FC42FBA15B4003C9725 /* auth-callback.html in Resources */,
+				6A1B9FBC2FBA15B4003C9725 /* popup.html in Resources */,
+				6A1B9FCF2FBA15B4003C9725 /* options.html in Resources */,
+				6A1B9FBB2FBA15B4003C9725 /* audio-player.bundle.js in Resources */,
+				6A1B9FC12FBA15B4003C9725 /* popup.bundle.js.LICENSE.txt in Resources */,
+				6A1B9FC32FBA15B4003C9725 /* lato-latin-100italic.woff2 in Resources */,
+				6A1B9FBF2FBA15B4003C9725 /* background.bundle.js in Resources */,
+				6A1B9FCC2FBA15B4003C9725 /* options.bundle.js.LICENSE.txt in Resources */,
+				6A1B9FB82FBA15B4003C9725 /* lato-latin-700italic.woff in Resources */,
+				6A1B9FCA2FBA15B4003C9725 /* lato-latin-300italic.woff2 in Resources */,
+				6A1B9FB62FBA15B4003C9725 /* lato-latin-900.woff in Resources */,
+				6A1B9FD02FBA15B4003C9725 /* lato-latin-900.woff2 in Resources */,
+				6A1B9FCE2FBA15B4003C9725 /* manifest.json in Resources */,
+				6A1B9FD22FBA15B4003C9725 /* lato-latin-100.woff2 in Resources */,
+				6A1B9FB72FBA15B4003C9725 /* lato-latin-400.woff2 in Resources */,
+				6A1B9FC82FBA15B4003C9725 /* lato-latin-400italic.woff2 in Resources */,
+				6A1B9FC02FBA15B4003C9725 /* lato-latin-700.woff2 in Resources */,
+				6A1B9FBD2FBA15B4003C9725 /* auth-callback.bundle.js in Resources */,
+				6A1B9FC22FBA15B4003C9725 /* lato-latin-100.woff in Resources */,
+				6A1B9FD12FBA15B4003C9725 /* lato-latin-900italic.woff2 in Resources */,
+				6A1B9FB92FBA15B4003C9725 /* lato-latin-700.woff in Resources */,
+				6A1B9FBE2FBA15B4003C9725 /* lato-latin-300.woff in Resources */,
+				6A1B9FC52FBA15B4003C9725 /* lato-latin-300.woff2 in Resources */,
+				6A1B9FB52FBA15B4003C9725 /* lato-latin-100italic.woff in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A1B9F4A2FBA15B4003C9725 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A1B9FA52FBA15B4003C9725 /* lato-latin-900italic.woff in Resources */,
+				6A1B9FA72FBA15B4003C9725 /* audio-player.html in Resources */,
+				6A1B9FA92FBA15B4003C9725 /* options.bundle.js in Resources */,
+				6A1B9F982FBA15B4003C9725 /* content-beatport.bundle.js in Resources */,
+				6A1B9FB42FBA15B4003C9725 /* popup.bundle.js in Resources */,
+				6A1B9FA42FBA15B4003C9725 /* lato-latin-400.woff in Resources */,
+				6A1B9FB22FBA15B4003C9725 /* lato-latin-400italic.woff in Resources */,
+				6A1B9FB12FBA15B4003C9725 /* content-bandcamp.bundle.js in Resources */,
+				6A1B9FAB2FBA15B4003C9725 /* lato-latin-700italic.woff2 in Resources */,
+				6A1B9FB32FBA15B4003C9725 /* lato-latin-300italic.woff in Resources */,
+				6A1B9FA22FBA15B4003C9725 /* auth-callback.html in Resources */,
+				6A1B9F9A2FBA15B4003C9725 /* popup.html in Resources */,
+				6A1B9FAD2FBA15B4003C9725 /* options.html in Resources */,
+				6A1B9F992FBA15B4003C9725 /* audio-player.bundle.js in Resources */,
+				6A1B9F9F2FBA15B4003C9725 /* popup.bundle.js.LICENSE.txt in Resources */,
+				6A1B9FA12FBA15B4003C9725 /* lato-latin-100italic.woff2 in Resources */,
+				6A1B9F9D2FBA15B4003C9725 /* background.bundle.js in Resources */,
+				6A1B9FAA2FBA15B4003C9725 /* options.bundle.js.LICENSE.txt in Resources */,
+				6A1B9F962FBA15B4003C9725 /* lato-latin-700italic.woff in Resources */,
+				6A1B9FA82FBA15B4003C9725 /* lato-latin-300italic.woff2 in Resources */,
+				6A1B9F942FBA15B4003C9725 /* lato-latin-900.woff in Resources */,
+				6A1B9FAE2FBA15B4003C9725 /* lato-latin-900.woff2 in Resources */,
+				6A1B9FAC2FBA15B4003C9725 /* manifest.json in Resources */,
+				6A1B9FB02FBA15B4003C9725 /* lato-latin-100.woff2 in Resources */,
+				6A1B9F952FBA15B4003C9725 /* lato-latin-400.woff2 in Resources */,
+				6A1B9FA62FBA15B4003C9725 /* lato-latin-400italic.woff2 in Resources */,
+				6A1B9F9E2FBA15B4003C9725 /* lato-latin-700.woff2 in Resources */,
+				6A1B9F9B2FBA15B4003C9725 /* auth-callback.bundle.js in Resources */,
+				6A1B9FA02FBA15B4003C9725 /* lato-latin-100.woff in Resources */,
+				6A1B9FAF2FBA15B4003C9725 /* lato-latin-900italic.woff2 in Resources */,
+				6A1B9F972FBA15B4003C9725 /* lato-latin-700.woff in Resources */,
+				6A1B9F9C2FBA15B4003C9725 /* lato-latin-300.woff in Resources */,
+				6A1B9FA32FBA15B4003C9725 /* lato-latin-300.woff2 in Resources */,
+				6A1B9F932FBA15B4003C9725 /* lato-latin-100italic.woff in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6A1B9F202FBA15B4003C9725 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A1B9F5A2FBA15B4003C9725 /* ViewController.swift in Sources */,
+				6A1B9F282FBA15B4003C9725 /* AppDelegate.swift in Sources */,
+				6A1B9F2A2FBA15B4003C9725 /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A1B9F322FBA15B4003C9725 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A1B9F5B2FBA15B4003C9725 /* ViewController.swift in Sources */,
+				6A1B9F392FBA15B4003C9725 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A1B9F3E2FBA15B4003C9725 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A1B9F5E2FBA15B4003C9725 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A1B9F482FBA15B4003C9725 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A1B9F5F2FBA15B4003C9725 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6A1B9F452FBA15B4003C9725 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6A1B9F412FBA15B4003C9725 /* Fomo Player Extension (iOS) */;
+			targetProxy = 6A1B9F442FBA15B4003C9725 /* PBXContainerItemProxy */;
+		};
+		6A1B9F4F2FBA15B4003C9725 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6A1B9F4B2FBA15B4003C9725 /* Fomo Player Extension (macOS) */;
+			targetProxy = 6A1B9F4E2FBA15B4003C9725 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		6A1B9F172FBA15B3003C9725 /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6A1B9F182FBA15B3003C9725 /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		6A1B9F2B2FBA15B4003C9725 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6A1B9F2C2FBA15B4003C9725 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		6A1B9F2E2FBA15B4003C9725 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6A1B9F2F2FBA15B4003C9725 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		6A1B9F3A2FBA15B4003C9725 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6A1B9F3B2FBA15B4003C9725 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		6A1B9F602FBA15B4003C9725 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		6A1B9F612FBA15B4003C9725 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		6A1B9F632FBA15B4003C9725 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fomo Player Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.gadgetmies.Fomo-Player.Extension";
+				PRODUCT_NAME = "Fomo Player Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6A1B9F642FBA15B4003C9725 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fomo Player Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.gadgetmies.Fomo-Player.Extension";
+				PRODUCT_NAME = "Fomo Player Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		6A1B9F672FBA15B4003C9725 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fomo Player";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.gadgetmies.Fomo-Player";
+				PRODUCT_NAME = "Fomo Player";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6A1B9F682FBA15B4003C9725 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fomo Player";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.gadgetmies.Fomo-Player";
+				PRODUCT_NAME = "Fomo Player";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		6A1B9F6A2FBA15B4003C9725 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fomo Player Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.gadgetmies.Fomo-Player.Extension";
+				PRODUCT_NAME = "Fomo Player Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		6A1B9F6B2FBA15B4003C9725 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fomo Player Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.gadgetmies.Fomo-Player.Extension";
+				PRODUCT_NAME = "Fomo Player Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		6A1B9F6E2FBA15B4003C9725 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fomo Player";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.gadgetmies.Fomo-Player";
+				PRODUCT_NAME = "Fomo Player";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		6A1B9F6F2FBA15B4003C9725 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fomo Player";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.gadgetmies.Fomo-Player";
+				PRODUCT_NAME = "Fomo Player";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6A1B9F142FBA15B2003C9725 /* Build configuration list for PBXProject "Fomo Player" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A1B9F602FBA15B4003C9725 /* Debug */,
+				6A1B9F612FBA15B4003C9725 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6A1B9F622FBA15B4003C9725 /* Build configuration list for PBXNativeTarget "Fomo Player Extension (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A1B9F632FBA15B4003C9725 /* Debug */,
+				6A1B9F642FBA15B4003C9725 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6A1B9F662FBA15B4003C9725 /* Build configuration list for PBXNativeTarget "Fomo Player (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A1B9F672FBA15B4003C9725 /* Debug */,
+				6A1B9F682FBA15B4003C9725 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6A1B9F692FBA15B4003C9725 /* Build configuration list for PBXNativeTarget "Fomo Player Extension (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A1B9F6A2FBA15B4003C9725 /* Debug */,
+				6A1B9F6B2FBA15B4003C9725 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6A1B9F6D2FBA15B4003C9725 /* Build configuration list for PBXNativeTarget "Fomo Player (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A1B9F6E2FBA15B4003C9725 /* Debug */,
+				6A1B9F6F2FBA15B4003C9725 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6A1B9F112FBA15B2003C9725 /* Project object */;
+}

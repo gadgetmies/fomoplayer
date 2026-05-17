@@ -1,0 +1,160 @@
+name: Extension release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      value: ${{ steps.compute.outputs.value }}
+    steps:
+      - name: Compute release version
+        id: compute
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${GITHUB_SHA::7}"
+          fi
+          echo "value=${version}" >> "$GITHUB_OUTPUT"
+          echo "Release version: ${version}"
+
+  build:
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+      FRONTEND_URL: ${{ vars.FRONTEND_URL_PROD }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: yarn
+
+      - name: Install workspace dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build Chrome extension
+        run: yarn workspace fomoplayer_browser_extension build:chrome
+
+      - name: Build Firefox extension
+        run: yarn workspace fomoplayer_browser_extension build:firefox
+
+      - name: Build Safari web extension bundle
+        run: yarn workspace fomoplayer_browser_extension build:safari
+
+      - name: Lint Firefox build
+        run: yarn workspace fomoplayer_browser_extension lint:firefox
+
+      - name: Package archives
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          # Chrome — zip the build directory directly.
+          ( cd packages/browser-extension/build/chrome \
+              && zip -r -X "$GITHUB_WORKSPACE/artifacts/fomo-player-extension-chrome-${VERSION}.zip" . )
+          # Firefox — zip the build directory directly.
+          ( cd packages/browser-extension/build/firefox \
+              && zip -r -X "$GITHUB_WORKSPACE/artifacts/fomo-player-extension-firefox-${VERSION}.zip" . )
+          # Safari — source bundle: Xcode project + web extension files + install doc.
+          # Recipients open the Xcode project, sign with their own Apple ID, ⌘R.
+          # No xcodebuild, no signing in CI.
+          staging="$(mktemp -d)/fomo-player-safari-source-${VERSION}"
+          mkdir -p "$staging/build"
+          cp -R "packages/browser-extension/Fomo Player" "$staging/Fomo Player"
+          cp -R "packages/browser-extension/build/safari" "$staging/build/safari"
+          cp packages/browser-extension/safari-source-README.md "$staging/README.md"
+          ( cd "$(dirname "$staging")" \
+              && zip -r -X "$GITHUB_WORKSPACE/artifacts/fomo-player-extension-safari-source-${VERSION}.zip" \
+                   "$(basename "$staging")" )
+
+      - name: Upload Chrome archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: fomo-player-extension-chrome-${{ env.VERSION }}
+          path: artifacts/fomo-player-extension-chrome-${{ env.VERSION }}.zip
+          if-no-files-found: error
+
+      - name: Upload Firefox archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: fomo-player-extension-firefox-${{ env.VERSION }}
+          path: artifacts/fomo-player-extension-firefox-${{ env.VERSION }}.zip
+          if-no-files-found: error
+
+      - name: Upload Safari source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: fomo-player-extension-safari-source-${{ env.VERSION }}
+          path: artifacts/fomo-player-extension-safari-source-${{ env.VERSION }}.zip
+          if-no-files-found: error
+
+  release:
+    needs:
+      - version
+      - build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.value }}
+    steps:
+      - name: Download all archives
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded
+          merge-multiple: true
+
+      - name: List downloaded artifacts
+        run: ls -la downloaded/
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Fomo Player ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true
+          files: |
+            downloaded/fomo-player-extension-chrome-${{ env.VERSION }}.zip
+            downloaded/fomo-player-extension-firefox-${{ env.VERSION }}.zip
+            downloaded/fomo-player-extension-safari-source-${{ env.VERSION }}.zip
+          body: |
+            Fomo Player browser extension build **${{ env.VERSION }}**.
+
+            ## Downloads
+
+            - **Chrome / Chromium** — `fomo-player-extension-chrome-${{ env.VERSION }}.zip`
+            - **Firefox** — `fomo-player-extension-firefox-${{ env.VERSION }}.zip`
+            - **Safari (macOS, source bundle)** — `fomo-player-extension-safari-source-${{ env.VERSION }}.zip`
+
+            ## Install
+
+            ### Chrome / Chromium
+            1. Unzip the Chrome archive.
+            2. Open `chrome://extensions/`, enable Developer mode, click **Load unpacked**, and select the unzipped directory.
+
+            ### Firefox
+            1. Unzip the Firefox archive (or use the `.zip` directly).
+            2. Open `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** and pick `manifest.json` from the unzipped directory. The add-on is unsigned and will be removed on Firefox restart.
+
+            ### Safari (macOS, ≥ 16.4)
+
+            Safari requires extensions to be code-signed, which has to happen on your machine with your own Apple ID. The Safari archive is a **source bundle**, not a pre-built installer.
+
+            1. Unzip the Safari archive.
+            2. Open `Fomo Player/Fomo Player.xcodeproj` in Xcode (free from the Mac App Store).
+            3. Open the included `README.md` for the step-by-step build flow (select your Apple ID's Personal Team in Signing & Capabilities, then ⌘R).
+
+            Build time is under a minute. The signed extension lasts ~7 days before needing a refresh (open the project in Xcode and ⌘R again) — that's a Personal Team limitation, not something we can fix without a paid Apple Developer membership.

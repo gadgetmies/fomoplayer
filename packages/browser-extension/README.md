@@ -122,6 +122,38 @@ extension access tokens.
 | `ALLOWED_ORIGIN_REGEX` | optional | Cleaner alternative to listing each id by hand: `^chrome-extension://[a-p]{32}$,^moz-extension://[0-9a-f-]{36}$,^safari-web-extension://[0-9A-Fa-f-]{36}$`. |
 | `EXTENSION_OAUTH_ALLOWED_REDIRECT_PATTERNS` | optional | Override the default redirect-URI regexes. The shipped defaults cover Chrome / Firefox / Safari `auth-callback.html`. |
 
+## Releases
+
+End users should grab archives from the [GitHub Releases page](https://github.com/gadgetmies/multi_store_player/releases) — every release attaches three assets:
+
+| File | Browser | Install |
+|---|---|---|
+| `fomo-player-extension-chrome-<version>.zip` | Chrome / Chromium | unzip → `chrome://extensions/` → "Load unpacked" |
+| `fomo-player-extension-firefox-<version>.zip` | Firefox | unzip → `about:debugging` → "Load Temporary Add-on" → pick `manifest.json` |
+| `fomo-player-extension-safari-source-<version>.zip` | Desktop Safari (≥ 16.4) | unzip → open `Fomo Player/Fomo Player.xcodeproj` in Xcode → pick your Apple ID's Personal Team under Signing & Capabilities for both targets → ⌘R. Full step-by-step is in the zip's bundled `README.md` (`safari-source-README.md` in this repo). |
+
+The Safari archive is a **source bundle**, not a `.app`. Each user signs and builds it locally with their own Apple ID — that's the only way Safari accepts the extension's signature without us holding a paid Apple Developer membership ($99/yr) and notarizing in CI. The trade-off is the Personal Team signature expires every ~7 days and the user has to ⌘R again to refresh.
+
+### Producing a release (maintainers)
+
+Releases are built by `.github/workflows/extension-release.yml`. To cut one:
+
+```sh
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+The tag push starts the workflow, which on a single Ubuntu runner builds the Chrome and Firefox bundles, runs `yarn build:safari` to produce `build/safari/`, packages the Safari source bundle (Xcode project + `build/safari/` + recipient install doc), and attaches all three zips to the GitHub Release matching the tag.
+
+You can also dispatch the workflow manually from the Actions UI (or `gh workflow run extension-release.yml`) — manual runs upload the zips as workflow artifacts only and do not create a Release.
+
+**Required repository configuration**
+
+| Setting | Where | Value |
+|---|---|---|
+| `FRONTEND_URL_PROD` | repo **Variables** (Settings → Secrets and variables → Actions → Variables) | The production frontend URL the build should be pinned to, e.g. `https://fomoplayer.com`. The build fails fast if this variable is unset — that's deliberate, see the top-of-repo `CLAUDE.md` rule against deployment domains in source. |
+| `GITHUB_TOKEN` write permission | repo Settings → Actions → General → Workflow permissions | "Read and write permissions" (or set `permissions: contents: write` in the workflow — already done). Needed for `softprops/action-gh-release` to attach assets. |
+
 ## Tests
 
 ```sh
