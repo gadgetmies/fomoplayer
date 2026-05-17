@@ -32,6 +32,7 @@ jobs:
     env:
       VERSION: ${{ needs.version.outputs.value }}
       FRONTEND_URL: ${{ vars.FRONTEND_URL_PROD }}
+      EXTENSION_KEY: ${{ vars.EXTENSION_KEY }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

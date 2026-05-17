@@ -152,7 +152,38 @@ You can also dispatch the workflow manually from the Actions UI (or `gh workflow
 | Setting | Where | Value |
 |---|---|---|
 | `FRONTEND_URL_PROD` | repo **Variables** (Settings → Secrets and variables → Actions → Variables) | The production frontend URL the build should be pinned to, e.g. `https://fomoplayer.com`. The build fails fast if this variable is unset — that's deliberate, see the top-of-repo `CLAUDE.md` rule against deployment domains in source. |
+| `EXTENSION_KEY` | repo **Variables** (same place) | Base64-encoded RSA public key baked into the Chrome manifest's `key` field. Without it, every "Load unpacked" install gets a random extension ID, which won't match the backend's `EXTENSION_OAUTH_ALLOWED_IDS` allowlist. The key is public (it ships in the manifest), so a variable is the correct shape — not a secret. See "Generating EXTENSION_KEY" below. |
 | `GITHUB_TOKEN` write permission | repo Settings → Actions → General → Workflow permissions | "Read and write permissions" (or set `permissions: contents: write` in the workflow — already done). Needed for `softprops/action-gh-release` to attach assets. |
+
+### Generating EXTENSION_KEY
+
+One-time setup. Generate an RSA keypair, keep the **private** key off the repo, register the **public** key as a repo variable, and compute the derived extension ID for the backend allowlist.
+
+```sh
+# 1. Generate a fresh RSA keypair (keep this file private).
+openssl genrsa -out fomo-player-extension.private.pem 2048
+
+# 2. Derive the public key in the DER+base64 form Chrome expects.
+EXTENSION_KEY=$(openssl rsa -in fomo-player-extension.private.pem -pubout -outform DER 2>/dev/null \
+  | base64 | tr -d '\n')
+echo "$EXTENSION_KEY"
+
+# 3. Compute the Chrome extension ID Chrome will derive from that key.
+EXTENSION_ID=$(echo "$EXTENSION_KEY" | base64 -d \
+  | openssl dgst -sha256 -binary \
+  | head -c 16 | xxd -p \
+  | tr '0-9a-f' 'a-p')
+echo "$EXTENSION_ID"
+
+# 4. Register the public key as a repo variable for the workflow to consume.
+gh variable set EXTENSION_KEY --body "$EXTENSION_KEY"
+
+# 5. Add $EXTENSION_ID to the backend's EXTENSION_OAUTH_ALLOWED_IDS env var
+#    (wherever the backend is deployed). This is what makes the OAuth flow
+#    accept tokens from extensions built from this CI key.
+```
+
+Store `fomo-player-extension.private.pem` somewhere durable (password manager, hardware key, ops-team vault). You don't need it for "Load unpacked" or for current CI — it's only required if you later sign `.crx` packages for Chrome Web Store distribution. **Don't commit it.**
 
 ## Tests
 
