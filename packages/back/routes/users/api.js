@@ -31,6 +31,7 @@ const {
   setUserScoreWeights,
   updateNotifications,
   getNotifications,
+  getNotificationTracks,
   getUserSettings,
   setEmail,
   setFollowStarred,
@@ -107,14 +108,28 @@ const upload = multer({
   },
 })
 
+router.get('/tracks/notifications', async ({ user: { id: authUserId }, query: { limit = 20, offset = 0, store: stores } }, res) => {
+  const parsedLimit = parseInt(limit, 10)
+  const parsedOffset = parseInt(offset, 10)
+  if (isNaN(parsedLimit) || parsedLimit < 0 || isNaN(parsedOffset) || parsedOffset < 0) {
+    return res.status(400).json({ error: 'limit and offset must be non-negative integers' })
+  }
+  const normalizedStores = (Array.isArray(stores) ? stores : stores ? [stores] : [])
+    .map((store) => (typeof store === 'string' ? store.toLowerCase().trim() : ''))
+    .filter(Boolean)
+  const storeFilter = normalizedStores.length > 0 ? normalizedStores : null
+  const result = await getNotificationTracks(authUserId, storeFilter, parsedLimit, parsedOffset)
+  res.json(result)
+})
+
 router.get(
   '/tracks',
   async (
     {
       user: { id: authUserId },
-      query: { 
-        limit_new: limitNew = 20, 
-        limit_recent: limitRecent = 20, 
+      query: {
+        limit_new: limitNew = 20,
+        limit_recent: limitRecent = 20,
         limit_heard: limitHeard = 20,
         offset_new: offsetNew = 0,
         offset_recent: offsetRecent = 0,

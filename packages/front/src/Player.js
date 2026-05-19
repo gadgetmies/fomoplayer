@@ -120,6 +120,8 @@ class Player extends Component {
       tracks = this.props.heardTracks
     } else if (this.props.listState === 'recent') {
       tracks = this.props.tracks.recentlyAdded.slice()
+    } else if (this.props.listState === 'notifications') {
+      tracks = this.props.tracks.notifications.slice()
     } else if (this.props.listState === 'carts') {
       tracks = this.props.selectedCart?.tracks || []
     } else if (this.props.listState === 'search') {
