@@ -8,6 +8,7 @@ import './App.css'
 import Settings from './Settings.js'
 import Spinner from './Spinner.js'
 import Admin from './Admin.js'
+import AdminDuplicates from './AdminDuplicates.js'
 import { launchMessages } from './launchMessages'
 
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
@@ -1201,6 +1202,9 @@ class App extends Component {
                 </Route>
                 <Route exact path="/admin">
                   <Admin />
+                </Route>
+                <Route exact path="/admin/duplicates">
+                  <AdminDuplicates />
                 </Route>
                 <Route exact path="/carts">
                   <Redirect to={`/carts/${this.state.carts[0].uuid}`} />
