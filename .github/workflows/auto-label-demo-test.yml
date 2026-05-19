@@ -1,0 +1,54 @@
+name: Auto-label demo-test PRs
+
+# Applies the `demo-test` label to any PR whose body contains a fenced
+# `demo-test` block, so .github/workflows/pr-demo.yml fires without a
+# maintainer having to hand-label the PR. Removes the label when the
+# block is taken back out so subsequent pushes do not retrigger demos.
+#
+# Uses pull_request_target so the workflow has write access to the PR;
+# the default GITHUB_TOKEN on `pull_request` cannot label fork PRs.
+# We do not check out the head ref — we only read the PR body via the
+# GitHub API, so there is no untrusted code path.
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Apply or remove demo-test label based on PR body
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body ?? ''
+            const hasBlock = /```demo-test\r?\n([\s\S]*?)```/.test(body)
+            const labels = context.payload.pull_request.labels.map((l) => l.name)
+            const hasLabel = labels.includes('demo-test')
+
+            if (hasBlock && !hasLabel) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                labels: ['demo-test'],
+              })
+              core.info('Applied demo-test label')
+              return
+            }
+
+            if (!hasBlock && hasLabel) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                name: 'demo-test',
+              })
+              core.info('Removed demo-test label')
+              return
+            }
+
+            core.info(`No change (hasBlock=${hasBlock}, hasLabel=${hasLabel})`)
