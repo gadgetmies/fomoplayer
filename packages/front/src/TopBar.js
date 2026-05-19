@@ -114,7 +114,7 @@ class TopBar extends Component {
                   label="Discover"
                   icon={<FontAwesomeIcon icon="play" />}
                   to={isMobile ? '' : '/tracks/new'}
-                  selected={['recent', 'new', 'heard'].includes(this.props.listState)}
+                  selected={['recent', 'new', 'heard', 'notifications'].includes(this.props.listState)}
                 />
               }
               open={this.state.discoverMenuOpen}
@@ -129,6 +129,14 @@ class TopBar extends Component {
                   onClick={() => this.setState({ discoverMenuOpen: false })}
                 >
                   <span className={'pill-button-contents button-push_button_label'}>New tracks</span>
+                </NavLink>
+                <NavLink
+                  style={(isActive) => ({ opacity: isActive ? 1 : 0.7 })}
+                  to={'/tracks/notifications'}
+                  className={'pill pill-button button-push_button-small'}
+                  onClick={() => this.setState({ discoverMenuOpen: false })}
+                >
+                  <span className={'pill-button-contents button-push_button_label'}>Notification tracks</span>
                 </NavLink>
                 <NavLink
                   style={(isActive) => ({ opacity: isActive ? 1 : 0.7 })}

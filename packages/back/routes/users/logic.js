@@ -1,5 +1,6 @@
 const BPromise = require('bluebird')
 const R = require('ramda')
+const sql = require('sql-template-strings')
 const pg = require('fomoplayer_shared').db.pg
 const { scheduleEmail } = require('../../services/mailer')
 const { insertUserPlaylistFollow } = require('../shared/db/user')
@@ -56,6 +57,8 @@ const {
   queryAuthorizations,
   deleteAuthorization,
 } = require('./db')
+
+const { parseNotificationText, buildNotificationPredicate } = require('../shared/db/notification-predicate')
 
 const logger = require('fomoplayer_shared').logger(__filename)
 const { apiURL } = require('../../config')
@@ -326,6 +329,119 @@ const verifyFollowOwnership = async (userId, type, followId) => {
 
 module.exports.getUserScoreWeights = queryUserScoreWeights
 module.exports.setUserScoreWeights = updateUserScoreWeights
+
+module.exports.getNotificationTracks = async (userId, stores, limit, offset) => {
+  const storeFilter = stores ? stores.map((s) => s.toLowerCase()) : null
+
+  const notificationRows = await pg.queryRowsAsync(sql`
+SELECT user_search_notification_id AS id,
+       user_search_notification_string AS text,
+       store_id AS "storeId"
+FROM user_search_notification
+NATURAL JOIN user_search_notification__store
+NATURAL JOIN store
+WHERE meta_account_user_id = ${userId}
+  AND (${storeFilter}::TEXT[] IS NULL OR LOWER(store_name) = ANY(${storeFilter}))`)
+
+  if (notificationRows.length === 0) {
+    return { tracks: [], pagination: { offset, count: 0, total: 0 } }
+  }
+
+  const byId = new Map()
+  for (const { id, text, storeId } of notificationRows) {
+    if (!byId.has(id)) {
+      byId.set(id, { text, storeIds: [] })
+    }
+    byId.get(id).storeIds.push(storeId)
+  }
+
+  const predicates = []
+  for (const { text, storeIds } of byId.values()) {
+    const parsed = parseNotificationText(text)
+    predicates.push(buildNotificationPredicate(parsed, storeIds))
+  }
+
+  const whereClause = sql`(`
+  predicates.forEach((p, i) => {
+    if (i > 0) whereClause.append(sql` OR `)
+    whereClause.append(p)
+  })
+  whereClause.append(sql`)`)
+
+  const result = await BPromise.using(pg.getTransaction(), async (tx) => {
+    const buildMatchingIdsCte = () => {
+      const q = sql`
+  matching_ids AS (
+    SELECT DISTINCT track_details.track_id, track_added
+    FROM track_details
+      JOIN track ON track.track_id = track_details.track_id
+      LEFT JOIN (
+        SELECT track__artist.track_id, STRING_AGG(artist_name, ' ') AS artist_text
+        FROM track__artist NATURAL JOIN artist
+        GROUP BY track__artist.track_id
+      ) AS artist_agg ON artist_agg.track_id = track_details.track_id
+      LEFT JOIN (
+        SELECT release__track.track_id, STRING_AGG(release_name, ' ') AS release_text
+        FROM release__track NATURAL JOIN release
+        GROUP BY release__track.track_id
+      ) AS release_agg ON release_agg.track_id = track_details.track_id
+      LEFT JOIN (
+        SELECT track__label.track_id, STRING_AGG(COALESCE(label_name, ''), ' ') AS label_text
+        FROM track__label NATURAL JOIN label
+        GROUP BY track__label.track_id
+      ) AS label_agg ON label_agg.track_id = track_details.track_id
+      JOIN user__track ON user__track.track_id = track_details.track_id
+        AND user__track.meta_account_user_id = ${userId}::INT
+    WHERE user__track_heard IS NULL
+      AND `
+      q.append(whereClause)
+      q.append(sql`)`)
+      return q
+    }
+
+    const trackQuery = sql`WITH `
+    trackQuery.append(buildMatchingIdsCte())
+    trackQuery.append(sql`
+SELECT track_details.track_id AS id
+     , td.*
+     , user__track_heard AS heard
+     , COALESCE(user_track_carts.carts, '[]'::JSON) AS carts
+FROM matching_ids
+  JOIN track_details USING (track_id)
+  JOIN JSON_TO_RECORD(track_details) AS td ( track_id INT, title TEXT, duration INT, added DATE, artists JSON
+                                           , version TEXT, labels JSON, remixers JSON, releases JSON, keys JSON
+                                           , genres JSON, previews JSON, stores JSON, released DATE, published DATE
+                                           , source_details JSON)
+       USING (track_id)
+  JOIN user__track ON user__track.track_id = track_details.track_id
+    AND user__track.meta_account_user_id = ${userId}::INT
+  LEFT JOIN (
+    SELECT track_id, JSON_AGG(JSON_BUILD_OBJECT('uuid', cart_uuid)) AS carts
+    FROM track__cart NATURAL JOIN cart
+    WHERE cart.meta_account_user_id = ${userId} AND cart_deleted IS NULL
+    GROUP BY track_id
+  ) user_track_carts USING (track_id)
+ORDER BY track_added DESC
+LIMIT ${limit} OFFSET ${offset}`)
+
+    const countQuery = sql`WITH `
+    countQuery.append(buildMatchingIdsCte())
+    countQuery.append(sql`
+SELECT COUNT(*) AS total FROM matching_ids`)
+
+    const [tracks, [{ total }]] = await Promise.all([
+      tx.queryRowsAsync(trackQuery),
+      tx.queryRowsAsync(countQuery),
+    ])
+
+    return { tracks, total: parseInt(total, 10) }
+  })
+
+  return {
+    tracks: result.tracks,
+    pagination: { offset, count: result.tracks.length, total: result.total },
+  }
+}
 
 module.exports.getNotifications = async (userId, stores) => {
   return queryNotifications(userId, stores)
