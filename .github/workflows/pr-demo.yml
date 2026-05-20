@@ -109,7 +109,7 @@ jobs:
           # PW_SLOWMO defaults to 600ms when PREVIEW_URL is set (see setup.js)
         run: |
           cd packages/back
-          NODE_ENV=ci dotenv -e .env.ci -- \
+          NODE_ENV=ci yarn dotenv -e .env.ci -- \
             npx cascade-test "${{ steps.demo.outputs.test_file }}"
 
       # ── 7. Upload the recorded video ──────────────────────────────────────
