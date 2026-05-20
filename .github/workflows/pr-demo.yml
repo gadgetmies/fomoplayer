@@ -1,14 +1,20 @@
 name: PR Demo Test
 
-# Runs when a maintainer applies the 'demo-test' label, or when new commits are
-# pushed to a PR that already carries the label.
+# Runs against the Railway PR preview whenever a trusted PR is opened,
+# edited, reopened, or pushed and its body contains a fenced
+# ```demo-test``` block naming a committed cascade-test path. The
+# author-association gate stops drive-by PRs from consuming preview
+# minutes or GitHub Actions minutes on the maintainer's account.
 on:
   pull_request:
-    types: [labeled, synchronize]
+    types: [opened, edited, synchronize, reopened]
 
 jobs:
   demo-test:
-    if: contains(github.event.pull_request.labels.*.name, 'demo-test')
+    if: >-
+      (github.event.pull_request.author_association == 'OWNER' ||
+       github.event.pull_request.author_association == 'COLLABORATOR') &&
+      contains(github.event.pull_request.body, '```demo-test')
     runs-on: ubuntu-latest
 
     permissions:
