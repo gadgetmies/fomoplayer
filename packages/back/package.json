@@ -13,7 +13,8 @@
     "test": "NODE_ENV=test dotenv -e .env.test -- npx cascade-test ./test/tests",
     "test:browser": "NODE_ENV=test dotenv -e .env.test -- npx cascade-test ./test/browser",
     "ci:test": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test ./test/tests",
-    "ci:test:browser": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test ./test/browser"
+    "ci:test:browser": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test ./test/browser",
+    "ci:demo": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test"
   },
   "engines": {
     "node": "22.x"
