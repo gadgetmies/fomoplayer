@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 'use strict'
 
+// Sentry first so unhandled errors during CLI bootstrap are captured.
+require('./sentry').init()
+
 const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
 const open = require('open')
@@ -17,6 +20,23 @@ let cli = yargs(hideBin(process.argv))
       const { key } = await login(getApiUrl(), (url) => open(url))
       setApiKey(key)
       console.log('Logged in successfully.')
+    },
+  })
+  .command({
+    // Sentry instrumentation smoke test. Captures a synthetic error so the
+    // operator can verify a real event reaches Sentry tagged `runtime: cli`.
+    command: 'sentry-test',
+    describe: false,
+    handler: async () => {
+      const Sentry = (() => {
+        try { return require('@sentry/node') } catch (_) { return null }
+      })()
+      const { flush } = require('./sentry')
+      const err = new Error('sentry-test (cli): synthetic error for instrumentation verification')
+      if (Sentry) Sentry.captureException(err)
+      await flush(2000)
+      console.error(err.message)
+      process.exit(1)
     },
   })
   .command(require('./commands/tracks'))

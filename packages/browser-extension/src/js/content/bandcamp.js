@@ -4,6 +4,7 @@
 //    sync features in src/js/popup/BandcampPanel.jsx),
 //  - bootstrapping the embedded Fomo Player player UI and per-track buttons,
 //  - triggering wishlist sync when the user is viewing their wishlist.
+import '../sentry'
 import browser from '../browser'
 import { installPlayerUi, setVisible } from './bandcamp/player-ui'
 import { installInjections, removeInjections } from './bandcamp/inject'

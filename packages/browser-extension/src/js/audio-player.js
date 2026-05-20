@@ -3,6 +3,7 @@
 // element, the playback queue, and the published state. Communicates with
 // the service worker / background entry via runtime messages so content
 // scripts on bandcamp.com pages can drive playback that survives navigation.
+import './sentry'
 //
 // In Chromium service-worker context this module is imported by the worker
 // bundle but `audio` resolves to null and we no-op; the worker delegates to

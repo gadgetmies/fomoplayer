@@ -1,6 +1,7 @@
 // Beatport content script. Runs on https://*.beatport.com/* pages and serves
 // scrape requests sent by the popup (and forwarded by the worker). Replaces
 // the MV2 `chrome.tabs.executeScript` pattern in src/js/popup/BeatportPanel.jsx.
+import '../sentry'
 import browser from '../browser'
 
 const PER_PAGE = 150
