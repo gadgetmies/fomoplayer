@@ -1,3 +1,4 @@
+import './sentry'
 import '../css/popup.css'
 import '../css/shared.css'
 import React from 'react'

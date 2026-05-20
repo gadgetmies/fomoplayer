@@ -8,6 +8,35 @@ npm start
 
 The app uses port 5002 by default. This can be configured via the `PORT` environment variable as using the `dotenv` files such as the `.env.example`. The frontend server by default proxies requests to `/api/`-path to the backend in order to prevent CORS issues. This behaviour is configured in the `src/setupProxy.js`.
 
+## Sentry instrumentation
+
+The front-end initialises `@sentry/browser` at the very top of `src/index.js`
+(via the side-effect import `src/sentry.js`). DSN, environment, and release
+come from build-time env vars (react-scripts requires the `REACT_APP_`
+prefix):
+
+```sh
+REACT_APP_SENTRY_DSN=https://…@sentry.io/…
+REACT_APP_SENTRY_ENVIRONMENT=production    # optional, defaults to REACT_APP_ENV
+REACT_APP_SENTRY_RELEASE=front@abcdef0     # set automatically by the build script from git SHA
+```
+
+When `REACT_APP_SENTRY_DSN` is unset (typical for `yarn start`) the SDK
+initialises in disabled mode and no events leave the browser.
+
+After a production build, upload source maps so Sentry can resolve stack
+traces to original positions:
+
+```sh
+SENTRY_AUTH_TOKEN=…  SENTRY_ORG=…  SENTRY_PROJECT=…  yarn build:sourcemaps:upload
+```
+
+`build:sourcemaps:upload` is a no-op when `SENTRY_AUTH_TOKEN` is unset, so
+local builds don't fail when credentials are missing.
+
+Smoke test: visit `/?sentryTest=1` after a build to throw a synthetic error
+tagged `runtime: front`.
+
 ## Create React App stuff
 
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).

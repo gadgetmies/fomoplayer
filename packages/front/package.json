@@ -13,6 +13,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.7.1",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@mebtte/react-media-session": "https://github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951",
+    "@sentry/browser": "^8.47.0",
     "babel-plugin-macros": "^3.1.0",
     "chart.js": "^4.4.1",
     "fomoplayer_shared": "1.0.0",
@@ -37,7 +38,8 @@
 
 
     "start": "GENERATE_SOURCEMAP=true REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL REACT_APP_FRONTEND_URL=$FRONTEND_URL PORT=4004 react-scripts start",
-    "build": "GENERATE_SOURCEMAP=true REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL REACT_APP_FRONTEND_URL=$FRONTEND_URL react-scripts build && mkdir -p ../back/public && cp -r build/* ../back/public/",
+    "build": "REACT_APP_SENTRY_RELEASE=\"${SENTRY_RELEASE:-front@$(git rev-parse --short HEAD 2>/dev/null || echo dev)}\" GENERATE_SOURCEMAP=true REACT_APP_ENV=$NODE_ENV REACT_APP_API_URL=$API_URL REACT_APP_FRONTEND_URL=$FRONTEND_URL react-scripts build && mkdir -p ../back/public && cp -r build/* ../back/public/",
+    "build:sourcemaps:upload": "node scripts/upload-sourcemaps.js",
 
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"

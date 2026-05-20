@@ -1,3 +1,6 @@
+// Sentry first — side-effecting import so init runs before anything that can throw.
+import './sentry'
+
 import * as R from 'ramda'
 import browser from './browser'
 import { bandcampReleasesTransform } from './transforms/bandcamp'

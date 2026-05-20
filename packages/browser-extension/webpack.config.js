@@ -113,7 +113,16 @@ const options = {
   plugins: [
     new CleanWebpackPlugin(),
     new DefinePlugin({ ...config, BROWSER: JSON.stringify(browser) }),
-    new EnvironmentPlugin({ ...sharedConfigForEnv, IP: sharedConfig.IP || '' }),
+    new EnvironmentPlugin({
+      ...sharedConfigForEnv,
+      IP: sharedConfig.IP || '',
+      // Sentry build-time injection: empty string means "Sentry disabled"
+      // at runtime. We compute release from the manifest version so it
+      // matches what ships in the extension store.
+      SENTRY_DSN: process.env.SENTRY_DSN || '',
+      SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT || '',
+      SENTRY_RELEASE: process.env.SENTRY_RELEASE || `extension@${pkg.version}`,
+    }),
     new CopyWebpackPlugin({
       patterns: [
         {

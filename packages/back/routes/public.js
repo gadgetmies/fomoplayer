@@ -47,6 +47,17 @@ const createPublicRouter = ({
 
   router.get('/health', (_, res) => res.json({ status: 'ok' }))
 
+  // Sentry instrumentation smoke test. Triggers a synthetic error so the
+  // operator can verify a real event reaches Sentry tagged `runtime: back`.
+  // Gated by SENTRY_TEST_TOKEN so it's safe to leave deployed.
+  router.get('/debug/sentry-test', (req, res) => {
+    const token = process.env.SENTRY_TEST_TOKEN
+    if (!token || req.query.token !== token) {
+      return res.status(404).end()
+    }
+    throw new Error('sentry-test (back): synthetic error for instrumentation verification')
+  })
+
   router.get('/sign-up-available', async (_, res) => {
     if (config.isPreviewEnv) {
       return res.send({ available: false })
