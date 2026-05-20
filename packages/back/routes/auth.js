@@ -785,9 +785,9 @@ const createAuthRouter = ({
           token,
           audience: apiOrigin,
           allowedRepo: githubActionsOidcRepo,
+          logger,
         })
         if (!payload) {
-          logger.warn('Actions OIDC login rejected: invalid or unauthorized token')
           return res.status(401).json({ error: 'Invalid or unauthorized Actions token' })
         }
 
