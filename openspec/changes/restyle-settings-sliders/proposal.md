@@ -26,10 +26,12 @@ for shipping a recorded demo alongside the change.
   score-weight slider, drags its thumb, and asserts the value and
   filled-track width respond, producing a Playwright video and trace
   when run via the `demo-test` workflow.
-- Document the demo-test wiring in the PR body: the PR will carry the
-  `demo-test` label and embed a fenced ` ```demo-test ` block pointing
-  at the new test file so `.github/workflows/pr-demo.yml` picks it up
-  and uploads the recorded video as an artifact.
+- Document the demo-test wiring in the PR body: the PR will embed a
+  fenced ` ```demo-test ` block pointing at the new test file so
+  `.github/workflows/pr-demo.yml` picks it up and uploads the
+  recorded video as an artifact. The workflow triggers on PR
+  open/edit/sync and gates on the fenced block plus the author's
+  `OWNER`/`COLLABORATOR` association; no label is required.
 
 ## Capabilities
 
@@ -38,9 +40,10 @@ for shipping a recorded demo alongside the change.
   controls used on the settings page (track shape, thumb shape, brand
   colour sourcing, and cross-browser coverage).
 - `pr-demo-test-workflow`: documents the contract the `pr-demo.yml`
-  GitHub workflow expects from a PR (label + fenced ` ```demo-test `
-  block in the body) and how a committed cascade-test file is wired up
-  so the workflow produces the recorded video artifact.
+  GitHub workflow expects from a PR (fenced ` ```demo-test ` block in
+  the body + trusted `author_association`) and how a committed
+  cascade-test file is wired up so the workflow produces the recorded
+  video artifact.
 
 ### Modified Capabilities
 
@@ -60,6 +63,7 @@ requirement of `fomoplayer-theme-tokens`._
 - `packages/back/test/browser/settings-slider.js`: new cascade-test
   file exercising a settings slider end-to-end.
 - PR description: gains a ` ```demo-test ` fenced block pointing at
-  `test/browser/settings-slider.js` and the `demo-test` label so the
-  existing `pr-demo.yml` workflow runs it against the Railway preview.
+  `test/browser/settings-slider.js`; the existing `pr-demo.yml`
+  workflow runs it against the Railway preview when the PR is opened
+  by an `OWNER`/`COLLABORATOR`.
 - No backend, no database, no API surface changes.

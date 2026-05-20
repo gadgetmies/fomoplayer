@@ -141,26 +141,31 @@ file uses the existing `cascade-test` framework already used by
 
 ### 5. PR-demo wiring
 
-**Choice:** the PR opened from this branch will:
+**Choice:** the PR opened from this branch will embed a fenced block
+of the exact form `.github/workflows/pr-demo.yml` expects in its body:
 
-- Carry the GitHub label `demo-test` (must be applied by a maintainer
-  per the workflow's `pull_request: types: [labeled, synchronize]`
-  trigger).
-- Embed in the PR body a fenced block of the exact form expected by
-  `.github/workflows/pr-demo.yml`:
+```demo-test
+test/browser/settings-slider.js
+```
 
-  ```demo-test
-  test/browser/settings-slider.js
-  ```
+The workflow triggers on `pull_request: types: [opened, edited,
+synchronize, reopened]` and gates the `demo-test` job on (a) the body
+containing a fenced ` ```demo-test ` block and (b) the PR
+`author_association` being `OWNER` or `COLLABORATOR`. No GitHub label
+is needed; the fenced block is the sole opt-in signal. The workflow
+reads the path relative to `packages/back/` and runs `cascade-test`
+against the Railway preview deployment, uploading the recorded video
+as `demo-video-pr-<n>` and commenting on the PR with a link to the
+run.
 
-  The workflow reads the path relative to `packages/back/` and runs
-  `cascade-test` against the Railway preview deployment, uploading
-  the recorded video as `demo-video-pr-<n>` and commenting on the
-  PR with a link to the run.
-
-**Rationale:** mirrors the contract already documented inline in the
-workflow file. We are exercising the existing pipeline rather than
-inventing a new one.
+**Rationale:** an earlier draft of this change used a `demo-test`
+label as the trigger, paired with an auto-label workflow that
+applied it from the body. That broke against GitHub's safety rule
+that `GITHUB_TOKEN`-emitted events do not propagate to other
+workflows, so the labelled event never reached `pr-demo.yml`. The
+fenced block + author-association gate sidesteps the propagation
+issue and keeps the cheap maintainer protection against drive-by PRs
+spending Railway preview minutes.
 
 ## Risks / Trade-offs
 

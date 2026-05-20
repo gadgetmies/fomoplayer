@@ -46,14 +46,12 @@
 
 ## 3. Wire the test into the PR-demo workflow
 
-- [ ] 3.1 Add a `demo-test` GitHub label to the PR opened from this
-  branch (a maintainer applies it on the GitHub UI; document this in
-  the PR body for re-discoverability).
-- [ ] 3.2 Author the PR body so it includes the exact fenced block
+- [x] 3.1 Author the PR body so it includes the exact fenced block
   `\`\`\`demo-test\ntest/browser/settings-slider.js\n\`\`\``, matching
   the regex `.github/workflows/pr-demo.yml` parses
-  (`/```demo-test\r?\n([\s\S]*?)```/`).
-- [ ] 3.3 After the PR is opened and the workflow runs, verify a
+  (`/```demo-test\r?\n([\s\S]*?)```/`). The author must be an `OWNER`
+  or `COLLABORATOR` for the job's `if:` guard to pass.
+- [ ] 3.2 After the PR is opened and the workflow runs, verify a
   `demo-video-pr-<n>` artifact appears on the run page and that the
   workflow comments back with a link.
 
