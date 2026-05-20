@@ -5,33 +5,101 @@ const jwt = require('jsonwebtoken')
 
 const GITHUB_ACTIONS_ISSUER = 'https://token.actions.githubusercontent.com'
 
-const jwksClient = jwksRsa({
+const defaultJwksClient = jwksRsa({
   cache: true,
   rateLimit: true,
   jwksRequestsPerMinute: 5,
   jwksUri: `${GITHUB_ACTIONS_ISSUER}/.well-known/jwks.json`,
 })
 
-const getSigningKey = (header, callback) => {
-  jwksClient.getSigningKey(header.kid, (err, key) => {
-    if (err) return callback(err)
-    callback(null, key.getPublicKey())
-  })
+const extractUnverifiedClaims = (token) => {
+  try {
+    const decoded = jwt.decode(token, { complete: true })
+    if (!decoded || typeof decoded !== 'object') return null
+    const payload = decoded.payload && typeof decoded.payload === 'object' ? decoded.payload : {}
+    const header = decoded.header && typeof decoded.header === 'object' ? decoded.header : {}
+    return {
+      iss: payload.iss ?? null,
+      aud: payload.aud ?? null,
+      sub: payload.sub ?? null,
+      repository: payload.repository ?? null,
+      exp: payload.exp ?? null,
+      alg: header.alg ?? null,
+    }
+  } catch {
+    return null
+  }
 }
 
-const verifyActionsToken = ({ token, audience, allowedRepo }) =>
-  new Promise((resolve) => {
-    if (!token || !audience || !allowedRepo) return resolve(null)
-    jwt.verify(
-      token,
-      getSigningKey,
-      { issuer: GITHUB_ACTIONS_ISSUER, audience, algorithms: ['RS256'] },
-      (err, payload) => {
-        if (err || !payload || typeof payload !== 'object') return resolve(null)
-        if (payload.repository !== allowedRepo) return resolve(null)
-        resolve(payload)
-      },
-    )
-  })
+const createVerifyActionsToken = ({ jwksClient = defaultJwksClient } = {}) =>
+  ({ token, audience, allowedRepo, logger } = {}) =>
+    new Promise((resolve) => {
+      const safeWarn = (reason, detail) => {
+        if (typeof logger?.warn !== 'function') return
+        logger.warn({
+          reason,
+          expectedAudience: audience ?? null,
+          expectedRepo: allowedRepo ?? null,
+          issuer: GITHUB_ACTIONS_ISSUER,
+          ...detail,
+        })
+      }
 
-module.exports = { verifyActionsToken, GITHUB_ACTIONS_ISSUER }
+      if (!token || !audience || !allowedRepo) {
+        const missing = []
+        if (!token) missing.push('token')
+        if (!audience) missing.push('audience')
+        if (!allowedRepo) missing.push('allowedRepo')
+        safeWarn('verifier-input-missing', { missing })
+        return resolve(null)
+      }
+
+      let jwksFetchFailedWarned = false
+      const getSigningKey = (header, callback) => {
+        jwksClient.getSigningKey(header.kid, (err, key) => {
+          if (err) {
+            safeWarn('jwks-key-fetch-failed', {
+              kid: header?.kid ?? null,
+              errorName: err.name ?? null,
+              errorMessage: err.message ?? null,
+            })
+            jwksFetchFailedWarned = true
+            return callback(err)
+          }
+          callback(null, key.getPublicKey())
+        })
+      }
+
+      jwt.verify(
+        token,
+        getSigningKey,
+        { issuer: GITHUB_ACTIONS_ISSUER, audience, algorithms: ['RS256'] },
+        (err, payload) => {
+          if (err || !payload || typeof payload !== 'object') {
+            if (!jwksFetchFailedWarned) {
+              safeWarn('signature-or-claim-verification-failed', {
+                jwtErrorName: err?.name ?? null,
+                jwtErrorMessage: err?.message ?? null,
+                unverifiedClaims: extractUnverifiedClaims(token),
+              })
+            }
+            return resolve(null)
+          }
+          if (payload.repository !== allowedRepo) {
+            safeWarn('repository-claim-mismatch', {
+              observedRepo: payload.repository ?? null,
+            })
+            return resolve(null)
+          }
+          resolve(payload)
+        },
+      )
+    })
+
+const verifyActionsToken = createVerifyActionsToken()
+
+module.exports = {
+  verifyActionsToken,
+  createVerifyActionsToken,
+  GITHUB_ACTIONS_ISSUER,
+}
