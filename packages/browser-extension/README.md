@@ -44,6 +44,25 @@ FRONTEND_URL=https://fomoplayer.com yarn build:safari       # → build/safari/
 fails fast when it is missing. The repo CLAUDE.md disallows deployment
 domains in source, so the URL must come from the env at build time.
 
+Optional Sentry build-time env vars (set them when packaging the production
+extension so the bundle ships with Sentry enabled, omit them in dev so the
+SDK initialises in disabled mode):
+
+```sh
+SENTRY_DSN=https://…@sentry.io/…  yarn build:chrome
+SENTRY_ENVIRONMENT=production     yarn build:chrome
+SENTRY_RELEASE=extension@$(jq -r .version src/manifest.base.json) yarn build:chrome
+```
+
+`SENTRY_RELEASE` defaults to `extension@<package.json version>` so it stays
+in lockstep with the manifest version that ships in the extension store.
+A built bundle with no DSN configured contains no DSN string (the SDK
+short-circuits at runtime).
+
+To verify instrumentation after loading the extension, open
+`chrome-extension://<id>/options.html?sentryTest=1` — the options entry
+throws a synthetic error tagged `runtime: extension`.
+
 The webpack config picks the manifest overlay from `BROWSER` (default
 `chrome`) and writes the result to `build/<browser>/`. `NODE_ENV=production`
 is set by the build scripts so the bundle does not contain HMR / eval. To

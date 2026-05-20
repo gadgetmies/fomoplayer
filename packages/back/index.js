@@ -1,3 +1,8 @@
+// Sentry must initialise before anything that could throw so bootstrap errors
+// are captured. The init is a no-op when SENTRY_DSN is unset.
+const sentry = require('./sentry.js')
+const sentryInitResult = sentry.init()
+
 const colorTrace = require('color-stacktrace')
 colorTrace.init(Error)
 const config = require('./config.js')
@@ -6,6 +11,7 @@ const logger = require('fomoplayer_shared').logger(__filename)
 logger.info('####################################')
 logger.info('####### Starting Fomo Player #######')
 logger.info('####################################')
+logger.info('Sentry init', sentryInitResult)
 
 if (!config.cryptoKey || Buffer.byteLength(config.cryptoKey, 'utf8') < 16) {
   logger.error('CRYPTO_KEY must be set and at least 16 bytes — refusing to start')
@@ -98,6 +104,11 @@ const corsOptions = {
 
 app.use(cors(corsOptions))
 app.options('*', cors(corsOptions)) // include before other routes
+
+// Sentry triage webhook. Mounted BEFORE the general JSON body parser so its
+// raw-body middleware can verify the HMAC signature against the exact bytes
+// Sentry signed. Ship-dark via TRIAGE_ENABLED=false (default).
+app.use('/api/sentry-webhook', require('./routes/sentry-webhook.js')())
 
 app.use('/api/admin', bodyParser.json({ limit: '20mb', extended: true, type: ['application/json', 'application/*+json'] }))
 app.use(bodyParser.json({ limit: '1mb', extended: true, type: ['application/json', 'application/*+json'] }))
@@ -253,6 +264,9 @@ const handleErrors = (err, req, res, _) => {
   })
 }
 
+// Sentry's Express error handler must precede our handleErrors so unhandled
+// errors are reported to Sentry before we render the JSON response.
+sentry.setupExpressErrorHandler(app)
 app.use(handleErrors)
 
 app.listen(config.port)

@@ -1,0 +1,77 @@
+name: Sentry Stale-Bot
+
+# Closes draft PRs labelled `sentry-fix` after 14 days of no activity, and
+# also closes any open GH issue sharing the same `sentry:<id>` label so the
+# dedup slot is freed. Without the explicit issue close, GitHub leaves the
+# linked triage issue open when a PR is closed without merging — which
+# would keep that Sentry id permanently de-duplicated.
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # daily 07:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close stale sentry-fix draft PRs and their linked issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const STALE_DAYS = 14
+            const cutoff = new Date(Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000)
+
+            const { data: search } = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} type:pr is:open is:draft label:"sentry-fix"`,
+              per_page: 100,
+            })
+
+            for (const pr of search.items) {
+              const updated = new Date(pr.updated_at)
+              if (updated >= cutoff) continue
+              const sentryLabels = (pr.labels || [])
+                .map((l) => (typeof l === 'string' ? l : l.name))
+                .filter((n) => n && n.startsWith('sentry:'))
+
+              core.info(`Closing stale PR #${pr.number} (last update ${pr.updated_at})`)
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `Auto-closing this draft \`sentry-fix\` PR after ${STALE_DAYS} days of no activity to free the dedup slot. Reopen it (or remove the \`sentry-fix\` label) if you still want to land it.`,
+              })
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                state: 'closed',
+              })
+
+              // Close linked triage issues that share the same sentry:<id> label.
+              for (const label of sentryLabels) {
+                const { data: issueSearch } = await github.rest.search.issuesAndPullRequests({
+                  q: `repo:${context.repo.owner}/${context.repo.repo} type:issue is:open label:"${label}"`,
+                })
+                for (const issue of issueSearch.items) {
+                  core.info(`Closing linked issue #${issue.number} (label ${label})`)
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: `Auto-closing alongside stale draft PR #${pr.number}.`,
+                  })
+                  await github.rest.issues.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    state: 'closed',
+                  })
+                }
+              }
+            }

@@ -1,3 +1,4 @@
+import './sentry'
 import browser from './browser'
 
 const params = new URLSearchParams(window.location.search)

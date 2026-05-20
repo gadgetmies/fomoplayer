@@ -1,0 +1,105 @@
+name: Sentry Cap-Recovery Cron
+
+# Hourly sweep: re-triage any unresolved Sentry issue that has no in-flight
+# GH issue or PR sharing its `sentry:<id>` label.
+#
+# For each candidate, POST a signed payload to /api/sentry-webhook so the
+# same filter pipeline runs (denylist, threshold, dedup, wont-fix, caps).
+# Dispatches one at a time; the webhook itself enforces maxInFlight, so
+# this loop just iterates the eligible list.
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  cap-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SENTRY_API_TOKEN: ${{ secrets.SENTRY_API_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      SENTRY_WEBHOOK_SECRET: ${{ secrets.SENTRY_WEBHOOK_SECRET }}
+      WEBHOOK_URL: ${{ vars.SENTRY_WEBHOOK_URL }}
+
+    steps:
+      - name: Refuse to run without required env
+        run: |
+          MISSING=()
+          for var in SENTRY_API_TOKEN SENTRY_ORG SENTRY_PROJECT SENTRY_WEBHOOK_SECRET WEBHOOK_URL; do
+            if [ -z "${!var:-}" ]; then MISSING+=("$var"); fi
+          done
+          if [ ${#MISSING[@]} -ne 0 ]; then
+            echo "::error::Missing required env: ${MISSING[*]}"; exit 1
+          fi
+
+      - name: Replay unresolved Sentry issues through the triage webhook
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const crypto = require('crypto')
+
+            const sentryFetch = async (url) => {
+              const res = await fetch(url, {
+                headers: { Authorization: `Bearer ${process.env.SENTRY_API_TOKEN}` },
+              })
+              if (!res.ok) throw new Error(`Sentry ${url} returned ${res.status}`)
+              return res.json()
+            }
+
+            const issuesUrl = `https://sentry.io/api/0/projects/${process.env.SENTRY_ORG}/${process.env.SENTRY_PROJECT}/issues/?query=is:unresolved&statsPeriod=14d&limit=100`
+            const issues = await sentryFetch(issuesUrl)
+            core.info(`Found ${issues.length} unresolved Sentry issue(s)`)
+
+            for (const issue of issues) {
+              // GitHub dedup check — skip anything already in-flight on GH.
+              const { data: search } = await github.rest.search.issuesAndPullRequests({
+                q: `repo:${context.repo.owner}/${context.repo.repo} is:open label:"sentry:${issue.id}"`,
+              })
+              if (search.items.length > 0) {
+                core.info(`Skipping ${issue.id}: open GH issue/PR already exists`)
+                continue
+              }
+
+              // Synthesize a webhook payload that mirrors Sentry's own
+              // issue.created hook shape so the route's filter pipeline
+              // takes the normal path.
+              const payload = JSON.stringify({
+                action: 'unresolved',
+                data: { issue },
+                source: 'sentry-cron',
+              })
+              const signature = crypto
+                .createHmac('sha256', process.env.SENTRY_WEBHOOK_SECRET)
+                .update(payload)
+                .digest('hex')
+
+              const res = await fetch(process.env.WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Sentry-Hook-Resource': 'issue',
+                  'Sentry-Hook-Signature': signature,
+                },
+                body: payload,
+              })
+              const text = await res.text()
+              core.info(`webhook ${issue.id} → ${res.status} ${text.slice(0, 200)}`)
+
+              // Stop iterating early if the webhook reports the in-flight
+              // cap; we'll try again next hour.
+              try {
+                const parsed = JSON.parse(text)
+                if (parsed.skip === 'inflight_cap' || parsed.skip === 'daily_dispatch_cap') {
+                  core.info(`Hit ${parsed.skip}; stopping this run`)
+                  break
+                }
+              } catch (_) {
+                // non-JSON response, ignore
+              }
+            }
