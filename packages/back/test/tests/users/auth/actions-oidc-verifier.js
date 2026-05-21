@@ -8,6 +8,7 @@ const { test } = require('cascade-test')
 const {
   createVerifyActionsToken,
   GITHUB_ACTIONS_ISSUER,
+  GITHUB_ACTIONS_JWKS_URI,
 } = require('../../../../routes/shared/github-actions-oidc')
 
 const AUDIENCE = 'https://preview-pr-1.up.railway.app'
@@ -50,6 +51,13 @@ const createRecordingLogger = () => {
 }
 
 test({
+  'JWKS URI matches GitHub Actions OIDC discovery (regression: 401 from wrong path)': () => {
+    expect(GITHUB_ACTIONS_JWKS_URI).to.equal(
+      'https://token.actions.githubusercontent.com/.well-known/jwks',
+    )
+    expect(GITHUB_ACTIONS_JWKS_URI.endsWith('.json')).to.equal(false)
+  },
+
   'verifier-input-missing — missing token logs reason and resolves null': async () => {
     const logger = createRecordingLogger()
     const verify = createVerifyActionsToken({ jwksClient: fakeJwksClient('unused') })

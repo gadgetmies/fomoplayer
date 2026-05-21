@@ -4,12 +4,18 @@ const jwksRsa = require('jwks-rsa')
 const jwt = require('jsonwebtoken')
 
 const GITHUB_ACTIONS_ISSUER = 'https://token.actions.githubusercontent.com'
+// GitHub Actions OIDC publishes its JWKS at /.well-known/jwks (no `.json`
+// suffix). The discovery doc at
+// https://token.actions.githubusercontent.com/.well-known/openid-configuration
+// declares this; the .json URL returns 404 and surfaces here as
+// `JwksError: Not Found`.
+const GITHUB_ACTIONS_JWKS_URI = `${GITHUB_ACTIONS_ISSUER}/.well-known/jwks`
 
 const defaultJwksClient = jwksRsa({
   cache: true,
   rateLimit: true,
   jwksRequestsPerMinute: 5,
-  jwksUri: `${GITHUB_ACTIONS_ISSUER}/.well-known/jwks.json`,
+  jwksUri: GITHUB_ACTIONS_JWKS_URI,
 })
 
 const extractUnverifiedClaims = (token) => {
@@ -107,4 +113,5 @@ module.exports = {
   verifyActionsToken,
   createVerifyActionsToken,
   GITHUB_ACTIONS_ISSUER,
+  GITHUB_ACTIONS_JWKS_URI,
 }
