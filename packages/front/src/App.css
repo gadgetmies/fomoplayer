@@ -243,15 +243,9 @@ input[type='range'] {
   width: 10rem;
   height: 1rem;
   margin: 5px;
-  padding: calc(0.5rem - 1px) 0;
   box-sizing: border-box;
   border: none;
   background-color: transparent;
-  background-image: linear-gradient(var(--fp-brand-primary), var(--fp-brand-primary));
-  background-repeat: no-repeat;
-  background-position: center;
-  background-origin: content-box;
-  background-clip: content-box;
   transition:
     box-shadow 0.25s ease-in-out,
     width 0.25s ease-in-out;
@@ -272,16 +266,18 @@ input[type='range']::-webkit-slider-thumb {
 
 input[type='range']::-webkit-slider-runnable-track {
   -webkit-appearance: none;
-  height: 2px;
-  background: transparent;
-  border: none;
+  height: 4px;
+  background: #222;
+  border: 1px solid #555;
+  border-radius: 2px;
   box-shadow: none;
 }
 
 input[type='range']::-moz-range-track {
-  height: 2px;
-  background: transparent;
-  border: none;
+  height: 4px;
+  background: #222;
+  border: 1px solid #555;
+  border-radius: 2px;
 }
 
 input[type='range']::-moz-range-thumb {
