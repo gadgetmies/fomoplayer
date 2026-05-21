@@ -112,48 +112,70 @@
 - [x] 5.1 Commit steps 2–4 to master as a single change (per the
       project's commit policy that backend + tests stay together).
       Per user request, landed on side branch
-      `diagnose-pr-demo-actions-oidc-401` (commit `6e5b1c36`) and
-      pushed to origin — PR to be opened by user, then merged to
-      master before the next steps. Original migration plan
+      `diagnose-pr-demo-actions-oidc-401` (commit `fc495b47` after
+      amend) and opened as PR #352. Original migration plan
       (commit directly to master) was preserved as a single
       bundled commit.
-- [ ] 5.2 Rebase the `restyle-settings-sliders` branch (or whichever
+- [x] 5.2 Rebase the `restyle-settings-sliders` branch (or whichever
       branch currently has the failing PR demo) onto master and
       force-with-lease push, so Railway redeploys the PR preview
-      with the diagnostic.
-- [ ] 5.3 Wait for the Railway PR preview to finish redeploying.
+      with the diagnostic. Per user request, instead of rebasing
+      slider branch onto master (which would require merging the
+      diagnose PR first), cherry-picked commit `fc495b47` from the
+      diagnose branch directly onto `restyle-settings-sliders` as
+      `f5f88f2c` and pushed to PR #349. Same net effect — Railway
+      redeploys the preview with the instrumented verifier.
+- [x] 5.3 Wait for the Railway PR preview to finish redeploying.
       Then retrigger `PR Demo Test` on the PR (either
       `gh run rerun --failed <run-id>` against the most recent run
-      or push an empty commit).
+      or push an empty commit). The push to PR #349 auto-triggered
+      `PR Demo Test`; run 26168858681 (head SHA `f5f88f2c`) ran the
+      cascade-test against the redeployed preview at 14:24:42 UTC
+      and failed at the expected `/api/auth/login/actions` 401,
+      confirming the new code is live and the structured warn
+      should now be in Railway logs for this run window.
 - [ ] 5.4 Read the Railway log for the new `verifyActionsToken` warn
       attributable to the cascade-test request. Capture the
       structured `reason` value and any associated fields in
       `notes.md` (create the file if it doesn't exist).
 
+      First attempt (commit `f5f88f2c` on PR #349) returned the
+      expected 401 but Railway logs surfaced only the morgan POST
+      entry, no `logger.warn`. Hypothesis: the shared logger's
+      `winston.format.json()` call form `logger.warn(object)` nests
+      the payload under `message` and may be filtered by Railway's
+      log presentation, or `LOG_LEVEL` in the preview env is set
+      above `warn`. Added a dual-emit fallback (`console.warn` with
+      `[verifyActionsToken]` prefix in addition to the structured
+      `logger.warn`) on commit `d19ec58b` (PR #349) /
+      `374337da` (PR #352) so the diagnostic reaches stdout
+      regardless of winston wiring.
+
 ## 6. Apply the targeted fix
 
-- [ ] 6.1 Based on the observed `reason` and the diagnostic fields,
-      identify the root cause:
-      - `signature-or-claim-verification-failed` with `aud` mismatch:
-        normalize trailing slashes on backend `apiOrigin` (or
-        whichever side has the discrepancy) and document the
-        normalization in `routes/auth.js` near the verifier call.
-      - `jwks-key-fetch-failed`: investigate Railway's outbound
-        connectivity to `token.actions.githubusercontent.com`;
-        possibly add a retry or surface a more specific error to
-        the workflow.
-      - `repository-claim-mismatch`: confirm
-        `GITHUB_ACTIONS_OIDC_REPO` matches the actual repo
-        (`owner/name`, case-sensitive); fix the env var or the
-        comparison.
-      - `verifier-input-missing`: trace which input is undefined
-        and fix at the source.
-- [ ] 6.2 Implement the fix in the same change. Add a regression
+- [x] 6.1 Based on the observed `reason` and the diagnostic fields,
+      identify the root cause: `jwks-key-fetch-failed` with
+      `errorName: 'JwksError'` and `errorMessage: 'Not Found'` for
+      a well-formed `kid`. The verifier's hard-coded
+      `jwksUri: ${GITHUB_ACTIONS_ISSUER}/.well-known/jwks.json`
+      returns HTTP 404; GitHub Actions OIDC's discovery doc
+      declares `jwks_uri:
+      https://token.actions.githubusercontent.com/.well-known/jwks`
+      (no `.json` suffix). The wrong path means every JWKS lookup
+      404s and the verifier returns `null` before ever inspecting
+      the token's signature or claims. Not a Railway egress issue,
+      not an audience normalization issue, not a repo-claim issue
+      — purely the URL.
+- [x] 6.2 Implement the fix in the same change. Add a regression
       cascade-test under
       `packages/back/test/tests/users/auth/actions-oidc-login.js`
       or the new verifier file that exercises the specific cause
       (e.g. audience-with-trailing-slash matches audience-without,
-      or a known-bad repo string is rejected).
+      or a known-bad repo string is rejected). Renamed JWKS path
+      constant to `GITHUB_ACTIONS_JWKS_URI` and exported it;
+      added a regression case in `actions-oidc-verifier.js` that
+      asserts the URI equals the literal GitHub-published
+      `/.well-known/jwks` (no `.json`). 18/18 cases pass.
 - [ ] 6.3 Commit the fix, rebase the PR branch on master again,
       force-with-lease push, and confirm `PR Demo Test` now reaches
       the cascade-test execution phase (i.e. the 401 is gone). The
