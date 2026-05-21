@@ -35,14 +35,19 @@ const createVerifyActionsToken = ({ jwksClient = defaultJwksClient } = {}) =>
   ({ token, audience, allowedRepo, logger } = {}) =>
     new Promise((resolve) => {
       const safeWarn = (reason, detail) => {
-        if (typeof logger?.warn !== 'function') return
-        logger.warn({
+        const payload = {
           reason,
           expectedAudience: audience ?? null,
           expectedRepo: allowedRepo ?? null,
           issuer: GITHUB_ACTIONS_ISSUER,
           ...detail,
-        })
+        }
+        try {
+          console.warn(`[verifyActionsToken] ${JSON.stringify(payload)}`)
+        } catch {
+          /* never let logging break verification */
+        }
+        if (typeof logger?.warn === 'function') logger.warn(payload)
       }
 
       if (!token || !audience || !allowedRepo) {
