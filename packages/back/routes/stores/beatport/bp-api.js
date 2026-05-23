@@ -51,10 +51,13 @@ module.exports = {
   getPlaylist: (url) => apiGet(requirePlaylistBase(url)),
 
   getArtistTracks: async (artistId, page = 1) =>
-    (await apiGet(`/catalog/artists/${artistId}/tracks/?page=${page}&per_page=${PER_PAGE}`)).results,
+    (await apiGet(`/catalog/artists/${artistId}/tracks/?page=${page}&per_page=${PER_PAGE}&order_by=-publish_date`))
+      .results,
 
+  // Labels have no nested tracks route; filter the tracks collection by label.
   getLabelTracks: async (labelId, page = 1) =>
-    (await apiGet(`/catalog/labels/${labelId}/tracks/?page=${page}&per_page=${PER_PAGE}`)).results,
+    (await apiGet(`/catalog/tracks/?label_id=${labelId}&page=${page}&per_page=${PER_PAGE}&order_by=-publish_date`))
+      .results,
 
   getPlaylistTracks: async (url, page = 1) =>
     (await apiGet(`${requirePlaylistBase(url)}tracks/?page=${page}&per_page=${PER_PAGE}`)).results,
