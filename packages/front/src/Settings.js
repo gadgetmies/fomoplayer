@@ -722,7 +722,7 @@ class Settings extends Component {
                         if (this.state.followQuery.match('^https://')) {
                           try {
                             const results = await (
-                              await requestWithCredentials({ path: `/followDetails?q=${this.state.followQuery}` })
+                              await requestWithCredentials({ path: `/followDetails?q=${encodeURIComponent(this.state.followQuery)}` })
                             ).json()
                             if (this.state.followDetailsUpdateAborted) return
                             this.setState({ followDetails: results, updatingFollowDetails: null })
@@ -737,7 +737,7 @@ class Settings extends Component {
                         } else {
                           const promises = this.props.stores.map(({ storeName }) =>
                             requestWithCredentials({
-                              path: `/stores/${storeName}/search/?q=${this.state.followQuery}`,
+                              path: `/stores/${storeName}/search/?q=${encodeURIComponent(this.state.followQuery)}`,
                             })
                               .then(async (res) =>
                                 (await res.json()).map((result) => ({ stores: [storeName], ...result })),
