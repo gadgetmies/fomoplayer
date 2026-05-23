@@ -646,6 +646,74 @@ WITH
         follows
     GROUP BY 1
 )
+  , followed_artists AS (
+    -- Artists the user follows or has starred, with a per-artist weight that
+    -- counts starred artists double. Shared by the collaboration and label
+    -- affinity rewards below so their followed/starred set stays consistent.
+    SELECT
+        artist_id
+      , MAX(CASE WHEN store__artist_watch__user_starred THEN 2 ELSE 1 END) AS follow_weight
+    FROM
+        store__artist_watch__user
+            NATURAL JOIN logged_user
+            NATURAL JOIN store__artist_watch
+            NATURAL JOIN store__artist
+    GROUP BY artist_id
+)
+  , collaboration_artist_strength AS (
+    -- For every artist that has collaborated with a followed/starred artist,
+    -- accumulate the precomputed collaboration strength weighted by how the
+    -- collaborated-with artist is followed (starred counts double). Followed
+    -- artists themselves are excluded here because they are already rewarded
+    -- through the artist_follow score.
+    SELECT
+        artist_collaboration.collaborator_artist_id AS artist_id
+      , SUM(artist_collaboration.collaboration_strength * followed_artists.follow_weight) AS strength
+    FROM
+        followed_artists
+            JOIN artist_collaboration ON artist_collaboration.artist_id = followed_artists.artist_id
+    WHERE
+        artist_collaboration.collaborator_artist_id NOT IN (SELECT artist_id FROM followed_artists)
+    GROUP BY 1
+)
+  , collaboration_scores AS (
+    SELECT
+        track_id
+      , SUM(collaboration_artist_strength.strength) AS collaboration_score
+    FROM
+        tracks_to_score
+            NATURAL JOIN track__artist
+            JOIN collaboration_artist_strength USING (artist_id)
+    GROUP BY 1
+)
+  , label_affinity_labels AS (
+    -- Labels that the user's followed/starred artists release on, weighted by
+    -- how strongly those artists are followed (starred counts double, and a
+    -- label gets the strongest connection among them).
+    SELECT
+        artist_label_track_count.label_id
+      , MAX(followed_artists.follow_weight) AS label_weight
+    FROM
+        followed_artists
+            JOIN artist_label_track_count ON artist_label_track_count.artist_id = followed_artists.artist_id
+    GROUP BY artist_label_track_count.label_id
+)
+  , label_affinity_scores AS (
+    -- Reward candidate tracks by how many tracks their artists have released on
+    -- those same labels. Followed/starred artists themselves are excluded since
+    -- they are already rewarded through the artist_follow score.
+    SELECT
+        track_id
+      , SUM(artist_label_track_count.track_count * label_affinity_labels.label_weight) AS label_affinity_score
+    FROM
+        tracks_to_score
+            NATURAL JOIN track__artist
+            JOIN artist_label_track_count USING (artist_id)
+            JOIN label_affinity_labels USING (label_id)
+    WHERE
+        artist_id NOT IN (SELECT artist_id FROM followed_artists)
+    GROUP BY track_id
+)
   , user_score_weights AS (
     SELECT
         user_track_score_weight_code
@@ -666,11 +734,15 @@ WITH
         COALESCE(label_follow_score, 0) * COALESCE(label_follow_multiplier, 0) +
         COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
         COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) +
-        COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) 
+        COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) +
+        COALESCE(collaboration_score, 0) * COALESCE(artist_collaboration_multiplier, 0) +
+        COALESCE(label_affinity_score, 0) * COALESCE(label_affinity_multiplier, 0)
       AS score
       , JSON_BUILD_OBJECT(
           'artist', JSON_BUILD_OBJECT('score', COALESCE(artist_score, 0), 'weight', artist_multiplier),
           'artist_follow', JSON_BUILD_OBJECT('score', COALESCE(artist_follow_score, 0), 'weight', artist_follow_multiplier),
+          'artist_collaboration', JSON_BUILD_OBJECT('score', COALESCE(collaboration_score, 0), 'weight', artist_collaboration_multiplier),
+          'label_affinity', JSON_BUILD_OBJECT('score', COALESCE(label_affinity_score, 0), 'weight', label_affinity_multiplier),
           'label', JSON_BUILD_OBJECT('score', COALESCE(label_score, 0), 'weight', label_multiplier),
           'label_follow', JSON_BUILD_OBJECT('score', COALESCE(label_follow_score, 0), 'weight', label_follow_multiplier),
           'date_added', JSON_BUILD_OBJECT('score', ROUND(added_score.score, 1), 'weight', date_added_multiplier),
@@ -690,6 +762,8 @@ WITH
            , artist_score
            , label_follow_score
            , artist_follow_score
+           , collaboration_score
+           , label_affinity_score
            , artists_starred
            , label_starred
            , (SELECT
@@ -741,12 +815,28 @@ WITH
               WHERE
                   user_track_score_weight_code = 'date_published'
              ) AS date_published_multiplier
+           , (SELECT
+                  user_track_score_weight_multiplier
+              FROM
+                  user_score_weights
+              WHERE
+                  user_track_score_weight_code = 'artist_collaboration'
+             ) AS artist_collaboration_multiplier
+           , (SELECT
+                  user_track_score_weight_multiplier
+              FROM
+                  user_score_weights
+              WHERE
+                  user_track_score_weight_code = 'label_affinity'
+             ) AS label_affinity_multiplier
          FROM
             tracks_to_score
                  NATURAL LEFT JOIN label_scores
                  NATURAL LEFT JOIN artist_scores
                  NATURAL LEFT JOIN label_follow_scores
                  NATURAL LEFT JOIN artist_follow_scores
+                 NATURAL LEFT JOIN collaboration_scores
+                 NATURAL LEFT JOIN label_affinity_scores
         ) AS tracks
             LEFT JOIN track_date_added_score AS added_score USING (track_id)
             LEFT JOIN track_date_released_score AS released_score USING (track_id)

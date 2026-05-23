@@ -15,6 +15,8 @@ const {
   updateDatePublishedScore,
   updateDateAddedScore,
   updatePurchasedScores,
+  updateArtistCollaborationScores,
+  updateArtistLabelTrackCounts,
 } = require('./jobs/scores')
 const { findMatchingTracks } = require('./jobs/find-matching-tracks')
 const { syncCarts } = require('./jobs/cart-sync')
@@ -155,6 +157,8 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   updateDateReleasedScore,
   updateDatePublishedScore,
   updatePurchasedScores,
+  updateArtistCollaborationScores,
+  updateArtistLabelTrackCounts,
   fetchBeatportWatches,
   fetchSpotifyWatches,
   fetchBandcampWatches,

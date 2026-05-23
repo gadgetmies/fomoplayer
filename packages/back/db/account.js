@@ -94,6 +94,8 @@ RETURNING meta_account_user_id AS id
              (5, 'artist', ${userId}),
              (1, 'label_follow', ${userId}),
              (5, 'artist_follow', ${userId}),
+             (1, 'artist_collaboration', ${userId}),
+             (0.1, 'label_affinity', ${userId}),
              (-0.1, 'date_published', ${userId}),
              (-0.1, 'date_released', ${userId}),
              (-0.1, 'date_added', ${userId})
