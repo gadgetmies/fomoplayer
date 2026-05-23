@@ -51,14 +51,46 @@ const enrichWithBandData = (script, tralbum) => {
 
 // Whether a bandcamp page is an artist or a label decides how the transform
 // attributes artists: on a label page the subdomain is the label, not the
-// artist. Label pages carry an `/artists` roster link; artist pages don't.
+// artist. Label accounts carry an `/artists` roster link, but many labels run
+// on plain band accounts — so we also treat a page as a label when a release
+// is credited to a different artist than the page (album byArtist != page
+// name) or the discography lists multiple distinct artists.
+const normalizeName = (value) => (value || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+
+const namesEquivalent = (a, b) => {
+  const x = normalizeName(a)
+  const y = normalizeName(b)
+  if (!x || !y) return true
+  return x === y || x.includes(y) || y.includes(x)
+}
+
+const getAlbumArtist = (doc) => {
+  const el = doc.querySelector('script[type="application/ld+json"]')
+  if (!el) return null
+  try {
+    const byArtist = JSON.parse(el.textContent)?.byArtist
+    if (Array.isArray(byArtist)) return byArtist[0]?.name || null
+    return byArtist?.name || null
+  } catch (_) {
+    return null
+  }
+}
+
 const getPageMeta = (doc) => {
   const siteName = doc.querySelector('[property="og:site_name"]')
   const nameFromTitle = doc.title && doc.title.split(' | ')[1]
-  return {
-    pageType: doc.querySelector('[href="/artists"]') === null ? 'artist' : 'label',
-    pageName: (siteName && siteName.getAttribute('content')) || nameFromTitle || null,
-  }
+  const pageName = (siteName && siteName.getAttribute('content')) || nameFromTitle || null
+  const albumArtist = getAlbumArtist(doc)
+  const overrideArtists = new Set(
+    Array.from(doc.querySelectorAll('#music-grid .artist-override'))
+      .map((el) => el.textContent.trim().toLowerCase())
+      .filter(Boolean),
+  )
+  const isLabel =
+    doc.querySelector('[href="/artists"]') !== null ||
+    (albumArtist && pageName && !namesEquivalent(albumArtist, pageName)) ||
+    overrideArtists.size >= 2
+  return { pageType: isLabel ? 'label' : 'artist', pageName, albumArtist }
 }
 
 const withPageMeta = (doc, tralbum) => (tralbum ? { ...tralbum, ...getPageMeta(doc) } : tralbum)

@@ -24,12 +24,48 @@ const extractJSON = R.curry((selector, attribute = undefined, dom) => {
   return JSON.parse(text)
 })
 
-// A Bandcamp subdomain ("band" page) is either an artist or a label. Label
-// pages expose an `/artists` link (the roster); artist pages do not. The
-// release URL of anything published through a label points at the *label's*
-// subdomain, so this is what lets the transform avoid treating the label as
-// the artist. Mirrors the heuristic in `getPageDetails`.
-const getPageType = (dom) => (dom.window.document.querySelector('[href="/artists"]') === null ? 'artist' : 'label')
+// A Bandcamp subdomain ("band" page) is either an artist or a label, but many
+// labels run on a plain band account: no `/artists` roster link and
+// is_label=false, so Bandcamp itself doesn't mark them as labels. We therefore
+// also treat a page as a label when a release is credited to a different artist
+// than the page (the album-level byArtist differs from the page name), or when
+// the discography lists releases by multiple distinct artists.
+const getLdJson = (dom) => {
+  const el = dom.window.document.querySelector('script[type="application/ld+json"]')
+  if (!el) return null
+  try {
+    return JSON.parse(el.textContent)
+  } catch (_) {
+    return null
+  }
+}
+
+// The authoritative album artist Bandcamp renders as the "by ..." byline.
+const getAlbumArtist = (dom) => {
+  const byArtist = getLdJson(dom)?.byArtist
+  if (Array.isArray(byArtist)) return byArtist[0]?.name || null
+  return byArtist?.name || null
+}
+
+const namesEquivalent = (a, b) => {
+  const x = normalizeName(a)
+  const y = normalizeName(b)
+  if (!x || !y) return true
+  return x === y || x.includes(y) || y.includes(x)
+}
+
+const detectPageType = (dom, { albumArtist, pageName } = {}) => {
+  const doc = dom.window.document
+  if (doc.querySelector('[href="/artists"]') !== null) return 'label'
+  if (albumArtist && pageName && !namesEquivalent(albumArtist, pageName)) return 'label'
+  const overrideArtists = new Set(
+    Array.from(doc.querySelectorAll('#music-grid .artist-override'))
+      .map((el) => el.textContent.trim().toLowerCase())
+      .filter(Boolean),
+  )
+  if (overrideArtists.size >= 2) return 'label'
+  return 'artist'
+}
 
 // Heuristic sanity check: a Bandcamp page's artist/label name usually
 // resembles its subdomain ("Ivy Lab" -> ivylab, "Fokuz Recordings" ->
@@ -131,14 +167,16 @@ const getRelease = (itemUrl, callback) => {
   return getPageSource(itemUrl)
     .then((res) => {
       const dom = new JSDOM(res)
-      const pageType = getPageType(dom)
       const pageName = getName(dom)
+      const albumArtist = getAlbumArtist(dom)
+      const pageType = detectPageType(dom, { albumArtist, pageName })
       warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
       callback(null, {
         ...getReleaseInfo(dom),
         url: itemUrl,
         pageType,
         pageName,
+        albumArtist,
       })
     })
     .catch((e) => {
@@ -232,12 +270,10 @@ const getPageDetails = (url, callback) => {
   return getPageSource(url)
     .then((res) => {
       const dom = new JSDOM(res)
-      const pageTitle = getName(dom)
-      const artistsLink = dom.window.document.querySelector('[href="/artists"]')
       return callback(null, {
-        id: getIdFromUrl,
-        name: pageTitle,
-        type: artistsLink === null ? 'artist' : 'label',
+        id: getIdFromUrl(url),
+        name: getName(dom),
+        type: detectPageType(dom),
       })
     })
     .catch((e) => {
