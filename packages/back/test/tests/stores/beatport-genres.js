@@ -48,4 +48,9 @@ test({
     assert.deepEqual(genreById(95), { id: 95, name: '140 / Deep Dubstep / Grime', slug: '140-deep-dubstep-grime' })
     assert.equal(genreTop100Url(genreById(95)), 'https://www.beatport.com/genre/140-deep-dubstep-grime/95/top-100')
   },
+  'genre ids match Beatport (Trap / Future Bass is 38, Bass / Club is 85)': async () => {
+    assert.deepEqual(genreById(38), { id: 38, name: 'Trap / Future Bass', slug: 'trap-future-bass' })
+    assert.deepEqual(genreById(85), { id: 85, name: 'Bass / Club', slug: 'bass-club' })
+    assert.deepEqual(genreById(98), { id: 98, name: 'Amapiano', slug: 'amapiano' })
+  },
 })
