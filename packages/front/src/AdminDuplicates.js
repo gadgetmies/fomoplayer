@@ -151,8 +151,8 @@ class AdminDuplicates extends Component {
 
   render() {
     return (
-      <div className="admin-duplicates">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="page-container scroll-container admin-duplicates">
+        <div className="admin-duplicates-header">
           <h1>Suspected Duplicates</h1>
           <button className="button button-push_button" onClick={() => this.props.history.push('/admin')}>
             Back to Radiator

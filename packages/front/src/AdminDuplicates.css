@@ -1,9 +1,26 @@
 .admin-duplicates {
-  padding: 20px;
+  padding: 1rem;
   color: white;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.admin-duplicates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.admin-duplicates-header h1 {
+  margin: 0;
 }
 
 .admin-duplicates .tabs {
+  display: flex;
+  gap: 4px;
   margin-bottom: 20px;
 }
 
@@ -12,35 +29,55 @@
   background: #444;
   color: white;
   border: none;
+  border-radius: 4px;
   cursor: pointer;
 }
 
 .admin-duplicates .tabs button.active {
-  background: #007bff;
+  background: var(--fp-brand-primary, #007bff);
 }
 
 .duplicate-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
   padding: 15px;
-  background: #333;
+  background: #222;
   margin-bottom: 10px;
   border-radius: 4px;
 }
 
 .duplicate-details {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .duplicate-actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .duplicate-actions button {
-  padding: 5px 10px;
+  padding: 6px 12px;
+  background: #444;
+  color: white;
+  border-radius: 4px;
   cursor: pointer;
+}
+
+.duplicate-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 768px) {
+  .duplicate-details {
+    grid-template-columns: 1fr;
+  }
 }
