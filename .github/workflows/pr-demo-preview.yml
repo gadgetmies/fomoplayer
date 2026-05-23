@@ -20,13 +20,14 @@ jobs:
       contains(github.event.pull_request.body, '```demo-preview')
     runs-on: ubuntu-latest
 
-    # Bind the job to a GitHub Environment so the minted OIDC token's `sub`
-    # becomes `repo:<owner>/<repo>:environment:<name>`. The preview backend
-    # grants admin to exactly that sub via GITHUB_ACTIONS_OIDC_ADMIN_SUB, so the
-    # demo can drive admin views. Protect the environment (required reviewers /
-    # branch restrictions) to control who can obtain the admin sub. Override the
-    # name with the PREVIEW_OIDC_ENVIRONMENT repo variable if desired.
-    environment: ${{ vars.PREVIEW_OIDC_ENVIRONMENT || 'preview-admin' }}
+    # Bind the job to the `preview-admin` GitHub Environment so the minted OIDC
+    # token's `sub` becomes `repo:<owner>/<repo>:environment:preview-admin`. The
+    # preview backend derives that exact sub from GITHUB_ACTIONS_OIDC_REPO and
+    # grants it admin, so the demo can drive admin views with no extra env var.
+    # The name is intentionally static (keep it in sync with config.js); protect
+    # this environment (required reviewers / branch restrictions) to control who
+    # can obtain the admin sub.
+    environment: preview-admin
 
     permissions:
       # Required to mint a GitHub Actions OIDC token for keyless login.
