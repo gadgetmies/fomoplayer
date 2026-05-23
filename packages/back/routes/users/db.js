@@ -646,6 +646,45 @@ WITH
         follows
     GROUP BY 1
 )
+  , collaboration_follows AS (
+    -- Artists the user follows or has starred. Starred artists are weighted
+    -- higher so their collaborators get prioritised more strongly.
+    SELECT
+        artist_id
+      , MAX(CASE WHEN store__artist_watch__user_starred THEN 2 ELSE 1 END) AS follow_weight
+    FROM
+        store__artist_watch__user
+            NATURAL JOIN logged_user
+            NATURAL JOIN store__artist_watch
+            NATURAL JOIN store__artist
+    GROUP BY artist_id
+)
+  , collaboration_artist_strength AS (
+    -- For every artist that has collaborated with a followed/starred artist,
+    -- accumulate the precomputed collaboration strength weighted by how the
+    -- collaborated-with artist is followed (starred counts double). Followed
+    -- artists themselves are excluded here because they are already rewarded
+    -- through the artist_follow score.
+    SELECT
+        artist_collaboration.collaborator_artist_id AS artist_id
+      , SUM(artist_collaboration.collaboration_strength * collaboration_follows.follow_weight) AS strength
+    FROM
+        collaboration_follows
+            JOIN artist_collaboration ON artist_collaboration.artist_id = collaboration_follows.artist_id
+    WHERE
+        artist_collaboration.collaborator_artist_id NOT IN (SELECT artist_id FROM collaboration_follows)
+    GROUP BY 1
+)
+  , collaboration_scores AS (
+    SELECT
+        track_id
+      , SUM(collaboration_artist_strength.strength) AS collaboration_score
+    FROM
+        tracks_to_score
+            NATURAL JOIN track__artist
+            JOIN collaboration_artist_strength USING (artist_id)
+    GROUP BY 1
+)
   , user_score_weights AS (
     SELECT
         user_track_score_weight_code
@@ -666,11 +705,13 @@ WITH
         COALESCE(label_follow_score, 0) * COALESCE(label_follow_multiplier, 0) +
         COALESCE(added_score.score, 0) * COALESCE(date_added_multiplier, 0) +
         COALESCE(released_score.score, 0) * COALESCE(date_released_multiplier, 0) +
-        COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) 
+        COALESCE(published_score.score, 0) * COALESCE(date_published_multiplier, 0) +
+        COALESCE(collaboration_score, 0) * COALESCE(artist_collaboration_multiplier, 0)
       AS score
       , JSON_BUILD_OBJECT(
           'artist', JSON_BUILD_OBJECT('score', COALESCE(artist_score, 0), 'weight', artist_multiplier),
           'artist_follow', JSON_BUILD_OBJECT('score', COALESCE(artist_follow_score, 0), 'weight', artist_follow_multiplier),
+          'artist_collaboration', JSON_BUILD_OBJECT('score', COALESCE(collaboration_score, 0), 'weight', artist_collaboration_multiplier),
           'label', JSON_BUILD_OBJECT('score', COALESCE(label_score, 0), 'weight', label_multiplier),
           'label_follow', JSON_BUILD_OBJECT('score', COALESCE(label_follow_score, 0), 'weight', label_follow_multiplier),
           'date_added', JSON_BUILD_OBJECT('score', ROUND(added_score.score, 1), 'weight', date_added_multiplier),
@@ -690,6 +731,7 @@ WITH
            , artist_score
            , label_follow_score
            , artist_follow_score
+           , collaboration_score
            , artists_starred
            , label_starred
            , (SELECT
@@ -741,12 +783,20 @@ WITH
               WHERE
                   user_track_score_weight_code = 'date_published'
              ) AS date_published_multiplier
+           , (SELECT
+                  user_track_score_weight_multiplier
+              FROM
+                  user_score_weights
+              WHERE
+                  user_track_score_weight_code = 'artist_collaboration'
+             ) AS artist_collaboration_multiplier
          FROM
             tracks_to_score
                  NATURAL LEFT JOIN label_scores
                  NATURAL LEFT JOIN artist_scores
                  NATURAL LEFT JOIN label_follow_scores
                  NATURAL LEFT JOIN artist_follow_scores
+                 NATURAL LEFT JOIN collaboration_scores
         ) AS tracks
             LEFT JOIN track_date_added_score AS added_score USING (track_id)
             LEFT JOIN track_date_released_score AS released_score USING (track_id)

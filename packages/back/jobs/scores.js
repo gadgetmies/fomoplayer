@@ -50,3 +50,14 @@ module.exports.updatePurchasedScores = async () => {
 
   return { success: true }
 }
+
+module.exports.updateArtistCollaborationScores = async () => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- updateArtistCollaborationScores
+    REFRESH MATERIALIZED VIEW CONCURRENTLY artist_collaboration
+    `,
+  )
+
+  return { success: true }
+}
