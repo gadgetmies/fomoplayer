@@ -43,13 +43,6 @@ const ensureIsAdmin = (req, res, next) => {
   if (adminUserIds.includes(userId) || grantedByActionsBot) {
     next()
   } else {
-    if (isPreviewEnv) {
-      // Preview-only diagnostic to distinguish "not authenticated" (no userId)
-      // from "authenticated but no admin flag" (session flag missing/not synced).
-      logger.info(
-        `Admin access denied (preview): userId=${userId} sessionActionsAdmin=${req.session?.isActionsAdmin === true} path=${req.originalUrl}`,
-      )
-    }
     res.status(403).send({ error: 'Access denied' })
   }
 }
