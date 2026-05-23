@@ -43,11 +43,13 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
   }
 
   if (activeInterceptors.has(name)) {
-    logger.info(`Cleaning up existing interceptor for ${name}`)
-    const existing = activeInterceptors.get(name)
-    if (existing?.publicApi && typeof existing.publicApi.dispose === 'function') {
-      existing.publicApi.dispose()
-    }
+    // Re-initialising for the same name returns the existing interceptor so all
+    // callers share one instance (and its mockedRequests). Tests commonly call
+    // init() and then import a route module that also calls init(); disposing
+    // and recreating here orphaned the caller's earlier reference (its
+    // mockedRequests stayed empty) and churned msw mid-flight, breaking
+    // interception. Callers that want a fresh interceptor dispose() first.
+    return activeInterceptors.get(name).publicApi
   }
 
   let mockedRequests = []
