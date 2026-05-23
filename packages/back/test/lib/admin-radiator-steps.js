@@ -49,11 +49,18 @@ const assertRadiatorShowsSeededData = async ({ page }) => {
       .catch(() => {})
   }
 
-  // Hard assertion against the same endpoint the view reads: the radiator has
-  // the seeded job results. page.request carries the logged-in session cookie.
-  const res = await page.request.get('/api/admin/radiator')
-  expect(res.ok(), `GET /api/admin/radiator returned HTTP ${res.status()}`).to.equal(true)
-  const data = await res.json()
+  // Hard assertion against the same endpoint the view reads. Use a browser-side
+  // fetch (not page.request) so it goes through the browser network with the
+  // logged-in session cookie, bypassing the Node-process http interceptors.
+  const fetched = await page.evaluate(async () => {
+    const r = await fetch('/api/admin/radiator', { credentials: 'same-origin' })
+    return { status: r.status, body: r.ok ? await r.json() : await r.text() }
+  })
+  expect(
+    fetched.status,
+    `GET /api/admin/radiator returned HTTP ${fetched.status}: ${typeof fetched.body === 'string' ? fetched.body : ''}`,
+  ).to.equal(200)
+  const data = fetched.body
   const added = data.find((d) => d.job_name === ADDED_TRACKS_JOB)
   expect(added, `radiator results include ${ADDED_TRACKS_JOB}`).to.exist
   const latest = added.results[0]

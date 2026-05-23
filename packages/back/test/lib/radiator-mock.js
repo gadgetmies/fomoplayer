@@ -64,27 +64,42 @@ module.exports.runRadiatorJobsViaDb = async () => {
 }
 
 // ── Preview: seed through the admin API (requires an admin session) ──────────
+//
+// Use a browser-side fetch (via page.evaluate) so requests go through the
+// browser network with the logged-in session cookie, bypassing the
+// Node-process http interceptors that otherwise crash on passthrough.
+
+const postViaBrowser = (page, path, body) =>
+  page.evaluate(
+    async ({ path, body }) => {
+      const r = await fetch(path, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: body ? { 'Content-Type': 'application/json' } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      })
+      return { status: r.status, text: await r.text() }
+    },
+    { path, body },
+  )
+
+const adminError = (path, { status, text }) =>
+  new Error(
+    `POST ${path} failed: HTTP ${status} — ${text}. ` +
+      'The session user must be an admin (ADMIN_USER_IDS) on the target environment.',
+  )
 
 module.exports.seedRadiatorPresetsViaApi = async (page) => {
   for (const { name, lens, config } of radiatorPresets) {
-    const res = await page.request.post('/api/admin/radiator/config', { data: { name, lens, config } })
-    if (!res.ok()) {
-      throw new Error(
-        `POST /api/admin/radiator/config failed: HTTP ${res.status()} — ${await res.text()}. ` +
-          'The session user must be an admin (ADMIN_USER_IDS) on the target environment.',
-      )
-    }
+    const res = await postViaBrowser(page, '/api/admin/radiator/config', { name, lens, config })
+    if (res.status < 200 || res.status >= 300) throw adminError('/api/admin/radiator/config', res)
   }
 }
 
 module.exports.runRadiatorJobsViaApi = async (page) => {
-  const res = await page.request.post(`/api/admin/jobs/${ADDED_TRACKS_JOB}/run`)
-  if (!res.ok()) {
-    throw new Error(
-      `POST /api/admin/jobs/${ADDED_TRACKS_JOB}/run failed: HTTP ${res.status()} — ${await res.text()}. ` +
-        'The session user must be an admin (ADMIN_USER_IDS) on the target environment.',
-    )
-  }
+  const path = `/api/admin/jobs/${ADDED_TRACKS_JOB}/run`
+  const res = await postViaBrowser(page, path, null)
+  if (res.status < 200 || res.status >= 300) throw adminError(path, res)
 }
 
 module.exports.radiatorPresetNames = radiatorPresets.map(({ name }) => name)
