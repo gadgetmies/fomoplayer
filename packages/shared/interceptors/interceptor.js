@@ -33,6 +33,15 @@ async function makeRequestAndRespond({ request, controller, url = undefined, opt
 const activeInterceptors = new Map()
 
 module.exports.init = function init({ proxies, mocks, name, regex }) {
+  // Remote-preview test runs (PREVIEW_URL set) drive a real deployed backend
+  // and make real outbound HTTP from the test process (OIDC login, API seeding).
+  // The msw passthrough path crashes on those, and there is nothing to mock
+  // locally, so skip installing interceptors entirely in that mode.
+  if (process.env.PREVIEW_URL) {
+    logger.info(`Skipping ${name} interceptor: PREVIEW_URL is set (remote preview run).`)
+    return { clearMockedRequests: () => {}, getMockedRequests: () => [], dispose: () => {} }
+  }
+
   if (activeInterceptors.has(name)) {
     logger.info(`Cleaning up existing interceptor for ${name}`)
     const existing = activeInterceptors.get(name)
