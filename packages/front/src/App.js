@@ -192,6 +192,7 @@ class App extends Component {
       processingTrack: null,
       fetchingCartDetails: false,
       userSettings: {},
+      isAdmin: false,
       isMobile,
       onboarding: false,
       searchTerms,
@@ -287,6 +288,7 @@ class App extends Component {
       this.updateFollows(),
       this.updateNotifications(),
       this.updateSettings(),
+      this.updateUserDetails(),
     ])
   }
 
@@ -759,6 +761,15 @@ class App extends Component {
     this.setState({ userSettings })
   }
 
+  async updateUserDetails() {
+    try {
+      const { isAdmin } = await requestJSONwithCredentials({ path: `/me` })
+      this.setState({ isAdmin })
+    } catch (e) {
+      console.error('Failed to fetch user details', e)
+    }
+  }
+
   onOnboardingButtonClicked() {
     this.setState({
       onboarding: !this.state.onboarding,
@@ -1188,6 +1199,7 @@ class App extends Component {
                   searchTerms={this.state.searchTerms}
                   searchFilters={this.state.searchFilters}
                   userSettings={this.state.userSettings}
+                  isAdmin={this.state.isAdmin}
                   stores={this.state.stores}
                   carts={this.state.carts}
                   onSelectCart={this.selectCart.bind(this)}

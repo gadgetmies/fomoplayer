@@ -369,6 +369,17 @@ class TopBar extends Component {
                 </ExternalLink>
               </div>
             </Popup>
+            {this.props.isAdmin && (
+              <MenuNavButton
+                to={'/admin'}
+                label={''}
+                title={'Admin'}
+                aria-label={'Admin'}
+                icon={<FontAwesomeIcon icon="user-shield" />}
+                className={'admin_button'}
+                selected={this.props.listState === 'admin'}
+              />
+            )}
             <MenuNavButton
               to={'/settings/following'}
               onClick={() => {

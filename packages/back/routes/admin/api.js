@@ -31,26 +31,7 @@ const {
   ignoreMislabeledEntity,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
-
-const { isPreviewEnv } = require('../../config.js')
-
-const adminUserIds = (process.env.ADMIN_USER_IDS ?? '')
-  .split(',')
-  .map((s) => parseInt(s.trim(), 10))
-  .filter((n) => !Number.isNaN(n))
-
-const ensureIsAdmin = (req, res, next) => {
-  const userId = req.user?.id
-  // The Actions bot admin session flag is only ever set by /login/actions,
-  // which is only registered in preview envs; re-check isPreviewEnv here as
-  // defence-in-depth so it can never grant admin in production.
-  const grantedByActionsBot = isPreviewEnv === true && req.session?.isActionsAdmin === true
-  if (adminUserIds.includes(userId) || grantedByActionsBot) {
-    next()
-  } else {
-    res.status(403).send({ error: 'Access denied' })
-  }
-}
+const { ensureIsAdmin } = require('../shared/auth.js')
 
 router.use(ensureIsAdmin)
 router.get('/jobs', async ({ user: { id: userId } }, res) => {
