@@ -7,6 +7,7 @@ const BPromise = require('bluebird')
 const {
   static: { nameSubdomainSimilarity, getSubdomain },
 } = require('../stores/bandcamp/bandcamp-api')
+const { getCachedMislabeled, ignoreCachedMislabeled } = require('../shared/db/bandcampMislabeledCache')
 
 const BANDCAMP_STORE_URL = 'https://bandcamp.com'
 const MISLABELED_SIMILARITY_THRESHOLD = 0.5
@@ -549,19 +550,19 @@ LIMIT 10
 
 const MISLABELED_ENTITY_TYPES = ['artist', 'label']
 
-// Find Bandcamp artists/labels that are likely mislabeled: their store URL is
-// the *other* entity type's URL (the merge magnet), or the page name diverges
-// from the subdomain. Counts are fetched in a second pass so the cheap scan
-// isn't burdened with per-row aggregates.
-module.exports.getMislabeledEntities = async (type) => {
+// Heuristic scan for Bandcamp artists/labels that are likely mislabeled: their
+// store URL is the *other* entity type's URL (the merge magnet), or the page
+// name diverges from the subdomain. These are cheap to compute but produce
+// false positives; the analyseBandcampMislabeled job confirms each candidate by
+// fetching its page before caching it.
+module.exports.detectMislabeledCandidates = async (type) => {
   if (!MISLABELED_ENTITY_TYPES.includes(type)) throw new Error(`Unsupported entity type: ${type}`)
 
   if (type === 'artist') {
-    const candidates = await pg.queryRowsAsync(sql`-- getMislabeledEntities artists
+    const candidates = await pg.queryRowsAsync(sql`-- detectMislabeledCandidates artists
       SELECT a.artist_id          AS id
            , a.artist_name        AS name
            , sa.store__artist_url AS url
-           , sa.store__artist_id  AS "storeArtistId"
            , EXISTS (SELECT 1
                      FROM store__label sl
                      WHERE sl.store_id = sa.store_id
@@ -572,26 +573,13 @@ module.exports.getMislabeledEntities = async (type) => {
         JOIN artist a ON a.artist_id = sa.artist_id
       WHERE sa.store__artist_url IS NOT NULL`)
 
-    const flagged = annotateMislabeled(candidates, 'url_collides_with_label')
-    if (flagged.length === 0) return []
-
-    const counts = await pg.queryRowsAsync(sql`-- getMislabeledEntities artist counts
-      SELECT ta.artist_id                 AS id
-           , COUNT(DISTINCT ta.track_id)   AS "trackCount"
-           , COUNT(DISTINCT rt.release_id) AS "releaseCount"
-      FROM
-        track__artist ta
-        LEFT JOIN release__track rt ON rt.track_id = ta.track_id
-      WHERE ta.artist_id = ANY (${flagged.map((r) => r.id)})
-      GROUP BY ta.artist_id`)
-    return mergeCounts(flagged, counts)
+    return annotateMislabeled(candidates, 'url_collides_with_label')
   }
 
-  const candidates = await pg.queryRowsAsync(sql`-- getMislabeledEntities labels
+  const candidates = await pg.queryRowsAsync(sql`-- detectMislabeledCandidates labels
     SELECT l.label_id          AS id
          , l.label_name        AS name
          , sl.store__label_url AS url
-         , sl.store__label_id  AS "storeLabelId"
          , EXISTS (SELECT 1
                    FROM store__artist sa
                    WHERE sa.store_id = sl.store_id
@@ -602,16 +590,44 @@ module.exports.getMislabeledEntities = async (type) => {
       JOIN label l ON l.label_id = sl.label_id
     WHERE sl.store__label_url IS NOT NULL`)
 
-  const flagged = annotateMislabeled(candidates, 'url_collides_with_artist')
-  if (flagged.length === 0) return []
+  return annotateMislabeled(candidates, 'url_collides_with_artist')
+}
+
+// Read the cached, page-confirmed mislabeled entities for the admin UI. Counts
+// are fetched in a second pass so the cache stays free of aggregates that go
+// stale as tracks are reassigned.
+module.exports.getMislabeledEntities = async (type) => {
+  if (!MISLABELED_ENTITY_TYPES.includes(type)) throw new Error(`Unsupported entity type: ${type}`)
+
+  const cached = await getCachedMislabeled(type)
+  if (cached.length === 0) return []
+
+  const ids = cached.map((r) => r.id)
+  if (type === 'artist') {
+    const counts = await pg.queryRowsAsync(sql`-- getMislabeledEntities artist counts
+      SELECT ta.artist_id                 AS id
+           , COUNT(DISTINCT ta.track_id)   AS "trackCount"
+           , COUNT(DISTINCT rt.release_id) AS "releaseCount"
+      FROM
+        track__artist ta
+        LEFT JOIN release__track rt ON rt.track_id = ta.track_id
+      WHERE ta.artist_id = ANY (${ids})
+      GROUP BY ta.artist_id`)
+    return mergeCounts(cached, counts)
+  }
 
   const counts = await pg.queryRowsAsync(sql`-- getMislabeledEntities label counts
     SELECT tl.label_id              AS id
          , COUNT(DISTINCT tl.track_id) AS "trackCount"
     FROM track__label tl
-    WHERE tl.label_id = ANY (${flagged.map((r) => r.id)})
+    WHERE tl.label_id = ANY (${ids})
     GROUP BY tl.label_id`)
-  return mergeCounts(flagged, counts)
+  return mergeCounts(cached, counts)
+}
+
+module.exports.ignoreMislabeledEntity = async (type, id) => {
+  if (!MISLABELED_ENTITY_TYPES.includes(type)) throw new Error(`Unsupported entity type: ${type}`)
+  await ignoreCachedMislabeled(type, parseInt(id, 10))
 }
 
 const annotateMislabeled = (candidates, collisionReason) =>

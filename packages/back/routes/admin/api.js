@@ -28,6 +28,7 @@ const {
   getMislabeledEntityTracks,
   reassignTrack,
   cleanupMislabeledSource,
+  ignoreMislabeledEntity,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 
@@ -233,6 +234,11 @@ router.post('/mislabeled/reassign', async ({ body }, res) => {
 
 router.post('/mislabeled/:type/:id/cleanup', async ({ params: { type, id } }, res) => {
   res.send(await cleanupMislabeledSource(type, id))
+})
+
+router.post('/mislabeled/:type/:id/ignore', async ({ params: { type, id } }, res) => {
+  await ignoreMislabeledEntity(type, id)
+  res.send({ ok: true })
 })
 
 module.exports = router

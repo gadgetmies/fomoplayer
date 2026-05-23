@@ -8,7 +8,11 @@ const REASON_LABELS = {
   url_collides_with_label: 'URL is also a label URL',
   url_collides_with_artist: 'URL is also an artist URL',
   name_subdomain_mismatch: 'Name differs from subdomain',
+  page_is_label: 'Page is actually a label',
+  page_is_artist: 'Page is actually an artist',
 }
+
+const ANALYSIS_JOB = 'analyseBandcampMislabeled'
 
 const formatArtists = (artists) => (artists && artists.length ? artists.map((a) => `${a.name} (${a.role})`).join(', ') : '—')
 
@@ -94,6 +98,7 @@ function AdminMislabeled() {
   const [tracks, setTracks] = useState([])
   const [tracksLoading, setTracksLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const [analysing, setAnalysing] = useState(false)
 
   const fetchEntities = useCallback(async (entityType) => {
     setLoading(true)
@@ -150,6 +155,36 @@ function AdminMislabeled() {
     }
   }
 
+  const runAnalysis = async () => {
+    setAnalysing(true)
+    try {
+      await requestJSONwithCredentials({ url: `${apiURL}/admin/jobs/${ANALYSIS_JOB}/run`, method: 'POST' })
+      await fetchEntities(type)
+    } catch (e) {
+      console.error(e)
+      window.alert('Analysis failed')
+    } finally {
+      setAnalysing(false)
+    }
+  }
+
+  const ignore = async (entity) => {
+    if (!window.confirm(`Ignore "${entity.name}" (${entity.id})? It will be hidden until it is detected again.`)) return
+    setProcessing(true)
+    try {
+      await requestJSONwithCredentials({
+        url: `${apiURL}/admin/mislabeled/${type}/${entity.id}/ignore`,
+        method: 'POST',
+      })
+      setEntities((prev) => prev.filter((e) => e.id !== entity.id))
+    } catch (e) {
+      console.error(e)
+      window.alert('Ignore failed')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const cleanup = async () => {
     if (
       !window.confirm(
@@ -193,6 +228,9 @@ function AdminMislabeled() {
           <div className="mislabeled-actions">
             <button type="button" disabled={processing} onClick={() => inspect(entity)}>
               Inspect
+            </button>
+            <button type="button" disabled={processing} onClick={() => ignore(entity)}>
+              Ignore
             </button>
           </div>
         </div>
@@ -258,9 +296,14 @@ function AdminMislabeled() {
     <div className="page-container scroll-container admin-mislabeled">
       <div className="admin-mislabeled-header">
         <h1>Mislabeled Artists &amp; Labels</h1>
-        <button className="button button-push_button" onClick={() => history.push('/admin')}>
-          Back to Radiator
-        </button>
+        <div className="mislabeled-actions">
+          <button className="button button-push_button" disabled={analysing || processing} onClick={runAnalysis}>
+            {analysing ? 'Analysing…' : 'Re-run analysis'}
+          </button>
+          <button className="button button-push_button" onClick={() => history.push('/admin')}>
+            Back to Radiator
+          </button>
+        </div>
       </div>
 
       <div className="tabs">

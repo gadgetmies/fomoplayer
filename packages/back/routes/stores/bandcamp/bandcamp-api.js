@@ -187,6 +187,7 @@ const getPageInfo = (url, callback) => {
       return callback(null, {
         id,
         name: getName(dom),
+        type: detectPageType(dom),
         releaseUrls: getReleaseUrls(url, dom),
       })
     })

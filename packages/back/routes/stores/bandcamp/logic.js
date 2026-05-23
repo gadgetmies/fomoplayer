@@ -14,6 +14,7 @@ const {
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl, queryKnownReleaseUrls } = require('./db.js')
+const { flagSuspectedMislabeledArtistByUrl } = require('../../shared/db/bandcampMislabeledCache.js')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 let storeDbId = null
@@ -146,7 +147,15 @@ const filterToUnknownUrls = async (urls) => {
 
 module.exports.getArtistTracks = async function* ({ url }) {
   try {
-    const { releaseUrls } = await getArtistAsync(url)
+    const { type, releaseUrls } = await getArtistAsync(url)
+    if (type === 'label') {
+      logger.warn(`Followed Bandcamp artist ${url} resolves to a label page, flagging as suspected mislabeled`)
+      try {
+        await flagSuspectedMislabeledArtistByUrl(url)
+      } catch (e) {
+        logger.warn(`Failed to flag suspected mislabeled artist ${url}: ${e.message}`)
+      }
+    }
     const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
     logger.debug(
       `Artist ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
