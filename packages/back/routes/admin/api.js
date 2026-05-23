@@ -24,6 +24,10 @@ const {
   getSuspectedDuplicates,
   mergeDuplicate,
   ignoreDuplicate,
+  getMislabeledEntities,
+  getMislabeledEntityTracks,
+  reassignTrack,
+  cleanupMislabeledSource,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 
@@ -212,6 +216,23 @@ router.post('/duplicates/:type/merge', async ({ params: { type }, body: { keptId
 router.post('/duplicates/:type/ignore', async ({ params: { type }, body: { id1, id2 } }, res) => {
   await ignoreDuplicate(type, id1, id2)
   res.send('OK')
+})
+
+router.get('/mislabeled/:type', async ({ params: { type } }, res) => {
+  res.send(await getMislabeledEntities(type))
+})
+
+router.get('/mislabeled/:type/:id/tracks', async ({ params: { type, id } }, res) => {
+  res.send(await getMislabeledEntityTracks(type, id))
+})
+
+router.post('/mislabeled/reassign', async ({ body }, res) => {
+  await reassignTrack(body)
+  res.send({ ok: true })
+})
+
+router.post('/mislabeled/:type/:id/cleanup', async ({ params: { type, id } }, res) => {
+  res.send(await cleanupMislabeledSource(type, id))
 })
 
 module.exports = router

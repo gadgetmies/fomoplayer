@@ -1,0 +1,199 @@
+.admin-mislabeled {
+  padding: 1rem;
+  color: white;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.admin-mislabeled-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.admin-mislabeled-header h1 {
+  margin: 0;
+}
+
+.admin-mislabeled .tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.admin-mislabeled .tabs button {
+  padding: 10px 20px;
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.admin-mislabeled .tabs button.active {
+  background: var(--fp-brand-primary, #007bff);
+}
+
+.admin-mislabeled .muted {
+  color: #aaa;
+}
+
+.mislabeled-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 15px;
+  background: #222;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+.mislabeled-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mislabeled-url {
+  word-break: break-all;
+}
+
+.mislabeled-reason {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #553;
+  border-radius: 10px;
+  font-size: 0.8em;
+}
+
+.mislabeled-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mislabeled-actions button,
+.mislabeled-results button {
+  padding: 6px 12px;
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mislabeled-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mislabeled-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.mislabeled-detail-header h2 {
+  margin: 0 0 4px 0;
+}
+
+.mislabeled-tracks {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mislabeled-tracks th,
+.mislabeled-tracks td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #333;
+  vertical-align: top;
+}
+
+.mislabeled-picker {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.mislabeled-picker select {
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 6px;
+}
+
+.mislabeled-search {
+  position: relative;
+}
+
+.mislabeled-search input {
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 6px;
+  min-width: 180px;
+}
+
+.mislabeled-results {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 2px 0 0 0;
+  padding: 0;
+  list-style: none;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.mislabeled-results li button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border-radius: 0;
+}
+
+.mislabeled-results li button:hover {
+  background: #444;
+}
+
+@media (max-width: 768px) {
+  .mislabeled-tracks,
+  .mislabeled-tracks thead,
+  .mislabeled-tracks tbody,
+  .mislabeled-tracks th,
+  .mislabeled-tracks td,
+  .mislabeled-tracks tr {
+    display: block;
+  }
+
+  .mislabeled-tracks thead {
+    display: none;
+  }
+
+  .mislabeled-tracks tr {
+    margin-bottom: 12px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 8px;
+  }
+}

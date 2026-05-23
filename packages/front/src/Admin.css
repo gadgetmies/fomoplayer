@@ -18,6 +18,12 @@
   margin: 0;
 }
 
+.admin-page-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .admin-grid {
   display: flex;
   gap: 1.5rem;
