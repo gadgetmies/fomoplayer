@@ -1,16 +1,6 @@
 const interceptor = require('./interceptor.js')
 const { BeatportUrlRegex } = require('../integrations/beatport')
-const { readSync } = require('fs')
-const fs = require('fs')
-const path = require('path')
-
-const beatportSearchMock = fs.readFileSync(path.resolve(`${__dirname}/fixtures/beatport-search.html`)).toString('utf-8')
-const beatportArtistsSearchMock = fs
-  .readFileSync(path.resolve(`${__dirname}/fixtures/beatport-artists-search.html`))
-  .toString('utf-8')
-const beatportLabelsSearchMock = fs
-  .readFileSync(path.resolve(`${__dirname}/fixtures/beatport-labels-search.html`))
-  .toString('utf-8')
+const beatportV4Search = require('./fixtures/beatport-v4-search.json')
 
 module.exports.init = () => {
   const beatportRedirect = process.env.BEATPORT_API_REDIRECT
@@ -29,34 +19,12 @@ module.exports.init = () => {
     ],
     mocks: [
       {
-        test: ({ pathname }) => pathname === '/search',
+        test: ({ pathname }) => pathname === '/v4/catalog/search/',
         getResponse: () => ({
-          body: beatportSearchMock,
+          body: JSON.stringify(beatportV4Search),
           options: {
             headers: {
-              'content-type': 'text/html; charset=utf-8',
-            },
-          },
-        }),
-      },
-      {
-        test: ({ pathname }) => pathname === '/search/artists',
-        getResponse: () => ({
-          body: beatportArtistsSearchMock,
-          options: {
-            headers: {
-              'content-type': 'text/html; charset=utf-8',
-            },
-          },
-        }),
-      },
-      {
-        test: ({ pathname }) => pathname === '/search/labels',
-        getResponse: () => ({
-          body: beatportLabelsSearchMock,
-          options: {
-            headers: {
-              'content-type': 'text/html; charset=utf-8',
+              'content-type': 'application/json',
             },
           },
         }),
@@ -64,8 +32,5 @@ module.exports.init = () => {
     ],
     name: 'Beatport',
     regex: BeatportUrlRegex,
-    beatportSearchMock,
-    beatportArtistsSearchMock,
-    beatportLabelsSearchMock,
   })
 }

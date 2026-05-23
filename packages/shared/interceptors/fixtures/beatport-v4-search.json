@@ -1,0 +1,29 @@
+{
+  "order": ["artists", "labels"],
+  "tracks": [],
+  "artists": [
+    {
+      "id": 912,
+      "name": "Noisia",
+      "slug": "noisia",
+      "image": { "uri": "https://geo-media.beatport.com/image_size/590x404/45bb850c-ae5b-4ef5-914f-935c91bc1b39.jpg" }
+    },
+    {
+      "id": 768708,
+      "name": "Nosssia",
+      "slug": "nosssia",
+      "image": { "uri": "https://geo-media.beatport.com/image_size/590x404/0d8ea159-5b24-4583-8e23-e1332ae80ce2.jpg" }
+    }
+  ],
+  "releases": [],
+  "charts": [],
+  "labels": [
+    {
+      "id": 1390,
+      "name": "Vision Recordings",
+      "slug": "vision-recordings",
+      "image": { "uri": "https://geo-media.beatport.com/image_size/590x404/2c0c1f2e-1a3b-4c5d-9e8f-7a6b5c4d3e2f.jpg" }
+    }
+  ],
+  "playlists": []
+}
