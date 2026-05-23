@@ -25,45 +25,28 @@ const extractJSON = R.curry((selector, attribute = undefined, dom) => {
 })
 
 // A Bandcamp subdomain ("band" page) is either an artist or a label, but many
-// labels run on a plain band account: no `/artists` roster link and
-// is_label=false, so Bandcamp itself doesn't mark them as labels. We therefore
-// also treat a page as a label when a release is credited to a different artist
-// than the page (the album-level byArtist differs from the page name), or when
-// the discography lists releases by multiple distinct artists.
-const getLdJson = (dom) => {
-  const el = dom.window.document.querySelector('script[type="application/ld+json"]')
-  if (!el) return null
-  try {
-    return JSON.parse(el.textContent)
-  } catch (_) {
-    return null
-  }
+// labels run on a plain band account, so the obvious signals don't always
+// catch them. We treat a page as a label when any of these hold:
+//   - it has an `/artists` roster link (proper label accounts), or
+//   - the page data carries is_label=true, or
+//   - its discography lists releases by 2+ distinct artists (the per-tile
+//     `artist-override` names) — the tell-tale of a label-run band account.
+const isLabelAccount = (dom) => {
+  const blob = dom.window.document.querySelector('#pagedata')?.getAttribute('data-blob')
+  return blob ? /"is_label"\s*:\s*true/.test(blob) : false
 }
 
-// The authoritative album artist Bandcamp renders as the "by ..." byline.
-const getAlbumArtist = (dom) => {
-  const byArtist = getLdJson(dom)?.byArtist
-  if (Array.isArray(byArtist)) return byArtist[0]?.name || null
-  return byArtist?.name || null
-}
-
-const namesEquivalent = (a, b) => {
-  const x = normalizeName(a)
-  const y = normalizeName(b)
-  if (!x || !y) return true
-  return x === y || x.includes(y) || y.includes(x)
-}
-
-const detectPageType = (dom, { albumArtist, pageName } = {}) => {
-  const doc = dom.window.document
-  if (doc.querySelector('[href="/artists"]') !== null) return 'label'
-  if (albumArtist && pageName && !namesEquivalent(albumArtist, pageName)) return 'label'
-  const overrideArtists = new Set(
-    Array.from(doc.querySelectorAll('#music-grid .artist-override'))
+const distinctOverrideArtistCount = (dom) =>
+  new Set(
+    Array.from(dom.window.document.querySelectorAll('#music-grid .artist-override'))
       .map((el) => el.textContent.trim().toLowerCase())
       .filter(Boolean),
-  )
-  if (overrideArtists.size >= 2) return 'label'
+  ).size
+
+const detectPageType = (dom) => {
+  if (dom.window.document.querySelector('[href="/artists"]') !== null) return 'label'
+  if (isLabelAccount(dom)) return 'label'
+  if (distinctOverrideArtistCount(dom) >= 2) return 'label'
   return 'artist'
 }
 
@@ -168,15 +151,13 @@ const getRelease = (itemUrl, callback) => {
     .then((res) => {
       const dom = new JSDOM(res)
       const pageName = getName(dom)
-      const albumArtist = getAlbumArtist(dom)
-      const pageType = detectPageType(dom, { albumArtist, pageName })
+      const pageType = detectPageType(dom)
       warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
       callback(null, {
         ...getReleaseInfo(dom),
         url: itemUrl,
         pageType,
         pageName,
-        albumArtist,
       })
     })
     .catch((e) => {

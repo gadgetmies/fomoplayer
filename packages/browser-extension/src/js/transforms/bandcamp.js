@@ -46,10 +46,6 @@ module.exports.bandcampReleasesTransform = L.collect([
       // into one another.
       const isLabelPage = release.pageType === 'label'
       const labelName = release.pageName || release.url.match(/https:\/\/([^.]*)/)[1]
-      // Prefer the album-level artist (the "by ..." byline / data-tralbum
-      // current.artist) over the band/page name: on a label that runs as a
-      // plain band account, `release.artist` is the label, not the artist.
-      const albumArtist = release.albumArtist || (release.current && release.current.artist) || release.artist
       const releaseArtistId = release.url.substring(8, release.url.indexOf('.bandcamp.com'))
       const releaseArtistUrl = release.url.substring(0, release.url.indexOf('/', 8))
       const artistStoreId = isLabelPage ? null : releaseArtistId || null
@@ -63,7 +59,7 @@ module.exports.bandcampReleasesTransform = L.collect([
         )
       }
       const artistTemplate = {
-        name: track.artist || albumArtist,
+        name: track.artist || release.artist,
         role: 'author',
         id: artistStoreId,
         url: artistStoreUrl,
@@ -87,7 +83,7 @@ module.exports.bandcampReleasesTransform = L.collect([
         const artistId = trimmedArtist.toLocaleLowerCase()
         const isReleaseArtist = !isLabelPage && artistId === releaseArtistId
         return {
-          name: trimmedArtist || track.artist || albumArtist,
+          name: trimmedArtist || track.artist,
           role,
           ...(isReleaseArtist
             ? {

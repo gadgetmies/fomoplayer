@@ -92,25 +92,6 @@ describe('bandcampReleasesTransform', () => {
     })
   })
 
-  it('credits the album artist, not the band/page name, on a label-as-band page', () => {
-    const [track] = bandcampReleasesTransform([
-      release({
-        url: 'https://modernconveniences.bandcamp.com/album/head-first-remixed',
-        artist: 'Modern Conveniences',
-        pageType: 'label',
-        pageName: 'Modern Conveniences',
-        albumArtist: 'Akuratyde',
-        trackinfo: [{ id: 20, title: 'Head First', artist: null, file: { 'mp3-128': 'x' }, duration: 200 }],
-      }),
-    ])
-    assert.deepStrictEqual(track.artists, [{ name: 'Akuratyde', role: 'author', id: null, url: null }])
-    assert.deepStrictEqual(track.label, {
-      id: '777',
-      url: 'https://modernconveniences.bandcamp.com',
-      name: 'Modern Conveniences',
-    })
-  })
-
   it('drops the label name as an artist when a real track artist is present', () => {
     const [withReal, intro] = bandcampReleasesTransform([
       release({
