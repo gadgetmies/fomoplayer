@@ -1,5 +1,4 @@
 const { getArtistTracks, getLabelTracks, getPlaylistTracks, storeName } = require('../../routes/stores/bandcamp/logic')
-const { scheduleEmail } = require('../../services/mailer')
 const logger = require('fomoplayer_shared').logger(__filename)
 const sql = require('sql-template-strings')
 const pg = require('fomoplayer_shared').db.pg
@@ -19,7 +18,7 @@ const requiredTrackProperties = [
 ]
 
 async function getArtistDetails() {
-  const [details] = pg.queryRowsAsync(sql`
+  const [details] = await pg.queryRowsAsync(sql`
     -- Bandcamp integration test job get artist store id
     SELECT store__artist_store_id AS "artistStoreId", store__artist_url AS url
     FROM
@@ -33,7 +32,7 @@ async function getArtistDetails() {
 }
 
 async function getLabelDetails() {
-  const [details] = pg.queryRowsAsync(sql`
+  const [details] = await pg.queryRowsAsync(sql`
     -- Bandcamp integration test job get artist store id
     SELECT store__label_store_id AS "labelStoreId", store__label_url AS url
     FROM
@@ -64,17 +63,18 @@ module.exports = async () => {
       for await (const { tracks, errors } of generator) {
         if (errors.length > 0) {
           logger.error(`Errors in fetching tracks for (${details.url}): ${JSON.stringify(errors)}`)
-          combinedErrors.concat(errors)
+          combinedErrors.push(...errors)
         }
 
         if (tracks.length === 0) {
           const error = `No tracks fetched for (${details.url})`
           logger.error(error)
           combinedErrors.push(error)
+          continue
         }
 
         const missingTrackProperties = requiredTrackProperties.filter(
-          (prop) => tracks[0].hasOwnProperty(prop) && tracks[0][prop] !== null,
+          (prop) => !tracks[0].hasOwnProperty(prop) || tracks[0][prop] === null,
         )
 
         if (missingTrackProperties.length !== 0) {
@@ -92,12 +92,6 @@ module.exports = async () => {
   }
 
   if (combinedErrors.length !== 0) {
-    await scheduleEmail(
-      process.env.ADMIN_EMAIL_SENDER,
-      process.env.ADMIN_EMAIL_RECIPIENT,
-      'URGENT! Bandcamp artist track fetching failed!',
-      `Errors: ${JSON.stringify(combinedErrors)}`,
-    )
     return { result: combinedErrors, success: false }
   }
 
