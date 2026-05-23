@@ -208,9 +208,11 @@ class Player extends Component {
     if (!['keyboard', 'media'].includes(source)) return
 
     // The flag is kept on the instance rather than in state on purpose:
-    // media-key events (e.g. an AirPods double-tap) arrive within the same
-    // React 18 batch, so a setState flag would still read its stale value on
-    // the second event and the double-click would never be detected.
+    // media-key events arrive in the same React 18 batch, so a setState flag
+    // would still read its stale value on the second event and the
+    // double-click would never be detected. The window is intentionally wide
+    // (1s): on AirPods a fast double-press triggers the OS skip gesture, so the
+    // two play/pause presses must be deliberately spaced out to reach us.
     if (this._playPauseDoubleClickStarted) {
       clearTimeout(this._playPauseDoubleClickTimer)
       this._playPauseDoubleClickStarted = false
@@ -222,7 +224,7 @@ class Player extends Component {
       this._playPauseDoubleClickStarted = true
       this._playPauseDoubleClickTimer = setTimeout(() => {
         this._playPauseDoubleClickStarted = false
-      }, 500)
+      }, 1000)
     }
   }
 
