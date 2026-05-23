@@ -13,9 +13,59 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GENRES_JS="$SCRIPT_DIR/../routes/stores/beatport/genres.js"
+IDENTITY_URL="https://account.beatport.com"
 API_BASE="https://api.beatport.com/v4"
+# Fixed Beatport OAuth identifiers (not deployment URLs): the public client of
+# the API docs app and its registered post-message redirect.
+CLIENT_ID="${BEATPORT_CLIENT_ID:-0GIvkCltVIuPkkwSJHp6NDb3s0potTjLBQr388Dd}"
+REDIRECT_URI="https://account.beatport.com/o/post-message/?origin=https://api.beatport.com"
 
-token="${BEATPORT_ACCESS_TOKEN:-$("$SCRIPT_DIR/beatport-token.sh")}"
+# Obtain an access token, either supplied directly or via the same
+# login -> authorize -> token OAuth flow as routes/stores/beatport/beatport-token.js.
+if [ -n "${BEATPORT_ACCESS_TOKEN:-}" ]; then
+  token="$BEATPORT_ACCESS_TOKEN"
+else
+  : "${BEATPORT_USERNAME:?set BEATPORT_USERNAME and BEATPORT_PASSWORD (or BEATPORT_ACCESS_TOKEN)}"
+  : "${BEATPORT_PASSWORD:?set BEATPORT_USERNAME and BEATPORT_PASSWORD (or BEATPORT_ACCESS_TOKEN)}"
+
+  jar="$(mktemp)"
+  trap 'rm -f "$jar"' EXIT
+
+  # 1. Log in for a session cookie (jq -n builds the JSON so credentials with
+  #    quotes or backslashes can't break out of the body).
+  login_body="$(jq -n --arg u "$BEATPORT_USERNAME" --arg p "$BEATPORT_PASSWORD" '{username: $u, password: $p}')"
+  if ! curl -sS -c "$jar" -H 'Content-Type: application/json' \
+    --data-binary "$login_body" \
+    --fail-with-body "$IDENTITY_URL/identity/v1/login/" >/dev/null; then
+    echo "fetch-beatport-genres: login failed; check BEATPORT_USERNAME/BEATPORT_PASSWORD" >&2
+    exit 1
+  fi
+
+  # 2. Authorize for an auth code. curl does not follow the redirect, so the code
+  #    is read straight off the Location header.
+  location="$(curl -sS -b "$jar" -o /dev/null -D - -G "$IDENTITY_URL/o/authorize/" \
+    --data-urlencode "response_type=code" \
+    --data-urlencode "client_id=$CLIENT_ID" \
+    --data-urlencode "redirect_uri=$REDIRECT_URI" |
+    tr -d '\r' | sed -n 's/^[Ll]ocation: //p')"
+  code="$(printf '%s' "$location" | sed -n 's/.*[?&]code=\([^&]*\).*/\1/p')"
+  if [ -z "$code" ]; then
+    echo "fetch-beatport-genres: authorize returned no code (location: ${location:-none})" >&2
+    exit 1
+  fi
+
+  # 3. Exchange the code for an access token.
+  token="$(curl -sS --fail-with-body "$IDENTITY_URL/o/token/" \
+    --data-urlencode "client_id=$CLIENT_ID" \
+    --data-urlencode "grant_type=authorization_code" \
+    --data-urlencode "code=$code" \
+    --data-urlencode "redirect_uri=$REDIRECT_URI" |
+    jq -r '.access_token // empty')"
+  if [ -z "$token" ]; then
+    echo "fetch-beatport-genres: token exchange did not return an access_token" >&2
+    exit 1
+  fi
+fi
 
 # Walk the paginated genres collection, keeping enabled genres as id<TAB>name<TAB>slug.
 live_tsv="$(
