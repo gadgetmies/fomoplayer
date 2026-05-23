@@ -217,7 +217,7 @@ class Player extends Component {
       this.setState({ playPauseDoubleClickStarted: true })
       setTimeout(() => {
         this.setState({ playPauseDoubleClickStarted: false })
-      }, 200)
+      }, 500)
     }
   }
 
