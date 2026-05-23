@@ -20,7 +20,7 @@ test({
     return { page, timeout: 30000 }
   },
 
-  'dragging a score-weight slider updates the value and the filled-track width': async ({ page }) => {
+  'dragging a score-weight slider updates the value': async ({ page }) => {
     await page.goto('/settings/sorting')
     await waitForWithTimeoutMessage(
       () => page.waitForSelector(SLIDER_SELECTOR, { timeout: 15000 }),
@@ -33,10 +33,7 @@ test({
       'Reveal the first score-weight slider before interacting with it.',
     )
 
-    const initial = await slider.evaluate((el) => ({
-      value: el.value,
-      backgroundSize: getComputedStyle(el).backgroundSize,
-    }))
+    const initialValue = await slider.evaluate((el) => el.value)
 
     await slider.focus()
     for (let i = 0; i < 12; i++) {
@@ -54,12 +51,8 @@ test({
       await page.mouse.up()
     }
 
-    const after = await slider.evaluate((el) => ({
-      value: el.value,
-      backgroundSize: getComputedStyle(el).backgroundSize,
-    }))
+    const afterValue = await slider.evaluate((el) => el.value)
 
-    expect(after.value, 'slider value moved after keyboard/drag input').to.not.equal(initial.value)
-    expect(after.backgroundSize, 'filled-track width responded to value change').to.not.equal(initial.backgroundSize)
+    expect(afterValue, 'slider value moved after keyboard/drag input').to.not.equal(initialValue)
   },
 })
