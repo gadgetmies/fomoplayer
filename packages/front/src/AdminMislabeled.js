@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom'
-import { requestJSONwithCredentials } from './request-json-with-credentials'
+import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
 import { apiURL } from './config'
 import './AdminMislabeled.css'
 
@@ -158,7 +158,10 @@ function AdminMislabeled() {
   const runAnalysis = async () => {
     setAnalysing(true)
     try {
-      await requestJSONwithCredentials({ url: `${apiURL}/admin/jobs/${ANALYSIS_JOB}/run`, method: 'POST' })
+      // The job-run endpoint replies with a plain-text acknowledgement, not
+      // JSON, so use the non-parsing request helper. The job runs server-side;
+      // we just refetch the (now updated) cache afterwards.
+      await requestWithCredentials({ url: `${apiURL}/admin/jobs/${ANALYSIS_JOB}/run`, method: 'POST' })
       await fetchEntities(type)
     } catch (e) {
       console.error(e)
