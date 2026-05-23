@@ -49,6 +49,20 @@ const enrichWithBandData = (script, tralbum) => {
   }
 }
 
+// Whether a bandcamp page is an artist or a label decides how the transform
+// attributes artists: on a label page the subdomain is the label, not the
+// artist. Label pages carry an `/artists` roster link; artist pages don't.
+const getPageMeta = (doc) => {
+  const siteName = doc.querySelector('[property="og:site_name"]')
+  const nameFromTitle = doc.title && doc.title.split(' | ')[1]
+  return {
+    pageType: doc.querySelector('[href="/artists"]') === null ? 'artist' : 'label',
+    pageName: (siteName && siteName.getAttribute('content')) || nameFromTitle || null,
+  }
+}
+
+const withPageMeta = (doc, tralbum) => (tralbum ? { ...tralbum, ...getPageMeta(doc) } : tralbum)
+
 let bridgeInstalled = false
 
 const installBridge = () => {
@@ -98,8 +112,8 @@ const askBridge = (kind) =>
 
 export const readTralbumData = async () => {
   const fromDom = readTralbumFromDom()
-  if (fromDom) return fromDom
-  return askBridge('tralbum')
+  if (fromDom) return withPageMeta(document, fromDom)
+  return withPageMeta(document, await askBridge('tralbum'))
 }
 
 // Discography / label pages link out to per-release URLs that can live on
@@ -129,7 +143,7 @@ export const fetchReleaseTralbum = async (relativeUrl) => {
       const raw = script.getAttribute('data-tralbum')
       const parsed = raw ? JSON.parse(raw) : null
       if (!parsed || !Array.isArray(parsed.trackinfo) || parsed.trackinfo.length === 0) return null
-      return enrichWithBandData(script, parsed)
+      return withPageMeta(doc, enrichWithBandData(script, parsed))
     } catch (_) {
       return null
     }

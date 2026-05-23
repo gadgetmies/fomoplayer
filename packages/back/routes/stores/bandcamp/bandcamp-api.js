@@ -18,12 +18,18 @@ const scrapeJSON = R.curry((pattern, string) => {
   return vm.runInNewContext(match[1], {})
 })
 
-const extractJSON = R.curry((selector, attribute = undefined, html) => {
-  const dom = new JSDOM(html)
+const extractJSON = R.curry((selector, attribute = undefined, dom) => {
   const element = dom.window.document.querySelector(selector)
   const text = attribute ? element.getAttribute(attribute) : element.textContent
   return JSON.parse(text)
 })
+
+// A Bandcamp subdomain ("band" page) is either an artist or a label. Label
+// pages expose an `/artists` link (the roster); artist pages do not. The
+// release URL of anything published through a label points at the *label's*
+// subdomain, so this is what lets the transform avoid treating the label as
+// the artist. Mirrors the heuristic in `getPageDetails`.
+const getPageType = (dom) => (dom.window.document.querySelector('[href="/artists"]') === null ? 'artist' : 'label')
 
 const getPageSource = async (url) => {
   if (suspendedUntil) {
@@ -63,11 +69,17 @@ const isRateLimited = () => {
   return suspendedUntil !== null && suspendedUntil >= Date.now()
 }
 
-const getReleaseInfo = (pageSource) => extractJSON('[data-tralbum]', 'data-tralbum', pageSource)
+const getReleaseInfo = (dom) => extractJSON('[data-tralbum]', 'data-tralbum', dom)
 const getRelease = (itemUrl, callback) => {
   return getPageSource(itemUrl)
     .then((res) => {
-      callback(null, { ...getReleaseInfo(res), url: itemUrl })
+      const dom = new JSDOM(res)
+      callback(null, {
+        ...getReleaseInfo(dom),
+        url: itemUrl,
+        pageType: getPageType(dom),
+        pageName: getName(dom),
+      })
     })
     .catch((e) => {
       logger.error(`Fetching release from ${itemUrl} failed`, { statusCode: e.statusCode })
