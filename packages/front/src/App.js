@@ -1215,6 +1215,12 @@ class App extends Component {
                     const {
                       location: { pathname },
                     } = window
+                    // The admin views render via their own routes above; this
+                    // catch-all also matches /admin*, so bail out here to avoid
+                    // rendering the tracks list + player frame over them.
+                    if (pathname.startsWith('/admin')) {
+                      return null
+                    }
                     const pathParts = pathname.slice(1).split('/')
                     const settingsVisible = pathname.match(/\/settings\/?/)
                     let listState = this.state.listState
