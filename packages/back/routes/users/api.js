@@ -75,10 +75,11 @@ const {
 
 const router = require('express-promise-router')()
 
-// Current user's details. `isAdmin` lets the client decide whether to surface
-// the admin UI; the admin API is independently guarded by ensureIsAdmin.
+// Current user's capabilities. `isAdmin` lets the client decide whether to
+// surface the admin UI; the admin API is independently guarded by
+// ensureIsAdmin. Deliberately does not expose the serial user id.
 router.get('/', (req, res) => {
-  res.send({ id: req.user.id, isAdmin: isAdmin(req) })
+  res.send({ isAdmin: isAdmin(req) })
 })
 
 const MAX_FILE_SIZE = parseInt(process.env.NOTIFICATION_AUDIO_SAMPLE_MAX_SIZE || '10485760', 10)
