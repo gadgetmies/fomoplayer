@@ -14,15 +14,39 @@ const browserHeaders = {
 
 // Wraps native fetch to provide {statusCode, body} shape matching the old request-promise API.
 // Note: strictSSL: false equivalent is not needed for Node 22's built-in fetch in typical use.
+// Headers worth surfacing when a request is rejected — Cloudflare/anti-bot
+// responses carry their reason here (cf-mitigated=challenge, server=cloudflare).
+const diagnosticHeaders = ['server', 'cf-ray', 'cf-mitigated', 'cf-cache-status', 'retry-after', 'content-type']
+
+const summariseHeaders = (headers) =>
+  diagnosticHeaders.reduce((acc, name) => {
+    const value = headers.get(name)
+    if (value) acc[name] = value
+    return acc
+  }, {})
+
 const request = (uri, callback) => {
   const promise = fetch(uri, { headers: browserHeaders })
     .then(async (res) => {
       const body = await res.text()
       const result = { statusCode: res.status, body }
+      if (res.status >= 400) {
+        console.error(
+          `Beatport request returned error status. URL: ${uri} status: ${res.status} ${res.statusText} ` +
+            `redirected: ${res.redirected} finalUrl: ${res.url} bodyLength: ${body.length}`,
+          { headers: summariseHeaders(res.headers), bodySnippet: body.slice(0, 1000) },
+        )
+      } else {
+        console.log(
+          `Beatport request ok. URL: ${uri} status: ${res.status} redirected: ${res.redirected} ` +
+            `finalUrl: ${res.url} bodyLength: ${body.length} hasNextData: ${body.includes('__NEXT_DATA__')}`,
+        )
+      }
       if (callback) callback(null, result)
       return result
     })
     .catch((e) => {
+      console.error(`Beatport request threw before producing a response. URL: ${uri}`, e)
       if (callback) callback(e)
       else throw e
     })
