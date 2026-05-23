@@ -61,3 +61,14 @@ module.exports.updateArtistCollaborationScores = async () => {
 
   return { success: true }
 }
+
+module.exports.updateArtistLabelTrackCounts = async () => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- updateArtistLabelTrackCounts
+    REFRESH MATERIALIZED VIEW CONCURRENTLY artist_label_track_count
+    `,
+  )
+
+  return { success: true }
+}

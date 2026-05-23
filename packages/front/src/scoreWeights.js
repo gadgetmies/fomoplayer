@@ -15,6 +15,13 @@ const scoreWeights = {
     step: 0.1,
     unit: 'points added per weighted collaboration with followed/starred artists',
   },
+  label_affinity: {
+    label: 'Label affinity',
+    min: 0,
+    max: 5,
+    step: 0.05,
+    unit: 'points added per track an artist has on labels shared with followed/starred artists',
+  },
   label_follow: { label: 'Label follow', min: 0, max: 10, step: 0.1, unit: 'points added per followed labels' },
   date_released: {
     label: 'Date released',
