@@ -809,6 +809,13 @@ const createAuthRouter = ({
           isPreviewEnv && githubActionsOidcAdminSub && subject === githubActionsOidcAdminSub,
         )
 
+        // Diagnostic (preview only — this route is preview-gated). The sub is not
+        // a secret; logging it lets a maintainer copy the exact value into
+        // GITHUB_ACTIONS_OIDC_ADMIN_SUB when wiring up the admin demo.
+        logger.info(
+          `Actions OIDC login: sub=${subject} adminSubConfigured=${Boolean(githubActionsOidcAdminSub)} isActionsAdmin=${isActionsAdmin}`,
+        )
+
         req.login(user, (err) => {
           if (err) return next(err)
           req.session.isActionsAdmin = isActionsAdmin
