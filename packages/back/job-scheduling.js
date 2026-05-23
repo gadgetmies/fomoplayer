@@ -22,6 +22,7 @@ const { findMatchingTracks } = require('./jobs/find-matching-tracks')
 const { syncCarts } = require('./jobs/cart-sync')
 const beatportIntegrationTest = require('./jobs/integration/beatport')
 const bandcampIntegrationTest = require('./jobs/integration/bandcamp')
+const checkBeatportGenres = require('./jobs/check-beatport-genres')
 const logger = require('fomoplayer_shared').logger(__filename)
 const radiator = require('./jobs/radiator/radiator')
 const { removeOldSources } = require('./jobs/remove-old-sources')
@@ -137,7 +138,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
 
     for (const { name, schedule, enabled } of jobSchedules) {
       if (scheduled[name]) {
-        if (scheduled[name].schedule === schedule && scheduled[name].enabled === enabled ) {
+        if (scheduled[name].schedule === schedule && scheduled[name].enabled === enabled) {
           continue
         } else {
           logger.info(`Updating schedule of job '${name}' to ${schedule}`)
@@ -183,6 +184,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   findMatchingTracks,
   beatportIntegrationTest,
   bandcampIntegrationTest,
+  checkBeatportGenres,
   removeOldSources,
   sendInvites,
   ...radiator,

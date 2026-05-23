@@ -56,10 +56,12 @@ module.exports = async () => {
   const labelDetails = await getLabelDetails()
 
   const bpTop100 = 'https://www.beatport.com/top-100'
+  const bpGenreTop100 = 'https://www.beatport.com/genre/uk-garage-bassline/86/top-100'
   const detailsAndFunctions = [
     [artistDetails, getArtistTracks],
     [labelDetails, getLabelTracks],
     [{ playlistStoreId: bpTop100, url: bpTop100 }, getPlaylistTracks],
+    [{ playlistStoreId: bpGenreTop100, url: bpGenreTop100 }, getPlaylistTracks],
   ]
 
   let combinedErrors = []

@@ -1,10 +1,9 @@
 const R = require('ramda')
 const bpApi = require('./bp-api')
+const { searchGenres, genreTop100Url } = require('./genres')
 const { processChunks } = require('../../shared/requests')
 
-const {
-  beatportV4TracksTransform,
-} = require('fomoplayer_browser_extension/src/js/transforms/beatport')
+const { beatportV4TracksTransform } = require('fomoplayer_browser_extension/src/js/transforms/beatport')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 const storeName = (module.exports.storeName = 'Beatport')
@@ -73,6 +72,21 @@ module.exports.getPlaylistTracks = async function* ({ playlistStoreId: url }) {
   yield { tracks, errors: [] }
 }
 
+// Matching genres are surfaced as their top-100 chart, which is the playlist a
+// user follows to track a whole genre. The genre set is cached locally, so this
+// adds no API call.
+const genrePlaylistResults = (query) =>
+  searchGenres(query).map((genre) => {
+    const url = genreTop100Url(genre)
+    return {
+      type: 'playlist',
+      id: url,
+      name: `${genre.name} Top 100`,
+      url,
+      store: { name: storeName.toLowerCase() },
+    }
+  })
+
 module.exports.search = async (query) => {
   const { artists = [], labels = [] } = await bpApi.search(query)
   const mapItems = (items, type) =>
@@ -84,7 +98,7 @@ module.exports.search = async (query) => {
       url: storefrontUrl(type, item.slug, item.id),
       store: { name: storeName.toLowerCase() },
     }))
-  return [...mapItems(artists, 'artist'), ...mapItems(labels, 'label')]
+  return [...mapItems(artists, 'artist'), ...mapItems(labels, 'label'), ...genrePlaylistResults(query)]
 }
 
 module.exports.getTracksForISRCs = async (isrcs) => {
