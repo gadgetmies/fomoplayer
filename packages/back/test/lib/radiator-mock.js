@@ -88,7 +88,7 @@ const adminError = (path, { status, text }) =>
     `POST ${path} failed: HTTP ${status} — ${text}. The session user is not an admin. ` +
       'On a preview, the Actions bot is granted admin from its OIDC sub via the ' +
       'preview-admin environment (ensure the preview is running current code); ' +
-      'locally, ADMIN_USER_IDS must include the test user id.',
+      'locally, ADMIN_USER_SUBS must include the test user OIDC subject.',
   )
 
 module.exports.seedRadiatorPresetsViaApi = async (page) => {
