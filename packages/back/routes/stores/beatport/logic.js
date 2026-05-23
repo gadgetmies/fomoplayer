@@ -1,31 +1,45 @@
-const BPromise = require('bluebird')
 const R = require('ramda')
 const bpApi = require('./bp-api')
 const { processChunks } = require('../../shared/requests')
 
 const {
-  beatportTracksTransform,
-  beatportTrackTransform,
+  beatportV4TracksTransform,
 } = require('fomoplayer_browser_extension/src/js/transforms/beatport')
 const logger = require('fomoplayer_shared').logger(__filename)
 
-const bpApiStatic = BPromise.promisifyAll(bpApi.staticFns)
-
-// TODO: add export?
 const storeName = (module.exports.storeName = 'Beatport')
 module.exports.storeUrl = 'https://www.beatport.com'
 module.exports.getPlaylistId = (id) => id
 
+const storefrontUrl = (type, slug, id) => `https://www.beatport.com/${type}/${slug}/${id}`
+
+const parseEntityUrl = (url) => {
+  const match = url.match(/^https:\/\/www\.beatport\.com\/(artist|label)\/([^/]+)\/(\d+)/)
+  return match ? { type: match[1], slug: match[2], id: match[3] } : null
+}
+
 const getPlaylistName = (module.exports.getPlaylistName = async ({ url }) => {
-  const { name } = await bpApiStatic.getDetailsAsync(url)
-  return name
+  const playlist = await bpApi.getPlaylist(url)
+  return playlist.name
 })
+
+const getDetails = (module.exports.getArtistDetails = async (url) => {
+  const parsed = parseEntityUrl(url)
+  if (!parsed) {
+    throw new Error(`Unable to extract Beatport details from url: ${url}`)
+  }
+  const { type, id, slug } = parsed
+  const entity = type === 'artist' ? await bpApi.getArtist(id) : await bpApi.getLabel(id)
+  return { url, name: entity.name, img: entity.image?.uri, type, id, slug: entity.slug ?? slug }
+})
+
+module.exports.getLabelName = module.exports.getArtistName = async (url) => (await getDetails(url)).name
 
 module.exports.getFollowDetails = async ({ id, url, type }) => {
   let details
 
   if (type === 'artist' || type === 'label') {
-    details = await bpApiStatic.getDetailsAsync(url)
+    details = await getDetails(url)
   } else if (type === 'playlist') {
     details = { id: url, name: await getPlaylistName({ url }) }
   } else {
@@ -35,92 +49,42 @@ module.exports.getFollowDetails = async ({ id, url, type }) => {
   return [{ id, ...details, type, store: { name: storeName }, url }]
 }
 
-const getTrackInfo = async (url) => {
-  const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
-  const transformed = beatportTrackTransform(queryData.data.props.pageProps.track)
-
-  if (!transformed) {
-    const error = `Track data extraction failed: ${url}`
-    logger.error(error)
-    throw new Error(error)
-  }
-
-  return transformed
-}
-
-function trackInfo([{ url }]) {
-  return getTrackInfo(url)
-}
-
-const appendTrackNumbers = async (tracks) => {
-  try {
-    const trackInfos = await processChunks(tracks, 4, trackInfo, { concurrency: 4 })
-
-    // TODO: yield
-    return tracks.map(({ id, ...rest }) => ({
-      id,
-      ...rest,
-      track_number: trackInfos.find((track) => id === track?.id)?.track_number,
-    }))
-  } catch (e) {
-    logger.error(`appendTrackNumbers failed: ${e.toString().substring(0, 100)}`)
-  }
-}
-
 module.exports.getArtistTracks = async function* ({ artistStoreId }) {
-  const artistQueryData = await bpApiStatic.getArtistQueryDataAsync(artistStoreId, 1)
-  const transformed = beatportTracksTransform(artistQueryData)
-
-  if (transformed.length === 0) {
-    const warning = `No tracks found for artist ${artistStoreId}`
-    logger.warn(warning)
-    yield { tracks: [], errors: [] }
+  const tracks = beatportV4TracksTransform(await bpApi.getArtistTracks(artistStoreId))
+  if (tracks.length === 0) {
+    logger.warn(`No tracks found for artist ${artistStoreId}`)
   }
-
-  yield { tracks: await appendTrackNumbers(transformed), errors: [] }
-}
-
-const getDetails = (module.exports.getArtistDetails = async (url) => ({
-  url,
-  ...(await bpApiStatic.getDetailsAsync(url)),
-}))
-
-module.exports.getLabelName = module.exports.getArtistName = async (url) => {
-  const { name } = await getDetails(url)
-  return name
+  yield { tracks, errors: [] }
 }
 
 module.exports.getLabelTracks = async function* ({ labelStoreId }) {
-  const labelQueryData = await bpApiStatic.getLabelQueryDataAsync(labelStoreId, 1)
-  const transformed = beatportTracksTransform(labelQueryData)
-
-  if (transformed.length === 0) {
-    const warning = `No tracks found for label ${labelStoreId}`
-    logger.warn(warning, { labelStoreId })
-    yield { tracks: [], errors: [] }
+  const tracks = beatportV4TracksTransform(await bpApi.getLabelTracks(labelStoreId))
+  if (tracks.length === 0) {
+    logger.warn(`No tracks found for label ${labelStoreId}`, { labelStoreId })
   }
-
-  yield { tracks: await appendTrackNumbers(transformed), errors: [] }
+  yield { tracks, errors: [] }
 }
 
 module.exports.getPlaylistTracks = async function* ({ playlistStoreId: url }) {
-  const queryData = await bpApiStatic.getQueryDataOnPageAsync(url)
-  const transformed = beatportTracksTransform(queryData.data.tracks)
-
-  if (transformed.length === 0) {
-    const warning = `No tracks found for playlist at ${url}`
-    logger.warn(warning)
-    return { tracks: [], errors: [] }
+  const tracks = beatportV4TracksTransform(await bpApi.getPlaylistTracks(url))
+  if (tracks.length === 0) {
+    logger.warn(`No tracks found for playlist at ${url}`)
   }
-
-  yield { tracks: await appendTrackNumbers(transformed), errors: [] }
+  yield { tracks, errors: [] }
 }
 
 module.exports.search = async (query) => {
-  const promises = [bpApiStatic.searchForArtistsAsync(query), bpApiStatic.searchForLabelsAsync(query)]
-  return (await Promise.all(promises))
-    .reduce((acc, { results }) => acc.concat(results), [])
-    .map((item) => ({ ...item, store: { name: storeName.toLowerCase() } }))
+  const { artists = [], labels = [] } = await bpApi.search(query)
+  const mapItems = (items, type) =>
+    items.map((item) => ({
+      type,
+      id: item.id,
+      name: item.name,
+      img: item.image?.uri,
+      url: storefrontUrl(type, item.slug, item.id),
+      store: { name: storeName.toLowerCase() },
+    }))
+  return [...mapItems(artists, 'artist'), ...mapItems(labels, 'label')]
 }
 
 module.exports.getTracksForISRCs = async (isrcs) => {
@@ -128,19 +92,9 @@ module.exports.getTracksForISRCs = async (isrcs) => {
     await processChunks(
       isrcs,
       1,
-      async ([trackISRC]) => {
-        const { results, buildId } = await bpApiStatic.searchForTracksAsync(trackISRC)
-        if (results.length === 0) return []
-        // TODO: remove duplicates
-        return await bpApiStatic.getTrackQueryDataAsync(results[0].id, buildId)
-      },
+      async ([trackISRC]) => beatportV4TracksTransform(await bpApi.getTracksByIsrc(trackISRC)),
       { concurrency: 1 },
     )
   ).flat()
-  return R.uniq(
-    tracks
-      .map(beatportTracksTransform)
-      .flat()
-      .filter(({ isrc }) => isrcs.includes(isrc)),
-  )
+  return R.uniq(tracks.filter(({ isrc }) => isrcs.includes(isrc)))
 }

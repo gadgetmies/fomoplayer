@@ -104,6 +104,11 @@ const trackTransform = L.pick({
 
 module.exports.beatportTrackTransform = L.get(trackTransform)
 
+// Beatport v4 catalog list endpoints return plain track objects under `results`
+// (same field shape the page __NEXT_DATA__ carried). Keep only playable tracks.
+module.exports.beatportV4TracksTransform = (results) =>
+  (results || []).filter((track) => track && track.sample_url).map(L.get(trackTransform))
+
 module.exports.beatportTracksTransform = L.collect([
   L.choices('props', []),
   'pageProps',

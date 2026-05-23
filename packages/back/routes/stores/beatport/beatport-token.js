@@ -103,6 +103,7 @@ const renew = async () => {
 }
 
 const getAccessToken = async () => {
+  if (process.env.BEATPORT_API_MOCK) return 'mock-access-token'
   if (token && Date.now() < token.expiresAt) return token.accessToken
   if (!inflight) {
     inflight = renew().finally(() => {

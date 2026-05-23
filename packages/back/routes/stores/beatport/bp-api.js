@@ -1,406 +1,63 @@
-const BPromise = require('bluebird')
-const R = require('ramda')
-const { init, initWithSession } = require('./session-request')
-const { decode } = require('html-entities')
+/**
+ * Thin client for the Beatport v4 catalog API (api.beatport.com/v4).
+ *
+ * Replaces the previous www.beatport.com page scraping, which Beatport put
+ * behind a Cloudflare managed challenge. Every request carries a Bearer token
+ * from the app-level token manager and retries once after a forced re-auth on
+ * 401.
+ */
+const { getAccessToken, _reset } = require('./beatport-token')
 
-// Beatport sits behind bot-protection that rejects requests without a
-// browser-like User-Agent (responds 403), so present standard browser headers.
-const browserHeaders = {
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'Accept-Language': 'en-US,en;q=0.9',
-}
+const API_BASE = 'https://api.beatport.com/v4'
+const PER_PAGE = 100
 
-// Wraps native fetch to provide {statusCode, body} shape matching the old request-promise API.
-// Note: strictSSL: false equivalent is not needed for Node 22's built-in fetch in typical use.
-// Headers worth surfacing when a request is rejected — Cloudflare/anti-bot
-// responses carry their reason here (cf-mitigated=challenge, server=cloudflare).
-const diagnosticHeaders = ['server', 'cf-ray', 'cf-mitigated', 'cf-cache-status', 'retry-after', 'content-type']
-
-const summariseHeaders = (headers) =>
-  diagnosticHeaders.reduce((acc, name) => {
-    const value = headers.get(name)
-    if (value) acc[name] = value
-    return acc
-  }, {})
-
-const request = (uri, callback) => {
-  const promise = fetch(uri, { headers: browserHeaders })
-    .then(async (res) => {
-      const body = await res.text()
-      const result = { statusCode: res.status, body }
-      if (res.status >= 400) {
-        console.error(
-          `Beatport request returned error status. URL: ${uri} status: ${res.status} ${res.statusText} ` +
-            `redirected: ${res.redirected} finalUrl: ${res.url} bodyLength: ${body.length}`,
-          { headers: summariseHeaders(res.headers), bodySnippet: body.slice(0, 1000) },
-        )
-      } else {
-        console.log(
-          `Beatport request ok. URL: ${uri} status: ${res.status} redirected: ${res.redirected} ` +
-            `finalUrl: ${res.url} bodyLength: ${body.length} hasNextData: ${body.includes('__NEXT_DATA__')}`,
-        )
-      }
-      if (callback) callback(null, result)
-      return result
-    })
-    .catch((e) => {
-      console.error(`Beatport request threw before producing a response. URL: ${uri}`, e)
-      if (callback) callback(e)
-      else throw e
-    })
-  return promise
-}
-
-const beatportUri = 'https://www.beatport.com'
-const loginUri = 'https://www.beatport.com/account/login'
-const cookieUri = 'https://www.beatport.com/'
-const csrfTokenKey = '_csrf_token'
-const sessionCookieKey = 'session'
-
-const handleErrorOrCallFn = R.curry((errorHandler, fn) => (err, res) => (err ? errorHandler(err) : fn(res)))
-
-const scrapeJSON = R.curry((startString, stopString, string) => {
-  const start = string.indexOf(startString) + startString.length
-  const stop = string.indexOf(stopString, start)
-  const text = string.substring(start, stop)
-  // TODO: handle status code here?
-  try {
-    return JSON.parse(text)
-  } catch (e) {
-    console.error(`Failed to scrape JSON`, text)
-    throw e
-  }
-})
-
-const getQueryData = (pageSource) =>
-  scrapeJSON('<script id="__NEXT_DATA__" type="application/json">', '</script>', pageSource)
-
-const getPageTitleFromSource = (pageSource) => {
-  const startString = '<title'
-  const start = pageSource.indexOf('>', pageSource.indexOf(startString))
-  if (start !== -1) {
-    const stop = pageSource.indexOf('</title>')
-    return decode(pageSource.substring(start + 1, stop))
-      .replace(' :: Beatport', '')
-      .replace(' artists & music download - Beatport', '')
-      .replace(' music download - Beatport', '')
-      .replace(' Music & Downloads on Beatport', '')
-      .replace(/ \| Download & Stream.*/, '')
-  } else {
-    const pageData = getQueryData(pageSource)
-    const { artist, label, track, dehydratedState } = pageData.props.pageProps
-    const playlist = R.pathOr(undefined, ['queries', '1', 'state', 'data'], dehydratedState)
-    if (!artist && !label && !track && !playlist) {
-      throw new Error('Unable to extract page title!')
-    }
-    return (artist || label || track || playlist).name
-  }
-}
-
-const getImageFromSource = (pageSource) => {
-  const pageData = getQueryData(pageSource)
-  const { artist, label } = pageData.props.pageProps
-  if (!artist && !label) {
-    throw new Error('Unable to extract image!')
-  }
-  return (artist || label).image.uri
-}
-
-const getDetails = (uri, callback) =>
-  request(
-    uri,
-    handleErrorOrCallFn(callback, (res) => {
-      try {
-        if (Math.floor(res.statusCode / 100) < 4) {
-          const name = getPageTitleFromSource(res.body)
-          let img
-          try {
-            img = getImageFromSource(res.body)
-          } catch (e) {
-            console.error(`Unable to find image for uri: ${uri}`)
-          }
-          const [_, type, slug, id] = uri.match(/^https:\/\/www\.beatport\.com\/([^/]*)\/([^/]*)\/([^/]+)/)
-          return callback(null, { name, img, type, id, slug })
-        } else {
-          const message = `Request returned error status. URL: ${uri}`
-          console.error(message)
-          callback(new Error(message))
-        }
-      } catch (e) {
-        console.error(`Failed to fetch details for uri: ${uri}`, e)
-        callback(e)
-      }
-    }),
-  )
-
-const getTitle = (uri, callback) =>
-  request(
-    uri,
-    handleErrorOrCallFn(callback, (res) => {
-      try {
-        if (Math.floor(res.statusCode / 100) < 4) {
-          return callback(null, getPageTitleFromSource(res.body))
-        } else {
-          const message = `Request returned error status. URL: ${uri}`
-          console.error(message)
-          callback(new Error(message))
-        }
-      } catch (e) {
-        console.error('Failed to fetch the page title', e)
-        callback(e)
-      }
-    }),
-  )
-
-const getPageQueryData = (uri, callback) => {
-  request(
-    uri,
-    handleErrorOrCallFn(callback, (res) => {
-      try {
-        if (Math.floor(res.statusCode / 100) < 4) {
-          let queryData = getQueryData(res.body)
-          return callback(null, queryData)
-        } else {
-          const message = `Request returned error status. URL: ${uri}`
-          console.error(message)
-          callback(new Error(message))
-        }
-      } catch (e) {
-        console.error(`Failed fetching details from ${uri}`, e)
-        callback(e)
-      }
-    }),
-  )
-}
-
-const getTrackQueryData = (trackId, buildId, callback) => {
-  const uri = `${beatportUri}/_next/data/${buildId}/en/track/_/${trackId}.json?id=11351675`
-  request(
-    uri,
-    handleErrorOrCallFn(callback, (res) => {
-      try {
-        if (Math.floor(res.statusCode / 100) < 4) {
-          return callback(null, JSON.parse(res.body))
-        } else {
-          const message = `Request returned error status. URL: ${uri}`
-          console.error(message)
-          callback(new Error(message))
-        }
-      } catch (e) {
-        console.error(`Failed fetching details from ${uri}`, e)
-        callback(e)
-      }
-    }),
-  )
-}
-
-const getArtistQueryData = (artistId, page = 1, callback) => {
-  const uri = `${beatportUri}/artist/_/${artistId}/tracks?per-page=50&page=${page}`
-  getPageQueryData(uri, callback)
-}
-
-const getLabelQueryData = (labelId, page = 1, callback) => {
-  const uri = `${beatportUri}/label/_/${labelId}/tracks?per-page=50&page=${page}`
-  console.log(`Fetching label details from ${uri}`)
-  getPageQueryData(uri, callback)
-}
-
-const getSearchResults = (html, type) => {
-  const queryData = getQueryData(html)
-  const results = queryData.props.pageProps.dehydratedState.queries[0].state.data.data
-  return {
-    results: results.map(
-      ({ label_name, artist_name, track_name, label_id, artist_id, track_id, label_image_uri, artist_image_uri }) => {
-        const name = label_name || artist_name || track_name
-        const id = label_id || artist_id || track_id
-        return {
-          type,
-          id,
-          name,
-          img: label_image_uri || artist_image_uri,
-          url: `${beatportUri}/${type}/${encodeURI(name.toLowerCase().replace(' ', '-'))}/${id}`,
-        }
-      },
-    ),
-    buildId: queryData.buildId,
-  }
-}
-
-function getSearchUri(query, type = '') {
-  return `${beatportUri}/search/${type ? `${type}s` : ''}?q=${query}`
-}
-
-const search = (query, type, callback) => {
-  const uri = getSearchUri(query, type)
-  console.log(`Performing Beatport search: ${uri}`)
-  request(
-    uri,
-    handleErrorOrCallFn(callback, (res) => {
-      try {
-        if (Math.floor(res.statusCode / 100) < 4) {
-          return callback(null, getSearchResults(res.body, type))
-        } else {
-          const message = `Request returned error status. URL: ${uri}`
-          console.error(message)
-          callback(new Error(message))
-        }
-      } catch (e) {
-        console.error(`Failed fetching search results from ${uri}`, e)
-        callback(e)
-      }
-    }),
-  ).catch((e) => {
-    callback(e)
+const apiGet = async (path, { retried = false } = {}) => {
+  const token = await getAccessToken()
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
   })
-}
-
-const searchForArtists = (query, callback) => search(query, 'artist', callback)
-const searchForLabels = (query, callback) => search(query, 'label', callback)
-const searchForTracks = (query, callback) => search(query, 'track', callback)
-
-const getQueryDataOnPage = (uri, callback) => {
-  request(
-    uri,
-    handleErrorOrCallFn(callback, (res) => {
-      try {
-        const data = getQueryData(res.body)
-        const title = getPageTitleFromSource(res.body)
-        return callback(null, { data, title })
-      } catch (e) {
-        console.error(`Failed fetching details from ${uri}`, e)
-        callback(e)
-      }
-    }),
-  ).catch((e) => {
-    console.error(e)
-    callback(e)
-  })
-}
-
-const getApi = (session) => {
-  const getJsonAsync = BPromise.promisify(session.getJson)
-  const api = {
-    getMyBeatport: (callback) => session.getJson(`${beatportUri}/api/my-beatport`, callback),
-    getMyBeatportTracks: (page, callback) =>
-      session.get(
-        `${beatportUri}/my-beatport?page=${page}&_pjax=%23pjax-inner-wrapper`,
-        handleErrorOrCallFn(callback, (res) => {
-          return callback(null, getQueryData(res))
-        }),
-      ),
-    getItemsInCarts: (callback) =>
-      session.getJson(
-        `${beatportUri}/api/cart/cart`,
-        handleErrorOrCallFn(callback, (res) => {
-          BPromise.map(res.carts.map(R.prop('id')), (cartId) => getJsonAsync(`${beatportUri}/api/cart/${cartId}`))
-            .map(({ items }) => R.pluck('id', items))
-            .then(R.flatten)
-            .tap((idsOfItemsInCart) => callback(null, idsOfItemsInCart))
-            .catch((err) => callback(err))
-        }),
-      ),
-    getTrack: (trackId, callback) => session.getJson(`https://embed.beatport.com/track?id=${trackId}`, callback),
-    getClip: (trackId, callback) =>
-      api.getTrack(
-        trackId,
-        handleErrorOrCallFn(callback, (res) => callback(null, res.results.preview)),
-      ),
-    addTrackToCart: (trackId, cartId, callback) =>
-      session.postJson(
-        `${beatportUri}/api/${cartId}`,
-        {
-          items: [{ type: 'track', id: trackId }],
-        },
-        handleErrorOrCallFn(callback, (res) => callback(null, res)),
-      ),
-    removeTrackFromCart: (trackId, cartId, callback) =>
-      session.deleteJson(
-        `${beatportUri}/api/cart/${cartId}`,
-        {
-          items: [{ type: 'track', id: trackId }],
-        },
-        handleErrorOrCallFn(callback, (res) => callback(null, res)),
-      ),
-    getAvailableDownloadIds: (page = 1, callback) =>
-      session.get(
-        `${beatportUri}/downloads/available?page=${page}&per-page=1000`,
-        handleErrorOrCallFn(callback, (res) => callback(null, getQueryData(res))),
-      ),
-    getDownloadedTracks: (page = 1, callback) =>
-      session.get(
-        `${beatportUri}/downloads/downloaded?page=${page}&per-page=1000`,
-        handleErrorOrCallFn(callback, (res) => callback(null, getQueryData(res))),
-      ),
-    downloadTrackWithId: (downloadId, callback) =>
-      getJsonAsync(`${beatportUri}/api/downloads/purchase?downloadId=${downloadId}`)
-        .then(R.prop('download_url'))
-        .then((downloadUrl) => session.getBlob(downloadUrl, callback))
-        .catch((err) => callback(err)),
-    getArtistQueryData,
-    getLabelQueryData,
-    searchForArtists,
-    searchForLabels,
+  if (response.status === 401 && !retried) {
+    _reset()
+    return apiGet(path, { retried: true })
   }
-
-  return api
-}
-
-const handleCreateSessionResponse = (callback) => (err, session) => {
-  if (err) {
-    return callback(err)
+  if (!response.ok) {
+    throw new Error(
+      `Beatport API request failed (${response.status}) for ${path}: ${(await response.text()).slice(0, 200)}`,
+    )
   }
-  const api = getApi(session)
-  const ensureLoginSuccessful = () =>
-    api.getMyBeatport((err) => {
-      if (err) {
-        callback(err)
-      } else {
-        callback(null, api)
-      }
-    })
-
-  return ensureLoginSuccessful()
+  return response.json()
 }
 
-const initializers = {
-  init: (username, password, callback) => {
-    return init(
-      cookieUri,
-      loginUri,
-      username,
-      password,
-      csrfTokenKey,
-      sessionCookieKey,
-      handleCreateSessionResponse(callback),
-    )
-  },
-  initWithSession: (sessionCookieValue, csrfToken, callback) => {
-    return initWithSession(
-      { [sessionCookieKey]: sessionCookieValue, [csrfTokenKey]: csrfToken },
-      cookieUri,
-      handleCreateSessionResponse(callback),
-    )
-  },
-  initAsync: (username, password) =>
-    BPromise.promisify(initializers.init)(username, password).then((api) => BPromise.promisifyAll(api)),
-  initWithSessionAsync: (sessionCookieValue, csrfToken) =>
-    BPromise.promisify(initializers.initWithSession)(sessionCookieValue, csrfToken).then((api) =>
-      BPromise.promisifyAll(api),
-    ),
+// Playlists are followed by URL (the playlist regex is a catch-all). Resolve a
+// numeric id + kind from chart/playlist URLs; unsupported shapes throw.
+const playlistBaseFromUrl = (url) => {
+  const match = url.match(/beatport\.com\/(chart|playlist)s?\/[^/]+\/(\d+)/)
+  if (!match) return null
+  const [, kind, id] = match
+  return kind === 'chart' ? `/catalog/charts/${id}/` : `/catalog/playlists/${id}/`
 }
 
-const staticFns = {
-  getArtistQueryData,
-  getLabelQueryData,
-  getTrackQueryData,
-  getQueryDataOnPage,
-  getTitle,
-  getDetails,
-  searchForArtists,
-  searchForLabels,
-  searchForTracks,
+const requirePlaylistBase = (url) => {
+  const base = playlistBaseFromUrl(url)
+  if (!base) throw new Error(`Unsupported Beatport playlist URL for the v4 API: ${url}`)
+  return base
 }
 
-module.exports = { ...initializers, staticFns }
+module.exports = {
+  search: (query) => apiGet(`/catalog/search/?q=${encodeURIComponent(query)}`),
+
+  getArtist: (artistId) => apiGet(`/catalog/artists/${artistId}/`),
+  getLabel: (labelId) => apiGet(`/catalog/labels/${labelId}/`),
+  getPlaylist: (url) => apiGet(requirePlaylistBase(url)),
+
+  getArtistTracks: async (artistId, page = 1) =>
+    (await apiGet(`/catalog/artists/${artistId}/tracks/?page=${page}&per_page=${PER_PAGE}`)).results,
+
+  getLabelTracks: async (labelId, page = 1) =>
+    (await apiGet(`/catalog/labels/${labelId}/tracks/?page=${page}&per_page=${PER_PAGE}`)).results,
+
+  getPlaylistTracks: async (url, page = 1) =>
+    (await apiGet(`${requirePlaylistBase(url)}tracks/?page=${page}&per_page=${PER_PAGE}`)).results,
+
+  getTracksByIsrc: async (isrc) => (await apiGet(`/catalog/tracks/?isrc=${encodeURIComponent(isrc)}`)).results,
+}
