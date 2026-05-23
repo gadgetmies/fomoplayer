@@ -10,7 +10,7 @@ const {
   getPageDetailsAsync,
   getTagReleasesAsync,
   getSearchResultsAsync,
-  static: { getTagsFromUrl, getTagName, isRateLimited },
+  static: { getTagsFromUrl, getTagName, getTagUrl, getTagSlug, isRateLimited },
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl, queryKnownReleaseUrls } = require('./db.js')
@@ -243,6 +243,22 @@ module.exports.getPlaylistTracks = async function* ({ playlistStoreId, type }) {
   }
 }
 
+// Bandcamp's discover pages are tag playlists, so every search can offer the
+// "Music tagged with <term>" playlist for the query in addition to the matching
+// artists/labels.
+const tagPlaylistResult = (query) => {
+  const slug = getTagSlug(query)
+  if (!slug) return []
+  const url = getTagUrl({ genre: slug })
+  return [
+    { type: 'playlist', id: url, name: getTagName(getTagsFromUrl(url)), url, store: { name: storeName.toLowerCase() } },
+  ]
+}
+
 module.exports.search = async (query) => {
-  return (await getSearchResultsAsync(query)).map((item) => ({ ...item, store: { name: storeName.toLowerCase() } }))
+  const results = (await getSearchResultsAsync(query)).map((item) => ({
+    ...item,
+    store: { name: storeName.toLowerCase() },
+  }))
+  return [...results, ...tagPlaylistResult(query)]
 }
