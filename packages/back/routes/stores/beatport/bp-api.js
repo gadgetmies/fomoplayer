@@ -3,10 +3,19 @@ const R = require('ramda')
 const { init, initWithSession } = require('./session-request')
 const { decode } = require('html-entities')
 
+// Beatport sits behind bot-protection that rejects requests without a
+// browser-like User-Agent (responds 403), so present standard browser headers.
+const browserHeaders = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+}
+
 // Wraps native fetch to provide {statusCode, body} shape matching the old request-promise API.
 // Note: strictSSL: false equivalent is not needed for Node 22's built-in fetch in typical use.
 const request = (uri, callback) => {
-  const promise = fetch(uri)
+  const promise = fetch(uri, { headers: browserHeaders })
     .then(async (res) => {
       const body = await res.text()
       const result = { statusCode: res.status, body }
