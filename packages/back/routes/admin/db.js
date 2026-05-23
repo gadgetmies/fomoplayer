@@ -19,14 +19,39 @@ SELECT merge_tracks(${trackToKeep}, ${trackToBeDeleted});
   `)
 }
 
-module.exports.queryJobLinks = async () => {
-  const [{ urls }] = await pg.queryRowsAsync(
-    sql`-- queryJobLinks
-SELECT STRING_AGG(${`<a href="${config.apiURL}/admin/jobs/`} || job_name || '/run">' || job_name || '</a>', '<br/>') AS urls
-FROM job
-      `,
+module.exports.getJobs = async () => {
+  const rows = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- getJobs
+SELECT j.job_name         AS name
+     , js.job_schedule    AS schedule
+     , j.job_enabled      AS enabled
+     , lr.job_run_started AS "lastRunStarted"
+     , lr.job_run_ended   AS "lastRunEnded"
+     , lr.job_run_success AS "lastRunSuccess"
+     , EXISTS (SELECT 1
+               FROM job_run r
+               WHERE r.job_id = j.job_id
+                 AND r.job_run_ended IS NULL) AS running
+FROM
+  job j
+  LEFT JOIN job_schedule js ON js.job_id = j.job_id
+  LEFT JOIN LATERAL (SELECT job_run_started, job_run_ended, job_run_success
+                     FROM job_run r
+                     WHERE r.job_id = j.job_id
+                     ORDER BY job_run_started DESC
+                     LIMIT 1) lr ON TRUE
+ORDER BY j.job_name`,
   )
-  return urls
+  return rows.map((row) => ({
+    name: row.name,
+    schedule: row.schedule,
+    enabled: row.enabled,
+    running: row.running,
+    lastRun: row.lastRunStarted
+      ? { started: row.lastRunStarted, ended: row.lastRunEnded, success: row.lastRunSuccess }
+      : null,
+  }))
 }
 
 module.exports.getQueryResults = async () =>

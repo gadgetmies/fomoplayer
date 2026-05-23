@@ -3,7 +3,7 @@ const router = require('express-promise-router')()
 const { runJob } = require('../../job-scheduling')
 const {
   mergeTracks,
-  queryJobLinks,
+  getJobs,
   getQueryResults,
   storeConfig,
   getConfigs,
@@ -34,8 +34,8 @@ const { getPreviewDetails } = require('../stores/bandcamp/logic')
 const { ensureIsAdmin } = require('../shared/auth.js')
 
 router.use(ensureIsAdmin)
-router.get('/jobs', async ({ user: { id: userId } }, res) => {
-  res.send(await queryJobLinks())
+router.get('/jobs', async (req, res) => {
+  res.send(await getJobs())
 })
 
 async function startJobRun(name, res) {

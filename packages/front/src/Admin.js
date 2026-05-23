@@ -171,6 +171,12 @@ class Admin extends Component {
           <div className="admin-page-header-actions">
             <button
               className="button button-push_button button-push_button-primary"
+              onClick={() => this.props.history.push('/admin/jobs')}
+            >
+              Jobs
+            </button>
+            <button
+              className="button button-push_button button-push_button-primary"
               onClick={() => this.props.history.push('/admin/duplicates')}
             >
               Manage Duplicates

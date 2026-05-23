@@ -10,6 +10,7 @@ import Spinner from './Spinner.js'
 import Admin from './Admin.js'
 import AdminDuplicates from './AdminDuplicates.js'
 import AdminMislabeled from './AdminMislabeled.js'
+import AdminJobs from './AdminJobs.js'
 import { launchMessages } from './launchMessages'
 
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials.js'
@@ -1221,6 +1222,9 @@ class App extends Component {
                 </Route>
                 <Route exact path="/admin/mislabeled">
                   <AdminMislabeled />
+                </Route>
+                <Route exact path="/admin/jobs">
+                  <AdminJobs />
                 </Route>
                 <Route exact path="/carts">
                   <Redirect to={`/carts/${this.state.carts[0].uuid}`} />

@@ -1,0 +1,51 @@
+.admin-jobs {
+  padding: 1rem;
+}
+
+.admin-jobs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-jobs-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.admin-jobs-table th,
+.admin-jobs-table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+  vertical-align: middle;
+}
+
+.admin-jobs-table .muted {
+  opacity: 0.6;
+}
+
+.admin-jobs-status-running {
+  color: #f0ad4e;
+  font-weight: 600;
+}
+
+.admin-jobs-status-success {
+  color: #5cb85c;
+}
+
+.admin-jobs-status-failed {
+  color: #d9534f;
+  font-weight: 600;
+}
+
+.admin-jobs-status-idle {
+  opacity: 0.6;
+}
