@@ -13,7 +13,6 @@ class Player extends Component {
     this.state = {
       listenedTracks: 0,
       togglingCurrentInCart: false,
-      playPauseDoubleClickStarted: false,
       helpActive: false,
       enabledStores,
       enabledStoreSearch,
@@ -206,17 +205,23 @@ class Player extends Component {
 
   async handlePlayPauseToggle(playing, source) {
     if (this.props.mode !== 'app') return
-    const isKeyboardOrMedia = ['keyboard', 'media'].includes(source)
+    if (!['keyboard', 'media'].includes(source)) return
 
-    if (playing && this.state.playPauseDoubleClickStarted) {
-      this.setState({ playPauseDoubleClickStarted: false })
-      if (isKeyboardOrMedia) {
-        await this.props.onAddToCart(this.getDefaultCart().id, this.props.currentTrack.id)
+    // The flag is kept on the instance rather than in state on purpose:
+    // media-key events (e.g. an AirPods double-tap) arrive within the same
+    // React 18 batch, so a setState flag would still read its stale value on
+    // the second event and the double-click would never be detected.
+    if (this._playPauseDoubleClickStarted) {
+      clearTimeout(this._playPauseDoubleClickTimer)
+      this._playPauseDoubleClickStarted = false
+      const defaultCart = this.getDefaultCart()
+      if (defaultCart && this.props.currentTrack) {
+        await this.props.onAddToCart(defaultCart.id, this.props.currentTrack.id)
       }
-    } else if (!playing && isKeyboardOrMedia) {
-      this.setState({ playPauseDoubleClickStarted: true })
-      setTimeout(() => {
-        this.setState({ playPauseDoubleClickStarted: false })
+    } else {
+      this._playPauseDoubleClickStarted = true
+      this._playPauseDoubleClickTimer = setTimeout(() => {
+        this._playPauseDoubleClickStarted = false
       }, 500)
     }
   }
