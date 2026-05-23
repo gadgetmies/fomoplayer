@@ -15,7 +15,7 @@
 const STORE_URL = 'https://www.beatport.com'
 
 const GENRES = [
-  { id: 1, name: 'Drum & Bass', slug: 'drum-and-bass' },
+  { id: 1, name: 'Drum & Bass', slug: 'drum-bass' },
   { id: 3, name: 'Electronica / Downtempo', slug: 'electronica-downtempo' },
   { id: 5, name: 'House', slug: 'house' },
   { id: 6, name: 'Techno (Peak Time / Driving / Hard)', slug: 'techno-peak-time-driving-hard' },
@@ -46,6 +46,7 @@ const GENRES = [
   { id: 90, name: 'Melodic House & Techno', slug: 'melodic-house-and-techno' },
   { id: 91, name: 'Bass House', slug: 'bass-house' },
   { id: 92, name: 'Techno (Raw / Deep / Hypnotic)', slug: 'techno-raw-deep-hypnotic' },
+  { id: 95, name: '140 / Deep Dubstep / Grime', slug: '140-deep-dubstep-grime' },
 ]
 
 const byId = new Map(GENRES.map((genre) => [String(genre.id), genre]))

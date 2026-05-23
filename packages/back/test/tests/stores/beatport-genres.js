@@ -44,4 +44,8 @@ test({
     assert.equal(url, 'https://www.beatport.com/genre/uk-garage-bassline/86/top-100')
     assert.deepEqual(parsePlaylistUrl(url), { kind: 'genre-top', id: '86' })
   },
+  'genre 95 (140 / Deep Dubstep / Grime) is in the cache': async () => {
+    assert.deepEqual(genreById(95), { id: 95, name: '140 / Deep Dubstep / Grime', slug: '140-deep-dubstep-grime' })
+    assert.equal(genreTop100Url(genreById(95)), 'https://www.beatport.com/genre/140-deep-dubstep-grime/95/top-100')
+  },
 })
