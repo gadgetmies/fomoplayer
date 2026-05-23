@@ -34,7 +34,7 @@ const { bandcampReleasesTransform } = require('fomoplayer_browser_extension/src/
 const {
   getReleaseAsync,
   getLabelAsync,
-  static: { isRateLimited },
+  static: { isRateLimited, nameSubdomainSimilarity, getSubdomain },
 } = require('../routes/stores/bandcamp/bandcamp-api')
 const {
   ensureArtistExists,
@@ -65,7 +65,7 @@ const explicitUrls = (flagValue('reimport') || '')
 
 const log = (...m) => console.log(...m)
 
-const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+const SIMILARITY_THRESHOLD = 0.5
 
 // store__artist rows whose URL is also a known label URL: the highest-confidence
 // signal that the "artist" is really a label page, and the magnet that merged
@@ -201,10 +201,9 @@ const main = async () => {
     )
   }
 
-  const reviewRows = (await queryReviewRows()).filter((r) => {
-    const slug = (r.url.match(/https?:\/\/([^.]+)\.bandcamp\.com/) || [])[1]
-    return slug && normalize(slug) !== normalize(r.artistName)
-  })
+  const reviewRows = (await queryReviewRows()).filter(
+    (r) => nameSubdomainSimilarity(r.artistName, getSubdomain(r.url)) < SIMILARITY_THRESHOLD,
+  )
   log(`\nFor review (subdomain slug != artist name, may be a vanity handle): ${reviewRows.length}`)
   for (const row of reviewRows.slice(0, 50)) {
     log(`  artist#${row.artistId} "${row.artistName}" ${row.url}`)

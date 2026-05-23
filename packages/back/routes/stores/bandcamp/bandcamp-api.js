@@ -31,6 +31,63 @@ const extractJSON = R.curry((selector, attribute = undefined, dom) => {
 // the artist. Mirrors the heuristic in `getPageDetails`.
 const getPageType = (dom) => (dom.window.document.querySelector('[href="/artists"]') === null ? 'artist' : 'label')
 
+// Heuristic sanity check: a Bandcamp page's artist/label name usually
+// resembles its subdomain ("Ivy Lab" -> ivylab, "Fokuz Recordings" ->
+// fokuzrecordings). A large divergence is a signal that the page may have
+// been mis-typed (a label parsed as an artist or vice versa) and that
+// releases fetched from it risk being attributed to the wrong entity, so we
+// surface it in the log rather than failing.
+const NAME_SUBDOMAIN_SIMILARITY_THRESHOLD = 0.5
+
+const normalizeName = (value) => (value || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+
+const getSubdomain = (url) => {
+  try {
+    return new URL(url).hostname.split('.')[0]
+  } catch (_) {
+    return ''
+  }
+}
+
+const levenshtein = (a, b) => {
+  if (a.length === 0) return b.length
+  if (b.length === 0) return a.length
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i)
+  let curr = new Array(b.length + 1)
+  for (let i = 1; i <= a.length; i++) {
+    curr[0] = i
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost)
+    }
+    ;[prev, curr] = [curr, prev]
+  }
+  return prev[b.length]
+}
+
+// 1 = identical (or one contains the other), 0 = completely different.
+const nameSubdomainSimilarity = (name, subdomain) => {
+  const a = normalizeName(name)
+  const b = normalizeName(subdomain)
+  if (!a || !b) return 1 // not enough to compare -> don't warn
+  if (a === b || a.includes(b) || b.includes(a)) return 1
+  return 1 - levenshtein(a, b) / Math.max(a.length, b.length)
+}
+
+const warnOnNameSubdomainMismatch = (url, pageType, pageName) => {
+  const subdomain = getSubdomain(url)
+  const similarity = nameSubdomainSimilarity(pageName, subdomain)
+  if (similarity < NAME_SUBDOMAIN_SIMILARITY_THRESHOLD) {
+    logger.warn(`Bandcamp ${pageType} name differs significantly from its subdomain; releases may be misattributed`, {
+      url,
+      pageType,
+      pageName,
+      subdomain,
+      similarity: Number(similarity.toFixed(2)),
+    })
+  }
+}
+
 const getPageSource = async (url) => {
   if (suspendedUntil) {
     if (suspendedUntil < Date.now()) {
@@ -74,11 +131,14 @@ const getRelease = (itemUrl, callback) => {
   return getPageSource(itemUrl)
     .then((res) => {
       const dom = new JSDOM(res)
+      const pageType = getPageType(dom)
+      const pageName = getName(dom)
+      warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
       callback(null, {
         ...getReleaseInfo(dom),
         url: itemUrl,
-        pageType: getPageType(dom),
-        pageName: getName(dom),
+        pageType,
+        pageName,
       })
     })
     .catch((e) => {
@@ -242,5 +302,7 @@ module.exports = {
     isRateLimited,
     resetRequestCount,
     getRequestCount,
+    nameSubdomainSimilarity,
+    getSubdomain,
   },
 }
