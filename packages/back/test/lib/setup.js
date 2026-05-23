@@ -14,6 +14,10 @@ const FRONTEND_SOURCE_PATHS = ['src', 'public', 'package.json'].map((entry) => p
 const FRONTEND_BUILD_PATH = path.join(BACKEND_ROOT, 'public')
 
 const isRemotePreview = Boolean(process.env.PREVIEW_URL)
+// When recording (VIDEO_DIR set) we want the same demo treatment locally as we
+// give remote-preview runs: slow-mo pacing and the cursor/click/keyboard
+// overlay, so a locally recorded video reads as a demo rather than a raw test.
+const isRecording = Boolean(process.env.VIDEO_DIR)
 
 const getLatestMtimeMs = async (targetPath) => {
   let stats
@@ -250,7 +254,7 @@ const initialize = async () => {
   }
 
   const headed = process.env.PW_HEADED === '1' || process.env.PWDEBUG === '1'
-  const slowMoValue = process.env.PW_SLOWMO ?? process.env.PW_SLOMO ?? (isRemotePreview ? '600' : '0')
+  const slowMoValue = process.env.PW_SLOWMO ?? process.env.PW_SLOMO ?? (isRemotePreview || isRecording ? '600' : '0')
   const slowMo = Number(slowMoValue)
 
   sharedBrowser = await chromium.launch({
@@ -265,9 +269,10 @@ const initialize = async () => {
   }
   sharedBrowserContext = await sharedBrowser.newContext(contextOptions)
 
-  if (isRemotePreview) {
+  if (isRemotePreview || isRecording) {
     await sharedBrowserContext.addInitScript(demoOverlay)
-  } else {
+  }
+  if (!isRemotePreview) {
     await sharedBrowserContext.route('**/*', async (route) => {
       const requestUrl = new URL(route.request().url())
       if (!requestUrl.pathname.startsWith('/api/')) {

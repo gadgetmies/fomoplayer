@@ -398,7 +398,6 @@ class Settings extends Component {
             type="range"
             style={{
               display: 'table-cell',
-              backgroundSize: `${(scaledWeight / (numberProps.max - numberProps.min)) * 100}% 100%`,
             }}
             value={scaledWeight}
             onChange={(e) => this.setScoreWeight(property, Number(e.target.value) * scaling)}

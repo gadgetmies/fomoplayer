@@ -33,12 +33,23 @@ async function makeRequestAndRespond({ request, controller, url = undefined, opt
 const activeInterceptors = new Map()
 
 module.exports.init = function init({ proxies, mocks, name, regex }) {
+  // Remote-preview test runs (PREVIEW_URL set) drive a real deployed backend
+  // and make real outbound HTTP from the test process (OIDC login, API seeding).
+  // The msw passthrough path crashes on those, and there is nothing to mock
+  // locally, so skip installing interceptors entirely in that mode.
+  if (process.env.PREVIEW_URL) {
+    logger.info(`Skipping ${name} interceptor: PREVIEW_URL is set (remote preview run).`)
+    return { clearMockedRequests: () => {}, getMockedRequests: () => [], dispose: () => {} }
+  }
+
   if (activeInterceptors.has(name)) {
-    logger.info(`Cleaning up existing interceptor for ${name}`)
-    const existing = activeInterceptors.get(name)
-    if (existing?.publicApi && typeof existing.publicApi.dispose === 'function') {
-      existing.publicApi.dispose()
-    }
+    // Re-initialising for the same name returns the existing interceptor so all
+    // callers share one instance (and its mockedRequests). Tests commonly call
+    // init() and then import a route module that also calls init(); disposing
+    // and recreating here orphaned the caller's earlier reference (its
+    // mockedRequests stayed empty) and churned msw mid-flight, breaking
+    // interception. Callers that want a fresh interceptor dispose() first.
+    return activeInterceptors.get(name).publicApi
   }
 
   let mockedRequests = []

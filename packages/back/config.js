@@ -103,6 +103,18 @@ module.exports = {
   oidcHandoffSecret,
   allowedPreviewOriginRegexes,
   githubActionsOidcRepo: process.env.GITHUB_ACTIONS_OIDC_REPO || undefined,
+  // GitHub Actions OIDC `sub` granted admin on a preview. Defaults to the
+  // environment-scoped sub for the static `preview-admin` environment that
+  // pr-demo-preview.yml binds to (keep the name in sync), derived from the
+  // configured repo — so no extra env var is needed. Security comes from the
+  // GitHub Environment's protection rules and the signed token, not from the
+  // name. GITHUB_ACTIONS_OIDC_ADMIN_SUB can override it (e.g. for customized
+  // OIDC claim formats). Only honoured when isPreviewEnv; never in production.
+  githubActionsOidcAdminSub:
+    process.env.GITHUB_ACTIONS_OIDC_ADMIN_SUB ||
+    (process.env.GITHUB_ACTIONS_OIDC_REPO
+      ? `repo:${process.env.GITHUB_ACTIONS_OIDC_REPO}:environment:preview-admin`
+      : undefined),
   extensionOauthAllowedIds,
   extensionOauthAllowedRedirectPatterns,
   internalAuthHandoffPrivateKey,

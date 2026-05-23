@@ -5,6 +5,7 @@ import { requestJSONwithCredentials, requestWithCredentials } from './request-js
 import { apiURL } from './config'
 import beautify from 'js-beautify'
 import { withRouter } from 'react-router-dom'
+import './Admin.css'
 
 const L = require('partial.lenses')
 const R = require('ramda')
@@ -78,15 +79,13 @@ class Admin extends Component {
   updateConfig(e) {
     const config = e.target.value
     window.localStorage.setItem('config', config)
-    this.setState({ config: config })
-    this.updateChart()
+    this.setState({ config: config }, this.updateChart.bind(this))
   }
 
   updateLens(e) {
     const text = e.target.value
-    this.setState({ lens: text })
     window.localStorage.setItem('lens', text)
-    this.updateChart()
+    this.setState({ lens: text }, this.updateChart.bind(this))
   }
 
   updateChart() {
@@ -116,10 +115,6 @@ class Admin extends Component {
     this.setState({ config: beautify(JSON.stringify(this.state.config)) })
   }
 
-  formatLens() {
-    this.setState({ lens: beautify(JSON.stringify(this.state.lens)) })
-  }
-
   toggleConfig() {
     this.setState({ configVisible: !this.state.configVisible })
   }
@@ -145,8 +140,9 @@ class Admin extends Component {
 
   selectConfig(e) {
     const config = this.state.configs.find(R.propEq(Number(e.target.value), 'id'))
-    this.setState({ config: config.config, lens: config.lens, name: config.name })
-    this.updateChart()
+    window.localStorage.setItem('lens', config.lens)
+    window.localStorage.setItem('config', config.config)
+    this.setState({ config: config.config, lens: config.lens, name: config.name }, this.updateChart.bind(this))
   }
 
   async saveConfig(e) {
@@ -169,8 +165,8 @@ class Admin extends Component {
       type: 'line',
     }
     return (
-      <div style={{ padding: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="page-container scroll-container admin-page">
+        <div className="admin-page-header">
           <h1>Radiator</h1>
           <button
             className="button button-push_button button-push_button-primary"
@@ -179,89 +175,118 @@ class Admin extends Component {
             Manage Duplicates
           </button>
         </div>
-        <div style={{ display: 'flex', gap: 15 }}>
-          <div style={{ width: '50%' }}>
-            <Chart type={config.type} options={this.state.config} data={this.state.chartData} />
-            <h2 onClick={this.toggleChartData.bind(this)}>Chart data</h2>
-            {this.state.chartDataVisible && (
-              <textarea
-                disabled
-                onChange={this.updateData.bind(this)}
-                rows={10}
-                style={{ width: '100%', border: this.state.dataError ? '1px solid red' : '1px solid black' }}
-                value={JSON.stringify(this.state.chartData, null, 2)}
-              />
-            )}
-            <h2 onClick={this.toggleCollectData.bind(this)}>Collected data</h2>
-            {this.state.collectDataVisible && (
-              <textarea
-                disabled
-                onChange={this.updateData.bind(this)}
-                rows={10}
-                style={{ width: '100%', border: this.state.dataError ? '1px solid red' : '1px solid black' }}
-                value={JSON.stringify(this.state.collectOutput, null, 2)}
-              />
-            )}
-          </div>
-          <div style={{ width: '50%' }}>
-            <label>
-              <span onClick={this.toggleData.bind(this)}>Data</span>
-              {this.state.dataVisible && (
+        <div className="admin-grid">
+          <div className="admin-column">
+            <div className="admin-page-chart">
+              <Chart type={config.type} options={this.state.config} data={this.state.chartData} />
+            </div>
+            <div className="admin-field">
+              <h2
+                className={`admin-section-toggle ${this.state.chartDataVisible ? 'open' : ''}`}
+                onClick={this.toggleChartData.bind(this)}
+              >
+                Chart data
+              </h2>
+              {this.state.chartDataVisible && (
                 <textarea
-                  onChange={this.updateData.bind(this)}
+                  disabled
                   rows={10}
-                  style={{ width: '100%' }}
-                  value={this.state.data}
+                  className={this.state.dataError ? 'error' : ''}
+                  value={JSON.stringify(this.state.chartData, null, 2)}
                 />
               )}
-            </label>
-            <form onSubmit={this.saveConfig.bind(this)} style={{ display: 'flex', flexDirection: 'column' }}>
-              <label>
-                <span onClick={this.toggleConfig.bind(this)}>Config</span>
+            </div>
+            <div className="admin-field">
+              <h2
+                className={`admin-section-toggle ${this.state.collectDataVisible ? 'open' : ''}`}
+                onClick={this.toggleCollectData.bind(this)}
+              >
+                Collected data
+              </h2>
+              {this.state.collectDataVisible && (
+                <textarea
+                  disabled
+                  rows={10}
+                  className={this.state.dataError ? 'error' : ''}
+                  value={JSON.stringify(this.state.collectOutput, null, 2)}
+                />
+              )}
+            </div>
+          </div>
+          <div className="admin-column">
+            <div className="admin-field">
+              <span
+                className={`admin-section-toggle ${this.state.dataVisible ? 'open' : ''}`}
+                onClick={this.toggleData.bind(this)}
+              >
+                Data
+              </span>
+              {this.state.dataVisible && (
+                <textarea onChange={this.updateData.bind(this)} rows={10} value={this.state.data} />
+              )}
+            </div>
+            <form onSubmit={this.saveConfig.bind(this)}>
+              <div className="admin-field">
+                <span
+                  className={`admin-section-toggle ${this.state.configVisible ? 'open' : ''}`}
+                  onClick={this.toggleConfig.bind(this)}
+                >
+                  Config
+                </span>
                 {this.state.configVisible && (
                   <textarea
                     rows={10}
-                    style={{ width: '100%' }}
                     onChange={this.updateConfig.bind(this)}
                     onBlur={this.formatConfig.bind(this)}
                     value={this.state.config}
                   />
                 )}
-              </label>
-              <label>
-                <span onClick={this.toggleLens.bind(this)}>Lens</span>
+              </div>
+              <div className="admin-field">
+                <span
+                  className={`admin-section-toggle ${this.state.lensVisible ? 'open' : ''}`}
+                  onClick={this.toggleLens.bind(this)}
+                >
+                  Lens
+                </span>
                 {this.state.lensVisible && (
                   <>
                     <textarea
-                      style={{ width: '100%' }}
                       rows={10}
                       value={this.state.lens}
                       onChange={this.updateLens.bind(this)}
                       onBlur={this.formatLens.bind(this)}
                     ></textarea>
                     <button
+                      className="button button-push_button"
                       onClick={(e) => {
                         e.preventDefault()
-                        this.formatLens.bind(this)
+                        this.formatLens()
                       }}
                     >
                       Format
                     </button>
                   </>
                 )}
-              </label>
-              <label>
-                Name
-                <input type="text" onChange={this.updateName.bind(this)} />
-              </label>
-              <button onClick={this.saveConfig.bind(this)}>Save</button>
-              <h2>Load radiator</h2>
-              <select onChange={this.selectConfig.bind(this)}>
-                <option disabled></option>
-                {this.state.configs.map((config) => (
-                  <option value={config.id}>{config.name}</option>
-                ))}
-              </select>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="admin-radiator-name">Name</label>
+                <input id="admin-radiator-name" type="text" onChange={this.updateName.bind(this)} />
+              </div>
+              <button type="submit" className="button button-push_button button-push_button-primary">
+                Save
+              </button>
+              <div className="admin-field">
+                <label htmlFor="admin-radiator-load">Load radiator</label>
+                <select id="admin-radiator-load" onChange={this.selectConfig.bind(this)}>
+                  <option disabled></option>
+                  {this.state.configs.map((config) => (
+                    <option key={config.id} value={config.id}>
+                      {config.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </form>
           </div>
         </div>

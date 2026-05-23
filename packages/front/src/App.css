@@ -239,13 +239,13 @@ audio {
 
 input[type='range'] {
   -webkit-appearance: none;
+  appearance: none;
   width: 10rem;
   height: 1rem;
   margin: 5px;
-  background: #222;
-  border-radius: 0.25rem;
-  background-image: linear-gradient(var(--fp-brand-primary), var(--fp-brand-primary));
-  background-repeat: no-repeat;
+  box-sizing: border-box;
+  border: none;
+  background-color: transparent;
   transition:
     box-shadow 0.25s ease-in-out,
     width 0.25s ease-in-out;
@@ -253,20 +253,40 @@ input[type='range'] {
 
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  height: 1rem;
-  width: 1rem;
-  border-radius: 0.25rem;
-  background: white;
+  appearance: none;
+  height: 14px;
+  width: 14px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--fp-brand-primary);
+  border: 2px solid #fff;
   cursor: ew-resize;
   transition: background 0.3s ease-in-out;
-  box-shadow: 0 0 2px 0 #555;
 }
 
 input[type='range']::-webkit-slider-runnable-track {
   -webkit-appearance: none;
+  height: 4px;
+  background: #222;
+  border: 1px solid #555;
+  border-radius: 2px;
   box-shadow: none;
-  border: none;
-  background: transparent;
+}
+
+input[type='range']::-moz-range-track {
+  height: 4px;
+  background: #222;
+  border: 1px solid #555;
+  border-radius: 2px;
+}
+
+input[type='range']::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: var(--fp-brand-primary);
+  border: 2px solid #fff;
+  cursor: ew-resize;
 }
 
 .react-joyride__tooltip button:disabled {

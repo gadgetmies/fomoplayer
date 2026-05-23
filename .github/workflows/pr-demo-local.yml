@@ -1,0 +1,140 @@
+name: PR Demo (local)
+
+# Records a demo by running the cascade-test against a backend + Postgres spun
+# up inside the Actions runner — no deployed preview required. Opt in by adding
+# a fenced ```demo-test``` block to a trusted PR's body naming a committed
+# cascade-test path:
+#
+#   ```demo-test
+#   test/browser/admin-radiator.js
+#   ```
+#
+# Because the test drives a local backend it can seed the database directly,
+# which is how tests like the admin Radiator demo populate their view. For a
+# recording against the real Railway preview, use a ```demo-preview``` block
+# instead (see pr-demo-preview.yml).
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  demo-local:
+    if: >-
+      (github.event.pull_request.author_association == 'OWNER' ||
+       github.event.pull_request.author_association == 'COLLABORATOR') &&
+      contains(github.event.pull_request.body, '```demo-test')
+    runs-on: ubuntu-latest
+    container: node:22
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'yarn'
+
+      - name: Preinstall system dependencies
+        run: apt-get update && apt-get install -y git postgresql-client
+
+      # The PR body provides the test path inside a fenced demo-test block.
+      - name: Extract test file from PR body
+        id: demo
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body ?? ''
+            const match = body.match(/```demo-test\r?\n([\s\S]*?)```/)
+            if (!match) {
+              core.setFailed('No ```demo-test``` block found in PR body. Add one with a test file path.')
+              return
+            }
+            const testFile = match[1].trim()
+            if (!testFile.endsWith('.js') || testFile.includes('..')) {
+              core.setFailed(`Invalid test file path: "${testFile}"`)
+              return
+            }
+            console.log(`Recording demo test: ${testFile}`)
+            core.setOutput('test_file', testFile)
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: yarn workspace fomoplayer_back run playwright install --with-deps chromium
+
+      - name: Set up database
+        run: psql -h postgres -U postgres -c 'CREATE DATABASE "multi-store-player-test";'
+        env:
+          PGPASSWORD: postgres
+
+      # Build the frontend into packages/back/public so the local backend serves
+      # the app under test (mirrors the root ci:test:browser script).
+      - name: Build frontend
+        run: NODE_ENV=ci yarn build
+        env:
+          REACT_APP_ENV: ci
+
+      # Record the test in demo mode: VIDEO_DIR enables recording, and setup.js
+      # turns on slow-mo + the cursor/click/keyboard overlay whenever VIDEO_DIR
+      # is set. No PREVIEW_URL, so the test runs against the local backend.
+      - name: Record demo test
+        env:
+          DATABASE_URL: postgres://postgres:postgres@postgres/multi-store-player-test
+          REACT_APP_ENV: ci
+          VIDEO_DIR: ${{ github.workspace }}/demo-output
+          PW_SLOWMO: '600'
+        run: |
+          TEST_FILE="${{ steps.demo.outputs.test_file }}"
+          TEST_DIR=$(dirname "$TEST_FILE")
+          TEST_REGEX="$(basename "$TEST_FILE" | sed 's/\./\\./g')$"
+          yarn workspace fomoplayer_back ci:demo "$TEST_DIR" --regex "$TEST_REGEX"
+
+      - name: Upload demo video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-local-pr-${{ github.event.pull_request.number }}
+          path: ${{ github.workspace }}/demo-output/
+          retention-days: 30
+
+      - name: Comment on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const succeeded = '${{ job.status }}' === 'success'
+            const icon = succeeded ? '✅' : '❌'
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: [
+                `${icon} **Demo (local) ${succeeded ? 'succeeded' : 'failed'}**`,
+                '',
+                `[View recording and run logs](${runUrl})`,
+                '',
+                succeeded
+                  ? 'Download the `demo-local-pr-${{ github.event.pull_request.number }}` artifact from the run page to watch the video.'
+                  : 'Check the run logs for details.',
+              ].join('\n'),
+            })
