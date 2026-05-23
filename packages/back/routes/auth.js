@@ -66,6 +66,7 @@ const createAuthRouter = ({
     previewAllowedGoogleSubs,
     maxAccountCount,
     githubActionsOidcRepo,
+    githubActionsOidcAdminSub,
     extensionOauthAllowedIds,
     extensionOauthAllowedRedirectPatterns = [],
     internalAuthHandoffPrivateKey,
@@ -787,16 +788,30 @@ const createAuthRouter = ({
           allowedRepo: githubActionsOidcRepo,
           logger,
         })
-        if (!payload) {
+        if (!payload || !payload.sub) {
           return res.status(401).json({ error: 'Invalid or unauthorized Actions token' })
         }
 
+        // Identify the bot user by the verified, GitHub-signed `sub` so that
+        // tokens from different workflow contexts (e.g. environments) resolve to
+        // distinct users. The repo claim is already validated by the verifier.
+        const subject = payload.sub
         const normalizedIssuer = GITHUB_ACTIONS_ISSUER.replace(/^https?:\/\//, '')
-        const user = await account.findOrCreateByIdentifier(normalizedIssuer, githubActionsOidcRepo)
+        const user = await account.findOrCreateByIdentifier(normalizedIssuer, subject)
         if (!user) return res.status(500).json({ error: 'Failed to resolve bot user' })
+
+        // Admin is granted only when running in a preview env AND the verified
+        // sub exactly equals the explicitly configured admin sub. This route is
+        // only registered when isPreviewEnv, so the flag can never be set in
+        // production; ensureIsAdmin additionally re-checks isPreviewEnv. The sub
+        // is GitHub-signed and cannot be forged/altered without GitHub's key.
+        const isActionsAdmin = Boolean(
+          isPreviewEnv && githubActionsOidcAdminSub && subject === githubActionsOidcAdminSub,
+        )
 
         req.login(user, (err) => {
           if (err) return next(err)
+          req.session.isActionsAdmin = isActionsAdmin
           res.status(204).end()
         })
       } catch (e) {

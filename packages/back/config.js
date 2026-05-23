@@ -103,6 +103,11 @@ module.exports = {
   oidcHandoffSecret,
   allowedPreviewOriginRegexes,
   githubActionsOidcRepo: process.env.GITHUB_ACTIONS_OIDC_REPO || undefined,
+  // Exact GitHub Actions OIDC `sub` that is granted admin on a preview. Set to
+  // an environment-scoped sub (e.g. repo:owner/repo:environment:preview-admin)
+  // so only a workflow job bound to that protected environment can obtain it.
+  // Only honoured when isPreviewEnv; never grants admin in production.
+  githubActionsOidcAdminSub: process.env.GITHUB_ACTIONS_OIDC_ADMIN_SUB || undefined,
   extensionOauthAllowedIds,
   extensionOauthAllowedRedirectPatterns,
   internalAuthHandoffPrivateKey,
