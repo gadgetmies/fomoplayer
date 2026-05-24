@@ -11,8 +11,8 @@ const { genreById } = require('./genres')
 
 const API_BASE = 'https://api.beatport.com/v4'
 const PER_PAGE = 100
-// Charts/playlists are surfaced in the search dropdown alongside artists and
-// labels, so keep the per-endpoint result count small.
+// Playlists are surfaced in the search dropdown alongside artists and labels,
+// so keep the per-endpoint result count small.
 const SEARCH_RESULTS = 10
 
 const apiGet = async (path, { retried = false } = {}) => {
@@ -36,7 +36,6 @@ const apiGet = async (path, { retried = false } = {}) => {
 // Resolve the kind + numeric id so the right v4 catalog route can be built:
 //   /genre/{slug}/{id}/top-100  -> genre top 100 (/catalog/genres/{id}/top/100/)
 //   /top-100                    -> overall top 100 (/catalog/top/100/)
-//   /chart(s)/{slug}/{id}       -> chart        (/catalog/charts/{id}/...)
 //   /playlist(s)/{slug}/{id}    -> user playlist (/catalog/playlists/{id}/...)
 // The /top-100 suffix on genre URLs is optional so legacy bare /genre/{slug}/{id}
 // follows keep working until the migration appends it.
@@ -48,8 +47,8 @@ const parsePlaylistUrl = (url) => {
   if (/beatport\.com\/top-100\/?(?:[?#]|$)/.test(url)) {
     return { kind: 'top' }
   }
-  if ((match = url.match(/beatport\.com\/(chart|playlist)s?\/[^/]+\/(\d+)/))) {
-    return { kind: match[1], id: match[2] }
+  if ((match = url.match(/beatport\.com\/playlists?\/[^/]+\/(\d+)/))) {
+    return { kind: 'playlist', id: match[1] }
   }
   return null
 }
@@ -71,20 +70,16 @@ const synthesizedPlaylistName = (parsed) => {
   return null
 }
 
-const detailBase = (parsed) =>
-  parsed.kind === 'chart' ? `/catalog/charts/${parsed.id}/` : `/catalog/playlists/${parsed.id}/`
+const detailBase = (parsed) => `/catalog/playlists/${parsed.id}/`
 
 module.exports = {
   parsePlaylistUrl,
 
   search: (query) => apiGet(`/catalog/search/?q=${encodeURIComponent(query)}`),
 
-  // The blended search endpoint does not return charts/playlists, so they are
-  // fetched from their own collections (filtered by name) to be offered as
-  // followable playlists.
-  searchCharts: async (query) =>
-    (await apiGet(`/catalog/charts/?name=${encodeURIComponent(query)}&per_page=${SEARCH_RESULTS}`)).results ?? [],
-
+  // The blended search endpoint does not return playlists, so they are fetched
+  // from their own collection (filtered by name) to be offered as followable
+  // playlists.
   searchPlaylists: async (query) =>
     (await apiGet(`/catalog/playlists/?name=${encodeURIComponent(query)}&per_page=${SEARCH_RESULTS}`)).results ?? [],
 

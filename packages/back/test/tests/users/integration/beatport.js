@@ -19,11 +19,7 @@ test({
     beatportInterceptor.clearMockedRequests()
     const res = await beatportLogic.search('noisia')
     const requestedPaths = mockedPaths()
-    assert.deepEqual([...requestedPaths].sort(), [
-      '/v4/catalog/charts/',
-      '/v4/catalog/playlists/',
-      '/v4/catalog/search/',
-    ])
+    assert.deepEqual([...requestedPaths].sort(), ['/v4/catalog/playlists/', '/v4/catalog/search/'])
     assert.deepEqual(res, beatportSearch)
   },
   'artist search only hits the blended search endpoint': async () => {
@@ -46,11 +42,11 @@ test({
       beatportSearch.filter(({ type }) => type === 'label'),
     )
   },
-  'playlist search hits the charts and playlists endpoints, not the blended search': async () => {
+  'playlist search hits the playlists endpoint, not the blended search': async () => {
     beatportInterceptor.clearMockedRequests()
     const res = await beatportLogic.search('noisia', 'playlist')
     const requestedPaths = mockedPaths()
-    assert.deepEqual([...requestedPaths].sort(), ['/v4/catalog/charts/', '/v4/catalog/playlists/'])
+    assert.deepEqual([...requestedPaths].sort(), ['/v4/catalog/playlists/'])
     assert.deepEqual(
       res,
       beatportSearch.filter(({ type }) => type === 'playlist'),
