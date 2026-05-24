@@ -1376,47 +1376,101 @@ INSERT INTO artist (artist_name) VALUES (${name}) RETURNING artist_id`,
   return created.artist_id
 }
 
-// Retire an artist that no longer holds any track credits, mirroring
-// cleanupMislabeledSource: keep it if it still has Bandcamp followers, otherwise
-// remove the rows that reference it (its split candidate, mislabeled flags,
-// store mappings, genres and ignores all cascade or are cleared here) and delete
-// it. Runs in its own transaction so a delete failure cannot roll back an
-// already-applied re-crediting.
-const deleteArtistIfOrphaned = async (artistId) => {
-  const [{ hasFollowers }] = await pg.queryRowsAsync(
+// Carry the source artist's followers over to the split targets, then retire
+// the source. Each user following the source becomes a follower of every target
+// that has a store presence (a store__artist row that can host a watch); new
+// artists created by name during the split have no store page to follow, so
+// they receive no watchers. The source's own credits are already gone, so
+// removing it just clears the rows that reference it (split candidate,
+// mislabeled flags, store mappings + their watches, genres and ignores all
+// cascade or are cleared here). Runs in its own transaction so a failure here
+// cannot roll back the already-applied re-crediting; if a follower could not be
+// rehomed (no store-backed target) the source is kept rather than dropping the
+// follow.
+const retireSplitSource = async (sourceId, targetIds) => {
+  const followers = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`-- deleteArtistIfOrphaned followers?
-SELECT EXISTS (SELECT 1
-               FROM
-                 store__artist_watch saw
-                 JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
-               WHERE sa.artist_id = ${artistId}) AS "hasFollowers"`,
+    sql`-- retireSplitSource followers
+SELECT DISTINCT sawu.meta_account_user_id AS "userId"
+FROM
+  store__artist_watch__user sawu
+  JOIN store__artist_watch saw ON saw.store__artist_watch_id = sawu.store__artist_watch_id
+  JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
+WHERE sa.artist_id = ${sourceId}`,
   )
-  if (hasFollowers) {
-    await markArtistSplitCandidateSplit(pg, artistId)
-    return false
+  const followerUserIds = followers.map((f) => f.userId)
+
+  // One store__artist per store-backed target to host the migrated follows.
+  const targetStoreArtists =
+    targetIds.length === 0
+      ? []
+      : await pg.queryRowsAsync(
+          // language=PostgreSQL
+          sql`-- retireSplitSource target store artists
+SELECT DISTINCT ON (artist_id) artist_id AS "artistId", store__artist_id AS "storeArtistId"
+FROM store__artist
+WHERE artist_id = ANY (${targetIds})
+ORDER BY artist_id, store__artist_id`,
+        )
+
+  // Followers exist but no target can hold a watch: keep the source so the
+  // follow is not silently lost.
+  if (followerUserIds.length > 0 && targetStoreArtists.length === 0) {
+    await markArtistSplitCandidateSplit(pg, sourceId)
+    logger.warn(
+      `splitArtist: kept source artist ${sourceId} — it has ${followerUserIds.length} follower(s) but no split target has a store page to receive them`,
+    )
+    return { deleted: false, followersMigrated: 0, followerCount: followerUserIds.length }
   }
+
   try {
+    let followersMigrated = 0
     await BPromise.using(pg.getTransaction(), async (tx) => {
-      await tx.queryAsync(sql`DELETE FROM user__artist_ignore WHERE artist_id = ${artistId}`)
-      await tx.queryAsync(sql`DELETE FROM user__artist__label_ignore WHERE artist_id = ${artistId}`)
-      await tx.queryAsync(sql`DELETE FROM artist__genre WHERE artist_id = ${artistId}`)
-      await tx.queryAsync(sql`DELETE FROM store__artist WHERE artist_id = ${artistId}`)
-      await tx.queryAsync(sql`DELETE FROM artist WHERE artist_id = ${artistId}`)
+      if (followerUserIds.length > 0) {
+        for (const { storeArtistId } of targetStoreArtists) {
+          await tx.queryAsync(
+            // language=PostgreSQL
+            sql`-- retireSplitSource ensure target watch
+INSERT INTO store__artist_watch (store__artist_id) VALUES (${storeArtistId})
+ON CONFLICT (store__artist_id) DO NOTHING`,
+          )
+          const [{ watchId }] = await tx.queryRowsAsync(
+            sql`SELECT store__artist_watch_id AS "watchId" FROM store__artist_watch WHERE store__artist_id = ${storeArtistId}`,
+          )
+          const migrated = await tx.queryRowsAsync(
+            // language=PostgreSQL
+            sql`-- retireSplitSource migrate followers
+INSERT INTO store__artist_watch__user (store__artist_watch_id, meta_account_user_id)
+SELECT ${watchId}, UNNEST(${followerUserIds}::int[])
+ON CONFLICT (store__artist_watch_id, meta_account_user_id) DO NOTHING
+RETURNING meta_account_user_id AS "userId"`,
+          )
+          followersMigrated += migrated.length
+        }
+      }
+
+      await tx.queryAsync(sql`DELETE FROM user__artist_ignore WHERE artist_id = ${sourceId}`)
+      await tx.queryAsync(sql`DELETE FROM user__artist__label_ignore WHERE artist_id = ${sourceId}`)
+      await tx.queryAsync(sql`DELETE FROM artist__genre WHERE artist_id = ${sourceId}`)
+      // Drops the source's store__artist rows and, via ON DELETE CASCADE, its
+      // own watches and the watcher rows now copied onto the targets.
+      await tx.queryAsync(sql`DELETE FROM store__artist WHERE artist_id = ${sourceId}`)
+      await tx.queryAsync(sql`DELETE FROM artist WHERE artist_id = ${sourceId}`)
     })
-    return true
+    return { deleted: true, followersMigrated, followerCount: followerUserIds.length }
   } catch (e) {
-    logger.warn(`splitArtist: could not delete source artist ${artistId}: ${e.message}`)
-    await markArtistSplitCandidateSplit(pg, artistId)
-    return false
+    logger.warn(`splitArtist: could not retire source artist ${sourceId}: ${e.message}`)
+    await markArtistSplitCandidateSplit(pg, sourceId)
+    return { deleted: false, followersMigrated: 0, followerCount: followerUserIds.length }
   }
 }
 
 // Split a combined artist into the individual artists it bundles. Every track
 // credited to the source is re-credited to each target (preserving the original
 // role), the source's genres are carried over, the source's own credits are
-// dropped, affected tracks' cached details refreshed, and the now-empty source
-// retired. Targets may be existing artists or new ones created by name.
+// dropped, affected tracks' cached details refreshed, the source's followers
+// moved onto the targets, and the now-empty source retired. Targets may be
+// existing artists or new ones created by name.
 module.exports.splitArtist = async (sourceId, targets) => {
   const parsedSource = parseInt(sourceId, 10)
   if (Number.isNaN(parsedSource)) throw new Error('Invalid source artist id')
@@ -1479,7 +1533,7 @@ ON CONFLICT DO NOTHING`,
     },
   )
 
-  const deleted = await deleteArtistIfOrphaned(parsedSource)
+  const { deleted, followersMigrated, followerCount } = await retireSplitSource(parsedSource, targetArtistIds)
 
   logger.info(
     `splitArtist: artist ${parsedSource} ("${source.name}") -> [${targetArtistIds.join(', ')}]` +
@@ -1491,11 +1545,13 @@ ON CONFLICT DO NOTHING`,
       targetArtistIds,
       createdArtists,
       trackCount,
+      followerCount,
+      followersMigrated,
       deleted,
     },
   )
 
-  return { deleted, targetArtistIds, createdArtists, trackCount }
+  return { deleted, targetArtistIds, createdArtists, trackCount, followerCount, followersMigrated }
 }
 
 // Add an artist credit to a single track (used by the inspect page). The target

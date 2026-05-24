@@ -189,8 +189,12 @@ function AdminArtistSplit() {
         body: { targets: validTargets.map((t) => (t.artistId ? { artistId: t.artistId } : { name: t.name })) },
       })
       window.alert(
-        `Re-credited ${res.trackCount} track${res.trackCount === 1 ? '' : 's'} to ${res.targetArtistIds.length} artists.` +
-          (res.deleted ? ' The combined artist was retired.' : ' The combined artist was kept (it still has followers).'),
+        `Re-credited ${res.trackCount} track${res.trackCount === 1 ? '' : 's'} to ${res.targetArtistIds.length} artists` +
+          (res.followerCount ? `, moved ${res.followerCount} follower${res.followerCount === 1 ? '' : 's'} to the new artists` : '') +
+          '.' +
+          (res.deleted
+            ? ' The combined artist was retired.'
+            : ' The combined artist was kept (its followers could not be moved to any target with a store page).'),
       )
       setCandidates((prev) => prev.filter((c) => c.id !== selected.id))
       setSelected(null)
@@ -304,8 +308,8 @@ function AdminArtistSplit() {
       <div className="split-panel">
         <h3>Split into separate artists</h3>
         <p className="muted">
-          Each track credited to this artist will be re-credited to all of the artists below; the combined artist is
-          then retired. Pick existing artists or type a name to create a new one.
+          Each track credited to this artist will be re-credited to all of the artists below, its followers moved to
+          them, and the combined artist then retired. Pick existing artists or type a name to create a new one.
         </p>
         {targets.map((target, index) => (
           <div key={index} className="split-target-row">
