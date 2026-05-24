@@ -41,6 +41,12 @@ const {
   fixArtistNameMismatch,
   fixBandcampArtistPageByUrl,
   fixArtistBandcampMismatches,
+  getArtistSplitCandidates,
+  ignoreArtistSplitCandidate,
+  getArtistTracks,
+  splitArtist,
+  addArtistCredit,
+  removeArtistCredit,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 const { ensureIsAdmin } = require('../shared/auth.js')
@@ -284,6 +290,31 @@ router.post('/bandcamp/fix-artist-page', async ({ body: { url } }, res) => {
 
 router.post('/artists/:id/fix-bandcamp-mismatches', async ({ params: { id } }, res) => {
   res.send(await fixArtistBandcampMismatches(id))
+})
+
+router.get('/artist-split-candidates', async (_, res) => {
+  res.send(await getArtistSplitCandidates())
+})
+
+router.get('/artists/:id/tracks', async ({ params: { id } }, res) => {
+  res.send(await getArtistTracks(id))
+})
+
+router.post('/artist-split-candidates/:id/ignore', async ({ params: { id } }, res) => {
+  await ignoreArtistSplitCandidate(id)
+  res.send({ ok: true })
+})
+
+router.post('/artists/:id/split', async ({ params: { id }, body: { targets } }, res) => {
+  res.send(await splitArtist(id, targets))
+})
+
+router.post('/tracks/:trackId/credits/add', async ({ params: { trackId }, body: { artistId, name, role } }, res) => {
+  res.send(await addArtistCredit(trackId, { artistId, name }, role))
+})
+
+router.post('/tracks/:trackId/credits/remove', async ({ params: { trackId }, body: { artistId, role } }, res) => {
+  res.send(await removeArtistCredit(trackId, artistId, role))
 })
 
 module.exports = router

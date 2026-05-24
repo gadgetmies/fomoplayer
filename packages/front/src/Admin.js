@@ -187,6 +187,12 @@ class Admin extends Component {
             >
               Fix Mislabeled
             </button>
+            <button
+              className="button button-push_button button-push_button-primary"
+              onClick={() => this.props.history.push('/admin/artist-split')}
+            >
+              Split Artists
+            </button>
           </div>
         </div>
         <div className="admin-grid">

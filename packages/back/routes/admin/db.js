@@ -22,6 +22,11 @@ const {
 const {
   static: { nameSubdomainSimilarity, getSubdomain, nameSubdomainSimilarityThreshold },
 } = require('../stores/bandcamp/bandcamp-api')
+const {
+  getArtistSplitCandidates,
+  ignoreArtistSplitCandidate,
+  markArtistSplitCandidateSplit,
+} = require('../shared/db/artistSplit')
 
 const BANDCAMP_STORE_URL = 'https://bandcamp.com'
 
@@ -1304,4 +1309,251 @@ module.exports.removeArtistUrl = async (id) => {
     storeArtistRowsCleared,
   })
   return { cleared: storeArtistRowsCleared.length }
+}
+
+// --- Artist splitting -------------------------------------------------------
+
+module.exports.getArtistSplitCandidates = async () => getArtistSplitCandidates()
+
+module.exports.ignoreArtistSplitCandidate = async (artistId) => {
+  const parsed = parseInt(artistId, 10)
+  if (Number.isNaN(parsed)) throw new Error('Invalid id')
+  await ignoreArtistSplitCandidate(parsed)
+}
+
+// Tracks credited to an artist, each with its full set of credits (artist id,
+// name and role) so the admin can see and edit every track's attribution. Used
+// by the split inspect page; works for any artist, flagged or not.
+module.exports.getArtistTracks = async (artistId) => {
+  const parsedId = parseInt(artistId, 10)
+  if (Number.isNaN(parsedId)) throw new Error('Invalid id')
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- getArtistTracks
+SELECT DISTINCT ON (t.track_id)
+       t.track_id            AS id
+     , t.track_title         AS title
+     , t.track_version       AS version
+     , ta.track__artist_role AS role
+     , r.release_name        AS "releaseName"
+     , sr.store__release_url AS "releaseUrl"
+     , st.store__track_url   AS "trackUrl"
+     , (SELECT JSON_AGG(JSON_BUILD_OBJECT('artistId', a2.artist_id, 'name', a2.artist_name,
+                                          'role', ta2.track__artist_role)
+                        ORDER BY ta2.track__artist_role, a2.artist_name)
+        FROM track__artist ta2 JOIN artist a2 ON a2.artist_id = ta2.artist_id
+        WHERE ta2.track_id = t.track_id) AS credits
+FROM
+  track__artist ta
+  JOIN track t ON t.track_id = ta.track_id
+  LEFT JOIN release__track rt ON rt.track_id = t.track_id
+  LEFT JOIN release r ON r.release_id = rt.release_id
+  LEFT JOIN store s ON s.store_url = ${BANDCAMP_STORE_URL}
+  LEFT JOIN store__release sr ON sr.release_id = r.release_id AND sr.store_id = s.store_id
+  LEFT JOIN store__track st ON st.track_id = t.track_id AND st.store_id = s.store_id
+WHERE ta.artist_id = ${parsedId}
+ORDER BY t.track_id, r.release_name`,
+  )
+}
+
+// Resolve a split/credit target to an artist id within a transaction. A target
+// is either an existing artist ({ artistId }) or a new one to create by name
+// ({ name }); artist names are not unique, so a named target always inserts.
+const resolveTargetArtistId = async (tx, target) => {
+  if (target && target.artistId != null && target.artistId !== '') {
+    const id = parseInt(target.artistId, 10)
+    if (Number.isNaN(id)) throw new Error('Invalid target artist id')
+    const [row] = await tx.queryRowsAsync(sql`SELECT artist_id FROM artist WHERE artist_id = ${id}`)
+    if (!row) throw new Error(`Target artist ${id} not found`)
+    return id
+  }
+  const name = (target && target.name ? target.name : '').trim()
+  if (!name) throw new Error('Each target needs an existing artist or a name')
+  const [created] = await tx.queryRowsAsync(
+    sql`-- resolveTargetArtistId create
+INSERT INTO artist (artist_name) VALUES (${name}) RETURNING artist_id`,
+  )
+  return created.artist_id
+}
+
+// Retire an artist that no longer holds any track credits, mirroring
+// cleanupMislabeledSource: keep it if it still has Bandcamp followers, otherwise
+// remove the rows that reference it (its split candidate, mislabeled flags,
+// store mappings, genres and ignores all cascade or are cleared here) and delete
+// it. Runs in its own transaction so a delete failure cannot roll back an
+// already-applied re-crediting.
+const deleteArtistIfOrphaned = async (artistId) => {
+  const [{ hasFollowers }] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- deleteArtistIfOrphaned followers?
+SELECT EXISTS (SELECT 1
+               FROM
+                 store__artist_watch saw
+                 JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
+               WHERE sa.artist_id = ${artistId}) AS "hasFollowers"`,
+  )
+  if (hasFollowers) {
+    await markArtistSplitCandidateSplit(pg, artistId)
+    return false
+  }
+  try {
+    await BPromise.using(pg.getTransaction(), async (tx) => {
+      await tx.queryAsync(sql`DELETE FROM user__artist_ignore WHERE artist_id = ${artistId}`)
+      await tx.queryAsync(sql`DELETE FROM user__artist__label_ignore WHERE artist_id = ${artistId}`)
+      await tx.queryAsync(sql`DELETE FROM artist__genre WHERE artist_id = ${artistId}`)
+      await tx.queryAsync(sql`DELETE FROM store__artist WHERE artist_id = ${artistId}`)
+      await tx.queryAsync(sql`DELETE FROM artist WHERE artist_id = ${artistId}`)
+    })
+    return true
+  } catch (e) {
+    logger.warn(`splitArtist: could not delete source artist ${artistId}: ${e.message}`)
+    await markArtistSplitCandidateSplit(pg, artistId)
+    return false
+  }
+}
+
+// Split a combined artist into the individual artists it bundles. Every track
+// credited to the source is re-credited to each target (preserving the original
+// role), the source's genres are carried over, the source's own credits are
+// dropped, affected tracks' cached details refreshed, and the now-empty source
+// retired. Targets may be existing artists or new ones created by name.
+module.exports.splitArtist = async (sourceId, targets) => {
+  const parsedSource = parseInt(sourceId, 10)
+  if (Number.isNaN(parsedSource)) throw new Error('Invalid source artist id')
+  if (!Array.isArray(targets) || targets.length < 2) {
+    throw new Error('A split needs at least two target artists')
+  }
+
+  const { source, targetArtistIds, createdArtists, trackCount } = await BPromise.using(
+    pg.getTransaction(),
+    async (tx) => {
+      const [src] = await tx.queryRowsAsync(sql`SELECT artist_name AS name FROM artist WHERE artist_id = ${parsedSource}`)
+      if (!src) throw new Error(`Artist ${parsedSource} not found`)
+
+      const resolved = []
+      const created = []
+      for (const target of targets) {
+        const isNew = !(target && target.artistId != null && target.artistId !== '')
+        const id = await resolveTargetArtistId(tx, target)
+        if (id === parsedSource) throw new Error('Cannot split an artist into itself')
+        if (isNew) created.push({ id, name: (target.name || '').trim() })
+        resolved.push(id)
+      }
+      const uniqueTargetIds = [...new Set(resolved)]
+
+      const credits = await tx.queryRowsAsync(
+        sql`-- splitArtist source credits
+SELECT track_id AS "trackId", track__artist_role AS role FROM track__artist WHERE artist_id = ${parsedSource}`,
+      )
+      const trackIds = [...new Set(credits.map((c) => c.trackId))]
+
+      for (const { trackId, role } of credits) {
+        for (const targetId of uniqueTargetIds) {
+          await tx.queryAsync(
+            // language=PostgreSQL
+            sql`-- splitArtist add credit
+INSERT INTO track__artist (track_id, artist_id, track__artist_role)
+VALUES (${trackId}, ${targetId}, ${role})
+ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING`,
+          )
+        }
+      }
+
+      for (const targetId of uniqueTargetIds) {
+        await tx.queryAsync(
+          // language=PostgreSQL
+          sql`-- splitArtist carry genres
+INSERT INTO artist__genre (artist_id, genre_id)
+SELECT ${targetId}, genre_id FROM artist__genre WHERE artist_id = ${parsedSource}
+ON CONFLICT DO NOTHING`,
+        )
+      }
+
+      await tx.queryAsync(sql`DELETE FROM track__artist WHERE artist_id = ${parsedSource}`)
+      await refreshTrackDetails(tx, trackIds)
+      // Mark resolved up front; if the source can be deleted below the row goes
+      // away via ON DELETE CASCADE, otherwise this keeps it off the list.
+      await markArtistSplitCandidateSplit(tx, parsedSource)
+
+      return { source: src, targetArtistIds: uniqueTargetIds, createdArtists: created, trackCount: trackIds.length }
+    },
+  )
+
+  const deleted = await deleteArtistIfOrphaned(parsedSource)
+
+  logger.info(
+    `splitArtist: artist ${parsedSource} ("${source.name}") -> [${targetArtistIds.join(', ')}]` +
+      (deleted ? ' (source deleted)' : ' (source kept)'),
+    {
+      operation: 'splitArtist',
+      sourceArtistId: parsedSource,
+      sourceName: source.name,
+      targetArtistIds,
+      createdArtists,
+      trackCount,
+      deleted,
+    },
+  )
+
+  return { deleted, targetArtistIds, createdArtists, trackCount }
+}
+
+// Add an artist credit to a single track (used by the inspect page). The target
+// may be an existing artist or a new one created by name; the role defaults to
+// author.
+module.exports.addArtistCredit = async (trackId, target, role) => {
+  const parsedTrack = parseInt(trackId, 10)
+  if (Number.isNaN(parsedTrack)) throw new Error('Invalid track id')
+  const creditRole = role === 'remixer' ? 'remixer' : 'author'
+
+  return BPromise.using(pg.getTransaction(), async (tx) => {
+    const [track] = await tx.queryRowsAsync(sql`SELECT track_id FROM track WHERE track_id = ${parsedTrack}`)
+    if (!track) throw new Error(`Track ${parsedTrack} not found`)
+    const artistId = await resolveTargetArtistId(tx, target)
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- addArtistCredit
+INSERT INTO track__artist (track_id, artist_id, track__artist_role)
+VALUES (${parsedTrack}, ${artistId}, ${creditRole})
+ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING`,
+    )
+    await refreshTrackDetails(tx, [parsedTrack])
+    const [{ name }] = await tx.queryRowsAsync(sql`SELECT artist_name AS name FROM artist WHERE artist_id = ${artistId}`)
+    logger.info(`addArtistCredit: track ${parsedTrack} += artist ${artistId} ("${name}", ${creditRole})`, {
+      operation: 'addArtistCredit',
+      trackId: parsedTrack,
+      artistId,
+      role: creditRole,
+    })
+    return { trackId: parsedTrack, artistId, name, role: creditRole }
+  })
+}
+
+// Remove an artist credit from a single track (used by the inspect page).
+module.exports.removeArtistCredit = async (trackId, artistId, role) => {
+  const parsedTrack = parseInt(trackId, 10)
+  const parsedArtist = parseInt(artistId, 10)
+  if (Number.isNaN(parsedTrack) || Number.isNaN(parsedArtist)) throw new Error('Invalid id')
+
+  return BPromise.using(pg.getTransaction(), async (tx) => {
+    if (role) {
+      await tx.queryAsync(
+        sql`-- removeArtistCredit (role)
+DELETE FROM track__artist WHERE track_id = ${parsedTrack} AND artist_id = ${parsedArtist} AND track__artist_role = ${role}`,
+      )
+    } else {
+      await tx.queryAsync(
+        sql`-- removeArtistCredit
+DELETE FROM track__artist WHERE track_id = ${parsedTrack} AND artist_id = ${parsedArtist}`,
+      )
+    }
+    await refreshTrackDetails(tx, [parsedTrack])
+    logger.info(`removeArtistCredit: track ${parsedTrack} -= artist ${parsedArtist} (${role || 'any role'})`, {
+      operation: 'removeArtistCredit',
+      trackId: parsedTrack,
+      artistId: parsedArtist,
+      role: role || null,
+    })
+    return { trackId: parsedTrack, artistId: parsedArtist, role: role || null }
+  })
 }
