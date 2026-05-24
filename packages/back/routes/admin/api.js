@@ -33,6 +33,11 @@ const {
   convertArtistToLabel,
   refetchBandcampLabelArtists,
   refetchBandcampArtistTracks,
+  getArtistNameMismatches,
+  ignoreArtistNameMismatch,
+  fixArtistNameMismatch,
+  fixBandcampArtistPageByUrl,
+  fixArtistBandcampMismatches,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 const { ensureIsAdmin } = require('../shared/auth.js')
@@ -243,6 +248,27 @@ router.post('/labels/:id/refetch-bandcamp-artists', async ({ params: { id } }, r
 router.post('/artists/:id/refetch-bandcamp-tracks', async ({ params: { id } }, res) => {
   await refetchBandcampArtistTracks(id)
   res.send({ ok: true })
+})
+
+router.get('/bandcamp/artist-name-mismatches', async (req, res) => {
+  res.send(await getArtistNameMismatches())
+})
+
+router.post('/bandcamp/artist-name-mismatches/:storeArtistId/fix', async ({ params: { storeArtistId } }, res) => {
+  res.send(await fixArtistNameMismatch(storeArtistId))
+})
+
+router.post('/bandcamp/artist-name-mismatches/:storeArtistId/ignore', async ({ params: { storeArtistId } }, res) => {
+  await ignoreArtistNameMismatch(storeArtistId)
+  res.send({ ok: true })
+})
+
+router.post('/bandcamp/fix-artist-page', async ({ body: { url } }, res) => {
+  res.send(await fixBandcampArtistPageByUrl(url))
+})
+
+router.post('/artists/:id/fix-bandcamp-mismatches', async ({ params: { id } }, res) => {
+  res.send(await fixArtistBandcampMismatches(id))
 })
 
 module.exports = router

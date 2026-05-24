@@ -28,6 +28,7 @@ const radiator = require('./jobs/radiator/radiator')
 const { removeOldSources } = require('./jobs/remove-old-sources')
 const { sendInvites } = require('./jobs/send-invites')
 const refetchBandcampLabelArtists = require('./jobs/refetch-bandcamp-label-artists')
+const detectBandcampArtistNameMismatches = require('./jobs/detect-bandcamp-artist-name-mismatches')
 
 const init = async () => {
   await pg.queryAsync(
@@ -189,6 +190,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   removeOldSources,
   sendInvites,
   refetchBandcampLabelArtists,
+  detectBandcampArtistNameMismatches,
   ...radiator,
 }
 

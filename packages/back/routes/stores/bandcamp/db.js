@@ -245,6 +245,124 @@ ORDER BY url ASC
   return rows.map((r) => r.url)
 }
 
+// --- Artist subdomain / name mismatch detection & repair --------------------
+
+// All Bandcamp artist mappings (subdomain + linked artist name) that are not
+// already dismissed, for the detection job to score by name/subdomain
+// similarity.
+module.exports.getBandcampArtistMappings = async () =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- getBandcampArtistMappings
+SELECT sa.store__artist_id       AS "storeArtistId"
+     , sa.store__artist_store_id AS subdomain
+     , sa.store__artist_url      AS url
+     , a.artist_name             AS name
+FROM
+  store__artist sa
+  JOIN store s ON s.store_id = sa.store_id AND s.store_url = ${STORE_URL}
+  JOIN artist a ON a.artist_id = sa.artist_id
+WHERE sa.store__artist_url IS NOT NULL
+  AND NOT EXISTS (SELECT 1
+                  FROM bandcamp_artist_name_mismatch m
+                  WHERE m.store__artist_id = sa.store__artist_id
+                    AND m.bandcamp_artist_name_mismatch_status = 'ignored')
+`,
+  )
+
+module.exports.flagArtistNameMismatch = async ({ storeArtistId, subdomain, currentName, similarity }) =>
+  pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- flagArtistNameMismatch
+INSERT INTO bandcamp_artist_name_mismatch
+  (store__artist_id, bandcamp_artist_name_mismatch_subdomain, bandcamp_artist_name_mismatch_current_name,
+   bandcamp_artist_name_mismatch_similarity, bandcamp_artist_name_mismatch_checked_at)
+VALUES (${storeArtistId}, ${subdomain}, ${currentName}, ${similarity}, NOW())
+ON CONFLICT (store__artist_id) DO UPDATE
+  SET bandcamp_artist_name_mismatch_subdomain    = EXCLUDED.bandcamp_artist_name_mismatch_subdomain
+    , bandcamp_artist_name_mismatch_current_name = EXCLUDED.bandcamp_artist_name_mismatch_current_name
+    , bandcamp_artist_name_mismatch_similarity   = EXCLUDED.bandcamp_artist_name_mismatch_similarity
+    , bandcamp_artist_name_mismatch_checked_at   = NOW()
+`,
+  )
+
+module.exports.getArtistNameMismatches = async () =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- getArtistNameMismatches
+SELECT m.store__artist_id                         AS "storeArtistId"
+     , sa.artist_id                               AS "artistId"
+     , a.artist_name                              AS "currentName"
+     , m.bandcamp_artist_name_mismatch_subdomain  AS subdomain
+     , sa.store__artist_url                       AS url
+     , m.bandcamp_artist_name_mismatch_similarity AS similarity
+FROM
+  bandcamp_artist_name_mismatch m
+  JOIN store__artist sa ON sa.store__artist_id = m.store__artist_id
+  JOIN artist a ON a.artist_id = sa.artist_id
+WHERE m.bandcamp_artist_name_mismatch_status = 'new'
+ORDER BY m.bandcamp_artist_name_mismatch_similarity ASC NULLS FIRST
+`,
+  )
+
+module.exports.ignoreArtistNameMismatch = async (storeArtistId) =>
+  pg.queryAsync(
+    sql`-- ignoreArtistNameMismatch
+UPDATE bandcamp_artist_name_mismatch
+SET bandcamp_artist_name_mismatch_status = 'ignored'
+WHERE store__artist_id = ${storeArtistId}`,
+  )
+
+module.exports.clearArtistNameMismatch = async (storeArtistId) =>
+  pg.queryAsync(
+    sql`-- clearArtistNameMismatch
+DELETE FROM bandcamp_artist_name_mismatch
+WHERE store__artist_id = ${storeArtistId}
+  AND bandcamp_artist_name_mismatch_status = 'new'`,
+  )
+
+const STORE_ARTIST_SELECT = (where) =>
+  sql`-- store__artist lookup
+SELECT sa.store__artist_id       AS "storeArtistId"
+     , sa.artist_id              AS "artistId"
+     , sa.store__artist_store_id AS subdomain
+     , sa.store__artist_url      AS url
+     , a.artist_name             AS "currentName"
+FROM
+  store__artist sa
+  JOIN store s ON s.store_id = sa.store_id AND s.store_url = ${STORE_URL}
+  JOIN artist a ON a.artist_id = sa.artist_id
+WHERE `.append(where)
+
+module.exports.getStoreArtistById = async (storeArtistId) => {
+  const [row] = await pg.queryRowsAsync(STORE_ARTIST_SELECT(sql`sa.store__artist_id = ${storeArtistId}`))
+  return row || null
+}
+
+module.exports.getStoreArtistByUrl = async (url) => {
+  const [row] = await pg.queryRowsAsync(
+    STORE_ARTIST_SELECT(sql`TRIM(TRAILING '/' FROM sa.store__artist_url) = TRIM(TRAILING '/' FROM ${url})`),
+  )
+  return row || null
+}
+
+module.exports.getBandcampStoreArtistsForArtist = async (artistId) =>
+  pg.queryRowsAsync(STORE_ARTIST_SELECT(sql`sa.artist_id = ${artistId}`))
+
+// Point a Bandcamp subdomain mapping at the correct artist (creating it by name
+// if needed) so the page's tracks resolve to it. Returns the correct artist id.
+module.exports.repointStoreArtistToName = async (storeArtistId, name) =>
+  BPromise.using(pg.getTransaction(), async (tx) => {
+    const [existing] = await tx.queryRowsAsync(
+      sql`SELECT artist_id AS id FROM artist WHERE LOWER(artist_name) = LOWER(${name})`,
+    )
+    const artistId =
+      existing?.id ??
+      (await tx.queryRowsAsync(sql`INSERT INTO artist (artist_name) VALUES (${name}) RETURNING artist_id AS id`))[0].id
+    await tx.queryAsync(sql`UPDATE store__artist SET artist_id = ${artistId} WHERE store__artist_id = ${storeArtistId}`)
+    return artistId
+  })
+
 // Replace each transformed track's artist credits with the freshly extracted
 // ones, matched to the database by Bandcamp store track id. When a labelId is
 // given (label re-fetch) the label credit is re-affirmed; for artist re-fetches

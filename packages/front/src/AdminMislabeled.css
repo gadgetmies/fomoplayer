@@ -131,6 +131,12 @@
   border-bottom: 1px solid #444;
 }
 
+.mislabeled-mismatches {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #444;
+}
+
 .mislabeled-converted {
   display: flex;
   gap: 8px;

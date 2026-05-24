@@ -322,5 +322,6 @@ module.exports = {
     getRequestCount,
     nameSubdomainSimilarity,
     getSubdomain,
+    nameSubdomainSimilarityThreshold: NAME_SUBDOMAIN_SIMILARITY_THRESHOLD,
   },
 }

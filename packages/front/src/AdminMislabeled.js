@@ -102,6 +102,17 @@ function AdminMislabeled() {
   const [tracksLoading, setTracksLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [convertedLabel, setConvertedLabel] = useState(null)
+  const [mismatches, setMismatches] = useState([])
+  const [fixUrl, setFixUrl] = useState('')
+
+  const fetchMismatches = useCallback(async () => {
+    try {
+      const rows = await requestJSONwithCredentials({ url: `${apiURL}/admin/bandcamp/artist-name-mismatches` })
+      setMismatches(rows)
+    } catch (e) {
+      console.error(e)
+    }
+  }, [])
 
   const fetchEntities = useCallback(async (entityType) => {
     setLoading(true)
@@ -120,6 +131,10 @@ function AdminMislabeled() {
   useEffect(() => {
     fetchEntities(type)
   }, [type, fetchEntities])
+
+  useEffect(() => {
+    fetchMismatches()
+  }, [fetchMismatches])
 
   const inspect = async (entity) => {
     setSelected(entity)
@@ -238,19 +253,84 @@ function AdminMislabeled() {
     }
   }
 
-  const refetchArtistTracks = async ({ targetId, targetName }) => {
+  const fixArtistMismatches = async ({ targetId, targetName }) => {
     setProcessing(true)
     try {
-      await requestJSONwithCredentials({
-        url: `${apiURL}/admin/artists/${targetId}/refetch-bandcamp-tracks`,
+      const res = await requestJSONwithCredentials({
+        url: `${apiURL}/admin/artists/${targetId}/fix-bandcamp-mismatches`,
         method: 'POST',
       })
       window.alert(
-        `Queued a background re-fetch of “${targetName}”’s Bandcamp releases. Tracks wrongly attributed to another name will be re-credited over the next few minutes.`,
+        res.fixed > 0
+          ? `Fixed ${res.fixed} mismatched Bandcamp page(s) held by “${targetName}”. Affected tracks will be re-credited over the next few minutes.`
+          : `No mismatched Bandcamp pages found for “${targetName}” (checked ${res.checked}).`,
       )
+      await fetchMismatches()
     } catch (e) {
       console.error(e)
-      window.alert('Could not queue the re-fetch')
+      window.alert('Could not fix the artist’s Bandcamp pages')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const fixMismatch = async (storeArtistId) => {
+    setProcessing(true)
+    try {
+      const res = await requestJSONwithCredentials({
+        url: `${apiURL}/admin/bandcamp/artist-name-mismatches/${storeArtistId}/fix`,
+        method: 'POST',
+      })
+      window.alert(
+        res.fixed
+          ? `Re-pointed the page to “${res.name}” and queued re-attribution of its tracks.`
+          : `No change: ${res.reason || 'the page name already matches the linked artist'}.`,
+      )
+      await fetchMismatches()
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not fix the mismatch')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const ignoreMismatch = async (storeArtistId) => {
+    setProcessing(true)
+    try {
+      await requestJSONwithCredentials({
+        url: `${apiURL}/admin/bandcamp/artist-name-mismatches/${storeArtistId}/ignore`,
+        method: 'POST',
+      })
+      await fetchMismatches()
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not ignore the mismatch')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const fixByUrl = async () => {
+    const url = fixUrl.trim()
+    if (!url) return
+    setProcessing(true)
+    try {
+      const res = await requestJSONwithCredentials({
+        url: `${apiURL}/admin/bandcamp/fix-artist-page`,
+        method: 'POST',
+        body: { url },
+      })
+      window.alert(
+        res.fixed
+          ? `Re-pointed ${url} to “${res.name}” and queued re-attribution of its tracks.`
+          : `No change: ${res.reason || 'the page name already matches the linked artist'}.`,
+      )
+      setFixUrl('')
+      await fetchMismatches()
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not fix that Bandcamp page')
     } finally {
       setProcessing(false)
     }
@@ -300,9 +380,48 @@ function AdminMislabeled() {
         <EntityPicker fixedType={type} processing={processing} onPick={flagEntity} />
       </div>
       <div className="mislabeled-flag">
-        <span>Re-fetch a Bandcamp artist’s tracks (fix wrong artist attribution):</span>
-        <EntityPicker fixedType="artist" processing={processing} onPick={refetchArtistTracks} />
+        <span>Fix a wrongly credited Bandcamp artist (re-point its pages, re-attribute tracks):</span>
+        <EntityPicker fixedType="artist" processing={processing} onPick={fixArtistMismatches} />
       </div>
+      <div className="mislabeled-flag">
+        <span>Fix a Bandcamp artist page by URL:</span>
+        <input
+          type="text"
+          value={fixUrl}
+          placeholder="https://artist.bandcamp.com/"
+          disabled={processing}
+          onChange={(e) => setFixUrl(e.target.value)}
+          style={{ minWidth: 280 }}
+        />
+        <button type="button" disabled={processing || !fixUrl.trim()} onClick={fixByUrl}>
+          Fix page
+        </button>
+      </div>
+      {mismatches.length > 0 && (
+        <div className="mislabeled-mismatches">
+          <h6>Suspected wrong artist mappings ({mismatches.length})</h6>
+          {mismatches.map((m) => (
+            <div key={m.storeArtistId} className="mislabeled-item">
+              <div className="mislabeled-info">
+                <div>
+                  <strong>{m.currentName}</strong> <span className="muted">(artist {m.artistId})</span>
+                  <span className="mislabeled-reason">subdomain “{m.subdomain}”</span>
+                </div>
+                <div className="muted mislabeled-url">{m.url}</div>
+                <div className="muted">similarity {m.similarity}</div>
+              </div>
+              <div className="mislabeled-actions">
+                <button type="button" disabled={processing} onClick={() => fixMismatch(m.storeArtistId)}>
+                  Fix
+                </button>
+                <button type="button" disabled={processing} onClick={() => ignoreMismatch(m.storeArtistId)}>
+                  Ignore
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {entities.length === 0 && <div>No suspected mislabeled {type}s found.</div>}
       {entities.map((entity) => (
         <div key={entity.id} className="mislabeled-item">

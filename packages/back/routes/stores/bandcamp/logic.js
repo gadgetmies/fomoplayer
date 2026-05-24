@@ -70,6 +70,10 @@ module.exports.getPreviewDetails = async (previewId) => {
   throw new Error('Preview url not found for id')
 }
 
+// The display name a Bandcamp page reports for itself (e.g. "Machinedrum"),
+// used to repair subdomains linked to the wrong artist.
+module.exports.fetchBandcampPageName = async (url) => (await getPageDetailsAsync(url)).name
+
 const getArtistDetails = (module.exports.getArtistDetails = async (url) => ({ url, ...(await getArtistAsync(url)) }))
 
 module.exports.getArtistName = async (url) => {

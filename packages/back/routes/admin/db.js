@@ -9,7 +9,21 @@ const {
   flagMislabeledById,
 } = require('../shared/db/bandcampMislabeledCache')
 const { ensureLabelExists } = require('../shared/db/store')
-const { enqueueLabelArtistRefetch, enqueueArtistTrackRefetch } = require('../stores/bandcamp/db')
+const {
+  enqueueLabelArtistRefetch,
+  enqueueArtistTrackRefetch,
+  getArtistNameMismatches,
+  ignoreArtistNameMismatch,
+  clearArtistNameMismatch,
+  getStoreArtistById,
+  getStoreArtistByUrl,
+  getBandcampStoreArtistsForArtist,
+  repointStoreArtistToName,
+} = require('../stores/bandcamp/db')
+const { fetchBandcampPageName } = require('../stores/bandcamp/logic')
+const {
+  static: { nameSubdomainSimilarity, getSubdomain, nameSubdomainSimilarityThreshold },
+} = require('../stores/bandcamp/bandcamp-api')
 
 const BANDCAMP_STORE_URL = 'https://bandcamp.com'
 
@@ -628,6 +642,65 @@ module.exports.refetchBandcampArtistTracks = async (id) => {
   const parsedId = parseInt(id, 10)
   if (Number.isNaN(parsedId)) throw new Error('Invalid id')
   await enqueueArtistTrackRefetch(parsedId)
+}
+
+const normalizedName = (value) => (value || '').trim().toLocaleLowerCase()
+
+// Repair one mismatched Bandcamp subdomain mapping: fetch the page's real name,
+// re-point the subdomain's store__artist to a correctly named artist (created
+// if needed), queue a re-fetch to re-attribute its tracks, and clear the flag.
+const fixStoreArtistMismatch = async (storeArtist) => {
+  const realName = await fetchBandcampPageName(storeArtist.url)
+  if (!realName) throw new Error(`Could not determine the Bandcamp page name for ${storeArtist.url}`)
+
+  if (normalizedName(realName) === normalizedName(storeArtist.currentName)) {
+    await clearArtistNameMismatch(storeArtist.storeArtistId)
+    return { storeArtistId: storeArtist.storeArtistId, fixed: false, reason: 'page name matches the linked artist' }
+  }
+
+  const artistId = await repointStoreArtistToName(storeArtist.storeArtistId, realName)
+  await enqueueArtistTrackRefetch(artistId)
+  await clearArtistNameMismatch(storeArtist.storeArtistId)
+  return { storeArtistId: storeArtist.storeArtistId, fixed: true, artistId, name: realName }
+}
+
+module.exports.getArtistNameMismatches = async () => getArtistNameMismatches()
+
+module.exports.ignoreArtistNameMismatch = async (storeArtistId) => {
+  const parsed = parseInt(storeArtistId, 10)
+  if (Number.isNaN(parsed)) throw new Error('Invalid id')
+  await ignoreArtistNameMismatch(parsed)
+}
+
+module.exports.fixArtistNameMismatch = async (storeArtistId) => {
+  const parsed = parseInt(storeArtistId, 10)
+  if (Number.isNaN(parsed)) throw new Error('Invalid id')
+  const storeArtist = await getStoreArtistById(parsed)
+  if (!storeArtist) throw new Error(`Bandcamp store artist ${parsed} not found`)
+  return fixStoreArtistMismatch(storeArtist)
+}
+
+module.exports.fixBandcampArtistPageByUrl = async (url) => {
+  if (!url || !/^https?:\/\//.test(url)) throw new Error('A Bandcamp page URL is required')
+  const storeArtist = await getStoreArtistByUrl(url)
+  if (!storeArtist) throw new Error(`No Bandcamp artist mapping found for ${url}`)
+  return fixStoreArtistMismatch(storeArtist)
+}
+
+// Fix every mismatched Bandcamp subdomain held by a (wrongly credited) artist.
+module.exports.fixArtistBandcampMismatches = async (id) => {
+  const parsedId = parseInt(id, 10)
+  if (Number.isNaN(parsedId)) throw new Error('Invalid id')
+  const rows = await getBandcampStoreArtistsForArtist(parsedId)
+  const results = []
+  for (const sa of rows) {
+    const subdomain = sa.subdomain || getSubdomain(sa.url)
+    if (!subdomain) continue
+    if (nameSubdomainSimilarity(sa.currentName, subdomain) < nameSubdomainSimilarityThreshold) {
+      results.push(await fixStoreArtistMismatch(sa))
+    }
+  }
+  return { checked: rows.length, fixed: results.filter((r) => r.fixed).length, results }
 }
 
 module.exports.flagMislabeledEntity = async (type, id) => {
