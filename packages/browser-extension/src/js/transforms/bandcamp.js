@@ -76,19 +76,7 @@ module.exports.bandcampReleasesTransform = L.collect([
       const versionOrRemix = isVersionOrRemix(match[10] || match[6])
       const version = versionOrRemix ? match[11] || match[7] : null
       const featuringArtists = extractFeat(match[6]) || []
-
-      // The "Artist - Title" prefix only designates the author on label pages,
-      // where releases span many artists. On an artist page the subdomain is
-      // itself the artist, so a prefix that is not the page artist (e.g. a
-      // stylised title like "VIER - ...") must stay part of the title rather
-      // than replace the artist.
-      const prefix = match[2] ? match[2].trim() : null
-      const prefixIsPageArtist =
-        !!prefix && [releaseArtistId, (release.artist || '').toLocaleLowerCase()].includes(prefix.toLocaleLowerCase())
-      const treatPrefixAsArtist = !!prefix && (isLabelPage || prefixIsPageArtist)
-
-      const strippedTitle = version || featuringArtists.length ? match[5].trim() : match[4] || match[3]?.trim()
-      const title = !treatPrefixAsArtist && match[1] ? `${match[1]}${strippedTitle || ''}`.trim() : strippedTitle
+      const title = version || featuringArtists.length ? match[5].trim() : match[4] || match[3]?.trim()
 
       const createArtistWithRole = (role) => (artist) => {
         const trimmedArtist = artist.trim()
@@ -113,7 +101,7 @@ module.exports.bandcampReleasesTransform = L.collect([
             .map(createArtistWithRole('remixer'))
         : []
 
-      const authorArtists = treatPrefixAsArtist
+      const authorArtists = match[2]
         ? match[2]
             .split(/[,&]/)
             .map(createArtistWithRole('author'))
