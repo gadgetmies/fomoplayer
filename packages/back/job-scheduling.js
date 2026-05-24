@@ -100,15 +100,23 @@ WHERE job_run_id = ${job_run_id}`,
 
   if (!success && jobName.endsWith('IntegrationTest')) {
     // Store integration test jobs are named '<store>IntegrationTest'; alert admins by email when one fails.
-    try {
-      await scheduleEmail(
-        process.env.ADMIN_EMAIL_SENDER,
-        process.env.ADMIN_EMAIL_RECIPIENT,
-        `URGENT! Integration test '${jobName}' failed!`,
-        `The integration test job '${jobName}' failed (job_run_id: ${job_run_id}).\n\nResult: ${JSON.stringify(res)}`,
+    const sender = process.env.ADMIN_EMAIL_SENDER
+    const recipient = process.env.ADMIN_EMAIL_RECIPIENT
+    if (sender && recipient) {
+      try {
+        await scheduleEmail(
+          sender,
+          recipient,
+          `URGENT! Integration test '${jobName}' failed!`,
+          `The integration test job '${jobName}' failed (job_run_id: ${job_run_id}).\n\nResult: ${JSON.stringify(res)}`,
+        )
+      } catch (e) {
+        logger.error(`Failed to queue failure notification email for ${jobName}: ${e.toString()}`)
+      }
+    } else {
+      logger.warn(
+        `Integration test '${jobName}' failed but admin email is not configured (ADMIN_EMAIL_SENDER/ADMIN_EMAIL_RECIPIENT); skipping failure notification`,
       )
-    } catch (e) {
-      logger.error(`Failed to queue failure notification email for ${jobName}: ${e.toString()}`)
     }
   }
 
