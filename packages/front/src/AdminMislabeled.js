@@ -565,27 +565,59 @@ function AdminMislabeled() {
           </div>
           <div className="mislabeled-actions">
             {type === 'artist' && (
-              <button type="button" disabled={processing} onClick={convertToLabel}>
+              <button
+                type="button"
+                disabled={processing}
+                onClick={convertToLabel}
+                title="Turn this artist into a label of the same name: re-credit every track to the label, move its followers across, retire the artist, and queue a re-fetch so tracks are re-attributed to their real per-track artists."
+              >
                 Convert to label
               </button>
             )}
-            <button type="button" disabled={processing} onClick={cleanup}>
+            <button
+              type="button"
+              disabled={processing}
+              onClick={cleanup}
+              title="Clear this entity's bogus Bandcamp URL so a future import can't re-absorb tracks onto it, then delete it entirely if nothing references it anymore (no tracks and no followers left). Run it after reassigning its tracks away."
+            >
               Clean up source
             </button>
-            <button type="button" disabled={processing} onClick={() => setSelected(null)}>
+            <button
+              type="button"
+              disabled={processing}
+              onClick={() => setSelected(null)}
+              title="Return to the list without making changes."
+            >
               Back to list
             </button>
           </div>
         </div>
-        <p className="mislabeled-help">
-          Each track below is currently credited to this {type}. Use “Reassign to” on a single track, or “Reassign all
-          tracks to” in a release’s header to move a whole release at once, to pick the artist or label it should really
-          belong to: the track gains the chosen credit and loses this one. Once no tracks remain, use “Clean up source”
-          to clear this {type}’s bogus Bandcamp URL and delete it if it is now empty.
-          {type === 'artist'
-            ? ' Use “Convert to label” when this is really a label whose releases are by various artists — it turns the artist into a label, moves followers across and queues a re-fetch so each track is re-credited to its real artist.'
-            : ''}
-        </p>
+        <div className="mislabeled-help">
+          <p>
+            Each track below is currently credited to this {type}. Reassign the ones that belong elsewhere, then tidy up
+            this source:
+          </p>
+          <ul>
+            <li>
+              <strong>Reassign to</strong> (single track) / <strong>Reassign all tracks to</strong> (whole release):
+              moves the track(s) to the artist or label they really belong to — each track gains the chosen credit and
+              loses this one.
+            </li>
+            {type === 'artist' && (
+              <li>
+                <strong>Convert to label</strong>: use when this “artist” is really a label whose releases are by various
+                artists. Turns it into a label, moves its followers across, retires the artist, and queues a re-fetch so
+                each track is re-credited to its real artist.
+              </li>
+            )}
+            <li>
+              <strong>Clean up source</strong>: clears this {type}’s bogus Bandcamp URL (so a future import won’t
+              re-absorb tracks onto it) and deletes the {type} entirely if nothing references it anymore — i.e. it has no
+              tracks and no followers left; otherwise the {type} is kept with its URL cleared. Run it after you’ve
+              reassigned its tracks away.
+            </li>
+          </ul>
+        </div>
 
         {tracksLoading ? (
           <div>Loading tracks…</div>
