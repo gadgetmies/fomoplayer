@@ -134,6 +134,7 @@ class Settings extends Component {
       followedArtistsExportSuccess: null,
       authorizations: [],
       followedTab: 'artists',
+      followResultsTab: 'artist',
       followedArtistsFilter: '',
       followedLabelsFilter: '',
       followedPlaylistsFilter: '',
@@ -332,6 +333,86 @@ class Settings extends Component {
 
   onShowFollowedTab(tab) {
     this.setState({ followedTab: tab })
+  }
+
+  onShowFollowResultsTab(tab) {
+    this.setState({ followResultsTab: tab })
+  }
+
+  renderFollowResults() {
+    const groupedByType = R.groupBy(R.prop('type'), this.state.followDetails)
+    const tabs = [
+      ['artist', 'Artists'],
+      ['label', 'Labels'],
+      ['playlist', 'Playlists'],
+    ].filter(([type]) => (groupedByType[type] ?? []).length > 0)
+    const activeTab = tabs.some(([type]) => type === this.state.followResultsTab)
+      ? this.state.followResultsTab
+      : tabs[0]?.[0]
+    const items = groupedByType[activeTab] ?? []
+
+    return (
+      <>
+        <div
+          className="select-button select-button--container state-select-button--container noselect"
+          style={{ marginTop: 16, marginBottom: 16 }}
+        >
+          {tabs.map(([type, label]) => (
+            <React.Fragment key={type}>
+              <input
+                type="radio"
+                id={`settings-follow-results-${type}`}
+                name="settings-follow-results"
+                checked={activeTab === type}
+                onChange={() => this.onShowFollowResultsTab(type)}
+              />
+              <label
+                className="select_button-button  select_button-button__large"
+                htmlFor={`settings-follow-results-${type}`}
+              >
+                {label} ({groupedByType[type].length})
+              </label>
+            </React.Fragment>
+          ))}
+        </div>
+        {R.sortBy(
+          R.prop(0),
+          Object.entries(
+            R.groupBy(
+              R.propSatisfies(
+                (name) => name.toLocaleLowerCase() !== this.state.followQuery.toLocaleLowerCase(),
+                'name',
+              ),
+              items,
+            ),
+          ),
+        ).map(([isNotExactMatch, grouped]) => (
+          <React.Fragment key={`${activeTab}-${isNotExactMatch}`}>
+            {activeTab !== 'playlist' && (
+              <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>
+            )}
+            <ul className={'no-style-list follow-list'}>
+              {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
+                <li key={`${storeName}-${type}-${id ?? url}`}>
+                  <FollowItemButton
+                    id={id}
+                    name={name}
+                    storeName={storeName}
+                    type={type}
+                    url={url}
+                    img={img}
+                    disabled={this.getFollowItemDisabled(type, { id, url, storeName })}
+                    loading={this.state.updatingFollowWithUrl === url}
+                    onClick={(() => this.onFollowItemClick(url, name, type)).bind(this)}
+                    data-onboarding-id="follow-item"
+                  />
+                </li>
+              ))}
+            </ul>
+          </React.Fragment>
+        ))}
+      </>
+    )
   }
 
   async setScoreWeight(property, value) {
@@ -705,58 +786,7 @@ class Settings extends Component {
                   </>
                 ) : this.state.followDetails === undefined ? null : (
                   <>
-                    {this.state.followDetails.length === 0 ? (
-                      'No results found'
-                    ) : (
-                      <div>
-                        {R.sortBy(R.prop(0), Object.entries(R.groupBy(R.prop('type'), this.state.followDetails))).map(
-                          ([type, items]) => (
-                            <React.Fragment key={type}>
-                              <h5>
-                                {type[0].toLocaleUpperCase()}
-                                {type.substring(1)}s
-                              </h5>
-                              {R.sortBy(
-                                R.prop(0),
-                                Object.entries(
-                                  R.groupBy(
-                                    R.propSatisfies(
-                                      (name) => name.toLocaleLowerCase() !== this.state.followQuery.toLocaleLowerCase(),
-                                      'name',
-                                    ),
-                                    items,
-                                  ),
-                                ),
-                              ).map(([isNotExactMatch, grouped]) => (
-                                <React.Fragment key={`${type}-${isNotExactMatch}`}>
-                                  {type !== 'playlist' && (
-                                    <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>
-                                  )}
-                                  <ul className={'no-style-list follow-list'}>
-                                    {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
-                                      <li key={`${storeName}-${type}-${id ?? url}`}>
-                                        <FollowItemButton
-                                          id={id}
-                                          name={name}
-                                          storeName={storeName}
-                                          type={type}
-                                          url={url}
-                                          img={img}
-                                          disabled={this.getFollowItemDisabled(type, { id, url, storeName })}
-                                          loading={this.state.updatingFollowWithUrl === url}
-                                          onClick={(() => this.onFollowItemClick(url, name, type)).bind(this)}
-                                          data-onboarding-id="follow-item"
-                                        />
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </React.Fragment>
-                              ))}
-                            </React.Fragment>
-                          ),
-                        )}
-                      </div>
-                    )}
+                    {this.state.followDetails.length === 0 ? 'No results found' : this.renderFollowResults()}
                   </>
                 )}
                 {this.props.stores.includes('spotify') && (
