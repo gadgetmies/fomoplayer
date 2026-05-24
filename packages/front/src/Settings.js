@@ -149,6 +149,8 @@ class Settings extends Component {
       cartNameEditorValue: '',
       cloningCartId: null,
       mediaButtonBehavior: localStorage.getItem('mediaButtonBehavior') || 'seek',
+      playPauseAddToCart: (localStorage.getItem('playPauseDoubleClickAddToCart') || 'true') === 'true',
+      playPauseAddToCartDelay: parseInt(localStorage.getItem('playPauseDoubleClickDelay'), 10) || 1000,
       audioSamples: [],
       uploadingAudioSample: false,
       deletingAudioSample: null,
@@ -607,20 +609,6 @@ class Settings extends Component {
               </label>
               <input
                 type="radio"
-                id="settings-state-sorting"
-                name="settings-state"
-                checked={this.state.page === 'sorting'}
-                onChange={() => this.onShowPage('sorting')}
-              />
-              <label
-                className="select_button-button  select_button-button__large"
-                htmlFor="settings-state-sorting"
-                data-help-id="sorting-tab"
-              >
-                Sorting
-              </label>
-              <input
-                type="radio"
                 id="settings-state-carts"
                 name="settings-state"
                 checked={this.state.page === 'carts'}
@@ -649,6 +637,20 @@ class Settings extends Component {
               </label>
               <input
                 type="radio"
+                id="settings-state-player"
+                name="settings-state"
+                checked={this.state.page === 'player'}
+                onChange={() => this.onShowPage('player')}
+              />
+              <label
+                className="select_button-button select_button-button__large"
+                htmlFor="settings-state-player"
+                data-help-id="player-tab"
+              >
+                Player
+              </label>
+              <input
+                type="radio"
                 id="settings-state-ignores"
                 name="settings-state"
                 checked={this.state.page === 'ignores'}
@@ -660,6 +662,20 @@ class Settings extends Component {
                 data-help-id="ignores-tab"
               >
                 Ignores
+              </label>
+              <input
+                type="radio"
+                id="settings-state-sorting"
+                name="settings-state"
+                checked={this.state.page === 'sorting'}
+                onChange={() => this.onShowPage('sorting')}
+              />
+              <label
+                className="select_button-button  select_button-button__large"
+                htmlFor="settings-state-sorting"
+                data-help-id="sorting-tab"
+              >
+                Sorting
               </label>
               <input
                 type="radio"
@@ -693,20 +709,6 @@ class Settings extends Component {
                   </label>
                 </>
               )}
-              <input
-                type="radio"
-                id="settings-state-player"
-                name="settings-state"
-                checked={this.state.page === 'player'}
-                onChange={() => this.onShowPage('player')}
-              />
-              <label
-                className="select_button-button select_button-button__large"
-                htmlFor="settings-state-player"
-                data-help-id="player-tab"
-              >
-                Player
-              </label>
             </div>
           </div>
           {this.state.page === 'following' ? (
@@ -1636,6 +1638,48 @@ class Settings extends Component {
                 />
                 <span className="noselect">{this.state.mediaButtonBehavior === 'skip' ? 'Skip' : 'Seek'}</span>
               </p>
+              <h4>Add to cart with play/pause</h4>
+              <p>
+                When enabled, pressing the play/pause media button (keyboard, headphones, etc.) twice within the
+                configured delay adds the currently playing track to your default cart. This setting is stored on this
+                device, so it can be configured separately for each device you use.
+              </p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
+                <label htmlFor="play-pause-add-to-cart" className="noselect">
+                  Add to cart on double press:
+                </label>
+                <ToggleButton
+                  id="play-pause-add-to-cart"
+                  checked={this.state.playPauseAddToCart}
+                  onChange={(state) => {
+                    localStorage.setItem('playPauseDoubleClickAddToCart', state ? 'true' : 'false')
+                    this.setState({ playPauseAddToCart: state })
+                  }}
+                />
+                <span className="noselect">{this.state.playPauseAddToCart ? 'On' : 'Off'}</span>
+              </p>
+              {this.state.playPauseAddToCart ? (
+                <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
+                  <label htmlFor="play-pause-add-to-cart-delay" className="noselect">
+                    Maximum delay between presses (ms):
+                  </label>
+                  <input
+                    id="play-pause-add-to-cart-delay"
+                    type="number"
+                    min="100"
+                    step="100"
+                    value={this.state.playPauseAddToCartDelay}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      this.setState({ playPauseAddToCartDelay: value })
+                      const parsed = parseInt(value, 10)
+                      if (!Number.isNaN(parsed) && parsed >= 100) {
+                        localStorage.setItem('playPauseDoubleClickDelay', String(parsed))
+                      }
+                    }}
+                  />
+                </p>
+              ) : null}
             </>
           ) : null}
           {this.state.page === 'integrations' ? (

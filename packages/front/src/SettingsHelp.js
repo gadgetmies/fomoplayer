@@ -24,19 +24,6 @@ export class SettingsHelp extends Component {
         </>
       ),
     },
-    Sorting: {
-      target: '[data-help-id=sorting-tab]',
-      placement: 'bottom',
-      content: (
-        <p>
-          In the sorting tab you can control how the tracks are sorted in the new tracks list. By adjusting the
-          parameters you can e.g. focus less on the newest tracks by lowering the penalties or ensure the followed
-          artists and labels appear higher in the list by increasing the bonuses. By marking tracks purchased (last item
-          in the add to cart dropdown) and increasing the related bonuses, you can ensure the new releases from the
-          artists and labels appear higher in the list.
-        </p>
-      ),
-    },
     Carts: {
       target: '[data-help-id=carts-tab]',
       placement: 'bottom',
@@ -61,6 +48,18 @@ export class SettingsHelp extends Component {
         </p>
       ),
     },
+    Player: {
+      target: '[data-help-id=player-tab]',
+      placement: 'bottom',
+      content: (
+        <p>
+          In the player tab you can configure the behavior of the media buttons on your device. You can choose between
+          the default behavior (single press to seek, double press to skip) and a skip behavior (single press to skip to
+          the next track or to the beginning/previous track). You can also enable adding the currently playing track to
+          your default cart by pressing play/pause twice, and adjust the maximum delay allowed between the two presses.
+        </p>
+      ),
+    },
     Ignores: {
       target: '[data-help-id=ignores-tab]',
       placement: 'bottom',
@@ -71,6 +70,19 @@ export class SettingsHelp extends Component {
           unwanted tracks in your new tracks list. Fortunately, artists with the same name usually don't release tracks
           on the same label. To reduce noise, use the ignore button to filter artists by labels you are not interested
           in. Manage these preferences in the Ignores tab.
+        </p>
+      ),
+    },
+    Sorting: {
+      target: '[data-help-id=sorting-tab]',
+      placement: 'bottom',
+      content: (
+        <p>
+          In the sorting tab you can control how the tracks are sorted in the new tracks list. By adjusting the
+          parameters you can e.g. focus less on the newest tracks by lowering the penalties or ensure the followed
+          artists and labels appear higher in the list by increasing the bonuses. By marking tracks purchased (last item
+          in the add to cart dropdown) and increasing the related bonuses, you can ensure the new releases from the
+          artists and labels appear higher in the list.
         </p>
       ),
     },
@@ -93,17 +105,6 @@ export class SettingsHelp extends Component {
           In order to synchronise tracks to Spotify, you will need to authorise the service to give it access rights to
           your Spotify account for creating playlists and synchronising the cart contents with playlists. For safety
           reasons the service will only modify playlists it has created.
-        </p>
-      ),
-    },
-    Player: {
-      target: '[data-help-id=player-tab]',
-      placement: 'bottom',
-      content: (
-        <p>
-          In the player tab you can configure the behavior of the media buttons on your device. You can choose between
-          the default behavior (single click to seek, double click to skip) and a skip behavior (single click to skip
-          to the next track or to the beginning/previous track).
         </p>
       ),
       locale: { last: 'Done' },
