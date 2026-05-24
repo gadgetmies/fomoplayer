@@ -56,6 +56,15 @@ const GENRES = [
   { id: 99, name: 'Trance (Raw / Deep / Hypnotic)', slug: 'trance-raw-deep-hypnotic' },
   { id: 100, name: 'Ambient / Experimental', slug: 'ambient-experimental' },
   { id: 101, name: 'Brazilian Funk', slug: 'brazilian-funk' },
+  { id: 102, name: 'African', slug: 'african' },
+  { id: 103, name: 'Caribbean', slug: 'caribbean' },
+  { id: 104, name: 'Country', slug: 'country' },
+  { id: 105, name: 'Hip-Hop', slug: 'hip-hop' },
+  { id: 106, name: 'Latin', slug: 'latin' },
+  { id: 107, name: 'Pop', slug: 'pop' },
+  { id: 108, name: 'R&B', slug: 'rb' },
+  { id: 109, name: 'Rock', slug: 'rock' },
+  { id: 110, name: 'DJ Edits', slug: 'dj-edits' },
   { id: 111, name: 'Latin Electronic', slug: 'latin-electronic' },
 ]
 
