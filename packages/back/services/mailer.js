@@ -15,7 +15,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 const client = new MessageClient(options)
 
-module.exports.scheduleEmail = async (sender, recipient, subject, plain, html) => {
+module.exports.scheduleEmail = async (sender, recipient, subject, plain, html = plain) => {
   await pg.queryAsync(
     // language=PostgreSQL
     sql`INSERT INTO email_queue (email_queue_sender, email_queue_recipient, email_queue_subject, email_queue_plain,
