@@ -12,4 +12,5 @@
   overflow: hidden;
   box-sizing: border-box;
   gap: 4px;
+  max-width: 20rem;
 }
