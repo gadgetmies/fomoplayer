@@ -86,54 +86,41 @@ fi
 # The cache lines look like: { id: 5, name: 'House', slug: 'house' },
 cache_tsv="$(sed -n "s/.*{ id: \([0-9]*\), name: '\(.*\)', slug: '\([^']*\)' }.*/\1\t\2\t\3/p" "$GENRES_JS" | sort -t$'\t' -k1,1n)"
 
-declare -A cache_name cache_slug live_name live_slug
-while IFS=$'\t' read -r id name slug; do
-  [ -n "$id" ] || continue
-  cache_name[$id]="$name"
-  cache_slug[$id]="$slug"
-done <<<"$cache_tsv"
-while IFS=$'\t' read -r id name slug; do
-  [ -n "$id" ] || continue
-  live_name[$id]="$name"
-  live_slug[$id]="$slug"
-done <<<"$live_tsv"
-
-mapfile -t live_ids < <(printf '%s\n' "${!live_name[@]}" | sort -n)
-mapfile -t cache_ids < <(printf '%s\n' "${!cache_name[@]}" | sort -n)
-
-added=() renamed=() removed=()
-for id in "${live_ids[@]}"; do
-  if [ -z "${cache_name[$id]+set}" ]; then
-    added+=("$id ${live_name[$id]} (${live_slug[$id]})")
-  elif [ "${cache_name[$id]}" != "${live_name[$id]}" ] || [ "${cache_slug[$id]}" != "${live_slug[$id]}" ]; then
-    renamed+=("$id ${live_name[$id]} (${live_slug[$id]}) [was ${cache_name[$id]} / ${cache_slug[$id]}]")
-  fi
-done
-for id in "${cache_ids[@]}"; do
-  [ -z "${live_name[$id]+set}" ] && removed+=("$id ${cache_name[$id]} (${cache_slug[$id]})")
-done
-
-report() {
-  local label="$1"
-  shift
-  if [ "$#" -eq 0 ]; then
-    printf '  %-9s none\n' "$label" >&2
-  else
-    printf '  %-9s %s\n' "$label" "$1" >&2
-    shift
-    for line in "$@"; do printf '            %s\n' "$line" >&2; done
-  fi
-}
-
-printf 'Fetched %d genres; cache has %d.\n' "${#live_ids[@]}" "${#cache_ids[@]}" >&2
-report "added:" ${added[@]+"${added[@]}"}
-report "removed:" ${removed[@]+"${removed[@]}"}
-report "renamed:" ${renamed[@]+"${renamed[@]}"}
-printf '\nPaste the block below into routes/stores/beatport/genres.js:\n\n' >&2
+# Diff the live catalog against the cache (added / removed / renamed) for review.
+# awk keeps this portable to bash 3.2 (macOS), which lacks associative arrays.
+{
+  awk -F'\t' '
+    function report(label, arr, count,   i) {
+      if (count == 0) { printf "  %-9s none\n", label; return }
+      printf "  %-9s %s\n", label, arr[1]
+      for (i = 2; i <= count; i++) printf "            %s\n", arr[i]
+    }
+    FNR == NR { cseen[$1] = 1; cname[$1] = $2; cslug[$1] = $3; corder[++cn] = $1; next }
+    { lseen[$1] = 1; lname[$1] = $2; lslug[$1] = $3; lorder[++ln] = $1 }
+    END {
+      printf "Fetched %d genres; cache has %d.\n", ln, cn
+      for (i = 1; i <= ln; i++) {
+        id = lorder[i]
+        if (!(id in cseen)) added[++na] = id " " lname[id] " (" lslug[id] ")"
+        else if (cname[id] != lname[id] || cslug[id] != lslug[id])
+          renamed[++nr] = id " " lname[id] " (" lslug[id] ") [was " cname[id] " / " cslug[id] "]"
+      }
+      for (i = 1; i <= cn; i++) {
+        id = corder[i]
+        if (!(id in lseen)) removed[++nd] = id " " cname[id] " (" cslug[id] ")"
+      }
+      report("added:", added, na)
+      report("removed:", removed, nd)
+      report("renamed:", renamed, nr)
+    }
+  ' <(printf '%s\n' "$cache_tsv") <(printf '%s\n' "$live_tsv")
+  printf '\nPaste the block below into routes/stores/beatport/genres.js:\n\n'
+} >&2
 
 echo "const GENRES = ["
-for id in "${live_ids[@]}"; do
-  name="${live_name[$id]//\'/\\\'}"
-  printf "  { id: %s, name: '%s', slug: '%s' },\n" "$id" "$name" "${live_slug[$id]}"
+printf '%s\n' "$live_tsv" | while IFS=$'\t' read -r id name slug; do
+  [ -n "$id" ] || continue
+  name="${name//\'/\\\'}"
+  printf "  { id: %s, name: '%s', slug: '%s' },\n" "$id" "$name" "$slug"
 done
 echo "]"
