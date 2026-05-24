@@ -3,7 +3,7 @@ const { search } = require('./logic.js')
 const { getUserPlaylists, getUserFollowedArtists, followArtists } = require('./logic')
 const { getPreviewDetails } = require('../bandcamp/logic')
 
-router.get('/search', ({ query: { q } }, res) => search(q).then((results) => res.send(results)))
+router.get('/search', ({ query: { q, type } }, res) => search(q, type).then((results) => res.send(results)))
 
 router.get('/my-playlists', async ({ user: { id: userId } }, res) => {
   const playlists = await getUserPlaylists(userId)

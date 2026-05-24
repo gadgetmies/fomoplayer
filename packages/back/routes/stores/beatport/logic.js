@@ -1,10 +1,9 @@
 const R = require('ramda')
 const bpApi = require('./bp-api')
+const { searchGenres, genreTop100Url } = require('./genres')
 const { processChunks } = require('../../shared/requests')
 
-const {
-  beatportV4TracksTransform,
-} = require('fomoplayer_browser_extension/src/js/transforms/beatport')
+const { beatportV4TracksTransform } = require('fomoplayer_browser_extension/src/js/transforms/beatport')
 const logger = require('fomoplayer_shared').logger(__filename)
 
 const storeName = (module.exports.storeName = 'Beatport')
@@ -73,18 +72,71 @@ module.exports.getPlaylistTracks = async function* ({ playlistStoreId: url }) {
   yield { tracks, errors: [] }
 }
 
-module.exports.search = async (query) => {
-  const { artists = [], labels = [] } = await bpApi.search(query)
-  const mapItems = (items, type) =>
-    items.map((item) => ({
-      type,
-      id: item.id,
+// Matching genres are surfaced as their top-100 chart, which is the playlist a
+// user follows to track a whole genre. The genre set is cached locally, so this
+// adds no API call.
+const genrePlaylistResults = (query) =>
+  searchGenres(query).map((genre) => {
+    const url = genreTop100Url(genre)
+    return {
+      type: 'playlist',
+      id: url,
+      name: `${genre.name} Top 100`,
+      url,
+      store: { name: storeName.toLowerCase() },
+    }
+  })
+
+// Beatport charts and playlists are followed by their storefront URL, which the
+// v4 client resolves back to the catalog chart/playlist routes. Surface them as
+// the 'playlist' follow type, same as genre top-100s.
+const playlistResults = (items, type) =>
+  items.map((item) => {
+    const url = storefrontUrl(type, item.slug ?? type, item.id)
+    return {
+      type: 'playlist',
+      id: url,
       name: item.name,
       img: item.image?.uri,
-      url: storefrontUrl(type, item.slug, item.id),
+      url,
       store: { name: storeName.toLowerCase() },
-    }))
-  return [...mapItems(artists, 'artist'), ...mapItems(labels, 'label')]
+    }
+  })
+
+const mapEntities = (items, type) =>
+  items.map((item) => ({
+    type,
+    id: item.id,
+    name: item.name,
+    img: item.image?.uri,
+    url: storefrontUrl(type, item.slug, item.id),
+    store: { name: storeName.toLowerCase() },
+  }))
+
+const searchEntities = async (query, type) => {
+  const { artists = [], labels = [] } = await bpApi.search(query)
+  return mapEntities(type === 'label' ? labels : artists, type)
+}
+
+const searchPlaylistsAndCharts = async (query) => {
+  const [charts, playlists] = await Promise.all([bpApi.searchCharts(query), bpApi.searchPlaylists(query)])
+  return [
+    ...playlistResults(charts, 'chart'),
+    ...playlistResults(playlists, 'playlist'),
+    ...genrePlaylistResults(query),
+  ]
+}
+
+// `type` (artist | label | playlist) lets the caller fetch a single category so
+// results can be shown as each request completes; omitting it returns everything.
+module.exports.search = async (query, type) => {
+  if (type === 'artist' || type === 'label') return searchEntities(query, type)
+  if (type === 'playlist') return searchPlaylistsAndCharts(query)
+  const [{ artists = [], labels = [] }, playlists] = await Promise.all([
+    bpApi.search(query),
+    searchPlaylistsAndCharts(query),
+  ])
+  return [...mapEntities(artists, 'artist'), ...mapEntities(labels, 'label'), ...playlists]
 }
 
 module.exports.getTracksForISRCs = async (isrcs) => {

@@ -232,7 +232,10 @@ module.exports.getArtistTracks = async function* ({ artistStoreId }) {
   yield { tracks: await appendArtistDetails(await appendTrackDetails(transformed)), errors: [] }
 }
 
-module.exports.search = async (query) => {
+// `type` (artist | label | playlist) lets the caller fetch a single category so
+// results can be shown as each request completes; Spotify only contributes artists.
+module.exports.search = async (query, type) => {
+  if (type && type !== 'artist') return []
   const items = (await spotifyApi.searchArtists(query)).body.artists.items
   return items.map(({ external_urls: { spotify }, id, name, type, images }) => ({
     url: spotify,

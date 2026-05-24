@@ -40,8 +40,12 @@ const getPageSource = async (url) => {
   const res = await fetch(url, { method: 'GET' })
   if ([429, 403].includes(res.status)) {
     suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
-    logger.error(`Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`)
-    const error = new Error(`Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`)
+    logger.error(
+      `Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`,
+    )
+    const error = new Error(
+      `Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`,
+    )
     error.isRateLimit = true
     error.statusCode = res.status
     error.requestCount = requestCount
@@ -114,10 +118,21 @@ const getTagsFromUrl = function (playlistUrl) {
   return { genre, subgenre, format }
 }
 
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+// A Bandcamp tag playlist is the discover page for one or more tags, e.g.
+// https://bandcamp.com/discover/drum-bass or .../bass-music+drum-bass+dubstep.
+// Slugify a free-text query into such a tag term so any search can offer the
+// matching "Music tagged with ..." playlist.
+const getTagSlug = (query) =>
+  (query || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9+]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 
-const getTagName = (tags) =>
-  capitalize(`${tags.genre || 'all'}${tags.subgenre ? ` / ${tags.subgenre}` : ''} (${tags.format || 'all formats'})`)
+const getTagName = (tags) => {
+  const term = [tags.genre, tags.subgenre].filter((part) => part && part !== 'all').join('+')
+  return `Music tagged with ${term || 'all music'}${tags.format ? ` (${tags.format})` : ''}`
+}
 
 const getTagDetails = (tags, callback) => {
   callback(null, {
@@ -210,6 +225,8 @@ module.exports = {
   static: {
     getTagsFromUrl,
     getTagName,
+    getTagUrl,
+    getTagSlug,
     isRateLimited,
     resetRequestCount,
     getRequestCount,

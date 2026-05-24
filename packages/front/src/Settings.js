@@ -67,6 +67,13 @@ const RevokeWarning = () => (
   <div style={{ fontSize: '75%', marginTop: 5 }}>Warning! This will disable all cart synchronizations</div>
 )
 
+const FOLLOW_RESULT_CATEGORIES = ['artist', 'label', 'playlist']
+
+// updatingFollowDetails is { [storeName]: { artist, label, playlist } } | null; flip
+// one store's category to done, keeping null (a cleared search) as null.
+const markCategoryDone = (updating, storeName, category) =>
+  updating && { ...updating, [storeName]: { ...updating[storeName], [category]: false } }
+
 class Settings extends Component {
   markHeardButton = (label, interval) => (
     <ConfirmButton
@@ -115,7 +122,7 @@ class Settings extends Component {
       removingCart: false,
       followDetailsDebounce: undefined,
       followDetails: undefined,
-      followDetailsUpdateAborted: false,
+      followSearchController: undefined,
       scoreWeightsDebounce: undefined,
       markingHeard: null,
       settingCartPublic: null,
@@ -153,7 +160,12 @@ class Settings extends Component {
 
   async componentDidMount() {
     try {
-      await Promise.all([this.updateFollows(), this.updateIgnores(), this.updateAuthorizations(), this.updateAudioSamples()])
+      await Promise.all([
+        this.updateFollows(),
+        this.updateIgnores(),
+        this.updateAuthorizations(),
+        this.updateAudioSamples(),
+      ])
     } catch (e) {
       console.error(e)
     }
@@ -238,7 +250,7 @@ class Settings extends Component {
     const allowedTypes = ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/mpeg', 'audio/mp3']
     const allowedExts = ['.wav', '.mp3']
     const fileExt = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
-    
+
     if (!allowedTypes.includes(file.type) && !allowedExts.includes(fileExt)) {
       alert('Invalid file type. Only WAV and MP3 files are allowed.')
       return
@@ -339,13 +351,19 @@ class Settings extends Component {
     this.setState({ followResultsTab: tab })
   }
 
+  isFollowCategoryPending(type) {
+    const updating = this.state.updatingFollowDetails
+    return updating !== null && Object.values(updating).some((perStore) => perStore?.[type])
+  }
+
   renderFollowResults() {
-    const groupedByType = R.groupBy(R.prop('type'), this.state.followDetails)
+    const groupedByType = R.groupBy(R.prop('type'), this.state.followDetails ?? [])
     const tabs = [
       ['artist', 'Artists'],
       ['label', 'Labels'],
       ['playlist', 'Playlists'],
-    ].filter(([type]) => (groupedByType[type] ?? []).length > 0)
+    ].filter(([type]) => (groupedByType[type] ?? []).length > 0 || this.isFollowCategoryPending(type))
+    if (tabs.length === 0) return 'No results found'
     const activeTab = tabs.some(([type]) => type === this.state.followResultsTab)
       ? this.state.followResultsTab
       : tabs[0]?.[0]
@@ -370,7 +388,12 @@ class Settings extends Component {
                 className="select_button-button  select_button-button__large"
                 htmlFor={`settings-follow-results-${type}`}
               >
-                {label} ({groupedByType[type].length})
+                {label}{' '}
+                {this.isFollowCategoryPending(type) ? (
+                  <Spinner size="small" />
+                ) : (
+                  <span className="follow-results-count">{(groupedByType[type] ?? []).length}</span>
+                )}
               </label>
             </React.Fragment>
           ))}
@@ -388,9 +411,7 @@ class Settings extends Component {
           ),
         ).map(([isNotExactMatch, grouped]) => (
           <React.Fragment key={`${activeTab}-${isNotExactMatch}`}>
-            {activeTab !== 'playlist' && (
-              <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>
-            )}
+            {activeTab !== 'playlist' && <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>}
             <ul className={'no-style-list follow-list'}>
               {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
                 <li key={`${storeName}-${type}-${id ?? url}`}>
@@ -452,11 +473,15 @@ class Settings extends Component {
   }
 
   clearSearch() {
+    if (this.state.followSearchController) {
+      this.state.followSearchController.abort()
+    }
     this.setState({
       followQuery: '',
       updatingFollowDetails: null,
       followDetails: undefined,
       updatingFollowWithUrl: null,
+      followSearchController: undefined,
     })
   }
 
@@ -695,7 +720,6 @@ class Settings extends Component {
                     value={this.state.followQuery}
                     onClearSearch={this.clearSearch.bind(this)}
                     onChange={({ target: { value: inputValue } }) => {
-                      // TODO: replace aborted and debounce with flatmapLatest
                       this.setState({
                         followQuery: inputValue,
                         followDetails: undefined,
@@ -703,91 +727,110 @@ class Settings extends Component {
                       })
                       if (this.state.followDetailsDebounce) {
                         clearTimeout(this.state.followDetailsDebounce)
-                        this.setState({
-                          followDetailsDebounce: undefined,
-                          followDetailsUpdateAborted: this.state.followDetailsDebounce !== undefined,
-                        })
+                        this.setState({ followDetailsDebounce: undefined })
+                      }
+                      // Supersede any in-flight search so its (possibly late) results
+                      // can't be appended to a newer query's results.
+                      if (this.state.followSearchController) {
+                        this.state.followSearchController.abort()
                       }
 
                       if (inputValue === '') {
+                        this.setState({ followSearchController: undefined })
                         return
                       }
                       this.setState({
                         updatingFollowDetails: Object.fromEntries(
-                          this.props.stores.map(({ storeName }) => [storeName, true]),
+                          this.props.stores.map(({ storeName }) => [
+                            storeName,
+                            Object.fromEntries(FOLLOW_RESULT_CATEGORIES.map((category) => [category, true])),
+                          ]),
                         ),
-                        followDetailsUpdateAborted: false,
                       })
+                      const controller = new AbortController()
+                      const { signal } = controller
                       const timeout = setTimeout(async () => {
                         if (this.state.followQuery.match('^https://')) {
                           try {
                             const results = await (
-                              await requestWithCredentials({ path: `/followDetails?q=${this.state.followQuery}` })
+                              await requestWithCredentials({
+                                path: `/followDetails?q=${encodeURIComponent(this.state.followQuery)}`,
+                                signal,
+                              })
                             ).json()
-                            if (this.state.followDetailsUpdateAborted) return
+                            if (signal.aborted) return
                             this.setState({ followDetails: results, updatingFollowDetails: null })
                           } catch (e) {
+                            if (e.name === 'AbortError') return
                             console.error('Error updating follow details', e)
-                            clearTimeout(this.state.followDetailsDebounce)
-                            this.setState({
-                              updatingFollowDetails: null,
-                              followDetailsDebounce: undefined,
-                            })
+                            this.setState({ updatingFollowDetails: null, followDetailsDebounce: undefined })
                           }
                         } else {
-                          const promises = this.props.stores.map(({ storeName }) =>
-                            requestWithCredentials({
-                              path: `/stores/${storeName}/search/?q=${this.state.followQuery}`,
-                            })
-                              .then(async (res) =>
-                                (await res.json()).map((result) => ({ stores: [storeName], ...result })),
-                              )
-                              .then((json) => {
-                                if (this.state.followDetailsUpdateAborted) return
-                                this.setState({
-                                  followDetails:
-                                    this.state.followDetails === undefined
-                                      ? json
-                                      : R.sortBy(
-                                          R.compose(R.toLower, R.prop('name')),
-                                          this.state.followDetails.concat(json),
-                                        ),
-                                  updatingFollowDetails: { ...this.state.updatingFollowDetails, [storeName]: false },
-                                })
-                              }),
-                          )
-                          Promise.all(promises)
-                            .catch((e) => {
-                              console.error('Error updating follow details', e)
-                              clearTimeout(this.state.followDetailsDebounce)
-                              this.setState({
-                                updatingFollowDetails: null,
-                                followDetailsDebounce: undefined,
+                          // One request per (store, category) so each category's results
+                          // render as soon as its request completes, independently.
+                          const requests = this.props.stores.flatMap(({ storeName }) =>
+                            FOLLOW_RESULT_CATEGORIES.map((category) =>
+                              requestWithCredentials({
+                                path: `/stores/${storeName}/search/?q=${encodeURIComponent(
+                                  this.state.followQuery,
+                                )}&type=${category}`,
+                                signal,
                               })
-                            })
-                            .finally(() => {
-                              if (!this.state.followDetailsUpdateAborted && this.state.followDetails?.length !== 0) {
-                                if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Search)) {
-                                  return setTimeout(() => Onboarding.helpers.next(), 500)
-                                }
+                                .then(async (res) =>
+                                  (await res.json()).map((result) => ({ stores: [storeName], ...result })),
+                                )
+                                .then((json) => {
+                                  if (signal.aborted) return
+                                  this.setState((prev) => ({
+                                    followDetails: R.uniqBy(
+                                      R.prop('url'),
+                                      R.sortBy(
+                                        R.compose(R.toLower, R.prop('name')),
+                                        (prev.followDetails ?? []).concat(json),
+                                      ),
+                                    ),
+                                    updatingFollowDetails: markCategoryDone(
+                                      prev.updatingFollowDetails,
+                                      storeName,
+                                      category,
+                                    ),
+                                  }))
+                                })
+                                .catch((e) => {
+                                  if (signal.aborted || e.name === 'AbortError') return
+                                  console.error('Error updating follow details', e)
+                                  this.setState((prev) => ({
+                                    updatingFollowDetails: markCategoryDone(
+                                      prev.updatingFollowDetails,
+                                      storeName,
+                                      category,
+                                    ),
+                                  }))
+                                }),
+                            ),
+                          )
+                          Promise.all(requests).finally(() => {
+                            if (!signal.aborted && this.state.followDetails?.length !== 0) {
+                              if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Search)) {
+                                return setTimeout(() => Onboarding.helpers.next(), 500)
                               }
-                            })
+                            }
+                          })
                         }
                       }, 500)
-                      this.setState({ followDetailsDebounce: timeout })
+                      this.setState({ followDetailsDebounce: timeout, followSearchController: controller })
                     }}
                   />
                 </div>
-                {this.state.updatingFollowDetails !== null &&
-                Object.values(this.state.updatingFollowDetails).some((val) => val) ? (
-                  <>
-                    <br />
-                    Searching <Spinner size="large" />
-                  </>
-                ) : this.state.followDetails === undefined ? null : (
-                  <>
-                    {this.state.followDetails.length === 0 ? 'No results found' : this.renderFollowResults()}
-                  </>
+                {this.state.followQuery.match('^https://') && this.state.followDetails === undefined ? (
+                  this.state.updatingFollowDetails !== null && (
+                    <>
+                      <br />
+                      Searching <Spinner size="large" />
+                    </>
+                  )
+                ) : this.state.updatingFollowDetails === null && this.state.followDetails === undefined ? null : (
+                  <>{this.renderFollowResults()}</>
                 )}
                 {this.props.stores.includes('spotify') && (
                   <div style={{ fontSize: '75%', marginTop: 5 }}>
@@ -853,7 +896,9 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={({ target: { value } }) => this.setState({ followedArtistsFilter: value.toLocaleLowerCase() })}
+                      onChange={({ target: { value } }) =>
+                        this.setState({ followedArtistsFilter: value.toLocaleLowerCase() })
+                      }
                       value={this.state.followedArtistsFilter}
                       onClearSearch={() => this.setState({ followedArtistsFilter: '' })}
                     />
@@ -908,7 +953,9 @@ class Settings extends Component {
                   <div className={'follow-filter'}>
                     <SearchBar
                       styles="large dark"
-                      onChange={({ target: { value } }) => this.setState({ followedLabelsFilter: value.toLocaleLowerCase() })}
+                      onChange={({ target: { value } }) =>
+                        this.setState({ followedLabelsFilter: value.toLocaleLowerCase() })
+                      }
                       value={this.state.followedLabelsFilter}
                       onClearSearch={() => this.setState({ followedLabelsFilter: '' })}
                     />
@@ -1330,9 +1377,9 @@ class Settings extends Component {
               </ul>
               <h4>Audio sample uploads</h4>
               <p style={{ fontSize: '90%', marginBottom: '10px' }}>
-                Upload audio samples (WAV or MP3, max 10MB) to use for notification search by audio similarity.
-                Uploaded samples will be processed at a later point to extract audio fingerprints. You will receive
-                a notification email if a track matching the audio fingerprint is found in or added to the database.
+                Upload audio samples (WAV or MP3, max 10MB) to use for notification search by audio similarity. Uploaded
+                samples will be processed at a later point to extract audio fingerprints. You will receive a
+                notification email if a track matching the audio fingerprint is found in or added to the database.
               </p>
               <div style={{ marginBottom: '20px' }}>
                 <input
@@ -1395,15 +1442,21 @@ class Settings extends Component {
                                   }
                                 }}
                                 title={isPlaying ? 'Pause' : 'Play'}
-                                style={{ marginRight: '8px', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
+                                style={{
+                                  marginRight: '8px',
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: 'inherit',
+                                }}
                               >
                                 <FontAwesomeIcon icon={isPlaying ? 'pause' : 'play'} />
                               </button>
                               <span style={{ marginRight: '10px' }}>
-                                {sample.filename || `Audio Sample ${sample.id}`}
-                                {' '}
+                                {sample.filename || `Audio Sample ${sample.id}`}{' '}
                                 <span style={{ fontSize: '85%', opacity: 0.8 }}>
-                                  ({sample.fileType.split('/')[1]?.toUpperCase() || 'AUDIO'}, {(sample.fileSize / 1024 / 1024).toFixed(2)}MB)
+                                  ({sample.fileType.split('/')[1]?.toUpperCase() || 'AUDIO'},{' '}
+                                  {(sample.fileSize / 1024 / 1024).toFixed(2)}MB)
                                 </span>
                               </span>
                               <button
@@ -1563,10 +1616,10 @@ class Settings extends Component {
             <>
               <h4>Fast forward button behaviour</h4>
               <p>
-                Configure how the next and previous media buttons on your device (keyboard, headphones, etc.) behave.
-                In <em>Seek</em> mode a single press seeks within the current track and a double press skips to the
-                next or previous track. In <em>Skip</em> mode a single press skips tracks. This setting is stored on
-                this device, so it can be configured separately for each device you use.
+                Configure how the next and previous media buttons on your device (keyboard, headphones, etc.) behave. In{' '}
+                <em>Seek</em> mode a single press seeks within the current track and a double press skips to the next or
+                previous track. In <em>Skip</em> mode a single press skips tracks. This setting is stored on this
+                device, so it can be configured separately for each device you use.
               </p>
               <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
                 <label htmlFor="media-button-behavior" className="noselect">
@@ -1840,7 +1893,12 @@ class Settings extends Component {
       return (
         (follow.url && url && follow.url === url) ||
         (followStoreId && id && String(followStoreId) === String(id)) ||
-        (followStoreName && storeName && followStoreName === storeName && followStoreId && id && String(followStoreId) === String(id))
+        (followStoreName &&
+          storeName &&
+          followStoreName === storeName &&
+          followStoreId &&
+          id &&
+          String(followStoreId) === String(id))
       )
     })
   }

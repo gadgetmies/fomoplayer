@@ -498,5 +498,14 @@
     "store": {
       "name": "bandcamp"
     }
+  },
+  {
+    "type": "playlist",
+    "id": "https://bandcamp.com/discover/noisia",
+    "name": "Music tagged with noisia",
+    "url": "https://bandcamp.com/discover/noisia",
+    "store": {
+      "name": "bandcamp"
+    }
   }
 ]

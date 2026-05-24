@@ -10,7 +10,7 @@ const {
   getPageDetailsAsync,
   getTagReleasesAsync,
   getSearchResultsAsync,
-  static: { getTagsFromUrl, getTagName, isRateLimited },
+  static: { getTagsFromUrl, getTagName, getTagUrl, getTagSlug, isRateLimited },
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl, queryKnownReleaseUrls } = require('./db.js')
@@ -243,6 +243,26 @@ module.exports.getPlaylistTracks = async function* ({ playlistStoreId, type }) {
   }
 }
 
-module.exports.search = async (query) => {
-  return (await getSearchResultsAsync(query)).map((item) => ({ ...item, store: { name: storeName.toLowerCase() } }))
+// Bandcamp's discover pages are tag playlists, so every search can offer the
+// "Music tagged with <term>" playlist for the query in addition to the matching
+// artists/labels.
+const tagPlaylistResult = (query) => {
+  const slug = getTagSlug(query)
+  if (!slug) return []
+  const url = getTagUrl({ genre: slug })
+  return [
+    { type: 'playlist', id: url, name: getTagName(getTagsFromUrl(url)), url, store: { name: storeName.toLowerCase() } },
+  ]
+}
+
+// `type` (artist | label | playlist) lets the caller fetch a single category so
+// results can be shown as each request completes; omitting it returns everything.
+// Playlists are the local tag result, so that category needs no remote request.
+module.exports.search = async (query, type) => {
+  if (type === 'playlist') return tagPlaylistResult(query)
+  const results = (await getSearchResultsAsync(query)).map((item) => ({
+    ...item,
+    store: { name: storeName.toLowerCase() },
+  }))
+  return type ? results.filter((result) => result.type === type) : [...results, ...tagPlaylistResult(query)]
 }
