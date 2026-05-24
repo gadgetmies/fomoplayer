@@ -1,0 +1,163 @@
+name: Sentry Resolve
+
+# Closes the Sentry loop on PR close events.
+#
+# - merged   + sentry:<id> label  → mark <id> resolved in Sentry, plus every
+#                                   ID listed in the ```sentry-also-resolves```
+#                                   fenced block in the PR body
+# - unmerged + sentry:<id> label  → apply `wont-fix` label to the PR, the
+#                                   linked triage issue(s), and the Sentry
+#                                   issue, so the triage pipeline stops
+#                                   re-dispatching it
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  resolve:
+    if: contains(toJson(github.event.pull_request.labels), 'sentry:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Collect sentry:<id> labels and also-resolves IDs
+        id: collect
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request
+            const labelNames = (pr.labels || []).map((l) => (typeof l === 'string' ? l : l.name)).filter(Boolean)
+            const primaryIds = labelNames
+              .filter((n) => n.startsWith('sentry:'))
+              .map((n) => n.slice('sentry:'.length))
+
+            const body = pr.body || ''
+            const match = body.match(/```sentry-also-resolves\r?\n([\s\S]*?)```/)
+            const alsoIds = match
+              ? match[1]
+                  .split('\n')
+                  .map((s) => s.trim())
+                  .filter((s) => s.length > 0 && !s.startsWith('#'))
+              : []
+
+            const allIds = Array.from(new Set([...primaryIds, ...alsoIds]))
+            core.setOutput('primary_ids', JSON.stringify(primaryIds))
+            core.setOutput('also_ids', JSON.stringify(alsoIds))
+            core.setOutput('all_ids', JSON.stringify(allIds))
+            core.setOutput('merged', pr.merged ? 'true' : 'false')
+            core.setOutput('pr_number', String(pr.number))
+            core.info(`primary=${JSON.stringify(primaryIds)} also=${JSON.stringify(alsoIds)} merged=${pr.merged}`)
+
+      # ── Merge path: mark every Sentry id resolved ────────────────────────
+      - name: Mark Sentry issues resolved
+        if: steps.collect.outputs.merged == 'true' && steps.collect.outputs.all_ids != '[]'
+        id: resolve
+        env:
+          SENTRY_API_TOKEN: ${{ secrets.SENTRY_API_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          ALL_IDS: ${{ steps.collect.outputs.all_ids }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SENTRY_API_TOKEN:-}" ] || [ -z "${SENTRY_ORG:-}" ]; then
+            echo "::error::SENTRY_API_TOKEN (secret) and SENTRY_ORG (repo variable) are required."
+            exit 1
+          fi
+          FAILED=()
+          for id in $(echo "$ALL_IDS" | jq -r '.[]'); do
+            echo "Resolving Sentry issue ${id} ..."
+            HTTP=$(curl -s -o /tmp/sentry-${id}.json -w "%{http_code}" \
+              -X PUT \
+              -H "Authorization: Bearer ${SENTRY_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "https://sentry.io/api/0/organizations/${SENTRY_ORG}/issues/${id}/" \
+              -d '{"status":"resolved"}')
+            if [ "$HTTP" != "200" ]; then
+              echo "::error::Sentry API returned ${HTTP} for issue ${id}"
+              cat /tmp/sentry-${id}.json || true
+              FAILED+=("${id}")
+            fi
+          done
+          if [ ${#FAILED[@]} -ne 0 ]; then
+            printf '%s\n' "${FAILED[@]}" > /tmp/sentry-failed-ids.txt
+            exit 1
+          fi
+
+      - name: Comment on PR if any Sentry resolve calls failed
+        if: failure() && steps.resolve.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const failed = fs.existsSync('/tmp/sentry-failed-ids.txt')
+              ? fs.readFileSync('/tmp/sentry-failed-ids.txt', 'utf8').split('\n').filter(Boolean)
+              : []
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt(process.env.pr_number, 10),
+              body: [
+                '### Sentry resolve failed',
+                '',
+                'The following Sentry issue IDs need to be resolved manually:',
+                '',
+                ...failed.map((id) => `- \`${id}\``),
+              ].join('\n'),
+            })
+        env:
+          pr_number: ${{ steps.collect.outputs.pr_number }}
+
+      # ── Close-without-merge path: apply wont-fix to PR, linked GH issues,
+      # and Sentry issue ───────────────────────────────────────────────────
+      - name: Apply wont-fix on close-without-merge
+        if: steps.collect.outputs.merged == 'false' && steps.collect.outputs.primary_ids != '[]'
+        uses: actions/github-script@v7
+        env:
+          SENTRY_API_TOKEN: ${{ secrets.SENTRY_API_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          primary_ids: ${{ steps.collect.outputs.primary_ids }}
+          pr_number: ${{ steps.collect.outputs.pr_number }}
+        with:
+          script: |
+            const primaryIds = JSON.parse(process.env.primary_ids)
+            const prNumber = parseInt(process.env.pr_number, 10)
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: ['wont-fix'],
+            })
+
+            for (const id of primaryIds) {
+              const { data: items } = await github.rest.search.issuesAndPullRequests({
+                q: `repo:${context.repo.owner}/${context.repo.repo} type:issue is:open label:"sentry:${id}"`,
+              })
+              for (const item of items.items) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: item.number,
+                  labels: ['wont-fix'],
+                })
+              }
+
+              if (process.env.SENTRY_API_TOKEN && process.env.SENTRY_ORG) {
+                const res = await fetch(`https://sentry.io/api/0/organizations/${process.env.SENTRY_ORG}/issues/${id}/`, {
+                  method: 'PUT',
+                  headers: {
+                    Authorization: `Bearer ${process.env.SENTRY_API_TOKEN}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ status: 'ignored', statusDetails: { ignoreUntilEscalating: true } }),
+                })
+                if (!res.ok) core.warning(`Sentry annotate failed for ${id}: ${res.status}`)
+              } else {
+                core.warning('SENTRY_API_TOKEN / SENTRY_ORG missing — skipped Sentry-side wont-fix annotation')
+              }
+            }

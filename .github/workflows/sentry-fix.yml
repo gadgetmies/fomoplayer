@@ -1,0 +1,205 @@
+name: Sentry Fix
+
+# Triggered by the backend's /api/sentry-webhook route after triage filters
+# pass. The dispatcher creates a triage GH issue with labels
+# `sentry:<id>` + `sentry-fix`, then fires this workflow with the issue
+# number as input. The agent reads the issue body (Sentry event JSON,
+# referenced source files, prior attempts) and opens a DRAFT PR.
+#
+# Also supports manual dispatch for dry-runs (e.g. step 8.8 of the apply
+# plan).
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'GH issue number created by the Sentry triage route'
+        required: true
+        type: string
+      per_file_byte_budget:
+        description: 'Max bytes per stack-trace source file inlined into the prompt'
+        required: false
+        type: string
+        default: '8192'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      # ── Read the triage issue ────────────────────────────────────────────
+      - name: Load triage issue
+        id: issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = parseInt(core.getInput('issue_number') || context.payload.inputs.issue_number, 10)
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            })
+            const sentryLabel = (issue.labels || [])
+              .map((l) => (typeof l === 'string' ? l : l.name))
+              .find((name) => name && name.startsWith('sentry:'))
+            if (!sentryLabel) core.setFailed(`Issue #${issueNumber} carries no sentry:<id> label`)
+            core.setOutput('issue_number', String(issueNumber))
+            core.setOutput('issue_url', issue.html_url)
+            core.setOutput('sentry_label', sentryLabel || '')
+            core.setOutput('sentry_id', sentryLabel ? sentryLabel.slice('sentry:'.length) : '')
+            const fs = require('fs')
+            fs.writeFileSync('/tmp/sentry-issue-body.md', issue.body || '')
+        env:
+          issue_number: ${{ inputs.issue_number }}
+
+      # ── Extract source-file references from the stack trace ──────────────
+      # The triage issue body contains a fenced ```json block with the Sentry
+      # event payload. We scan it for in-repo paths and inline each (up to
+      # `per_file_byte_budget` bytes per file) into the agent prompt.
+      - name: Assemble agent prompt
+        id: prompt
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+            const body = fs.readFileSync('/tmp/sentry-issue-body.md', 'utf8')
+            const eventMatch = body.match(/```json\r?\n([\s\S]*?)```/)
+            const eventJson = eventMatch ? eventMatch[1] : '{}'
+            const priorMatch = body.match(/## Prior attempts\r?\n([\s\S]*?)(\r?\n##|$)/)
+            const priorAttempts = priorMatch ? priorMatch[1].trim() : '_None._'
+
+            // Find in-repo paths referenced in the event JSON (packages/back/..., packages/front/..., etc.).
+            const REPO_PATH_RE = /(packages\/[a-z0-9_-]+\/[\w./-]+\.[jt]sx?)/g
+            const seen = new Set()
+            const paths = []
+            let m
+            while ((m = REPO_PATH_RE.exec(eventJson)) !== null) {
+              const p = m[1]
+              if (!seen.has(p)) { seen.add(p); paths.push(p) }
+            }
+
+            const perFileBudget = parseInt(core.getInput('per_file_byte_budget') || context.payload.inputs.per_file_byte_budget || '8192', 10)
+            const sources = []
+            for (const p of paths) {
+              try {
+                const abs = path.resolve(process.cwd(), p)
+                if (!fs.existsSync(abs)) { sources.push({ path: p, missing: true }); continue }
+                const raw = fs.readFileSync(abs, 'utf8')
+                const truncated = raw.length > perFileBudget
+                sources.push({ path: p, content: truncated ? raw.slice(0, perFileBudget) : raw, truncated })
+              } catch (e) {
+                sources.push({ path: p, error: String(e) })
+              }
+            }
+
+            const issueUrl = core.getInput('issue_url')
+
+            const prompt = [
+              '# Investigate and open a draft PR for this Sentry issue',
+              '',
+              `Triage issue: ${issueUrl || `#${core.getInput('issue_number')}`}`,
+              `Sentry label: \`${core.getInput('sentry_label')}\``,
+              '',
+              'Instructions:',
+              '- Investigate the failure described below.',
+              '- If you can write a candidate fix, open a DRAFT PR linked to the triage issue with `Closes #<issue-number>`.',
+              `- Apply both labels \`${core.getInput('sentry_label')}\` and \`sentry-fix\` to the PR.`,
+              '- DO NOT mark the PR ready for review. DO NOT merge it.',
+              '- If you cannot find or commit to a fix, post a reasoning comment on the triage issue and stop.',
+              '',
+              '## Sentry event payload',
+              '',
+              '```json',
+              eventJson.trim(),
+              '```',
+              '',
+              '## Stack-trace source files',
+              ...sources.flatMap((s) => {
+                if (s.missing) return [`### ${s.path}`, '_File does not exist at HEAD._', '']
+                if (s.error) return [`### ${s.path}`, `_Read error: ${s.error}_`, '']
+                return [
+                  `### ${s.path}${s.truncated ? ` (truncated to ${perFileBudget} bytes)` : ''}`,
+                  '```',
+                  s.content,
+                  '```',
+                  '',
+                ]
+              }),
+              '',
+              '## Prior attempts',
+              priorAttempts,
+            ].join('\n')
+
+            fs.writeFileSync('/tmp/sentry-fix-prompt.md', prompt)
+            core.setOutput('prompt_path', '/tmp/sentry-fix-prompt.md')
+        env:
+          issue_url: ${{ steps.issue.outputs.issue_url }}
+          sentry_label: ${{ steps.issue.outputs.sentry_label }}
+          issue_number: ${{ steps.issue.outputs.issue_number }}
+          per_file_byte_budget: ${{ inputs.per_file_byte_budget }}
+
+      # ── Run the coding agent ─────────────────────────────────────────────
+      # Wired against anthropics/claude-code-action. The action contract
+      # we depend on is: it reads a prompt, has contents:write +
+      # pull-requests:write, and opens a draft PR. Swap to an equivalent
+      # action with the same contract without touching the rest of the
+      # workflow.
+      - name: Run coding agent
+        id: agent
+        uses: anthropics/claude-code-action@v0
+        continue-on-error: true
+        with:
+          prompt_file: ${{ steps.prompt.outputs.prompt_path }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          allowed_tools: 'Bash,Read,Edit,Write,Grep,Glob'
+          base_branch: master
+          draft_pr: 'true'
+          pr_labels: ${{ steps.issue.outputs.sentry_label }},sentry-fix
+          closes_issue: ${{ steps.issue.outputs.issue_number }}
+
+      # ── No-PR fallback ────────────────────────────────────────────────────
+      # If the agent finished without opening a PR, leave a comment on the
+      # triage issue explaining what happened. The issue stays open and keeps
+      # counting toward `maxInFlight` until a human resolves it.
+      - name: Comment on issue if no PR was opened
+        if: steps.agent.outcome != 'success' || steps.agent.outputs.pr_number == ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = parseInt(process.env.issue_number, 10)
+            const reasoning = process.env.agent_output || 'The Sentry fix agent finished without opening a PR. No reasoning output captured.'
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: [
+                '### Sentry fix agent: no PR opened',
+                '',
+                'The agent run completed without producing a draft PR. The issue remains open and continues to count toward `maxInFlight`.',
+                '',
+                '<details><summary>Agent output</summary>',
+                '',
+                '```',
+                reasoning.slice(0, 4000),
+                '```',
+                '',
+                '</details>',
+              ].join('\n'),
+            })
+        env:
+          issue_number: ${{ steps.issue.outputs.issue_number }}
+          agent_output: ${{ steps.agent.outputs.text || '' }}

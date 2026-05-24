@@ -18,7 +18,7 @@ const seedTestUserAdminOidcIdentity = async (pg) => {
        (meta_account_user_id, authentication_method_id, meta_account__authentication_method_details_details)
      SELECT email_identity.meta_account_user_id,
             oidc_method.authentication_method_id,
-            jsonb_build_object('issuer', 'accounts.google.com', 'subject', $1)
+            jsonb_build_object('issuer', 'accounts.google.com', 'subject', $1::text)
      FROM meta_account__authentication_method_details email_identity
        JOIN authentication_method email_method
          ON email_method.authentication_method_id = email_identity.authentication_method_id
