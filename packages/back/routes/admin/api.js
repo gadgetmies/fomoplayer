@@ -28,6 +28,7 @@ const {
   getMislabeledEntities,
   getMislabeledEntityTracks,
   reassignTrack,
+  reassignReleaseTracks,
   cleanupMislabeledSource,
   ignoreMislabeledEntity,
   flagMislabeledEntity,
@@ -225,6 +226,10 @@ router.get('/mislabeled/:type/:id/tracks', async ({ params: { type, id } }, res)
 router.post('/mislabeled/reassign', async ({ body }, res) => {
   await reassignTrack(body)
   res.send({ ok: true })
+})
+
+router.post('/mislabeled/reassign-release', async ({ body }, res) => {
+  res.send(await reassignReleaseTracks(body))
 })
 
 router.post('/mislabeled/:type/:id/cleanup', async ({ params: { type, id } }, res) => {

@@ -131,6 +131,51 @@
   border-bottom: 1px solid #444;
 }
 
+.mislabeled-flag-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.mislabeled-help {
+  color: #aaa;
+  font-size: 0.85em;
+  line-height: 1.4;
+  margin: 0 0 8px 0;
+  max-width: 720px;
+}
+
+.mislabeled-list-heading {
+  margin: 8px 0 4px 0;
+}
+
+.mislabeled-release-group {
+  margin-bottom: 18px;
+}
+
+.mislabeled-release-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px;
+  background: #2a2a2a;
+  border-radius: 4px 4px 0 0;
+}
+
+.mislabeled-release-reassign {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.mislabeled-release-reassign > span {
+  font-size: 0.9em;
+}
+
 .mislabeled-mismatches {
   margin-bottom: 16px;
   padding-bottom: 16px;

@@ -15,6 +15,25 @@ const REASON_LABELS = {
 
 const formatArtists = (artists) => (artists && artists.length ? artists.map((a) => `${a.name} (${a.role})`).join(', ') : '—')
 
+// Group a flat track list (from the inspect endpoint) by release, preserving
+// order, so the detail view can offer a per-release bulk reassignment. Tracks
+// with no release fall into a trailing group keyed by `null`.
+const groupTracksByRelease = (tracks) => {
+  const groups = []
+  const byReleaseId = new Map()
+  tracks.forEach((track) => {
+    const key = track.releaseId == null ? null : track.releaseId
+    let group = byReleaseId.get(key)
+    if (!group) {
+      group = { releaseId: track.releaseId ?? null, releaseName: track.releaseName, releaseUrl: track.releaseUrl, tracks: [] }
+      byReleaseId.set(key, group)
+      groups.push(group)
+    }
+    group.tracks.push(track)
+  })
+  return groups
+}
+
 // Render text as a link to its Bandcamp page when a URL is known, otherwise the
 // bare text — used wherever the view names an artist, label, release or track.
 const BandcampLink = ({ url, children }) =>
@@ -176,6 +195,32 @@ function AdminMislabeled() {
         body: { sourceType: type, sourceId: selected.id, targetType, targetId, trackId: track.id, role: track.role },
       })
       setTracks((prev) => prev.filter((t) => t.id !== track.id))
+    } catch (e) {
+      console.error(e)
+      window.alert('Reassign failed')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const reassignRelease = async (group, { targetType, targetId, targetName }) => {
+    if (
+      !window.confirm(
+        `Reassign all ${group.tracks.length} track${group.tracks.length === 1 ? '' : 's'} of "${
+          group.releaseName || group.releaseUrl || 'this release'
+        }" from ${type} "${selected.name}" to ${targetType} "${targetName}" (${targetId})?`,
+      )
+    )
+      return
+    setProcessing(true)
+    try {
+      await requestJSONwithCredentials({
+        url: `${apiURL}/admin/mislabeled/reassign-release`,
+        method: 'POST',
+        body: { sourceType: type, sourceId: selected.id, targetType, targetId, releaseId: group.releaseId },
+      })
+      const reassignedIds = new Set(group.tracks.map((t) => t.id))
+      setTracks((prev) => prev.filter((t) => !reassignedIds.has(t.id)))
     } catch (e) {
       console.error(e)
       window.alert('Reassign failed')
@@ -387,30 +432,56 @@ function AdminMislabeled() {
         </div>
       )}
       <div className="mislabeled-flag">
-        <span>Flag a {type} as mislabeled:</span>
+        <div className="mislabeled-flag-text">
+          <span>Flag a {type} as mislabeled:</span>
+          <p className="mislabeled-help">
+            Adds the chosen {type} to the review list below. This only flags it — its tracks and pages are left
+            untouched until you Inspect it and reassign its tracks{' '}
+            {type === 'artist' ? '(or Convert it to a label if it is really a label)' : ''}.
+          </p>
+        </div>
         <EntityPicker fixedType={type} processing={processing} onPick={flagEntity} />
       </div>
       <div className="mislabeled-flag">
-        <span>Fix a wrongly credited Bandcamp artist (re-point its pages, re-attribute tracks):</span>
+        <div className="mislabeled-flag-text">
+          <span>Fix an artist that is really a label:</span>
+          <p className="mislabeled-help">
+            Use this when a Bandcamp page was imported as an artist but is actually a label whose releases are by
+            various artists. Converts every matching Bandcamp page held by the chosen artist into a label and queues a
+            background re-fetch so each track is re-credited to its real per-track artist (instead of the label name).
+          </p>
+        </div>
         <EntityPicker fixedType="artist" processing={processing} onPick={fixArtistMismatches} />
       </div>
       <div className="mislabeled-flag">
-        <span>Fix a Bandcamp artist page by URL:</span>
-        <input
-          type="text"
-          value={fixUrl}
-          placeholder="https://artist.bandcamp.com/"
-          disabled={processing}
-          onChange={(e) => setFixUrl(e.target.value)}
-          style={{ minWidth: 280 }}
-        />
+        <div className="mislabeled-flag-text">
+          <span>Fix a Bandcamp page by URL:</span>
+          <p className="mislabeled-help">
+            The same fix as above, but targeted at one Bandcamp page by its URL. Looks up that page; if it is really a
+            label, converts it into a label and queues a re-fetch to re-attribute its tracks to their real artists.
+          </p>
+          <input
+            type="text"
+            value={fixUrl}
+            placeholder="https://label.bandcamp.com/"
+            disabled={processing}
+            onChange={(e) => setFixUrl(e.target.value)}
+            style={{ minWidth: 280 }}
+          />
+        </div>
         <button type="button" disabled={processing || !fixUrl.trim()} onClick={fixByUrl}>
-          Fix page
+          Fix Bandcamp page
         </button>
       </div>
       {mismatches.length > 0 && (
         <div className="mislabeled-mismatches">
           <h6>Suspected wrong artist mappings ({mismatches.length})</h6>
+          <p className="mislabeled-help">
+            Bandcamp pages imported as artists whose name barely matches their subdomain — usually label pages whose
+            releases were collapsed onto a single artist. For each row, “Fix” converts that page into a label and queues
+            a re-fetch so its tracks are re-attributed to their real artists; “Ignore” dismisses the suggestion so it
+            won’t be flagged again.
+          </p>
           {mismatches.map((m) => (
             <div key={m.storeArtistId} className="mislabeled-item">
               <div className="mislabeled-info">
@@ -438,6 +509,12 @@ function AdminMislabeled() {
           ))}
         </div>
       )}
+      <h6 className="mislabeled-list-heading">Suspected mislabeled {type}s ({entities.length})</h6>
+      <p className="mislabeled-help">
+        These are the {type}s detected as mislabeled (the reason is shown on each row). “Inspect” opens the {type} and
+        lists every track credited to it so you can reassign them to the right artist or label; “Ignore” hides this row
+        until it is detected again.
+      </p>
       {entities.length === 0 && <div>No suspected mislabeled {type}s found.</div>}
       {entities.map((entity) => (
         <div key={entity.id} className="mislabeled-item">
@@ -471,70 +548,100 @@ function AdminMislabeled() {
     </div>
   )
 
-  const renderDetail = () => (
-    <div className="mislabeled-detail">
-      <div className="mislabeled-detail-header">
-        <div>
-          <h2>
-            {type === 'artist' ? 'Artist' : 'Label'}:{' '}
-            <BandcampLink url={selected.url}>{selected.name}</BandcampLink>{' '}
-            <span className="muted">({selected.id})</span>
-          </h2>
-          <div className="muted mislabeled-url">
-            <BandcampLink url={selected.url}>{selected.url}</BandcampLink>
+  const renderDetail = () => {
+    const groups = groupTracksByRelease(tracks)
+    return (
+      <div className="mislabeled-detail">
+        <div className="mislabeled-detail-header">
+          <div>
+            <h2>
+              {type === 'artist' ? 'Artist' : 'Label'}:{' '}
+              <BandcampLink url={selected.url}>{selected.name}</BandcampLink>{' '}
+              <span className="muted">({selected.id})</span>
+            </h2>
+            <div className="muted mislabeled-url">
+              <BandcampLink url={selected.url}>{selected.url}</BandcampLink>
+            </div>
+          </div>
+          <div className="mislabeled-actions">
+            {type === 'artist' && (
+              <button type="button" disabled={processing} onClick={convertToLabel}>
+                Convert to label
+              </button>
+            )}
+            <button type="button" disabled={processing} onClick={cleanup}>
+              Clean up source
+            </button>
+            <button type="button" disabled={processing} onClick={() => setSelected(null)}>
+              Back to list
+            </button>
           </div>
         </div>
-        <div className="mislabeled-actions">
-          {type === 'artist' && (
-            <button type="button" disabled={processing} onClick={convertToLabel}>
-              Convert to label
-            </button>
-          )}
-          <button type="button" disabled={processing} onClick={cleanup}>
-            Clean up source
-          </button>
-          <button type="button" disabled={processing} onClick={() => setSelected(null)}>
-            Back to list
-          </button>
-        </div>
-      </div>
+        <p className="mislabeled-help">
+          Each track below is currently credited to this {type}. Use “Reassign to” on a single track, or “Reassign all
+          tracks to” in a release’s header to move a whole release at once, to pick the artist or label it should really
+          belong to: the track gains the chosen credit and loses this one. Once no tracks remain, use “Clean up source”
+          to clear this {type}’s bogus Bandcamp URL and delete it if it is now empty.
+          {type === 'artist'
+            ? ' Use “Convert to label” when this is really a label whose releases are by various artists — it turns the artist into a label, moves followers across and queues a re-fetch so each track is re-credited to its real artist.'
+            : ''}
+        </p>
 
-      {tracksLoading ? (
-        <div>Loading tracks…</div>
-      ) : tracks.length === 0 ? (
-        <div>No tracks remain attributed to this {type}. You can clean up the source now.</div>
-      ) : (
-        <table className="mislabeled-tracks">
-          <thead>
-            <tr>
-              <th>Track</th>
-              <th>Release</th>
-              <th>Current credits</th>
-              <th>Reassign to</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tracks.map((track) => (
-              <tr key={track.id}>
-                <td>
-                  <BandcampLink url={track.trackUrl}>{track.title}</BandcampLink>
-                  {track.version ? ` (${track.version})` : ''}
-                  {track.role ? <span className="muted"> · {track.role}</span> : null}
-                </td>
-                <td>
-                  <BandcampLink url={track.releaseUrl}>{track.releaseName || track.releaseUrl || '—'}</BandcampLink>
-                </td>
-                <td className="muted">{formatArtists(track.artists)}</td>
-                <td>
-                  <EntityPicker processing={processing} onPick={(target) => reassign(track, target)} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  )
+        {tracksLoading ? (
+          <div>Loading tracks…</div>
+        ) : tracks.length === 0 ? (
+          <div>No tracks remain attributed to this {type}. You can clean up the source now.</div>
+        ) : (
+          groups.map((group) => (
+            <div className="mislabeled-release-group" key={group.releaseId == null ? 'none' : group.releaseId}>
+              <div className="mislabeled-release-header">
+                <strong>
+                  Release: <BandcampLink url={group.releaseUrl}>{group.releaseName || group.releaseUrl || '—'}</BandcampLink>{' '}
+                  <span className="muted">
+                    ({group.tracks.length} track{group.tracks.length === 1 ? '' : 's'})
+                  </span>
+                </strong>
+                {group.releaseId != null && (
+                  <label className="mislabeled-release-reassign">
+                    <span>Reassign all tracks to:</span>
+                    <EntityPicker
+                      fixedType="artist"
+                      processing={processing}
+                      onPick={(target) => reassignRelease(group, target)}
+                    />
+                  </label>
+                )}
+              </div>
+              <table className="mislabeled-tracks">
+                <thead>
+                  <tr>
+                    <th>Track</th>
+                    <th>Current credits</th>
+                    <th>Reassign to</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {group.tracks.map((track) => (
+                    <tr key={track.id}>
+                      <td>
+                        <BandcampLink url={track.trackUrl}>{track.title}</BandcampLink>
+                        {track.version ? ` (${track.version})` : ''}
+                        {track.role ? <span className="muted"> · {track.role}</span> : null}
+                      </td>
+                      <td className="muted">{formatArtists(track.artists)}</td>
+                      <td>
+                        <EntityPicker processing={processing} onPick={(target) => reassign(track, target)} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="page-container scroll-container admin-mislabeled">
