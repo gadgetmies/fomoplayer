@@ -13,7 +13,7 @@ const {
   static: { getTagsFromUrl, getTagName, getTagUrl, getTagSlug, isRateLimited },
 } = require('./bandcamp-api.js')
 
-const { queryAlbumUrl, queryKnownReleaseUrls } = require('./db.js')
+const { queryAlbumUrl, queryKnownReleaseUrls, searchFollowEntities } = require('./db.js')
 const { flagMislabeledByUrl, clearMislabeledByUrl } = require('../../shared/db/bandcampMislabeledCache.js')
 const logger = require('fomoplayer_shared').logger(__filename)
 
@@ -275,14 +275,37 @@ const tagPlaylistResult = (query) => {
   ]
 }
 
-// `type` (artist | label | playlist) lets the caller fetch a single category so
-// results can be shown as each request completes; omitting it returns everything.
-// Playlists are the local tag result, so that category needs no remote request.
+// Follow search merges what the database already knows (artists/labels/
+// playlists, typed correctly) with Bandcamp's own autocomplete. `type`
+// (artist | label | playlist) lets the caller fetch a single category so
+// results can stream as each request completes; omitting it returns everything.
+// The DB entry wins on conflicts so re-typed entities (e.g. a label that
+// Bandcamp still reports as an artist) land in the right group; store-only hits
+// are kept as-is so newly discovered pages still show up. Playlists are the
+// local tag result, so that category needs no remote request.
 module.exports.search = async (query, type) => {
   if (type === 'playlist') return tagPlaylistResult(query)
-  const results = (await getSearchResultsAsync(query)).map((item) => ({
-    ...item,
-    store: { name: storeName.toLowerCase() },
-  }))
-  return type ? results.filter((result) => result.type === type) : [...results, ...tagPlaylistResult(query)]
+  const store = { name: storeName.toLowerCase() }
+  const [storeResults, dbEntities] = await Promise.all([
+    getSearchResultsAsync(query).catch((e) => {
+      logger.warn(`Bandcamp store search failed for "${query}": ${e.message}`)
+      return []
+    }),
+    searchFollowEntities(query),
+  ])
+
+  const byUrl = new Map()
+  for (const { type: entityType, url, id, name } of dbEntities) {
+    byUrl.set(url, { type: entityType, url, id, name, img: null, store })
+  }
+  for (const item of storeResults) {
+    const existing = byUrl.get(item.url)
+    if (existing) {
+      if (existing.img == null) existing.img = item.img
+    } else {
+      byUrl.set(item.url, { ...item, store })
+    }
+  }
+  const merged = [...byUrl.values()]
+  return type ? merged.filter((result) => result.type === type) : [...merged, ...tagPlaylistResult(query)]
 }
