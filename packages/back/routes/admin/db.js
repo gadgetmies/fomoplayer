@@ -1269,3 +1269,39 @@ module.exports.cleanupMislabeledSource = async (type, id) => {
     return { deleted: false }
   }
 }
+
+// Detach a mislabeled Bandcamp page from an artist without deleting the artist:
+// clear its Bandcamp store URL (so a future import can't re-absorb tracks onto
+// it) and resolve the mislabeled flag, leaving the artist and all its track
+// credits intact. Use when the artist is legitimate but was wrongly linked to a
+// Bandcamp page.
+module.exports.removeArtistUrl = async (id) => {
+  const parsedId = parseInt(id, 10)
+  if (Number.isNaN(parsedId)) throw new Error('Invalid id')
+
+  const storeArtistRowsCleared = await pg.queryRowsAsync(sql`-- removeArtistUrl store__artist before
+    SELECT store__artist_id  AS "storeArtistId"
+         , store__artist_url AS url
+    FROM store__artist
+    WHERE artist_id = ${parsedId}
+      AND store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})
+      AND store__artist_url IS NOT NULL`)
+
+  await BPromise.using(pg.getTransaction(), async (tx) => {
+    await tx.queryAsync(sql`-- removeArtistUrl clear url
+      UPDATE store__artist
+      SET store__artist_url = NULL, store__artist_store_id = NULL
+      WHERE artist_id = ${parsedId}
+        AND store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})`)
+    await tx.queryAsync(sql`-- removeArtistUrl clear flag
+      DELETE FROM bandcamp_mislabeled_artist
+      WHERE artist_id = ${parsedId} AND bandcamp_mislabeled_artist_status = 'new'`)
+  })
+
+  logger.info(`removeArtistUrl: cleared Bandcamp URL for artist ${parsedId}`, {
+    operation: 'removeArtistUrl',
+    artistId: parsedId,
+    storeArtistRowsCleared,
+  })
+  return { cleared: storeArtistRowsCleared.length }
+}

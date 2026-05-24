@@ -415,6 +415,29 @@ function AdminMislabeled() {
     }
   }
 
+  const removeUrl = async () => {
+    if (
+      !window.confirm(
+        `Remove the Bandcamp URL from artist "${selected.name}" (${selected.id})? The artist and all its tracks are kept; only its link to the Bandcamp page is cleared so a future import won't re-absorb tracks onto it.`,
+      )
+    )
+      return
+    setProcessing(true)
+    try {
+      await requestJSONwithCredentials({
+        url: `${apiURL}/admin/mislabeled/artist/${selected.id}/remove-url`,
+        method: 'POST',
+      })
+      window.alert('Bandcamp URL removed from the artist.')
+      await fetchEntities(type)
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not remove the URL')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const renderList = () => (
     <div className="mislabeled-list">
       {convertedLabel && (
@@ -574,6 +597,16 @@ function AdminMislabeled() {
                 Convert to label
               </button>
             )}
+            {type === 'artist' && (
+              <button
+                type="button"
+                disabled={processing}
+                onClick={removeUrl}
+                title="Clear just this artist's Bandcamp page URL while keeping the artist and all its tracks. Use when the artist is legitimate but was wrongly linked to a Bandcamp page."
+              >
+                Remove URL from artist
+              </button>
+            )}
             <button
               type="button"
               disabled={processing}
@@ -608,6 +641,13 @@ function AdminMislabeled() {
                 <strong>Convert to label</strong>: use when this “artist” is really a label whose releases are by various
                 artists. Turns it into a label, moves its followers across, retires the artist, and queues a re-fetch so
                 each track is re-credited to its real artist.
+              </li>
+            )}
+            {type === 'artist' && (
+              <li>
+                <strong>Remove URL from artist</strong>: clears just this artist’s Bandcamp page URL (so a future import
+                won’t re-absorb tracks onto it) while keeping the artist and all its track credits. Use when the artist
+                is legitimate but was wrongly linked to a Bandcamp page.
               </li>
             )}
             <li>
