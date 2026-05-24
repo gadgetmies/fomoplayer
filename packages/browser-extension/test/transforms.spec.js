@@ -2,7 +2,7 @@
 
 const assert = require('assert')
 const { beatportTrackTransform } = require('../src/js/transforms/beatport')
-const { bandcampTagTracksTransform } = require('../src/js/transforms/bandcamp')
+const { bandcampTagTracksTransform, bandcampReleasesTransform } = require('../src/js/transforms/bandcamp')
 
 describe('beatportTrackTransform', () => {
   it('maps a Beatport track payload to the canonical shape', () => {
@@ -51,5 +51,63 @@ describe('bandcampTagTracksTransform', () => {
       { item_id: 2, title: 'Bar' },
     ])
     assert.deepStrictEqual(out, [{ id: 1 }, { id: 2 }])
+  })
+})
+
+describe('bandcampReleasesTransform', () => {
+  const release = (overrides) => ({
+    id: 1,
+    artist: 'Ivy Lab',
+    album_release_date: '01 Jan 2016 00:00:00 GMT',
+    current: { title: 'Blonde E.P', publish_date: '01 Jan 2016 00:00:00 GMT', release_date: null, band_id: 777 },
+    trackinfo: [{ id: 11, title: 'Husk', artist: null, file: { 'mp3-128': 'x' }, duration: 100 }],
+    ...overrides,
+  })
+
+  it('keeps the subdomain as the artist id/url and emits no label on an artist page', () => {
+    const [track] = bandcampReleasesTransform([
+      release({ url: 'https://ivylab.bandcamp.com/album/blonde-e-p', pageType: 'artist', pageName: 'Ivy Lab' }),
+    ])
+    assert.deepStrictEqual(track.artists, [
+      { name: 'Ivy Lab', role: 'author', id: 'ivylab', url: 'https://ivylab.bandcamp.com' },
+    ])
+    assert.strictEqual(track.label, null)
+  })
+
+  it('does not give artists the label subdomain on a label page (prevents merging)', () => {
+    const [track] = bandcampReleasesTransform([
+      release({
+        url: 'https://fokuzrecordings.bandcamp.com/album/early-haze-96-ep',
+        artist: 'Fokuz Recordings',
+        pageType: 'label',
+        pageName: 'Fokuz Recordings',
+        trackinfo: [{ id: 12, title: 'SATL - Time Lapse', artist: null, file: { 'mp3-128': 'x' }, duration: 200 }],
+      }),
+    ])
+    assert.deepStrictEqual(track.artists, [{ name: 'SATL', role: 'author', id: null, url: null }])
+    assert.deepStrictEqual(track.label, {
+      id: '777',
+      url: 'https://fokuzrecordings.bandcamp.com',
+      name: 'Fokuz Recordings',
+    })
+  })
+
+  it('drops the label name as an artist when a real track artist is present', () => {
+    const [withReal, intro] = bandcampReleasesTransform([
+      release({
+        url: 'https://fokuzrecordings.bandcamp.com/album/early-haze-96-ep',
+        artist: 'Fokuz Recordings',
+        pageType: 'label',
+        pageName: 'Fokuz Recordings',
+        trackinfo: [
+          { id: 13, title: 'SATL - Time Lapse', artist: 'Fokuz Recordings', file: { 'mp3-128': 'x' }, duration: 200 },
+          { id: 14, title: 'Untitled', artist: null, file: { 'mp3-128': 'x' }, duration: 50 },
+        ],
+      }),
+    ])
+    assert.deepStrictEqual(withReal.artists, [{ name: 'SATL', role: 'author', id: null, url: null }])
+    // No parseable artist: falls back to the album artist so the track still
+    // has an artist, but with a null url so it can never become a merge magnet.
+    assert.deepStrictEqual(intro.artists, [{ name: 'Fokuz Recordings', role: 'author', id: null, url: null }])
   })
 })

@@ -37,13 +37,32 @@ module.exports.bandcampReleasesTransform = L.collect([
     L.filter(R.prop('file')),
     L.elems,
     L.choose((track) => {
+      // A Bandcamp subdomain can be either an artist or a label page. The
+      // release URL of anything released *through* a label points at the
+      // label's subdomain, so on a label page the subdomain is NOT the
+      // artist. Only treat the subdomain as the artist's store id/url on
+      // actual artist pages; on label pages artists are matched by name
+      // (id/url null) so different artists on the same label don't collapse
+      // into one another.
+      const isLabelPage = release.pageType === 'label'
+      const labelName = release.pageName || release.url.match(/https:\/\/([^.]*)/)[1]
       const releaseArtistId = release.url.substring(8, release.url.indexOf('.bandcamp.com'))
       const releaseArtistUrl = release.url.substring(0, release.url.indexOf('/', 8))
+      const artistStoreId = isLabelPage ? null : releaseArtistId || null
+      const artistStoreUrl = isLabelPage ? null : releaseArtistUrl || null
+      const isLabelOrVariousName = (name) => {
+        const n = (name || '').trim().toLocaleLowerCase()
+        if (!n) return false
+        return (
+          (isLabelPage && n === labelName.toLocaleLowerCase()) ||
+          ['various artists', 'various', 'v/a', 'va'].includes(n)
+        )
+      }
       const artistTemplate = {
         name: track.artist || release.artist,
         role: 'author',
-        id: releaseArtistId || null,
-        url: releaseArtistUrl || null,
+        id: artistStoreId,
+        url: artistStoreUrl,
       }
       // 0 = full original title
       // 1 = `${artists} -` if present
@@ -62,14 +81,14 @@ module.exports.bandcampReleasesTransform = L.collect([
       const createArtistWithRole = (role) => (artist) => {
         const trimmedArtist = artist.trim()
         const artistId = trimmedArtist.toLocaleLowerCase()
-        const isReleaseArtist = artistId === releaseArtistId
+        const isReleaseArtist = !isLabelPage && artistId === releaseArtistId
         return {
           name: trimmedArtist || track.artist,
           role,
           ...(isReleaseArtist
             ? {
-                id: releaseArtistId,
-                url: releaseArtistUrl,
+                id: artistStoreId,
+                url: artistStoreUrl,
               }
             : { id: null, url: null }),
         }
@@ -82,21 +101,30 @@ module.exports.bandcampReleasesTransform = L.collect([
             .map(createArtistWithRole('remixer'))
         : []
 
-      const artists = match[2]
+      const authorArtists = match[2]
         ? match[2]
             .split(/[,&]/)
             .map(createArtistWithRole('author'))
             .filter((artist) => !remixers.find(({ name }) => name === artist.name))
         : [artistTemplate]
 
+      const allArtists = authorArtists
+        .concat(featuringArtists.map(createArtistWithRole('author')))
+        .concat(remixers)
+
+      // Drop the label / "Various Artists" entries so the label isn't stored
+      // as an artist. Never empty the list though: a track with zero artists
+      // breaks release/track de-duplication (ARRAY_AGG matching), so fall
+      // back to the unfiltered list when filtering removes everything.
+      const filteredArtists = allArtists.filter((artist) => !isLabelOrVariousName(artist.name))
+      const finalArtists = filteredArtists.length > 0 ? filteredArtists : allArtists
+
       return [
         L.pick({
           id: 'id',
           title: title ? R.always(title) : 'title',
           version: R.always(version),
-          artists: match
-            ? R.always(artists.concat(featuringArtists.map(createArtistWithRole('author'))).concat(remixers))
-            : R.always([artistTemplate]),
+          artists: R.always(finalArtists),
           released: R.always(release.current.release_date || release.current.publish_date),
           published: R.always(release.current.publish_date),
           duration_ms: durationLens,
@@ -106,11 +134,17 @@ module.exports.bandcampReleasesTransform = L.collect([
             title: release.current.title,
             id: release.id.toString(10),
           }),
-          label: R.always({
-            id: release.current.band_id.toString(10),
-            url: release.url.substr(0, release.url.search(/[^/:]\//) + 1),
-            name: release.url.match(/https:\/\/([^.]*)/)[1],
-          }),
+          // Only emit a label when the release is published through a label
+          // page; on an artist page the subdomain is the artist, not a label.
+          label: R.always(
+            isLabelPage
+              ? {
+                  id: release.current.band_id.toString(10),
+                  url: release.url.substr(0, release.url.search(/[^/:]\//) + 1),
+                  name: labelName,
+                }
+              : null,
+          ),
           previews: L.partsOf(
             L.pick({
               // url: ['file', 'mp3-128'], // TODO: do not include the url because it will be fetched separately?

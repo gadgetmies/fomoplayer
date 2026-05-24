@@ -1,7 +1,8 @@
 // Preview demo (demo-preview workflow): seeds through the public/admin API
 // because the test runs against a deployed preview with no direct DB access.
-// Requires the session user to be an admin (ADMIN_USER_IDS) on the target
-// environment to reach the /admin endpoints.
+// Requires the session user to be an admin on the target environment to reach
+// the /admin endpoints (the preview Actions bot is granted admin from its OIDC
+// sub; otherwise ADMIN_USER_SUBS must list the user's subject).
 const { test } = require('cascade-test')
 const { getSharedContext } = require('../lib/setup')
 const { seedTracks } = require('../lib/seed')

@@ -49,6 +49,30 @@ const enrichWithBandData = (script, tralbum) => {
   }
 }
 
+// Whether a bandcamp page is an artist or a label decides how the transform
+// attributes artists: on a label page the subdomain is the label, not the
+// artist. Label accounts carry an `/artists` roster link, but many labels run
+// on plain band accounts — so we also treat a page as a label when its page
+// data has is_label=true or its discography lists 2+ distinct artists.
+const getPageMeta = (doc) => {
+  const siteName = doc.querySelector('[property="og:site_name"]')
+  const nameFromTitle = doc.title && doc.title.split(' | ')[1]
+  const pageName = (siteName && siteName.getAttribute('content')) || nameFromTitle || null
+  const blob = doc.getElementById('pagedata')?.getAttribute('data-blob')
+  const distinctOverrideArtists = new Set(
+    Array.from(doc.querySelectorAll('#music-grid .artist-override'))
+      .map((el) => el.textContent.trim().toLowerCase())
+      .filter(Boolean),
+  ).size
+  const isLabel =
+    doc.querySelector('[href="/artists"]') !== null ||
+    (blob ? /"is_label"\s*:\s*true/.test(blob) : false) ||
+    distinctOverrideArtists >= 2
+  return { pageType: isLabel ? 'label' : 'artist', pageName }
+}
+
+const withPageMeta = (doc, tralbum) => (tralbum ? { ...tralbum, ...getPageMeta(doc) } : tralbum)
+
 let bridgeInstalled = false
 
 const installBridge = () => {
@@ -98,8 +122,8 @@ const askBridge = (kind) =>
 
 export const readTralbumData = async () => {
   const fromDom = readTralbumFromDom()
-  if (fromDom) return fromDom
-  return askBridge('tralbum')
+  if (fromDom) return withPageMeta(document, fromDom)
+  return withPageMeta(document, await askBridge('tralbum'))
 }
 
 // Discography / label pages link out to per-release URLs that can live on
@@ -129,7 +153,7 @@ export const fetchReleaseTralbum = async (relativeUrl) => {
       const raw = script.getAttribute('data-tralbum')
       const parsed = raw ? JSON.parse(raw) : null
       if (!parsed || !Array.isArray(parsed.trackinfo) || parsed.trackinfo.length === 0) return null
-      return enrichWithBandData(script, parsed)
+      return withPageMeta(doc, enrichWithBandData(script, parsed))
     } catch (_) {
       return null
     }

@@ -3,7 +3,7 @@ const router = require('express-promise-router')()
 const { runJob } = require('../../job-scheduling')
 const {
   mergeTracks,
-  queryJobLinks,
+  getJobs,
   getQueryResults,
   storeConfig,
   getConfigs,
@@ -24,32 +24,27 @@ const {
   getSuspectedDuplicates,
   mergeDuplicate,
   ignoreDuplicate,
+  getMislabeledEntities,
+  getMislabeledEntityTracks,
+  reassignTrack,
+  cleanupMislabeledSource,
+  ignoreMislabeledEntity,
+  flagMislabeledEntity,
+  convertArtistToLabel,
+  refetchBandcampLabelArtists,
+  refetchBandcampArtistTracks,
+  getArtistNameMismatches,
+  ignoreArtistNameMismatch,
+  fixArtistNameMismatch,
+  fixBandcampArtistPageByUrl,
+  fixArtistBandcampMismatches,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
-
-const { isPreviewEnv } = require('../../config.js')
-
-const adminUserIds = (process.env.ADMIN_USER_IDS ?? '')
-  .split(',')
-  .map((s) => parseInt(s.trim(), 10))
-  .filter((n) => !Number.isNaN(n))
-
-const ensureIsAdmin = (req, res, next) => {
-  const userId = req.user?.id
-  // The Actions bot admin session flag is only ever set by /login/actions,
-  // which is only registered in preview envs; re-check isPreviewEnv here as
-  // defence-in-depth so it can never grant admin in production.
-  const grantedByActionsBot = isPreviewEnv === true && req.session?.isActionsAdmin === true
-  if (adminUserIds.includes(userId) || grantedByActionsBot) {
-    next()
-  } else {
-    res.status(403).send({ error: 'Access denied' })
-  }
-}
+const { ensureIsAdmin } = require('../shared/auth.js')
 
 router.use(ensureIsAdmin)
-router.get('/jobs', async ({ user: { id: userId } }, res) => {
-  res.send(await queryJobLinks())
+router.get('/jobs', async (req, res) => {
+  res.send(await getJobs())
 })
 
 async function startJobRun(name, res) {
@@ -212,6 +207,68 @@ router.post('/duplicates/:type/merge', async ({ params: { type }, body: { keptId
 router.post('/duplicates/:type/ignore', async ({ params: { type }, body: { id1, id2 } }, res) => {
   await ignoreDuplicate(type, id1, id2)
   res.send('OK')
+})
+
+router.get('/mislabeled/:type', async ({ params: { type } }, res) => {
+  res.send(await getMislabeledEntities(type))
+})
+
+router.get('/mislabeled/:type/:id/tracks', async ({ params: { type, id } }, res) => {
+  res.send(await getMislabeledEntityTracks(type, id))
+})
+
+router.post('/mislabeled/reassign', async ({ body }, res) => {
+  await reassignTrack(body)
+  res.send({ ok: true })
+})
+
+router.post('/mislabeled/:type/:id/cleanup', async ({ params: { type, id } }, res) => {
+  res.send(await cleanupMislabeledSource(type, id))
+})
+
+router.post('/mislabeled/:type/:id/ignore', async ({ params: { type, id } }, res) => {
+  await ignoreMislabeledEntity(type, id)
+  res.send({ ok: true })
+})
+
+router.post('/mislabeled/:type/:id/flag', async ({ params: { type, id } }, res) => {
+  await flagMislabeledEntity(type, id)
+  res.send({ ok: true })
+})
+
+router.post('/mislabeled/artist/:id/convert-to-label', async ({ params: { id } }, res) => {
+  res.send(await convertArtistToLabel(id))
+})
+
+router.post('/labels/:id/refetch-bandcamp-artists', async ({ params: { id } }, res) => {
+  await refetchBandcampLabelArtists(id)
+  res.send({ ok: true })
+})
+
+router.post('/artists/:id/refetch-bandcamp-tracks', async ({ params: { id } }, res) => {
+  await refetchBandcampArtistTracks(id)
+  res.send({ ok: true })
+})
+
+router.get('/bandcamp/artist-name-mismatches', async (req, res) => {
+  res.send(await getArtistNameMismatches())
+})
+
+router.post('/bandcamp/artist-name-mismatches/:storeArtistId/fix', async ({ params: { storeArtistId } }, res) => {
+  res.send(await fixArtistNameMismatch(storeArtistId))
+})
+
+router.post('/bandcamp/artist-name-mismatches/:storeArtistId/ignore', async ({ params: { storeArtistId } }, res) => {
+  await ignoreArtistNameMismatch(storeArtistId)
+  res.send({ ok: true })
+})
+
+router.post('/bandcamp/fix-artist-page', async ({ body: { url } }, res) => {
+  res.send(await fixBandcampArtistPageByUrl(url))
+})
+
+router.post('/artists/:id/fix-bandcamp-mismatches', async ({ params: { id } }, res) => {
+  res.send(await fixArtistBandcampMismatches(id))
 })
 
 module.exports = router

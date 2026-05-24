@@ -64,6 +64,7 @@ const uuid = require('uuid').v4
 const { storeName: spotifyStoreName } = require('../shared/spotify')
 const { storeUrl: bandcampStoreUrl } = require('../stores/bandcamp/logic')
 const { enableCartSync, removeCartSync, importPlaylistAsCart } = require('../shared/cart')
+const { isAdmin } = require('../shared/auth.js')
 const { getMinioClient, getBucketName, getStorageUrl } = require('../shared/minio')
 const {
   insertNotificationAudioSample,
@@ -73,6 +74,13 @@ const {
 } = require('./db')
 
 const router = require('express-promise-router')()
+
+// Current user's capabilities. `isAdmin` lets the client decide whether to
+// surface the admin UI; the admin API is independently guarded by
+// ensureIsAdmin. Deliberately does not expose the serial user id.
+router.get('/', (req, res) => {
+  res.send({ isAdmin: isAdmin(req) })
+})
 
 const MAX_FILE_SIZE = parseInt(process.env.NOTIFICATION_AUDIO_SAMPLE_MAX_SIZE || '10485760', 10)
 

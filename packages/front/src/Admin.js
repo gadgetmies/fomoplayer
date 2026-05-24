@@ -168,12 +168,26 @@ class Admin extends Component {
       <div className="page-container scroll-container admin-page">
         <div className="admin-page-header">
           <h1>Radiator</h1>
-          <button
-            className="button button-push_button button-push_button-primary"
-            onClick={() => this.props.history.push('/admin/duplicates')}
-          >
-            Manage Duplicates
-          </button>
+          <div className="admin-page-header-actions">
+            <button
+              className="button button-push_button button-push_button-primary"
+              onClick={() => this.props.history.push('/admin/jobs')}
+            >
+              Jobs
+            </button>
+            <button
+              className="button button-push_button button-push_button-primary"
+              onClick={() => this.props.history.push('/admin/duplicates')}
+            >
+              Manage Duplicates
+            </button>
+            <button
+              className="button button-push_button button-push_button-primary"
+              onClick={() => this.props.history.push('/admin/mislabeled')}
+            >
+              Fix Mislabeled
+            </button>
+          </div>
         </div>
         <div className="admin-grid">
           <div className="admin-column">

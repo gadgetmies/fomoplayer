@@ -25,12 +25,20 @@ const accountAPI = {
   findByUserId: async (id) => {
     const [details] = await pgrm.queryRowsAsync(
       //language=PostgreSQL
-      sql`SELECT meta_account_user_id AS id,
-       meta_account_details AS details
-FROM meta_account
-         NATURAL JOIN meta_account__authentication_method_details
-         NATURAL JOIN authentication_method
-WHERE meta_account_user_id = ${id}`,
+      sql`SELECT ma.meta_account_user_id AS id,
+       ma.meta_account_details AS details,
+       COALESCE(
+         (SELECT array_agg(d.meta_account__authentication_method_details_details ->> 'subject')
+          FROM meta_account__authentication_method_details d
+                   JOIN authentication_method am
+                        ON am.authentication_method_id = d.authentication_method_id
+                            AND am.authentication_method_code = 'oidc'
+          WHERE d.meta_account_user_id = ma.meta_account_user_id
+            AND (d.meta_account__authentication_method_details_details ->> 'subject') IS NOT NULL),
+         ARRAY [] :: TEXT[]
+       ) AS "oidcSubjects"
+FROM meta_account ma
+WHERE ma.meta_account_user_id = ${id}`,
     )
     if (!details) {
       throw new Error(`User not found with id: ${id}`)

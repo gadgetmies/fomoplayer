@@ -13,8 +13,26 @@ const {
   static: { getTagsFromUrl, getTagName, getTagUrl, getTagSlug, isRateLimited },
 } = require('./bandcamp-api.js')
 
-const { queryAlbumUrl, queryKnownReleaseUrls } = require('./db.js')
+const { queryAlbumUrl, queryKnownReleaseUrls, searchFollowEntities } = require('./db.js')
+const { flagMislabeledByUrl, clearMislabeledByUrl } = require('../../shared/db/bandcampMislabeledCache.js')
 const logger = require('fomoplayer_shared').logger(__filename)
+
+// As the watch fetch loads each artist/label page anyway, classify it and keep
+// the mislabeled cache in sync — no extra Bandcamp requests. `expected` is the
+// entity type we follow it as; if the page is the other type, flag it.
+const updateMislabeledFlag = async (expected, url, pageType) => {
+  try {
+    const other = expected === 'artist' ? 'label' : 'artist'
+    if (pageType === other) {
+      logger.warn(`Followed Bandcamp ${expected} ${url} resolves to a ${other} page, flagging as suspected mislabeled`)
+      await flagMislabeledByUrl(expected, url)
+    } else {
+      await clearMislabeledByUrl(expected, url)
+    }
+  } catch (e) {
+    logger.warn(`Failed to update mislabeled flag for ${expected} ${url}: ${e.message}`)
+  }
+}
 
 let storeDbId = null
 const storeName = (module.exports.storeName = 'Bandcamp')
@@ -52,6 +70,10 @@ module.exports.getPreviewDetails = async (previewId) => {
   throw new Error('Preview url not found for id')
 }
 
+// The display name a Bandcamp page reports for itself (e.g. "Machinedrum"),
+// used to repair subdomains linked to the wrong artist.
+module.exports.fetchBandcampPageName = async (url) => (await getPageDetailsAsync(url)).name
+
 const getArtistDetails = (module.exports.getArtistDetails = async (url) => ({ url, ...(await getArtistAsync(url)) }))
 
 module.exports.getArtistName = async (url) => {
@@ -83,6 +105,27 @@ module.exports.getFollowDetails = async ({ id, type, url }) => {
   }
 
   return [{ ...details, store: { name: storeName.toLowerCase() } }]
+}
+
+// Re-fetch a single release and transform it as if it were seen on a label
+// page, so tracks are attributed to their real artists rather than collapsed
+// onto the (mis-detected) page artist. Used by the label artist re-fetch job
+// after a mislabeled artist is converted into a label.
+module.exports.fetchLabelReleaseTracks = async (releaseUrl, labelName) => {
+  const releaseInfo = await getReleaseAsync(releaseUrl)
+  releaseInfo.pageType = 'label'
+  releaseInfo.pageName = labelName
+  return bandcampReleasesTransform([releaseInfo])
+}
+
+// Re-fetch a release as an artist page so each track is attributed to the page
+// artist (the subdomain) instead of a mis-parsed title prefix. Used to repair
+// artists whose tracks were wrongly attributed during normal ingestion.
+module.exports.fetchArtistReleaseTracks = async (releaseUrl, artistName) => {
+  const releaseInfo = await getReleaseAsync(releaseUrl)
+  releaseInfo.pageType = 'artist'
+  releaseInfo.pageName = artistName
+  return bandcampReleasesTransform([releaseInfo])
 }
 
 const releaseTracksWithFiles = (releaseDetails) => {
@@ -146,7 +189,8 @@ const filterToUnknownUrls = async (urls) => {
 
 module.exports.getArtistTracks = async function* ({ url }) {
   try {
-    const { releaseUrls } = await getArtistAsync(url)
+    const { type, releaseUrls } = await getArtistAsync(url)
+    await updateMislabeledFlag('artist', url, type)
     const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
     logger.debug(
       `Artist ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
@@ -179,7 +223,8 @@ module.exports.getArtistTracks = async function* ({ url }) {
 
 module.exports.getLabelTracks = async function* ({ url }) {
   try {
-    const { releaseUrls } = await getLabelAsync(url)
+    const { type, releaseUrls } = await getLabelAsync(url)
+    await updateMislabeledFlag('label', url, type)
     const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
     logger.debug(
       `Label ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
@@ -255,14 +300,37 @@ const tagPlaylistResult = (query) => {
   ]
 }
 
-// `type` (artist | label | playlist) lets the caller fetch a single category so
-// results can be shown as each request completes; omitting it returns everything.
-// Playlists are the local tag result, so that category needs no remote request.
+// Follow search merges what the database already knows (artists/labels/
+// playlists, typed correctly) with Bandcamp's own autocomplete. `type`
+// (artist | label | playlist) lets the caller fetch a single category so
+// results can stream as each request completes; omitting it returns everything.
+// The DB entry wins on conflicts so re-typed entities (e.g. a label that
+// Bandcamp still reports as an artist) land in the right group; store-only hits
+// are kept as-is so newly discovered pages still show up. Playlists are the
+// local tag result, so that category needs no remote request.
 module.exports.search = async (query, type) => {
   if (type === 'playlist') return tagPlaylistResult(query)
-  const results = (await getSearchResultsAsync(query)).map((item) => ({
-    ...item,
-    store: { name: storeName.toLowerCase() },
-  }))
-  return type ? results.filter((result) => result.type === type) : [...results, ...tagPlaylistResult(query)]
+  const store = { name: storeName.toLowerCase() }
+  const [storeResults, dbEntities] = await Promise.all([
+    getSearchResultsAsync(query).catch((e) => {
+      logger.warn(`Bandcamp store search failed for "${query}": ${e.message}`)
+      return []
+    }),
+    searchFollowEntities(query),
+  ])
+
+  const byUrl = new Map()
+  for (const { type: entityType, url, id, name } of dbEntities) {
+    byUrl.set(url, { type: entityType, url, id, name, img: null, store })
+  }
+  for (const item of storeResults) {
+    const existing = byUrl.get(item.url)
+    if (existing) {
+      if (existing.img == null) existing.img = item.img
+    } else {
+      byUrl.set(item.url, { ...item, store })
+    }
+  }
+  const merged = [...byUrl.values()]
+  return type ? merged.filter((result) => result.type === type) : [...merged, ...tagPlaylistResult(query)]
 }
