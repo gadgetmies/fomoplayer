@@ -20,15 +20,9 @@ test({
   'overall top-100 resolves to the top kind': async () => {
     assert.deepEqual(parsePlaylistUrl('https://www.beatport.com/top-100'), { kind: 'top' })
   },
-  'chart and playlist URLs still resolve': async () => {
-    assert.deepEqual(parsePlaylistUrl('https://www.beatport.com/chart/some-chart/12345'), {
-      kind: 'chart',
-      id: '12345',
-    })
-    assert.deepEqual(parsePlaylistUrl('https://www.beatport.com/playlist/mine/999'), {
-      kind: 'playlist',
-      id: '999',
-    })
+  'chart and user-playlist URLs no longer resolve as followable playlists': async () => {
+    assert.equal(parsePlaylistUrl('https://www.beatport.com/chart/some-chart/12345'), null)
+    assert.equal(parsePlaylistUrl('https://www.beatport.com/playlist/mine/999'), null)
   },
   'unrelated beatport URLs do not resolve as playlists': async () => {
     assert.equal(parsePlaylistUrl('https://www.beatport.com/artist/noisia/12'), null)
