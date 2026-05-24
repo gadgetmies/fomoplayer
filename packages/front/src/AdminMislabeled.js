@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom'
-import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
+import { requestJSONwithCredentials } from './request-json-with-credentials'
 import { apiURL } from './config'
 import './AdminMislabeled.css'
 
@@ -11,8 +11,6 @@ const REASON_LABELS = {
   page_is_label: 'Page is actually a label',
   page_is_artist: 'Page is actually an artist',
 }
-
-const ANALYSIS_JOB = 'analyseBandcampMislabeled'
 
 const formatArtists = (artists) => (artists && artists.length ? artists.map((a) => `${a.name} (${a.role})`).join(', ') : '—')
 
@@ -98,7 +96,6 @@ function AdminMislabeled() {
   const [tracks, setTracks] = useState([])
   const [tracksLoading, setTracksLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
-  const [analysing, setAnalysing] = useState(false)
 
   const fetchEntities = useCallback(async (entityType) => {
     setLoading(true)
@@ -152,22 +149,6 @@ function AdminMislabeled() {
       window.alert('Reassign failed')
     } finally {
       setProcessing(false)
-    }
-  }
-
-  const runAnalysis = async () => {
-    setAnalysing(true)
-    try {
-      // The job-run endpoint replies with a plain-text acknowledgement, not
-      // JSON, so use the non-parsing request helper. The job runs server-side;
-      // we just refetch the (now updated) cache afterwards.
-      await requestWithCredentials({ url: `${apiURL}/admin/jobs/${ANALYSIS_JOB}/run`, method: 'POST' })
-      await fetchEntities(type)
-    } catch (e) {
-      console.error(e)
-      window.alert('Analysis failed')
-    } finally {
-      setAnalysing(false)
     }
   }
 
@@ -300,9 +281,6 @@ function AdminMislabeled() {
       <div className="admin-mislabeled-header">
         <h1>Mislabeled Artists &amp; Labels</h1>
         <div className="mislabeled-actions">
-          <button className="button button-push_button" disabled={analysing || processing} onClick={runAnalysis}>
-            {analysing ? 'Analysing…' : 'Re-run analysis'}
-          </button>
           <button className="button button-push_button" onClick={() => history.push('/admin')}>
             Back to Radiator
           </button>

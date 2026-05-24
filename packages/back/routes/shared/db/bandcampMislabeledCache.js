@@ -3,16 +3,14 @@ const pg = require('fomoplayer_shared').db.pg
 
 const BANDCAMP_STORE_URL = 'https://bandcamp.com'
 
-// Cached results of the mislabeled-entity analysis. Rows are written by the
-// `analyseBandcampMislabeled` job (heuristic candidates confirmed by fetching
-// the Bandcamp page) and by the Bandcamp artist fetch when it lands on a page
-// that is actually a label. The admin UI reads from here instead of recomputing
-// the (page-fetching) analysis on every request.
+// Cache of Bandcamp artists/labels detected as mislabeled — their subdomain page
+// actually belongs to the other entity type. Rows are written by the Bandcamp
+// fetch jobs as they classify the page they already load for each watched
+// artist/label, and read by the admin UI. No page fetching happens here.
 
 const toNumberOrNull = (value) => (value === null || value === undefined ? null : Number(value))
 
-// status='new' rows joined to their entity for the admin list and for
-// re-verification by the analysis job.
+// status='new' rows joined to their entity for the admin list.
 module.exports.getCachedMislabeled = async (type) => {
   const rows =
     type === 'artist'
@@ -42,73 +40,60 @@ module.exports.getCachedMislabeled = async (type) => {
   return rows.map((row) => ({ ...row, similarity: toNumberOrNull(row.similarity) }))
 }
 
-module.exports.upsertConfirmedMislabeled = async (type, rows) => {
-  for (const { id, url, reason, similarity, detectedPageType } of rows) {
-    if (type === 'artist') {
-      await pg.queryAsync(sql`-- upsertConfirmedMislabeled artist
-        INSERT INTO bandcamp_mislabeled_artist
-          (artist_id, bandcamp_mislabeled_artist_url, bandcamp_mislabeled_artist_reason,
-           bandcamp_mislabeled_artist_similarity, bandcamp_mislabeled_artist_detected_page_type,
-           bandcamp_mislabeled_artist_checked_at)
-        VALUES (${id}, ${url}, ${reason}, ${similarity ?? null}, ${detectedPageType ?? null}, NOW())
-        ON CONFLICT (artist_id) DO UPDATE
-          SET bandcamp_mislabeled_artist_url               = EXCLUDED.bandcamp_mislabeled_artist_url
-            , bandcamp_mislabeled_artist_reason            = EXCLUDED.bandcamp_mislabeled_artist_reason
-            , bandcamp_mislabeled_artist_similarity        = EXCLUDED.bandcamp_mislabeled_artist_similarity
-            , bandcamp_mislabeled_artist_detected_page_type = EXCLUDED.bandcamp_mislabeled_artist_detected_page_type
-            , bandcamp_mislabeled_artist_checked_at         = NOW()`)
-    } else {
-      await pg.queryAsync(sql`-- upsertConfirmedMislabeled label
-        INSERT INTO bandcamp_mislabeled_label
-          (label_id, bandcamp_mislabeled_label_url, bandcamp_mislabeled_label_reason,
-           bandcamp_mislabeled_label_similarity, bandcamp_mislabeled_label_detected_page_type,
-           bandcamp_mislabeled_label_checked_at)
-        VALUES (${id}, ${url}, ${reason}, ${similarity ?? null}, ${detectedPageType ?? null}, NOW())
-        ON CONFLICT (label_id) DO UPDATE
-          SET bandcamp_mislabeled_label_url               = EXCLUDED.bandcamp_mislabeled_label_url
-            , bandcamp_mislabeled_label_reason            = EXCLUDED.bandcamp_mislabeled_label_reason
-            , bandcamp_mislabeled_label_similarity        = EXCLUDED.bandcamp_mislabeled_label_similarity
-            , bandcamp_mislabeled_label_detected_page_type = EXCLUDED.bandcamp_mislabeled_label_detected_page_type
-            , bandcamp_mislabeled_label_checked_at         = NOW()`)
-    }
+// Flag the entity behind a Bandcamp store URL as mislabeled: its page resolved
+// to the other entity type. Idempotent; preserves an existing 'ignored' status.
+module.exports.flagMislabeledByUrl = async (type, url) => {
+  if (type === 'artist') {
+    await pg.queryAsync(sql`-- flagMislabeledByUrl artist
+      INSERT INTO bandcamp_mislabeled_artist
+        (artist_id, bandcamp_mislabeled_artist_url, bandcamp_mislabeled_artist_reason,
+         bandcamp_mislabeled_artist_detected_page_type, bandcamp_mislabeled_artist_checked_at)
+      SELECT sa.artist_id, sa.store__artist_url, 'page_is_label', 'label', NOW()
+      FROM
+        store__artist sa
+        JOIN store s ON s.store_id = sa.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
+      WHERE sa.store__artist_url = ${url}
+      ON CONFLICT (artist_id) DO UPDATE
+        SET bandcamp_mislabeled_artist_detected_page_type = 'label'
+          , bandcamp_mislabeled_artist_checked_at         = NOW()`)
+  } else {
+    await pg.queryAsync(sql`-- flagMislabeledByUrl label
+      INSERT INTO bandcamp_mislabeled_label
+        (label_id, bandcamp_mislabeled_label_url, bandcamp_mislabeled_label_reason,
+         bandcamp_mislabeled_label_detected_page_type, bandcamp_mislabeled_label_checked_at)
+      SELECT sl.label_id, sl.store__label_url, 'page_is_artist', 'artist', NOW()
+      FROM
+        store__label sl
+        JOIN store s ON s.store_id = sl.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
+      WHERE sl.store__label_url = ${url}
+      ON CONFLICT (label_id) DO UPDATE
+        SET bandcamp_mislabeled_label_detected_page_type = 'artist'
+          , bandcamp_mislabeled_label_checked_at         = NOW()`)
   }
 }
 
-// Drop status='new' rows the analysis just checked but could no longer confirm
-// (e.g. the page is now correctly typed, or the bogus URL was cleared).
-// 'ignored' rows are left untouched so dismissed false positives stay dismissed.
-module.exports.removeUnconfirmedMislabeled = async (type, checkedIds, confirmedIds) => {
-  if (checkedIds.length === 0) return
+// Clear a mislabeled flag once a page is confirmed to be the correct type.
+// 'ignored' rows are left untouched so dismissed entries stay dismissed.
+module.exports.clearMislabeledByUrl = async (type, url) => {
   if (type === 'artist') {
-    await pg.queryAsync(sql`-- removeUnconfirmedMislabeled artist
+    await pg.queryAsync(sql`-- clearMislabeledByUrl artist
       DELETE FROM bandcamp_mislabeled_artist
       WHERE bandcamp_mislabeled_artist_status = 'new'
-        AND artist_id = ANY (${checkedIds})
-        AND NOT (artist_id = ANY (${confirmedIds}))`)
+        AND artist_id IN (SELECT sa.artist_id
+                          FROM
+                            store__artist sa
+                            JOIN store s ON s.store_id = sa.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
+                          WHERE sa.store__artist_url = ${url})`)
   } else {
-    await pg.queryAsync(sql`-- removeUnconfirmedMislabeled label
+    await pg.queryAsync(sql`-- clearMislabeledByUrl label
       DELETE FROM bandcamp_mislabeled_label
       WHERE bandcamp_mislabeled_label_status = 'new'
-        AND label_id = ANY (${checkedIds})
-        AND NOT (label_id = ANY (${confirmedIds}))`)
+        AND label_id IN (SELECT sl.label_id
+                         FROM
+                           store__label sl
+                           JOIN store s ON s.store_id = sl.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
+                         WHERE sl.store__label_url = ${url})`)
   }
-}
-
-// Called from the Bandcamp artist fetch when a followed artist's page turns out
-// to be a label. Resolves the artist by its Bandcamp store URL and caches it.
-module.exports.flagSuspectedMislabeledArtistByUrl = async (url) => {
-  await pg.queryAsync(sql`-- flagSuspectedMislabeledArtistByUrl
-    INSERT INTO bandcamp_mislabeled_artist
-      (artist_id, bandcamp_mislabeled_artist_url, bandcamp_mislabeled_artist_reason,
-       bandcamp_mislabeled_artist_detected_page_type, bandcamp_mislabeled_artist_checked_at)
-    SELECT sa.artist_id, sa.store__artist_url, 'page_is_label', 'label', NOW()
-    FROM
-      store__artist sa
-      JOIN store s ON s.store_id = sa.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
-    WHERE sa.store__artist_url = ${url}
-    ON CONFLICT (artist_id) DO UPDATE
-      SET bandcamp_mislabeled_artist_detected_page_type = 'label'
-        , bandcamp_mislabeled_artist_checked_at         = NOW()`)
 }
 
 module.exports.ignoreCachedMislabeled = async (type, id) => {
@@ -123,47 +108,4 @@ module.exports.ignoreCachedMislabeled = async (type, id) => {
       SET bandcamp_mislabeled_label_status = 'ignored'
       WHERE label_id = ${id}`)
   }
-}
-
-// Least-recently-checked Bandcamp artists/labels that have a store URL, so the
-// analysis job can fetch and classify them a batch at a time, rotating across
-// runs. Never-checked entities sort first.
-module.exports.getEntitiesToCheck = async (limit) =>
-  pg.queryRowsAsync(sql`-- getEntitiesToCheck
-SELECT type, id, url
-FROM (
-  SELECT 'artist' AS type
-       , sa.artist_id AS id
-       , sa.store__artist_url AS url
-       , c.bandcamp_entity_check_checked_at AS checked_at
-  FROM
-    store__artist sa
-    JOIN store s ON s.store_id = sa.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
-    LEFT JOIN bandcamp_entity_check c
-      ON c.bandcamp_entity_check_entity_type = 'artist' AND c.bandcamp_entity_check_entity_id = sa.artist_id
-  WHERE sa.store__artist_url IS NOT NULL
-  UNION ALL
-  SELECT 'label'
-       , sl.label_id
-       , sl.store__label_url
-       , c.bandcamp_entity_check_checked_at
-  FROM
-    store__label sl
-    JOIN store s ON s.store_id = sl.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
-    LEFT JOIN bandcamp_entity_check c
-      ON c.bandcamp_entity_check_entity_type = 'label' AND c.bandcamp_entity_check_entity_id = sl.label_id
-  WHERE sl.store__label_url IS NOT NULL
-) e
-ORDER BY checked_at ASC NULLS FIRST, type, id
-LIMIT ${limit}`)
-
-module.exports.recordEntityChecks = async (type, ids) => {
-  if (ids.length === 0) return
-  await pg.queryAsync(sql`-- recordEntityChecks
-INSERT INTO bandcamp_entity_check
-  (bandcamp_entity_check_entity_type, bandcamp_entity_check_entity_id, bandcamp_entity_check_checked_at)
-SELECT ${type}, id, NOW()
-FROM unnest(${ids} :: INT[]) AS id
-ON CONFLICT (bandcamp_entity_check_entity_type, bandcamp_entity_check_entity_id)
-DO UPDATE SET bandcamp_entity_check_checked_at = NOW()`)
 }

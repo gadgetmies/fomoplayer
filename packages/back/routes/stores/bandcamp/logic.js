@@ -14,8 +14,25 @@ const {
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl, queryKnownReleaseUrls } = require('./db.js')
-const { flagSuspectedMislabeledArtistByUrl } = require('../../shared/db/bandcampMislabeledCache.js')
+const { flagMislabeledByUrl, clearMislabeledByUrl } = require('../../shared/db/bandcampMislabeledCache.js')
 const logger = require('fomoplayer_shared').logger(__filename)
+
+// As the watch fetch loads each artist/label page anyway, classify it and keep
+// the mislabeled cache in sync — no extra Bandcamp requests. `expected` is the
+// entity type we follow it as; if the page is the other type, flag it.
+const updateMislabeledFlag = async (expected, url, pageType) => {
+  try {
+    const other = expected === 'artist' ? 'label' : 'artist'
+    if (pageType === other) {
+      logger.warn(`Followed Bandcamp ${expected} ${url} resolves to a ${other} page, flagging as suspected mislabeled`)
+      await flagMislabeledByUrl(expected, url)
+    } else {
+      await clearMislabeledByUrl(expected, url)
+    }
+  } catch (e) {
+    logger.warn(`Failed to update mislabeled flag for ${expected} ${url}: ${e.message}`)
+  }
+}
 
 let storeDbId = null
 const storeName = (module.exports.storeName = 'Bandcamp')
@@ -148,14 +165,7 @@ const filterToUnknownUrls = async (urls) => {
 module.exports.getArtistTracks = async function* ({ url }) {
   try {
     const { type, releaseUrls } = await getArtistAsync(url)
-    if (type === 'label') {
-      logger.warn(`Followed Bandcamp artist ${url} resolves to a label page, flagging as suspected mislabeled`)
-      try {
-        await flagSuspectedMislabeledArtistByUrl(url)
-      } catch (e) {
-        logger.warn(`Failed to flag suspected mislabeled artist ${url}: ${e.message}`)
-      }
-    }
+    await updateMislabeledFlag('artist', url, type)
     const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
     logger.debug(
       `Artist ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
@@ -188,7 +198,8 @@ module.exports.getArtistTracks = async function* ({ url }) {
 
 module.exports.getLabelTracks = async function* ({ url }) {
   try {
-    const { releaseUrls } = await getLabelAsync(url)
+    const { type, releaseUrls } = await getLabelAsync(url)
+    await updateMislabeledFlag('label', url, type)
     const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
     logger.debug(
       `Label ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,

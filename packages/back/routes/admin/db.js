@@ -1,16 +1,11 @@
 const sql = require('sql-template-strings')
 const pg = require('fomoplayer_shared').db.pg
-const config = require('../../config')
 const logger = require('fomoplayer_shared').logger(__filename)
 const R = require('ramda')
 const BPromise = require('bluebird')
-const {
-  static: { nameSubdomainSimilarity, getSubdomain },
-} = require('../stores/bandcamp/bandcamp-api')
 const { getCachedMislabeled, ignoreCachedMislabeled } = require('../shared/db/bandcampMislabeledCache')
 
 const BANDCAMP_STORE_URL = 'https://bandcamp.com'
-const MISLABELED_SIMILARITY_THRESHOLD = 0.5
 
 module.exports.mergeTracks = async ({ trackToBeDeleted, trackToKeep }) => {
   await pg.queryAsync(sql`
@@ -575,49 +570,6 @@ LIMIT 10
 
 const MISLABELED_ENTITY_TYPES = ['artist', 'label']
 
-// Heuristic scan for Bandcamp artists/labels that are likely mislabeled: their
-// store URL is the *other* entity type's URL (the merge magnet), or the page
-// name diverges from the subdomain. These are cheap to compute but produce
-// false positives; the analyseBandcampMislabeled job confirms each candidate by
-// fetching its page before caching it.
-module.exports.detectMislabeledCandidates = async (type) => {
-  if (!MISLABELED_ENTITY_TYPES.includes(type)) throw new Error(`Unsupported entity type: ${type}`)
-
-  if (type === 'artist') {
-    const candidates = await pg.queryRowsAsync(sql`-- detectMislabeledCandidates artists
-      SELECT a.artist_id          AS id
-           , a.artist_name        AS name
-           , sa.store__artist_url AS url
-           , EXISTS (SELECT 1
-                     FROM store__label sl
-                     WHERE sl.store_id = sa.store_id
-                       AND sl.store__label_url = sa.store__artist_url) AS "collides"
-      FROM
-        store__artist sa
-        JOIN store s ON s.store_id = sa.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
-        JOIN artist a ON a.artist_id = sa.artist_id
-      WHERE sa.store__artist_url IS NOT NULL`)
-
-    return annotateMislabeled(candidates, 'url_collides_with_label')
-  }
-
-  const candidates = await pg.queryRowsAsync(sql`-- detectMislabeledCandidates labels
-    SELECT l.label_id          AS id
-         , l.label_name        AS name
-         , sl.store__label_url AS url
-         , EXISTS (SELECT 1
-                   FROM store__artist sa
-                   WHERE sa.store_id = sl.store_id
-                     AND sa.store__artist_url = sl.store__label_url) AS "collides"
-    FROM
-      store__label sl
-      JOIN store s ON s.store_id = sl.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
-      JOIN label l ON l.label_id = sl.label_id
-    WHERE sl.store__label_url IS NOT NULL`)
-
-  return annotateMislabeled(candidates, 'url_collides_with_artist')
-}
-
 // Read the cached, page-confirmed mislabeled entities for the admin UI. Counts
 // are fetched in a second pass so the cache stays free of aggregates that go
 // stale as tracks are reassigned.
@@ -654,20 +606,6 @@ module.exports.ignoreMislabeledEntity = async (type, id) => {
   if (!MISLABELED_ENTITY_TYPES.includes(type)) throw new Error(`Unsupported entity type: ${type}`)
   await ignoreCachedMislabeled(type, parseInt(id, 10))
 }
-
-const annotateMislabeled = (candidates, collisionReason) =>
-  candidates
-    .map((row) => {
-      const similarity = nameSubdomainSimilarity(row.name, getSubdomain(row.url))
-      const reason = row.collides
-        ? collisionReason
-        : similarity < MISLABELED_SIMILARITY_THRESHOLD
-        ? 'name_subdomain_mismatch'
-        : null
-      return { ...row, similarity: Number(similarity.toFixed(2)), reason }
-    })
-    .filter((row) => row.reason !== null)
-    .sort((a, b) => (a.collides === b.collides ? a.similarity - b.similarity : a.collides ? -1 : 1))
 
 const mergeCounts = (flagged, counts) => {
   const byId = new Map(counts.map((c) => [c.id, c]))

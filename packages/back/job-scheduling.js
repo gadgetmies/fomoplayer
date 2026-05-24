@@ -27,7 +27,6 @@ const logger = require('fomoplayer_shared').logger(__filename)
 const radiator = require('./jobs/radiator/radiator')
 const { removeOldSources } = require('./jobs/remove-old-sources')
 const { sendInvites } = require('./jobs/send-invites')
-const { analyseBandcampMislabeled } = require('./jobs/analyse-bandcamp-mislabeled')
 
 const init = async () => {
   await pg.queryAsync(
@@ -188,7 +187,6 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   checkBeatportGenres,
   removeOldSources,
   sendInvites,
-  analyseBandcampMislabeled,
   ...radiator,
 }
 
