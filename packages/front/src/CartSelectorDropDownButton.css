@@ -2,8 +2,17 @@
   white-space: nowrap;
 }
 
+.cart-selector-toggle .button-push_button_label {
+  display: inline-block;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 @media (max-width: 590px) {
   .cart-selector-toggle .button-push_button_label {
-    display: inline;
+    max-width: 8rem;
   }
 }
