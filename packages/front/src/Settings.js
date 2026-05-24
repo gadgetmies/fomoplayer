@@ -67,6 +67,13 @@ const RevokeWarning = () => (
   <div style={{ fontSize: '75%', marginTop: 5 }}>Warning! This will disable all cart synchronizations</div>
 )
 
+const FOLLOW_RESULT_CATEGORIES = ['artist', 'label', 'playlist']
+
+// updatingFollowDetails is { [storeName]: { artist, label, playlist } } | null; flip
+// one store's category to done, keeping null (a cleared search) as null.
+const markCategoryDone = (updating, storeName, category) =>
+  updating && { ...updating, [storeName]: { ...updating[storeName], [category]: false } }
+
 class Settings extends Component {
   markHeardButton = (label, interval) => (
     <ConfirmButton
@@ -344,13 +351,19 @@ class Settings extends Component {
     this.setState({ followResultsTab: tab })
   }
 
+  isFollowCategoryPending(type) {
+    const updating = this.state.updatingFollowDetails
+    return updating !== null && Object.values(updating).some((perStore) => perStore?.[type])
+  }
+
   renderFollowResults() {
-    const groupedByType = R.groupBy(R.prop('type'), this.state.followDetails)
+    const groupedByType = R.groupBy(R.prop('type'), this.state.followDetails ?? [])
     const tabs = [
       ['artist', 'Artists'],
       ['label', 'Labels'],
       ['playlist', 'Playlists'],
-    ].filter(([type]) => (groupedByType[type] ?? []).length > 0)
+    ].filter(([type]) => (groupedByType[type] ?? []).length > 0 || this.isFollowCategoryPending(type))
+    if (tabs.length === 0) return 'No results found'
     const activeTab = tabs.some(([type]) => type === this.state.followResultsTab)
       ? this.state.followResultsTab
       : tabs[0]?.[0]
@@ -375,47 +388,52 @@ class Settings extends Component {
                 className="select_button-button  select_button-button__large"
                 htmlFor={`settings-follow-results-${type}`}
               >
-                {label} ({groupedByType[type].length})
+                {label}{' '}
+                {this.isFollowCategoryPending(type) ? (
+                  <Spinner size="small" />
+                ) : (
+                  <span className="follow-results-count">{(groupedByType[type] ?? []).length}</span>
+                )}
               </label>
             </React.Fragment>
           ))}
         </div>
-        {R.sortBy(
-          R.prop(0),
-          Object.entries(
-            R.groupBy(
-              R.propSatisfies(
-                (name) => name.toLocaleLowerCase() !== this.state.followQuery.toLocaleLowerCase(),
-                'name',
+        {items.length === 0
+          ? this.isFollowCategoryPending(activeTab) && <Spinner size="large" />
+          : R.sortBy(
+              R.prop(0),
+              Object.entries(
+                R.groupBy(
+                  R.propSatisfies(
+                    (name) => name.toLocaleLowerCase() !== this.state.followQuery.toLocaleLowerCase(),
+                    'name',
+                  ),
+                  items,
+                ),
               ),
-              items,
-            ),
-          ),
-        ).map(([isNotExactMatch, grouped]) => (
-          <React.Fragment key={`${activeTab}-${isNotExactMatch}`}>
-            {activeTab !== 'playlist' && (
-              <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>
-            )}
-            <ul className={'no-style-list follow-list'}>
-              {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
-                <li key={`${storeName}-${type}-${id ?? url}`}>
-                  <FollowItemButton
-                    id={id}
-                    name={name}
-                    storeName={storeName}
-                    type={type}
-                    url={url}
-                    img={img}
-                    disabled={this.getFollowItemDisabled(type, { id, url, storeName })}
-                    loading={this.state.updatingFollowWithUrl === url}
-                    onClick={(() => this.onFollowItemClick(url, name, type)).bind(this)}
-                    data-onboarding-id="follow-item"
-                  />
-                </li>
-              ))}
-            </ul>
-          </React.Fragment>
-        ))}
+            ).map(([isNotExactMatch, grouped]) => (
+              <React.Fragment key={`${activeTab}-${isNotExactMatch}`}>
+                {activeTab !== 'playlist' && <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>}
+                <ul className={'no-style-list follow-list'}>
+                  {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
+                    <li key={`${storeName}-${type}-${id ?? url}`}>
+                      <FollowItemButton
+                        id={id}
+                        name={name}
+                        storeName={storeName}
+                        type={type}
+                        url={url}
+                        img={img}
+                        disabled={this.getFollowItemDisabled(type, { id, url, storeName })}
+                        loading={this.state.updatingFollowWithUrl === url}
+                        onClick={(() => this.onFollowItemClick(url, name, type)).bind(this)}
+                        data-onboarding-id="follow-item"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </React.Fragment>
+            ))}
       </>
     )
   }
@@ -725,7 +743,10 @@ class Settings extends Component {
                       }
                       this.setState({
                         updatingFollowDetails: Object.fromEntries(
-                          this.props.stores.map(({ storeName }) => [storeName, true]),
+                          this.props.stores.map(({ storeName }) => [
+                            storeName,
+                            Object.fromEntries(FOLLOW_RESULT_CATEGORIES.map((category) => [category, true])),
+                          ]),
                         ),
                       })
                       const controller = new AbortController()
@@ -747,57 +768,71 @@ class Settings extends Component {
                             this.setState({ updatingFollowDetails: null, followDetailsDebounce: undefined })
                           }
                         } else {
-                          const promises = this.props.stores.map(({ storeName }) =>
-                            requestWithCredentials({
-                              path: `/stores/${storeName}/search/?q=${encodeURIComponent(this.state.followQuery)}`,
-                              signal,
-                            })
-                              .then(async (res) =>
-                                (await res.json()).map((result) => ({ stores: [storeName], ...result })),
-                              )
-                              .then((json) => {
-                                if (signal.aborted) return
-                                this.setState((prev) => ({
-                                  followDetails: R.uniqBy(
-                                    R.prop('url'),
-                                    R.sortBy(
-                                      R.compose(R.toLower, R.prop('name')),
-                                      (prev.followDetails ?? []).concat(json),
+                          // One request per (store, category) so each category's results
+                          // render as soon as its request completes, independently.
+                          const requests = this.props.stores.flatMap(({ storeName }) =>
+                            FOLLOW_RESULT_CATEGORIES.map((category) =>
+                              requestWithCredentials({
+                                path: `/stores/${storeName}/search/?q=${encodeURIComponent(
+                                  this.state.followQuery,
+                                )}&type=${category}`,
+                                signal,
+                              })
+                                .then(async (res) =>
+                                  (await res.json()).map((result) => ({ stores: [storeName], ...result })),
+                                )
+                                .then((json) => {
+                                  if (signal.aborted) return
+                                  this.setState((prev) => ({
+                                    followDetails: R.uniqBy(
+                                      R.prop('url'),
+                                      R.sortBy(
+                                        R.compose(R.toLower, R.prop('name')),
+                                        (prev.followDetails ?? []).concat(json),
+                                      ),
                                     ),
-                                  ),
-                                  updatingFollowDetails: { ...prev.updatingFollowDetails, [storeName]: false },
-                                }))
-                              }),
+                                    updatingFollowDetails: markCategoryDone(
+                                      prev.updatingFollowDetails,
+                                      storeName,
+                                      category,
+                                    ),
+                                  }))
+                                })
+                                .catch((e) => {
+                                  if (signal.aborted || e.name === 'AbortError') return
+                                  console.error('Error updating follow details', e)
+                                  this.setState((prev) => ({
+                                    updatingFollowDetails: markCategoryDone(
+                                      prev.updatingFollowDetails,
+                                      storeName,
+                                      category,
+                                    ),
+                                  }))
+                                }),
+                            ),
                           )
-                          Promise.all(promises)
-                            .catch((e) => {
-                              if (e.name === 'AbortError') return
-                              console.error('Error updating follow details', e)
-                              this.setState({ updatingFollowDetails: null, followDetailsDebounce: undefined })
-                            })
-                            .finally(() => {
-                              if (!signal.aborted && this.state.followDetails?.length !== 0) {
-                                if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Search)) {
-                                  return setTimeout(() => Onboarding.helpers.next(), 500)
-                                }
+                          Promise.all(requests).finally(() => {
+                            if (!signal.aborted && this.state.followDetails?.length !== 0) {
+                              if (Onboarding.active && Onboarding.isCurrentStep(Onboarding.steps.Search)) {
+                                return setTimeout(() => Onboarding.helpers.next(), 500)
                               }
-                            })
+                            }
+                          })
                         }
                       }, 500)
                       this.setState({ followDetailsDebounce: timeout, followSearchController: controller })
                     }}
                   />
                 </div>
-                {this.state.updatingFollowDetails !== null &&
-                Object.values(this.state.updatingFollowDetails).some((val) => val) ? (
-                  <>
-                    <br />
-                    Searching <Spinner size="large" />
-                  </>
-                ) : this.state.followDetails === undefined ? null : (
-                  <>
-                    {this.state.followDetails.length === 0 ? 'No results found' : this.renderFollowResults()}
-                  </>
+                {this.state.followQuery.match('^https://') && this.state.followDetails === undefined ? (
+                  this.state.updatingFollowDetails !== null && (
+                    <>
+                      <br />
+                      Searching <Spinner size="large" />
+                    </>
+                  )
+                ) : this.state.updatingFollowDetails === null && this.state.followDetails === undefined ? null : (
+                  <>{this.renderFollowResults()}</>
                 )}
                 {this.props.stores.includes('spotify') && (
                   <div style={{ fontSize: '75%', marginTop: 5 }}>

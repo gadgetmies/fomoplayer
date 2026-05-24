@@ -103,28 +103,40 @@ const playlistResults = (items, type) =>
     }
   })
 
-module.exports.search = async (query) => {
-  const [{ artists = [], labels = [] }, charts, playlists] = await Promise.all([
-    bpApi.search(query),
-    bpApi.searchCharts(query),
-    bpApi.searchPlaylists(query),
-  ])
-  const mapItems = (items, type) =>
-    items.map((item) => ({
-      type,
-      id: item.id,
-      name: item.name,
-      img: item.image?.uri,
-      url: storefrontUrl(type, item.slug, item.id),
-      store: { name: storeName.toLowerCase() },
-    }))
+const mapEntities = (items, type) =>
+  items.map((item) => ({
+    type,
+    id: item.id,
+    name: item.name,
+    img: item.image?.uri,
+    url: storefrontUrl(type, item.slug, item.id),
+    store: { name: storeName.toLowerCase() },
+  }))
+
+const searchEntities = async (query, type) => {
+  const { artists = [], labels = [] } = await bpApi.search(query)
+  return mapEntities(type === 'label' ? labels : artists, type)
+}
+
+const searchPlaylistsAndCharts = async (query) => {
+  const [charts, playlists] = await Promise.all([bpApi.searchCharts(query), bpApi.searchPlaylists(query)])
   return [
-    ...mapItems(artists, 'artist'),
-    ...mapItems(labels, 'label'),
     ...playlistResults(charts, 'chart'),
     ...playlistResults(playlists, 'playlist'),
     ...genrePlaylistResults(query),
   ]
+}
+
+// `type` (artist | label | playlist) lets the caller fetch a single category so
+// results can be shown as each request completes; omitting it returns everything.
+module.exports.search = async (query, type) => {
+  if (type === 'artist' || type === 'label') return searchEntities(query, type)
+  if (type === 'playlist') return searchPlaylistsAndCharts(query)
+  const [{ artists = [], labels = [] }, playlists] = await Promise.all([
+    bpApi.search(query),
+    searchPlaylistsAndCharts(query),
+  ])
+  return [...mapEntities(artists, 'artist'), ...mapEntities(labels, 'label'), ...playlists]
 }
 
 module.exports.getTracksForISRCs = async (isrcs) => {

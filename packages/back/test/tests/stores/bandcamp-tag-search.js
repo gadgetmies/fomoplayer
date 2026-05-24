@@ -3,7 +3,7 @@ const { test } = require('cascade-test')
 
 const {
   static: { getTagSlug, getTagUrl, getTagName, getTagsFromUrl },
-} = require('../../../../routes/stores/bandcamp/bandcamp-api.js')
+} = require('../../../routes/stores/bandcamp/bandcamp-api.js')
 
 // Mirrors the result Bandcamp search appends for the query (see logic.search).
 const tagPlaylistFor = (query) => {

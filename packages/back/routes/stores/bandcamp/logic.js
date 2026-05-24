@@ -255,10 +255,14 @@ const tagPlaylistResult = (query) => {
   ]
 }
 
-module.exports.search = async (query) => {
+// `type` (artist | label | playlist) lets the caller fetch a single category so
+// results can be shown as each request completes; omitting it returns everything.
+// Playlists are the local tag result, so that category needs no remote request.
+module.exports.search = async (query, type) => {
+  if (type === 'playlist') return tagPlaylistResult(query)
   const results = (await getSearchResultsAsync(query)).map((item) => ({
     ...item,
     store: { name: storeName.toLowerCase() },
   }))
-  return [...results, ...tagPlaylistResult(query)]
+  return type ? results.filter((result) => result.type === type) : [...results, ...tagPlaylistResult(query)]
 }
