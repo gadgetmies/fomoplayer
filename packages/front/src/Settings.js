@@ -1679,12 +1679,13 @@ class Settings extends Component {
                       }}
                     >
                       <option value="">Default cart</option>
-                      {this.props.carts.map(({ id, name, is_default }) => (
-                        <option key={id} value={id}>
-                          {name}
-                          {is_default ? ' (default)' : ''}
-                        </option>
-                      ))}
+                      {this.props.carts
+                        .filter(({ is_default }) => !is_default)
+                        .map(({ id, name }) => (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        ))}
                     </select>
                   </p>
                   <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
