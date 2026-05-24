@@ -36,7 +36,7 @@ const Popup = ({
   openOnHover: openOnHoverProp,
   popupAbove
 }) => {
-  const openOnHover = openOnHoverProp || !isMobile
+  const openOnHover = openOnHoverProp === undefined ? !isMobile : openOnHoverProp
   const [open, setOpen] = useState(defaultOpen)
   useEffect(
     (props) => {

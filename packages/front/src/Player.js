@@ -207,24 +207,32 @@ class Player extends Component {
     if (this.props.mode !== 'app') return
     if (!['keyboard', 'media'].includes(source)) return
 
+    // Double-pressing play/pause to add the current track to the default cart
+    // is opt-out and configurable per device (see the Player settings tab).
+    if ((localStorage.getItem('playPauseDoubleClickAddToCart') || 'true') !== 'true') return
+
     // The flag is kept on the instance rather than in state on purpose:
     // media-key events arrive in the same React 18 batch, so a setState flag
     // would still read its stale value on the second event and the
-    // double-click would never be detected. The window is intentionally wide
-    // (1s): on AirPods a fast double-press triggers the OS skip gesture, so the
-    // two play/pause presses must be deliberately spaced out to reach us.
+    // double-click would never be detected. The window defaults wide (1s)
+    // because on AirPods a fast double-press triggers the OS skip gesture, so
+    // the two play/pause presses must be deliberately spaced out to reach us.
+    const delay = parseInt(localStorage.getItem('playPauseDoubleClickDelay'), 10) || 1000
     if (this._playPauseDoubleClickStarted) {
       clearTimeout(this._playPauseDoubleClickTimer)
       this._playPauseDoubleClickStarted = false
-      const defaultCart = this.getDefaultCart()
-      if (defaultCart && this.props.currentTrack) {
-        await this.props.onAddToCart(defaultCart.id, this.props.currentTrack.id)
+      const configuredCartId = localStorage.getItem('playPauseDoubleClickCartId')
+      const targetCart =
+        (configuredCartId && this.props.carts.find((cart) => String(cart.id) === configuredCartId)) ||
+        this.getDefaultCart()
+      if (targetCart && this.props.currentTrack) {
+        await this.props.onAddToCart(targetCart.id, this.props.currentTrack.id)
       }
     } else {
       this._playPauseDoubleClickStarted = true
       this._playPauseDoubleClickTimer = setTimeout(() => {
         this._playPauseDoubleClickStarted = false
-      }, 1000)
+      }, delay)
     }
   }
 

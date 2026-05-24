@@ -1,0 +1,31 @@
+.cart-selector-toggle {
+  white-space: nowrap;
+}
+
+.cart-selector-toggle .button-push_button_label {
+  display: inline-block;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+@media (max-width: 590px) {
+  .cart-selector-toggle .button-push_button_label {
+    max-width: 8rem;
+  }
+}
+
+.cart-button > svg {
+  flex-shrink: 0;
+}
+
+.cart-button .cart-button-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}

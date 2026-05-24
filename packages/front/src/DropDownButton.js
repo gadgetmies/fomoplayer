@@ -24,6 +24,7 @@ const DropDownButton = (props) => {
     popupStyle,
     open,
     openOnHover,
+    onOpenChanged,
     ...rest
   } = props
 
@@ -43,6 +44,7 @@ const DropDownButton = (props) => {
       <DropDown
         open={open}
         openOnHover={openOnHover}
+        onOpenChanged={onOpenChanged}
         disabled={disabled}
         anchor={
           <button
