@@ -4,6 +4,7 @@ const { runJob } = require('../../job-scheduling')
 const {
   mergeTracks,
   getJobs,
+  getJobRuns,
   getQueryResults,
   storeConfig,
   getConfigs,
@@ -52,6 +53,10 @@ async function startJobRun(name, res) {
   await runJob(name)
   res.send('Job started')
 }
+
+router.get('/jobs/:name/runs', async ({ params: { name } }, res) => {
+  res.send(await getJobRuns(name))
+})
 
 router.get('/jobs/:name/run', ({ user: { id: userId }, params: { name } }, res) => {
   return startJobRun(name, res)
