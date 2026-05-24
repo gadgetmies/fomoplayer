@@ -96,6 +96,42 @@ module.exports.clearMislabeledByUrl = async (type, url) => {
   }
 }
 
+// Manually flag an entity (by id) as mislabeled from the admin UI, regardless
+// of any page heuristic. Re-activates a previously 'ignored' row.
+module.exports.flagMislabeledById = async (type, id) => {
+  if (type === 'artist') {
+    await pg.queryAsync(sql`-- flagMislabeledById artist
+      INSERT INTO bandcamp_mislabeled_artist
+        (artist_id, bandcamp_mislabeled_artist_url, bandcamp_mislabeled_artist_reason,
+         bandcamp_mislabeled_artist_status, bandcamp_mislabeled_artist_checked_at)
+      SELECT a.artist_id, sa.store__artist_url, 'manual', 'new', NOW()
+      FROM
+        artist a
+        LEFT JOIN store__artist sa ON sa.artist_id = a.artist_id
+          AND sa.store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})
+      WHERE a.artist_id = ${id}
+      ON CONFLICT (artist_id) DO UPDATE
+        SET bandcamp_mislabeled_artist_reason     = 'manual'
+          , bandcamp_mislabeled_artist_status     = 'new'
+          , bandcamp_mislabeled_artist_checked_at = NOW()`)
+  } else {
+    await pg.queryAsync(sql`-- flagMislabeledById label
+      INSERT INTO bandcamp_mislabeled_label
+        (label_id, bandcamp_mislabeled_label_url, bandcamp_mislabeled_label_reason,
+         bandcamp_mislabeled_label_status, bandcamp_mislabeled_label_checked_at)
+      SELECT l.label_id, sl.store__label_url, 'manual', 'new', NOW()
+      FROM
+        label l
+        LEFT JOIN store__label sl ON sl.label_id = l.label_id
+          AND sl.store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})
+      WHERE l.label_id = ${id}
+      ON CONFLICT (label_id) DO UPDATE
+        SET bandcamp_mislabeled_label_reason     = 'manual'
+          , bandcamp_mislabeled_label_status     = 'new'
+          , bandcamp_mislabeled_label_checked_at = NOW()`)
+  }
+}
+
 module.exports.ignoreCachedMislabeled = async (type, id) => {
   if (type === 'artist') {
     await pg.queryAsync(sql`-- ignoreCachedMislabeled artist

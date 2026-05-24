@@ -10,14 +10,17 @@ const REASON_LABELS = {
   name_subdomain_mismatch: 'Name differs from subdomain',
   page_is_label: 'Page is actually a label',
   page_is_artist: 'Page is actually an artist',
+  manual: 'Flagged manually',
 }
 
 const formatArtists = (artists) => (artists && artists.length ? artists.map((a) => `${a.name} (${a.role})`).join(', ') : '—')
 
-// Search + pick a target entity (artist or label) for a single track, then
-// hand it back to the parent to perform the reassignment.
-function EntityPicker({ onPick, processing }) {
-  const [targetType, setTargetType] = useState('artist')
+// Search + pick an entity. With `fixedType` the type selector is hidden and the
+// search is locked to that type (used for manual flagging); otherwise the user
+// chooses artist/label (used to pick a track's reassignment target).
+function EntityPicker({ onPick, processing, fixedType }) {
+  const [pickedType, setPickedType] = useState('artist')
+  const targetType = fixedType || pickedType
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [open, setOpen] = useState(false)
@@ -50,10 +53,12 @@ function EntityPicker({ onPick, processing }) {
 
   return (
     <div className="mislabeled-picker">
-      <select value={targetType} onChange={(e) => setTargetType(e.target.value)} disabled={processing}>
-        <option value="artist">Artist</option>
-        <option value="label">Label</option>
-      </select>
+      {!fixedType && (
+        <select value={pickedType} onChange={(e) => setPickedType(e.target.value)} disabled={processing}>
+          <option value="artist">Artist</option>
+          <option value="label">Label</option>
+        </select>
+      )}
       <div className="mislabeled-search">
         <input
           type="text"
@@ -169,6 +174,49 @@ function AdminMislabeled() {
     }
   }
 
+  const flagEntity = async ({ targetId, targetName }) => {
+    setProcessing(true)
+    try {
+      await requestJSONwithCredentials({
+        url: `${apiURL}/admin/mislabeled/${type}/${targetId}/flag`,
+        method: 'POST',
+      })
+      await fetchEntities(type)
+    } catch (e) {
+      console.error(e)
+      window.alert(`Could not flag "${targetName}"`)
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const convertToLabel = async () => {
+    if (
+      !window.confirm(
+        `Convert artist "${selected.name}" (${selected.id}) into a label? Every track credited to it will be re-credited to the label, this artist's credit removed, and the artist retired if nothing else references it.`,
+      )
+    )
+      return
+    setProcessing(true)
+    try {
+      const res = await requestJSONwithCredentials({
+        url: `${apiURL}/admin/mislabeled/artist/${selected.id}/convert-to-label`,
+        method: 'POST',
+      })
+      window.alert(
+        res.deleted
+          ? 'Converted to label; the artist was retired.'
+          : 'Converted to label; the artist was kept (it still has followers).',
+      )
+      await fetchEntities(type)
+    } catch (e) {
+      console.error(e)
+      window.alert('Convert failed')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const cleanup = async () => {
     if (
       !window.confirm(
@@ -194,6 +242,10 @@ function AdminMislabeled() {
 
   const renderList = () => (
     <div className="mislabeled-list">
+      <div className="mislabeled-flag">
+        <span>Flag a {type} as mislabeled:</span>
+        <EntityPicker fixedType={type} processing={processing} onPick={flagEntity} />
+      </div>
       {entities.length === 0 && <div>No suspected mislabeled {type}s found.</div>}
       {entities.map((entity) => (
         <div key={entity.id} className="mislabeled-item">
@@ -205,8 +257,8 @@ function AdminMislabeled() {
             <div className="muted mislabeled-url">{entity.url}</div>
             <div className="muted">
               {entity.trackCount} track{entity.trackCount === 1 ? '' : 's'}
-              {type === 'artist' ? ` · ${entity.releaseCount} release${entity.releaseCount === 1 ? '' : 's'}` : ''} ·
-              similarity {entity.similarity}
+              {type === 'artist' ? ` · ${entity.releaseCount} release${entity.releaseCount === 1 ? '' : 's'}` : ''}
+              {entity.similarity != null ? ` · similarity ${entity.similarity}` : ''}
             </div>
           </div>
           <div className="mislabeled-actions">
@@ -232,6 +284,11 @@ function AdminMislabeled() {
           <div className="muted mislabeled-url">{selected.url}</div>
         </div>
         <div className="mislabeled-actions">
+          {type === 'artist' && (
+            <button type="button" disabled={processing} onClick={convertToLabel}>
+              Convert to label
+            </button>
+          )}
           <button type="button" disabled={processing} onClick={cleanup}>
             Clean up source
           </button>

@@ -3,7 +3,12 @@ const pg = require('fomoplayer_shared').db.pg
 const logger = require('fomoplayer_shared').logger(__filename)
 const R = require('ramda')
 const BPromise = require('bluebird')
-const { getCachedMislabeled, ignoreCachedMislabeled } = require('../shared/db/bandcampMislabeledCache')
+const {
+  getCachedMislabeled,
+  ignoreCachedMislabeled,
+  flagMislabeledById,
+} = require('../shared/db/bandcampMislabeledCache')
+const { ensureLabelExists } = require('../shared/db/store')
 
 const BANDCAMP_STORE_URL = 'https://bandcamp.com'
 
@@ -605,6 +610,89 @@ module.exports.getMislabeledEntities = async (type) => {
 module.exports.ignoreMislabeledEntity = async (type, id) => {
   if (!MISLABELED_ENTITY_TYPES.includes(type)) throw new Error(`Unsupported entity type: ${type}`)
   await ignoreCachedMislabeled(type, parseInt(id, 10))
+}
+
+module.exports.flagMislabeledEntity = async (type, id) => {
+  if (!MISLABELED_ENTITY_TYPES.includes(type)) throw new Error(`Unsupported entity type: ${type}`)
+  const parsedId = parseInt(id, 10)
+  if (Number.isNaN(parsedId)) throw new Error('Invalid id')
+  await flagMislabeledById(type, parsedId)
+}
+
+// Re-label a Bandcamp artist that is actually a label: find/create the label
+// (by name, linking the artist's Bandcamp store URL), move every track credited
+// to the artist onto the label, drop the artist's bogus credit (leaving any
+// other artist credits intact), then retire the now-empty artist and clear its
+// mislabeled flag. Returns the new label id and whether the artist was deleted.
+module.exports.convertArtistToLabel = async (id) => {
+  const parsedId = parseInt(id, 10)
+  if (Number.isNaN(parsedId)) throw new Error('Invalid id')
+
+  return BPromise.using(pg.getTransaction(), async (tx) => {
+    const [artist] = await tx.queryRowsAsync(sql`-- convertArtistToLabel load artist
+      SELECT a.artist_name             AS name
+           , sa.store__artist_store_id AS "storeId"
+           , sa.store__artist_url      AS url
+      FROM
+        artist a
+        LEFT JOIN store__artist sa ON sa.artist_id = a.artist_id
+          AND sa.store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})
+      WHERE a.artist_id = ${parsedId}`)
+    if (!artist) throw new Error(`Artist ${parsedId} not found`)
+
+    let labelId
+    if (artist.url && artist.storeId) {
+      ;({ labelId } = await ensureLabelExists(
+        tx,
+        BANDCAMP_STORE_URL,
+        { id: artist.storeId, url: artist.url, name: artist.name },
+        null,
+      ))
+    } else {
+      const [existing] = await tx.queryRowsAsync(sql`-- convertArtistToLabel find label by name
+        SELECT label_id AS id FROM label WHERE LOWER(label_name) = LOWER(${artist.name})`)
+      labelId =
+        existing?.id ??
+        (
+          await tx.queryRowsAsync(sql`-- convertArtistToLabel create label
+            INSERT INTO label (label_name) VALUES (${artist.name}) RETURNING label_id AS id`)
+        )[0].id
+    }
+
+    await tx.queryAsync(sql`-- convertArtistToLabel add label credits
+      INSERT INTO track__label (track_id, label_id)
+      SELECT ta.track_id, ${labelId}
+      FROM track__artist ta
+      WHERE ta.artist_id = ${parsedId}
+      ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING`)
+
+    await tx.queryAsync(sql`-- convertArtistToLabel drop artist credits
+      DELETE FROM track__artist WHERE artist_id = ${parsedId}`)
+
+    await tx.queryAsync(sql`-- convertArtistToLabel clear flag
+      DELETE FROM bandcamp_mislabeled_artist WHERE artist_id = ${parsedId}`)
+
+    await tx.queryAsync(sql`-- convertArtistToLabel clear artist url
+      UPDATE store__artist
+      SET store__artist_url = NULL, store__artist_store_id = NULL
+      WHERE artist_id = ${parsedId}
+        AND store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})`)
+
+    const [{ empty }] = await tx.queryRowsAsync(sql`-- convertArtistToLabel artist empty?
+      SELECT NOT EXISTS (SELECT 1 FROM track__artist WHERE artist_id = ${parsedId})
+         AND NOT EXISTS (SELECT 1
+                         FROM store__artist_watch saw
+                           JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
+                         WHERE sa.artist_id = ${parsedId}) AS empty`)
+    if (!empty) return { labelId, deleted: false }
+
+    await tx.queryAsync(sql`DELETE FROM user__artist_ignore WHERE artist_id = ${parsedId}`)
+    await tx.queryAsync(sql`DELETE FROM user__artist__label_ignore WHERE artist_id = ${parsedId}`)
+    await tx.queryAsync(sql`DELETE FROM artist__genre WHERE artist_id = ${parsedId}`)
+    await tx.queryAsync(sql`DELETE FROM store__artist WHERE artist_id = ${parsedId}`)
+    await tx.queryAsync(sql`DELETE FROM artist WHERE artist_id = ${parsedId}`)
+    return { labelId, deleted: true }
+  })
 }
 
 const mergeCounts = (flagged, counts) => {

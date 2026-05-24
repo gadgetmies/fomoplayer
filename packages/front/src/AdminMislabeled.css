@@ -121,6 +121,16 @@
   vertical-align: top;
 }
 
+.mislabeled-flag {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #444;
+}
+
 .mislabeled-picker {
   display: flex;
   gap: 6px;

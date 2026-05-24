@@ -29,6 +29,8 @@ const {
   reassignTrack,
   cleanupMislabeledSource,
   ignoreMislabeledEntity,
+  flagMislabeledEntity,
+  convertArtistToLabel,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 const { ensureIsAdmin } = require('../shared/auth.js')
@@ -220,6 +222,15 @@ router.post('/mislabeled/:type/:id/cleanup', async ({ params: { type, id } }, re
 router.post('/mislabeled/:type/:id/ignore', async ({ params: { type, id } }, res) => {
   await ignoreMislabeledEntity(type, id)
   res.send({ ok: true })
+})
+
+router.post('/mislabeled/:type/:id/flag', async ({ params: { type, id } }, res) => {
+  await flagMislabeledEntity(type, id)
+  res.send({ ok: true })
+})
+
+router.post('/mislabeled/artist/:id/convert-to-label', async ({ params: { id } }, res) => {
+  res.send(await convertArtistToLabel(id))
 })
 
 module.exports = router
