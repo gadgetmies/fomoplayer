@@ -65,8 +65,8 @@ export const CartSelectorDropDownButton = ({
             }}
             key="cart-default"
           >
-            <FontAwesomeIcon icon={selectedCartId ? ['far', 'circle'] : 'circle-check'} style={{ marginRight: 6 }} />{' '}
-            Default cart
+            <FontAwesomeIcon icon={selectedCartId ? ['far', 'circle'] : 'circle-check'} style={{ marginRight: 6 }} />
+            <span className="cart-button-name">Default cart</span>
           </button>
         )}
         {carts
@@ -83,8 +83,8 @@ export const CartSelectorDropDownButton = ({
                 }}
                 key={`cart-${cartId}`}
               >
-                <FontAwesomeIcon icon={isSelected ? 'circle-check' : ['far', 'circle']} style={{ marginRight: 6 }} />{' '}
-                {name}
+                <FontAwesomeIcon icon={isSelected ? 'circle-check' : ['far', 'circle']} style={{ marginRight: 6 }} />
+                <span className="cart-button-name">{name}</span>
               </button>
             )
           })}
