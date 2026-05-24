@@ -87,8 +87,28 @@ const genrePlaylistResults = (query) =>
     }
   })
 
+// Beatport charts and playlists are followed by their storefront URL, which the
+// v4 client resolves back to the catalog chart/playlist routes. Surface them as
+// the 'playlist' follow type, same as genre top-100s.
+const playlistResults = (items, type) =>
+  items.map((item) => {
+    const url = storefrontUrl(type, item.slug ?? type, item.id)
+    return {
+      type: 'playlist',
+      id: url,
+      name: item.name,
+      img: item.image?.uri,
+      url,
+      store: { name: storeName.toLowerCase() },
+    }
+  })
+
 module.exports.search = async (query) => {
-  const { artists = [], labels = [] } = await bpApi.search(query)
+  const [{ artists = [], labels = [] }, charts, playlists] = await Promise.all([
+    bpApi.search(query),
+    bpApi.searchCharts(query),
+    bpApi.searchPlaylists(query),
+  ])
   const mapItems = (items, type) =>
     items.map((item) => ({
       type,
@@ -98,7 +118,13 @@ module.exports.search = async (query) => {
       url: storefrontUrl(type, item.slug, item.id),
       store: { name: storeName.toLowerCase() },
     }))
-  return [...mapItems(artists, 'artist'), ...mapItems(labels, 'label'), ...genrePlaylistResults(query)]
+  return [
+    ...mapItems(artists, 'artist'),
+    ...mapItems(labels, 'label'),
+    ...playlistResults(charts, 'chart'),
+    ...playlistResults(playlists, 'playlist'),
+    ...genrePlaylistResults(query),
+  ]
 }
 
 module.exports.getTracksForISRCs = async (isrcs) => {

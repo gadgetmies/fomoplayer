@@ -11,6 +11,9 @@ const { genreById } = require('./genres')
 
 const API_BASE = 'https://api.beatport.com/v4'
 const PER_PAGE = 100
+// Charts/playlists are surfaced in the search dropdown alongside artists and
+// labels, so keep the per-endpoint result count small.
+const SEARCH_RESULTS = 10
 
 const apiGet = async (path, { retried = false } = {}) => {
   const token = await getAccessToken()
@@ -75,6 +78,15 @@ module.exports = {
   parsePlaylistUrl,
 
   search: (query) => apiGet(`/catalog/search/?q=${encodeURIComponent(query)}`),
+
+  // The blended search endpoint does not return charts/playlists, so they are
+  // fetched from their own collections (filtered by name) to be offered as
+  // followable playlists.
+  searchCharts: async (query) =>
+    (await apiGet(`/catalog/charts/?name=${encodeURIComponent(query)}&per_page=${SEARCH_RESULTS}`)).results ?? [],
+
+  searchPlaylists: async (query) =>
+    (await apiGet(`/catalog/playlists/?name=${encodeURIComponent(query)}&per_page=${SEARCH_RESULTS}`)).results ?? [],
 
   getArtist: (artistId) => apiGet(`/catalog/artists/${artistId}/`),
   getLabel: (labelId) => apiGet(`/catalog/labels/${labelId}/`),
