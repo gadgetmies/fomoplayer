@@ -1,7 +1,8 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const BPromise = require('bluebird')
-const { ensureArtistExists } = require('../../shared/db/store.js')
+const logger = require('fomoplayer_shared').logger(__filename)
+const { ensureArtistExists, refreshTrackDetails } = require('../../shared/db/store.js')
 
 const STORE_URL = 'https://bandcamp.com'
 
@@ -349,27 +350,18 @@ module.exports.getStoreArtistByUrl = async (url) => {
 module.exports.getBandcampStoreArtistsForArtist = async (artistId) =>
   pg.queryRowsAsync(STORE_ARTIST_SELECT(sql`sa.artist_id = ${artistId}`))
 
-// Point a Bandcamp subdomain mapping at the correct artist (creating it by name
-// if needed) so the page's tracks resolve to it. Returns the correct artist id.
-module.exports.repointStoreArtistToName = async (storeArtistId, name) =>
-  BPromise.using(pg.getTransaction(), async (tx) => {
-    const [existing] = await tx.queryRowsAsync(
-      sql`SELECT artist_id AS id FROM artist WHERE LOWER(artist_name) = LOWER(${name})`,
-    )
-    const artistId =
-      existing?.id ??
-      (await tx.queryRowsAsync(sql`INSERT INTO artist (artist_name) VALUES (${name}) RETURNING artist_id AS id`))[0].id
-    await tx.queryAsync(sql`UPDATE store__artist SET artist_id = ${artistId} WHERE store__artist_id = ${storeArtistId}`)
-    return artistId
-  })
-
 // Replace each transformed track's artist credits with the freshly extracted
 // ones, matched to the database by Bandcamp store track id. When a labelId is
 // given (label re-fetch) the label credit is re-affirmed; for artist re-fetches
 // the labels are left untouched. Returns the number of tracks updated.
 module.exports.reattributeTracksArtists = async (tracks, labelId = null) => {
   let updated = 0
+  // Per-track before/after image so a re-attribution can be audited and, if
+  // needed, reverted: which credits were removed, which were added, and whether
+  // the label credit was newly attached.
+  const audit = []
   await BPromise.using(pg.getTransaction(), async (tx) => {
+    const updatedTrackIds = []
     for (const track of tracks) {
       const [row] = await tx.queryRowsAsync(
         // language=PostgreSQL
@@ -390,6 +382,13 @@ WHERE store__track_store_id = ${track.id}
       }
       if (artists.length === 0) continue
 
+      const removedCredits = await tx.queryRowsAsync(
+        // language=PostgreSQL
+        sql`-- reattributeTracksArtists credits before
+SELECT artist_id AS "artistId", track__artist_role AS role
+FROM track__artist WHERE track_id = ${trackId}`,
+      )
+
       await tx.queryAsync(sql`DELETE FROM track__artist WHERE track_id = ${trackId}`)
       for (const { id, role } of artists) {
         await tx.queryAsync(
@@ -400,17 +399,37 @@ VALUES (${trackId}, ${id}, ${role})
 ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING`,
         )
       }
+      let labelCreditAdded = false
       if (labelId) {
-        await tx.queryAsync(
+        const added = await tx.queryRowsAsync(
           // language=PostgreSQL
           sql`-- reattributeTracksArtists ensure label
 INSERT INTO track__label (track_id, label_id)
 VALUES (${trackId}, ${labelId})
-ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING`,
+ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING
+RETURNING track_id`,
         )
+        labelCreditAdded = added.length > 0
       }
+      audit.push({
+        trackId,
+        storeTrackId: track.id,
+        removedCredits,
+        addedCredits: artists.map(({ id, role }) => ({ artistId: id, role })),
+        labelCreditAdded,
+      })
+      updatedTrackIds.push(trackId)
       updated++
     }
+    await refreshTrackDetails(tx, updatedTrackIds)
   })
+  if (updated > 0) {
+    logger.info(`reattributeTracksArtists: re-credited ${updated} track(s)`, {
+      operation: 'reattributeTracksArtists',
+      labelId,
+      trackCount: updated,
+      tracks: audit,
+    })
+  }
   return updated
 }

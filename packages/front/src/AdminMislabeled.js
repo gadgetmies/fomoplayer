@@ -15,6 +15,17 @@ const REASON_LABELS = {
 
 const formatArtists = (artists) => (artists && artists.length ? artists.map((a) => `${a.name} (${a.role})`).join(', ') : '—')
 
+// Render text as a link to its Bandcamp page when a URL is known, otherwise the
+// bare text — used wherever the view names an artist, label, release or track.
+const BandcampLink = ({ url, children }) =>
+  url ? (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  ) : (
+    <>{children}</>
+  )
+
 // Search + pick an entity. With `fixedType` the type selector is hidden and the
 // search is locked to that type (used for manual flagging); otherwise the user
 // chooses artist/label (used to pick a track's reassignment target).
@@ -283,8 +294,8 @@ function AdminMislabeled() {
       })
       window.alert(
         res.fixed
-          ? `Re-pointed the page to “${res.name}” and queued re-attribution of its tracks.`
-          : `No change: ${res.reason || 'the page name already matches the linked artist'}.`,
+          ? `Converted “${res.name}” into a label and queued a re-fetch to re-attribute its tracks to their real artists.`
+          : `No change: ${res.reason || 'nothing to fix'}.`,
       )
       await fetchMismatches()
     } catch (e) {
@@ -323,8 +334,8 @@ function AdminMislabeled() {
       })
       window.alert(
         res.fixed
-          ? `Re-pointed ${url} to “${res.name}” and queued re-attribution of its tracks.`
-          : `No change: ${res.reason || 'the page name already matches the linked artist'}.`,
+          ? `Converted ${url} (“${res.name}”) into a label and queued a re-fetch to re-attribute its tracks to their real artists.`
+          : `No change: ${res.reason || 'nothing to fix'}.`,
       )
       setFixUrl('')
       await fetchMismatches()
@@ -404,10 +415,15 @@ function AdminMislabeled() {
             <div key={m.storeArtistId} className="mislabeled-item">
               <div className="mislabeled-info">
                 <div>
-                  <strong>{m.currentName}</strong> <span className="muted">(artist {m.artistId})</span>
+                  <strong>
+                    <BandcampLink url={m.url}>{m.currentName}</BandcampLink>
+                  </strong>{' '}
+                  <span className="muted">(artist {m.artistId})</span>
                   <span className="mislabeled-reason">subdomain “{m.subdomain}”</span>
                 </div>
-                <div className="muted mislabeled-url">{m.url}</div>
+                <div className="muted mislabeled-url">
+                  <BandcampLink url={m.url}>{m.url || '—'}</BandcampLink>
+                </div>
                 <div className="muted">similarity {m.similarity}</div>
               </div>
               <div className="mislabeled-actions">
@@ -427,10 +443,15 @@ function AdminMislabeled() {
         <div key={entity.id} className="mislabeled-item">
           <div className="mislabeled-info">
             <div>
-              <strong>{entity.name}</strong> <span className="muted">({entity.id})</span>
+              <strong>
+                <BandcampLink url={entity.url}>{entity.name}</BandcampLink>
+              </strong>{' '}
+              <span className="muted">({entity.id})</span>
               <span className="mislabeled-reason">{REASON_LABELS[entity.reason] || entity.reason}</span>
             </div>
-            <div className="muted mislabeled-url">{entity.url}</div>
+            <div className="muted mislabeled-url">
+              <BandcampLink url={entity.url}>{entity.url || '—'}</BandcampLink>
+            </div>
             <div className="muted">
               {entity.trackCount} track{entity.trackCount === 1 ? '' : 's'}
               {type === 'artist' ? ` · ${entity.releaseCount} release${entity.releaseCount === 1 ? '' : 's'}` : ''}
@@ -455,9 +476,13 @@ function AdminMislabeled() {
       <div className="mislabeled-detail-header">
         <div>
           <h2>
-            {type === 'artist' ? 'Artist' : 'Label'}: {selected.name} <span className="muted">({selected.id})</span>
+            {type === 'artist' ? 'Artist' : 'Label'}:{' '}
+            <BandcampLink url={selected.url}>{selected.name}</BandcampLink>{' '}
+            <span className="muted">({selected.id})</span>
           </h2>
-          <div className="muted mislabeled-url">{selected.url}</div>
+          <div className="muted mislabeled-url">
+            <BandcampLink url={selected.url}>{selected.url}</BandcampLink>
+          </div>
         </div>
         <div className="mislabeled-actions">
           {type === 'artist' && (
@@ -492,11 +517,13 @@ function AdminMislabeled() {
             {tracks.map((track) => (
               <tr key={track.id}>
                 <td>
-                  {track.title}
+                  <BandcampLink url={track.trackUrl}>{track.title}</BandcampLink>
                   {track.version ? ` (${track.version})` : ''}
                   {track.role ? <span className="muted"> · {track.role}</span> : null}
                 </td>
-                <td>{track.releaseName || '—'}</td>
+                <td>
+                  <BandcampLink url={track.releaseUrl}>{track.releaseName || track.releaseUrl || '—'}</BandcampLink>
+                </td>
                 <td className="muted">{formatArtists(track.artists)}</td>
                 <td>
                   <EntityPicker processing={processing} onPick={(target) => reassign(track, target)} />
