@@ -7,7 +7,7 @@ const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')({
   batchSize: 20,
   refreshInterval: '6 hours',
 })
-const { sendNextEmailBatch } = require('./services/mailer')
+const { sendNextEmailBatch, scheduleEmail } = require('./services/mailer')
 const { updateNotifications } = require('./jobs/notifications')
 const { updateTrackDetails } = require('./jobs/track_details')
 const {
@@ -94,6 +94,20 @@ SET job_run_ended   = NOW(),
   job_run_result  = ${JSON.stringify(res)}
 WHERE job_run_id = ${job_run_id}`,
   )
+
+  if (!success && jobName.endsWith('IntegrationTest')) {
+    // Store integration test jobs are named '<store>IntegrationTest'; alert admins by email when one fails.
+    try {
+      await scheduleEmail(
+        process.env.ADMIN_EMAIL_SENDER,
+        process.env.ADMIN_EMAIL_RECIPIENT,
+        `URGENT! Integration test '${jobName}' failed!`,
+        `The integration test job '${jobName}' failed (job_run_id: ${job_run_id}).\n\nResult: ${JSON.stringify(res)}`,
+      )
+    } catch (e) {
+      logger.error(`Failed to queue failure notification email for ${jobName}: ${e.toString()}`)
+    }
+  }
 
   logger.info(`Job ${jobName} run complete`)
 }
