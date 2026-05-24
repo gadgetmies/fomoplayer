@@ -124,3 +124,46 @@ module.exports.ignoreCachedMislabeled = async (type, id) => {
       WHERE label_id = ${id}`)
   }
 }
+
+// Least-recently-checked Bandcamp artists/labels that have a store URL, so the
+// analysis job can fetch and classify them a batch at a time, rotating across
+// runs. Never-checked entities sort first.
+module.exports.getEntitiesToCheck = async (limit) =>
+  pg.queryRowsAsync(sql`-- getEntitiesToCheck
+SELECT type, id, url
+FROM (
+  SELECT 'artist' AS type
+       , sa.artist_id AS id
+       , sa.store__artist_url AS url
+       , c.bandcamp_entity_check_checked_at AS checked_at
+  FROM
+    store__artist sa
+    JOIN store s ON s.store_id = sa.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
+    LEFT JOIN bandcamp_entity_check c
+      ON c.bandcamp_entity_check_entity_type = 'artist' AND c.bandcamp_entity_check_entity_id = sa.artist_id
+  WHERE sa.store__artist_url IS NOT NULL
+  UNION ALL
+  SELECT 'label'
+       , sl.label_id
+       , sl.store__label_url
+       , c.bandcamp_entity_check_checked_at
+  FROM
+    store__label sl
+    JOIN store s ON s.store_id = sl.store_id AND s.store_url = ${BANDCAMP_STORE_URL}
+    LEFT JOIN bandcamp_entity_check c
+      ON c.bandcamp_entity_check_entity_type = 'label' AND c.bandcamp_entity_check_entity_id = sl.label_id
+  WHERE sl.store__label_url IS NOT NULL
+) e
+ORDER BY checked_at ASC NULLS FIRST, type, id
+LIMIT ${limit}`)
+
+module.exports.recordEntityChecks = async (type, ids) => {
+  if (ids.length === 0) return
+  await pg.queryAsync(sql`-- recordEntityChecks
+INSERT INTO bandcamp_entity_check
+  (bandcamp_entity_check_entity_type, bandcamp_entity_check_entity_id, bandcamp_entity_check_checked_at)
+SELECT ${type}, id, NOW()
+FROM unnest(${ids} :: INT[]) AS id
+ON CONFLICT (bandcamp_entity_check_entity_type, bandcamp_entity_check_entity_id)
+DO UPDATE SET bandcamp_entity_check_checked_at = NOW()`)
+}
