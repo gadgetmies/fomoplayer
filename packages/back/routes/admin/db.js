@@ -8,7 +8,7 @@ const {
   ignoreCachedMislabeled,
   flagMislabeledById,
 } = require('../shared/db/bandcampMislabeledCache')
-const { ensureLabelExists } = require('../shared/db/store')
+const { ensureLabelExists, refreshTrackDetails } = require('../shared/db/store')
 const {
   enqueueLabelArtistRefetch,
   enqueueArtistTrackRefetch,
@@ -18,9 +18,7 @@ const {
   getStoreArtistById,
   getStoreArtistByUrl,
   getBandcampStoreArtistsForArtist,
-  repointStoreArtistToName,
 } = require('../stores/bandcamp/db')
-const { fetchBandcampPageName } = require('../stores/bandcamp/logic')
 const {
   static: { nameSubdomainSimilarity, getSubdomain, nameSubdomainSimilarityThreshold },
 } = require('../stores/bandcamp/bandcamp-api')
@@ -644,24 +642,20 @@ module.exports.refetchBandcampArtistTracks = async (id) => {
   await enqueueArtistTrackRefetch(parsedId)
 }
 
-const normalizedName = (value) => (value || '').trim().toLocaleLowerCase()
-
-// Repair one mismatched Bandcamp subdomain mapping: fetch the page's real name,
-// re-point the subdomain's store__artist to a correctly named artist (created
-// if needed), queue a re-fetch to re-attribute its tracks, and clear the flag.
+// Repair one mismatched Bandcamp subdomain mapping. These mismatches are
+// label subdomains whose releases were collapsed onto a single artist named
+// after the label, so the repair treats the subdomain as a label: convert the
+// erroneously-created artist into a label of the same name (moving its tracks,
+// followers and ignores onto the label and retiring the artist), then queue a
+// background re-fetch that re-attributes each release's tracks to their real
+// per-track artists. Clearing the flag is handled by the conversion (the
+// store__artist row, and the mismatch via ON DELETE CASCADE, are removed) with
+// an explicit fallback for the case where the artist is kept.
 const fixStoreArtistMismatch = async (storeArtist) => {
-  const realName = await fetchBandcampPageName(storeArtist.url)
-  if (!realName) throw new Error(`Could not determine the Bandcamp page name for ${storeArtist.url}`)
-
-  if (normalizedName(realName) === normalizedName(storeArtist.currentName)) {
-    await clearArtistNameMismatch(storeArtist.storeArtistId)
-    return { storeArtistId: storeArtist.storeArtistId, fixed: false, reason: 'page name matches the linked artist' }
-  }
-
-  const artistId = await repointStoreArtistToName(storeArtist.storeArtistId, realName)
-  await enqueueArtistTrackRefetch(artistId)
+  const { labelId, deleted } = await convertArtistToLabel(storeArtist.artistId)
+  await enqueueLabelArtistRefetch(labelId)
   await clearArtistNameMismatch(storeArtist.storeArtistId)
-  return { storeArtistId: storeArtist.storeArtistId, fixed: true, artistId, name: realName }
+  return { storeArtistId: storeArtist.storeArtistId, fixed: true, labelId, name: storeArtist.currentName, deleted }
 }
 
 module.exports.getArtistNameMismatches = async () => getArtistNameMismatches()
@@ -697,7 +691,15 @@ module.exports.fixArtistBandcampMismatches = async (id) => {
     const subdomain = sa.subdomain || getSubdomain(sa.url)
     if (!subdomain) continue
     if (nameSubdomainSimilarity(sa.currentName, subdomain) < nameSubdomainSimilarityThreshold) {
-      results.push(await fixStoreArtistMismatch(sa))
+      // The first conversion moves all of the artist's tracks and may retire
+      // the artist, so a later subdomain of the same artist can no longer be
+      // converted; record the failure instead of aborting the whole request.
+      try {
+        results.push(await fixStoreArtistMismatch(sa))
+      } catch (e) {
+        logger.warn(`Could not fix Bandcamp mismatch for store artist ${sa.storeArtistId}: ${e.message}`)
+        results.push({ storeArtistId: sa.storeArtistId, fixed: false, reason: e.message })
+      }
     }
   }
   return { checked: rows.length, fixed: results.filter((r) => r.fixed).length, results }
@@ -713,10 +715,11 @@ module.exports.flagMislabeledEntity = async (type, id) => {
 // Re-label a Bandcamp artist that is actually a label: find/create the label
 // (by name, linking the artist's Bandcamp store URL), move every track credited
 // to the artist onto the label, drop the artist's bogus credit (leaving any
-// other artist credits intact), migrate the artist's followers into followers
-// of the label, then retire the now-empty artist and clear its mislabeled flag.
+// other artist credits intact), refresh those tracks' cached details so search
+// reflects the new label, migrate the artist's followers and ignores onto the
+// label, then retire the now-empty artist and clear its mislabeled flag.
 // Returns the new label id and whether the artist was deleted.
-module.exports.convertArtistToLabel = async (id) => {
+const convertArtistToLabel = async (id) => {
   const parsedId = parseInt(id, 10)
   if (Number.isNaN(parsedId)) throw new Error('Invalid id')
 
@@ -752,6 +755,9 @@ module.exports.convertArtistToLabel = async (id) => {
         )[0].id
     }
 
+    const movedTracks = await tx.queryRowsAsync(sql`-- convertArtistToLabel tracks credited to artist
+      SELECT DISTINCT track_id AS id FROM track__artist WHERE artist_id = ${parsedId}`)
+
     await tx.queryAsync(sql`-- convertArtistToLabel add label credits
       INSERT INTO track__label (track_id, label_id)
       SELECT ta.track_id, ${labelId}
@@ -770,6 +776,11 @@ module.exports.convertArtistToLabel = async (id) => {
       SET store__artist_url = NULL, store__artist_store_id = NULL
       WHERE artist_id = ${parsedId}
         AND store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})`)
+
+    await refreshTrackDetails(
+      tx,
+      movedTracks.map((t) => t.id),
+    )
 
     // Carry the artist's followers over to the label. Each follower of any of
     // the artist's store watches becomes a follower of the label's Bandcamp
@@ -808,6 +819,23 @@ module.exports.convertArtistToLabel = async (id) => {
     // move (no Bandcamp label store presence to attach the watch to).
     if (followerCount > 0 && !followsMigrated) return { labelId, deleted: false }
 
+    // Preserve each user's intent: someone who ignored this artist (entirely,
+    // or only on a given label) should keep ignoring it now that it has become
+    // a label, so migrate those rows into full-label ignores before dropping
+    // the artist-scoped ones.
+    await tx.queryAsync(sql`-- convertArtistToLabel migrate full-artist ignores
+      INSERT INTO user__label_ignore (label_id, meta_account_user_id)
+      SELECT ${labelId}, meta_account_user_id
+      FROM user__artist_ignore
+      WHERE artist_id = ${parsedId}
+      ON CONFLICT (label_id, meta_account_user_id) DO NOTHING`)
+    await tx.queryAsync(sql`-- convertArtistToLabel migrate artist-on-label ignores
+      INSERT INTO user__label_ignore (label_id, meta_account_user_id)
+      SELECT ${labelId}, meta_account_user_id
+      FROM user__artist__label_ignore
+      WHERE artist_id = ${parsedId}
+      ON CONFLICT (label_id, meta_account_user_id) DO NOTHING`)
+
     await tx.queryAsync(sql`DELETE FROM user__artist_ignore WHERE artist_id = ${parsedId}`)
     await tx.queryAsync(sql`DELETE FROM user__artist__label_ignore WHERE artist_id = ${parsedId}`)
     await tx.queryAsync(sql`DELETE FROM artist__genre WHERE artist_id = ${parsedId}`)
@@ -816,6 +844,8 @@ module.exports.convertArtistToLabel = async (id) => {
     return { labelId, deleted: true }
   })
 }
+
+module.exports.convertArtistToLabel = convertArtistToLabel
 
 const mergeCounts = (flagged, counts) => {
   const byId = new Map(counts.map((c) => [c.id, c]))
@@ -846,6 +876,8 @@ module.exports.getMislabeledEntityTracks = async (type, id) => {
            , ta.track__artist_role AS role
            , r.release_id          AS "releaseId"
            , r.release_name        AS "releaseName"
+           , sr.store__release_url AS "releaseUrl"
+           , st.store__track_url   AS "trackUrl"
            , `
         .append(artists)
         .append(sql`
@@ -854,6 +886,9 @@ module.exports.getMislabeledEntityTracks = async (type, id) => {
         JOIN track t ON t.track_id = ta.track_id
         LEFT JOIN release__track rt ON rt.track_id = t.track_id
         LEFT JOIN release r ON r.release_id = rt.release_id
+        LEFT JOIN store s ON s.store_url = ${BANDCAMP_STORE_URL}
+        LEFT JOIN store__release sr ON sr.release_id = r.release_id AND sr.store_id = s.store_id
+        LEFT JOIN store__track st ON st.track_id = t.track_id AND st.store_id = s.store_id
       WHERE ta.artist_id = ${parsedId}
       ORDER BY t.track_id, r.release_name`),
     )
@@ -868,6 +903,8 @@ module.exports.getMislabeledEntityTracks = async (type, id) => {
          , NULL           AS role
          , r.release_id   AS "releaseId"
          , r.release_name AS "releaseName"
+         , sr.store__release_url AS "releaseUrl"
+         , st.store__track_url   AS "trackUrl"
          , `
       .append(artists)
       .append(sql`
@@ -876,6 +913,9 @@ module.exports.getMislabeledEntityTracks = async (type, id) => {
       JOIN track t ON t.track_id = tl.track_id
       LEFT JOIN release__track rt ON rt.track_id = t.track_id
       LEFT JOIN release r ON r.release_id = rt.release_id
+      LEFT JOIN store s ON s.store_url = ${BANDCAMP_STORE_URL}
+      LEFT JOIN store__release sr ON sr.release_id = r.release_id AND sr.store_id = s.store_id
+      LEFT JOIN store__track st ON st.track_id = t.track_id AND st.store_id = s.store_id
     WHERE tl.label_id = ${parsedId}
     ORDER BY t.track_id, r.release_name`),
   )

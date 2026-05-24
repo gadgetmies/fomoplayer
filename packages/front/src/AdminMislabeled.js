@@ -283,8 +283,8 @@ function AdminMislabeled() {
       })
       window.alert(
         res.fixed
-          ? `Re-pointed the page to “${res.name}” and queued re-attribution of its tracks.`
-          : `No change: ${res.reason || 'the page name already matches the linked artist'}.`,
+          ? `Converted “${res.name}” into a label and queued a re-fetch to re-attribute its tracks to their real artists.`
+          : `No change: ${res.reason || 'nothing to fix'}.`,
       )
       await fetchMismatches()
     } catch (e) {
@@ -323,8 +323,8 @@ function AdminMislabeled() {
       })
       window.alert(
         res.fixed
-          ? `Re-pointed ${url} to “${res.name}” and queued re-attribution of its tracks.`
-          : `No change: ${res.reason || 'the page name already matches the linked artist'}.`,
+          ? `Converted ${url} (“${res.name}”) into a label and queued a re-fetch to re-attribute its tracks to their real artists.`
+          : `No change: ${res.reason || 'nothing to fix'}.`,
       )
       setFixUrl('')
       await fetchMismatches()
@@ -407,7 +407,15 @@ function AdminMislabeled() {
                   <strong>{m.currentName}</strong> <span className="muted">(artist {m.artistId})</span>
                   <span className="mislabeled-reason">subdomain “{m.subdomain}”</span>
                 </div>
-                <div className="muted mislabeled-url">{m.url}</div>
+                <div className="muted mislabeled-url">
+                  {m.url ? (
+                    <a href={m.url} target="_blank" rel="noopener noreferrer">
+                      {m.url}
+                    </a>
+                  ) : (
+                    '—'
+                  )}
+                </div>
                 <div className="muted">similarity {m.similarity}</div>
               </div>
               <div className="mislabeled-actions">
@@ -430,7 +438,15 @@ function AdminMislabeled() {
               <strong>{entity.name}</strong> <span className="muted">({entity.id})</span>
               <span className="mislabeled-reason">{REASON_LABELS[entity.reason] || entity.reason}</span>
             </div>
-            <div className="muted mislabeled-url">{entity.url}</div>
+            <div className="muted mislabeled-url">
+              {entity.url ? (
+                <a href={entity.url} target="_blank" rel="noopener noreferrer">
+                  {entity.url}
+                </a>
+              ) : (
+                '—'
+              )}
+            </div>
             <div className="muted">
               {entity.trackCount} track{entity.trackCount === 1 ? '' : 's'}
               {type === 'artist' ? ` · ${entity.releaseCount} release${entity.releaseCount === 1 ? '' : 's'}` : ''}
@@ -457,7 +473,15 @@ function AdminMislabeled() {
           <h2>
             {type === 'artist' ? 'Artist' : 'Label'}: {selected.name} <span className="muted">({selected.id})</span>
           </h2>
-          <div className="muted mislabeled-url">{selected.url}</div>
+          <div className="muted mislabeled-url">
+            {selected.url ? (
+              <a href={selected.url} target="_blank" rel="noopener noreferrer">
+                {selected.url}
+              </a>
+            ) : (
+              selected.url
+            )}
+          </div>
         </div>
         <div className="mislabeled-actions">
           {type === 'artist' && (
@@ -492,11 +516,25 @@ function AdminMislabeled() {
             {tracks.map((track) => (
               <tr key={track.id}>
                 <td>
-                  {track.title}
+                  {track.trackUrl ? (
+                    <a href={track.trackUrl} target="_blank" rel="noopener noreferrer">
+                      {track.title}
+                    </a>
+                  ) : (
+                    track.title
+                  )}
                   {track.version ? ` (${track.version})` : ''}
                   {track.role ? <span className="muted"> · {track.role}</span> : null}
                 </td>
-                <td>{track.releaseName || '—'}</td>
+                <td>
+                  {track.releaseUrl ? (
+                    <a href={track.releaseUrl} target="_blank" rel="noopener noreferrer">
+                      {track.releaseName || track.releaseUrl}
+                    </a>
+                  ) : (
+                    track.releaseName || '—'
+                  )}
+                </td>
                 <td className="muted">{formatArtists(track.artists)}</td>
                 <td>
                   <EntityPicker processing={processing} onPick={(target) => reassign(track, target)} />

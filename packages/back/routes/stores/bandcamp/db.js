@@ -1,7 +1,7 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const BPromise = require('bluebird')
-const { ensureArtistExists } = require('../../shared/db/store.js')
+const { ensureArtistExists, refreshTrackDetails } = require('../../shared/db/store.js')
 
 const STORE_URL = 'https://bandcamp.com'
 
@@ -349,20 +349,6 @@ module.exports.getStoreArtistByUrl = async (url) => {
 module.exports.getBandcampStoreArtistsForArtist = async (artistId) =>
   pg.queryRowsAsync(STORE_ARTIST_SELECT(sql`sa.artist_id = ${artistId}`))
 
-// Point a Bandcamp subdomain mapping at the correct artist (creating it by name
-// if needed) so the page's tracks resolve to it. Returns the correct artist id.
-module.exports.repointStoreArtistToName = async (storeArtistId, name) =>
-  BPromise.using(pg.getTransaction(), async (tx) => {
-    const [existing] = await tx.queryRowsAsync(
-      sql`SELECT artist_id AS id FROM artist WHERE LOWER(artist_name) = LOWER(${name})`,
-    )
-    const artistId =
-      existing?.id ??
-      (await tx.queryRowsAsync(sql`INSERT INTO artist (artist_name) VALUES (${name}) RETURNING artist_id AS id`))[0].id
-    await tx.queryAsync(sql`UPDATE store__artist SET artist_id = ${artistId} WHERE store__artist_id = ${storeArtistId}`)
-    return artistId
-  })
-
 // Replace each transformed track's artist credits with the freshly extracted
 // ones, matched to the database by Bandcamp store track id. When a labelId is
 // given (label re-fetch) the label credit is re-affirmed; for artist re-fetches
@@ -370,6 +356,7 @@ module.exports.repointStoreArtistToName = async (storeArtistId, name) =>
 module.exports.reattributeTracksArtists = async (tracks, labelId = null) => {
   let updated = 0
   await BPromise.using(pg.getTransaction(), async (tx) => {
+    const updatedTrackIds = []
     for (const track of tracks) {
       const [row] = await tx.queryRowsAsync(
         // language=PostgreSQL
@@ -409,8 +396,10 @@ VALUES (${trackId}, ${labelId})
 ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING`,
         )
       }
+      updatedTrackIds.push(trackId)
       updated++
     }
+    await refreshTrackDetails(tx, updatedTrackIds)
   })
   return updated
 }
