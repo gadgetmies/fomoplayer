@@ -87,22 +87,6 @@ const genrePlaylistResults = (query) =>
     }
   })
 
-// Beatport playlists are followed by their storefront URL, which the v4 client
-// resolves back to the catalog playlist route. Surface them as the 'playlist'
-// follow type, same as genre top-100s.
-const playlistResults = (items) =>
-  items.map((item) => {
-    const url = storefrontUrl('playlist', item.slug ?? 'playlist', item.id)
-    return {
-      type: 'playlist',
-      id: url,
-      name: item.name,
-      img: item.image?.uri,
-      url,
-      store: { name: storeName.toLowerCase() },
-    }
-  })
-
 const mapEntities = (items, type) =>
   items.map((item) => ({
     type,
@@ -118,21 +102,15 @@ const searchEntities = async (query, type) => {
   return mapEntities(type === 'label' ? labels : artists, type)
 }
 
-const searchPlaylists = async (query) => [
-  ...playlistResults(await bpApi.searchPlaylists(query)),
-  ...genrePlaylistResults(query),
-]
-
 // `type` (artist | label | playlist) lets the caller fetch a single category so
 // results can be shown as each request completes; omitting it returns everything.
+// The only followable Beatport 'playlists' are genre top-100s, sourced from the
+// local genre cache, so the playlist category makes no API call.
 module.exports.search = async (query, type) => {
   if (type === 'artist' || type === 'label') return searchEntities(query, type)
-  if (type === 'playlist') return searchPlaylists(query)
-  const [{ artists = [], labels = [] }, playlists] = await Promise.all([
-    bpApi.search(query),
-    searchPlaylists(query),
-  ])
-  return [...mapEntities(artists, 'artist'), ...mapEntities(labels, 'label'), ...playlists]
+  if (type === 'playlist') return genrePlaylistResults(query)
+  const { artists = [], labels = [] } = await bpApi.search(query)
+  return [...mapEntities(artists, 'artist'), ...mapEntities(labels, 'label'), ...genrePlaylistResults(query)]
 }
 
 module.exports.getTracksForISRCs = async (isrcs) => {

@@ -19,7 +19,7 @@ test({
     beatportInterceptor.clearMockedRequests()
     const res = await beatportLogic.search('noisia')
     const requestedPaths = mockedPaths()
-    assert.deepEqual([...requestedPaths].sort(), ['/v4/catalog/playlists/', '/v4/catalog/search/'])
+    assert.deepEqual([...requestedPaths].sort(), ['/v4/catalog/search/'])
     assert.deepEqual(res, beatportSearch)
   },
   'artist search only hits the blended search endpoint': async () => {
@@ -42,14 +42,14 @@ test({
       beatportSearch.filter(({ type }) => type === 'label'),
     )
   },
-  'playlist search hits the playlists endpoint, not the blended search': async () => {
+  'playlist search returns genre top-100 lists from the local cache without hitting the API': async () => {
     beatportInterceptor.clearMockedRequests()
-    const res = await beatportLogic.search('noisia', 'playlist')
-    const requestedPaths = mockedPaths()
-    assert.deepEqual([...requestedPaths].sort(), ['/v4/catalog/playlists/'])
-    assert.deepEqual(
-      res,
-      beatportSearch.filter(({ type }) => type === 'playlist'),
+    const res = await beatportLogic.search('techno', 'playlist')
+    assert.deepEqual(mockedPaths(), [])
+    assert.ok(res.length > 0, 'expected at least one genre top-100 result for "techno"')
+    assert.ok(
+      res.every(({ type, url }) => type === 'playlist' && /\/genre\/[^/]+\/\d+\/top-100$/.test(url)),
+      'expected every playlist result to be a genre top-100 storefront URL',
     )
   },
   teardown: async () => {

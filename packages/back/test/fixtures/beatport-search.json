@@ -28,15 +28,5 @@
     "store": {
       "name": "beatport"
     }
-  },
-  {
-    "type": "playlist",
-    "id": "https://www.beatport.com/playlist/noisia-essentials/654321",
-    "name": "Noisia Essentials",
-    "img": "https://geo-media.beatport.com/image_size/590x404/playlist-noisia-essentials.jpg",
-    "url": "https://www.beatport.com/playlist/noisia-essentials/654321",
-    "store": {
-      "name": "beatport"
-    }
   }
 ]
