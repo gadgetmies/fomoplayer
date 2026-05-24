@@ -28,7 +28,9 @@ const {
   getMislabeledEntities,
   getMislabeledEntityTracks,
   reassignTrack,
+  reassignReleaseTracks,
   cleanupMislabeledSource,
+  removeArtistUrl,
   ignoreMislabeledEntity,
   flagMislabeledEntity,
   convertArtistToLabel,
@@ -227,6 +229,10 @@ router.post('/mislabeled/reassign', async ({ body }, res) => {
   res.send({ ok: true })
 })
 
+router.post('/mislabeled/reassign-release', async ({ body }, res) => {
+  res.send(await reassignReleaseTracks(body))
+})
+
 router.post('/mislabeled/:type/:id/cleanup', async ({ params: { type, id } }, res) => {
   res.send(await cleanupMislabeledSource(type, id))
 })
@@ -243,6 +249,10 @@ router.post('/mislabeled/:type/:id/flag', async ({ params: { type, id } }, res) 
 
 router.post('/mislabeled/artist/:id/convert-to-label', async ({ params: { id } }, res) => {
   res.send(await convertArtistToLabel(id))
+})
+
+router.post('/mislabeled/artist/:id/remove-url', async ({ params: { id } }, res) => {
+  res.send(await removeArtistUrl(id))
 })
 
 router.post('/labels/:id/refetch-bandcamp-artists', async ({ params: { id } }, res) => {

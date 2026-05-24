@@ -1066,6 +1066,10 @@ module.exports.reassignTrack = async ({ sourceType, sourceId, targetType, target
       await tx.queryAsync(sql`-- reassignTrack remove label
         DELETE FROM track__label WHERE track_id = ${track} AND label_id = ${src}`)
     }
+
+    // Rebuild the cached track_details JSON so search reflects the new credit
+    // instead of the old one.
+    await refreshTrackDetails(tx, [track])
   })
 
   // Revert by removing the added {targetType targetId} link from track ${track}
@@ -1076,6 +1080,81 @@ module.exports.reassignTrack = async ({ sourceType, sourceId, targetType, target
     added: { type: targetType, id: tgt, role: targetRole },
     removed: { type: sourceType, id: src, role: sourceType === 'artist' ? role || null : null },
   })
+}
+
+// Reassign every track of one release that is currently credited to a mislabeled
+// source entity onto the correct target, in a single transaction. Used from the
+// inspect view to re-attribute a whole release at once (e.g. a compilation whose
+// tracks were all collapsed onto the label name). Each track keeps its own role.
+module.exports.reassignReleaseTracks = async ({ sourceType, sourceId, targetType, targetId, releaseId }) => {
+  if (!MISLABELED_ENTITY_TYPES.includes(sourceType) || !MISLABELED_ENTITY_TYPES.includes(targetType)) {
+    throw new Error('Invalid entity type')
+  }
+  const src = parseInt(sourceId, 10)
+  const tgt = parseInt(targetId, 10)
+  const rel = parseInt(releaseId, 10)
+  if ([src, tgt, rel].some((n) => Number.isNaN(n))) throw new Error('Invalid id')
+  if (sourceType === targetType && src === tgt) throw new Error('Source and target are the same entity')
+
+  let reassigned = 0
+  const reassignedTrackIds = []
+  await BPromise.using(pg.getTransaction(), async (tx) => {
+    const tracks =
+      sourceType === 'artist'
+        ? await tx.queryRowsAsync(sql`-- reassignReleaseTracks find artist tracks
+            SELECT ta.track_id AS "trackId", ta.track__artist_role AS role
+            FROM release__track rt
+              JOIN track__artist ta ON ta.track_id = rt.track_id
+            WHERE rt.release_id = ${rel} AND ta.artist_id = ${src}`)
+        : await tx.queryRowsAsync(sql`-- reassignReleaseTracks find label tracks
+            SELECT tl.track_id AS "trackId", NULL AS role
+            FROM release__track rt
+              JOIN track__label tl ON tl.track_id = rt.track_id
+            WHERE rt.release_id = ${rel} AND tl.label_id = ${src}`)
+
+    for (const { trackId, role } of tracks) {
+      const targetRole = targetType === 'artist' ? role || 'author' : null
+      if (targetType === 'artist') {
+        await tx.queryAsync(sql`-- reassignReleaseTracks add artist
+          INSERT INTO track__artist (track_id, artist_id, track__artist_role)
+          VALUES (${trackId}, ${tgt}, ${targetRole})
+          ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING`)
+      } else {
+        await tx.queryAsync(sql`-- reassignReleaseTracks add label
+          INSERT INTO track__label (track_id, label_id)
+          VALUES (${trackId}, ${tgt})
+          ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING`)
+      }
+
+      if (sourceType === 'artist') {
+        if (role) {
+          await tx.queryAsync(sql`-- reassignReleaseTracks remove artist (role)
+            DELETE FROM track__artist WHERE track_id = ${trackId} AND artist_id = ${src} AND track__artist_role = ${role}`)
+        } else {
+          await tx.queryAsync(sql`-- reassignReleaseTracks remove artist
+            DELETE FROM track__artist WHERE track_id = ${trackId} AND artist_id = ${src}`)
+        }
+      } else {
+        await tx.queryAsync(sql`-- reassignReleaseTracks remove label
+          DELETE FROM track__label WHERE track_id = ${trackId} AND label_id = ${src}`)
+      }
+      reassignedTrackIds.push(trackId)
+      reassigned++
+    }
+
+    // Rebuild the cached track_details JSON so search reflects the new credits
+    // instead of the old ones.
+    await refreshTrackDetails(tx, reassignedTrackIds)
+  })
+
+  logger.info(`reassignReleaseTracks: release ${rel} ${sourceType} ${src} -> ${targetType} ${tgt} (${reassigned} tracks)`, {
+    operation: 'reassignReleaseTracks',
+    releaseId: rel,
+    reassigned,
+    added: { type: targetType, id: tgt },
+    removed: { type: sourceType, id: src },
+  })
+  return { reassigned }
 }
 
 // After reassigning, neutralise the source: clear the bogus Bandcamp store URL
@@ -1189,4 +1268,40 @@ module.exports.cleanupMislabeledSource = async (type, id) => {
     logger.warn(`Could not delete mislabeled label ${parsedId}: ${e.message}`)
     return { deleted: false }
   }
+}
+
+// Detach a mislabeled Bandcamp page from an artist without deleting the artist:
+// clear its Bandcamp store URL (so a future import can't re-absorb tracks onto
+// it) and resolve the mislabeled flag, leaving the artist and all its track
+// credits intact. Use when the artist is legitimate but was wrongly linked to a
+// Bandcamp page.
+module.exports.removeArtistUrl = async (id) => {
+  const parsedId = parseInt(id, 10)
+  if (Number.isNaN(parsedId)) throw new Error('Invalid id')
+
+  const storeArtistRowsCleared = await pg.queryRowsAsync(sql`-- removeArtistUrl store__artist before
+    SELECT store__artist_id  AS "storeArtistId"
+         , store__artist_url AS url
+    FROM store__artist
+    WHERE artist_id = ${parsedId}
+      AND store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})
+      AND store__artist_url IS NOT NULL`)
+
+  await BPromise.using(pg.getTransaction(), async (tx) => {
+    await tx.queryAsync(sql`-- removeArtistUrl clear url
+      UPDATE store__artist
+      SET store__artist_url = NULL, store__artist_store_id = NULL
+      WHERE artist_id = ${parsedId}
+        AND store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})`)
+    await tx.queryAsync(sql`-- removeArtistUrl clear flag
+      DELETE FROM bandcamp_mislabeled_artist
+      WHERE artist_id = ${parsedId} AND bandcamp_mislabeled_artist_status = 'new'`)
+  })
+
+  logger.info(`removeArtistUrl: cleared Bandcamp URL for artist ${parsedId}`, {
+    operation: 'removeArtistUrl',
+    artistId: parsedId,
+    storeArtistRowsCleared,
+  })
+  return { cleared: storeArtistRowsCleared.length }
 }
