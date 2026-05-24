@@ -69,6 +69,23 @@ ORDER BY j.job_name`,
   }))
 }
 
+module.exports.getJobRuns = async (name, limit = 20) =>
+  await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- getJobRuns
+SELECT job_run_id      AS id
+     , job_run_started AS started
+     , job_run_ended   AS ended
+     , job_run_success AS success
+     , job_run_result  AS result
+FROM
+  job
+  NATURAL JOIN job_run
+WHERE job_name = ${name}
+ORDER BY job_run_started DESC
+LIMIT ${limit}`,
+  )
+
 module.exports.getQueryResults = async () =>
   await pg.queryRowsAsync(
     // language=PostgreSQL
