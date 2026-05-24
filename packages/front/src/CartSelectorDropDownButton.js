@@ -1,3 +1,4 @@
+import './CartSelectorDropDownButton.css'
 import DropDownButton from './DropDownButton'
 import SearchBar from './SearchBar'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -17,19 +18,28 @@ export const CartSelectorDropDownButton = ({
 }) => {
   const [cartFilter, setCartFilter] = useState('')
   const [newCartName, setNewCartName] = useState('')
+  const [open, setOpen] = useState(false)
 
   const selectedCart = selectedCartId ? carts.find(({ id }) => String(id) === String(selectedCartId)) : undefined
   const label = selectedCart ? selectedCart.name : 'Default cart'
 
+  const selectCart = (cartId) => {
+    onSelectCart(cartId)
+    setOpen(false)
+  }
+
   return (
     <DropDownButton
-      icon={'cart-shopping'}
       label={label}
-      buttonClassName={buttonClassName || ''}
+      buttonClassName={`cart-selector-toggle ${buttonClassName || ''}`}
       popupClassName={`cart-popup popup_content-small ${popupClassName || ''}`}
       buttonStyle={{ opacity: 1 }}
       popupStyle={{ overflow: 'hidden' }}
       disabled={disabled}
+      open={open}
+      openOnHover={false}
+      onOpenChanged={setOpen}
+      onClick={() => setOpen((wasOpen) => !wasOpen)}
     >
       <div>
         <SearchBar
@@ -51,11 +61,12 @@ export const CartSelectorDropDownButton = ({
             className="button button-push_button button-push_button-small button-push_button-primary cart-button"
             onClick={(e) => {
               e.stopPropagation()
-              onSelectCart('')
+              selectCart('')
             }}
             key="cart-default"
           >
-            <FontAwesomeIcon icon={selectedCartId ? 'circle' : 'circle-check'} style={{ marginRight: 6 }} /> Default cart
+            <FontAwesomeIcon icon={selectedCartId ? ['far', 'circle'] : 'circle-check'} style={{ marginRight: 6 }} />{' '}
+            Default cart
           </button>
         )}
         {carts
@@ -68,11 +79,12 @@ export const CartSelectorDropDownButton = ({
                 className="button button-push_button button-push_button-small button-push_button-primary cart-button"
                 onClick={(e) => {
                   e.stopPropagation()
-                  onSelectCart(String(cartId))
+                  selectCart(String(cartId))
                 }}
                 key={`cart-${cartId}`}
               >
-                <FontAwesomeIcon icon={isSelected ? 'circle-check' : 'circle'} style={{ marginRight: 6 }} /> {name}
+                <FontAwesomeIcon icon={isSelected ? 'circle-check' : ['far', 'circle']} style={{ marginRight: 6 }} />{' '}
+                {name}
               </button>
             )
           })}
@@ -95,7 +107,7 @@ export const CartSelectorDropDownButton = ({
               setNewCartName('')
               const created = await onCreateCartClick(newCartName)
               if (created && created.id != null) {
-                onSelectCart(String(created.id))
+                selectCart(String(created.id))
               }
             }}
             disabled={newCartName === ''}
@@ -105,7 +117,7 @@ export const CartSelectorDropDownButton = ({
         </div>
         <hr className={'popup-divider'} />
         <div style={{ textAlign: 'center', width: '100%' }}>
-          <NavLink to={'/settings/carts'} style={{ textAlign: 'center' }}>
+          <NavLink to={'/settings/carts'} onClick={() => setOpen(false)} style={{ textAlign: 'center' }}>
             Manage carts in settings
           </NavLink>
         </div>

@@ -1,0 +1,9 @@
+.cart-selector-toggle {
+  white-space: nowrap;
+}
+
+@media (max-width: 590px) {
+  .cart-selector-toggle .button-push_button_label {
+    display: inline;
+  }
+}
