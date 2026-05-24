@@ -193,7 +193,7 @@ function AdminMislabeled() {
   const convertToLabel = async () => {
     if (
       !window.confirm(
-        `Convert artist "${selected.name}" (${selected.id}) into a label? Every track credited to it will be re-credited to the label, this artist's credit removed, and the artist retired if nothing else references it.`,
+        `Convert artist "${selected.name}" (${selected.id}) into a label? Every track credited to it will be re-credited to the label, this artist's credit removed, its followers moved to follow the label, and the artist retired.`,
       )
     )
       return
@@ -205,8 +205,8 @@ function AdminMislabeled() {
       })
       window.alert(
         res.deleted
-          ? 'Converted to label; the artist was retired.'
-          : 'Converted to label; the artist was kept (it still has followers).',
+          ? 'Converted to label; followers moved and the artist retired.'
+          : 'Converted to label, but the artist was kept: its followers could not be moved (the label has no Bandcamp store page).',
       )
       await fetchEntities(type)
     } catch (e) {

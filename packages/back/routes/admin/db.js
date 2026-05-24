@@ -622,8 +622,9 @@ module.exports.flagMislabeledEntity = async (type, id) => {
 // Re-label a Bandcamp artist that is actually a label: find/create the label
 // (by name, linking the artist's Bandcamp store URL), move every track credited
 // to the artist onto the label, drop the artist's bogus credit (leaving any
-// other artist credits intact), then retire the now-empty artist and clear its
-// mislabeled flag. Returns the new label id and whether the artist was deleted.
+// other artist credits intact), migrate the artist's followers into followers
+// of the label, then retire the now-empty artist and clear its mislabeled flag.
+// Returns the new label id and whether the artist was deleted.
 module.exports.convertArtistToLabel = async (id) => {
   const parsedId = parseInt(id, 10)
   if (Number.isNaN(parsedId)) throw new Error('Invalid id')
@@ -641,8 +642,9 @@ module.exports.convertArtistToLabel = async (id) => {
     if (!artist) throw new Error(`Artist ${parsedId} not found`)
 
     let labelId
+    let storeLabelId = null
     if (artist.url && artist.storeId) {
-      ;({ labelId } = await ensureLabelExists(
+      ;({ labelId, storeLabelId } = await ensureLabelExists(
         tx,
         BANDCAMP_STORE_URL,
         { id: artist.storeId, url: artist.url, name: artist.name },
@@ -678,13 +680,42 @@ module.exports.convertArtistToLabel = async (id) => {
       WHERE artist_id = ${parsedId}
         AND store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})`)
 
-    const [{ empty }] = await tx.queryRowsAsync(sql`-- convertArtistToLabel artist empty?
-      SELECT NOT EXISTS (SELECT 1 FROM track__artist WHERE artist_id = ${parsedId})
-         AND NOT EXISTS (SELECT 1
-                         FROM store__artist_watch saw
-                           JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
-                         WHERE sa.artist_id = ${parsedId}) AS empty`)
-    if (!empty) return { labelId, deleted: false }
+    // Carry the artist's followers over to the label. Each follower of any of
+    // the artist's store watches becomes a follower of the label's Bandcamp
+    // watch (created on demand). The artist watch rows are dropped with the
+    // artist below via ON DELETE CASCADE.
+    const [{ followerCount }] = await tx.queryRowsAsync(sql`-- convertArtistToLabel follower count
+      SELECT COUNT(DISTINCT sawu.meta_account_user_id)::int AS "followerCount"
+      FROM
+        store__artist_watch__user sawu
+        JOIN store__artist_watch saw ON saw.store__artist_watch_id = sawu.store__artist_watch_id
+        JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
+      WHERE sa.artist_id = ${parsedId}`)
+
+    let followsMigrated = false
+    if (followerCount > 0 && storeLabelId) {
+      await tx.queryAsync(sql`-- convertArtistToLabel ensure label watch
+        INSERT INTO store__label_watch (store__label_id) VALUES (${storeLabelId})
+        ON CONFLICT (store__label_id) DO NOTHING`)
+      const [{ labelWatchId }] = await tx.queryRowsAsync(sql`-- convertArtistToLabel label watch id
+        SELECT store__label_watch_id AS "labelWatchId"
+        FROM store__label_watch WHERE store__label_id = ${storeLabelId}`)
+      await tx.queryAsync(sql`-- convertArtistToLabel migrate followers
+        INSERT INTO store__label_watch__user (store__label_watch_id, meta_account_user_id)
+        SELECT ${labelWatchId}, sawu.meta_account_user_id
+        FROM
+          store__artist_watch__user sawu
+          JOIN store__artist_watch saw ON saw.store__artist_watch_id = sawu.store__artist_watch_id
+          JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
+        WHERE sa.artist_id = ${parsedId}
+        ON CONFLICT (store__label_watch_id, meta_account_user_id) DO NOTHING`)
+      followsMigrated = true
+    }
+
+    // Retire the artist once it has nothing left: all tracks were re-credited
+    // above, so the only thing that can keep it alive is followers we could not
+    // move (no Bandcamp label store presence to attach the watch to).
+    if (followerCount > 0 && !followsMigrated) return { labelId, deleted: false }
 
     await tx.queryAsync(sql`DELETE FROM user__artist_ignore WHERE artist_id = ${parsedId}`)
     await tx.queryAsync(sql`DELETE FROM user__artist__label_ignore WHERE artist_id = ${parsedId}`)
