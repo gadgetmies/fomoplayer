@@ -398,42 +398,40 @@ class Settings extends Component {
             </React.Fragment>
           ))}
         </div>
-        {items.length === 0
-          ? this.isFollowCategoryPending(activeTab) && <Spinner size="large" />
-          : R.sortBy(
-              R.prop(0),
-              Object.entries(
-                R.groupBy(
-                  R.propSatisfies(
-                    (name) => name.toLocaleLowerCase() !== this.state.followQuery.toLocaleLowerCase(),
-                    'name',
-                  ),
-                  items,
-                ),
+        {R.sortBy(
+          R.prop(0),
+          Object.entries(
+            R.groupBy(
+              R.propSatisfies(
+                (name) => name.toLocaleLowerCase() !== this.state.followQuery.toLocaleLowerCase(),
+                'name',
               ),
-            ).map(([isNotExactMatch, grouped]) => (
-              <React.Fragment key={`${activeTab}-${isNotExactMatch}`}>
-                {activeTab !== 'playlist' && <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>}
-                <ul className={'no-style-list follow-list'}>
-                  {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
-                    <li key={`${storeName}-${type}-${id ?? url}`}>
-                      <FollowItemButton
-                        id={id}
-                        name={name}
-                        storeName={storeName}
-                        type={type}
-                        url={url}
-                        img={img}
-                        disabled={this.getFollowItemDisabled(type, { id, url, storeName })}
-                        loading={this.state.updatingFollowWithUrl === url}
-                        onClick={(() => this.onFollowItemClick(url, name, type)).bind(this)}
-                        data-onboarding-id="follow-item"
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </React.Fragment>
-            ))}
+              items,
+            ),
+          ),
+        ).map(([isNotExactMatch, grouped]) => (
+          <React.Fragment key={`${activeTab}-${isNotExactMatch}`}>
+            {activeTab !== 'playlist' && <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>}
+            <ul className={'no-style-list follow-list'}>
+              {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
+                <li key={`${storeName}-${type}-${id ?? url}`}>
+                  <FollowItemButton
+                    id={id}
+                    name={name}
+                    storeName={storeName}
+                    type={type}
+                    url={url}
+                    img={img}
+                    disabled={this.getFollowItemDisabled(type, { id, url, storeName })}
+                    loading={this.state.updatingFollowWithUrl === url}
+                    onClick={(() => this.onFollowItemClick(url, name, type)).bind(this)}
+                    data-onboarding-id="follow-item"
+                  />
+                </li>
+              ))}
+            </ul>
+          </React.Fragment>
+        ))}
       </>
     )
   }
