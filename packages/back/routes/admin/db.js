@@ -1066,6 +1066,10 @@ module.exports.reassignTrack = async ({ sourceType, sourceId, targetType, target
       await tx.queryAsync(sql`-- reassignTrack remove label
         DELETE FROM track__label WHERE track_id = ${track} AND label_id = ${src}`)
     }
+
+    // Rebuild the cached track_details JSON so search reflects the new credit
+    // instead of the old one.
+    await refreshTrackDetails(tx, [track])
   })
 
   // Revert by removing the added {targetType targetId} link from track ${track}
@@ -1093,6 +1097,7 @@ module.exports.reassignReleaseTracks = async ({ sourceType, sourceId, targetType
   if (sourceType === targetType && src === tgt) throw new Error('Source and target are the same entity')
 
   let reassigned = 0
+  const reassignedTrackIds = []
   await BPromise.using(pg.getTransaction(), async (tx) => {
     const tracks =
       sourceType === 'artist'
@@ -1133,8 +1138,13 @@ module.exports.reassignReleaseTracks = async ({ sourceType, sourceId, targetType
         await tx.queryAsync(sql`-- reassignReleaseTracks remove label
           DELETE FROM track__label WHERE track_id = ${trackId} AND label_id = ${src}`)
       }
+      reassignedTrackIds.push(trackId)
       reassigned++
     }
+
+    // Rebuild the cached track_details JSON so search reflects the new credits
+    // instead of the old ones.
+    await refreshTrackDetails(tx, reassignedTrackIds)
   })
 
   logger.info(`reassignReleaseTracks: release ${rel} ${sourceType} ${src} -> ${targetType} ${tgt} (${reassigned} tracks)`, {
