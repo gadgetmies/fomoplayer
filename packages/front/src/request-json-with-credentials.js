@@ -29,7 +29,7 @@ const resolveRequestUrl = (value) => {
   }
 }
 
-const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET', body, headers }) => {
+const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET', body, headers, signal }) => {
   const resolvedUrl = requestedUrl ? requestedUrl : `${config.apiURL}${path}`
   let url = new URL(resolvedUrl, window.location.origin)
 
@@ -43,6 +43,7 @@ const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET',
     method,
     body: body ? JSON.stringify(body) : undefined,
     credentials: 'include',
+    signal,
     headers: {
       accept: 'application/json',
       'content-type': 'application/json',
