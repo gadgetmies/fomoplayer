@@ -15,6 +15,7 @@ import { apiURL } from './config'
 import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
 import { SettingsHelp } from './SettingsHelp'
+import { CartSelectorDropDownButton } from './CartSelectorDropDownButton'
 import ImportPlaylistButton from './ImportPlaylistButton'
 import FollowedItem from './FollowedItem'
 import SearchBar from './SearchBar'
@@ -1662,14 +1663,11 @@ class Settings extends Component {
               {this.state.playPauseAddToCart ? (
                 <>
                   <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
-                    <label htmlFor="play-pause-add-to-cart-cart" className="noselect">
-                      Add tracks to cart:
-                    </label>
-                    <select
-                      id="play-pause-add-to-cart-cart"
-                      value={this.state.playPauseAddToCartCartId}
-                      onChange={(e) => {
-                        const cartId = e.target.value
+                    <label className="noselect">Add tracks to cart:</label>
+                    <CartSelectorDropDownButton
+                      carts={this.props.carts}
+                      selectedCartId={this.state.playPauseAddToCartCartId}
+                      onSelectCart={(cartId) => {
                         if (cartId) {
                           localStorage.setItem('playPauseDoubleClickCartId', cartId)
                         } else {
@@ -1677,16 +1675,12 @@ class Settings extends Component {
                         }
                         this.setState({ playPauseAddToCartCartId: cartId })
                       }}
-                    >
-                      <option value="">Default cart</option>
-                      {this.props.carts
-                        .filter(({ is_default }) => !is_default)
-                        .map(({ id, name }) => (
-                          <option key={id} value={id}>
-                            {name}
-                          </option>
-                        ))}
-                    </select>
+                      onCreateCartClick={async (name) => {
+                        const created = await this.props.onCreateCart(name)
+                        await this.props.onUpdateCarts()
+                        return created
+                      }}
+                    />
                   </p>
                   <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
                     <label htmlFor="play-pause-add-to-cart-delay" className="noselect">
