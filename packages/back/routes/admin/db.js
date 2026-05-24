@@ -652,9 +652,30 @@ module.exports.refetchBandcampArtistTracks = async (id) => {
 // store__artist row, and the mismatch via ON DELETE CASCADE, are removed) with
 // an explicit fallback for the case where the artist is kept.
 const fixStoreArtistMismatch = async (storeArtist) => {
+  logger.info(`Fixing Bandcamp artist/label mismatch for store artist ${storeArtist.storeArtistId}`, {
+    operation: 'fixStoreArtistMismatch',
+    storeArtistId: storeArtist.storeArtistId,
+    artistId: storeArtist.artistId,
+    currentName: storeArtist.currentName,
+    subdomain: storeArtist.subdomain,
+    url: storeArtist.url,
+  })
   const { labelId, deleted } = await convertArtistToLabel(storeArtist.artistId)
   await enqueueLabelArtistRefetch(labelId)
   await clearArtistNameMismatch(storeArtist.storeArtistId)
+  logger.info(
+    `Fixed Bandcamp artist/label mismatch for store artist ${storeArtist.storeArtistId}: ` +
+      `converted artist ${storeArtist.artistId} ("${storeArtist.currentName}") to label ${labelId} ` +
+      `(artist ${deleted ? 'deleted' : 'kept'}); queued label re-fetch to re-attribute tracks`,
+    {
+      operation: 'fixStoreArtistMismatch',
+      storeArtistId: storeArtist.storeArtistId,
+      artistId: storeArtist.artistId,
+      labelId,
+      deleted,
+      labelRefetchQueued: true,
+    },
+  )
   return { storeArtistId: storeArtist.storeArtistId, fixed: true, labelId, name: storeArtist.currentName, deleted }
 }
 
@@ -735,6 +756,9 @@ const convertArtistToLabel = async (id) => {
       WHERE a.artist_id = ${parsedId}`)
     if (!artist) throw new Error(`Artist ${parsedId} not found`)
 
+    const [labelByName] = await tx.queryRowsAsync(sql`-- convertArtistToLabel label exists?
+      SELECT label_id AS id FROM label WHERE LOWER(label_name) = LOWER(${artist.name})`)
+
     let labelId
     let storeLabelId = null
     if (artist.url && artist.storeId) {
@@ -745,25 +769,59 @@ const convertArtistToLabel = async (id) => {
         null,
       ))
     } else {
-      const [existing] = await tx.queryRowsAsync(sql`-- convertArtistToLabel find label by name
-        SELECT label_id AS id FROM label WHERE LOWER(label_name) = LOWER(${artist.name})`)
       labelId =
-        existing?.id ??
+        labelByName?.id ??
         (
           await tx.queryRowsAsync(sql`-- convertArtistToLabel create label
             INSERT INTO label (label_name) VALUES (${artist.name}) RETURNING label_id AS id`)
         )[0].id
     }
 
-    const movedTracks = await tx.queryRowsAsync(sql`-- convertArtistToLabel tracks credited to artist
-      SELECT DISTINCT track_id AS id FROM track__artist WHERE artist_id = ${parsedId}`)
+    // Capture every entity touched (before-images of what we delete/clear, and
+    // exactly what we add via RETURNING) so the whole conversion can be audited
+    // and, if necessary, reverted from this single log entry.
+    const audit = {
+      operation: 'convertArtistToLabel',
+      artistId: parsedId,
+      artistName: artist.name,
+      label: { id: labelId, created: !labelByName, storeLabelId },
+      deleted: false,
+    }
+    const logAudit = () =>
+      logger.info(
+        `convertArtistToLabel: artist ${parsedId} ("${artist.name}") -> label ${labelId}` +
+          (audit.deleted ? ' (artist deleted)' : ' (artist kept)'),
+        audit,
+      )
 
-    await tx.queryAsync(sql`-- convertArtistToLabel add label credits
+    audit.storeArtistRows = await tx.queryRowsAsync(sql`-- convertArtistToLabel store__artist before
+      SELECT store__artist_id       AS "storeArtistId"
+           , store_id               AS "storeId"
+           , store__artist_store_id AS "storeArtistStoreId"
+           , store__artist_url      AS url
+           , store__artist_source   AS source
+      FROM store__artist WHERE artist_id = ${parsedId}`)
+
+    audit.trackArtistCreditsRemoved = await tx.queryRowsAsync(sql`-- convertArtistToLabel credits before
+      SELECT track_id AS "trackId", track__artist_role AS role
+      FROM track__artist WHERE artist_id = ${parsedId}`)
+    const movedTrackIds = [...new Set(audit.trackArtistCreditsRemoved.map((c) => c.trackId))]
+
+    const [mislabeledFlag] = await tx.queryRowsAsync(sql`-- convertArtistToLabel flag before
+      SELECT bandcamp_mislabeled_artist_url    AS url
+           , bandcamp_mislabeled_artist_reason AS reason
+           , bandcamp_mislabeled_artist_status AS status
+      FROM bandcamp_mislabeled_artist WHERE artist_id = ${parsedId}`)
+    audit.mislabeledFlagRemoved = mislabeledFlag || null
+
+    const labelCreditsAdded = await tx.queryRowsAsync(sql`-- convertArtistToLabel add label credits
       INSERT INTO track__label (track_id, label_id)
       SELECT ta.track_id, ${labelId}
       FROM track__artist ta
       WHERE ta.artist_id = ${parsedId}
-      ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING`)
+      ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING
+      RETURNING track_id AS "trackId"`)
+    audit.labelCreditsAddedTrackIds = labelCreditsAdded.map((r) => r.trackId)
 
     await tx.queryAsync(sql`-- convertArtistToLabel drop artist credits
       DELETE FROM track__artist WHERE artist_id = ${parsedId}`)
@@ -777,10 +835,8 @@ const convertArtistToLabel = async (id) => {
       WHERE artist_id = ${parsedId}
         AND store_id = (SELECT store_id FROM store WHERE store_url = ${BANDCAMP_STORE_URL})`)
 
-    await refreshTrackDetails(
-      tx,
-      movedTracks.map((t) => t.id),
-    )
+    await refreshTrackDetails(tx, movedTrackIds)
+    audit.trackDetailsRefreshed = movedTrackIds
 
     // Carry the artist's followers over to the label. Each follower of any of
     // the artist's store watches becomes a follower of the label's Bandcamp
@@ -793,6 +849,7 @@ const convertArtistToLabel = async (id) => {
         JOIN store__artist_watch saw ON saw.store__artist_watch_id = sawu.store__artist_watch_id
         JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
       WHERE sa.artist_id = ${parsedId}`)
+    audit.followers = { count: followerCount, migrated: false, labelWatchId: null, userIds: [] }
 
     let followsMigrated = false
     if (followerCount > 0 && storeLabelId) {
@@ -802,7 +859,7 @@ const convertArtistToLabel = async (id) => {
       const [{ labelWatchId }] = await tx.queryRowsAsync(sql`-- convertArtistToLabel label watch id
         SELECT store__label_watch_id AS "labelWatchId"
         FROM store__label_watch WHERE store__label_id = ${storeLabelId}`)
-      await tx.queryAsync(sql`-- convertArtistToLabel migrate followers
+      const migratedFollowers = await tx.queryRowsAsync(sql`-- convertArtistToLabel migrate followers
         INSERT INTO store__label_watch__user (store__label_watch_id, meta_account_user_id)
         SELECT ${labelWatchId}, sawu.meta_account_user_id
         FROM
@@ -810,37 +867,69 @@ const convertArtistToLabel = async (id) => {
           JOIN store__artist_watch saw ON saw.store__artist_watch_id = sawu.store__artist_watch_id
           JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
         WHERE sa.artist_id = ${parsedId}
-        ON CONFLICT (store__label_watch_id, meta_account_user_id) DO NOTHING`)
+        ON CONFLICT (store__label_watch_id, meta_account_user_id) DO NOTHING
+        RETURNING meta_account_user_id AS "userId"`)
+      audit.followers = {
+        count: followerCount,
+        migrated: true,
+        labelWatchId,
+        userIds: migratedFollowers.map((r) => r.userId),
+      }
       followsMigrated = true
     }
 
     // Retire the artist once it has nothing left: all tracks were re-credited
     // above, so the only thing that can keep it alive is followers we could not
     // move (no Bandcamp label store presence to attach the watch to).
-    if (followerCount > 0 && !followsMigrated) return { labelId, deleted: false }
+    if (followerCount > 0 && !followsMigrated) {
+      logAudit()
+      return { labelId, deleted: false }
+    }
 
     // Preserve each user's intent: someone who ignored this artist (entirely,
     // or only on a given label) should keep ignoring it now that it has become
     // a label, so migrate those rows into full-label ignores before dropping
     // the artist-scoped ones.
-    await tx.queryAsync(sql`-- convertArtistToLabel migrate full-artist ignores
+    audit.artistIgnoresRemoved = (
+      await tx.queryRowsAsync(sql`-- convertArtistToLabel artist ignores before
+        SELECT meta_account_user_id AS "userId" FROM user__artist_ignore WHERE artist_id = ${parsedId}`)
+    ).map((r) => r.userId)
+    audit.artistLabelIgnoresRemoved = await tx.queryRowsAsync(sql`-- convertArtistToLabel artist-label ignores before
+      SELECT meta_account_user_id AS "userId", label_id AS "labelId"
+      FROM user__artist__label_ignore WHERE artist_id = ${parsedId}`)
+
+    const labelIgnoresFromArtist = await tx.queryRowsAsync(sql`-- convertArtistToLabel migrate full-artist ignores
       INSERT INTO user__label_ignore (label_id, meta_account_user_id)
       SELECT ${labelId}, meta_account_user_id
       FROM user__artist_ignore
       WHERE artist_id = ${parsedId}
-      ON CONFLICT (label_id, meta_account_user_id) DO NOTHING`)
-    await tx.queryAsync(sql`-- convertArtistToLabel migrate artist-on-label ignores
+      ON CONFLICT (label_id, meta_account_user_id) DO NOTHING
+      RETURNING meta_account_user_id AS "userId"`)
+    const labelIgnoresFromArtistLabel = await tx.queryRowsAsync(sql`-- convertArtistToLabel migrate artist-on-label ignores
       INSERT INTO user__label_ignore (label_id, meta_account_user_id)
       SELECT ${labelId}, meta_account_user_id
       FROM user__artist__label_ignore
       WHERE artist_id = ${parsedId}
-      ON CONFLICT (label_id, meta_account_user_id) DO NOTHING`)
+      ON CONFLICT (label_id, meta_account_user_id) DO NOTHING
+      RETURNING meta_account_user_id AS "userId"`)
+    audit.labelIgnoresAdded = {
+      fromArtistIgnore: labelIgnoresFromArtist.map((r) => r.userId),
+      fromArtistLabelIgnore: labelIgnoresFromArtistLabel.map((r) => r.userId),
+    }
 
     await tx.queryAsync(sql`DELETE FROM user__artist_ignore WHERE artist_id = ${parsedId}`)
     await tx.queryAsync(sql`DELETE FROM user__artist__label_ignore WHERE artist_id = ${parsedId}`)
+
+    audit.artistGenresRemoved = (
+      await tx.queryRowsAsync(sql`-- convertArtistToLabel artist genres before
+        SELECT genre_id AS "genreId" FROM artist__genre WHERE artist_id = ${parsedId}`)
+    ).map((r) => r.genreId)
+
     await tx.queryAsync(sql`DELETE FROM artist__genre WHERE artist_id = ${parsedId}`)
     await tx.queryAsync(sql`DELETE FROM store__artist WHERE artist_id = ${parsedId}`)
     await tx.queryAsync(sql`DELETE FROM artist WHERE artist_id = ${parsedId}`)
+    audit.deleted = true
+    logAudit()
     return { labelId, deleted: true }
   })
 }
@@ -934,11 +1023,12 @@ module.exports.reassignTrack = async ({ sourceType, sourceId, targetType, target
   if ([src, tgt, track].some((n) => Number.isNaN(n))) throw new Error('Invalid id')
   if (sourceType === targetType && src === tgt) throw new Error('Source and target are the same entity')
 
-  return BPromise.using(pg.getTransaction(), async (tx) => {
+  const targetRole = targetType === 'artist' ? role || 'author' : null
+  await BPromise.using(pg.getTransaction(), async (tx) => {
     if (targetType === 'artist') {
       await tx.queryAsync(sql`-- reassignTrack add artist
         INSERT INTO track__artist (track_id, artist_id, track__artist_role)
-        VALUES (${track}, ${tgt}, ${role || 'author'})
+        VALUES (${track}, ${tgt}, ${targetRole})
         ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING`)
     } else {
       await tx.queryAsync(sql`-- reassignTrack add label
@@ -960,6 +1050,15 @@ module.exports.reassignTrack = async ({ sourceType, sourceId, targetType, target
         DELETE FROM track__label WHERE track_id = ${track} AND label_id = ${src}`)
     }
   })
+
+  // Revert by removing the added {targetType targetId} link from track ${track}
+  // and re-adding the {sourceType sourceId} link (role ${role || 'n/a'}).
+  logger.info(`reassignTrack: track ${track} ${sourceType} ${src} -> ${targetType} ${tgt}`, {
+    operation: 'reassignTrack',
+    trackId: track,
+    added: { type: targetType, id: tgt, role: targetRole },
+    removed: { type: sourceType, id: src, role: sourceType === 'artist' ? role || null : null },
+  })
 }
 
 // After reassigning, neutralise the source: clear the bogus Bandcamp store URL
@@ -971,6 +1070,17 @@ module.exports.cleanupMislabeledSource = async (type, id) => {
   if (Number.isNaN(parsedId)) throw new Error('Invalid id')
 
   if (type === 'artist') {
+    const [{ name: artistName } = {}] = await pg.queryRowsAsync(
+      sql`SELECT artist_name AS name FROM artist WHERE artist_id = ${parsedId}`,
+    )
+    const storeArtistRows = await pg.queryRowsAsync(sql`-- cleanupMislabeledSource store__artist before
+      SELECT store__artist_id       AS "storeArtistId"
+           , store_id               AS "storeId"
+           , store__artist_store_id AS "storeArtistStoreId"
+           , store__artist_url      AS url
+           , store__artist_source   AS source
+      FROM store__artist WHERE artist_id = ${parsedId}`)
+
     await pg.queryAsync(sql`-- cleanupMislabeledSource clear artist url
       UPDATE store__artist
       SET store__artist_url = NULL, store__artist_store_id = NULL
@@ -983,15 +1093,43 @@ module.exports.cleanupMislabeledSource = async (type, id) => {
                          FROM store__artist_watch saw
                            JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
                          WHERE sa.artist_id = ${parsedId}) AS empty`)
-    if (!empty) return { deleted: false }
+    if (!empty) {
+      logger.info(`cleanupMislabeledSource: cleared Bandcamp URL for artist ${parsedId}, kept (not empty)`, {
+        operation: 'cleanupMislabeledSource',
+        type,
+        artistId: parsedId,
+        artistName,
+        storeArtistRowsCleared: storeArtistRows,
+        deleted: false,
+      })
+      return { deleted: false }
+    }
     try {
+      const audit = {
+        operation: 'cleanupMislabeledSource',
+        type,
+        artistId: parsedId,
+        artistName,
+        storeArtistRowsCleared: storeArtistRows,
+        deleted: true,
+      }
       await BPromise.using(pg.getTransaction(), async (tx) => {
+        audit.artistIgnoresRemoved = (
+          await tx.queryRowsAsync(sql`SELECT meta_account_user_id AS "userId" FROM user__artist_ignore WHERE artist_id = ${parsedId}`)
+        ).map((r) => r.userId)
+        audit.artistLabelIgnoresRemoved = await tx.queryRowsAsync(
+          sql`SELECT meta_account_user_id AS "userId", label_id AS "labelId" FROM user__artist__label_ignore WHERE artist_id = ${parsedId}`,
+        )
+        audit.artistGenresRemoved = (
+          await tx.queryRowsAsync(sql`SELECT genre_id AS "genreId" FROM artist__genre WHERE artist_id = ${parsedId}`)
+        ).map((r) => r.genreId)
         await tx.queryAsync(sql`DELETE FROM user__artist_ignore WHERE artist_id = ${parsedId}`)
         await tx.queryAsync(sql`DELETE FROM user__artist__label_ignore WHERE artist_id = ${parsedId}`)
         await tx.queryAsync(sql`DELETE FROM artist__genre WHERE artist_id = ${parsedId}`)
         await tx.queryAsync(sql`DELETE FROM store__artist WHERE artist_id = ${parsedId}`)
         await tx.queryAsync(sql`DELETE FROM artist WHERE artist_id = ${parsedId}`)
       })
+      logger.info(`cleanupMislabeledSource: deleted artist ${parsedId} ("${artistName}")`, audit)
       return { deleted: true }
     } catch (e) {
       logger.warn(`Could not delete mislabeled artist ${parsedId}: ${e.message}`)
@@ -999,6 +1137,9 @@ module.exports.cleanupMislabeledSource = async (type, id) => {
     }
   }
 
+  const [{ name: labelName } = {}] = await pg.queryRowsAsync(
+    sql`SELECT label_name AS name FROM label WHERE label_id = ${parsedId}`,
+  )
   const [{ empty }] = await pg.queryRowsAsync(sql`-- cleanupMislabeledSource label empty?
     SELECT NOT EXISTS (SELECT 1 FROM track__label WHERE label_id = ${parsedId})
        AND NOT EXISTS (SELECT 1
@@ -1007,10 +1148,25 @@ module.exports.cleanupMislabeledSource = async (type, id) => {
                        WHERE sl.label_id = ${parsedId}) AS empty`)
   if (!empty) return { deleted: false }
   try {
+    const audit = {
+      operation: 'cleanupMislabeledSource',
+      type,
+      labelId: parsedId,
+      labelName,
+      deleted: true,
+    }
     await BPromise.using(pg.getTransaction(), async (tx) => {
+      audit.storeLabelRowsRemoved = await tx.queryRowsAsync(sql`-- cleanupMislabeledSource store__label before
+        SELECT store__label_id       AS "storeLabelId"
+             , store_id              AS "storeId"
+             , store__label_store_id AS "storeLabelStoreId"
+             , store__label_url      AS url
+             , store__label_source   AS source
+        FROM store__label WHERE label_id = ${parsedId}`)
       await tx.queryAsync(sql`DELETE FROM store__label WHERE label_id = ${parsedId}`)
       await tx.queryAsync(sql`DELETE FROM label WHERE label_id = ${parsedId}`)
     })
+    logger.info(`cleanupMislabeledSource: deleted label ${parsedId} ("${labelName}")`, audit)
     return { deleted: true }
   } catch (e) {
     logger.warn(`Could not delete mislabeled label ${parsedId}: ${e.message}`)
