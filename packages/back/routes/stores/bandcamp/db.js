@@ -1,5 +1,7 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
+const BPromise = require('bluebird')
+const { ensureArtistExists } = require('../../shared/db/store.js')
 
 const STORE_URL = 'https://bandcamp.com'
 
@@ -106,4 +108,147 @@ WHERE  store_id            = ${storeId}
 `,
   )
   return new Set(rows.map((r) => r.url))
+}
+
+// --- Label artist re-fetch queue ---------------------------------------------
+
+// Queue (or re-queue) a label whose Bandcamp tracks should be re-attributed to
+// their real artists. Re-queuing resets a previous done/error row to pending.
+module.exports.enqueueLabelArtistRefetch = async (labelId) =>
+  pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- enqueueLabelArtistRefetch
+INSERT INTO bandcamp_label_artist_refetch (label_id)
+VALUES (${labelId})
+ON CONFLICT (label_id) DO UPDATE
+  SET bandcamp_label_artist_refetch_status         = 'pending'
+    , bandcamp_label_artist_refetch_added          = NOW()
+    , bandcamp_label_artist_refetch_started        = NULL
+    , bandcamp_label_artist_refetch_finished       = NULL
+    , bandcamp_label_artist_refetch_error          = NULL
+    , bandcamp_label_artist_refetch_releases_total = NULL
+    , bandcamp_label_artist_refetch_releases_done  = 0
+`,
+  )
+
+module.exports.getPendingLabelArtistRefetches = async () =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- getPendingLabelArtistRefetches
+SELECT r.bandcamp_label_artist_refetch_id          AS id
+     , r.label_id                                  AS "labelId"
+     , l.label_name                                AS "labelName"
+     , r.bandcamp_label_artist_refetch_releases_done AS "releasesDone"
+FROM
+  bandcamp_label_artist_refetch r
+  JOIN label l ON l.label_id = r.label_id
+WHERE r.bandcamp_label_artist_refetch_status = 'pending'
+ORDER BY r.bandcamp_label_artist_refetch_added ASC
+`,
+  )
+
+module.exports.markLabelArtistRefetchStarted = async (id, releasesTotal) =>
+  pg.queryAsync(
+    sql`-- markLabelArtistRefetchStarted
+UPDATE bandcamp_label_artist_refetch
+SET bandcamp_label_artist_refetch_started        = COALESCE(bandcamp_label_artist_refetch_started, NOW())
+  , bandcamp_label_artist_refetch_releases_total = ${releasesTotal}
+WHERE bandcamp_label_artist_refetch_id = ${id}`,
+  )
+
+module.exports.setLabelArtistRefetchProgress = async (id, releasesDone) =>
+  pg.queryAsync(
+    sql`-- setLabelArtistRefetchProgress
+UPDATE bandcamp_label_artist_refetch
+SET bandcamp_label_artist_refetch_releases_done = ${releasesDone}
+WHERE bandcamp_label_artist_refetch_id = ${id}`,
+  )
+
+module.exports.markLabelArtistRefetchDone = async (id) =>
+  pg.queryAsync(
+    sql`-- markLabelArtistRefetchDone
+UPDATE bandcamp_label_artist_refetch
+SET bandcamp_label_artist_refetch_status   = 'done'
+  , bandcamp_label_artist_refetch_finished = NOW()
+  , bandcamp_label_artist_refetch_error    = NULL
+WHERE bandcamp_label_artist_refetch_id = ${id}`,
+  )
+
+module.exports.markLabelArtistRefetchError = async (id, message) =>
+  pg.queryAsync(
+    sql`-- markLabelArtistRefetchError
+UPDATE bandcamp_label_artist_refetch
+SET bandcamp_label_artist_refetch_status   = 'error'
+  , bandcamp_label_artist_refetch_finished = NOW()
+  , bandcamp_label_artist_refetch_error    = ${message}
+WHERE bandcamp_label_artist_refetch_id = ${id}`,
+  )
+
+// Distinct Bandcamp release URLs backing a label's tracks, ordered so the
+// re-fetch job can resume from where it stopped (e.g. after a rate limit).
+module.exports.queryLabelBandcampReleaseUrls = async (labelId) => {
+  const rows = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryLabelBandcampReleaseUrls
+SELECT DISTINCT sr.store__release_url AS url
+FROM
+  track__label tl
+  JOIN release__track rt ON rt.track_id = tl.track_id
+  JOIN store__release sr ON sr.release_id = rt.release_id
+  JOIN store s ON s.store_id = sr.store_id AND s.store_url = ${STORE_URL}
+WHERE tl.label_id = ${labelId}
+  AND sr.store__release_url IS NOT NULL
+ORDER BY url ASC
+`,
+  )
+  return rows.map((r) => r.url)
+}
+
+// Replace each transformed track's artist credits with the freshly extracted
+// ones and (re)affirm the label credit. Tracks are matched to the database by
+// their Bandcamp store track id. Returns the number of tracks updated.
+module.exports.reattributeTracksArtists = async (tracks, labelId) => {
+  let updated = 0
+  await BPromise.using(pg.getTransaction(), async (tx) => {
+    for (const track of tracks) {
+      const [row] = await tx.queryRowsAsync(
+        // language=PostgreSQL
+        sql`-- reattributeTracksArtists find track
+SELECT track_id AS "trackId"
+FROM
+  store__track
+  NATURAL JOIN store
+WHERE store__track_store_id = ${track.id}
+  AND store_url = ${STORE_URL}`,
+      )
+      if (!row) continue
+      const trackId = row.trackId
+
+      const artists = []
+      for (const artist of track.artists) {
+        artists.push(await ensureArtistExists(tx, STORE_URL, artist, null))
+      }
+      if (artists.length === 0) continue
+
+      await tx.queryAsync(sql`DELETE FROM track__artist WHERE track_id = ${trackId}`)
+      for (const { id, role } of artists) {
+        await tx.queryAsync(
+          // language=PostgreSQL
+          sql`-- reattributeTracksArtists add artist
+INSERT INTO track__artist (track_id, artist_id, track__artist_role)
+VALUES (${trackId}, ${id}, ${role})
+ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING`,
+        )
+      }
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- reattributeTracksArtists ensure label
+INSERT INTO track__label (track_id, label_id)
+VALUES (${trackId}, ${labelId})
+ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING`,
+      )
+      updated++
+    }
+  })
+  return updated
 }

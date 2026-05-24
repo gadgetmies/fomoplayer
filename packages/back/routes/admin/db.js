@@ -9,6 +9,7 @@ const {
   flagMislabeledById,
 } = require('../shared/db/bandcampMislabeledCache')
 const { ensureLabelExists } = require('../shared/db/store')
+const { enqueueLabelArtistRefetch } = require('../stores/bandcamp/db')
 
 const BANDCAMP_STORE_URL = 'https://bandcamp.com'
 
@@ -610,6 +611,15 @@ module.exports.getMislabeledEntities = async (type) => {
 module.exports.ignoreMislabeledEntity = async (type, id) => {
   if (!MISLABELED_ENTITY_TYPES.includes(type)) throw new Error(`Unsupported entity type: ${type}`)
   await ignoreCachedMislabeled(type, parseInt(id, 10))
+}
+
+// Queue a label (typically just converted from a mislabeled artist) for a
+// background re-fetch of its Bandcamp releases so each track is re-attributed
+// to its real artists instead of the label name.
+module.exports.refetchBandcampLabelArtists = async (id) => {
+  const parsedId = parseInt(id, 10)
+  if (Number.isNaN(parsedId)) throw new Error('Invalid id')
+  await enqueueLabelArtistRefetch(parsedId)
 }
 
 module.exports.flagMislabeledEntity = async (type, id) => {

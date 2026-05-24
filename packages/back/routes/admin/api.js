@@ -31,6 +31,7 @@ const {
   ignoreMislabeledEntity,
   flagMislabeledEntity,
   convertArtistToLabel,
+  refetchBandcampLabelArtists,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 const { ensureIsAdmin } = require('../shared/auth.js')
@@ -231,6 +232,11 @@ router.post('/mislabeled/:type/:id/flag', async ({ params: { type, id } }, res) 
 
 router.post('/mislabeled/artist/:id/convert-to-label', async ({ params: { id } }, res) => {
   res.send(await convertArtistToLabel(id))
+})
+
+router.post('/labels/:id/refetch-bandcamp-artists', async ({ params: { id } }, res) => {
+  await refetchBandcampLabelArtists(id)
+  res.send({ ok: true })
 })
 
 module.exports = router

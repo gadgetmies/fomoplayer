@@ -103,6 +103,17 @@ module.exports.getFollowDetails = async ({ id, type, url }) => {
   return [{ ...details, store: { name: storeName.toLowerCase() } }]
 }
 
+// Re-fetch a single release and transform it as if it were seen on a label
+// page, so tracks are attributed to their real artists rather than collapsed
+// onto the (mis-detected) page artist. Used by the label artist re-fetch job
+// after a mislabeled artist is converted into a label.
+module.exports.fetchLabelReleaseTracks = async (releaseUrl, labelName) => {
+  const releaseInfo = await getReleaseAsync(releaseUrl)
+  releaseInfo.pageType = 'label'
+  releaseInfo.pageName = labelName
+  return bandcampReleasesTransform([releaseInfo])
+}
+
 const releaseTracksWithFiles = (releaseDetails) => {
   const tracks = releaseDetails.reduce((acc, { trackinfo }) => acc.concat(trackinfo), [])
   return tracks.filter(R.complement(R.propEq(null, 'file')))

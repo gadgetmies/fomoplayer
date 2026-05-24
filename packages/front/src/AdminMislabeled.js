@@ -101,6 +101,7 @@ function AdminMislabeled() {
   const [tracks, setTracks] = useState([])
   const [tracksLoading, setTracksLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const [convertedLabel, setConvertedLabel] = useState(null)
 
   const fetchEntities = useCallback(async (entityType) => {
     setLoading(true)
@@ -208,10 +209,30 @@ function AdminMislabeled() {
           ? 'Converted to label; followers moved and the artist retired.'
           : 'Converted to label, but the artist was kept: its followers could not be moved (the label has no Bandcamp store page).',
       )
+      setConvertedLabel({ id: res.labelId, name: selected.name })
       await fetchEntities(type)
     } catch (e) {
       console.error(e)
       window.alert('Convert failed')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const refetchArtists = async () => {
+    setProcessing(true)
+    try {
+      await requestJSONwithCredentials({
+        url: `${apiURL}/admin/labels/${convertedLabel.id}/refetch-bandcamp-artists`,
+        method: 'POST',
+      })
+      window.alert(
+        'Queued a background re-fetch of the label’s Bandcamp releases. Track artists will be corrected over the next few minutes.',
+      )
+      setConvertedLabel(null)
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not queue the artist re-fetch')
     } finally {
       setProcessing(false)
     }
@@ -242,6 +263,20 @@ function AdminMislabeled() {
 
   const renderList = () => (
     <div className="mislabeled-list">
+      {convertedLabel && (
+        <div className="mislabeled-converted">
+          <span>
+            Converted “{convertedLabel.name}” to label #{convertedLabel.id}. Re-fetch its Bandcamp releases to
+            re-attribute tracks to their real artists?
+          </span>
+          <button type="button" disabled={processing} onClick={refetchArtists}>
+            Re-fetch artists
+          </button>
+          <button type="button" disabled={processing} onClick={() => setConvertedLabel(null)}>
+            Dismiss
+          </button>
+        </div>
+      )}
       <div className="mislabeled-flag">
         <span>Flag a {type} as mislabeled:</span>
         <EntityPicker fixedType={type} processing={processing} onPick={flagEntity} />

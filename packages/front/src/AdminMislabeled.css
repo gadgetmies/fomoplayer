@@ -131,6 +131,18 @@
   border-bottom: 1px solid #444;
 }
 
+.mislabeled-converted {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  background: #2a3a2a;
+  border: 1px solid #3c5a3c;
+}
+
 .mislabeled-picker {
   display: flex;
   gap: 6px;
