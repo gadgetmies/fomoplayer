@@ -114,6 +114,16 @@ module.exports.fetchLabelReleaseTracks = async (releaseUrl, labelName) => {
   return bandcampReleasesTransform([releaseInfo])
 }
 
+// Re-fetch a release as an artist page so each track is attributed to the page
+// artist (the subdomain) instead of a mis-parsed title prefix. Used to repair
+// artists whose tracks were wrongly attributed during normal ingestion.
+module.exports.fetchArtistReleaseTracks = async (releaseUrl, artistName) => {
+  const releaseInfo = await getReleaseAsync(releaseUrl)
+  releaseInfo.pageType = 'artist'
+  releaseInfo.pageName = artistName
+  return bandcampReleasesTransform([releaseInfo])
+}
+
 const releaseTracksWithFiles = (releaseDetails) => {
   const tracks = releaseDetails.reduce((acc, { trackinfo }) => acc.concat(trackinfo), [])
   return tracks.filter(R.complement(R.propEq(null, 'file')))

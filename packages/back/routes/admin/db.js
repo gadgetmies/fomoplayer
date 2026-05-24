@@ -9,7 +9,7 @@ const {
   flagMislabeledById,
 } = require('../shared/db/bandcampMislabeledCache')
 const { ensureLabelExists } = require('../shared/db/store')
-const { enqueueLabelArtistRefetch } = require('../stores/bandcamp/db')
+const { enqueueLabelArtistRefetch, enqueueArtistTrackRefetch } = require('../stores/bandcamp/db')
 
 const BANDCAMP_STORE_URL = 'https://bandcamp.com'
 
@@ -620,6 +620,14 @@ module.exports.refetchBandcampLabelArtists = async (id) => {
   const parsedId = parseInt(id, 10)
   if (Number.isNaN(parsedId)) throw new Error('Invalid id')
   await enqueueLabelArtistRefetch(parsedId)
+}
+
+// Queue an artist for a background re-fetch of its Bandcamp releases so tracks
+// mis-attributed by the title-prefix heuristic are re-credited to the artist.
+module.exports.refetchBandcampArtistTracks = async (id) => {
+  const parsedId = parseInt(id, 10)
+  if (Number.isNaN(parsedId)) throw new Error('Invalid id')
+  await enqueueArtistTrackRefetch(parsedId)
 }
 
 module.exports.flagMislabeledEntity = async (type, id) => {

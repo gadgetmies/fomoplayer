@@ -238,6 +238,24 @@ function AdminMislabeled() {
     }
   }
 
+  const refetchArtistTracks = async ({ targetId, targetName }) => {
+    setProcessing(true)
+    try {
+      await requestJSONwithCredentials({
+        url: `${apiURL}/admin/artists/${targetId}/refetch-bandcamp-tracks`,
+        method: 'POST',
+      })
+      window.alert(
+        `Queued a background re-fetch of “${targetName}”’s Bandcamp releases. Tracks wrongly attributed to another name will be re-credited over the next few minutes.`,
+      )
+    } catch (e) {
+      console.error(e)
+      window.alert('Could not queue the re-fetch')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const cleanup = async () => {
     if (
       !window.confirm(
@@ -280,6 +298,10 @@ function AdminMislabeled() {
       <div className="mislabeled-flag">
         <span>Flag a {type} as mislabeled:</span>
         <EntityPicker fixedType={type} processing={processing} onPick={flagEntity} />
+      </div>
+      <div className="mislabeled-flag">
+        <span>Re-fetch a Bandcamp artist’s tracks (fix wrong artist attribution):</span>
+        <EntityPicker fixedType="artist" processing={processing} onPick={refetchArtistTracks} />
       </div>
       {entities.length === 0 && <div>No suspected mislabeled {type}s found.</div>}
       {entities.map((entity) => (

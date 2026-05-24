@@ -1,8 +1,9 @@
 const logger = require('fomoplayer_shared').logger(__filename)
-const { fetchLabelReleaseTracks } = require('../routes/stores/bandcamp/logic.js')
+const { fetchLabelReleaseTracks, fetchArtistReleaseTracks } = require('../routes/stores/bandcamp/logic.js')
 const {
-  getPendingLabelArtistRefetches,
+  getPendingRefetches,
   queryLabelBandcampReleaseUrls,
+  queryArtistBandcampReleaseUrls,
   markLabelArtistRefetchStarted,
   setLabelArtistRefetchProgress,
   markLabelArtistRefetchDone,
@@ -10,22 +11,24 @@ const {
   reattributeTracksArtists,
 } = require('../routes/stores/bandcamp/db.js')
 
-// Drain the label artist re-fetch queue: for each queued label, re-fetch its
-// Bandcamp releases as label pages and re-attribute every track to its real
-// artists. Processing is resumable per release so a Bandcamp rate limit just
-// pauses the work until the next scheduled run.
+// Drain the Bandcamp re-attribution queue. For each queued entity, re-fetch its
+// Bandcamp releases (labels as label pages, artists as artist pages) and
+// re-attribute every track to its real artists. Processing is resumable per
+// release so a Bandcamp rate limit just pauses the work until the next run.
 module.exports = async () => {
-  const pending = await getPendingLabelArtistRefetches()
-  let labelsCompleted = 0
+  const pending = await getPendingRefetches()
+  let entitiesCompleted = 0
   let tracksUpdated = 0
 
-  for (const { id, labelId, labelName, releasesDone } of pending) {
+  for (const { id, labelId, artistId, name, type, releasesDone } of pending) {
+    const isLabel = type === 'label'
+
     let urls
     try {
-      urls = await queryLabelBandcampReleaseUrls(labelId)
+      urls = isLabel ? await queryLabelBandcampReleaseUrls(labelId) : await queryArtistBandcampReleaseUrls(artistId)
     } catch (e) {
       await markLabelArtistRefetchError(id, e.message)
-      logger.error(`Failed to list Bandcamp releases for label ${labelId}`, e)
+      logger.error(`Failed to list Bandcamp releases for ${type} ${labelId || artistId}`, e)
       continue
     }
 
@@ -35,28 +38,30 @@ module.exports = async () => {
     try {
       for (let i = done; i < urls.length; i++) {
         try {
-          const tracks = await fetchLabelReleaseTracks(urls[i], labelName)
-          tracksUpdated += await reattributeTracksArtists(tracks, labelId)
+          const tracks = isLabel
+            ? await fetchLabelReleaseTracks(urls[i], name)
+            : await fetchArtistReleaseTracks(urls[i], name)
+          tracksUpdated += await reattributeTracksArtists(tracks, isLabel ? labelId : null)
         } catch (e) {
           if (e.isRateLimit) throw e
-          logger.warn(`Skipping release ${urls[i]} for label ${labelId}: ${e.message}`)
+          logger.warn(`Skipping release ${urls[i]} for ${type} ${labelId || artistId}: ${e.message}`)
         }
         done = i + 1
         await setLabelArtistRefetchProgress(id, done)
       }
       await markLabelArtistRefetchDone(id)
-      labelsCompleted++
+      entitiesCompleted++
     } catch (e) {
       if (e.isRateLimit) {
         logger.warn(
-          `Rate limited while re-fetching label ${labelId}; will resume next run (${done}/${urls.length} releases done)`,
+          `Rate limited while re-fetching ${type} ${labelId || artistId}; will resume next run (${done}/${urls.length} releases done)`,
         )
-        return { success: true, result: { labelsCompleted, tracksUpdated, note: 'rate limited, will resume' } }
+        return { success: true, result: { entitiesCompleted, tracksUpdated, note: 'rate limited, will resume' } }
       }
       await markLabelArtistRefetchError(id, e.message)
-      logger.error(`Failed to re-attribute artists for label ${labelId}`, e)
+      logger.error(`Failed to re-attribute artists for ${type} ${labelId || artistId}`, e)
     }
   }
 
-  return { success: true, result: { labelsCompleted, tracksUpdated } }
+  return { success: true, result: { entitiesCompleted, tracksUpdated } }
 }

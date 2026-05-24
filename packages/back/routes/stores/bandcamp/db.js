@@ -131,17 +131,37 @@ ON CONFLICT (label_id) DO UPDATE
 `,
   )
 
-module.exports.getPendingLabelArtistRefetches = async () =>
+module.exports.enqueueArtistTrackRefetch = async (artistId) =>
+  pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- enqueueArtistTrackRefetch
+INSERT INTO bandcamp_label_artist_refetch (artist_id)
+VALUES (${artistId})
+ON CONFLICT (artist_id) DO UPDATE
+  SET bandcamp_label_artist_refetch_status         = 'pending'
+    , bandcamp_label_artist_refetch_added          = NOW()
+    , bandcamp_label_artist_refetch_started        = NULL
+    , bandcamp_label_artist_refetch_finished       = NULL
+    , bandcamp_label_artist_refetch_error          = NULL
+    , bandcamp_label_artist_refetch_releases_total = NULL
+    , bandcamp_label_artist_refetch_releases_done  = 0
+`,
+  )
+
+module.exports.getPendingRefetches = async () =>
   pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`-- getPendingLabelArtistRefetches
-SELECT r.bandcamp_label_artist_refetch_id          AS id
-     , r.label_id                                  AS "labelId"
-     , l.label_name                                AS "labelName"
+    sql`-- getPendingRefetches
+SELECT r.bandcamp_label_artist_refetch_id            AS id
+     , r.label_id                                    AS "labelId"
+     , r.artist_id                                   AS "artistId"
+     , COALESCE(l.label_name, a.artist_name)         AS name
+     , CASE WHEN r.label_id IS NOT NULL THEN 'label' ELSE 'artist' END AS type
      , r.bandcamp_label_artist_refetch_releases_done AS "releasesDone"
 FROM
   bandcamp_label_artist_refetch r
-  JOIN label l ON l.label_id = r.label_id
+  LEFT JOIN label l ON l.label_id = r.label_id
+  LEFT JOIN artist a ON a.artist_id = r.artist_id
 WHERE r.bandcamp_label_artist_refetch_status = 'pending'
 ORDER BY r.bandcamp_label_artist_refetch_added ASC
 `,
@@ -204,10 +224,32 @@ ORDER BY url ASC
   return rows.map((r) => r.url)
 }
 
+// Distinct Bandcamp release URLs published on an artist's own subdomain. Uses
+// the store page URL rather than current track credits, since the whole point
+// is to repair tracks that are currently credited to the wrong artist.
+module.exports.queryArtistBandcampReleaseUrls = async (artistId) => {
+  const rows = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryArtistBandcampReleaseUrls
+SELECT DISTINCT sr.store__release_url AS url
+FROM
+  store__artist sa
+  JOIN store s ON s.store_id = sa.store_id AND s.store_url = ${STORE_URL}
+  JOIN store__release sr ON sr.store_id = sa.store_id
+    AND sr.store__release_url LIKE sa.store__artist_url || '/%'
+WHERE sa.artist_id = ${artistId}
+  AND sa.store__artist_url IS NOT NULL
+ORDER BY url ASC
+`,
+  )
+  return rows.map((r) => r.url)
+}
+
 // Replace each transformed track's artist credits with the freshly extracted
-// ones and (re)affirm the label credit. Tracks are matched to the database by
-// their Bandcamp store track id. Returns the number of tracks updated.
-module.exports.reattributeTracksArtists = async (tracks, labelId) => {
+// ones, matched to the database by Bandcamp store track id. When a labelId is
+// given (label re-fetch) the label credit is re-affirmed; for artist re-fetches
+// the labels are left untouched. Returns the number of tracks updated.
+module.exports.reattributeTracksArtists = async (tracks, labelId = null) => {
   let updated = 0
   await BPromise.using(pg.getTransaction(), async (tx) => {
     for (const track of tracks) {
@@ -240,13 +282,15 @@ VALUES (${trackId}, ${id}, ${role})
 ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING`,
         )
       }
-      await tx.queryAsync(
-        // language=PostgreSQL
-        sql`-- reattributeTracksArtists ensure label
+      if (labelId) {
+        await tx.queryAsync(
+          // language=PostgreSQL
+          sql`-- reattributeTracksArtists ensure label
 INSERT INTO track__label (track_id, label_id)
 VALUES (${trackId}, ${labelId})
 ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING`,
-      )
+        )
+      }
       updated++
     }
   })
