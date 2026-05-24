@@ -151,6 +151,7 @@ class Settings extends Component {
       mediaButtonBehavior: localStorage.getItem('mediaButtonBehavior') || 'seek',
       playPauseAddToCart: (localStorage.getItem('playPauseDoubleClickAddToCart') || 'true') === 'true',
       playPauseAddToCartDelay: parseInt(localStorage.getItem('playPauseDoubleClickDelay'), 10) || 1000,
+      playPauseAddToCartCartId: localStorage.getItem('playPauseDoubleClickCartId') || '',
       audioSamples: [],
       uploadingAudioSample: false,
       deletingAudioSample: null,
@@ -1641,8 +1642,8 @@ class Settings extends Component {
               <h4>Add to cart with play/pause</h4>
               <p>
                 When enabled, pressing the play/pause media button (keyboard, headphones, etc.) twice within the
-                configured delay adds the currently playing track to your default cart. This setting is stored on this
-                device, so it can be configured separately for each device you use.
+                configured delay adds the currently playing track to the selected cart. These settings are stored on
+                this device, so they can be configured separately for each device you use.
               </p>
               <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
                 <label htmlFor="play-pause-add-to-cart" className="noselect">
@@ -1659,26 +1660,54 @@ class Settings extends Component {
                 <span className="noselect">{this.state.playPauseAddToCart ? 'On' : 'Off'}</span>
               </p>
               {this.state.playPauseAddToCart ? (
-                <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
-                  <label htmlFor="play-pause-add-to-cart-delay" className="noselect">
-                    Maximum delay between presses (ms):
-                  </label>
-                  <input
-                    id="play-pause-add-to-cart-delay"
-                    type="number"
-                    min="100"
-                    step="100"
-                    value={this.state.playPauseAddToCartDelay}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      this.setState({ playPauseAddToCartDelay: value })
-                      const parsed = parseInt(value, 10)
-                      if (!Number.isNaN(parsed) && parsed >= 100) {
-                        localStorage.setItem('playPauseDoubleClickDelay', String(parsed))
-                      }
-                    }}
-                  />
-                </p>
+                <>
+                  <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
+                    <label htmlFor="play-pause-add-to-cart-cart" className="noselect">
+                      Add tracks to cart:
+                    </label>
+                    <select
+                      id="play-pause-add-to-cart-cart"
+                      value={this.state.playPauseAddToCartCartId}
+                      onChange={(e) => {
+                        const cartId = e.target.value
+                        if (cartId) {
+                          localStorage.setItem('playPauseDoubleClickCartId', cartId)
+                        } else {
+                          localStorage.removeItem('playPauseDoubleClickCartId')
+                        }
+                        this.setState({ playPauseAddToCartCartId: cartId })
+                      }}
+                    >
+                      <option value="">Default cart</option>
+                      {this.props.carts.map(({ id, name, is_default }) => (
+                        <option key={id} value={id}>
+                          {name}
+                          {is_default ? ' (default)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </p>
+                  <p style={{ display: 'flex', alignItems: 'center', gap: 16 }} className="input-layout">
+                    <label htmlFor="play-pause-add-to-cart-delay" className="noselect">
+                      Maximum delay between presses (ms):
+                    </label>
+                    <input
+                      id="play-pause-add-to-cart-delay"
+                      type="number"
+                      min="100"
+                      step="100"
+                      value={this.state.playPauseAddToCartDelay}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        this.setState({ playPauseAddToCartDelay: value })
+                        const parsed = parseInt(value, 10)
+                        if (!Number.isNaN(parsed) && parsed >= 100) {
+                          localStorage.setItem('playPauseDoubleClickDelay', String(parsed))
+                        }
+                      }}
+                    />
+                  </p>
+                </>
               ) : null}
             </>
           ) : null}

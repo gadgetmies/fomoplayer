@@ -56,7 +56,8 @@ export class SettingsHelp extends Component {
           In the player tab you can configure the behavior of the media buttons on your device. You can choose between
           the default behavior (single press to seek, double press to skip) and a skip behavior (single press to skip to
           the next track or to the beginning/previous track). You can also enable adding the currently playing track to
-          your default cart by pressing play/pause twice, and adjust the maximum delay allowed between the two presses.
+          a cart of your choice by pressing play/pause twice, and adjust the maximum delay allowed between the two
+          presses.
         </p>
       ),
     },

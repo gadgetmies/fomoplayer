@@ -221,9 +221,12 @@ class Player extends Component {
     if (this._playPauseDoubleClickStarted) {
       clearTimeout(this._playPauseDoubleClickTimer)
       this._playPauseDoubleClickStarted = false
-      const defaultCart = this.getDefaultCart()
-      if (defaultCart && this.props.currentTrack) {
-        await this.props.onAddToCart(defaultCart.id, this.props.currentTrack.id)
+      const configuredCartId = localStorage.getItem('playPauseDoubleClickCartId')
+      const targetCart =
+        (configuredCartId && this.props.carts.find((cart) => String(cart.id) === configuredCartId)) ||
+        this.getDefaultCart()
+      if (targetCart && this.props.currentTrack) {
+        await this.props.onAddToCart(targetCart.id, this.props.currentTrack.id)
       }
     } else {
       this._playPauseDoubleClickStarted = true
