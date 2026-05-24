@@ -6,16 +6,11 @@
  * and slugs below are taken verbatim from Beatport's own genre navigation, so
  * they match the storefront and v4 API exactly. The checkBeatportGenres job
  * compares this list against the live API and alerts when genres are added or
- * renamed so it can be updated. Regenerate the list with:
- *   npm run fetch:beatport-genres   (needs BEATPORT_USERNAME / BEATPORT_PASSWORD)
+ * renamed so it can be updated.
  *
  * A genre's top-100 lives at the storefront URL
  *   https://www.beatport.com/genre/{slug}/{id}/top-100
  * which the v4 client maps to /v4/catalog/genres/{id}/top/100/.
- *
- * Note: this covers the Electronic genres. Beatport's Open Format genres
- * (African, Caribbean, Country, DJ Edits, Hip-Hop, Latin, Pop, R&B, Rock) are
- * not included yet — the job will report them once their ids are available.
  */
 const STORE_URL = 'https://www.beatport.com'
 

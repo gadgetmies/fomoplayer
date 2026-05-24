@@ -10,7 +10,6 @@
     "db-migrate:prod": "db-migrate -v --config ${PWD}/database.json -e prod up",
     "db-migrate:prod:retry": "node scripts/db-migrate-with-retry.js",
     "db:wait": "node scripts/wait-for-db.js",
-    "fetch:beatport-genres": "bash scripts/fetch-beatport-genres.sh",
     "test": "NODE_ENV=test dotenv -e .env.test -- npx cascade-test ./test/tests",
     "test:browser": "NODE_ENV=test dotenv -e .env.test -- npx cascade-test ./test/browser",
     "ci:test": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test ./test/tests",
