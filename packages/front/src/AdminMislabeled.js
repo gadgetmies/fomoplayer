@@ -81,6 +81,12 @@ function EntityPicker({ onPick, processing, fixedType }) {
     }
   }, [query, targetType])
 
+  // Only artists can be created on the fly here; the label reassign path
+  // requires an existing label id.
+  const trimmed = query.trim()
+  const canCreate = targetType === 'artist' && trimmed !== ''
+  const exactMatch = results.some((r) => r.name.toLowerCase() === trimmed.toLowerCase())
+
   return (
     <div className="mislabeled-picker">
       {!fixedType && (
@@ -95,10 +101,10 @@ function EntityPicker({ onPick, processing, fixedType }) {
           placeholder={`Search ${targetType}…`}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => results.length > 0 && setOpen(true)}
+          onFocus={() => (results.length > 0 || canCreate) && setOpen(true)}
           disabled={processing}
         />
-        {open && results.length > 0 && (
+        {open && (results.length > 0 || canCreate) && (
           <ul className="mislabeled-results">
             {results.map((r) => (
               <li key={r.id}>
@@ -115,6 +121,22 @@ function EntityPicker({ onPick, processing, fixedType }) {
                 </button>
               </li>
             ))}
+            {canCreate && !exactMatch && (
+              <li>
+                <button
+                  type="button"
+                  className="mislabeled-create-option"
+                  disabled={processing}
+                  onClick={() => {
+                    setOpen(false)
+                    setQuery('')
+                    onPick({ targetType, targetName: trimmed })
+                  }}
+                >
+                  ＋ Create new artist “{trimmed}”
+                </button>
+              </li>
+            )}
           </ul>
         )}
       </div>
@@ -183,7 +205,9 @@ function AdminMislabeled() {
   const reassign = async (track, { targetType, targetId, targetName }) => {
     if (
       !window.confirm(
-        `Reassign "${track.title}" from ${type} "${selected.name}" to ${targetType} "${targetName}" (${targetId})?`,
+        `Reassign "${track.title}" from ${type} "${selected.name}" to ${targetType} "${targetName}" ${
+          targetId ? `(${targetId})` : '(new)'
+        }?`,
       )
     )
       return
@@ -192,7 +216,7 @@ function AdminMislabeled() {
       await requestJSONwithCredentials({
         url: `${apiURL}/admin/mislabeled/reassign`,
         method: 'POST',
-        body: { sourceType: type, sourceId: selected.id, targetType, targetId, trackId: track.id, role: track.role },
+        body: { sourceType: type, sourceId: selected.id, targetType, targetId, targetName, trackId: track.id, role: track.role },
       })
       setTracks((prev) => prev.filter((t) => t.id !== track.id))
     } catch (e) {
@@ -208,7 +232,7 @@ function AdminMislabeled() {
       !window.confirm(
         `Reassign all ${group.tracks.length} track${group.tracks.length === 1 ? '' : 's'} of "${
           group.releaseName || group.releaseUrl || 'this release'
-        }" from ${type} "${selected.name}" to ${targetType} "${targetName}" (${targetId})?`,
+        }" from ${type} "${selected.name}" to ${targetType} "${targetName}" ${targetId ? `(${targetId})` : '(new)'}?`,
       )
     )
       return
@@ -217,7 +241,7 @@ function AdminMislabeled() {
       await requestJSONwithCredentials({
         url: `${apiURL}/admin/mislabeled/reassign-release`,
         method: 'POST',
-        body: { sourceType: type, sourceId: selected.id, targetType, targetId, releaseId: group.releaseId },
+        body: { sourceType: type, sourceId: selected.id, targetType, targetId, targetName, releaseId: group.releaseId },
       })
       const reassignedIds = new Set(group.tracks.map((t) => t.id))
       setTracks((prev) => prev.filter((t) => !reassignedIds.has(t.id)))
@@ -634,7 +658,8 @@ function AdminMislabeled() {
             <li>
               <strong>Reassign to</strong> (single track) / <strong>Reassign all tracks to</strong> (whole release):
               moves the track(s) to the artist or label they really belong to — each track gains the chosen credit and
-              loses this one.
+              loses this one. Pick an existing artist/label, or type a name and choose “Create new artist” to reassign
+              to a brand-new artist.
             </li>
             {type === 'artist' && (
               <li>

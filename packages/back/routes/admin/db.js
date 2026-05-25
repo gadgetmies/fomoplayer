@@ -1035,18 +1035,26 @@ module.exports.getMislabeledEntityTracks = async (type, id) => {
 // Move one track's link from a mislabeled source entity to the correct target.
 // Source and target may be different types (e.g. a label-as-artist track moved
 // onto a label): we add the target link and drop the source link.
-module.exports.reassignTrack = async ({ sourceType, sourceId, targetType, targetId, trackId, role }) => {
+module.exports.reassignTrack = async ({ sourceType, sourceId, targetType, targetId, targetName, trackId, role }) => {
   if (!MISLABELED_ENTITY_TYPES.includes(sourceType) || !MISLABELED_ENTITY_TYPES.includes(targetType)) {
     throw new Error('Invalid entity type')
   }
   const src = parseInt(sourceId, 10)
-  const tgt = parseInt(targetId, 10)
   const track = parseInt(trackId, 10)
-  if ([src, tgt, track].some((n) => Number.isNaN(n))) throw new Error('Invalid id')
-  if (sourceType === targetType && src === tgt) throw new Error('Source and target are the same entity')
+  if ([src, track].some((n) => Number.isNaN(n))) throw new Error('Invalid id')
+  const hasTargetId = targetId != null && targetId !== ''
+  if (targetType === 'label' && !hasTargetId) throw new Error('Pick an existing label to reassign to')
 
   const targetRole = targetType === 'artist' ? role || 'author' : null
+  let tgt
   await BPromise.using(pg.getTransaction(), async (tx) => {
+    tgt =
+      targetType === 'artist'
+        ? await resolveTargetArtistId(tx, hasTargetId ? { artistId: targetId } : { name: targetName })
+        : parseInt(targetId, 10)
+    if (Number.isNaN(tgt)) throw new Error('Invalid id')
+    if (sourceType === targetType && src === tgt) throw new Error('Source and target are the same entity')
+
     if (targetType === 'artist') {
       await tx.queryAsync(sql`-- reassignTrack add artist
         INSERT INTO track__artist (track_id, artist_id, track__artist_role)
@@ -1091,19 +1099,27 @@ module.exports.reassignTrack = async ({ sourceType, sourceId, targetType, target
 // source entity onto the correct target, in a single transaction. Used from the
 // inspect view to re-attribute a whole release at once (e.g. a compilation whose
 // tracks were all collapsed onto the label name). Each track keeps its own role.
-module.exports.reassignReleaseTracks = async ({ sourceType, sourceId, targetType, targetId, releaseId }) => {
+module.exports.reassignReleaseTracks = async ({ sourceType, sourceId, targetType, targetId, targetName, releaseId }) => {
   if (!MISLABELED_ENTITY_TYPES.includes(sourceType) || !MISLABELED_ENTITY_TYPES.includes(targetType)) {
     throw new Error('Invalid entity type')
   }
   const src = parseInt(sourceId, 10)
-  const tgt = parseInt(targetId, 10)
   const rel = parseInt(releaseId, 10)
-  if ([src, tgt, rel].some((n) => Number.isNaN(n))) throw new Error('Invalid id')
-  if (sourceType === targetType && src === tgt) throw new Error('Source and target are the same entity')
+  if ([src, rel].some((n) => Number.isNaN(n))) throw new Error('Invalid id')
+  const hasTargetId = targetId != null && targetId !== ''
+  if (targetType === 'label' && !hasTargetId) throw new Error('Pick an existing label to reassign to')
 
   let reassigned = 0
+  let tgt
   const reassignedTrackIds = []
   await BPromise.using(pg.getTransaction(), async (tx) => {
+    tgt =
+      targetType === 'artist'
+        ? await resolveTargetArtistId(tx, hasTargetId ? { artistId: targetId } : { name: targetName })
+        : parseInt(targetId, 10)
+    if (Number.isNaN(tgt)) throw new Error('Invalid id')
+    if (sourceType === targetType && src === tgt) throw new Error('Source and target are the same entity')
+
     const tracks =
       sourceType === 'artist'
         ? await tx.queryRowsAsync(sql`-- reassignReleaseTracks find artist tracks

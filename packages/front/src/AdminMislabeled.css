@@ -266,6 +266,12 @@
   background: #444;
 }
 
+.mislabeled-results li button.mislabeled-create-option {
+  border-top: 1px solid #555;
+  font-style: italic;
+  color: #9ad;
+}
+
 @media (max-width: 768px) {
   .mislabeled-tracks,
   .mislabeled-tracks thead,
