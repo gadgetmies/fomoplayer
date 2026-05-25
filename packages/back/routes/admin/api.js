@@ -41,11 +41,48 @@ const {
   fixArtistNameMismatch,
   fixBandcampArtistPageByUrl,
   fixArtistBandcampMismatches,
+  getArtistSplitCandidates,
+  ignoreArtistSplitCandidate,
+  getArtistTracks,
+  splitArtist,
+  addArtistCredit,
+  removeArtistCredit,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 const { ensureIsAdmin } = require('../shared/auth.js')
+const config = require('../../config')
+const { isDatabaseResetAllowed } = require('./database-reset-policy')
+const { resetDatabase, databaseResetEnvironmentName } = require('./reset-database')
 
 router.use(ensureIsAdmin)
+
+// Lets the admin UI decide whether to surface preview-only tools. The database
+// reset is offered only in preview deployments; production never reports it.
+router.get('/capabilities', (req, res) => {
+  const databaseReset = isDatabaseResetAllowed(config)
+  res.send({
+    databaseReset,
+    environmentName: databaseReset ? databaseResetEnvironmentName() : null,
+  })
+})
+
+// Destructive: drops all data and rebuilds an empty schema. Hard-gated to
+// preview environments regardless of the UI, requires the env name as a typed
+// confirmation token, and is the authoritative check (the resetDatabase helper
+// re-asserts the same policy).
+router.post('/reset-database', async (req, res) => {
+  if (!isDatabaseResetAllowed(config)) {
+    return res.status(403).send({ error: 'Database reset is not available in this environment' })
+  }
+  if (req.body?.confirm !== databaseResetEnvironmentName()) {
+    return res.status(400).send({ error: 'Confirmation does not match the environment name' })
+  }
+  // Rebuilding every migration can outlast the global 25s request timeout.
+  if (typeof req.clearTimeout === 'function') req.clearTimeout()
+  logger.warn(`Admin ${req.user?.id ?? 'unknown'} triggered a database reset`)
+  await resetDatabase()
+  res.send({ ok: true })
+})
 router.get('/jobs', async (req, res) => {
   res.send(await getJobs())
 })
@@ -284,6 +321,31 @@ router.post('/bandcamp/fix-artist-page', async ({ body: { url } }, res) => {
 
 router.post('/artists/:id/fix-bandcamp-mismatches', async ({ params: { id } }, res) => {
   res.send(await fixArtistBandcampMismatches(id))
+})
+
+router.get('/artist-split-candidates', async (_, res) => {
+  res.send(await getArtistSplitCandidates())
+})
+
+router.get('/artists/:id/tracks', async ({ params: { id } }, res) => {
+  res.send(await getArtistTracks(id))
+})
+
+router.post('/artist-split-candidates/:id/ignore', async ({ params: { id } }, res) => {
+  await ignoreArtistSplitCandidate(id)
+  res.send({ ok: true })
+})
+
+router.post('/artists/:id/split', async ({ params: { id }, body: { targets } }, res) => {
+  res.send(await splitArtist(id, targets))
+})
+
+router.post('/tracks/:trackId/credits/add', async ({ params: { trackId }, body: { artistId, name, role } }, res) => {
+  res.send(await addArtistCredit(trackId, { artistId, name }, role))
+})
+
+router.post('/tracks/:trackId/credits/remove', async ({ params: { trackId }, body: { artistId, role } }, res) => {
+  res.send(await removeArtistCredit(trackId, artistId, role))
 })
 
 module.exports = router

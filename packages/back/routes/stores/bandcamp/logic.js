@@ -129,7 +129,16 @@ const releaseTracksWithFiles = (releaseDetails) => {
   return tracks.filter(R.complement(R.propEq(null, 'file')))
 }
 
-const getTracksFromReleases = async (releaseUrls) => {
+// `pageContext` carries the entity type/name detected on the followed page's
+// own /music listing (a label or artist landing page). That detection is
+// reliable; per-release detection on an individual album page is not, because a
+// single album page rarely exposes the label signals (the /artists roster link,
+// is_label, or 2+ distinct artist tiles). When a context is supplied we override
+// each release's own pageType/pageName with it so every release on a label is
+// treated as a label release — otherwise label releases collapse onto a single
+// subdomain artist. The tag/discover path passes no context (its releases have
+// no single owning page) and keeps per-release detection.
+const getTracksFromReleases = async (releaseUrls, pageContext = null) => {
   const errors = []
 
   let releaseDetails = []
@@ -137,6 +146,10 @@ const getTracksFromReleases = async (releaseUrls) => {
     logger.debug(`Processing release: ${releaseUrl}`)
     try {
       const releaseInfo = await getReleaseAsync(releaseUrl)
+      if (pageContext) {
+        releaseInfo.pageType = pageContext.pageType
+        releaseInfo.pageName = pageContext.pageName
+      }
       releaseDetails.push(releaseInfo)
     } catch (e) {
       if (e.isRateLimit) {
@@ -185,12 +198,16 @@ const filterToUnknownUrls = async (urls) => {
 
 module.exports.getArtistTracks = async function* ({ url }) {
   try {
-    const { type, releaseUrls } = await getArtistAsync(url)
+    const { type, name, releaseUrls } = await getArtistAsync(url)
     await updateMislabeledFlag('artist', url, type)
     const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
     logger.debug(
       `Artist ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
     )
+    // Detect the page's true type once, here on its /music listing, and apply it
+    // to every release: a page that is really a label must not credit all its
+    // releases to the subdomain.
+    const pageContext = { pageType: type, pageName: name }
     yield { tracks: [], errors: [], skipped, totalReleases: releaseUrls.length }
     for (const releaseUrl of unknownUrls) {
       if (isRateLimited()) {
@@ -198,7 +215,7 @@ module.exports.getArtistTracks = async function* ({ url }) {
         return
       }
       try {
-        yield await getTracksFromReleases([releaseUrl])
+        yield await getTracksFromReleases([releaseUrl], pageContext)
       } catch (e) {
         if (e.isRateLimit) {
           logger.error('Rate limit reached while getting artist tracks from release', e)
@@ -219,12 +236,16 @@ module.exports.getArtistTracks = async function* ({ url }) {
 
 module.exports.getLabelTracks = async function* ({ url }) {
   try {
-    const { type, releaseUrls } = await getLabelAsync(url)
+    const { type, name, releaseUrls } = await getLabelAsync(url)
     await updateMislabeledFlag('label', url, type)
     const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
     logger.debug(
       `Label ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
     )
+    // Detect the page's true type once, here on its /music listing, and apply it
+    // to every release so a label's releases are attributed to their real
+    // artists by name instead of all collapsing onto the label subdomain.
+    const pageContext = { pageType: type, pageName: name }
     yield { tracks: [], errors: [], skipped, totalReleases: releaseUrls.length }
     for (const releaseUrl of unknownUrls) {
       if (isRateLimited()) {
@@ -232,7 +253,7 @@ module.exports.getLabelTracks = async function* ({ url }) {
         return
       }
       try {
-        yield await getTracksFromReleases([releaseUrl])
+        yield await getTracksFromReleases([releaseUrl], pageContext)
       } catch (e) {
         if (e.isRateLimit) {
           logger.error('Rate limit reached while getting label tracks from release', e)

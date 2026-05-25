@@ -6,9 +6,9 @@
     "artists": [
       {
         "name": "Billain",
-        "id": "billainaethek",
         "role": "author",
-        "url": "https://billainaethek.bandcamp.com"
+        "id": null,
+        "url": null
       }
     ],
     "released": "17 Nov 2023 00:00:00 GMT",
@@ -20,7 +20,11 @@
       "title": "Different Eyes EP",
       "id": "1051734106"
     },
-    "label": null,
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "VISION"
+    },
     "previews": [
       {
         "format": "mp3",
@@ -75,9 +79,9 @@
     "artists": [
       {
         "name": "Billain",
-        "id": "billainaethek",
         "role": "author",
-        "url": "https://billainaethek.bandcamp.com"
+        "id": null,
+        "url": null
       }
     ],
     "released": "17 Nov 2023 00:00:00 GMT",
@@ -89,7 +93,11 @@
       "title": "Different Eyes EP",
       "id": "1051734106"
     },
-    "label": null,
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "VISION"
+    },
     "previews": [
       {
         "format": "mp3",
@@ -144,9 +152,9 @@
     "artists": [
       {
         "name": "Billain",
-        "id": "billainaethek",
         "role": "author",
-        "url": "https://billainaethek.bandcamp.com"
+        "id": null,
+        "url": null
       }
     ],
     "released": "17 Nov 2023 00:00:00 GMT",
@@ -158,7 +166,11 @@
       "title": "Different Eyes EP",
       "id": "1051734106"
     },
-    "label": null,
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "VISION"
+    },
     "previews": [
       {
         "format": "mp3",
@@ -213,9 +225,9 @@
     "artists": [
       {
         "name": "Billain",
-        "id": "billainaethek",
         "role": "author",
-        "url": "https://billainaethek.bandcamp.com"
+        "id": null,
+        "url": null
       }
     ],
     "released": "17 Nov 2023 00:00:00 GMT",
@@ -227,7 +239,11 @@
       "title": "Different Eyes EP",
       "id": "1051734106"
     },
-    "label": null,
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "VISION"
+    },
     "previews": [
       {
         "format": "mp3",
@@ -282,9 +298,9 @@
     "artists": [
       {
         "name": "Billain",
-        "id": "billainaethek",
         "role": "author",
-        "url": "https://billainaethek.bandcamp.com"
+        "id": null,
+        "url": null
       }
     ],
     "released": "17 Nov 2023 00:00:00 GMT",
@@ -296,7 +312,11 @@
       "title": "Different Eyes EP",
       "id": "1051734106"
     },
-    "label": null,
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "VISION"
+    },
     "previews": [
       {
         "format": "mp3",
@@ -351,9 +371,9 @@
     "artists": [
       {
         "name": "Billain",
-        "id": "billainaethek",
         "role": "author",
-        "url": "https://billainaethek.bandcamp.com"
+        "id": null,
+        "url": null
       }
     ],
     "released": "17 Nov 2023 00:00:00 GMT",
@@ -365,7 +385,11 @@
       "title": "Different Eyes EP",
       "id": "1051734106"
     },
-    "label": null,
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "VISION"
+    },
     "previews": [
       {
         "format": "mp3",
@@ -420,9 +444,9 @@
     "artists": [
       {
         "name": "Billain",
-        "id": "billainaethek",
         "role": "author",
-        "url": "https://billainaethek.bandcamp.com"
+        "id": null,
+        "url": null
       }
     ],
     "released": "17 Nov 2023 00:00:00 GMT",
@@ -434,7 +458,11 @@
       "title": "Different Eyes EP",
       "id": "1051734106"
     },
-    "label": null,
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "VISION"
+    },
     "previews": [
       {
         "format": "mp3",

@@ -5,6 +5,7 @@ import { requestJSONwithCredentials, requestWithCredentials } from './request-js
 import { apiURL } from './config'
 import beautify from 'js-beautify'
 import { withRouter } from 'react-router-dom'
+import AdminDatabaseReset from './AdminDatabaseReset'
 import './Admin.css'
 
 const L = require('partial.lenses')
@@ -187,6 +188,12 @@ class Admin extends Component {
             >
               Fix Mislabeled
             </button>
+            <button
+              className="button button-push_button button-push_button-primary"
+              onClick={() => this.props.history.push('/admin/artist-split')}
+            >
+              Split Artists
+            </button>
           </div>
         </div>
         <div className="admin-grid">
@@ -304,6 +311,7 @@ class Admin extends Component {
             </form>
           </div>
         </div>
+        <AdminDatabaseReset />
       </div>
     )
   }

@@ -1,0 +1,271 @@
+.admin-artist-split {
+  padding: 1rem;
+  color: white;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.admin-artist-split-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.admin-artist-split-header h1 {
+  margin: 0;
+}
+
+.admin-artist-split .muted {
+  color: #aaa;
+}
+
+.admin-artist-split button {
+  padding: 6px 12px;
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.admin-artist-split button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.admin-artist-split .split-primary {
+  background: var(--fp-brand-primary, #007bff);
+}
+
+.split-manual {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #444;
+}
+
+.split-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 15px;
+  background: #222;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+.split-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.split-suggestions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.split-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #335;
+  border-radius: 10px;
+  font-size: 0.85em;
+}
+
+.split-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.split-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.split-detail-header h2 {
+  margin: 0;
+}
+
+.split-panel {
+  background: #222;
+  border-radius: 4px;
+  padding: 12px 15px;
+  margin-bottom: 20px;
+}
+
+.split-panel h3 {
+  margin: 0 0 4px 0;
+}
+
+.split-target-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.split-target-remove {
+  flex: 0 0 auto;
+}
+
+.split-panel-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.artist-field {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.artist-field-badge {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  min-width: 34px;
+  text-align: center;
+}
+
+.artist-field-badge.new {
+  background: #553;
+}
+
+.artist-field-badge.existing {
+  background: #355;
+}
+
+.artist-field-search {
+  position: relative;
+}
+
+.artist-field-search input {
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 6px;
+  min-width: 180px;
+}
+
+.artist-field-results {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 2px 0 0 0;
+  padding: 0;
+  list-style: none;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.artist-field-results li button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border-radius: 0;
+}
+
+.artist-field-results li button:hover {
+  background: #444;
+}
+
+.split-tracks {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.split-tracks th,
+.split-tracks td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #333;
+  vertical-align: top;
+}
+
+.split-credits {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.split-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: #333;
+  border-radius: 10px;
+  font-size: 0.85em;
+}
+
+.split-credit-remove {
+  padding: 0 5px;
+  background: #633;
+  border-radius: 8px;
+  line-height: 1.4;
+  font-size: 0.85em;
+}
+
+.split-add-credit {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.split-add-credit select {
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 6px;
+}
+
+@media (max-width: 768px) {
+  .split-tracks,
+  .split-tracks thead,
+  .split-tracks tbody,
+  .split-tracks th,
+  .split-tracks td,
+  .split-tracks tr {
+    display: block;
+  }
+
+  .split-tracks thead {
+    display: none;
+  }
+
+  .split-tracks tr {
+    margin-bottom: 12px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 8px;
+  }
+}
