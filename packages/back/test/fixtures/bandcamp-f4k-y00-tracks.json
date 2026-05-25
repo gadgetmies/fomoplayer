@@ -6,9 +6,9 @@
     "artists": [
       {
         "name": "Billain",
-        "id": "billainaethek",
         "role": "author",
-        "url": "https://billainaethek.bandcamp.com"
+        "id": null,
+        "url": null
       }
     ],
     "released": "31 Dec 2023 00:00:00 GMT",
@@ -20,7 +20,11 @@
       "title": "F4K Y00",
       "id": "3959806045"
     },
-    "label": null,
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "VISION"
+    },
     "previews": [
       {
         "format": "mp3",
@@ -75,9 +79,9 @@
     "artists": [
       {
         "name": "Billain",
-        "id": "billainaethek",
         "role": "author",
-        "url": "https://billainaethek.bandcamp.com"
+        "id": null,
+        "url": null
       }
     ],
     "released": "31 Dec 2023 00:00:00 GMT",
@@ -89,7 +93,11 @@
       "title": "F4K Y00",
       "id": "3959806045"
     },
-    "label": null,
+    "label": {
+      "id": "3470339956",
+      "url": "https://billainaethek.bandcamp.com",
+      "name": "VISION"
+    },
     "previews": [
       {
         "format": "mp3",
