@@ -5,6 +5,7 @@ import { requestJSONwithCredentials, requestWithCredentials } from './request-js
 import { apiURL } from './config'
 import beautify from 'js-beautify'
 import { withRouter } from 'react-router-dom'
+import AdminDatabaseReset from './AdminDatabaseReset'
 import './Admin.css'
 
 const L = require('partial.lenses')
@@ -310,6 +311,7 @@ class Admin extends Component {
             </form>
           </div>
         </div>
+        <AdminDatabaseReset />
       </div>
     )
   }

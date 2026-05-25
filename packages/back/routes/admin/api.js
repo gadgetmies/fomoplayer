@@ -50,8 +50,39 @@ const {
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 const { ensureIsAdmin } = require('../shared/auth.js')
+const config = require('../../config')
+const { isDatabaseResetAllowed } = require('./database-reset-policy')
+const { resetDatabase, databaseResetEnvironmentName } = require('./reset-database')
 
 router.use(ensureIsAdmin)
+
+// Lets the admin UI decide whether to surface preview-only tools. The database
+// reset is offered only in preview deployments; production never reports it.
+router.get('/capabilities', (req, res) => {
+  const databaseReset = isDatabaseResetAllowed(config)
+  res.send({
+    databaseReset,
+    environmentName: databaseReset ? databaseResetEnvironmentName() : null,
+  })
+})
+
+// Destructive: drops all data and rebuilds an empty schema. Hard-gated to
+// preview environments regardless of the UI, requires the env name as a typed
+// confirmation token, and is the authoritative check (the resetDatabase helper
+// re-asserts the same policy).
+router.post('/reset-database', async (req, res) => {
+  if (!isDatabaseResetAllowed(config)) {
+    return res.status(403).send({ error: 'Database reset is not available in this environment' })
+  }
+  if (req.body?.confirm !== databaseResetEnvironmentName()) {
+    return res.status(400).send({ error: 'Confirmation does not match the environment name' })
+  }
+  // Rebuilding every migration can outlast the global 25s request timeout.
+  if (typeof req.clearTimeout === 'function') req.clearTimeout()
+  logger.warn(`Admin ${req.user?.id ?? 'unknown'} triggered a database reset`)
+  await resetDatabase()
+  res.send({ ok: true })
+})
 router.get('/jobs', async (req, res) => {
   res.send(await getJobs())
 })
