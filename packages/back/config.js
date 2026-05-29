@@ -67,6 +67,18 @@ const extensionOauthAllowedRedirectPatterns = (
   .filter((pattern) => pattern.length > 0)
   .map((pattern) => new RegExp(pattern))
 
+// Tracks whose published date is older than this many days are skipped during
+// watch-job ingestion (see routes/shared/tracks.js). Defaults to a true 2 years.
+const trackMaxAgeDays = (() => {
+  const raw = process.env.TRACK_MAX_AGE_DAYS
+  if (raw === undefined || raw === '') return 730
+  const value = Number(raw)
+  if (!Number.isInteger(value)) {
+    throw new Error(`TRACK_MAX_AGE_DAYS must be an integer; got "${raw}"`)
+  }
+  return value
+})()
+
 const decodePem = (value) => (typeof value === 'string' ? value.replace(/\\n/g, '\n') : undefined)
 const internalAuthHandoffPrivateKey = decodePem(process.env.INTERNAL_AUTH_HANDOFF_PRIVATE_KEY) || undefined
 const internalAuthHandoffPublicKey = decodePem(process.env.INTERNAL_AUTH_HANDOFF_PUBLIC_KEY) || undefined
@@ -125,4 +137,5 @@ module.exports = {
   internalAuthApiAudience,
   extensionAccessTokenTtlSeconds: 15 * 60,
   extensionRefreshTokenTtlSeconds: 90 * 24 * 60 * 60,
+  trackMaxAgeDays,
 }

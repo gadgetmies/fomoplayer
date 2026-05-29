@@ -16,7 +16,7 @@ const {
   artistOnLabelInIgnore,
   addTracksToUser,
 } = require('../users/db.js')
-const { apiURL } = require('../../config.js')
+const { apiURL, trackMaxAgeDays } = require('../../config.js')
 const { queryTracksForStoreIds, queryTrackDetails, queryStoredTracksForUrls, queryTrackIdMappingForStoreUrl } = require('./db/tracks')
 const { queryLabelForRelease } = require('./db/release')
 
@@ -137,13 +137,22 @@ const addTrackToUser = (module.exports.addTrackToUser = async (tx, userId, artis
   }
 })
 
-const aYear = 1000 * 60 * 60 * 24 * 30 * 12
+const DAY_MS = 1000 * 60 * 60 * 24
+// Whether an ingested track is old enough to skip. Purchased tracks and the
+// skipOld=false path are never skipped. maxAgeDays is configurable via the
+// TRACK_MAX_AGE_DAYS env var (see config.js).
+const isTrackTooOld = (
+  track,
+  { skipOld = true, type = 'tracks', maxAgeDays = trackMaxAgeDays, now = Date.now() } = {},
+) => skipOld && type !== 'purchased' && now - new Date(track.published).getTime() > maxAgeDays * DAY_MS
+module.exports.isTrackTooOld = isTrackTooOld
+
 const addStoreTrackToUsers = async (storeUrl, userIds, track, sourceId, skipOld = true, type = 'tracks') => {
   return BPromise.using(pg.getTransaction(), async (tx) => {
     let labelId
     let releaseId
 
-    if (skipOld && Date.now() - new Date(track.published) > 2 * aYear && type !== 'purchased') {
+    if (isTrackTooOld(track, { skipOld, type })) {
       logger.info(`Track too old, skipping: ${track.id}`)
     } else {
       if (track.label) {
