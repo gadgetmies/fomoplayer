@@ -12,10 +12,18 @@ Usage:
     cd analyser
     source venv/bin/activate
     python run_fingerprint_and_report.py [--skip-fingerprint] [--report-only]
+                                          [--workers N] [--batch-size M]
 
 Flags:
     --skip-fingerprint: assume fingerprints already in DB; jump to scoring
-    --report-only: assume match table already populated; just write the report
+    --report-only:      assume match table already populated; just write the report
+    --workers:          parallel worker processes for preview fingerprinting (default 4)
+    --batch-size:       files per Panako invocation (default 20)
+
+The preview fingerprinting phase runs `--workers` parallel processes,
+each pulling batches of `--batch-size` files. Each worker maintains its
+own `PANAKO_CACHE_FOLDER` so LMDB writes never contend across workers,
+and runs Panako on the whole batch in a single `panako store` JVM call.
 """
 
 from __future__ import annotations
@@ -24,9 +32,11 @@ import argparse
 import datetime as dt
 import json
 import os
+import subprocess
 import sys
 import time
 import traceback
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import psycopg2
@@ -47,13 +57,16 @@ from extraction import (  # noqa: E402
     download_and_manage_file,
     ensure_downloads_directory,
     extract_panako_fingerprints,
+    read_tdb_file,
+    PANAKO_CONFIG_ARGS,
+    PANAKO_STORE_EXTRA_ARGS,
 )
 
 DB_DSN = os.environ.get('DATABASE_URL', 'postgresql://localhost/multi-store-player')
 STAGE1_THRESHOLD = float(os.environ.get('SAMPLE_MATCH_DEFAULT_THRESHOLD', '0.008'))
 BUCKET_SECONDS = float(os.environ.get('SAMPLE_MATCH_BUCKET_SECONDS', '0.05'))
 PEAK_BUCKET_MIN = int(os.environ.get('SAMPLE_MATCH_PEAK_BUCKET_MIN', '1'))
-REPORT_PATH = Path(__file__).parent.parent / 'openspec' / 'changes' / 'suspected-sample-matches-display' / 'PANAKO-RESULTS.md'
+REPORT_PATH = Path(__file__).parent.parent / 'openspec' / 'changes' / 'archive' / '2026-05-30-suspected-sample-matches-display' / 'PANAKO-RESULTS.md'
 
 # ----------------------------- helpers ------------------------------------
 
@@ -303,7 +316,137 @@ def upsert_match(conn, sample_id, preview_id, score, threshold, bucket_seconds):
 # ---------------------------- main phases ---------------------------------
 
 
-def phase_fingerprint(conn, downloads_dir):
+def _worker_cache_dir():
+    """Per-worker Panako cache folder, isolated by PID so LMDB writes never
+    contend across workers. Reused across batches within one worker."""
+    cache_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        f'panako_db_worker_{os.getpid()}',
+    )
+    os.makedirs(cache_dir, exist_ok=True)
+    return os.path.abspath(cache_dir)
+
+
+def _batched_panako_store(audio_paths, cache_dir):
+    """Run `panako store` then `panako resolve` on a batch of files in a
+    single JVM invocation each. Returns parallel list of file IDs."""
+    panako_args = list(PANAKO_CONFIG_ARGS) + [f'PANAKO_CACHE_FOLDER={cache_dir}']
+    store_cmd = ['panako', 'store', *audio_paths, *PANAKO_STORE_EXTRA_ARGS, *panako_args]
+    store_result = subprocess.run(store_cmd, capture_output=True, text=True, check=False)
+    if store_result.returncode != 0:
+        raise RuntimeError(
+            f'panako batch store failed (rc={store_result.returncode}): '
+            f'{store_result.stderr[:500]}'
+        )
+
+    resolve_cmd = ['panako', 'resolve', *audio_paths, *panako_args]
+    resolve_result = subprocess.run(resolve_cmd, capture_output=True, text=True, check=False)
+    if resolve_result.returncode != 0:
+        raise RuntimeError(
+            f'panako batch resolve failed (rc={resolve_result.returncode}): '
+            f'{resolve_result.stderr[:500]}'
+        )
+
+    ids = [line.strip() for line in resolve_result.stdout.strip().split('\n') if line.strip()]
+    if len(ids) != len(audio_paths):
+        raise RuntimeError(
+            f'panako resolve returned {len(ids)} ids for {len(audio_paths)} files'
+        )
+    return ids
+
+
+def _worker_process_preview_batch(batch_jobs):
+    """Pool-callable: download + wav-convert each preview, then batch-Panako
+    them, then INSERT into Postgres. Returns one result dict per input job."""
+    cache_dir = _worker_cache_dir()
+    downloads_dir = ensure_downloads_directory()
+    results = []
+    prepared = []
+
+    # Phase A: per-file download + wav-convert. Failures don't sink the batch.
+    for job in batch_jobs:
+        try:
+            downloaded_path, _ = download_and_manage_file(
+                job['url'], job['id'], 'preview', None, downloads_dir,
+            )
+            audio_path = to_wav_if_needed(downloaded_path, 'preview', job['id'], downloads_dir)
+            if not os.path.exists(audio_path) or os.path.getsize(audio_path) == 0:
+                raise RuntimeError(f'audio missing/empty: {audio_path}')
+            prepared.append({'id': job['id'], 'audio_path': os.path.abspath(audio_path)})
+        except Exception as e:  # noqa: BLE001
+            results.append({'id': job['id'], 'fp_count': 0, 'error': f'prep: {e}'[:200]})
+
+    if not prepared:
+        return results
+
+    # Phase B: batched Panako on prepared files
+    try:
+        file_ids = _batched_panako_store([p['audio_path'] for p in prepared], cache_dir)
+    except Exception as e:  # noqa: BLE001
+        results.extend(
+            {'id': p['id'], 'fp_count': 0, 'error': f'batch: {e}'[:200]}
+            for p in prepared
+        )
+        return results
+
+    # Phase C: read .tdb + INSERT per file
+    conn = db_connect()
+    try:
+        for p, fid in zip(prepared, file_ids):
+            tdb_path = os.path.join(cache_dir, f'{fid}.tdb')
+            for _ in range(20):
+                if os.path.exists(tdb_path) and os.path.getsize(tdb_path) > 0:
+                    break
+                time.sleep(0.1)
+            fingerprints = read_tdb_file(tdb_path)
+            try:
+                insert_preview_fingerprints(conn, p['id'], fingerprints)
+                results.append({'id': p['id'], 'fp_count': len(fingerprints), 'error': None})
+            except Exception as e:  # noqa: BLE001
+                results.append({'id': p['id'], 'fp_count': 0, 'error': f'insert: {e}'[:200]})
+    finally:
+        conn.close()
+    return results
+
+
+def _fingerprint_previews_parallel(workers, batch_size):
+    conn = db_connect()
+    try:
+        previews = fetch_previews_to_fingerprint(conn)
+    finally:
+        conn.close()
+    if not previews:
+        print('No previews to fingerprint.')
+        return []
+
+    batches = [previews[i:i + batch_size] for i in range(0, len(previews), batch_size)]
+    print(f'{len(previews)} previews to fingerprint, {workers} workers × batches of {batch_size} ({len(batches)} batches)')
+    results = []
+    start = time.time()
+    with ProcessPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(_worker_process_preview_batch, b): i for i, b in enumerate(batches, 1)}
+        for completed_n, fut in enumerate(as_completed(futures), 1):
+            batch_idx = futures[fut]
+            try:
+                batch_results = fut.result()
+            except Exception as e:  # noqa: BLE001
+                print(f'  batch {batch_idx} crashed: {e}')
+                continue
+            results.extend(batch_results)
+            elapsed = time.time() - start
+            done = len(results)
+            fail = sum(1 for r in batch_results if r['error'])
+            rate = done / max(1.0, elapsed)
+            eta = (len(previews) - done) / max(0.1, rate)
+            print(
+                f'  batch {completed_n}/{len(batches)} done '
+                f'({len(batch_results)} files, {fail} failed) '
+                f'| total {done}/{len(previews)} | {rate:.2f} files/s | ETA {eta:.0f}s'
+            )
+    return results
+
+
+def phase_fingerprint(conn, downloads_dir, workers=4, batch_size=20):
     print('=== Phase 1: fingerprint samples ===')
     samples = fetch_samples_to_fingerprint(conn)
     sample_results = []
@@ -318,23 +461,8 @@ def phase_fingerprint(conn, downloads_dir):
         print(f"inserted {len(fps)} fingerprints for sample {s['id']}")
         sample_results.append({'id': s['id'], 'fp_count': len(fps), 'error': None})
 
-    print('\n=== Phase 2: fingerprint previews ===')
-    previews = fetch_previews_to_fingerprint(conn)
-    print(f"{len(previews)} previews to fingerprint")
-    preview_results = []
-    start = time.time()
-    for i, p in enumerate(previews, 1):
-        elapsed = time.time() - start
-        eta = elapsed / max(1, i - 1) * (len(previews) - i + 1) if i > 1 else 0
-        print(f"\n--- preview {p['id']} ({i}/{len(previews)}, elapsed {elapsed:.0f}s, ETA {eta:.0f}s) ---")
-        fps, err = fingerprint_one(downloads_dir, 'preview', p['id'], p['url'])
-        if err:
-            print(f"FAILED: {err}")
-            preview_results.append({'id': p['id'], 'fp_count': 0, 'error': err[:200]})
-            continue
-        insert_preview_fingerprints(conn, p['id'], fps)
-        print(f"inserted {len(fps)} fingerprints for preview {p['id']}")
-        preview_results.append({'id': p['id'], 'fp_count': len(fps), 'error': None})
+    print('\n=== Phase 2: fingerprint previews (parallel) ===')
+    preview_results = _fingerprint_previews_parallel(workers=workers, batch_size=batch_size)
     return sample_results, preview_results
 
 
@@ -384,13 +512,26 @@ def phase_score(conn):
 def phase_report(conn, score_results, samples, sample_results=None, preview_results=None):
     print('\n=== Phase 4: build report ===')
 
-    # Ground truth = the rows whose threshold marker is NULL or pre-set (synthetic),
-    # but simpler: pull every row currently in the table and mark which were hand-
-    # inserted by the values matching {1,2,6→74}, {3,4,5→163}.
-    GROUND_TRUTH = {
-        (1, 74), (2, 74), (6, 74),
-        (3, 163), (4, 163), (5, 163),
-    }
+    # Ground truth lives in user_notification_audio_sample_match_gt — the curator
+    # maintains it by hand. Fall back to the hardcoded seed set if the table is
+    # absent (older runs predate it).
+    GROUND_TRUTH = set()
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT to_regclass('public.user_notification_audio_sample_match_gt')
+        """)
+        gt_exists = cur.fetchone()[0] is not None
+    if gt_exists:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT user_notification_audio_sample_id, store__track_preview_id
+                FROM user_notification_audio_sample_match_gt
+            """)
+            GROUND_TRUTH = {(int(s), int(p)) for s, p in cur.fetchall()}
+        print(f'Ground truth loaded from user_notification_audio_sample_match_gt: {len(GROUND_TRUTH)} pairs')
+    else:
+        GROUND_TRUTH = {(1, 74), (2, 74), (6, 74), (3, 163), (4, 163), (5, 163)}
+        print(f'Ground truth fallback (seed set): {len(GROUND_TRUTH)} pairs')
 
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("""
@@ -451,12 +592,16 @@ def phase_report(conn, score_results, samples, sample_results=None, preview_resu
 
     lines.append('## Ground truth vs Panako')
     lines.append('')
-    lines.append('Ground truth = the 6 `(sample, preview)` rows that were hand-inserted '
-                 'into `user_notification_audio_sample_match` to seed the Settings UI '
-                 '(mantra samples 1,2,6 → preview 74 / track 48; serious samples '
-                 '3,4,5 → preview 163 / track 111).')
+    if gt_exists:
+        lines.append(f'Ground truth = the {len(GROUND_TRUTH)} `(sample, preview)` '
+                     'rows in `user_notification_audio_sample_match_gt`, a '
+                     'curator-maintained snapshot.')
+    else:
+        lines.append(f'Ground truth = a built-in seed set of {len(GROUND_TRUTH)} '
+                     '`(sample, preview)` rows (the curator table was not present).')
     lines.append('')
-    lines.append(f'- **Recall** (of the 6 ground-truth pairs): {len(tp)}/{len(GROUND_TRUTH)} = **{recall:.0%}**')
+    lines.append(f'- **Recall** (of the {len(GROUND_TRUTH)} ground-truth pairs): '
+                 f'{len(tp)}/{len(GROUND_TRUTH)} = **{recall:.0%}**')
     lines.append(f'- **Precision** (vs total Panako-discovered matches above threshold): '
                  f'{len(tp)}/{len(found)} = **{precision:.0%}**')
     lines.append(f'- True positives: **{len(tp)}**')
@@ -555,6 +700,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--skip-fingerprint', action='store_true')
     ap.add_argument('--report-only', action='store_true')
+    ap.add_argument('--workers', type=int, default=4,
+                    help='Parallel worker processes for preview fingerprinting (default 4)')
+    ap.add_argument('--batch-size', type=int, default=20,
+                    help='Files per Panako invocation (default 20)')
     args = ap.parse_args()
 
     conn = db_connect()
@@ -562,7 +711,9 @@ def main():
 
     sample_results = preview_results = None
     if not args.skip_fingerprint and not args.report_only:
-        sample_results, preview_results = phase_fingerprint(conn, downloads_dir)
+        sample_results, preview_results = phase_fingerprint(
+            conn, downloads_dir, workers=args.workers, batch_size=args.batch_size,
+        )
         # Persist a small ledger so a later --report-only run can still cite stats
         ledger = {'samples': sample_results, 'previews': preview_results}
         Path(__file__).parent.joinpath('last_fingerprint_run.json').write_text(json.dumps(ledger, indent=2))
@@ -579,8 +730,28 @@ def main():
             {sid: matches for sid, matches in score_results.items()}, indent=2, default=str
         ))
     else:
-        # Re-derive samples + score_results from the freshly-populated match table
-        score_results, samples = phase_score(conn)
+        # --report-only: do NOT re-score (phase_score TRUNCATEs the match
+        # table). Load the last score-run from disk and re-derive the
+        # samples list from the DB.
+        score_path = Path(__file__).parent / 'last_score_run.json'
+        if not score_path.exists():
+            raise SystemExit(
+                f'--report-only needs {score_path} from a previous full run; not found.'
+            )
+        raw = json.loads(score_path.read_text())
+        score_results = {int(sid): matches for sid, matches in raw.items()}
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT s.user_notification_audio_sample_id AS id,
+                       s.user_notification_audio_sample_filename AS filename
+                FROM user_notification_audio_sample s
+                WHERE EXISTS (
+                  SELECT 1 FROM user_notification_audio_sample_fingerprint f
+                  WHERE f.user_notification_audio_sample_id = s.user_notification_audio_sample_id
+                )
+                ORDER BY s.user_notification_audio_sample_id
+            """)
+            samples = list(cur.fetchall())
 
     phase_report(conn, score_results, samples, sample_results, preview_results)
 
