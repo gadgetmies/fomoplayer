@@ -195,6 +195,18 @@ def get_oauth2_token():
     return id_token
 
 
+def build_model(model_name):
+    graph_filename = f"./models/{model_name}.pb"
+    return TensorflowPredictEffnetDiscogs(graphFilename=graph_filename, output="PartitionedCall:1")
+
+
+def compute_temporal_embedding(wav_path, model):
+    """Load audio at 16kHz and run the model, returning the (n_patches, 1280)
+    per-patch temporal embedding matrix."""
+    audio = MonoLoader(filename=wav_path, sampleRate=16000, resampleQuality=4)()
+    return model(audio)
+
+
 if __name__ == '__main__':
     print(f"[{datetime.datetime.now()}] Starting")
     id_token = get_oauth2_token()
@@ -345,6 +357,11 @@ if __name__ == '__main__':
                 if not found:
                     print(f"Failed to find a working preview for track {track.get('track_id')}")
 
+        # Build the model once and reuse it across the batch.
+        model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
+        print("Preparing model")
+        model = build_model(model_name)
+
         for track in tracks:
             if (track['missing']):
                 print(f"Reporting track preview missing with id: {track['preview_id']}")
@@ -368,22 +385,15 @@ if __name__ == '__main__':
                     if isrc != 'null':
                         print(f"Fetching Spotify audio features for ISRC: {isrc}")
                         # spotify_details = get_spotify_details(isrc)
-                    # outputFile = NamedTemporaryFile()
                     print("Preparing audio")
-                    audio = MonoLoader(filename='./output.wav', sampleRate=16000, resampleQuality=4)()
-                    print("Preparing model")
-                    model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
-                    graphFilename = f"./models/{model_name}.pb"
-                    model = TensorflowPredictEffnetDiscogs(
-                        graphFilename=graphFilename,
-                        output="PartitionedCall:1")
                     print("Processing audio")
-                    embeddings = model(audio)
+                    embeddings = compute_temporal_embedding('./output.wav', model)
 
-                    print(f"Processing done, sending details for preview with id: {track.get("preview_id")}")
-                    data = [{"id": track.get("preview_id"),
+                    preview_id = track.get("preview_id")
+                    print(f"Processing done, sending details for preview with id: {preview_id}")
+                    data = [{"id": preview_id,
                              "embeddings": json.dumps(embeddings.T.mean(1).tolist()),
-                             "model": args.model,
+                             "model": model_name,
                              "spotify": spotify_details}]
                     res = requests.post(f"{os.getenv('API_URL')}/admin/analyse",
                                         headers={'Authorization': f"Bearer {id_token}"},

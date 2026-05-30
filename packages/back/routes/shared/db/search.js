@@ -23,6 +23,11 @@ module.exports.searchForTracks = async (
   const sampleSearchId = originalQueryString.match(/sample:~(\d+)/)?.[1]
   const useMatchScoreSort = Boolean(sampleSearchId) && !s
 
+  // Hardcoded production embedding type: the only type currently generated for previews.
+  // Filtering on it keeps cross-model vectors from being compared and makes the reference
+  // selection deterministic.
+  const PRODUCTION_EMBEDDING_TYPE = 'discogs_multi_embeddings-effnet-bs64-1'
+
   const queryString = originalQueryString.replace(/(\S+:\S+)\s*/g, '').trim()
 
   const hasUnresolvedEntityFilter = fieldFilters.some(([key, value]) => {
@@ -133,18 +138,21 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
     }
 
     if (similaritySearchTrackId) {
+      // language=PostgreSQL
       query.append(sql`
 , reference AS
-  (SELECT store__track_preview_embedding
+  (SELECT store__track_preview_embedding AS reference_embedding
    FROM
      store__track_preview_embedding
      NATURAL JOIN store__track_preview
      NATURAL JOIN store__track
-   WHERE track_id = ${similaritySearchTrackId} LIMIT 1)
+   WHERE track_id = ${similaritySearchTrackId}
+     AND store__track_preview_embedding_type = ${PRODUCTION_EMBEDDING_TYPE}
+   LIMIT 1)
    , similar_tracks AS
   (SELECT track_id
-        , MIN(store__track_preview_embedding <->
-          (SELECT store__track_preview_embedding FROM reference)) AS similarity
+        , MIN(store__track_preview_embedding <=>
+          (SELECT reference_embedding FROM reference)) AS similarity
    FROM
      store__track_preview_embedding
      NATURAL JOIN store__track_preview
@@ -167,7 +175,8 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
    WHERE (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
      AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL OR track_id = ${similaritySearchTrackId})
      AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
-     AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))`)
+     AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
+     AND store__track_preview_embedding_type = ${PRODUCTION_EMBEDDING_TYPE}`)
 
       if (fuzzyFilterQueries.length > 0) {
         query.append(' AND ')
@@ -209,7 +218,7 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
       }
 
       query.append(sql`
-   ORDER BY MIN(store__track_preview_embedding <-> (SELECT store__track_preview_embedding FROM reference)) NULLS LAST
+   ORDER BY MIN(store__track_preview_embedding <=> (SELECT reference_embedding FROM reference)) NULLS LAST
    LIMIT ${limit} OFFSET ${offset})
 `)
     }
