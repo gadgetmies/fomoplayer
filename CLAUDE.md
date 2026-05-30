@@ -28,6 +28,38 @@ Exceptions:
 When introducing a new URL, ask: "would this break if someone deployed Fomo
 Player at a different host?" If yes, route it through configuration.
 
+# Database naming conventions
+
+Two rules apply to every table in this schema. They are load-bearing because
+the codebase uses `NATURAL JOIN` heavily — same column name = same meaning =
+correct join.
+
+1. **Non-FK columns are prefixed with the table name.** For example
+   `user_notification_audio_sample` has
+   `user_notification_audio_sample_file_size`,
+   `user_notification_audio_sample_object_key`, etc. — never bare
+   `file_size` / `object_key`. The prefix makes columns globally unique
+   across the schema, so a `NATURAL JOIN` only unifies the FK column you
+   intended.
+2. **Foreign-key columns use the exact name of the referenced parent PK
+   column** (not a renamed or prefixed variant). For example a row in
+   `user_notification_audio_sample_match` that references
+   `user_notification_audio_sample(user_notification_audio_sample_id)`
+   stores it in a column called `user_notification_audio_sample_id` —
+   not `parent_sample_id` or `sample_id`. This is what lets
+   `match NATURAL JOIN user_notification_audio_sample` succeed: the
+   shared column name IS the FK relationship.
+
+Together these mean `match NATURAL JOIN store__track_preview NATURAL JOIN
+store__track NATURAL JOIN user_notification_audio_sample` composes from
+left to right with no aliases and no `ON` clauses — each step adds the
+parent it FKs to via the rule-2-named column.
+
+Canonical examples in the schema: the `user_notification_audio_sample*`
+family (`*_embedding`, `*_fingerprint`, `*_match`) and the
+`store__track*` family. New tables MUST follow these rules so existing
+NATURAL JOIN chains keep composing.
+
 # Bandcamp specifics
 
 **Bandcamp "previews" are full tracks.** Anything labelled `preview` for a
