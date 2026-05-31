@@ -1463,6 +1463,27 @@ class Settings extends Component {
                                   {(sample.fileSize / 1024 / 1024).toFixed(2)}MB)
                                 </span>
                               </span>
+                              {typeof sample.matchCount === 'number' && sample.matchCount > 0 ? (
+                                <>
+                                  <span aria-hidden="true" style={{ opacity: 0.4, marginRight: '6px' }}>
+                                    ·
+                                  </span>
+                                  <NavLink
+                                    to={`/search/?q=sample:~${sample.id}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="suspected-matches-link"
+                                    style={{
+                                      fontSize: '85%',
+                                      color: 'inherit',
+                                      marginRight: '8px',
+                                    }}
+                                  >
+                                    {sample.matchCount === 1
+                                      ? '1 suspected match'
+                                      : `${sample.matchCount} suspected matches`}
+                                  </NavLink>
+                                </>
+                              ) : null}
                               <button
                                 disabled={this.state.deletingAudioSample === sample.id}
                                 onClick={async (e) => {

@@ -32,3 +32,19 @@
   text-align: center;
   vertical-align: middle;
 }
+
+.suspected-matches-link {
+  text-decoration: none;
+  outline: none;
+}
+
+.suspected-matches-link:hover,
+.suspected-matches-link:focus {
+  text-decoration: underline;
+}
+
+.suspected-matches-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 2px;
+}

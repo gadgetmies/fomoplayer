@@ -1481,15 +1481,21 @@ module.exports.queryNotificationAudioSamples = async (userId) => {
   return await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- getNotificationAudioSamples
-    SELECT 
+    SELECT
       user_notification_audio_sample_id AS id,
       user_notification_audio_sample_url AS url,
       user_notification_audio_sample_object_key AS "objectKey",
       user_notification_audio_sample_file_size AS "fileSize",
       user_notification_audio_sample_file_type AS "fileType",
       user_notification_audio_sample_filename AS filename,
-      user_notification_audio_sample_created_at AS "createdAt"
+      user_notification_audio_sample_created_at AS "createdAt",
+      mc."matchCount"
     FROM user_notification_audio_sample
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*)::INT AS "matchCount"
+      FROM user_notification_audio_sample_match m
+      WHERE m.user_notification_audio_sample_id = user_notification_audio_sample.user_notification_audio_sample_id
+    ) mc ON TRUE
     WHERE meta_account_user_id = ${userId}
     ORDER BY user_notification_audio_sample_created_at DESC
     `,
