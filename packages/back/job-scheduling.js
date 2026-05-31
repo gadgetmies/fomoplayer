@@ -30,6 +30,7 @@ const { sendInvites } = require('./jobs/send-invites')
 const refetchBandcampLabelArtists = require('./jobs/refetch-bandcamp-label-artists')
 const detectBandcampArtistNameMismatches = require('./jobs/detect-bandcamp-artist-name-mismatches')
 const detectArtistSplitCandidates = require('./jobs/detect-artist-split-candidates')
+const detectArtistNameIssues = require('./jobs/detect-artist-name-issues')
 const { findDuplicates } = require('./jobs/find-duplicates')
 
 const init = async () => {
@@ -202,6 +203,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   refetchBandcampLabelArtists,
   detectBandcampArtistNameMismatches,
   detectArtistSplitCandidates,
+  detectArtistNameIssues,
   findDuplicates,
   ...radiator,
 }

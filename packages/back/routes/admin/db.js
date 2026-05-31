@@ -27,6 +27,11 @@ const {
   ignoreArtistSplitCandidate,
   markArtistSplitCandidateSplit,
 } = require('../shared/db/artistSplit')
+const {
+  getArtistNameIssues,
+  ignoreArtistNameIssue,
+  clearArtistNameIssue,
+} = require('../shared/db/artistNameIssue')
 
 const BANDCAMP_STORE_URL = 'https://bandcamp.com'
 
@@ -1627,5 +1632,160 @@ DELETE FROM track__artist WHERE track_id = ${parsedTrack} AND artist_id = ${pars
       role: role || null,
     })
     return { trackId: parsedTrack, artistId: parsedArtist, role: role || null }
+  })
+}
+
+module.exports.getArtistNameIssues = async () => getArtistNameIssues()
+
+module.exports.ignoreArtistNameIssue = async (artistId) => {
+  const id = parseInt(artistId, 10)
+  if (Number.isNaN(id)) throw new Error('Invalid id')
+  await ignoreArtistNameIssue(id)
+}
+
+// Rename an artist in place. The artist row is the canonical name source
+// (track listings, search, and cached track_details all dereference it),
+// so changing it refreshes the cached details of every track credited to
+// the artist. A successful rename drops the issue row so a later
+// re-pollution gets flagged again on the next scan.
+module.exports.renameArtist = async (artistId, newName) => {
+  const id = parseInt(artistId, 10)
+  if (Number.isNaN(id)) throw new Error('Invalid id')
+  const trimmed = (newName || '').trim()
+  if (!trimmed) throw new Error('New name is required')
+  // Matches the artist.artist_name VARCHAR(100) column width so the UI
+  // reports the limit instead of a Postgres constraint error.
+  if (trimmed.length > 100) throw new Error('Artist name must be 100 characters or fewer')
+
+  return BPromise.using(pg.getTransaction(), async (tx) => {
+    const [existing] = await tx.queryRowsAsync(
+      sql`SELECT artist_name AS name FROM artist WHERE artist_id = ${id}`,
+    )
+    if (!existing) throw new Error(`Artist ${id} not found`)
+    if (existing.name === trimmed) {
+      await clearArtistNameIssue(tx, id)
+      return { artistId: id, name: trimmed, changed: false, trackCount: 0 }
+    }
+    await tx.queryAsync(sql`UPDATE artist SET artist_name = ${trimmed} WHERE artist_id = ${id}`)
+    const tracks = await tx.queryRowsAsync(
+      sql`SELECT DISTINCT track_id FROM track__artist WHERE artist_id = ${id}`,
+    )
+    const trackIds = tracks.map(({ track_id }) => track_id)
+    await refreshTrackDetails(tx, trackIds)
+    await clearArtistNameIssue(tx, id)
+    logger.info(`renameArtist: ${id} "${existing.name}" -> "${trimmed}" (${trackIds.length} tracks refreshed)`, {
+      operation: 'renameArtist',
+      artistId: id,
+      oldName: existing.name,
+      newName: trimmed,
+      trackCount: trackIds.length,
+    })
+    return { artistId: id, name: trimmed, changed: true, trackCount: trackIds.length }
+  })
+}
+
+// Merge a polluted artist record into the real artist. Uses the existing
+// merge_artists() function (the same one duplicate-management uses), which
+// reassigns store__artist, track__artist, artist__genre, and user ignores
+// to the kept id and deletes the source. The issue row is removed via
+// ON DELETE CASCADE when the source artist disappears.
+module.exports.mergeArtistInto = async (deletedId, keptId) => {
+  const dId = parseInt(deletedId, 10)
+  const kId = parseInt(keptId, 10)
+  if (Number.isNaN(dId) || Number.isNaN(kId)) throw new Error('Invalid id')
+  if (dId === kId) throw new Error('Cannot merge an artist into itself')
+
+  const [source] = await pg.queryRowsAsync(
+    sql`SELECT artist_name AS name FROM artist WHERE artist_id = ${dId}`,
+  )
+  if (!source) throw new Error(`Source artist ${dId} not found`)
+  const [target] = await pg.queryRowsAsync(
+    sql`SELECT artist_name AS name FROM artist WHERE artist_id = ${kId}`,
+  )
+  if (!target) throw new Error(`Target artist ${kId} not found`)
+
+  // Capture the affected tracks before the merge so the cache refresh
+  // covers every track that ends up credited to the kept artist.
+  const tracks = await pg.queryRowsAsync(
+    sql`-- mergeArtistInto affected tracks
+SELECT DISTINCT track_id FROM track__artist WHERE artist_id = ${dId} OR artist_id = ${kId}`,
+  )
+  const trackIds = tracks.map(({ track_id }) => track_id)
+
+  await pg.queryAsync(sql`
+-- mergeArtistInto
+SELECT merge_artists(${kId}, ${dId})`)
+  await BPromise.using(pg.getTransaction(), async (tx) => {
+    await refreshTrackDetails(tx, trackIds)
+  })
+
+  logger.info(
+    `mergeArtistInto: ${dId} "${source.name}" -> ${kId} "${target.name}" (${trackIds.length} tracks refreshed)`,
+    {
+      operation: 'mergeArtistInto',
+      deletedArtistId: dId,
+      keptArtistId: kId,
+      deletedName: source.name,
+      keptName: target.name,
+      trackCount: trackIds.length,
+    },
+  )
+  return { keptArtistId: kId, deletedArtistId: dId, trackCount: trackIds.length }
+}
+
+// Retire a bogus artist record outright: drop its credits, genres, user
+// ignores and store mappings (the cascade clears the resulting watches),
+// then the artist row itself (which cascades the issue row away). Refuses
+// when the artist has followers — the admin should merge into a real
+// artist first to preserve the follow, otherwise the follower's queue
+// silently loses an entry.
+module.exports.deleteArtist = async (artistId) => {
+  const id = parseInt(artistId, 10)
+  if (Number.isNaN(id)) throw new Error('Invalid id')
+
+  return BPromise.using(pg.getTransaction(), async (tx) => {
+    const [artist] = await tx.queryRowsAsync(
+      sql`SELECT artist_name AS name FROM artist WHERE artist_id = ${id}`,
+    )
+    if (!artist) throw new Error(`Artist ${id} not found`)
+
+    const [{ followerCount }] = await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`-- deleteArtist follower count
+SELECT COUNT(DISTINCT sawu.meta_account_user_id)::int AS "followerCount"
+FROM
+  store__artist_watch__user sawu
+  JOIN store__artist_watch saw ON saw.store__artist_watch_id = sawu.store__artist_watch_id
+  JOIN store__artist sa ON sa.store__artist_id = saw.store__artist_id
+WHERE sa.artist_id = ${id}`,
+    )
+    if (followerCount > 0) {
+      throw new Error(
+        `Cannot delete artist ${id}: ${followerCount} follower(s). Merge into the real artist instead so the follow is preserved.`,
+      )
+    }
+
+    const tracks = await tx.queryRowsAsync(
+      sql`SELECT DISTINCT track_id FROM track__artist WHERE artist_id = ${id}`,
+    )
+    const trackIds = tracks.map(({ track_id }) => track_id)
+
+    await tx.queryAsync(sql`DELETE FROM track__artist WHERE artist_id = ${id}`)
+    await tx.queryAsync(sql`DELETE FROM artist__genre WHERE artist_id = ${id}`)
+    await tx.queryAsync(sql`DELETE FROM user__artist_ignore WHERE artist_id = ${id}`)
+    await tx.queryAsync(sql`DELETE FROM user__artist__label_ignore WHERE artist_id = ${id}`)
+    // store__artist cascade clears watches; artist row cascade clears the
+    // artist_name_issue entry.
+    await tx.queryAsync(sql`DELETE FROM store__artist WHERE artist_id = ${id}`)
+    await tx.queryAsync(sql`DELETE FROM artist WHERE artist_id = ${id}`)
+    await refreshTrackDetails(tx, trackIds)
+
+    logger.info(`deleteArtist: ${id} "${artist.name}" deleted (${trackIds.length} track credit(s) removed)`, {
+      operation: 'deleteArtist',
+      artistId: id,
+      name: artist.name,
+      trackCount: trackIds.length,
+    })
+    return { artistId: id, trackCount: trackIds.length }
   })
 }

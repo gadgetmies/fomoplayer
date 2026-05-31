@@ -11,6 +11,7 @@ import Admin from './Admin.js'
 import AdminDuplicates from './AdminDuplicates.js'
 import AdminMislabeled from './AdminMislabeled.js'
 import AdminArtistSplit from './AdminArtistSplit.js'
+import AdminArtistNames from './AdminArtistNames.js'
 import AdminJobs from './AdminJobs.js'
 import { launchMessages } from './launchMessages'
 
@@ -1226,6 +1227,9 @@ class App extends Component {
                 </Route>
                 <Route exact path="/admin/artist-split">
                   <AdminArtistSplit />
+                </Route>
+                <Route exact path="/admin/artist-names">
+                  <AdminArtistNames />
                 </Route>
                 <Route exact path="/admin/jobs">
                   <AdminJobs />

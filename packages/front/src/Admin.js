@@ -194,6 +194,12 @@ class Admin extends Component {
             >
               Split Artists
             </button>
+            <button
+              className="button button-push_button button-push_button-primary"
+              onClick={() => this.props.history.push('/admin/artist-names')}
+            >
+              Fix Artist Names
+            </button>
           </div>
         </div>
         <div className="admin-grid">

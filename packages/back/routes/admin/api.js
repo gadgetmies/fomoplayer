@@ -47,6 +47,11 @@ const {
   splitArtist,
   addArtistCredit,
   removeArtistCredit,
+  getArtistNameIssues,
+  ignoreArtistNameIssue,
+  renameArtist,
+  mergeArtistInto,
+  deleteArtist,
 } = require('./db')
 const { getPreviewDetails } = require('../stores/bandcamp/logic')
 const { ensureIsAdmin } = require('../shared/auth.js')
@@ -346,6 +351,27 @@ router.post('/tracks/:trackId/credits/add', async ({ params: { trackId }, body: 
 
 router.post('/tracks/:trackId/credits/remove', async ({ params: { trackId }, body: { artistId, role } }, res) => {
   res.send(await removeArtistCredit(trackId, artistId, role))
+})
+
+router.get('/artist-name-issues', async (_, res) => {
+  res.send(await getArtistNameIssues())
+})
+
+router.post('/artist-name-issues/:id/ignore', async ({ params: { id } }, res) => {
+  await ignoreArtistNameIssue(id)
+  res.send({ ok: true })
+})
+
+router.post('/artists/:id/rename', async ({ params: { id }, body: { name } }, res) => {
+  res.send(await renameArtist(id, name))
+})
+
+router.post('/artists/:deletedId/merge-into/:keptId', async ({ params: { deletedId, keptId } }, res) => {
+  res.send(await mergeArtistInto(deletedId, keptId))
+})
+
+router.post('/artists/:id/delete', async ({ params: { id } }, res) => {
+  res.send(await deleteArtist(id))
 })
 
 module.exports = router
