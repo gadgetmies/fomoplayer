@@ -13,6 +13,28 @@ import { CartDropDownButton } from './CartDropDownButton'
 
 const isNumber = (value) => typeof value === 'number' && !Number.isNaN(value)
 
+// Swipe-right-to-mark-heard gesture tuning (mobile / touch devices).
+const SWIPE_HEARD_THRESHOLD = 90 // px the row must travel right before a release marks it heard
+const SWIPE_HEARD_MAX = 140 // px the row is allowed to travel (resistance cap)
+const SWIPE_DIRECTION_LOCK = 8 // px of movement before we commit to horizontal vs. vertical
+const SWIPE_TAP_SLOP = 10 // px of horizontal travel beyond which a following click is suppressed
+
+// Only offer the swipe gesture on touch / coarse-pointer devices. On a desktop
+// with a mouse the dedicated "Mark heard" controls are visible instead, so the
+// gesture would only get in the way.
+const supportsTouchGestures = () => {
+  if (typeof window === 'undefined') return false
+  if (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) return true
+  if (typeof window.matchMedia === 'function') {
+    try {
+      return window.matchMedia('(pointer: coarse)').matches
+    } catch (_e) {
+      /* matchMedia can throw on malformed queries in old engines */
+    }
+  }
+  return typeof window !== 'undefined' && 'ontouchstart' in window
+}
+
 class Track extends Component {
   constructor(props) {
     super(props)
@@ -23,6 +45,81 @@ class Track extends Component {
       heard: props.heard,
       processingCart: false,
       newCartName: '',
+      swipeOffset: 0,
+      swiping: false,
+    }
+    this.swipeStartX = null
+    this.swipeStartY = null
+    this.swipeDirection = null
+    this.swiped = false
+    this.handleSwipeTouchStart = this.handleSwipeTouchStart.bind(this)
+    this.handleSwipeTouchMove = this.handleSwipeTouchMove.bind(this)
+    this.handleSwipeTouchEnd = this.handleSwipeTouchEnd.bind(this)
+  }
+
+  // The right-swipe toggles a track's heard state, so it is offered on the
+  // listening lists (new / recent / heard) in app mode on touch devices.
+  isSwipeToToggleHeardEnabled() {
+    return (
+      supportsTouchGestures() && this.props.mode === 'app' && ['new', 'recent', 'heard'].includes(this.props.listState)
+    )
+  }
+
+  handleSwipeTouchStart(event) {
+    if (!this.isSwipeToToggleHeardEnabled()) return
+    const touch = event.touches[0]
+    if (!touch) return
+    this.swipeStartX = touch.clientX
+    this.swipeStartY = touch.clientY
+    this.swipeDirection = null
+    this.swiped = false
+    if (this.state.swipeOffset !== 0 || this.state.swiping) {
+      this.setState({ swipeOffset: 0, swiping: false })
+    }
+  }
+
+  handleSwipeTouchMove(event) {
+    if (this.swipeStartX === null) return
+    const touch = event.touches[0]
+    if (!touch) return
+    const deltaX = touch.clientX - this.swipeStartX
+    const deltaY = touch.clientY - this.swipeStartY
+
+    if (this.swipeDirection === null) {
+      if (Math.abs(deltaX) < SWIPE_DIRECTION_LOCK && Math.abs(deltaY) < SWIPE_DIRECTION_LOCK) return
+      // Lock to whichever axis dominates so vertical scrolling still works.
+      this.swipeDirection = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical'
+      if (this.swipeDirection === 'horizontal') {
+        this.setState({ swiping: true })
+      }
+    }
+
+    if (this.swipeDirection !== 'horizontal') return
+
+    // Keep the row's pull-to-refresh / scroll handlers on the table body from
+    // also reacting to this horizontal gesture.
+    event.stopPropagation()
+
+    const offset = Math.max(0, Math.min(SWIPE_HEARD_MAX, deltaX))
+    if (offset > SWIPE_TAP_SLOP) this.swiped = true
+    if (offset !== this.state.swipeOffset) {
+      this.setState({ swipeOffset: offset })
+    }
+  }
+
+  handleSwipeTouchEnd() {
+    if (this.swipeStartX === null) return
+    const triggered = this.swipeDirection === 'horizontal' && this.state.swipeOffset >= SWIPE_HEARD_THRESHOLD
+    this.swipeStartX = null
+    this.swipeStartY = null
+    this.swipeDirection = null
+    if (this.state.swipeOffset !== 0 || this.state.swiping) {
+      this.setState({ swipeOffset: 0, swiping: false })
+    }
+    // Let the event keep bubbling so the table body's pull-to-refresh handler
+    // can reset its own touch state; only the heard toggle is ours.
+    if (triggered) {
+      this.props.onToggleHeard(this.props.id, !this.props.heard)
     }
   }
 
@@ -126,16 +223,64 @@ class Track extends Component {
     const [_, heardDate, heardTime] = !this.props.heard
       ? []
       : new Date(Date.parse(this.props.heard)).toISOString().match(/(.*)T(.*):/)
+    const swipeEnabled = this.isSwipeToToggleHeardEnabled()
+    const { swipeOffset, swiping } = this.state
+    const swipePastThreshold = swipeOffset >= SWIPE_HEARD_THRESHOLD
+    const swipeMarksUnheard = !!this.props.heard
+    const swipeActionVerb = swipeMarksUnheard ? 'unheard' : 'heard'
+    // Fixed two-line label: "Mark / heard" below the threshold, "Release to /
+    // mark heard" above it (and the unheard equivalents).
+    const swipeLine1 = swipePastThreshold ? 'Release to' : 'Mark'
+    const swipeLine2 = swipePastThreshold ? `mark ${swipeActionVerb}` : swipeActionVerb
+    // While swiping we follow the finger (no transition); on release we animate
+    // the row sliding back. The reveal panel below animates in lock-step so the
+    // strip it fills always tracks the row's slide (no off-colour gap appears).
+    const swipeTransition = swiping ? 'none' : 'transform 200ms ease, width 200ms ease'
     return (
       <tr
         ref={'row'}
-        style={{ display: 'flex', width: '100%' }}
-        onClick={() => this.props.onClick()}
+        style={{
+          display: 'flex',
+          width: '100%',
+          position: 'relative',
+          transform: swipeOffset ? `translateX(${swipeOffset}px)` : undefined,
+          transition: swiping ? 'none' : 'transform 200ms ease',
+        }}
+        onClick={() => {
+          // A swipe ends with the same tap target as a click; don't also play.
+          if (this.swiped) {
+            this.swiped = false
+            return
+          }
+          this.props.onClick()
+        }}
         onDoubleClick={() => {
           this.props.onDoubleClick()
         }}
+        onTouchStart={swipeEnabled ? this.handleSwipeTouchStart : undefined}
+        onTouchMove={swipeEnabled ? this.handleSwipeTouchMove : undefined}
+        onTouchEnd={swipeEnabled ? this.handleSwipeTouchEnd : undefined}
+        onTouchCancel={swipeEnabled ? this.handleSwipeTouchEnd : undefined}
         className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''} ${noPreviews ? 'track__no-previews' : ''}`}
       >
+        {swipeEnabled && (
+          <td
+            className="swipe-heard-reveal"
+            aria-hidden="true"
+            style={{ width: swipeOffset, transform: `translateX(${-swipeOffset}px)`, transition: swipeTransition }}
+          >
+            <div
+              className={
+                `swipe-heard-indicator ` +
+                `${swipeMarksUnheard ? 'swipe-heard-indicator__unheard' : ''} ` +
+                `${swipePastThreshold ? 'swipe-heard-indicator__armed' : ''}`
+              }
+            >
+              <span className="swipe-heard-indicator-line">{swipeLine1}</span>
+              <span className="swipe-heard-indicator-line">{swipeLine2}</span>
+            </div>
+          </td>
+        )}
         {this.props.mode === 'app' ? (
           <td className={'new-cell tracks-cell'}>
             <button
@@ -182,7 +327,7 @@ class Track extends Component {
                 <FontAwesomeIcon icon="circle" />
               )}
             </button>
-            {!!this.props.heard ? null : <div className={'track-new-indicator'} />}
+            {!!this.props.heard || swipeOffset > 0 ? null : <div className={'track-new-indicator'} />}
           </td>
         ) : null}
         <td className={'track-details tracks-cell'}>
@@ -371,7 +516,10 @@ class Track extends Component {
                 />
               </span>
             </div>
-            <div className={'cart-cell track-table-cell preview-missing-actions'} style={{ overflow: 'visible' }}>
+            <div
+              className={'cart-cell track-table-cell preview-missing-actions track-mark-heard-action'}
+              style={{ overflow: 'visible' }}
+            >
               <button
                 disabled={this.props.heard}
                 className={'button button-push_button button-push_button-small button-push_button-primary'}

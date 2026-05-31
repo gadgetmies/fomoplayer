@@ -11,8 +11,76 @@
   background: repeating-linear-gradient(45deg, #606060, #606060 10px, #666 10px, #666 20px);
 }
 
+/*
+ * `touch-action: pan-y` keeps the browser from horizontally scrolling the whole
+ * track list during the swipe-to-toggle-heard gesture, so the gesture only
+ * drives the per-row affordance below.
+ */
+.track {
+  touch-action: pan-y;
+}
+
+/*
+ * Swipe affordance. While a row is swiped right the whole row slides right, and
+ * this panel — pinned to the row's original left edge (counter-translated) and
+ * as wide as the swipe offset — fills the strip the row vacates. The panel
+ * takes the row's own background colour (so no differently-coloured background
+ * is revealed), and on top of it sits a white bar with glow — inset 6px to
+ * match the resting "new" indicator (.track-new-indicator / .new-cell) —
+ * containing the centred, two-line "Mark / heard" (or "Release to / mark heard")
+ * label. At rest the panel is zero-width (and clipped, so invisible), leaving
+ * the original thin "new" bar unchanged and no label text shown.
+ */
+.swipe-heard-reveal {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  /* Cells carry a default padding; force it off and use border-box so a
+     width of 0 is truly zero-width (otherwise the panel never fully collapses). */
+  box-sizing: border-box;
+  padding: 0;
+  overflow: hidden;
+  background-color: inherit;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.swipe-heard-indicator {
+  flex: 1;
+  min-width: 0;
+  margin: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #222;
+  font-weight: 600;
+  line-height: 1.1;
+  border-radius: 2px;
+  background-color: white;
+  box-shadow:
+    inset 0 1px 1px rgb(255, 255, 255),
+    0 0 8px rgb(255, 255, 255);
+  overflow: hidden;
+}
+
+.swipe-heard-indicator-line {
+  display: block;
+  white-space: nowrap;
+  font-size: 85%;
+}
+
 @media (max-width: 768px) {
   .empty-cell {
+    display: none;
+  }
+
+  /* The swipe-right gesture marks tracks heard on mobile, so the explicit
+     "Mark as heard" button is redundant here. */
+  .track-mark-heard-action {
     display: none;
   }
 }

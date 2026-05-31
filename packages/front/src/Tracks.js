@@ -616,6 +616,7 @@ class Tracks extends Component {
                 onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
                 onCartFilterChange={this.onCartFilterChange.bind(this)}
                 onMarkHeardButtonClick={this.props.onMarkHeardButtonClick}
+                onToggleHeard={this.props.onToggleHeard}
                 onAddEntityToSearch={this.props.onAddEntityToSearch}
               />
             )
