@@ -1,0 +1,2 @@
+DROP INDEX idx_store__track_preview_embedding_hnsw_cosine
+;
