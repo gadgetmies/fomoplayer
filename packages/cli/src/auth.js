@@ -58,7 +58,7 @@ async function login(apiUrl, openBrowser, printLine = (msg) => console.log(msg))
 
         let key
         try {
-          const response = await fetch(`${apiUrl}/api/auth/cli-token`, {
+          const response = await fetch(`${apiUrl}/auth/cli-token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code, code_verifier: codeVerifier }),
@@ -109,7 +109,7 @@ async function login(apiUrl, openBrowser, printLine = (msg) => console.log(msg))
 
     server.listen(0, '127.0.0.1', () => {
       const { port } = server.address()
-      const loginUrl = new URL(`${apiUrl}/api/auth/login/cli`)
+      const loginUrl = new URL(`${apiUrl}/auth/login/cli`)
       loginUrl.searchParams.set('callbackPort', String(port))
       loginUrl.searchParams.set('code_challenge', codeChallenge)
       loginUrl.searchParams.set('code_challenge_method', 'S256')
