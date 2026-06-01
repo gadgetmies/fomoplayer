@@ -1,6 +1,6 @@
 const { expect } = require('chai')
 const { test } = require('cascade-test')
-const { getSharedContext, dismissOnboarding, waitForWithTimeoutMessage } = require('../lib/setup')
+const { getSharedContext, dismissOnboarding, waitForWithTimeoutMessage, teardownSharedContext } = require('../lib/setup')
 const { seedTracks } = require('../lib/seed')
 const { resolveTestUserId } = require('../lib/test-user')
 
@@ -34,6 +34,7 @@ const dispatchTouch = async (page, type, clientY) =>
   )
 
 test({
+  teardown: teardownSharedContext,
   setup: async () => {
     const { page } = await getSharedContext()
     const userId = await resolveTestUserId()

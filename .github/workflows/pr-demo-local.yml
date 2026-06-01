@@ -123,6 +123,26 @@ jobs:
           echo "Recorded videos:"
           find "$DIR" -type f -name '*.webm' -printf '%s\t%p\n'
 
+      # Capture exactly what landed in demo-output (and any Playwright temp
+      # artifacts) so the PR comment can surface it — handy when a recording is
+      # empty/missing and the raw run logs aren't readily accessible.
+      - name: Collect recording diagnostics
+        if: always()
+        run: |
+          DIR="${{ github.workspace }}/demo-output"
+          {
+            echo "DEMO_DIAG<<DIAG_EOF"
+            echo "demo-output listing:"
+            ls -laR "$DIR" 2>&1 || echo "(demo-output missing)"
+            echo ""
+            echo "webm files and sizes:"
+            find "$DIR" -type f -name '*.webm' -printf '%s bytes\t%p\n' 2>&1 || echo "(none)"
+            echo ""
+            echo "stray Playwright video temp dirs under the workspace:"
+            find "${{ github.workspace }}" -type d -name '.playwright-artifacts-*' 2>/dev/null || true
+            echo "DIAG_EOF"
+          } >> "$GITHUB_ENV"
+
       - name: Upload demo video
         if: always()
         uses: actions/upload-artifact@v4
@@ -139,6 +159,7 @@ jobs:
             const succeeded = '${{ job.status }}' === 'success'
             const icon = succeeded ? '✅' : '❌'
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const diag = process.env.DEMO_DIAG || '(no diagnostics captured)'
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -151,5 +172,12 @@ jobs:
                 succeeded
                   ? 'Download the `demo-local-pr-${{ github.event.pull_request.number }}` artifact from the run page to watch the video.'
                   : 'Check the run logs for details.',
+                '',
+                '<details><summary>Recording diagnostics</summary>',
+                '',
+                '```',
+                diag,
+                '```',
+                '</details>',
               ].join('\n'),
             })
