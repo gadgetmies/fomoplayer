@@ -8,9 +8,15 @@ const { pg } = require('../../../lib/db')
 
 const ADMIN_API_KEY_RATE_LIMITS = require('../../../../db/api-key').ADMIN_API_KEY_RATE_LIMITS
 
+// Subjects are kept short on purpose: the 20211227163945 *down* migration
+// (run on every initDb reset) reconstructs meta_account_username as
+// `issuer || '_' || subject` into a VARCHAR(50) column. With
+// issuer='accounts.google.com' (19 chars) the subject must stay <= 30 chars or
+// a later suite's DB reset fails with "value too long for character varying(50)"
+// for the OIDC accounts this test leaves behind.
 const OIDC_ISSUER = 'accounts.google.com'
-const ADMIN_SUBJECT = 'test-subject-admin-limits-admin'
-const NON_ADMIN_SUBJECT = 'test-subject-admin-limits-nonadmin'
+const ADMIN_SUBJECT = 'admin-limits-admin'
+const NON_ADMIN_SUBJECT = 'admin-limits-nonadmin'
 
 const HANDOFF_SECRET = process.env.OIDC_HANDOFF_SECRET
 
