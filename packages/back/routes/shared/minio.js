@@ -63,4 +63,11 @@ module.exports.getStorageUrl = () => {
   if (!storageUrl) return null
   return storageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
 }
+// Scheme of the configured storage host. Production hosts are https; a local
+// MinIO dev server is reached over http. Defaults to https when unset so
+// existing deployments are unaffected.
+module.exports.getStorageScheme = () => {
+  if (!storageUrl) return 'https'
+  return storageUrl.startsWith('http://') ? 'http' : 'https'
+}
 
