@@ -22,6 +22,9 @@ const {
   queryAudioSamplesWithoutFingerprint,
   upsertAudioSampleFingerprints,
   findExactMatchForSample,
+  queryAudioSamplesWithFingerprint,
+  persistSampleMatches,
+  queryFingerprintDiagnostics,
   getSuspectedDuplicates,
   mergeDuplicate,
   ignoreDuplicate,
@@ -228,13 +231,64 @@ router.post('/exact-match/audio-samples/fingerprints', async ({ body: { sample_i
   }
 })
 
+// Factory so the handler can be unit-tested with a stub diagnostics query.
+const fingerprintDiagnosticsHandler = (queryFn, log = logger) =>
+  async ({ query: { sampleId, previewId, bucketSeconds } }, res) => {
+    const sampleIdInt = parseInt(sampleId, 10)
+    const previewIdInt = parseInt(previewId, 10)
+    if (!Number.isInteger(sampleIdInt) || !Number.isInteger(previewIdInt)) {
+      return res.status(400).send({ error: 'sampleId and previewId required as integers' })
+    }
+    const opts = {}
+    if (bucketSeconds !== undefined) {
+      const b = parseFloat(bucketSeconds)
+      if (!Number.isFinite(b) || b <= 0) {
+        return res.status(400).send({ error: 'bucketSeconds must be a positive number' })
+      }
+      opts.bucketSeconds = b
+    }
+    try {
+      const diagnostics = await queryFn(sampleIdInt, previewIdInt, opts)
+      res.send(diagnostics)
+    } catch (error) {
+      log.error('Error computing fingerprint diagnostics', { error: error.message, stack: error.stack })
+      res.status(500).send({ error: error.message })
+    }
+  }
+
+router.get('/exact-match/diagnostics', fingerprintDiagnosticsHandler(queryFingerprintDiagnostics))
+
 router.get('/exact-match/audio-samples/:sampleId/match', async ({ params: { sampleId }, query: { threshold } }, res) => {
   try {
-    const matchThreshold = threshold ? parseFloat(threshold) : 0.5
+    const matchThreshold = threshold === undefined ? undefined : parseFloat(threshold)
     const matches = await findExactMatchForSample(parseInt(sampleId, 10), matchThreshold)
     res.send(matches)
   } catch (error) {
     logger.error('Error finding exact match', { error: error.message, stack: error.stack })
+    res.status(500).send({ error: error.message })
+  }
+})
+
+// List every audio sample that already has fingerprints — used by the analyser's
+// interleaved scoring pass to iterate samples after each chunk of fingerprinted
+// previews.
+router.get('/exact-match/audio-samples', async (_req, res) => {
+  res.send(await queryAudioSamplesWithFingerprint())
+})
+
+// Run findExactMatchForSample for one sample AND persist the resulting matches
+// into user_notification_audio_sample_match (overwriting any prior set for that
+// sample, mirroring the upsert-fingerprints semantics). Returns the matches so
+// callers can log them locally.
+router.post('/exact-match/audio-samples/:sampleId/matches', async ({ params: { sampleId }, query: { threshold } }, res) => {
+  try {
+    const matchThreshold = threshold === undefined ? config.sampleMatchDefaultThreshold : parseFloat(threshold)
+    const bucketSeconds = config.sampleMatchBucketSeconds ?? 0.05
+    const matches = await findExactMatchForSample(parseInt(sampleId, 10), matchThreshold)
+    await persistSampleMatches(parseInt(sampleId, 10), matches, matchThreshold, bucketSeconds)
+    res.send({ sample_id: parseInt(sampleId, 10), match_count: matches.length, matches })
+  } catch (error) {
+    logger.error('Error scoring sample', { error: error.message, stack: error.stack })
     res.status(500).send({ error: error.message })
   }
 })
@@ -349,3 +403,4 @@ router.post('/tracks/:trackId/credits/remove', async ({ params: { trackId }, bod
 })
 
 module.exports = router
+module.exports.fingerprintDiagnosticsHandler = fingerprintDiagnosticsHandler

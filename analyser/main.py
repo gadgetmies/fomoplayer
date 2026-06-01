@@ -2,27 +2,24 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from LoopbackServer import LoopbackServer
 from essentia.standard import MonoLoader, TensorflowPredictEffnetDiscogs
 
-from input import start_input_thread
-import time
-import webbrowser
 import json
 import requests
-from oidc_common import OpenIDConfiguration, ClientConfiguration, get_client_state
+from auth import auth_header, get_api_url, request_error
 
 from pydub import AudioSegment
 from spotipy.oauth2 import SpotifyClientCredentials
 import argparse
+import hashlib
 import os
 import spotipy
+import sys
 import taglib
 import tempfile
 import traceback
 import urllib.request
 import urllib.parse
-import sys
 import datetime
 
 spotify = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
@@ -35,40 +32,209 @@ ap.add_argument("-m", "--model", help="Model type (e.g. 'discogs_multi_embedding
 ap.add_argument("-p", "--purchased", help="Analyse purchased tracks")
 ap.add_argument("-a", "--audio-samples", action="store_true", help="Process uploaded audio samples instead of store previews")
 ap.add_argument("-b", "--batch-size", type=int, default=10, help="Batch size for fetching samples")
+ap.add_argument("--sanity-window", type=int, default=20,
+                help="How many previously generated embeddings to keep on disk and compare against to detect bit-identical duplicates. 0 disables the check.")
+ap.add_argument("--skip-sanity-confirmation", action="store_true",
+                help="Skip the y/N prompt when an embedding collision is detected; log the warning and continue. Required for unattended runs (e.g. analyse_all.sh).")
 args = ap.parse_args()
 
-client = ClientConfiguration(client_configuration='oidc_configuration.json',
-                             client_secret=os.getenv("GOOGLE_NATIVE_APP_OIDC_CLIENT_SECRET"),
-                             client_id=os.getenv("GOOGLE_NATIVE_APP_OIDC_CLIENT_ID"))
 
-provider = OpenIDConfiguration('https://accounts.google.com/.well-known/openid-configuration')
+SANITY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".embedding_sanity.json")
+COLLISIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "embedding_collisions.jsonl")
+
+
+class EmbeddingSanityChecker:
+    """Detects bit-identical embeddings across a rolling window of recent items.
+
+    Two different inputs producing the exact same vector almost always means the
+    model is broken (all-zero output, constant output, etc.). The checker
+    fingerprints each vector (SHA256 of the rounded list), persists a window of
+    the last N entries to disk, and warns / prompts when a new vector matches a
+    different earlier id. After the operator confirms once for a run, no further
+    prompts fire that run.
+    """
+
+    def __init__(self, window_size, skip_prompt):
+        self.window_size = max(0, window_size)
+        self.skip_prompt = skip_prompt
+        self.entries = []
+        self.confirmed_continue = False
+        if self.window_size > 0 and os.path.isfile(SANITY_FILE):
+            try:
+                with open(SANITY_FILE) as f:
+                    self.entries = json.load(f).get("entries", [])
+            except (json.JSONDecodeError, OSError) as e:
+                print(f"[sanity] Could not load {SANITY_FILE}: {e}. Starting fresh.")
+
+    @staticmethod
+    def _signature(vector):
+        # Round to absorb tiny non-determinism (e.g. nondeterministic GPU ops);
+        # bit-identical real embeddings to 6 decimals across 1280 dims means the
+        # model is degenerate, not that two tracks happen to sound alike.
+        rounded = [round(float(x), 6) for x in vector]
+        return hashlib.sha256(json.dumps(rounded).encode("utf-8")).hexdigest()
+
+    def _persist(self):
+        try:
+            with open(SANITY_FILE, "w") as f:
+                json.dump({"entries": self.entries[-self.window_size:]}, f)
+        except OSError as e:
+            print(f"[sanity] WARNING: failed to persist {SANITY_FILE}: {e}")
+
+    @staticmethod
+    def _describe(item_id, label):
+        """Format an entry as 'id=<x>' or 'id=<x> [<label>]' for log lines."""
+        if label:
+            return f"id={item_id} [{label}]"
+        return f"id={item_id}"
+
+    @staticmethod
+    def _append_collision(signature, new_entry, old_entry):
+        """Append one collision pair to COLLISIONS_FILE (JSONL, append-only).
+
+        Operators investigate later with e.g.
+            jq -s 'group_by(.hash) | map({hash:.[0].hash, ids:[.[].new.id]+[.[].old.id]|unique})' embedding_collisions.jsonl
+        to reconstruct full clusters of items that produced the same vector.
+        """
+        record = {
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            "hash": signature,
+            "new": {
+                "id": new_entry["id"],
+                "label": new_entry.get("label"),
+                "group_key": new_entry.get("group_key"),
+            },
+            "old": {
+                "id": old_entry["id"],
+                "label": old_entry.get("label"),
+                "group_key": old_entry.get("group_key"),
+            },
+        }
+        try:
+            with open(COLLISIONS_FILE, "a") as f:
+                f.write(json.dumps(record) + "\n")
+        except OSError as e:
+            print(f"[sanity] WARNING: failed to append to {COLLISIONS_FILE}: {e}")
+
+    def record_and_check(self, item_id, vector, label=None, group_key=None):
+        """Return True to continue, False if the operator chose to abort.
+
+        - `label` is shown next to the id in warnings (e.g. `track_id=123`).
+        - `group_key` (if given) identifies a logical source larger than the
+          single item: e.g. for store previews the track_id, so two previews
+          of the same track aren't flagged as a model failure. Two entries
+          with the same `group_key` are NOT treated as collisions.
+        - Every collision pair is appended to COLLISIONS_FILE for later
+          investigation, even when --skip-sanity-confirmation suppresses the
+          interactive prompt.
+        """
+        if self.window_size <= 0:
+            return True
+
+        signature = self._signature(vector)
+        item_id_str = str(item_id)
+        group_key_str = str(group_key) if group_key is not None else None
+
+        new_entry = {"id": item_id_str, "hash": signature}
+        if label:
+            new_entry["label"] = label
+        if group_key_str:
+            new_entry["group_key"] = group_key_str
+
+        def is_same_source(entry):
+            # Same preview/sample id → re-analysis, not a model bug.
+            if entry.get("id") == item_id_str:
+                return True
+            # Same group (e.g. two previews of one track) → expected, not a bug.
+            if group_key_str and entry.get("group_key") == group_key_str:
+                return True
+            return False
+
+        collisions = [e for e in self.entries
+                      if e.get("hash") == signature and not is_same_source(e)]
+
+        if collisions:
+            for old in collisions:
+                self._append_collision(signature, new_entry, old)
+
+            first = collisions[0]
+            new_desc = self._describe(item_id_str, label)
+            old_desc = self._describe(first["id"], first.get("label"))
+            others = len(collisions) - 1
+            suffix = (
+                f" (and {others} other earlier match{'es' if others != 1 else ''})"
+                if others else ""
+            )
+            print(
+                f"\n[sanity] WARNING: embedding for {new_desc} is bit-identical to "
+                f"a previously generated embedding for {old_desc}{suffix}.",
+                flush=True,
+            )
+            print(
+                f"[sanity] Full collision record(s) appended to {COLLISIONS_FILE}",
+                flush=True,
+            )
+            print(
+                "[sanity] This usually indicates a broken / degenerate model "
+                "(constant or all-zero output), not two genuinely identical tracks.",
+                flush=True,
+            )
+            if self.confirmed_continue:
+                print("[sanity] (continue already confirmed earlier this run — proceeding)", flush=True)
+            elif self.skip_prompt:
+                print("[sanity] --skip-sanity-confirmation set — proceeding without prompt.", flush=True)
+            else:
+                try:
+                    answer = input("[sanity] Continue anyway? [y/N]: ").strip().lower()
+                except EOFError:
+                    answer = ""
+                if answer not in ("y", "yes"):
+                    print("[sanity] Operator declined — aborting batch.", flush=True)
+                    return False
+                self.confirmed_continue = True
+
+        self.entries.append(new_entry)
+        self._persist()
+        return True
 
 
 # tracks = glob(args.path + '/**/*.mp3', recursive=True)
 
-def get_next_analysis_tracks(id_token, model='discogs_multi_embeddings-effnet-bs64-1', purchased=True, batch_size=10):
+def _parse_json_or_explain(action, res):
+    """Return res.json(), or raise with status + body excerpt on parse failure."""
+    try:
+        return res.json()
+    except ValueError:
+        body_excerpt = (res.text or "")[:500]
+        raise Exception(
+            f"{action}: backend returned status {res.status_code} with "
+            f"non-JSON body (length {len(res.text or '')}): {body_excerpt!r}"
+        )
+
+
+def get_next_analysis_tracks(model='discogs_multi_embeddings-effnet-bs64-1', purchased=True, batch_size=10):
     print("Getting next tracks to analyse")
     print(purchased)
-    print(f"{os.getenv('API_URL')}/admin/analyse?model={model}&batch_size={batch_size}&purchased={'true' if purchased else ''}")
+    print(f"{get_api_url()}/admin/analyse?model={model}&batch_size={batch_size}&purchased={'true' if purchased else ''}")
     res = requests.get(
-        f"{os.getenv('API_URL')}/admin/analyse?model={model}&batch_size={batch_size}&purchased={'true' if purchased else ''}",
-        headers={'Authorization': f"Bearer {id_token}"}
+        f"{get_api_url()}/admin/analyse?model={model}&batch_size={batch_size}&purchased={'true' if purchased else ''}",
+        headers=auth_header()
     )
     if (res.status_code != 200):
-        raise Exception(f"Next tracks request returned an error {res.text}")
-    return res.json()
+        raise Exception(request_error("Next tracks request", res))
+    return _parse_json_or_explain("Next tracks request", res)
 
 
-def get_next_audio_samples(id_token, batch_size=10):
+def get_next_audio_samples(batch_size=10):
     print("Getting next audio samples to analyse")
-    print(f"{os.getenv('API_URL')}/admin/notification-audio-samples/without-embedding?limit={batch_size}")
+    print(f"{get_api_url()}/admin/notification-audio-samples/without-embedding?limit={batch_size}")
     res = requests.get(
-        f"{os.getenv('API_URL')}/admin/notification-audio-samples/without-embedding?limit={batch_size}",
-        headers={'Authorization': f"Bearer {id_token}"}
+        f"{get_api_url()}/admin/notification-audio-samples/without-embedding?limit={batch_size}",
+        headers=auth_header()
     )
     if (res.status_code != 200):
-        raise Exception(f"Next audio samples request returned an error {res.text}")
-    return res.json()
+        raise Exception(request_error("Next audio samples request", res))
+    return _parse_json_or_explain("Next audio samples request", res)
 
 
 def safe_get_first_tag_value(dict, key):
@@ -122,79 +288,6 @@ def get_spotify_details(isrc):
         return {}
 '''
 
-MAX_AGE = 90 * 60
-TOKEN_PATH = './.fomo_player_token'
-
-
-def get_oauth2_token():
-    if os.path.isfile(TOKEN_PATH):
-        with open(TOKEN_PATH, 'r') as file:
-            # You might consider a test API call to establish token validity here.
-            token = json.load(file)
-            if  token["expires_in"] > time.time():
-                return token["id_token"]
-            else:
-                body = {
-                    "client_id": client.client_id,
-                    "client_secret": client.client_secret,
-                    "grant_type": "refresh_token",
-                    "refresh_token": token["refresh_token"],
-                }
-
-                r = requests.post(provider.token_endpoint, data=body)
-
-                # handles error from token response
-
-                token_response = r.json()
-                id_token = token_response["id_token"]
-                with open(TOKEN_PATH, 'w') as outfile:
-                    outfile.write(
-                        json.dumps({"id_token": id_token, "expires_in": time.time() + token_response["expires_in"],
-                                    "refresh_token": token["refresh_token"]}))
-
-                return id_token
-
-    with LoopbackServer(provider, client) as httpd:
-        # launch web browser
-        webbrowser.open(httpd.base_uri)
-        # wait for input
-        start_input_thread("Press enter to stop\r\n", httpd.done)
-        # process http requests until authorization response is received
-        if httpd.wait_authorization_response() is None:
-            sys.exit()
-
-    if "error" in httpd.authorization_response:
-        raise Exception(httpd.authorization_response["error"][0])
-
-    state = get_client_state(httpd.authorization_response)
-
-    body = {
-        "grant_type": "authorization_code",
-        "redirect_uri": httpd.redirect_uri,
-        "code": httpd.authorization_response["code"][0],
-        "code_verifier": state.code_verifier,
-    }
-
-    auth = (client.client_id, client.client_secret)
-
-    r = requests.post(provider.token_endpoint, data=body, auth=auth)
-
-    # handles error from token response
-
-    token_response = r.json()
-
-    if "error" in token_response:
-        raise Exception(token_response["error"])
-
-    id_token = token_response["id_token"]
-    with open(TOKEN_PATH, 'w') as outfile:
-        os.chmod(TOKEN_PATH, 0o600)
-        outfile.write(json.dumps({"id_token": id_token, "expires_in": time.time() + token_response["expires_in"],
-                                  "refresh_token": token_response["refresh_token"]}))
-
-    return id_token
-
-
 def build_model(model_name):
     graph_filename = f"./models/{model_name}.pb"
     return TensorflowPredictEffnetDiscogs(graphFilename=graph_filename, output="PartitionedCall:1")
@@ -209,16 +302,17 @@ def compute_temporal_embedding(wav_path, model):
 
 if __name__ == '__main__':
     print(f"[{datetime.datetime.now()}] Starting")
-    id_token = get_oauth2_token()
-    
+
+    sanity = EmbeddingSanityChecker(args.sanity_window, args.skip_sanity_confirmation)
+
     if args.audio_samples:
         # Process uploaded audio samples
-        samples_to_process = get_next_audio_samples(id_token, batch_size=args.batch_size)
+        samples_to_process = get_next_audio_samples(batch_size=args.batch_size)
         print(f"Got {len(samples_to_process)} audio samples")
 
         if (len(samples_to_process) == 0):
             print("No audio samples to process")
-            exit(0)
+            sys.exit(2)
 
         samples = []
 
@@ -250,16 +344,19 @@ if __name__ == '__main__':
                         "id": sampleId,
                         "url": sampleUrl,
                         "path": temp_filename,
+                        "filename": filename,
                         "missing": False
                     })
                 except Exception as e:
                     print("Downloading audio sample failed")
                     samples.append({
                         "id": sampleId,
+                        "filename": filename,
                         "missing": True
                     })
                     print(e)
 
+            output_wav_path = os.path.join(temp_dir_name, "output.wav")
             for sample in samples:
                 if (sample['missing']):
                     print(f"Skipping missing audio sample with id: {sample['id']}")
@@ -274,17 +371,17 @@ if __name__ == '__main__':
                         if file_ext in ['.mp3', '.mpeg']:
                             print("Converting mp3 to wav")
                             sound = AudioSegment.from_mp3(absolute_file_path)
-                            sound.export('./output.wav', format="wav")
+                            sound.export(output_wav_path, format="wav")
                         elif file_ext == '.wav':
                             print("File is already wav format")
                             import shutil
-                            shutil.copy(absolute_file_path, './output.wav')
+                            shutil.copy(absolute_file_path, output_wav_path)
                         else:
                             print(f"Unsupported file format: {file_ext}")
                             continue
 
                         print("Preparing audio")
-                        audio = MonoLoader(filename='./output.wav', sampleRate=16000, resampleQuality=4)()
+                        audio = MonoLoader(filename=output_wav_path, sampleRate=16000, resampleQuality=4)()
                         print("Preparing model")
                         model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
                         graphFilename = f"./models/{model_name}.pb"
@@ -293,16 +390,21 @@ if __name__ == '__main__':
                             output="PartitionedCall:1")
                         print("Processing audio")
                         embeddings = model(audio)
+                        vector = embeddings.T.mean(1).tolist()
+
+                        label = f"filename={sample['filename']}" if sample.get("filename") else None
+                        if not sanity.record_and_check(sample.get("id"), vector, label=label):
+                            sys.exit(1)
 
                         print(f"Processing done, sending details for audio sample with id: {sample.get('id')}")
                         data = [{
                             "id": sample.get("id"),
-                            "embeddings": json.dumps(embeddings.T.mean(1).tolist()),
+                            "embeddings": json.dumps(vector),
                             "model": model_name,
                             "missing": False
                         }]
-                        res = requests.post(f"{os.getenv('API_URL')}/admin/notification-audio-samples/embeddings",
-                                            headers={'Authorization': f"Bearer {id_token}"},
+                        res = requests.post(f"{get_api_url()}/admin/notification-audio-samples/embeddings",
+                                            headers=auth_header(),
                                             json=data)
                         if res.status_code != 200:
                             print(f"Error reporting results for {sample['id']}")
@@ -315,20 +417,20 @@ if __name__ == '__main__':
 
                     print("Cleaning up temp files")
                     try:
-                        if os.path.exists('./output.wav'):
-                            os.remove('./output.wav')
+                        if os.path.exists(output_wav_path):
+                            os.remove(output_wav_path)
                     except Exception as e:
                         print("Failed removing temp file")
                         print(e)
     else:
         # Process store track previews (original behavior)
         purchased = args.purchased is not None
-        tracks_to_process = get_next_analysis_tracks(id_token, purchased=purchased, batch_size=args.batch_size)
+        tracks_to_process = get_next_analysis_tracks(purchased=purchased, batch_size=args.batch_size)
         print(f"Got {len(tracks_to_process)} tracks")
 
         if (len(tracks_to_process) == 0):
             print("No tracks to process")
-            exit(0)
+            sys.exit(2)
 
         tracks = []
 
@@ -357,62 +459,70 @@ if __name__ == '__main__':
                 if not found:
                     print(f"Failed to find a working preview for track {track.get('track_id')}")
 
-        # Build the model once and reuse it across the batch.
-        model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
-        print("Preparing model")
-        model = build_model(model_name)
+            # Build the model once and reuse it across the batch.
+            model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
+            print("Preparing model")
+            model = build_model(model_name)
 
-        for track in tracks:
-            if (track['missing']):
-                print(f"Reporting track preview missing with id: {track['preview_id']}")
-                data = [{"preview_id": track.get("preview_id"), "missing": True}]
-                res = requests.post(f"{os.getenv('API_URL')}/admin/analyse",
-                                    headers={'Authorization': f"Bearer {id_token}"},
-                                    json=data)
-            else:
-                absolute_file_path = track.get("path").replace("'", "\''")
-                try:
-                    print(f"Processing: {absolute_file_path}")
+            output_wav_path = os.path.join(temp_dir_name, "output.wav")
 
-                    print("Converting mp3 to wav")
-                    sound = AudioSegment.from_mp3(absolute_file_path)
-                    sound.export('./output.wav', format="wav")
-
-                    print("Extracting metadata from ID3 tags")
-
-                    spotify_details = {}
-                    isrc = track["isrc"]
-                    if isrc != 'null':
-                        print(f"Fetching Spotify audio features for ISRC: {isrc}")
-                        # spotify_details = get_spotify_details(isrc)
-                    print("Preparing audio")
-                    print("Processing audio")
-                    embeddings = compute_temporal_embedding('./output.wav', model)
-
-                    preview_id = track.get("preview_id")
-                    print(f"Processing done, sending details for preview with id: {preview_id}")
-                    data = [{"id": preview_id,
-                             "embeddings": json.dumps(embeddings.T.mean(1).tolist()),
-                             "model": model_name,
-                             "spotify": spotify_details}]
-                    res = requests.post(f"{os.getenv('API_URL')}/admin/analyse",
-                                        headers={'Authorization': f"Bearer {id_token}"},
+            for track in tracks:
+                if (track['missing']):
+                    print(f"Reporting track preview missing with id: {track['preview_id']}")
+                    data = [{"preview_id": track.get("preview_id"), "missing": True}]
+                    res = requests.post(f"{get_api_url()}/admin/analyse",
+                                        headers=auth_header(),
                                         json=data)
-                    if res.status_code != 200:
-                        print(f"Error reporting results for {track['id']}")
-                        print(f"Status code: {res.status_code}")
-                        print(res.text)
-                except Exception as e:
-                    print(f"Error processing {absolute_file_path}")
-                    print(e)
-                    print(traceback.format_exc())
+                else:
+                    absolute_file_path = track.get("path").replace("'", "\''")
+                    try:
+                        print(f"Processing: {absolute_file_path}")
 
-                print("Removing temp file")
-                try:
-                    os.remove(absolute_file_path)
-                except Exception as e:
-                    print("Failed removing temp file")
-                    print(e)
+                        print("Converting mp3 to wav")
+                        sound = AudioSegment.from_mp3(absolute_file_path)
+                        sound.export(output_wav_path, format="wav")
+
+                        print("Extracting metadata from ID3 tags")
+
+                        spotify_details = {}
+                        isrc = track["isrc"]
+                        if isrc != 'null':
+                            print(f"Fetching Spotify audio features for ISRC: {isrc}")
+                            # spotify_details = get_spotify_details(isrc)
+                        print("Preparing audio")
+                        print("Processing audio")
+                        embeddings = compute_temporal_embedding(output_wav_path, model)
+                        vector = embeddings.T.mean(1).tolist()
+
+                        preview_id = track.get("preview_id")
+                        track_id = track.get("id")
+                        label = f"track_id={track_id}" if track_id is not None else None
+                        if not sanity.record_and_check(preview_id, vector, label=label, group_key=track_id):
+                            sys.exit(1)
+
+                        print(f"Processing done, sending details for preview with id: {preview_id}")
+                        data = [{"id": preview_id,
+                                 "embeddings": json.dumps(vector),
+                                 "model": model_name,
+                                 "spotify": spotify_details}]
+                        res = requests.post(f"{get_api_url()}/admin/analyse",
+                                            headers=auth_header(),
+                                            json=data)
+                        if res.status_code != 200:
+                            print(f"Error reporting results for {track['id']}")
+                            print(f"Status code: {res.status_code}")
+                            print(res.text)
+                    except Exception as e:
+                        print(f"Error processing {absolute_file_path}")
+                        print(e)
+                        print(traceback.format_exc())
+
+                    print("Removing temp file")
+                    try:
+                        os.remove(absolute_file_path)
+                    except Exception as e:
+                        print("Failed removing temp file")
+                        print(e)
 
 print("Processing completed successfully")
 exit(0)

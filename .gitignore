@@ -65,6 +65,9 @@ typings/
 secrets.*.js
 packages/analyser/venv
 analyser/.fomo_player_token
+analyser/.embedding_sanity.json
+analyser/embedding_collisions.jsonl
+analyser/sample_match_results.jsonl
 analyser/venv/
 analyser/__pycache__/
 pg/
