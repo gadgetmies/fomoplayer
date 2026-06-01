@@ -271,6 +271,10 @@ class Player extends Component {
     return this.props.markHeard(this.getTracks().find(R.propEq(id, 'id')))
   }
 
+  async toggleHeard(id, heard) {
+    return this.props.setHeard(this.getTracks().find(R.propEq(id, 'id')), heard)
+  }
+
   render() {
     const tracks = this.getTracks()
     const currentTrack = this.props.currentTrack
@@ -376,6 +380,7 @@ class Player extends Component {
           onUpdateCarts={this.props.onUpdateCarts}
           onUpdateTracksClicked={this.props.onUpdateTracksClicked}
           onMarkHeardButtonClick={this.markHeard.bind(this)}
+          onToggleHeard={this.toggleHeard.bind(this)}
           onAddEntityToSearch={this.props.onAddEntityToSearch}
         />
       </div>

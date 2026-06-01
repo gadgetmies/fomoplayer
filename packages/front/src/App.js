@@ -739,6 +739,53 @@ class App extends Component {
     })
   }
 
+  // Toggle a track's heard state (used by the mobile swipe gesture). Unlike
+  // markHeard this can also clear the heard flag, and it keeps the displayed
+  // lists in sync so the change (e.g. the "new" indicator) is reflected
+  // immediately and the gesture can be repeated to undo it.
+  async setHeard(track, heard) {
+    if (!track || this.state.mode === 'list') {
+      return
+    }
+
+    const heardAt = heard ? new Date().toISOString() : null
+    const { tracksData, heardTracks } = this.state
+    // heardTracks ids can be strings while list ids are numbers (see
+    // mergeHeardStatus' parseInt), so compare on a normalised id.
+    const sameTrack = (t) => String(t.id) === String(track.id)
+    const wasInHeard = heardTracks.some(sameTrack)
+
+    const updateHeardInList = (list) =>
+      (list || []).map((t) => (sameTrack(t) ? { ...t, heard: heardAt } : t))
+
+    let updatedHeardTracks = heardTracks.filter((t) => !sameTrack(t))
+    if (heard) {
+      updatedHeardTracks = R.prepend({ ...track, heard: heardAt }, updatedHeardTracks)
+    }
+
+    const listenedDelta = heard ? (wasInHeard ? 0 : 1) : wasInHeard ? -1 : 0
+
+    this.setState({
+      heardTracks: updatedHeardTracks,
+      listenedTracks: this.state.listenedTracks + listenedDelta,
+      tracksData: {
+        ...tracksData,
+        tracks: {
+          ...tracksData.tracks,
+          new: updateHeardInList(tracksData.tracks.new),
+          heard: updateHeardInList(tracksData.tracks.heard),
+          recentlyAdded: updateHeardInList(tracksData.tracks.recentlyAdded),
+        },
+      },
+    })
+
+    await requestWithCredentials({
+      path: `/me/tracks/${track.id}`,
+      method: 'POST',
+      body: { heard },
+    })
+  }
+
   async updateEmail(email) {
     await requestWithCredentials({
       path: `/me/settings`,
@@ -1295,6 +1342,7 @@ class App extends Component {
                           totalTracks={this.state.tracksData.meta.totalTracks}
                           tracks={this.state.tracksData.tracks}
                           markHeard={this.markHeard.bind(this)}
+                          setHeard={this.setHeard.bind(this)}
                           loadingMore={
                             listState === 'carts'
                               ? !!(this.state.cartPagination && this.state.cartPagination.loadingMore)

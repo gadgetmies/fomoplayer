@@ -1,4 +1,4 @@
-const { chromium } = require('playwright')
+const { chromium, devices } = require('playwright')
 const fs = require('fs/promises')
 const path = require('path')
 const { initDb } = require('./db')
@@ -7,6 +7,8 @@ const { startServer } = require('./server')
 let initPromise = null
 let sharedBrowserContext = null
 let sharedBrowser = null
+let sharedBaseURL = null
+let mobilePromise = null
 
 const BACKEND_ROOT = path.resolve(__dirname, '../..')
 const FRONTEND_ROOT = path.resolve(BACKEND_ROOT, '../front')
@@ -296,6 +298,7 @@ const initialize = async () => {
     server = result.server
     baseURL = `http://localhost:${result.port}`
   }
+  sharedBaseURL = baseURL
 
   const headed = process.env.PW_HEADED === '1' || process.env.PWDEBUG === '1'
   const slowMoValue = process.env.PW_SLOWMO ?? process.env.PW_SLOMO ?? (isRemotePreview || isRecording ? '600' : '0')
@@ -385,11 +388,69 @@ const initialize = async () => {
   return { server, browser: sharedBrowser, context: sharedBrowserContext, page }
 }
 
+// Some gestures (swipe-to-mark-heard, etc.) are only offered on touch / mobile
+// devices, so they need a touch-enabled, phone-sized context to exercise. We
+// build it on the shared browser and reuse the already-established login by
+// copying cookies over, rather than re-running the login flow. Recording and
+// the demo overlay are applied the same way as the shared context so the demo
+// video reads as a phone interaction.
+const initializeMobile = async () => {
+  const { context: desktopContext } = await module.exports.getSharedContext()
+
+  const mobileDevice = devices['Pixel 5']
+  const videoDir = process.env.VIDEO_DIR
+  const contextOptions = {
+    ...mobileDevice,
+    baseURL: sharedBaseURL,
+  }
+  if (videoDir) {
+    contextOptions.recordVideo = { dir: videoDir, size: mobileDevice.viewport }
+  }
+
+  const mobileContext = await sharedBrowser.newContext(contextOptions)
+
+  if (isRemotePreview || isRecording) {
+    await mobileContext.addInitScript(demoOverlay)
+  }
+  if (!isRemotePreview) {
+    await mobileContext.route('**/*', async (route) => {
+      const requestUrl = new URL(route.request().url())
+      if (!requestUrl.pathname.startsWith('/api/')) {
+        await route.continue()
+        return
+      }
+      const targetUrl = `${sharedBaseURL}${requestUrl.pathname}${requestUrl.search}`
+      await route.continue({ url: targetUrl })
+    })
+  }
+
+  // Reuse the shared context's authenticated session instead of logging in again.
+  const cookies = await desktopContext.cookies()
+  if (cookies.length > 0) {
+    await mobileContext.addCookies(cookies)
+  }
+
+  const page = await mobileContext.newPage()
+
+  process.on('beforeExit', async () => {
+    await mobileContext.close().catch(() => {})
+  })
+
+  return { context: mobileContext, page }
+}
+
 module.exports.getSharedContext = () => {
   if (!initPromise) {
     initPromise = initialize()
   }
   return initPromise
+}
+
+module.exports.getMobileContext = () => {
+  if (!mobilePromise) {
+    mobilePromise = initializeMobile()
+  }
+  return mobilePromise
 }
 
 module.exports.getBrowserContext = () => sharedBrowserContext
