@@ -1,2 +1,2 @@
-DROP INDEX idx_store__track_preview_embedding_hnsw_cosine
+DROP INDEX IF EXISTS idx_store__track_preview_embedding_hnsw_cosine
 ;
