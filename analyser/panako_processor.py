@@ -117,114 +117,54 @@ def upload_sample_fingerprints(sample_id, fingerprints):
     return res.json()
 
 
-SAMPLE_MATCH_RESULTS_FILE = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "sample_match_results.jsonl"
-)
+def run_server_side_scoring(reason):
+    """POST the bulk scoring endpoint, log one summary line per sample.
 
+    The endpoint scores every sample with fingerprints, persists each
+    sample's matches into `user_notification_audio_sample_match`, and
+    returns a per-sample status. A 404 means the endpoint is not deployed
+    yet — log it and return without raising so the fingerprint loop keeps
+    going.
 
-def list_samples_with_fingerprint():
-    """Try the new `GET /admin/exact-match/audio-samples` admin endpoint.
-
-    Returns (samples_or_None, deployed_bool). `None` + False means the
-    endpoint is not deployed yet (HTTP 404); the caller should skip the
-    scoring pass with a clear message rather than treating it as a hard
-    failure. Anything else non-200 is raised so the loop's retry path picks
-    it up.
+    Returns (ok_count, fail_count).
     """
-    res = requests.get(
-        f"{get_api_url()}/admin/exact-match/audio-samples",
-        headers=auth_header(),
-    )
-    if res.status_code == 404:
-        return (None, False)
-    if res.status_code != 200:
-        raise Exception(request_error("List samples request", res))
-    return (_parse_json_or_explain("List samples request", res), True)
-
-
-def score_sample_via_existing_endpoint(sample_id):
-    """Call the existing `GET /admin/exact-match/audio-samples/:id/match` endpoint.
-
-    This is the read-only match query that's already deployed in production —
-    it returns the same rows the new persist endpoint would store, just
-    without writing them to `user_notification_audio_sample_match`. Used as
-    the source of truth for scoring data until the new POST persist endpoint
-    is rolled out; results are appended locally to SAMPLE_MATCH_RESULTS_FILE.
-    """
-    res = requests.get(
-        f"{get_api_url()}/admin/exact-match/audio-samples/{sample_id}/match",
-        headers=auth_header(),
-    )
-    if res.status_code != 200:
-        raise Exception(request_error(f"Score sample {sample_id}", res))
-    return _parse_json_or_explain(f"Score sample {sample_id}", res)
-
-
-def append_sample_match_result(sample_id, filename, matches):
-    """Append one sample's scoring result to the local JSONL file.
-
-    Acts as the temporary local store for match data until the backend's
-    new persist endpoint is deployed. One line per (sample, scoring pass);
-    the file accumulates across runs and is gitignored.
-    """
-    record = {
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-        "sample_id": sample_id,
-        "filename": filename,
-        "match_count": len(matches),
-        "matches": matches,
-    }
+    endpoint = f"{get_api_url()}/admin/exact-match/audio-samples/matches"
+    print(f"[scoring] {reason} — POSTing {endpoint} (server scores every sample with fingerprints)")
     try:
-        with open(SAMPLE_MATCH_RESULTS_FILE, "a") as f:
-            f.write(json.dumps(record) + "\n")
-    except OSError as e:
-        print(f"[scoring]   WARNING: failed to append to {SAMPLE_MATCH_RESULTS_FILE}: {e}")
-
-
-def run_interleaved_scoring(reason):
-    """Iterate every fingerprinted sample, run scoring, log to local file.
-
-    Best-effort per sample: a single sample failure is logged and skipped so
-    one bad sample doesn't poison the whole pass. Returns (ok_count, fail_count).
-
-    Note: until the new persist endpoint is deployed server-side, match
-    results are written to SAMPLE_MATCH_RESULTS_FILE (gitignored). Once the
-    backend is deployed, switch the per-sample call to the POST endpoint and
-    drop the local file.
-    """
-    print(f"[scoring] {reason} — listing samples with fingerprints…")
-    try:
-        samples, endpoint_deployed = list_samples_with_fingerprint()
+        res = requests.post(endpoint, headers=auth_header(), json={})
     except Exception as e:
-        print(f"[scoring] Could not list samples: {e}. Skipping scoring pass.")
+        print(f"[scoring] Could not reach scoring endpoint: {e}. Skipping scoring pass.")
         return (0, 0)
 
-    if not endpoint_deployed:
+    if res.status_code == 404:
         print(
-            "[scoring] GET /admin/exact-match/audio-samples returned 404 — "
-            "the new list endpoint is not deployed yet. Skipping scoring pass; "
-            "re-run after the backend roll-out."
+            f"[scoring] {endpoint} returned 404 — the bulk scoring endpoint is "
+            "not deployed yet. Skipping scoring pass; re-run after the backend "
+            "roll-out."
         )
         return (0, 0)
 
-    print(f"[scoring] Scoring {len(samples)} samples; results -> {SAMPLE_MATCH_RESULTS_FILE}")
-    ok = 0
-    failed = 0
-    for s in samples:
-        sid = s.get("id")
-        fname = s.get("filename") or ""
-        try:
-            matches = score_sample_via_existing_endpoint(sid)
-            append_sample_match_result(sid, fname, matches)
-            ok += 1
-            count = len(matches)
-            top_score = matches[0].get("match_score") if count else None
-            print(f"[scoring]   sample {sid} ({fname}): {count} match(es)"
-                  + (f", top score={top_score}" if top_score is not None else ""))
-        except Exception as e:
-            failed += 1
-            print(f"[scoring]   sample {sid} ({fname}): FAILED — {e}")
-    print(f"[scoring] Done: {ok} ok, {failed} failed (results in {SAMPLE_MATCH_RESULTS_FILE})")
+    if res.status_code != 200:
+        print(f"[scoring] Scoring request failed: {request_error('Bulk scoring request', res)}")
+        return (0, 0)
+
+    payload = _parse_json_or_explain("Bulk scoring request", res)
+    results = payload.get("results") or []
+    ok = payload.get("ok_count", 0)
+    failed = payload.get("fail_count", 0)
+    print(f"[scoring] Server scored {len(results)} samples ({ok} ok, {failed} failed)")
+    for r in results:
+        sid = r.get("sample_id")
+        fname = r.get("filename") or ""
+        if r.get("status") == "ok":
+            count = r.get("match_count", 0)
+            top_score = r.get("top_score")
+            print(
+                f"[scoring]   sample {sid} ({fname}): {count} match(es)"
+                + (f", top score={top_score}" if top_score is not None else "")
+            )
+        else:
+            print(f"[scoring]   sample {sid} ({fname}): FAILED — {r.get('error')}")
     return (ok, failed)
 
 
@@ -385,7 +325,7 @@ if __name__ == '__main__':
                 previews_since_last_score += 1
 
                 if args.score_after > 0 and previews_since_last_score >= args.score_after:
-                    run_interleaved_scoring(
+                    run_server_side_scoring(
                         reason=f"reached {previews_fingerprinted_this_run} previews fingerprinted this run "
                                f"(score-after={args.score_after})"
                     )

@@ -120,41 +120,18 @@ samples. Pass `--score-after N`:
 python panako_processor.py --previews -b 2000 --score-after 1000
 ```
 
-The scoring pass uses:
+The scoring pass issues one
+`POST /admin/exact-match/audio-samples/matches` with no body, which
+tells the server to score every sample with fingerprints. The server
+iterates samples sequentially, calls `findExactMatchForSample` and
+persists each sample's matches into
+`user_notification_audio_sample_match`; the response is a per-sample
+summary the worker prints. A 404 means the endpoint is not deployed
+yet — the worker logs a clear message and skips the scoring pass.
 
-- `GET /admin/exact-match/audio-samples` (**new** — needs deploy) — list
-  every sample with fingerprints. If this returns 404 the worker logs a
-  clear message and skips the scoring pass; deploy the backend change
-  before relying on `--score-after`.
-- `GET /admin/exact-match/audio-samples/:sampleId/match` (existing) —
-  the read-only match query that's already deployed. The analyser uses
-  this per sample to compute matches.
-
-**Temporary local storage of results.** Until the new persist endpoint
-(`POST /admin/exact-match/audio-samples/:sampleId/matches`) is
-deployed, match results are written to
-`analyser/sample_match_results.jsonl` (gitignored, append-only), one
-JSON line per (sample, scoring pass):
-
-```json
-{"timestamp":"…","sample_id":42,"filename":"foo.mp3","match_count":3,"matches":[…]}
-```
-
-Inspect with `jq`:
-
-```bash
-# Top-scoring matches across all passes
-jq -s 'map(.matches[0] // empty) | sort_by(.match_score) | reverse | .[:20]' \
-  analyser/sample_match_results.jsonl
-
-# Most recent result per sample
-jq -s 'group_by(.sample_id) | map(max_by(.timestamp))' analyser/sample_match_results.jsonl
-```
-
-Once the new persist endpoint is deployed, switch
-`score_sample_via_existing_endpoint` in `panako_processor.py` to POST
-to the new endpoint and drop the local file (it's a transition aid,
-not a long-term store).
+Results are persisted to `user_notification_audio_sample_match`
+server-side; inspect via `fomoplayer query` or the user-facing
+Settings page after a scoring pass.
 
 **Gotcha — counter is per-invocation.** The counter resets on every
 worker invocation (i.e. every batch under `analyse_all.sh`). So with
