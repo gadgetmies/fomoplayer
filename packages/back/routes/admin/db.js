@@ -3,6 +3,7 @@ const pg = require('fomoplayer_shared').db.pg
 const logger = require('fomoplayer_shared').logger(__filename)
 const R = require('ramda')
 const BPromise = require('bluebird')
+const config = require('../../config')
 const {
   getCachedMislabeled,
   ignoreCachedMislabeled,

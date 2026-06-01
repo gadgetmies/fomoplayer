@@ -269,29 +269,77 @@ router.get('/exact-match/audio-samples/:sampleId/match', async ({ params: { samp
   }
 })
 
-// List every audio sample that already has fingerprints — used by the analyser's
-// interleaved scoring pass to iterate samples after each chunk of fingerprinted
-// previews.
-router.get('/exact-match/audio-samples', async (_req, res) => {
-  res.send(await queryAudioSamplesWithFingerprint())
-})
+// Score one, many, or all samples with fingerprints, then persist each
+// sample's matches into user_notification_audio_sample_match via
+// persistSampleMatches (delete-then-insert per sample). Iteration is
+// sequential server-side and best-effort: a single sample's failure is
+// caught, logged, and recorded in the response so the rest of the pass
+// still completes.
+const bulkScoreSamplesHandler =
+  ({
+    findExactMatch = findExactMatchForSample,
+    persistMatches = persistSampleMatches,
+    listSamples = queryAudioSamplesWithFingerprint,
+    cfg = config,
+    log = logger,
+  } = {}) =>
+  async ({ body }, res) => {
+    const requestedIds = body?.sample_ids
+    if (Array.isArray(requestedIds) && requestedIds.length === 0) {
+      return res.status(400).send({ error: 'sample_ids must be omitted or non-empty' })
+    }
 
-// Run findExactMatchForSample for one sample AND persist the resulting matches
-// into user_notification_audio_sample_match (overwriting any prior set for that
-// sample, mirroring the upsert-fingerprints semantics). Returns the matches so
-// callers can log them locally.
-router.post('/exact-match/audio-samples/:sampleId/matches', async ({ params: { sampleId }, query: { threshold } }, res) => {
-  try {
-    const matchThreshold = threshold === undefined ? config.sampleMatchDefaultThreshold : parseFloat(threshold)
-    const bucketSeconds = config.sampleMatchBucketSeconds ?? 0.05
-    const matches = await findExactMatchForSample(parseInt(sampleId, 10), matchThreshold)
-    await persistSampleMatches(parseInt(sampleId, 10), matches, matchThreshold, bucketSeconds)
-    res.send({ sample_id: parseInt(sampleId, 10), match_count: matches.length, matches })
-  } catch (error) {
-    logger.error('Error scoring sample', { error: error.message, stack: error.stack })
-    res.status(500).send({ error: error.message })
+    const matchThreshold =
+      body?.threshold === undefined ? cfg.sampleMatchDefaultThreshold : parseFloat(body.threshold)
+    const bucketSeconds = cfg.sampleMatchBucketSeconds ?? 0.05
+
+    let sampleIds
+    try {
+      if (Array.isArray(requestedIds)) {
+        sampleIds = requestedIds.map((id) => parseInt(id, 10))
+      } else {
+        const samples = await listSamples()
+        // queryAudioSamplesWithFingerprint returns id as a string (BIGINT via
+        // NATURAL JOIN); normalise to integer so response sample_ids match the
+        // spec ("sample_id": <int>) regardless of how the list was resolved.
+        sampleIds = samples.map((s) => parseInt(s.id, 10))
+      }
+    } catch (error) {
+      log.error('Error resolving sample list for bulk scoring', {
+        error: error.message,
+        stack: error.stack,
+      })
+      return res.status(500).send({ error: error.message })
+    }
+
+    const results = []
+    let okCount = 0
+    let failCount = 0
+    for (const sampleId of sampleIds) {
+      try {
+        const matches = await findExactMatch(sampleId, matchThreshold)
+        await persistMatches(sampleId, matches, matchThreshold, bucketSeconds)
+        okCount += 1
+        results.push({
+          sample_id: sampleId,
+          status: 'ok',
+          match_count: matches.length,
+          top_score: matches.length > 0 ? matches[0].match_score : null,
+        })
+      } catch (error) {
+        failCount += 1
+        log.error('Error scoring sample in bulk endpoint', {
+          sampleId,
+          error: error.message,
+          stack: error.stack,
+        })
+        results.push({ sample_id: sampleId, status: 'error', error: error.message })
+      }
+    }
+    res.send({ ok_count: okCount, fail_count: failCount, results })
   }
-})
+
+router.post('/exact-match/audio-samples/matches', bulkScoreSamplesHandler())
 
 router.get('/duplicates/:type', async ({ params: { type } }, res) => {
   res.send(await getSuspectedDuplicates(type))
@@ -404,3 +452,4 @@ router.post('/tracks/:trackId/credits/remove', async ({ params: { trackId }, bod
 
 module.exports = router
 module.exports.fingerprintDiagnosticsHandler = fingerprintDiagnosticsHandler
+module.exports.bulkScoreSamplesHandler = bulkScoreSamplesHandler
