@@ -571,41 +571,315 @@ module.exports.ignoreDuplicate = async (type, id1, id2) => {
   `, [id1, id2])
 }
 
-module.exports.findExactMatchForSample = async (sampleId, threshold = 0.5) => {
-  return await pg.queryRowsAsync(
+module.exports.queryFingerprintDiagnostics = async (
+  sampleId,
+  previewId,
+  { bucketSeconds = 0.05, maxPerSide = 10000 } = {},
+) => {
+  // Single round-trip: UNION ALL the two fingerprint sides with a discriminator.
+  // Fetch (maxPerSide + 1) rows per side so we can detect truncation cleanly.
+  const fetchLimit = maxPerSide + 1
+  const rows = await pg.queryRowsAsync(
     // language=PostgreSQL
-    sql`-- findExactMatchForSample
+    sql`-- queryFingerprintDiagnostics
+(SELECT 'sample' AS side, hash, position, f1
+ FROM (
+   SELECT
+     user_notification_audio_sample_fingerprint_hash AS hash,
+     user_notification_audio_sample_fingerprint_position AS position,
+     user_notification_audio_sample_fingerprint_frequency_bin AS f1
+   FROM user_notification_audio_sample_fingerprint
+   WHERE user_notification_audio_sample_id = ${sampleId}
+   LIMIT ${fetchLimit}
+ ) s)
+UNION ALL
+(SELECT 'preview' AS side, hash, position, f1
+ FROM (
+   SELECT
+     store__track_preview_fingerprint_hash AS hash,
+     store__track_preview_fingerprint_position AS position,
+     store__track_preview_fingerprint_frequency_bin AS f1
+   FROM store__track_preview_fingerprint
+   WHERE store__track_preview_id = ${previewId}
+   LIMIT ${fetchLimit}
+ ) p)
+    `,
+  )
+
+  const rawSample = rows.filter((r) => r.side === 'sample')
+  const rawPreview = rows.filter((r) => r.side === 'preview')
+  const truncated = rawSample.length > maxPerSide || rawPreview.length > maxPerSide
+  const sample = rawSample.slice(0, maxPerSide)
+  const preview = rawPreview.slice(0, maxPerSide)
+
+  // Stringify the BIGINT hash so Set equality is reliable regardless of
+  // node-pg's int parsing config.
+  const hashKey = (r) => String(r.hash)
+  const hashF1Key = (r) => `${String(r.hash)}|${r.f1 === null ? '' : r.f1}`
+
+  const sampleHashSet = new Set(sample.map(hashKey))
+  const previewHashSet = new Set(preview.map(hashKey))
+  const sampleHashF1Set = new Set(sample.map(hashF1Key))
+  const previewHashF1Set = new Set(preview.map(hashF1Key))
+
+  let intersectionHashCount = 0
+  for (const h of sampleHashSet) if (previewHashSet.has(h)) intersectionHashCount++
+  let intersectionHashWithF1Count = 0
+  for (const k of sampleHashF1Set) if (previewHashF1Set.has(k)) intersectionHashWithF1Count++
+
+  const unionSize = sampleHashSet.size + previewHashSet.size - intersectionHashCount
+  const jaccard = unionSize > 0 ? intersectionHashCount / unionSize : 0
+  const containmentAgainstSample =
+    sampleHashSet.size > 0 ? intersectionHashCount / sampleHashSet.size : 0
+  const containmentAgainstPreview =
+    previewHashSet.size > 0 ? intersectionHashCount / previewHashSet.size : 0
+
+  // Δt = position_preview − position_sample, bucketed. Cartesian product
+  // per shared hash is fine because Panako hashes are sparse per file
+  // (typically one position per hash).
+  const sampleByHash = new Map()
+  for (const r of sample) {
+    const k = hashKey(r)
+    if (!sampleByHash.has(k)) sampleByHash.set(k, [])
+    sampleByHash.get(k).push(r.position)
+  }
+  const previewByHash = new Map()
+  for (const r of preview) {
+    const k = hashKey(r)
+    if (!previewByHash.has(k)) previewByHash.set(k, [])
+    previewByHash.get(k).push(r.position)
+  }
+
+  const buckets = new Map()
+  for (const [k, sampPositions] of sampleByHash) {
+    const prevPositions = previewByHash.get(k)
+    if (!prevPositions) continue
+    for (const sp of sampPositions) {
+      for (const pp of prevPositions) {
+        const delta = pp - sp
+        // Round-then-multiply, then trim float noise on the label.
+        const bucketRaw = Math.round(delta / bucketSeconds) * bucketSeconds
+        const bucket = Math.round(bucketRaw * 1e6) / 1e6
+        buckets.set(bucket, (buckets.get(bucket) || 0) + 1)
+      }
+    }
+  }
+  const topOffsetBuckets = [...buckets.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([deltaTSeconds, count]) => ({ deltaTSeconds, count }))
+
+  const currentScorerWouldReturn =
+    sampleHashSet.size > 0 ? intersectionHashCount / sampleHashSet.size : 0
+
+  return {
+    truncated,
+    sampleHashCount: sampleHashSet.size,
+    previewHashCount: previewHashSet.size,
+    intersectionHashCount,
+    intersectionHashWithF1Count,
+    jaccard,
+    containmentAgainstSample,
+    containmentAgainstPreview,
+    topOffsetBuckets,
+    currentScorerWouldReturn,
+  }
+}
+
+module.exports.findExactMatchForSample = async (
+  sampleId,
+  threshold,
+  { log = logger, bucketSeconds, peakBucketMin } = {},
+) => {
+  // Stage 1 threshold: explicit arg > SAMPLE_MATCH_DEFAULT_THRESHOLD env >
+  // throw. The throw is intentional — silent reliance on the old in-source
+  // 0.5 default is what we're trying to fix.
+  const effectiveThreshold = threshold ?? config.sampleMatchDefaultThreshold
+  if (effectiveThreshold === undefined || effectiveThreshold === null) {
+    throw new Error(
+      'SAMPLE_MATCH_DEFAULT_THRESHOLD must be set in env or an explicit threshold passed to findExactMatchForSample',
+    )
+  }
+  const effectiveBucketSeconds = bucketSeconds ?? config.sampleMatchBucketSeconds ?? 0.05
+  const effectivePeakBucketMin = peakBucketMin ?? config.sampleMatchPeakBucketMin ?? 1
+
+  const rows = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- findExactMatchForSample (two-stage)
 WITH sample_hashes AS (
-  SELECT DISTINCT user_notification_audio_sample_fingerprint_hash
+  SELECT DISTINCT user_notification_audio_sample_fingerprint_hash AS hash
   FROM user_notification_audio_sample_fingerprint
   WHERE user_notification_audio_sample_id = ${sampleId}
 ),
-preview_matches AS (
+sample_hash_count AS (
+  SELECT COUNT(*)::INTEGER AS count FROM sample_hashes
+),
+candidates AS (
+  -- Stage 1: distinct-hash overlap above the configured threshold.
+  -- Bounded LIMIT keeps the Stage 2 CROSS JOIN tractable when the
+  -- preview corpus is large.
   SELECT
-    stp.store__track_preview_id,
-    stp.store__track_id,
-    COUNT(DISTINCT stpf.store__track_preview_fingerprint_hash) AS matching_hashes,
-    (SELECT COUNT(*) FROM sample_hashes) AS sample_hash_count
+    stpf.store__track_preview_id,
+    COUNT(DISTINCT stpf.store__track_preview_fingerprint_hash)::INTEGER AS matching_hashes
   FROM store__track_preview_fingerprint stpf
-    NATURAL JOIN store__track_preview stp
-    INNER JOIN sample_hashes sh ON stpf.store__track_preview_fingerprint_hash = sh.user_notification_audio_sample_fingerprint_hash
-  GROUP BY stp.store__track_preview_id, stp.store__track_id
+    INNER JOIN sample_hashes sh
+      ON stpf.store__track_preview_fingerprint_hash = sh.hash
+  GROUP BY stpf.store__track_preview_id
   HAVING COUNT(DISTINCT stpf.store__track_preview_fingerprint_hash)::FLOAT /
-         NULLIF((SELECT COUNT(*) FROM sample_hashes), 0) >= ${threshold}
+         NULLIF((SELECT count FROM sample_hash_count), 0) >= ${effectiveThreshold}
+  ORDER BY matching_hashes DESC
+  LIMIT 100
+),
+matched_positions AS (
+  -- Stage 2 prep: every (sample_pos, preview_pos) pair sharing a hash,
+  -- per candidate preview. Bucketed by Δt = preview_pos − sample_pos.
+  SELECT
+    c.store__track_preview_id,
+    ROUND(
+      (pf.store__track_preview_fingerprint_position
+        - sf.user_notification_audio_sample_fingerprint_position)
+      / ${effectiveBucketSeconds}::FLOAT
+    ) * ${effectiveBucketSeconds}::FLOAT AS delta_t_bucket
+  FROM candidates c
+    INNER JOIN store__track_preview_fingerprint pf
+      ON pf.store__track_preview_id = c.store__track_preview_id
+    INNER JOIN user_notification_audio_sample_fingerprint sf
+      ON sf.user_notification_audio_sample_id = ${sampleId}
+     AND sf.user_notification_audio_sample_fingerprint_hash
+         = pf.store__track_preview_fingerprint_hash
+),
+bucket_counts AS (
+  SELECT
+    store__track_preview_id,
+    delta_t_bucket,
+    COUNT(*)::INTEGER AS bucket_count
+  FROM matched_positions
+  GROUP BY store__track_preview_id, delta_t_bucket
+),
+peak_per_preview AS (
+  SELECT DISTINCT ON (store__track_preview_id)
+    store__track_preview_id,
+    delta_t_bucket AS peak_delta_t_bucket,
+    bucket_count AS peak_bucket_count
+  FROM bucket_counts
+  ORDER BY store__track_preview_id, bucket_count DESC, delta_t_bucket ASC
 )
 SELECT
-  pm.store__track_preview_id,
-  pm.store__track_id,
-  pm.matching_hashes,
-  pm.sample_hash_count,
-  (pm.matching_hashes::FLOAT / NULLIF(pm.sample_hash_count, 0)) AS match_score,
-  st.track_id
-FROM preview_matches pm
-  NATURAL JOIN store__track st
-ORDER BY match_score DESC, matching_hashes DESC
+  ppp.store__track_preview_id,
+  stp.store__track_id,
+  st.track_id,
+  c.matching_hashes,
+  (SELECT count FROM sample_hash_count) AS sample_hash_count,
+  ppp.peak_delta_t_bucket::FLOAT AS peak_delta_t_seconds,
+  ppp.peak_bucket_count AS match_score,
+  (c.matching_hashes::FLOAT /
+    NULLIF((SELECT count FROM sample_hash_count), 0)) AS stage1_ratio
+FROM peak_per_preview ppp
+  INNER JOIN candidates c ON c.store__track_preview_id = ppp.store__track_preview_id
+  INNER JOIN store__track_preview stp ON stp.store__track_preview_id = ppp.store__track_preview_id
+  INNER JOIN store__track st ON st.store__track_id = stp.store__track_id
+WHERE ppp.peak_bucket_count >= ${effectivePeakBucketMin}
+ORDER BY match_score DESC, c.matching_hashes DESC
 LIMIT 10
     `,
   )
+
+  // Single summary log per call — the diagnostics-test contract requires
+  // exactly one info log, including for the zero-row case, with the
+  // sample hash count visible. The extra Stage-1 / Stage-2 fields surface
+  // the new scoring path to operators.
+  let sampleHashCount
+  if (rows.length > 0) {
+    sampleHashCount = Number(rows[0].sample_hash_count)
+  } else {
+    const [{ count }] = await pg.queryRowsAsync(
+      // language=PostgreSQL
+      sql`-- findExactMatchForSample sample hash count
+SELECT COUNT(DISTINCT user_notification_audio_sample_fingerprint_hash)::INTEGER AS count
+FROM user_notification_audio_sample_fingerprint
+WHERE user_notification_audio_sample_id = ${sampleId}
+      `,
+    )
+    sampleHashCount = count
+  }
+  log.info('findExactMatchForSample', {
+    sampleId,
+    threshold: effectiveThreshold,
+    bucketSeconds: effectiveBucketSeconds,
+    peakBucketMin: effectivePeakBucketMin,
+    sampleHashCount,
+    candidateRowCount: rows.length,
+    topScore: rows[0]?.match_score ?? null,
+    topPreviewId: rows[0]?.store__track_preview_id ?? null,
+    topMatchingHashes: rows[0]?.matching_hashes ?? null,
+    topStage1Ratio: rows[0]?.stage1_ratio ?? null,
+    topPeakDeltaTSeconds: rows[0]?.peak_delta_t_seconds ?? null,
+  })
+
+  return rows
+}
+
+// List every audio sample that has a fingerprint extracted. Used by the
+// analyser's interleaved scoring pass to iterate samples for re-matching
+// after a chunk of new preview fingerprints has landed.
+module.exports.queryAudioSamplesWithFingerprint = async () => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryAudioSamplesWithFingerprint
+SELECT
+  user_notification_audio_sample_id AS id,
+  user_notification_audio_sample_filename AS filename,
+  user_notification_audio_sample_fingerprint_count AS fingerprint_count
+FROM user_notification_audio_sample
+  NATURAL JOIN user_notification_audio_sample_fingerprint_meta
+ORDER BY user_notification_audio_sample_id
+    `,
+  )
+}
+
+// Replace the sample's persisted matches with the given rows. Mirrors the
+// upsert-fingerprints semantics: delete-then-insert in one transaction so
+// readers never see a half-written set.
+module.exports.persistSampleMatches = async (sampleId, matches, threshold, bucketSeconds) => {
+  await BPromise.using(pg.getTransaction(), async (tx) => {
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- persistSampleMatches: clear existing
+DELETE FROM user_notification_audio_sample_match
+WHERE user_notification_audio_sample_id = ${sampleId}
+      `,
+    )
+
+    if (!matches || matches.length === 0) return
+
+    const values = matches.map((m) => ({
+      sample_id: sampleId,
+      preview_id: m.store__track_preview_id,
+      score: m.match_score,
+    }))
+
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- persistSampleMatches: insert
+INSERT INTO user_notification_audio_sample_match (
+  user_notification_audio_sample_id,
+  store__track_preview_id,
+  user_notification_audio_sample_match_score,
+  user_notification_audio_sample_match_threshold,
+  user_notification_audio_sample_match_bucket_seconds
+)
+SELECT
+  rec.sample_id::BIGINT,
+  rec.preview_id::BIGINT,
+  rec.score::INTEGER,
+  ${threshold}::FLOAT,
+  ${bucketSeconds}::FLOAT
+FROM json_to_recordset(${JSON.stringify(values)}::json) AS rec (
+  sample_id TEXT, preview_id TEXT, score TEXT
+)
+      `,
+    )
+  })
 }
 
 const MISLABELED_ENTITY_TYPES = ['artist', 'label']

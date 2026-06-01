@@ -26,8 +26,8 @@ test({
       const mockFetch = makeFetchMock(200, '{}')
       const originalFetch = globalThis.fetch
       globalThis.fetch = mockFetch
-      const client = new FomoPlayerClient({ apiUrl: 'http://localhost:3000', apiKey: 'fp_test-key' })
-      await client.get('/api/me/tracks')
+      const client = new FomoPlayerClient({ apiUrl: 'http://localhost:3000/api', apiKey: 'fp_test-key' })
+      await client.get('/me/tracks')
       return { calls: mockFetch.calls, originalFetch }
     },
     teardown: async ({ originalFetch }) => {
@@ -48,10 +48,10 @@ test({
       const mockFetch = makeFetchMock(401, '{"error":"Unauthorized"}')
       const originalFetch = globalThis.fetch
       globalThis.fetch = mockFetch
-      const client = new FomoPlayerClient({ apiUrl: 'http://localhost:3000', apiKey: 'fp_bad-key' })
+      const client = new FomoPlayerClient({ apiUrl: 'http://localhost:3000/api', apiKey: 'fp_bad-key' })
       let thrownError = null
       try {
-        await client.get('/api/me/tracks')
+        await client.get('/me/tracks')
       } catch (err) {
         thrownError = err
       }

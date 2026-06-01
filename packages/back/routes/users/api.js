@@ -65,7 +65,7 @@ const { storeName: spotifyStoreName } = require('../shared/spotify')
 const { storeUrl: bandcampStoreUrl } = require('../stores/bandcamp/logic')
 const { enableCartSync, removeCartSync, importPlaylistAsCart } = require('../shared/cart')
 const { isAdmin } = require('../shared/auth.js')
-const { getMinioClient, getBucketName, getStorageUrl } = require('../shared/minio')
+const { getMinioClient, getBucketName, getStorageUrl, getStorageScheme } = require('../shared/minio')
 const {
   insertNotificationAudioSample,
   queryNotificationAudioSamples: getNotificationAudioSamples,
@@ -500,7 +500,7 @@ router.post(
       })
 
       const cleanStorageUrl = storageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
-      const url = `https://${cleanStorageUrl}/${bucketName}/${objectKey}`
+      const url = `${getStorageScheme()}://${cleanStorageUrl}/${bucketName}/${objectKey}`
       
       const sample = await insertNotificationAudioSample(
         userId,

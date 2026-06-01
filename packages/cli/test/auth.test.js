@@ -16,15 +16,16 @@ const { login } = require('../src/auth')
 test({
   setup: async () => {
     const { server, port } = await startServer()
-    const apiUrl = `http://localhost:${port}`
-    return { server, apiUrl, timeout: 60000 }
+    const baseUrl = `http://localhost:${port}`
+    const apiUrl = `${baseUrl}/api`
+    return { server, baseUrl, apiUrl, timeout: 60000 }
   },
   teardown: async ({ server }) => {
     server.kill()
   },
 
   'login flow: PKCE code exchange returns an API key': {
-    setup: async ({ server, apiUrl }) => {
+    setup: async ({ server, baseUrl, apiUrl }) => {
       // Simulate the browser: authenticate, visit the CLI login page, confirm access.
       // Manually track the session cookie across requests.
       const openBrowser = async (loginUrl) => {
@@ -32,7 +33,7 @@ test({
         const callbackPort = url.searchParams.get('callbackPort')
 
         // Step 1: authenticate as the seeded test user
-        const loginRes = await fetch(`${apiUrl}/api/auth/login`, {
+        const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: 'testuser', password: 'testpwd' }),
@@ -51,7 +52,7 @@ test({
         }
 
         // Step 3: submit the confirm form
-        const confirmRes = await fetch(`${apiUrl}/api/auth/login/cli/confirm`, {
+        const confirmRes = await fetch(`${baseUrl}/api/auth/login/cli/confirm`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -71,7 +72,7 @@ test({
       }
 
       const result = await login(apiUrl, openBrowser, () => {})
-      return { server, apiUrl, result }
+      return { server, baseUrl, apiUrl, result }
     },
     teardown: async ({ result }) => {
       if (result?.key) {

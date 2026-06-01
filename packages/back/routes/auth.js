@@ -8,7 +8,8 @@ const defaultConfig = require('../config.js')
 const { queryAccountCount: defaultQueryAccountCount, consumeHandoffJti: defaultConsumeHandoffJti } = require('./db')
 const { deleteInviteCode: defaultDeleteInviteCode } = require('../db/account')
 const { v4: uuid } = require('uuid')
-const { createApiKey } = require('../db/api-key')
+const { createApiKey, ADMIN_API_KEY_RATE_LIMITS } = require('../db/api-key')
+const { isAdminUserId } = require('./shared/auth')
 const defaultExtensionRefreshToken = require('../db/extension-refresh-token')
 const defaultTokenServer = require('../token-server')
 const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = require('../routes/shared/spotify')
@@ -263,7 +264,8 @@ const createAuthRouter = ({
         return res.status(401).json({ error: 'Invalid, expired, or already used authorization code' })
       }
       const rawKey = `fp_${uuid()}`
-      await createApiKey(result.userId, rawKey, 'CLI')
+      const limits = (await isAdminUserId(result.userId)) ? ADMIN_API_KEY_RATE_LIMITS : undefined
+      await createApiKey(result.userId, rawKey, 'CLI', limits)
       return res.json({ access_token: rawKey, token_type: 'bearer' })
     } catch (e) {
       next(e)
@@ -741,7 +743,8 @@ const createAuthRouter = ({
       const user = await account.findByIdentifier(payload.oidcIssuer, payload.sub)
       if (!user) return res.status(403).json({ error: 'No account found for this identity. Please log in via the web app first.' })
       const rawKey = `fp_${uuid()}`
-      const keyRecord = await createApiKey(user.id, rawKey, name)
+      const limits = (await isAdminUserId(user.id)) ? ADMIN_API_KEY_RATE_LIMITS : undefined
+      const keyRecord = await createApiKey(user.id, rawKey, name, limits)
       return res.json({ key: rawKey, id: keyRecord.api_key_id, name: keyRecord.api_key_name })
     } catch (e) { next(e) }
   })

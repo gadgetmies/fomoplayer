@@ -11,7 +11,7 @@ const { defineTools } = require('../../mcp/tools')
 test({
   setup: async () => {
     const { server, port } = await startServer()
-    const apiUrl = `http://localhost:${port}`
+    const apiUrl = `http://localhost:${port}/api`
     const { raw: apiKey } = await createTestApiKey()
     const client = new FomoPlayerClient({ apiUrl, apiKey })
     const tools = defineTools(client)

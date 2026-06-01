@@ -67,6 +67,37 @@ const extensionOauthAllowedRedirectPatterns = (
   .filter((pattern) => pattern.length > 0)
   .map((pattern) => new RegExp(pattern))
 
+const parseEnvFloat = (raw, name) => {
+  if (raw === undefined || raw === '') return undefined
+  const value = Number(raw)
+  if (!Number.isFinite(value)) {
+    throw new Error(`${name} must be a finite number; got "${raw}"`)
+  }
+  return value
+}
+
+const parseEnvInt = (raw, name) => {
+  if (raw === undefined || raw === '') return undefined
+  const value = Number(raw)
+  if (!Number.isInteger(value)) {
+    throw new Error(`${name} must be an integer; got "${raw}"`)
+  }
+  return value
+}
+
+const sampleMatchDefaultThreshold = parseEnvFloat(
+  process.env.SAMPLE_MATCH_DEFAULT_THRESHOLD,
+  'SAMPLE_MATCH_DEFAULT_THRESHOLD',
+)
+const sampleMatchPeakBucketMin = parseEnvInt(
+  process.env.SAMPLE_MATCH_PEAK_BUCKET_MIN,
+  'SAMPLE_MATCH_PEAK_BUCKET_MIN',
+)
+const sampleMatchBucketSeconds = parseEnvFloat(
+  process.env.SAMPLE_MATCH_BUCKET_SECONDS,
+  'SAMPLE_MATCH_BUCKET_SECONDS',
+)
+
 // Tracks whose published date is older than this many days are skipped during
 // watch-job ingestion (see routes/shared/tracks.js). Defaults to a true 2 years.
 const trackMaxAgeDays = (() => {
@@ -137,5 +168,12 @@ module.exports = {
   internalAuthApiAudience,
   extensionAccessTokenTtlSeconds: 15 * 60,
   extensionRefreshTokenTtlSeconds: 90 * 24 * 60 * 60,
+  // findExactMatchForSample reads these at call time so live Railway
+  // env updates take effect without redeploying. Threshold must be set
+  // in every environment (the matcher throws when an unset config meets
+  // a callsite with no explicit threshold).
+  sampleMatchDefaultThreshold,
+  sampleMatchPeakBucketMin,
+  sampleMatchBucketSeconds,
   trackMaxAgeDays,
 }
