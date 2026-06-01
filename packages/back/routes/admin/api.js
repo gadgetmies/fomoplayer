@@ -299,7 +299,10 @@ const bulkScoreSamplesHandler =
         sampleIds = requestedIds.map((id) => parseInt(id, 10))
       } else {
         const samples = await listSamples()
-        sampleIds = samples.map((s) => s.id)
+        // queryAudioSamplesWithFingerprint returns id as a string (BIGINT via
+        // NATURAL JOIN); normalise to integer so response sample_ids match the
+        // spec ("sample_id": <int>) regardless of how the list was resolved.
+        sampleIds = samples.map((s) => parseInt(s.id, 10))
       }
     } catch (error) {
       log.error('Error resolving sample list for bulk scoring', {
