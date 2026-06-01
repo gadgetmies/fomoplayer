@@ -108,6 +108,21 @@ jobs:
           TEST_REGEX="$(basename "$TEST_FILE" | sed 's/\./\\./g')$"
           yarn workspace fomoplayer_back ci:demo "$TEST_DIR" --regex "$TEST_REGEX"
 
+      # Guard against a regression of the zero-byte-video bug: Playwright only
+      # flushes a recording when its context/browser closes, so if that ever
+      # stops happening we want the job to fail here rather than silently upload
+      # an empty artifact.
+      - name: Verify recording is non-empty
+        run: |
+          DIR="${{ github.workspace }}/demo-output"
+          if ! find "$DIR" -type f -name '*.webm' -size +0c | grep -q .; then
+            echo "::error::No non-empty video was recorded in ${DIR} — the demo recording produced zero-byte output."
+            ls -la "$DIR" || true
+            exit 1
+          fi
+          echo "Recorded videos:"
+          find "$DIR" -type f -name '*.webm' -printf '%s\t%p\n'
+
       - name: Upload demo video
         if: always()
         uses: actions/upload-artifact@v4
