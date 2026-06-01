@@ -1,10 +1,11 @@
 const { expect } = require('chai')
 const { test } = require('cascade-test')
-const { getSharedContext, dismissOnboarding, waitForWithTimeoutMessage } = require('../lib/setup')
+const { getSharedContext, dismissOnboarding, waitForWithTimeoutMessage, teardownSharedContext } = require('../lib/setup')
 const { seedTracks, seededTrackAssertions } = require('../lib/seed')
 const { resolveTestUserId } = require('../lib/test-user')
 
 test({
+  teardown: teardownSharedContext,
   setup: async () => {
     const { page } = await getSharedContext()
     const userId = await resolveTestUserId()

@@ -1,10 +1,11 @@
 const { expect } = require('chai')
 const { test } = require('cascade-test')
-const { getSharedContext, dismissOnboarding, waitForWithTimeoutMessage } = require('../lib/setup')
+const { getSharedContext, dismissOnboarding, waitForWithTimeoutMessage, teardownSharedContext } = require('../lib/setup')
 
 const SLIDER_SELECTOR = 'input[type="range"][id^="weights-"]'
 
 test({
+  teardown: teardownSharedContext,
   setup: async () => {
     const { page } = await getSharedContext()
     await page.goto('/settings/sorting')

@@ -238,6 +238,50 @@ const demoOverlay = () => {
   }
 }
 
+// Close the recording context and browser so Playwright flushes the video to
+// disk. Playwright only writes a recorded video when its context (or the owning
+// browser) closes — closing the browser also finalises the videos of every
+// context on it. Idempotent: each handle is captured and nulled before the
+// (async) close so a second call (or a concurrent beforeExit) can't double-close.
+const teardownSharedContext = async () => {
+  if (sharedBrowserContext) {
+    const context = sharedBrowserContext
+    sharedBrowserContext = null
+    await context.close().catch(() => {})
+  }
+  if (sharedBrowser) {
+    const browser = sharedBrowser
+    sharedBrowser = null
+    await browser.close().catch(() => {})
+  }
+  initPromise = null
+}
+
+// cascade-test ends every forked test process with `process.exit()` (see
+// `setTimeout(() => process.exit(exitCode), 0)` in its runner). Node does NOT
+// emit `beforeExit` for an explicit `process.exit()`, so the `beforeExit`
+// cleanup below never runs under the test runner — which is why demo recordings
+// came out as zero-byte files: Playwright created the video but the context was
+// never closed to flush it. When recording, defer the real exit until the
+// context/browser has closed (capped so a hung close can't wedge CI).
+if (isRecording) {
+  const realExit = process.exit.bind(process)
+  let flushing = false
+  process.exit = (code) => {
+    if (flushing) {
+      return realExit(code)
+    }
+    flushing = true
+    const finish = () => realExit(code)
+    const guard = setTimeout(finish, 10000)
+    teardownSharedContext().finally(() => {
+      clearTimeout(guard)
+      finish()
+    })
+    return undefined
+  }
+}
+
 const initialize = async () => {
   let baseURL, server
 
@@ -331,16 +375,11 @@ const initialize = async () => {
     process.on('exit', () => server.kill())
   }
 
-  // Finalize video recording (if active) before process exits.
-  process.on('beforeExit', async () => {
-    if (sharedBrowserContext) {
-      await sharedBrowserContext.close().catch(() => {})
-      sharedBrowserContext = null
-    }
-    if (sharedBrowser) {
-      await sharedBrowser.close().catch(() => {})
-      sharedBrowser = null
-    }
+  // Fallback for non-runner exits that do emit `beforeExit` (e.g. a plain
+  // `node` invocation). Under cascade-test this never fires — the wrapped
+  // `process.exit` above handles flushing the recording instead.
+  process.on('beforeExit', () => {
+    teardownSharedContext().catch(() => {})
   })
 
   return { server, browser: sharedBrowser, context: sharedBrowserContext, page }
@@ -354,6 +393,11 @@ module.exports.getSharedContext = () => {
 }
 
 module.exports.getBrowserContext = () => sharedBrowserContext
+
+// Exposed so a test suite's `teardown` can also flush the recording explicitly
+// (cascade-test awaits `teardown` before exiting); the wrapped `process.exit`
+// makes this optional, but it's available for callers that want it.
+module.exports.teardownSharedContext = teardownSharedContext
 
 module.exports.dismissOnboarding = dismissOnboarding
 module.exports.waitForWithTimeoutMessage = waitForWithTimeoutMessage

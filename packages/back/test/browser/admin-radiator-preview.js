@@ -4,13 +4,14 @@
 // the /admin endpoints (the preview Actions bot is granted admin from its OIDC
 // sub; otherwise ADMIN_USER_SUBS must list the user's subject).
 const { test } = require('cascade-test')
-const { getSharedContext } = require('../lib/setup')
+const { getSharedContext, teardownSharedContext } = require('../lib/setup')
 const { seedTracks } = require('../lib/seed')
 const { resolveTestUserId } = require('../lib/test-user')
 const { seedRadiatorPresetsViaApi, runRadiatorJobsViaApi } = require('../lib/radiator-mock')
 const { gotoRadiator, assertRadiatorShowsSeededData } = require('../lib/admin-radiator-steps')
 
 test({
+  teardown: teardownSharedContext,
   setup: async () => {
     const { page } = await getSharedContext()
     const userId = await resolveTestUserId()
