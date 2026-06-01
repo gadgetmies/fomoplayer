@@ -96,13 +96,21 @@ jobs:
       # Record the test in demo mode: VIDEO_DIR enables recording, and setup.js
       # turns on slow-mo + the cursor/click/keyboard overlay whenever VIDEO_DIR
       # is set. No PREVIEW_URL, so the test runs against the local backend.
+      # NOTE: this is a container job, so use the $GITHUB_WORKSPACE env var (the
+      # workspace path *inside* the container, e.g. /__w/<repo>/<repo>) rather
+      # than the ${{ github.workspace }} expression, which expands to the *host*
+      # path (/home/runner/work/...). The runner path-translates env/inputs into
+      # the container but does NOT rewrite ${{ github.workspace }} substituted as
+      # a literal string inside a run: script — mixing the two made the recording
+      # land under $GITHUB_WORKSPACE while the verify step looked at the host path
+      # and falsely reported a zero-byte recording.
       - name: Record demo test
         env:
           DATABASE_URL: postgres://postgres:postgres@postgres/multi-store-player-test
           REACT_APP_ENV: ci
-          VIDEO_DIR: ${{ github.workspace }}/demo-output
           PW_SLOWMO: '600'
         run: |
+          export VIDEO_DIR="$GITHUB_WORKSPACE/demo-output"
           TEST_FILE="${{ steps.demo.outputs.test_file }}"
           TEST_DIR=$(dirname "$TEST_FILE")
           TEST_REGEX="$(basename "$TEST_FILE" | sed 's/\./\\./g')$"
@@ -114,7 +122,7 @@ jobs:
       # an empty artifact.
       - name: Verify recording is non-empty
         run: |
-          DIR="${{ github.workspace }}/demo-output"
+          DIR="$GITHUB_WORKSPACE/demo-output"
           if ! find "$DIR" -type f -name '*.webm' -size +0c | grep -q .; then
             echo "::error::No non-empty video was recorded in ${DIR} — the demo recording produced zero-byte output."
             ls -la "$DIR" || true
@@ -123,32 +131,19 @@ jobs:
           echo "Recorded videos:"
           find "$DIR" -type f -name '*.webm' -printf '%s\t%p\n'
 
-      # Capture exactly what landed in demo-output (and any Playwright temp
-      # artifacts) so the PR comment can surface it — handy when a recording is
-      # empty/missing and the raw run logs aren't readily accessible.
+      # Surface what landed in demo-output in the PR comment — handy when a
+      # recording is empty/missing and the raw run logs aren't readily accessible.
       - name: Collect recording diagnostics
         if: always()
         run: |
+          DIR="$GITHUB_WORKSPACE/demo-output"
           {
             echo "DEMO_DIAG<<DIAG_EOF"
-            echo "context github.workspace = ${{ github.workspace }}"
-            echo "env GITHUB_WORKSPACE     = ${GITHUB_WORKSPACE}"
-            echo "pwd                      = $(pwd)"
+            echo "recording dir: ${DIR}"
+            ls -laR "$DIR" 2>&1 || echo "(demo-output missing)"
             echo ""
-            echo "ls of \${{ github.workspace }}/demo-output:"
-            ls -laR "${{ github.workspace }}/demo-output" 2>&1 || echo "(missing)"
-            echo ""
-            echo "ls of \$GITHUB_WORKSPACE/demo-output:"
-            ls -laR "${GITHUB_WORKSPACE}/demo-output" 2>&1 || echo "(missing)"
-            echo ""
-            echo "ALL *.webm anywhere in the container:"
-            find / -type f -name '*.webm' 2>/dev/null | head -50 || true
-            echo ""
-            echo "ALL demo-output dirs anywhere in the container:"
-            find / -type d -name 'demo-output' 2>/dev/null | head -50 || true
-            echo ""
-            echo "ALL Playwright video temp dirs in the container:"
-            find / -type d -name '.playwright-artifacts-*' 2>/dev/null | head -50 || true
+            echo "webm files and sizes:"
+            find "$DIR" -type f -name '*.webm' -printf '%s bytes\t%p\n' 2>&1 || echo "(none)"
             echo "DIAG_EOF"
           } >> "$GITHUB_ENV"
 
