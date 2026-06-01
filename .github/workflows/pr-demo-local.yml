@@ -129,17 +129,26 @@ jobs:
       - name: Collect recording diagnostics
         if: always()
         run: |
-          DIR="${{ github.workspace }}/demo-output"
           {
             echo "DEMO_DIAG<<DIAG_EOF"
-            echo "demo-output listing:"
-            ls -laR "$DIR" 2>&1 || echo "(demo-output missing)"
+            echo "context github.workspace = ${{ github.workspace }}"
+            echo "env GITHUB_WORKSPACE     = ${GITHUB_WORKSPACE}"
+            echo "pwd                      = $(pwd)"
             echo ""
-            echo "webm files and sizes:"
-            find "$DIR" -type f -name '*.webm' -printf '%s bytes\t%p\n' 2>&1 || echo "(none)"
+            echo "ls of \${{ github.workspace }}/demo-output:"
+            ls -laR "${{ github.workspace }}/demo-output" 2>&1 || echo "(missing)"
             echo ""
-            echo "stray Playwright video temp dirs under the workspace:"
-            find "${{ github.workspace }}" -type d -name '.playwright-artifacts-*' 2>/dev/null || true
+            echo "ls of \$GITHUB_WORKSPACE/demo-output:"
+            ls -laR "${GITHUB_WORKSPACE}/demo-output" 2>&1 || echo "(missing)"
+            echo ""
+            echo "ALL *.webm anywhere in the container:"
+            find / -type f -name '*.webm' 2>/dev/null | head -50 || true
+            echo ""
+            echo "ALL demo-output dirs anywhere in the container:"
+            find / -type d -name 'demo-output' 2>/dev/null | head -50 || true
+            echo ""
+            echo "ALL Playwright video temp dirs in the container:"
+            find / -type d -name '.playwright-artifacts-*' 2>/dev/null | head -50 || true
             echo "DIAG_EOF"
           } >> "$GITHUB_ENV"
 
