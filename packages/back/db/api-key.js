@@ -8,14 +8,32 @@ const hashApiKey = (rawKey) => crypto.createHmac('sha256', config.cryptoKey).upd
 
 module.exports.hashApiKey = hashApiKey
 
-module.exports.createApiKey = async (userId, rawKey, name) => {
+// Effectively-unlimited rate limits assigned to API keys minted for admin
+// accounts. Well under the Postgres INTEGER maximum (2,147,483,647), so the
+// existing columns and rate limiter are untouched — the sliding-window check
+// simply never trips for these keys.
+const ADMIN_API_KEY_RATE_LIMITS = { ratePerMinute: 1_000_000_000, ratePerDay: 1_000_000_000 }
+
+module.exports.ADMIN_API_KEY_RATE_LIMITS = ADMIN_API_KEY_RATE_LIMITS
+
+// When `limits` is provided, the per-minute/per-day rate limit columns are set
+// explicitly; otherwise they are omitted so the table defaults (60/1000) apply.
+module.exports.createApiKey = async (userId, rawKey, name, limits) => {
   const hash = hashApiKey(rawKey)
   const prefix = rawKey.slice(0, 8)
-  const rows = await pg.queryRowsAsync(sql`
-    INSERT INTO api_key (api_key_hash, api_key_prefix, api_key_name, meta_account_user_id)
-    VALUES (${hash}, ${prefix}, ${name}, ${userId})
-    RETURNING api_key_id, api_key_prefix, api_key_name, api_key_created_at
-  `)
+  const rows = await pg.queryRowsAsync(
+    limits
+      ? sql`
+        INSERT INTO api_key (api_key_hash, api_key_prefix, api_key_name, meta_account_user_id, rate_limit_per_minute, rate_limit_per_day)
+        VALUES (${hash}, ${prefix}, ${name}, ${userId}, ${limits.ratePerMinute}, ${limits.ratePerDay})
+        RETURNING api_key_id, api_key_prefix, api_key_name, api_key_created_at
+      `
+      : sql`
+        INSERT INTO api_key (api_key_hash, api_key_prefix, api_key_name, meta_account_user_id)
+        VALUES (${hash}, ${prefix}, ${name}, ${userId})
+        RETURNING api_key_id, api_key_prefix, api_key_name, api_key_created_at
+      `,
+  )
   return rows[0]
 }
 

@@ -1,4 +1,5 @@
 const config = require('../../config.js')
+const account = require('../../db/account.js')
 
 const adminUserSubs = (process.env.ADMIN_USER_SUBS ?? '')
   .split(',')
@@ -27,6 +28,16 @@ const isAdmin = (req) => {
 }
 
 module.exports.isAdmin = isAdmin
+
+// Resolve admin status from a user id (the mint paths have no Express `req` to
+// feed `isAdmin`). Loads the account's stored OIDC subjects and checks them
+// against the same ADMIN_USER_SUBS rule used at request time.
+const isAdminUserId = async (userId) => {
+  const { oidcSubjects = [] } = await account.findByUserId(userId)
+  return oidcSubjects.some((sub) => adminUserSubs.includes(sub))
+}
+
+module.exports.isAdminUserId = isAdminUserId
 
 module.exports.ensureIsAdmin = (req, res, next) => {
   if (isAdmin(req)) {
