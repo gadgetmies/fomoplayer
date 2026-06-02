@@ -60,26 +60,28 @@ def cleanup_downloads(downloads_dir):
     - Only touches the top level — subdirectories and their contents stay.
     - Each unlink is wrapped in its own try/except so one bad file does
       not block the rest.
-    - Must never raise into the caller's `finally` block — log and
-      continue on error.
-    - Logs a one-line summary `[cleanup] downloads/: removed N files,
+    - Must never raise into the caller's `finally` block — print a
+      warning and continue on error.
+    - Prints a one-line summary `[cleanup] downloads/: removed N files,
       M errors` at the end.
     """
 
 def cleanup_panako_worker_dirs(analyser_root):
     """Remove every `analyser_root/panako_db_worker_*/` directory.
 
-    - Matches the `panako_db_worker_*` glob at the top level of
+    - Matches the `panako_db_worker_*` prefix at the top level of
       `analyser_root`.
     - `shutil.rmtree(..., ignore_errors=False)` per match, wrapped in
       try/except so one stuck dir does not block the rest.
-    - Must never raise into the caller. Logs `[cleanup] worker dirs:
+    - Must never raise into the caller. Prints `[cleanup] worker dirs:
       removed N, M errors`.
     """
 ```
 
 Both use `os.listdir` + explicit path joins (no recursive globbing) so
-they only touch the intended top-level entries.
+they only touch the intended top-level entries. Logging is via
+`print()` to match the surrounding modules' existing convention rather
+than the `logging` module.
 
 ### Cleanup call sites
 
@@ -123,20 +125,21 @@ other's in-flight files.
 ### Simplification of `download_and_manage_file`
 
 With end-of-invocation wipe, `target_path` is guaranteed not to exist at
-the start of a new invocation. The hash-compare branch and the
-rename-with-counter branch become unreachable and are removed.
+the start of a new invocation. The hash-compare branch, the
+rename-with-counter branch, and the `needs_reprocess` return value all
+become unreachable / unused, and are removed together. The function
+returns just the file path.
 
 Resulting function (in `analyser/extraction.py`):
 
 ```python
 def download_and_manage_file(url, file_id, file_type, filename=None,
                               downloads_dir=None):
-    """Download a file and return (file_path, needs_reprocess).
+    """Download a file to `downloads_dir` and return its path.
 
-    needs_reprocess is always False under the end-of-run cleanup
-    contract; the parameter is kept for signature compatibility with
-    existing callers and may be removed in a follow-up if no caller
-    uses it.
+    Assumes the downloads dir is empty at start of run (enforced by the
+    end-of-invocation `cleanup_downloads` finally block), so no existing
+    file ever needs to be reconciled.
     """
     if downloads_dir is None:
         downloads_dir = ensure_downloads_directory()
@@ -158,12 +161,16 @@ def download_and_manage_file(url, file_id, file_type, filename=None,
         raise RuntimeError(f"Downloaded file is missing or empty: {temp_path}")
 
     os.rename(temp_path, target_path)
-    return target_path, False
+    return target_path
 ```
 
-The `if needs_reprocess: print("File matches existing, reprocessing in
-Panako: ...")` branches in `panako_processor.py` are now dead and removed
-as part of the same change — they only logged a message, no behavior.
+Call sites change from `downloaded_path, needs_reprocess =
+download_and_manage_file(...)` to `downloaded_path =
+download_and_manage_file(...)` in both `panako_processor.py` (audio
+samples + previews branches) and `run_fingerprint_and_report.py`
+(`fingerprint_one` and `_worker_process_preview_batch`). The
+`if needs_reprocess: print(...)` log lines in `panako_processor.py` are
+dropped — they only logged a message, no behavior.
 
 ## Failure modes
 
