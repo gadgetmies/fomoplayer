@@ -79,14 +79,7 @@ top level, and the analyser root MUST contain no
 
 ### Requirement: Cleanup helpers MUST be error-tolerant and never raise into the caller
 
-Both `cleanup_downloads(downloads_dir)` and
-`cleanup_panako_worker_dirs(analyser_root)` in
-`analyser/extraction.py` MUST wrap each per-entry removal in a
-`try/except` so that a failure on one entry does not abort the
-remaining entries. Neither helper MUST raise an exception into the
-caller's `finally:` block. Each helper MUST print a one-line summary
-of the form `[cleanup] <target>: removed N entries, M errors` to
-stdout before returning.
+Both `cleanup_downloads(downloads_dir)` and `cleanup_panako_worker_dirs(analyser_root)` in `analyser/extraction.py` MUST wrap each per-entry removal in a `try/except` so that a failure on one entry does not abort the remaining entries. Neither helper MUST raise an exception into the caller's `finally:` block. Each helper MUST print a one-line summary of the form `[cleanup] <target>: removed N entries, M errors` to stdout before returning.
 
 #### Scenario: Unwritable file does not abort cleanup of other files
 
@@ -137,16 +130,7 @@ entries that are not directories. In particular, the shared
 
 ### Requirement: download_and_manage_file MUST return only the file path
 
-`download_and_manage_file(url, file_id, file_type, filename=None,
-downloads_dir=None)` in `analyser/extraction.py` MUST return a
-single `str` (the absolute or downloads-dir-relative path of the
-final file on disk). It MUST NOT return a tuple, and it MUST NOT
-contain a `needs_reprocess` flag in its return value. The function
-relies on the start-of-invocation invariant established by
-`cleanup_downloads` — that the target path is not present when the
-download begins — and therefore MUST NOT contain hash-comparison
-logic against pre-existing files, nor rename-with-counter logic
-for content-divergent files of the same `(file_type, file_id)`.
+`download_and_manage_file(url, file_id, file_type, filename=None, downloads_dir=None)` in `analyser/extraction.py` MUST return a single `str` (the absolute or downloads-dir-relative path of the final file on disk). It MUST NOT return a tuple, and it MUST NOT contain a `needs_reprocess` flag in its return value. The function relies on the start-of-invocation invariant established by `cleanup_downloads` — that the target path is not present when the download begins — and therefore MUST NOT contain hash-comparison logic against pre-existing files, nor rename-with-counter logic for content-divergent files of the same `(file_type, file_id)`.
 
 Call sites in `analyser/panako_processor.py` and
 `analyser/run_fingerprint_and_report.py` MUST update to receive a
