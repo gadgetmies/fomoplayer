@@ -32,7 +32,8 @@ jobs:
     permissions:
       # Required to mint a GitHub Actions OIDC token for keyless login.
       id-token: write
-      contents: read
+      # write (not read) so the trace can be published to the gh-pages branch.
+      contents: write
       pull-requests: write
 
     steps:
@@ -148,6 +149,27 @@ jobs:
           echo "Recorded traces:"
           find "$DIR" -type f -name '*.zip' -printf '%s\t%p\n'
 
+      # ── 6b. Redact secrets from the trace ─────────────────────────────────
+      # The preview login authenticates with the live OIDC token and the trace
+      # carries the resulting session cookie on every request. Scrub both before
+      # the trace is uploaded as an artifact OR published to Pages. Runs even on
+      # test failure so a failing run's trace is still safe to inspect.
+      - name: Redact trace
+        if: always()
+        run: node packages/back/test/lib/redact-trace.js "${{ github.workspace }}/demo-output"
+        # OIDC_TOKEN is already in env from step 4 (used as a literal to scrub).
+
+      # ── 6c. Publish the redacted trace to gh-pages for one-click viewing ──
+      # Requires GitHub Pages to be enabled for this repo (Settings → Pages →
+      # Deploy from a branch → gh-pages → /). The published URL is then opened
+      # directly in https://trace.playwright.dev/ — no download needed.
+      - name: Publish trace to Pages
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: bash .github/scripts/publish-trace.sh preview "${{ github.workspace }}/demo-output"
+
       # ── 7. Upload the recorded video and trace ────────────────────────────
       # Uploads the whole demo-output dir, so the recorded video (.webm) and the
       # Playwright trace(s) (.zip) ship together in the same artifact.
@@ -165,20 +187,42 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs')
             const succeeded = '${{ job.status }}' === 'success'
             const icon = succeeded ? '✅' : '❌'
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const prNumber = context.payload.pull_request.number
+            const owner = context.repo.owner.toLowerCase()
+            const repo = context.repo.repo
+            const dir = `${process.env.GITHUB_WORKSPACE}/demo-output`
+            // trace.playwright.dev is a static client-side viewer: it fetches
+            // the trace from a public, CORS-enabled URL passed via ?trace=. The
+            // gh-pages Pages URL is the primary; raw.githubusercontent.com (also
+            // CORS-enabled) is a fallback that works even before Pages is enabled.
+            const viewer = (url) => `https://trace.playwright.dev/?trace=${encodeURIComponent(url)}`
+            const traceLines = []
+            try {
+              for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.zip')).sort()) {
+                const rel = `traces/pr-${prNumber}/preview/${file}`
+                const pagesUrl = `https://${owner}.github.io/${repo}/${rel}`
+                const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/gh-pages/${rel}`
+                traceLines.push(`- \`${file}\`: [open in trace viewer](${viewer(pagesUrl)}) · [fallback](${viewer(rawUrl)})`)
+              }
+            } catch (e) {}
+            const traceSection = traceLines.length
+              ? ['', 'Open the Playwright trace in your browser — no download needed (secrets redacted):', ...traceLines,
+                 '', "_If \"open in trace viewer\" can't load it, the repo's GitHub Pages isn't enabled yet — use the `fallback` link, or download the artifact and run `npx playwright show-trace`._"]
+              : []
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
+              issue_number: prNumber,
               body: [
                 `${icon} **Demo test ${succeeded ? 'succeeded' : 'failed'}**`,
                 '',
                 `[View recording and run logs](${runUrl})`,
+                ...traceSection,
                 '',
-                succeeded
-                  ? 'Download the `demo-video-pr-${{ github.event.pull_request.number }}` artifact from the run page to watch the video (`.webm`) and open the Playwright trace(s) (`.zip`) with `npx playwright show-trace trace.zip` (or `trace-mobile.zip` if the test exercised the mobile context).'
-                  : 'Check the run logs for details.',
+                'Or download the `demo-video-pr-${{ github.event.pull_request.number }}` artifact to watch the video (`.webm`) and open the trace(s) with `npx playwright show-trace trace.zip` (or `trace-mobile.zip`).',
               ].join('\n'),
             })

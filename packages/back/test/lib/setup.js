@@ -351,10 +351,6 @@ const initialize = async () => {
   }
   sharedBrowserContext = await sharedBrowser.newContext(contextOptions)
 
-  if (videoDir) {
-    await startTracing(sharedBrowserContext, path.join(videoDir, 'trace.zip'))
-  }
-
   if (isRemotePreview || isRecording) {
     await sharedBrowserContext.addInitScript(demoOverlay)
   }
@@ -404,6 +400,15 @@ const initialize = async () => {
     if (!sessionCookies.some(({ name }) => name === 'connect.sid')) {
       throw new Error('Login did not establish a session cookie')
     }
+  }
+
+  // Start tracing only AFTER login. The remote-preview login posts the live
+  // OIDC token as a request body; recording it would bake that secret into
+  // trace.zip (which we publish for review). Starting here keeps the token out
+  // of the trace entirely — the session cookie that every later request still
+  // carries is scrubbed separately by test/lib/redact-trace.js before upload.
+  if (videoDir) {
+    await startTracing(sharedBrowserContext, path.join(videoDir, 'trace.zip'))
   }
 
   await page.goto('/tracks/recent')
