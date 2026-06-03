@@ -178,7 +178,7 @@ jobs:
                 `[View recording and run logs](${runUrl})`,
                 '',
                 succeeded
-                  ? 'Download the `demo-video-pr-${{ github.event.pull_request.number }}` artifact from the run page to watch the video (`.webm`) and open the Playwright trace (`.zip`) with `npx playwright show-trace trace.zip`.'
+                  ? 'Download the `demo-video-pr-${{ github.event.pull_request.number }}` artifact from the run page to watch the video (`.webm`) and open the Playwright trace(s) (`.zip`) with `npx playwright show-trace trace.zip` (or `trace-mobile.zip` if the test exercised the mobile context).'
                   : 'Check the run logs for details.',
               ].join('\n'),
             })

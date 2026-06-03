@@ -264,7 +264,11 @@ const flushPendingTraces = async () => {
   const traces = pendingTraces
   pendingTraces = []
   for (const { context, path: tracePath } of traces) {
-    await context.tracing.stop({ path: tracePath }).catch(() => {})
+    await context.tracing.stop({ path: tracePath }).catch((error) => {
+      // Surface the cause: a swallowed failure leaves the trace missing/empty
+      // and the CI verify step would then fail with no hint as to why.
+      console.warn(`[browser-test] Failed to flush trace to ${tracePath}: ${error?.message ?? error}`)
+    })
   }
 }
 
