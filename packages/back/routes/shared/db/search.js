@@ -28,6 +28,13 @@ module.exports.searchForTracks = async (
   // selection deterministic.
   const PRODUCTION_EMBEDDING_TYPE = 'discogs_multi_embeddings-effnet-bs64-1'
 
+  // Candidate pool size for the two-phase ANN similarity search. Phase one pulls the N
+  // nearest preview embeddings via the HNSW index; the catalogue joins and user filters
+  // (store / onlyNew / text / bpm / key / id) are applied afterwards, so the pool is sized
+  // larger than a result page to keep recall reasonable when filters are selective. Raise
+  // this (and consider SET LOCAL hnsw.ef_search) if narrow filters start returning short pages.
+  const ANN_CANDIDATE_POOL_SIZE = 1000
+
   const queryString = originalQueryString.replace(/(\S+:\S+)\s*/g, '').trim()
 
   const hasUnresolvedEntityFilter = fieldFilters.some(([key, value]) => {
@@ -138,6 +145,14 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
     }
 
     if (similaritySearchTrackId) {
+      // Two-phase ANN. Phase one (ann_candidates) pulls the nearest preview embeddings
+      // using the HNSW index (idx_store__track_preview_embedding_hnsw_cosine). A bare
+      // `ORDER BY embedding <=> reference LIMIT N` is the only shape pgvector's HNSW index
+      // can accelerate — the previous single-CTE version wrapped the distance in
+      // MIN()/GROUP BY and placed the catalogue joins ahead of the ORDER BY, which forced a
+      // full sequential scan of the (now large) embedding table. Phase two (similar_tracks)
+      // applies the catalogue joins and user filters to just the candidate pool and collapses
+      // previews to tracks via MIN(similarity).
       // language=PostgreSQL
       query.append(sql`
 , reference AS
@@ -149,12 +164,18 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
    WHERE track_id = ${similaritySearchTrackId}
      AND store__track_preview_embedding_type = ${PRODUCTION_EMBEDDING_TYPE}
    LIMIT 1)
-   , similar_tracks AS
+ , ann_candidates AS
+  (SELECT store__track_preview_id
+        , store__track_preview_embedding <=> (SELECT reference_embedding FROM reference) AS similarity
+   FROM store__track_preview_embedding
+   WHERE store__track_preview_embedding_type = ${PRODUCTION_EMBEDDING_TYPE}
+   ORDER BY store__track_preview_embedding <=> (SELECT reference_embedding FROM reference)
+   LIMIT ${ANN_CANDIDATE_POOL_SIZE})
+ , similar_tracks AS
   (SELECT track_id
-        , MIN(store__track_preview_embedding <=>
-          (SELECT reference_embedding FROM reference)) AS similarity
+        , MIN(similarity) AS similarity
    FROM
-     store__track_preview_embedding
+     ann_candidates
      NATURAL JOIN store__track_preview
      NATURAL JOIN store__track
      NATURAL JOIN track
@@ -175,8 +196,7 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
    WHERE (${addedSinceValue}::TIMESTAMPTZ IS NULL OR track_added > ${addedSinceValue}::TIMESTAMPTZ)
      AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL OR track_id = ${similaritySearchTrackId})
      AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
-     AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
-     AND store__track_preview_embedding_type = ${PRODUCTION_EMBEDDING_TYPE}`)
+     AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))`)
 
       if (fuzzyFilterQueries.length > 0) {
         query.append(' AND ')
@@ -218,7 +238,7 @@ WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
       }
 
       query.append(sql`
-   ORDER BY MIN(store__track_preview_embedding <=> (SELECT reference_embedding FROM reference)) NULLS LAST
+   ORDER BY MIN(similarity) NULLS LAST
    LIMIT ${limit} OFFSET ${offset})
 `)
     }
