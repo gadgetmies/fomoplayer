@@ -1,3 +1,16 @@
+# UI changes require demo recordings
+
+**Any change that is visible in the UI must ship with paired demo tests.**
+When a feature touches the front-end, an admin view, or the extension popup,
+follow the `demo-tests` skill (`.claude/skills/demo-tests/SKILL.md`): add a
+`demo-test` (local) and a `demo-preview` browser test under
+`packages/back/test/browser/`, written to share as much code as possible
+(only the state-seeding differs), and add both fenced ` ```demo-test ` /
+` ```demo-preview ` blocks to the PR body so the demo workflows record a
+preview video. demo-preview must seed state via the UI/API only (no DB);
+demo-test reuses that and may fall back to direct DB seeding only when
+necessary.
+
 # Configuration policy
 
 **No deployment domains in source code.** Hostnames or URLs that vary by
