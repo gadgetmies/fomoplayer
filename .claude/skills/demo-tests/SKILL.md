@@ -94,6 +94,42 @@ steps live in `test/lib/admin-radiator-steps.js` and all seeding in
 Prefer a single shared `seedViaUi`/`seedViaApi` used by both files — that is the
 lowest-duplication outcome. Reach for `seedViaDb` only as a local-only fallback.
 
+### Getting tracks into the database: follow an artist/label in Settings
+
+When a test needs tracks present, the best UI-driven way to get them is to
+**follow an artist or label from the Settings page** — this is the real
+ingestion path a user takes, it works identically on local and preview (so the
+same code seeds both), and it produces a recording that doubles as a genuine
+"follow → tracks appear" demo. Prefer this over lower-level seeding when the
+feature under test just needs some tracks to exist.
+
+Use the dedicated `seedTracks({ userIds })` helper only when you need a fixed,
+deterministic fixture set and the follow flow would be too slow or flaky for the
+assertion; use direct DB seeding only as the local-only last resort described
+above.
+
+### Re-run safety on the preview (idempotent seeding + tolerant assertions)
+
+The Railway preview **persists data between runs**, and every PR update re-runs
+the demo-preview test against it. So the test must tolerate state left by a
+previous run. Don't try to wipe the shared preview — make the test
+re-run-safe instead:
+
+1. **Keep seeding idempotent.** Running `seedViaApi`/`seedViaUi` twice must be a
+   no-op or an upsert, never an error. The platform endpoints already are:
+   `POST /api/admin/radiator/config` does `ON CONFLICT … DO UPDATE`, artist/label
+   follows do `ON CONFLICT DO NOTHING`, and track add upserts by store track id.
+   When seeding through the **UI**, guard the action so the second run doesn't
+   undo the first — only click *Follow* if the artist/label isn't already
+   followed (clicking it again would unfollow on a populated preview).
+2. **Assert at-least / includes, never exact.** This is the real fix for "data
+   is already there." Prefer `expect(count).to.be.greaterThan(0)` over
+   `.to.equal(1)`, and `expect(titles).to.include.members(seeded)` over a deep
+   equal. The existing tests already lean this way for exactly this reason.
+3. **Uniquify per run only when you truly need fresh data.** Tag what you create
+   with a unique suffix (PR number + run id/timestamp) and assert only on that
+   tagged subset, so each run owns its data and ignores prior runs'.
+
 ## Use the shared harness — it already handles both environments
 
 `test/lib/setup.js` branches on `isRemotePreview = Boolean(PREVIEW_URL)` for you.
