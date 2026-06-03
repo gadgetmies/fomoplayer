@@ -94,6 +94,20 @@ steps live in `test/lib/admin-radiator-steps.js` and all seeding in
 Prefer a single shared `seedViaUi`/`seedViaApi` used by both files — that is the
 lowest-duplication outcome. Reach for `seedViaDb` only as a local-only fallback.
 
+### Getting tracks into the database: follow an artist/label in Settings
+
+When a test needs tracks present, the best UI-driven way to get them is to
+**follow an artist or label from the Settings page** — this is the real
+ingestion path a user takes, it works identically on local and preview (so the
+same code seeds both), and it produces a recording that doubles as a genuine
+"follow → tracks appear" demo. Prefer this over lower-level seeding when the
+feature under test just needs some tracks to exist.
+
+Use the dedicated `seedTracks({ userIds })` helper only when you need a fixed,
+deterministic fixture set and the follow flow would be too slow or flaky for the
+assertion; use direct DB seeding only as the local-only last resort described
+above.
+
 ## Use the shared harness — it already handles both environments
 
 `test/lib/setup.js` branches on `isRemotePreview = Boolean(PREVIEW_URL)` for you.
