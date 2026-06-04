@@ -27,7 +27,8 @@ jobs:
     container: node:22
 
     permissions:
-      contents: read
+      # write (not read) so the trace can be published to the gh-pages branch.
+      contents: write
       pull-requests: write
 
     services:
@@ -53,7 +54,8 @@ jobs:
           cache: 'yarn'
 
       - name: Preinstall system dependencies
-        run: apt-get update && apt-get install -y git postgresql-client
+        # zip/unzip are needed by redact-trace.js to rewrite the trace archive.
+        run: apt-get update && apt-get install -y git postgresql-client unzip zip
 
       # The PR body provides the test path inside a fenced demo-test block.
       - name: Extract test file from PR body
@@ -130,6 +132,29 @@ jobs:
           fi
           echo "Recorded videos:"
           find "$DIR" -type f -name '*.webm' -printf '%s\t%p\n'
+          if ! find "$DIR" -type f -name '*.zip' -size +0c | grep -q .; then
+            echo "::error::No non-empty Playwright trace was written in ${DIR} — tracing produced no output."
+            ls -la "$DIR" || true
+            exit 1
+          fi
+          echo "Recorded traces:"
+          find "$DIR" -type f -name '*.zip' -printf '%s\t%p\n'
+
+      # Scrub the session cookie from the trace before it leaves the runner.
+      # The local login uses fixture creds (no live secret), but redacting keeps
+      # behaviour uniform with the preview workflow and guards future changes.
+      - name: Redact trace
+        if: always()
+        run: node packages/back/test/lib/redact-trace.js "$GITHUB_WORKSPACE/demo-output"
+
+      # Publish the trace to gh-pages for one-click viewing. Requires GitHub
+      # Pages to be enabled (Settings → Pages → Deploy from a branch → gh-pages).
+      - name: Publish trace to Pages
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: bash .github/scripts/publish-trace.sh local "$GITHUB_WORKSPACE/demo-output"
 
       # Surface what landed in demo-output in the PR comment — handy when a
       # recording is empty/missing and the raw run logs aren't readily accessible.
@@ -144,10 +169,15 @@ jobs:
             echo ""
             echo "webm files and sizes:"
             find "$DIR" -type f -name '*.webm' -printf '%s bytes\t%p\n' 2>&1 || echo "(none)"
+            echo ""
+            echo "trace files and sizes:"
+            find "$DIR" -type f -name '*.zip' -printf '%s bytes\t%p\n' 2>&1 || echo "(none)"
             echo "DIAG_EOF"
           } >> "$GITHUB_ENV"
 
-      - name: Upload demo video
+      # Uploads the whole demo-output dir, so the recorded video (.webm) and the
+      # Playwright trace(s) (.zip) ship together in the same artifact.
+      - name: Upload demo video and trace
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -160,22 +190,43 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs')
             const succeeded = '${{ job.status }}' === 'success'
             const icon = succeeded ? '✅' : '❌'
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             const diag = process.env.DEMO_DIAG || '(no diagnostics captured)'
+            const prNumber = context.payload.pull_request.number
+            const owner = context.repo.owner.toLowerCase()
+            const repo = context.repo.repo
+            const dir = `${process.env.GITHUB_WORKSPACE}/demo-output`
+            // trace.playwright.dev fetches the trace from a public, CORS-enabled
+            // URL passed via ?trace=. gh-pages Pages URL is primary;
+            // raw.githubusercontent.com is the fallback (works pre-Pages-enable).
+            const viewer = (url) => `https://trace.playwright.dev/?trace=${encodeURIComponent(url)}`
+            const traceLines = []
+            try {
+              for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.zip')).sort()) {
+                const rel = `traces/pr-${prNumber}/local/${file}`
+                const pagesUrl = `https://${owner}.github.io/${repo}/${rel}`
+                const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/gh-pages/${rel}`
+                traceLines.push(`- \`${file}\`: [open in trace viewer](${viewer(pagesUrl)}) · [fallback](${viewer(rawUrl)})`)
+              }
+            } catch (e) {}
+            const traceSection = traceLines.length
+              ? ['', 'Open the Playwright trace in your browser — no download needed:', ...traceLines,
+                 '', "_If \"open in trace viewer\" can't load it, the repo's GitHub Pages isn't enabled yet — use the `fallback` link, or download the artifact and run `npx playwright show-trace`._"]
+              : []
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
+              issue_number: prNumber,
               body: [
                 `${icon} **Demo (local) ${succeeded ? 'succeeded' : 'failed'}**`,
                 '',
                 `[View recording and run logs](${runUrl})`,
+                ...traceSection,
                 '',
-                succeeded
-                  ? 'Download the `demo-local-pr-${{ github.event.pull_request.number }}` artifact from the run page to watch the video.'
-                  : 'Check the run logs for details.',
+                'Or download the `demo-local-pr-${{ github.event.pull_request.number }}` artifact to watch the video (`.webm`) and open the trace(s) with `npx playwright show-trace trace.zip` (or `trace-mobile.zip`).',
                 '',
                 '<details><summary>Recording diagnostics</summary>',
                 '',

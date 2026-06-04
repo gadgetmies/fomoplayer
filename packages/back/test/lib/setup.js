@@ -9,6 +9,11 @@ let sharedBrowserContext = null
 let sharedBrowser = null
 let sharedBaseURL = null
 let mobilePromise = null
+// Contexts with an active Playwright trace, paired with the file the trace must
+// be written to. Unlike video (flushed when the context/browser closes), a
+// trace is only saved when `tracing.stop({ path })` is called explicitly, so we
+// track every traced context here and stop them all during teardown.
+let pendingTraces = []
 
 const BACKEND_ROOT = path.resolve(__dirname, '../..')
 const FRONTEND_ROOT = path.resolve(BACKEND_ROOT, '../front')
@@ -240,12 +245,42 @@ const demoOverlay = () => {
   }
 }
 
+// Start a Playwright trace on a context and remember where to write it. Called
+// only when recording (VIDEO_DIR set) so a demo run produces a trace alongside
+// its video. Screenshots + snapshots + sources give the full trace-viewer
+// timeline (DOM snapshots, network, console, and test source).
+const startTracing = async (context, tracePath) => {
+  await context.tracing.start({ screenshots: true, snapshots: true, sources: true })
+  pendingTraces.push({ context, path: tracePath })
+}
+
+// Stop every active trace, writing each to its file. Must run before the owning
+// context/browser closes, otherwise the trace is lost. Idempotent: the queue is
+// captured and cleared up front so a second call can't double-stop.
+const flushPendingTraces = async () => {
+  if (pendingTraces.length === 0) {
+    return
+  }
+  const traces = pendingTraces
+  pendingTraces = []
+  for (const { context, path: tracePath } of traces) {
+    await context.tracing.stop({ path: tracePath }).catch((error) => {
+      // Surface the cause: a swallowed failure leaves the trace missing/empty
+      // and the CI verify step would then fail with no hint as to why.
+      console.warn(`[browser-test] Failed to flush trace to ${tracePath}: ${error?.message ?? error}`)
+    })
+  }
+}
+
 // Close the recording context and browser so Playwright flushes the video to
 // disk. Playwright only writes a recorded video when its context (or the owning
 // browser) closes — closing the browser also finalises the videos of every
 // context on it. Idempotent: each handle is captured and nulled before the
 // (async) close so a second call (or a concurrent beforeExit) can't double-close.
 const teardownSharedContext = async () => {
+  // Save traces before closing anything — stopping a trace on a closed context
+  // would throw and lose it.
+  await flushPendingTraces()
   if (sharedBrowserContext) {
     const context = sharedBrowserContext
     sharedBrowserContext = null
@@ -367,6 +402,15 @@ const initialize = async () => {
     }
   }
 
+  // Start tracing only AFTER login. The remote-preview login posts the live
+  // OIDC token as a request body; recording it would bake that secret into
+  // trace.zip (which we publish for review). Starting here keeps the token out
+  // of the trace entirely — the session cookie that every later request still
+  // carries is scrubbed separately by test/lib/redact-trace.js before upload.
+  if (videoDir) {
+    await startTracing(sharedBrowserContext, path.join(videoDir, 'trace.zip'))
+  }
+
   await page.goto('/tracks/recent')
   await waitForWithTimeoutMessage(
     () => page.waitForSelector('.tracks-table', { timeout: 15000 }),
@@ -409,6 +453,10 @@ const initializeMobile = async () => {
 
   const mobileContext = await sharedBrowser.newContext(contextOptions)
 
+  if (videoDir) {
+    await startTracing(mobileContext, path.join(videoDir, 'trace-mobile.zip'))
+  }
+
   if (isRemotePreview || isRecording) {
     await mobileContext.addInitScript(demoOverlay)
   }
@@ -433,6 +481,9 @@ const initializeMobile = async () => {
   const page = await mobileContext.newPage()
 
   process.on('beforeExit', async () => {
+    // Save any pending traces before closing — a trace can't be stopped on a
+    // closed context.
+    await flushPendingTraces()
     await mobileContext.close().catch(() => {})
   })
 
