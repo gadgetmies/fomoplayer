@@ -1307,39 +1307,48 @@ module.exports.getMislabeledEntityTracks = async (type, id) => {
   )
 }
 
-// Move one track's link from a mislabeled source entity to the correct target.
-// Source and target may be different types (e.g. a label-as-artist track moved
-// onto a label): we add the target link and drop the source link.
-module.exports.reassignTrack = async ({ sourceType, sourceId, targetType, targetId, targetName, trackId, role }) => {
-  if (!MISLABELED_ENTITY_TYPES.includes(sourceType) || !MISLABELED_ENTITY_TYPES.includes(targetType)) {
+// Move one track's link from a mislabeled source entity to one or more correct
+// targets. `targets` is an array of { targetType, targetId, targetName }; each
+// target may be a different type from the source (e.g. a label-as-artist track
+// moved onto a label). We add every target link and then drop the single source
+// link, all in one transaction. Passing several artist targets re-credits the
+// track to a collaboration instead of moving it to a single artist.
+module.exports.reassignTrack = async ({ sourceType, sourceId, targets, trackId, role }) => {
+  if (!MISLABELED_ENTITY_TYPES.includes(sourceType)) throw new Error('Invalid entity type')
+  if (!Array.isArray(targets) || targets.length === 0) throw new Error('Pick at least one target')
+  if (targets.some(({ targetType }) => !MISLABELED_ENTITY_TYPES.includes(targetType))) {
     throw new Error('Invalid entity type')
   }
   const src = parseInt(sourceId, 10)
   const track = parseInt(trackId, 10)
   if ([src, track].some((n) => Number.isNaN(n))) throw new Error('Invalid id')
-  const hasTargetId = targetId != null && targetId !== ''
-  if (targetType === 'label' && !hasTargetId) throw new Error('Pick an existing label to reassign to')
 
-  const targetRole = targetType === 'artist' ? role || 'author' : null
-  let tgt
+  const added = []
   await BPromise.using(pg.getTransaction(), async (tx) => {
-    tgt =
-      targetType === 'artist'
-        ? await resolveTargetArtistId(tx, hasTargetId ? { artistId: targetId } : { name: targetName })
-        : parseInt(targetId, 10)
-    if (Number.isNaN(tgt)) throw new Error('Invalid id')
-    if (sourceType === targetType && src === tgt) throw new Error('Source and target are the same entity')
+    for (const { targetType, targetId, targetName } of targets) {
+      const hasTargetId = targetId != null && targetId !== ''
+      if (targetType === 'label' && !hasTargetId) throw new Error('Pick an existing label to reassign to')
 
-    if (targetType === 'artist') {
-      await tx.queryAsync(sql`-- reassignTrack add artist
-        INSERT INTO track__artist (track_id, artist_id, track__artist_role)
-        VALUES (${track}, ${tgt}, ${targetRole})
-        ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING`)
-    } else {
-      await tx.queryAsync(sql`-- reassignTrack add label
-        INSERT INTO track__label (track_id, label_id)
-        VALUES (${track}, ${tgt})
-        ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING`)
+      const targetRole = targetType === 'artist' ? role || 'author' : null
+      const tgt =
+        targetType === 'artist'
+          ? await resolveTargetArtistId(tx, hasTargetId ? { artistId: targetId } : { name: targetName })
+          : parseInt(targetId, 10)
+      if (Number.isNaN(tgt)) throw new Error('Invalid id')
+      if (sourceType === targetType && src === tgt) throw new Error('Source and target are the same entity')
+
+      if (targetType === 'artist') {
+        await tx.queryAsync(sql`-- reassignTrack add artist
+          INSERT INTO track__artist (track_id, artist_id, track__artist_role)
+          VALUES (${track}, ${tgt}, ${targetRole})
+          ON CONFLICT ON CONSTRAINT track__artist_track_id_artist_id_track__artist_role_key DO NOTHING`)
+      } else {
+        await tx.queryAsync(sql`-- reassignTrack add label
+          INSERT INTO track__label (track_id, label_id)
+          VALUES (${track}, ${tgt})
+          ON CONFLICT ON CONSTRAINT track__label_track_id_label_id_key DO NOTHING`)
+      }
+      added.push({ type: targetType, id: tgt, role: targetRole })
     }
 
     if (sourceType === 'artist') {
@@ -1355,17 +1364,17 @@ module.exports.reassignTrack = async ({ sourceType, sourceId, targetType, target
         DELETE FROM track__label WHERE track_id = ${track} AND label_id = ${src}`)
     }
 
-    // Rebuild the cached track_details JSON so search reflects the new credit
-    // instead of the old one.
+    // Rebuild the cached track_details JSON so search reflects the new credits
+    // instead of the old ones.
     await refreshTrackDetails(tx, [track])
   })
 
-  // Revert by removing the added {targetType targetId} link from track ${track}
-  // and re-adding the {sourceType sourceId} link (role ${role || 'n/a'}).
-  logger.info(`reassignTrack: track ${track} ${sourceType} ${src} -> ${targetType} ${tgt}`, {
+  // Revert by removing each added link from track ${track} and re-adding the
+  // {sourceType sourceId} link (role ${role || 'n/a'}).
+  logger.info(`reassignTrack: track ${track} ${sourceType} ${src} -> ${added.map((a) => `${a.type} ${a.id}`).join(', ')}`, {
     operation: 'reassignTrack',
     trackId: track,
-    added: { type: targetType, id: tgt, role: targetRole },
+    added,
     removed: { type: sourceType, id: src, role: sourceType === 'artist' ? role || null : null },
   })
 }
