@@ -498,7 +498,7 @@ class Settings extends Component {
         <h5>
           {label} ({suggestions.length})
         </h5>
-        <ul className="no-style-list follow-list follow-suggestion-list">
+        <ul className="no-style-list follow-list">
           {suggestions.map(({ id, name, url, storeName, count }) => {
             const busy = this.state.updatingSuggestion === `${type}-${id}`
             return (
@@ -511,24 +511,18 @@ class Settings extends Component {
               >
                 <span className="button pill pill-button">
                   <span className="pill-button-contents">
-                    <a href={url} target="_blank" rel="noopener noreferrer" title="Check details from store">
-                      <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} /> {name}
-                    </a>
-                    <span className="follow-suggestion-count" title={`${count} purchased track(s)`}>
+                    <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} /> {name}{' '}
+                    <span className="follow-results-count" title={`${count} purchased track(s)`}>
                       {count}
-                    </span>
-                    <SpinnerButton
-                      size="small"
-                      className="button button-push_button-small button-push_button-primary"
-                      loading={busy}
+                    </span>{' '}
+                    <button
                       disabled={this.state.updatingSuggestion !== null}
-                      icon="plus"
                       title={`Follow ${name}`}
                       data-test="follow-suggestion-follow"
                       onClick={() => this.onFollowSuggestionClick(type, { id, name, url })}
                     >
-                      Follow
-                    </SpinnerButton>
+                      {busy ? <Spinner size="small" /> : <FontAwesomeIcon icon="plus" />}
+                    </button>{' '}
                     <button
                       disabled={this.state.updatingSuggestion !== null}
                       title={`Ignore suggestion for ${name}`}
@@ -536,7 +530,18 @@ class Settings extends Component {
                       onClick={() => this.onIgnoreSuggestionClick(type, id)}
                     >
                       <FontAwesomeIcon icon="times-circle" />
-                    </button>
+                    </button>{' '}
+                    {url && (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Check details from store"
+                      >
+                        <FontAwesomeIcon icon="external-link-alt" />
+                      </a>
+                    )}
                   </span>
                 </span>
               </li>
