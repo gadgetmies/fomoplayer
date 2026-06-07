@@ -101,6 +101,8 @@ class Settings extends Component {
       artistFollows: [],
       labelFollows: [],
       playlistFollows: [],
+      followSuggestions: { artists: [], labels: [] },
+      updatingSuggestion: null,
       artistOnLabelIgnores: [],
       artistIgnores: [],
       labelIgnores: [],
@@ -166,6 +168,7 @@ class Settings extends Component {
     try {
       await Promise.all([
         this.updateFollows(),
+        this.updateFollowSuggestions(),
         this.updateIgnores(),
         this.updateAuthorizations(),
         this.updateAudioSamples(),
@@ -203,6 +206,54 @@ class Settings extends Component {
       path: `/me/follows/playlists`,
     })
     this.setState({ playlistFollows })
+  }
+
+  async updateFollowSuggestions() {
+    const followSuggestions = await requestJSONwithCredentials({
+      path: `/me/follows/suggestions`,
+    })
+    this.setState({ followSuggestions })
+  }
+
+  async onFollowSuggestionClick(type, { id, name, url }) {
+    this.setState({ updatingSuggestion: `${type}-${id}` })
+    try {
+      await this.onFollowItemClick(url, name, type)
+      // Drop the now-followed suggestion and refresh from the server so the
+      // counts and remaining suggestions stay in sync.
+      this.removeSuggestionFromState(type, id)
+      await this.updateFollowSuggestions()
+    } catch (e) {
+      console.error('Following suggestion failed', e)
+    } finally {
+      this.setState({ updatingSuggestion: null })
+    }
+  }
+
+  async onIgnoreSuggestionClick(type, id) {
+    this.setState({ updatingSuggestion: `${type}-${id}` })
+    try {
+      await requestWithCredentials({
+        path: `/me/follows/suggestions/ignores`,
+        method: 'POST',
+        body: { type, id },
+      })
+      this.removeSuggestionFromState(type, id)
+    } catch (e) {
+      console.error('Ignoring suggestion failed', e)
+    } finally {
+      this.setState({ updatingSuggestion: null })
+    }
+  }
+
+  removeSuggestionFromState(type, id) {
+    const key = type === 'artist' ? 'artists' : 'labels'
+    this.setState((prev) => ({
+      followSuggestions: {
+        ...prev.followSuggestions,
+        [key]: (prev.followSuggestions[key] ?? []).filter((s) => s.id !== id),
+      },
+    }))
   }
 
   async updateIgnores() {
@@ -437,6 +488,80 @@ class Settings extends Component {
           </React.Fragment>
         ))}
       </>
+    )
+  }
+
+  renderSuggestionList(type, suggestions) {
+    const label = type === 'artist' ? 'Artists' : 'Labels'
+    return (
+      <>
+        <h5>
+          {label} ({suggestions.length})
+        </h5>
+        <ul className="no-style-list follow-list follow-suggestion-list">
+          {suggestions.map(({ id, name, url, storeName, count }) => {
+            const busy = this.state.updatingSuggestion === `${type}-${id}`
+            return (
+              <li
+                key={`${type}-${id}`}
+                data-test="follow-suggestion"
+                data-test-suggestion-type={type}
+                data-test-suggestion-id={id}
+                data-test-suggestion-name={name}
+              >
+                <span className="button pill pill-button">
+                  <span className="pill-button-contents">
+                    <a href={url} target="_blank" rel="noopener noreferrer" title="Check details from store">
+                      <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} /> {name}
+                    </a>
+                    <span className="follow-suggestion-count" title={`${count} purchased track(s)`}>
+                      {count}
+                    </span>
+                    <SpinnerButton
+                      size="small"
+                      className="button button-push_button-small button-push_button-primary"
+                      loading={busy}
+                      disabled={this.state.updatingSuggestion !== null}
+                      icon="plus"
+                      title={`Follow ${name}`}
+                      data-test="follow-suggestion-follow"
+                      onClick={() => this.onFollowSuggestionClick(type, { id, name, url })}
+                    >
+                      Follow
+                    </SpinnerButton>
+                    <button
+                      disabled={this.state.updatingSuggestion !== null}
+                      title={`Ignore suggestion for ${name}`}
+                      data-test="follow-suggestion-ignore"
+                      onClick={() => this.onIgnoreSuggestionClick(type, id)}
+                    >
+                      <FontAwesomeIcon icon="times-circle" />
+                    </button>
+                  </span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      </>
+    )
+  }
+
+  renderFollowSuggestions() {
+    const { artists = [], labels = [] } = this.state.followSuggestions ?? {}
+    if (artists.length === 0 && labels.length === 0) {
+      return null
+    }
+    return (
+      <div className="follow-suggestions" data-test="follow-suggestions">
+        <h4>Suggestions from your purchases</h4>
+        <p style={{ fontSize: '90%', marginTop: 0 }}>
+          Artists and labels behind the tracks in your purchased cart that you are not following yet. Follow the ones
+          you like, or ignore a suggestion to remove it from this list.
+        </p>
+        {artists.length > 0 && this.renderSuggestionList('artist', artists)}
+        {labels.length > 0 && this.renderSuggestionList('label', labels)}
+      </div>
     )
   }
 
@@ -850,6 +975,7 @@ class Settings extends Component {
                   </div>
                 )}
               </label>
+              {this.renderFollowSuggestions()}
               <h4>Followed</h4>
               <div
                 className="select-button select-button--container state-select-button--container noselect"

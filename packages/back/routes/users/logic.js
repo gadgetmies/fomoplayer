@@ -30,6 +30,12 @@ const {
   queryUserArtistOnLabelIgnores,
   queryUserLabelIgnores,
   queryUserArtistIgnores,
+  queryArtistFollowSuggestions,
+  queryLabelFollowSuggestions,
+  addArtistFollowSuggestionIgnore,
+  addLabelFollowSuggestionIgnore,
+  deleteArtistFollowSuggestionIgnore,
+  deleteLabelFollowSuggestionIgnore,
   queryUserTracks,
   deleteArtistWatchesFromUser,
   deleteArtistWatchFromUser,
@@ -68,6 +74,13 @@ module.exports.getUserPlaylistFollows = queryUserPlaylistFollows
 module.exports.getUserArtistOnLabelIgnores = queryUserArtistOnLabelIgnores
 module.exports.getUserLabelIgnores = queryUserLabelIgnores
 module.exports.getUserArtistIgnores = queryUserArtistIgnores
+
+module.exports.getArtistFollowSuggestions = queryArtistFollowSuggestions
+module.exports.getLabelFollowSuggestions = queryLabelFollowSuggestions
+module.exports.addArtistFollowSuggestionIgnore = addArtistFollowSuggestionIgnore
+module.exports.addLabelFollowSuggestionIgnore = addLabelFollowSuggestionIgnore
+module.exports.removeArtistFollowSuggestionIgnore = deleteArtistFollowSuggestionIgnore
+module.exports.removeLabelFollowSuggestionIgnore = deleteLabelFollowSuggestionIgnore
 
 module.exports.removeArtistOnLabelIgnoreFromUser = deleteArtistOnLabelIgnoreFromUser
 module.exports.removeLabelIgnoreFromUser = deleteLabelIgnoreFromUser

@@ -48,3 +48,25 @@
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+.follow-suggestions {
+  margin-bottom: 1.5em;
+}
+
+.follow-suggestion-list .pill-button-contents {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.follow-suggestion-count {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 0.4em;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.25);
+  font-size: 80%;
+  line-height: 1.5;
+  text-align: center;
+  vertical-align: middle;
+}
