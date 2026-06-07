@@ -118,7 +118,11 @@ jobs:
           PREVIEW_URL: ${{ steps.preview.outputs.url }}
           VIDEO_DIR: ${{ github.workspace }}/demo-output
           # OIDC_TOKEN is already in env from step 4
-          # PW_SLOWMO defaults to 600ms when PREVIEW_URL is set (see setup.js)
+          # Pace the recording slowly enough to follow (overrides the 600ms
+          # default in setup.js), and hold on the final frame at the end so the
+          # closing state is reviewable.
+          PW_SLOWMO: '1200'
+          PW_END_IDLE_MS: '4000'
         run: |
           cd packages/back
           TEST_FILE="${{ steps.demo.outputs.test_file }}"

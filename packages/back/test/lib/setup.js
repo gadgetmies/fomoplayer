@@ -20,6 +20,13 @@ const isRemotePreview = Boolean(process.env.PREVIEW_URL)
 // give remote-preview runs: slow-mo pacing and the cursor/click/keyboard
 // overlay, so a locally recorded video reads as a demo rather than a raw test.
 const isRecording = Boolean(process.env.VIDEO_DIR)
+// Optional trailing idle (ms) held on the final frame before the recording is
+// flushed, so the closing state is easy to review. Set by the demo workflows
+// via PW_END_IDLE_MS; ignored outside recording so normal CI isn't slowed.
+const endIdleMs = (() => {
+  const value = Number(process.env.PW_END_IDLE_MS)
+  return Number.isFinite(value) && value > 0 ? value : 0
+})()
 
 const getLatestMtimeMs = async (targetPath) => {
   let stats
@@ -249,6 +256,11 @@ const teardownSharedContext = async () => {
   if (sharedBrowserContext) {
     const context = sharedBrowserContext
     sharedBrowserContext = null
+    // Linger on the final frame so the closing state is reviewable before
+    // Playwright stops recording on context close (recording runs only).
+    if (isRecording && endIdleMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, endIdleMs))
+    }
     await context.close().catch(() => {})
   }
   if (sharedBrowser) {
@@ -275,7 +287,9 @@ if (isRecording) {
     }
     flushing = true
     const finish = () => realExit(code)
-    const guard = setTimeout(finish, 10000)
+    // Allow for the trailing idle on top of the close budget so the recording
+    // has time to flush before the hard exit.
+    const guard = setTimeout(finish, 10000 + endIdleMs)
     teardownSharedContext().finally(() => {
       clearTimeout(guard)
       finish()

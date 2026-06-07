@@ -108,7 +108,10 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@postgres/multi-store-player-test
           REACT_APP_ENV: ci
-          PW_SLOWMO: '600'
+          # Pace the recording slowly enough to follow, and hold on the final
+          # frame for a moment at the end so the closing state is reviewable.
+          PW_SLOWMO: '1200'
+          PW_END_IDLE_MS: '4000'
         run: |
           export VIDEO_DIR="$GITHUB_WORKSPACE/demo-output"
           TEST_FILE="${{ steps.demo.outputs.test_file }}"
