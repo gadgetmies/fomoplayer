@@ -16,6 +16,7 @@ const {
   getUserLabelIgnores,
   getArtistFollowSuggestions,
   getLabelFollowSuggestions,
+  getFollowSuggestionImages,
   addArtistFollowSuggestionIgnore,
   addLabelFollowSuggestionIgnore,
   removeArtistFollowSuggestionIgnore,
@@ -347,6 +348,12 @@ router.get('/follows/suggestions', async ({ user: { id: authUserId }, query: { s
     getLabelFollowSuggestions(authUserId, stores),
   ])
   res.send({ artists, labels })
+})
+
+// Resolve cover images for suggestions lazily so the list renders immediately
+// and images backfill (entity artwork isn't stored, it comes live from stores).
+router.post('/follows/suggestions/images', async ({ body: { urls } }, res) => {
+  res.send(await getFollowSuggestionImages(urls))
 })
 
 // Dismiss a suggestion so it no longer appears, reducing noise in the list.

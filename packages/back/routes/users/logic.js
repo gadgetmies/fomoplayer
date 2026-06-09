@@ -82,6 +82,39 @@ module.exports.addLabelFollowSuggestionIgnore = addLabelFollowSuggestionIgnore
 module.exports.removeArtistFollowSuggestionIgnore = deleteArtistFollowSuggestionIgnore
 module.exports.removeLabelFollowSuggestionIgnore = deleteLabelFollowSuggestionIgnore
 
+// Resolve cover images for follow suggestions on demand. We don't persist entity
+// artwork, so images are fetched live from the originating store (the same source
+// the follow-search results use). This is best-effort: any failure (store
+// unreachable, rate limited, parse error) yields a null image rather than failing
+// the request, and each lookup is time-boxed so a slow store can't hang the page.
+const SUGGESTION_IMAGE_TIMEOUT_MS = 8000
+const withTimeout = (promise, ms) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Suggestion image lookup timed out')), ms)),
+  ])
+
+module.exports.getFollowSuggestionImages = async (urls) => {
+  const uniqueUrls = [...new Set((urls ?? []).filter((url) => typeof url === 'string' && url.length > 0))]
+  return BPromise.map(
+    uniqueUrls,
+    async (url) => {
+      try {
+        const details = await getStoreDetailsFromUrl(url)
+        const storeModule =
+          storeModules[details.storeName] || storeModules[details.storeName?.toLowerCase()]
+        if (!storeModule) return { url, img: null }
+        const [resolved] = await withTimeout(storeModule.logic.getFollowDetails(details), SUGGESTION_IMAGE_TIMEOUT_MS)
+        return { url, img: resolved?.img ?? null }
+      } catch (e) {
+        logger.warn(`Failed to resolve suggestion image for ${url}`, e)
+        return { url, img: null }
+      }
+    },
+    { concurrency: 6 },
+  )
+}
+
 module.exports.removeArtistOnLabelIgnoreFromUser = deleteArtistOnLabelIgnoreFromUser
 module.exports.removeLabelIgnoreFromUser = deleteLabelIgnoreFromUser
 module.exports.removeArtistIgnoreFromUser = deleteArtistIgnoreFromUser

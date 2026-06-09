@@ -420,6 +420,7 @@ FROM (
     ORDER BY purchased_artist_counts.artist_id, store_name
 ) suggestions
 ORDER BY count DESC, name
+LIMIT 24
 `,
   )
 }
@@ -474,6 +475,7 @@ FROM (
     ORDER BY purchased_label_counts.label_id, store_name
 ) suggestions
 ORDER BY count DESC, name
+LIMIT 24
 `,
   )
 }

@@ -213,6 +213,33 @@ class Settings extends Component {
       path: `/me/follows/suggestions`,
     })
     this.setState({ followSuggestions })
+    // Backfill cover images without blocking the list render.
+    this.enrichSuggestionImages(followSuggestions)
+  }
+
+  async enrichSuggestionImages({ artists = [], labels = [] }) {
+    const urls = [...artists, ...labels].map(({ url }) => url).filter(Boolean)
+    if (urls.length === 0) {
+      return
+    }
+    try {
+      const images = await requestJSONwithCredentials({
+        path: `/me/follows/suggestions/images`,
+        method: 'POST',
+        body: { urls },
+      })
+      const imgByUrl = new Map(images.filter(({ img }) => img).map(({ url, img }) => [url, img]))
+      const merge = (items) => (items ?? []).map((s) => (imgByUrl.has(s.url) ? { ...s, img: imgByUrl.get(s.url) } : s))
+      this.setState((prev) => ({
+        followSuggestions: {
+          ...prev.followSuggestions,
+          artists: merge(prev.followSuggestions.artists),
+          labels: merge(prev.followSuggestions.labels),
+        },
+      }))
+    } catch (e) {
+      console.error('Enriching suggestion images failed', e)
+    }
   }
 
   async onFollowSuggestionClick(type, { id, name, url }) {
@@ -499,51 +526,44 @@ class Settings extends Component {
           {label} ({suggestions.length})
         </h5>
         <ul className="no-style-list follow-list">
-          {suggestions.map(({ id, name, url, storeName, count }) => {
+          {suggestions.map(({ id, name, url, storeName, count, img }) => {
             const busy = this.state.updatingSuggestion === `${type}-${id}`
             return (
               <li
                 key={`${type}-${id}`}
+                className="follow-suggestion-item"
                 data-test="follow-suggestion"
                 data-test-suggestion-type={type}
                 data-test-suggestion-id={id}
                 data-test-suggestion-name={name}
               >
-                <span className="button pill pill-button">
-                  <span className="pill-button-contents">
-                    <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} /> {name}{' '}
-                    <span className="follow-results-count" title={`${count} purchased track(s)`}>
-                      {count}
-                    </span>{' '}
-                    <button
-                      disabled={this.state.updatingSuggestion !== null}
-                      title={`Follow ${name}`}
-                      data-test="follow-suggestion-follow"
-                      onClick={() => this.onFollowSuggestionClick(type, { id, name, url })}
-                    >
-                      {busy ? <Spinner size="small" /> : <FontAwesomeIcon icon="plus" />}
-                    </button>{' '}
-                    <button
-                      disabled={this.state.updatingSuggestion !== null}
-                      title={`Ignore suggestion for ${name}`}
-                      data-test="follow-suggestion-ignore"
-                      onClick={() => this.onIgnoreSuggestionClick(type, id)}
-                    >
-                      <FontAwesomeIcon icon="times-circle" />
-                    </button>{' '}
-                    {url && (
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        title="Check details from store"
-                      >
-                        <FontAwesomeIcon icon="external-link-alt" />
-                      </a>
-                    )}
-                  </span>
+                <FollowItemButton
+                  id={id}
+                  name={name}
+                  storeName={storeName.toLowerCase()}
+                  type={type}
+                  url={url}
+                  img={img}
+                  loading={busy}
+                  disabled={this.state.updatingSuggestion !== null}
+                  onClick={() => this.onFollowSuggestionClick(type, { id, name, url })}
+                  data-test="follow-suggestion-follow"
+                />
+                <span className="follow-suggestion-count" title={`${count} purchased track(s)`}>
+                  {count}
                 </span>
+                <button
+                  className="follow-suggestion-ignore-button"
+                  disabled={this.state.updatingSuggestion !== null}
+                  title={`Ignore suggestion for ${name}`}
+                  data-test="follow-suggestion-ignore"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    this.onIgnoreSuggestionClick(type, id)
+                  }}
+                >
+                  <FontAwesomeIcon icon="times-circle" />
+                </button>
               </li>
             )
           })}
