@@ -16,11 +16,20 @@ const CART_CARET_SELECTOR = `${TRACK_SELECTOR} .table-cell-button-row .button-dr
 const CART_POPUP_SELECTOR = '.cart-popup.popup_content'
 
 const gotoTracksAndOpenCartPopup = async (page) => {
+  // The remote preview is shared and redeploys on every push, so it can be cold
+  // or mid-restart when this runs — the seeded tracks then take longer than a
+  // warm backend to render. Wait generously and reload once before giving up.
+  // Locally the rows appear immediately, so this adds no real delay there.
   await page.goto('/tracks/recent')
-  await waitForWithTimeoutMessage(
-    () => page.waitForSelector(TRACK_SELECTOR, { timeout: 15000 }),
-    'Load the tracks table with at least one seeded row before opening the cart popup.',
-  )
+  try {
+    await page.waitForSelector(TRACK_SELECTOR, { timeout: 20000 })
+  } catch {
+    await page.goto('/tracks/recent')
+    await waitForWithTimeoutMessage(
+      () => page.waitForSelector(TRACK_SELECTOR, { timeout: 20000 }),
+      'Load the tracks table with at least one seeded row before opening the cart popup.',
+    )
+  }
   await dismissOnboarding(page)
 
   await waitForWithTimeoutMessage(
