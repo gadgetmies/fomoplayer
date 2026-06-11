@@ -42,7 +42,15 @@
 }
 
 @media (max-width: 590px) {
+  /*
+   * Anchor the popup to the viewport (not the row). The swipe-to-mark-heard
+   * feature gives each track row `position: relative`, which would otherwise
+   * trap an `position: absolute` popup at the bottom of its row. `fixed` pins it
+   * to the bottom-middle of the screen and the z-index lifts it above the
+   * player bar.
+   */
   .popup_content {
+    position: fixed;
     left: 2rem;
     right: 2rem;
     bottom: 0;
@@ -51,6 +59,13 @@
     border-bottom-right-radius: 0;
     flex-direction: column;
     align-content: flex-end;
+    z-index: 1001;
+  }
+
+  /* Full-screen dark backdrop pinned to the viewport, behind the popup. */
+  .popup_overlay {
+    position: fixed;
+    z-index: 1000;
   }
 
   .mobile .popup_content {
