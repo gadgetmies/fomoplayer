@@ -48,11 +48,18 @@
    * trap an `position: absolute` popup at the bottom of its row. `fixed` pins it
    * to the bottom-middle of the screen and the z-index lifts it above the
    * player bar.
+   *
+   * Centre via `left: 50%` + `translateX(-50%)` rather than symmetric
+   * `left`/`right`: popups such as the cart popup cap their width with
+   * `max-width`, and with `left`, `right` and `width` all constrained the
+   * browser drops `right`, pinning the popup off-centre against the left
+   * gutter. Constraining width instead keeps it centred at any width.
    */
   .popup_content {
     position: fixed;
-    left: 2rem;
-    right: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 4rem);
     bottom: 0;
     background: black;
     border-bottom-left-radius: 0;
