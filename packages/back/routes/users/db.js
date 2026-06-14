@@ -364,6 +364,164 @@ ORDER BY 1, store_name
   )
 }
 
+// Suggest artists to follow based on the tracks the user has purchased (the
+// tracks in their purchased cart). An artist is suggested when it authored at
+// least one purchased track, the user does not already follow it on any store,
+// and the user has not dismissed the suggestion. The count is the number of
+// distinct purchased tracks by the artist; a representative store URL is picked
+// so the suggestion can be followed with the existing follow-by-url flow.
+module.exports.queryArtistFollowSuggestions = async (userId, stores = undefined) => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryArtistFollowSuggestions
+WITH purchased_artist_counts AS (
+    SELECT artist_id
+         , COUNT(DISTINCT track_id) AS count
+    FROM cart
+             NATURAL JOIN track__cart
+             NATURAL JOIN track__artist
+    WHERE meta_account_user_id = ${userId}
+      AND cart_is_purchased
+      AND track__artist_role = 'author'
+    GROUP BY artist_id
+)
+SELECT id
+     , name
+     , url
+     , "storeName"
+     , count
+FROM (
+    SELECT DISTINCT ON (purchased_artist_counts.artist_id)
+           purchased_artist_counts.artist_id AS id
+         , artist_name                       AS name
+         , store__artist_url                 AS url
+         , store_name                        AS "storeName"
+         , purchased_artist_counts.count :: INT AS count
+    FROM purchased_artist_counts
+             NATURAL JOIN artist
+             NATURAL JOIN store__artist
+             NATURAL JOIN store
+    WHERE store__artist_url IS NOT NULL
+      AND (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY (${stores}))
+      AND NOT EXISTS (
+            SELECT 1
+            FROM store__artist_watch
+                     NATURAL JOIN store__artist_watch__user
+                     NATURAL JOIN store__artist AS followed_store__artist
+            WHERE followed_store__artist.artist_id = purchased_artist_counts.artist_id
+              AND meta_account_user_id = ${userId}
+        )
+      AND NOT EXISTS (
+            SELECT 1
+            FROM user__artist_follow_suggestion_ignore
+            WHERE artist_id = purchased_artist_counts.artist_id
+              AND meta_account_user_id = ${userId}
+        )
+    ORDER BY purchased_artist_counts.artist_id, store_name
+) suggestions
+ORDER BY count DESC, name
+LIMIT 24
+`,
+  )
+}
+
+// Label equivalent of queryArtistFollowSuggestions.
+module.exports.queryLabelFollowSuggestions = async (userId, stores = undefined) => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryLabelFollowSuggestions
+WITH purchased_label_counts AS (
+    SELECT label_id
+         , COUNT(DISTINCT track_id) AS count
+    FROM cart
+             NATURAL JOIN track__cart
+             NATURAL JOIN track__label
+    WHERE meta_account_user_id = ${userId}
+      AND cart_is_purchased
+    GROUP BY label_id
+)
+SELECT id
+     , name
+     , url
+     , "storeName"
+     , count
+FROM (
+    SELECT DISTINCT ON (purchased_label_counts.label_id)
+           purchased_label_counts.label_id AS id
+         , label_name                      AS name
+         , store__label_url                AS url
+         , store_name                      AS "storeName"
+         , purchased_label_counts.count :: INT AS count
+    FROM purchased_label_counts
+             NATURAL JOIN label
+             NATURAL JOIN store__label
+             NATURAL JOIN store
+    WHERE store__label_url IS NOT NULL
+      AND (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY (${stores}))
+      AND NOT EXISTS (
+            SELECT 1
+            FROM store__label_watch
+                     NATURAL JOIN store__label_watch__user
+                     NATURAL JOIN store__label AS followed_store__label
+            WHERE followed_store__label.label_id = purchased_label_counts.label_id
+              AND meta_account_user_id = ${userId}
+        )
+      AND NOT EXISTS (
+            SELECT 1
+            FROM user__label_follow_suggestion_ignore
+            WHERE label_id = purchased_label_counts.label_id
+              AND meta_account_user_id = ${userId}
+        )
+    ORDER BY purchased_label_counts.label_id, store_name
+) suggestions
+ORDER BY count DESC, name
+LIMIT 24
+`,
+  )
+}
+
+module.exports.addArtistFollowSuggestionIgnore = async (userId, artistId) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- addArtistFollowSuggestionIgnore
+INSERT INTO user__artist_follow_suggestion_ignore (meta_account_user_id, artist_id)
+VALUES (${userId}, ${artistId})
+ON CONFLICT (artist_id, meta_account_user_id) DO NOTHING
+`,
+  )
+}
+
+module.exports.addLabelFollowSuggestionIgnore = async (userId, labelId) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- addLabelFollowSuggestionIgnore
+INSERT INTO user__label_follow_suggestion_ignore (meta_account_user_id, label_id)
+VALUES (${userId}, ${labelId})
+ON CONFLICT (label_id, meta_account_user_id) DO NOTHING
+`,
+  )
+}
+
+module.exports.deleteArtistFollowSuggestionIgnore = async (userId, artistId) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- deleteArtistFollowSuggestionIgnore
+DELETE FROM user__artist_follow_suggestion_ignore
+WHERE meta_account_user_id = ${userId} AND artist_id = ${artistId}
+`,
+  )
+}
+
+module.exports.deleteLabelFollowSuggestionIgnore = async (userId, labelId) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- deleteLabelFollowSuggestionIgnore
+DELETE FROM user__label_follow_suggestion_ignore
+WHERE meta_account_user_id = ${userId} AND label_id = ${labelId}
+`,
+  )
+}
+
 module.exports.queryUserPlaylistFollows = async (userId, stores = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL

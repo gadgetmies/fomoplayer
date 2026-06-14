@@ -14,6 +14,13 @@ const {
   getUserArtistIgnores,
   getUserArtistOnLabelIgnores,
   getUserLabelIgnores,
+  getArtistFollowSuggestions,
+  getLabelFollowSuggestions,
+  getFollowSuggestionImages,
+  addArtistFollowSuggestionIgnore,
+  addLabelFollowSuggestionIgnore,
+  removeArtistFollowSuggestionIgnore,
+  removeLabelFollowSuggestionIgnore,
   removeArtistOnLabelIgnoreFromUser,
   removeLabelIgnoreFromUser,
   removeArtistIgnoreFromUser,
@@ -332,6 +339,45 @@ router.post('/follows/playlists', async ({ user: { id: userId }, body }, res) =>
   const sourceId = await insertSource({ operation: '/follows/playlists' })
   const addedPlaylists = await addPlaylistFollows(body, userId, sourceId)
   res.send(addedPlaylists)
+})
+
+// Follow suggestions derived from the tracks in the user's purchased cart.
+router.get('/follows/suggestions', async ({ user: { id: authUserId }, query: { store: stores } }, res) => {
+  const [artists, labels] = await Promise.all([
+    getArtistFollowSuggestions(authUserId, stores),
+    getLabelFollowSuggestions(authUserId, stores),
+  ])
+  res.send({ artists, labels })
+})
+
+// Resolve cover images for suggestions lazily so the list renders immediately
+// and images backfill (entity artwork isn't stored, it comes live from stores).
+router.post('/follows/suggestions/images', async ({ body: { urls } }, res) => {
+  res.send(await getFollowSuggestionImages(urls))
+})
+
+// Dismiss a suggestion so it no longer appears, reducing noise in the list.
+router.post('/follows/suggestions/ignores', async ({ user: { id: authUserId }, body: { type, id } }, res) => {
+  if (type === 'artist') {
+    await addArtistFollowSuggestionIgnore(authUserId, id)
+  } else if (type === 'label') {
+    await addLabelFollowSuggestionIgnore(authUserId, id)
+  } else {
+    return res.status(400).send({ error: `Unknown suggestion type: ${type}` })
+  }
+  res.status(204).send()
+})
+
+// Undo a dismissal (also used to keep demo seeding re-run safe).
+router.delete('/follows/suggestions/ignores/:type/:id', async ({ user: { id: authUserId }, params: { type, id } }, res) => {
+  if (type === 'artist') {
+    await removeArtistFollowSuggestionIgnore(authUserId, id)
+  } else if (type === 'label') {
+    await removeLabelFollowSuggestionIgnore(authUserId, id)
+  } else {
+    return res.status(400).send({ error: `Unknown suggestion type: ${type}` })
+  }
+  res.status(204).send()
 })
 
 router.put('/follows/:type/:id', async ({ user: { id: userId }, params: { id, type }, body: { starred } }, res) => {

@@ -101,6 +101,8 @@ class Settings extends Component {
       artistFollows: [],
       labelFollows: [],
       playlistFollows: [],
+      followSuggestions: { artists: [], labels: [] },
+      updatingSuggestion: null,
       artistOnLabelIgnores: [],
       artistIgnores: [],
       labelIgnores: [],
@@ -166,6 +168,7 @@ class Settings extends Component {
     try {
       await Promise.all([
         this.updateFollows(),
+        this.updateFollowSuggestions(),
         this.updateIgnores(),
         this.updateAuthorizations(),
         this.updateAudioSamples(),
@@ -203,6 +206,81 @@ class Settings extends Component {
       path: `/me/follows/playlists`,
     })
     this.setState({ playlistFollows })
+  }
+
+  async updateFollowSuggestions() {
+    const followSuggestions = await requestJSONwithCredentials({
+      path: `/me/follows/suggestions`,
+    })
+    this.setState({ followSuggestions })
+    // Backfill cover images without blocking the list render.
+    this.enrichSuggestionImages(followSuggestions)
+  }
+
+  async enrichSuggestionImages({ artists = [], labels = [] }) {
+    const urls = [...artists, ...labels].map(({ url }) => url).filter(Boolean)
+    if (urls.length === 0) {
+      return
+    }
+    try {
+      const images = await requestJSONwithCredentials({
+        path: `/me/follows/suggestions/images`,
+        method: 'POST',
+        body: { urls },
+      })
+      const imgByUrl = new Map(images.filter(({ img }) => img).map(({ url, img }) => [url, img]))
+      const merge = (items) => (items ?? []).map((s) => (imgByUrl.has(s.url) ? { ...s, img: imgByUrl.get(s.url) } : s))
+      this.setState((prev) => ({
+        followSuggestions: {
+          ...prev.followSuggestions,
+          artists: merge(prev.followSuggestions.artists),
+          labels: merge(prev.followSuggestions.labels),
+        },
+      }))
+    } catch (e) {
+      console.error('Enriching suggestion images failed', e)
+    }
+  }
+
+  async onFollowSuggestionClick(type, { id, name, url }) {
+    this.setState({ updatingSuggestion: `${type}-${id}` })
+    try {
+      await this.onFollowItemClick(url, name, type)
+      // Drop the now-followed suggestion and refresh from the server so the
+      // counts and remaining suggestions stay in sync.
+      this.removeSuggestionFromState(type, id)
+      await this.updateFollowSuggestions()
+    } catch (e) {
+      console.error('Following suggestion failed', e)
+    } finally {
+      this.setState({ updatingSuggestion: null })
+    }
+  }
+
+  async onIgnoreSuggestionClick(type, id) {
+    this.setState({ updatingSuggestion: `${type}-${id}` })
+    try {
+      await requestWithCredentials({
+        path: `/me/follows/suggestions/ignores`,
+        method: 'POST',
+        body: { type, id },
+      })
+      this.removeSuggestionFromState(type, id)
+    } catch (e) {
+      console.error('Ignoring suggestion failed', e)
+    } finally {
+      this.setState({ updatingSuggestion: null })
+    }
+  }
+
+  removeSuggestionFromState(type, id) {
+    const key = type === 'artist' ? 'artists' : 'labels'
+    this.setState((prev) => ({
+      followSuggestions: {
+        ...prev.followSuggestions,
+        [key]: (prev.followSuggestions[key] ?? []).filter((s) => s.id !== id),
+      },
+    }))
   }
 
   async updateIgnores() {
@@ -437,6 +515,78 @@ class Settings extends Component {
           </React.Fragment>
         ))}
       </>
+    )
+  }
+
+  renderSuggestionList(type, suggestions) {
+    const label = type === 'artist' ? 'Artists' : 'Labels'
+    return (
+      <>
+        <h5>
+          {label} ({suggestions.length})
+        </h5>
+        <ul className="no-style-list follow-list">
+          {suggestions.map(({ id, name, url, storeName, count, img }) => {
+            const busy = this.state.updatingSuggestion === `${type}-${id}`
+            return (
+              <li
+                key={`${type}-${id}`}
+                className="follow-suggestion-item"
+                data-test="follow-suggestion"
+                data-test-suggestion-type={type}
+                data-test-suggestion-id={id}
+                data-test-suggestion-name={name}
+              >
+                <FollowItemButton
+                  id={id}
+                  name={name}
+                  storeName={storeName.toLowerCase()}
+                  type={type}
+                  url={url}
+                  img={img}
+                  loading={busy}
+                  disabled={this.state.updatingSuggestion !== null}
+                  onClick={() => this.onFollowSuggestionClick(type, { id, name, url })}
+                  data-test="follow-suggestion-follow"
+                />
+                <span className="follow-suggestion-count" title={`${count} purchased track(s)`}>
+                  {count}
+                </span>
+                <button
+                  className="follow-suggestion-ignore-button"
+                  disabled={this.state.updatingSuggestion !== null}
+                  title={`Ignore suggestion for ${name}`}
+                  data-test="follow-suggestion-ignore"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    this.onIgnoreSuggestionClick(type, id)
+                  }}
+                >
+                  <FontAwesomeIcon icon="times-circle" />
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      </>
+    )
+  }
+
+  renderFollowSuggestions() {
+    const { artists = [], labels = [] } = this.state.followSuggestions ?? {}
+    if (artists.length === 0 && labels.length === 0) {
+      return null
+    }
+    return (
+      <div className="follow-suggestions" data-test="follow-suggestions">
+        <h4>Suggestions from your purchases</h4>
+        <p style={{ fontSize: '90%', marginTop: 0 }}>
+          Artists and labels behind the tracks in your purchased cart that you are not following yet. Follow the ones
+          you like, or ignore a suggestion to remove it from this list.
+        </p>
+        {artists.length > 0 && this.renderSuggestionList('artist', artists)}
+        {labels.length > 0 && this.renderSuggestionList('label', labels)}
+      </div>
     )
   }
 
@@ -850,6 +1000,7 @@ class Settings extends Component {
                   </div>
                 )}
               </label>
+              {this.renderFollowSuggestions()}
               <h4>Followed</h4>
               <div
                 className="select-button select-button--container state-select-button--container noselect"
