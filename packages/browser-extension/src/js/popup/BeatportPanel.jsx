@@ -1,5 +1,6 @@
 import React from 'react'
 import browser from '../browser'
+import CartPushSection from './cart-push/CartPushSection.jsx'
 
 const getActiveTabId = async () => {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
@@ -125,6 +126,7 @@ export default class BeatportPanel extends React.Component {
             </p>
           </>
         )}
+        <CartPushSection store="beatport" isCurrent={isCurrent} />
       </div>
     )
   }
