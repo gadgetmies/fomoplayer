@@ -149,7 +149,7 @@ const postBeatportCartItem = async (cartId, itemId, bearer, deps = {}) => {
     headers: bearerHeaders(bearer),
     body: JSON.stringify({
       item_id: itemId,
-      item_type_id: 2,
+      item_type_id: 1,
       audio_format_id: 1,
       purchase_type_id: 1,
       source_type_id: 6,
