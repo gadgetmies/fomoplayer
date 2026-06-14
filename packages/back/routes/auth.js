@@ -362,7 +362,30 @@ const createAuthRouter = ({
     if (!isExtensionFlowConfigured) {
       return res.status(503).json({ error: 'Extension login is not configured on this backend' })
     }
-    return passport.authenticate('openidconnect', { state: { returnToExtension: true } })(req, res, next)
+    const extensionId = req.session?.extensionId
+    const extensionCodeChallenge = req.session?.extensionCodeChallenge
+    const extensionCodeChallengeMethod = req.session?.extensionCodeChallengeMethod
+    const extensionState = req.session?.extensionState
+    const extensionRedirectUri = req.session?.extensionRedirectUri
+    if (!isExtensionIdAllowed(extensionId)) {
+      return res.status(400).json({ error: 'Session missing or invalid extensionId' })
+    }
+    if (!extensionCodeChallenge || extensionCodeChallengeMethod !== 'S256' || !extensionState) {
+      return res.status(400).json({ error: 'Session missing PKCE parameters' })
+    }
+    if (!isAllowedExtensionRedirectUri(extensionRedirectUri)) {
+      return res.status(400).json({ error: 'Session missing or invalid redirect_uri' })
+    }
+    return passport.authenticate('openidconnect', {
+      state: {
+        returnToExtension: true,
+        extensionId,
+        extensionCodeChallenge,
+        extensionCodeChallengeMethod,
+        extensionState,
+        extensionRedirectUri,
+      },
+    })(req, res, next)
   })
 
   router.post('/login/extension/confirm', async (req, res) => {
@@ -576,11 +599,29 @@ const createAuthRouter = ({
       }
 
       if (returnToExtension) {
+        const extensionId = passportState.extensionId
+        const extensionCodeChallenge = passportState.extensionCodeChallenge
+        const extensionCodeChallengeMethod = passportState.extensionCodeChallengeMethod
+        const extensionState = passportState.extensionState
+        const extensionRedirectUri = passportState.extensionRedirectUri
+        if (!isExtensionIdAllowed(extensionId)
+          || !extensionCodeChallenge
+          || extensionCodeChallengeMethod !== 'S256'
+          || !extensionState
+          || !isAllowedExtensionRedirectUri(extensionRedirectUri)) {
+          logger.warn('Extension OIDC callback missing PKCE details in state')
+          return redirectWithLoginFailed(res)
+        }
         return req.login(user, (loginErr) => {
           if (loginErr) {
             logger.error('req.login failed after extension OIDC', { errorMessage: loginErr?.message })
             return redirectWithLoginFailed(res)
           }
+          req.session.extensionId = extensionId
+          req.session.extensionCodeChallenge = extensionCodeChallenge
+          req.session.extensionCodeChallengeMethod = extensionCodeChallengeMethod
+          req.session.extensionState = extensionState
+          req.session.extensionRedirectUri = extensionRedirectUri
           return res.redirect(`${authRouteBaseUrl}/login/extension`)
         })
       }
