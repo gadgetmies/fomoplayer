@@ -1,5 +1,6 @@
 import React from 'react'
 import browser from '../browser'
+import CartPushSection from './cart-push/CartPushSection.jsx'
 
 const getActiveTab = async () => {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
@@ -148,6 +149,7 @@ export default class BandcampPanel extends React.Component {
             </p>
           </>
         )}
+        <CartPushSection store="bandcamp" isCurrent={isCurrent} />
       </div>
     )
   }
