@@ -28,12 +28,19 @@ ON CONFLICT DO NOTHING
     await pg.queryAsync(
       // language=PostgreSQL
       sql`-- addPurchasedTracksToUsers (with date)
+-- DISTINCT ON (cart_id, track_id) is required: the same track_id can appear
+-- multiple times in the payload (a track resolves to multiple store__track URLs,
+-- so queryStoredTracksForUrls returns it once per URL). Without deduplication the
+-- cross join with cart produces duplicate (cart_id, track_id) tuples and
+-- ON CONFLICT DO UPDATE fails with "command cannot affect row a second time".
+-- Ordering by purchased keeps the earliest purchase timestamp per track.
 INSERT INTO track__cart (cart_id, track_id, track__cart_added)
-SELECT cart_id, t.track_id, t.purchased
+SELECT DISTINCT ON (cart_id, t.track_id) cart_id, t.track_id, t.purchased
 FROM cart,
      jsonb_to_recordset(${JSON.stringify(payload)} :: JSONB)
        AS t(track_id BIGINT, purchased TIMESTAMPTZ)
 WHERE meta_account_user_id = ANY(${userIds}) AND cart_is_purchased
+ORDER BY cart_id, t.track_id, t.purchased
 ON CONFLICT ON CONSTRAINT track__cart_cart_id_track_id_key
 DO UPDATE SET track__cart_added = EXCLUDED.track__cart_added
 `,
