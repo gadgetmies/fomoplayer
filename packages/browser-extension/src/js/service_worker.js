@@ -27,6 +27,7 @@ import {
 import { startBeatportRun, resumeBeatportRun } from './cart-push/beatport'
 import { startBandcampRun, openNextBandcampBatch } from './cart-push/bandcamp'
 import { readRun, clearRun, RunStatus, BANDCAMP_BATCH_SIZE_KEY } from './cart-push/state'
+import { normalizeAppUrl } from './app-url'
 // Importing audio-player has no effect in a service-worker (no DOM) but
 // installs the audio host inside the Firefox background page.
 import './audio-player'
@@ -40,7 +41,10 @@ const BANDCAMP_STORE_URL = 'https://bandcamp.com'
 
 const getAppUrl = async () => {
   const { appUrl } = await browser.storage.local.get(['appUrl'])
-  return appUrl || DEFAULT_APP_URL
+  // Normalize on read too: strips a trailing slash from a value stored before
+  // Options started normalizing, or from a DEFAULT_APP_URL baked from a
+  // FRONTEND_URL that ends in a slash — otherwise `${appUrl}${path}` double-slashes.
+  return normalizeAppUrl(appUrl || DEFAULT_APP_URL)
 }
 
 const broadcast = (message) => browser.runtime.sendMessage(message).catch(() => {})

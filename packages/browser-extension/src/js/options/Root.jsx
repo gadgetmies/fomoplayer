@@ -1,5 +1,6 @@
 import React from 'react'
 import browser from '../browser'
+import { normalizeAppUrl } from '../app-url'
 
 const BATCH_SIZE_KEY = 'bandcampCartPushBatchSize'
 
@@ -68,8 +69,11 @@ export default class Root extends React.Component {
   }
 
   saveAppUrl() {
-    browser.storage.local.set({ appUrl: this.state.appUrl })
-    this.setState({ storedAppUrl: this.state.appUrl })
+    // Strip any trailing slash before storing — paths are concatenated as
+    // `${appUrl}${path}`, so a trailing slash would produce a double slash.
+    const appUrl = normalizeAppUrl(this.state.appUrl)
+    browser.storage.local.set({ appUrl })
+    this.setState({ appUrl, storedAppUrl: appUrl })
   }
 
   updateAppUrl(e) {
