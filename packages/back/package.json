@@ -11,9 +11,13 @@
     "db-migrate:prod:retry": "node scripts/db-migrate-with-retry.js",
     "db:wait": "node scripts/wait-for-db.js",
     "test": "NODE_ENV=test dotenv -e .env.test -- npx cascade-test ./test/tests",
-    "test:browser": "NODE_ENV=test dotenv -e .env.test -- npx cascade-test ./test/browser",
+    "test:browser": "NODE_ENV=test dotenv -e .env.test -- npx cascade-test ./test/browser --regex '^(?!.*-(local|preview)\\.(js|ts)$).*$'",
+    "test:browser:demo": "NODE_ENV=test dotenv -e .env.test -- npx cascade-test ./test/browser --regex '-(local|preview)\\.(js|ts)$'",
+    "test:browser:all": "NODE_ENV=test dotenv -e .env.test -- npx cascade-test ./test/browser",
     "ci:test": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test ./test/tests",
-    "ci:test:browser": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test ./test/browser",
+    "ci:test:browser": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test ./test/browser --regex '^(?!.*-(local|preview)\\.(js|ts)$).*$'",
+    "ci:test:browser:demo": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test ./test/browser --regex '-(local|preview)\\.(js|ts)$'",
+    "ci:test:browser:all": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test ./test/browser",
     "ci:demo": "NODE_ENV=ci dotenv -e .env.ci -- npx cascade-test"
   },
   "engines": {

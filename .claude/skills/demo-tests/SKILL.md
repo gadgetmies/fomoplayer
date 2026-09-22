@@ -181,21 +181,44 @@ test({
 The `-local.js` file is the same, except it may swap `seedViaUi` for a
 `seedViaDb` fallback if (and only if) UI/API seeding isn't feasible there.
 
-## Both files also run in normal browser CI
+## Demo tests are opt-in — they do NOT run in the default browser CI
 
-`<feature>-local.js` and `<feature>-preview.js` live in `test/browser/`, so the
-regular `ci:test:browser` job runs them too (no `PREVIEW_URL`, no recording).
-They must be **green there as well**, not only in the demo workflows. Since the
-preview test's API/UI seeding works against a local backend (CI grants the test
-user admin via `ADMIN_USER_SUBS`), keep its setup runnable locally.
+`<feature>-local.js` and `<feature>-preview.js` live in `test/browser/`, but the
+default browser run **skips them**. `test:browser` / `ci:test:browser` pass a
+`--regex` that excludes any basename ending in `-local.js` / `-preview.js`, so
+the `node.js.yml` PR job runs only the ordinary browser tests. Demo tests
+execute only when specifically requested:
+
+| Command | Runs |
+|---------|------|
+| `yarn ci:test:browser` | ordinary browser tests only (the default PR job) |
+| `yarn ci:test:browser:demo` | the demo pairs only |
+| `yarn ci:test:browser:all` | everything, no filter |
+| `yarn workspace fomoplayer_back ci:demo <dir> --regex <file>` | one named file (what the demo workflows use) |
+
+**The `-local.js` / `-preview.js` suffix is load-bearing.** It is the only thing
+that marks a file as a demo test; a demo pair named anything else will run in
+the default PR job.
+
+Because the default job no longer covers them, a demo test that rots will not be
+caught by ordinary CI — it surfaces when the demo workflow runs on a PR. Keep
+the preview test's API/UI seeding runnable against a local backend (CI grants the
+test user admin via `ADMIN_USER_SUBS`) so `ci:test:browser:demo` stays a useful
+local check.
 
 ## Run locally before committing
 
 ```bash
-# Plain pass (both envs simulated locally, no video):
+# Plain pass (both envs simulated locally, no video).
+# NB: use `ci:demo`, not `ci:test:browser` — the latter already carries its own
+# `--regex` (the demo exclusion), and a second `--regex` would be parsed as an
+# array rather than overriding it.
 NODE_ENV=ci yarn build                     # build front-end into packages/back/public first
-yarn workspace fomoplayer_back ci:test:browser --regex '<feature>-local\.js$'
-yarn workspace fomoplayer_back ci:test:browser --regex '<feature>-preview\.js$'
+yarn workspace fomoplayer_back ci:demo ./test/browser --regex '<feature>-local\.js$'
+yarn workspace fomoplayer_back ci:demo ./test/browser --regex '<feature>-preview\.js$'
+
+# Or run every demo pair at once:
+yarn ci:test:browser:demo
 
 # Record a demo locally (writes a .webm, applies slow-mo + overlay):
 cd packages/back
@@ -212,7 +235,9 @@ context never closed (use `teardownSharedContext` as the suite `teardown`).
 - [ ] `<feature>-local.js` and `<feature>-preview.js` differ only in seeding.
 - [ ] demo-preview seeds via UI/API only (no DB); demo-test reuses that, with
       `seedViaDb` only as a justified local fallback.
-- [ ] Both pass under `ci:test:browser` and record a non-empty `.webm`.
+- [ ] Both pass under `ci:test:browser:demo` and record a non-empty `.webm`.
+- [ ] Both files are named `<feature>-local.js` / `<feature>-preview.js` — the
+      suffix is what keeps them out of the default PR job.
 - [ ] PR body contains both ` ```demo-test ` and ` ```demo-preview ` blocks
       naming the committed paths.
 - [ ] No deployment hostnames hard-coded (see CLAUDE.md) — the harness supplies
