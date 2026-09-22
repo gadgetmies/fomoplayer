@@ -2,15 +2,18 @@
 
 ### Requirement: Push a Fomo Player cart to the active store's cart from the popup
 
-The browser-extension popup SHALL expose, on the Beatport panel and on the Bandcamp panel, a "Push Fomo Player cart" control that lets the user pick one of their Fomo Player carts and push its tracks toward that store's cart. The control's **start UI** (cart picker and push button) SHALL render only when the active browser tab is on the matching store — i.e. when the panel's `isCurrent` prop is truthy — consistent with how existing per-store sync controls are gated.
+The browser-extension popup SHALL expose, on the Beatport panel and on the Bandcamp panel, a "Push cart" control that lets the user pick one of their Fomo Player carts and push its tracks toward that store's cart. The control's **start UI** (cart picker and push button) SHALL render only when the active browser tab is on the matching store — i.e. when the panel's `isCurrent` prop is truthy — consistent with how existing per-store sync controls are gated.
 
-The cart picker SHALL be a `<select>` populated from `GET /api/me/carts`. Carts whose `deleted` is set, and the purchased cart, SHALL be omitted. The default cart SHALL be marked with a `(default)` suffix. The push button SHALL be disabled until a cart is picked.
+The cart picker SHALL be a single-select listbox control populated from `GET /api/me/carts`. Carts whose `deleted` is set, and the purchased cart, SHALL be omitted. The default cart SHALL be marked with a `(default)` suffix. The push button SHALL be disabled until a cart is picked.
+
+The picker MAY be a custom control rather than a native `<select>` so it can be styled for the narrow (200px) popup, but it SHALL then keep keyboard parity with the native element: Up/Down to move between carts, Home/End to jump to the first/last, Enter to pick the focused cart, Escape to dismiss the list without changing the selection. It SHALL expose `role="listbox"` with `role="option"` children and mark the current selection with `aria-selected`.
 
 #### Scenario: User on a Beatport tab sees the push control
 
 - **WHEN** the active tab matches `https://*.beatport.com/*`
 - **AND** the Beatport panel is rendered in the popup
-- **THEN** the panel shows a Fomo Player cart picker and a `Push to Beatport cart "FOMO: <name>"` button (with `<name>` filled from the currently picked cart, or disabled if none)
+- **THEN** the panel shows a Fomo Player cart picker and a `Push to Beatport cart` button (disabled until a cart is picked)
+- **AND** the picked cart's name is shown by the picker itself, so the button label does not repeat it
 
 #### Scenario: User on a Bandcamp tab sees the push control
 
@@ -134,7 +137,7 @@ The service worker SHALL persist the run-state object after every meaningful sta
 
 ### Requirement: Only one cart-push run is active at a time
 
-While a run is in `running` or `awaiting-next-batch` status, the start button SHALL be disabled on both the Beatport panel and the Bandcamp panel. The popup SHALL surface a hint identifying which store the in-flight run belongs to so the user knows where to look (e.g., "A Beatport push is in progress — wait or dismiss it before starting another"). The service worker SHALL refuse a `cart-push:start` message while a non-terminal run exists; the message SHALL be a no-op in that state.
+While a run is in `running` or `awaiting-next-batch` status, the start button SHALL be disabled on both the Beatport panel and the Bandcamp panel. The in-flight run SHALL NOT disable the panels' unrelated controls (per-store sync, "Send tracks"); those remain gated only by the popup's own `running` flag. The popup SHALL surface a hint identifying which store the in-flight run belongs to so the user knows where to look (e.g., "A Beatport push is in progress — wait or dismiss it before starting another"). The service worker SHALL refuse a `cart-push:start` message while a non-terminal run exists; the message SHALL be a no-op in that state.
 
 #### Scenario: User tries to start a Bandcamp push while a Beatport run is in flight
 
@@ -221,3 +224,43 @@ The field's value SHALL be persisted to `browser.storage.local.bandcampCartPushB
 - **THEN** the new value is persisted to `browser.storage.local`
 - **AND** the in-flight run continues with the batch size it was started with
 - **AND** the next run started after dismissal picks up the new value
+
+### Requirement: Beatport push progress is reported through the popup's global Status panel
+
+Beatport push progress SHALL be surfaced by the popup's existing global `Status`
+panel — the same control the other long-running syncs use — rather than by a
+progress line inside the cart-push section. The service worker SHALL report
+progress by passing `setStatus` / `clearStatus` into the cart-push deps, and the
+status label SHALL name the target Beatport cart and the position in the queue,
+in the form `Pushing "FOMO: <name>" — X / Y`.
+
+Progress reporting SHALL be best-effort: when `setStatus` / `clearStatus` are
+absent from `deps` (as in unit tests), the run SHALL proceed unaffected.
+
+The Status panel SHALL be cleared on **every** terminal outcome of a run, so a
+finished or failed push never leaves the popup advertising work in progress.
+This includes the paths that terminate before the POST loop begins (no Beatport
+session, cart listing failed, cart creation failed, empty queue) and the paths
+that terminate inside it (queue exhausted, session lost mid-loop).
+
+#### Scenario: Progress advances as the queue drains
+
+- **WHEN** a Beatport run starts with two tracks to add to the cart `FOMO: set-1`
+- **THEN** the Status panel is set to `Pushing "FOMO: set-1" — 0 / 2` at 0%
+- **AND** it advances to `Pushing "FOMO: set-1" — 1 / 2` at 50% after the first POST
+- **AND** it advances to `Pushing "FOMO: set-1" — 2 / 2` at 100% after the second
+- **AND** the Status panel is cleared once the run reaches `completed`
+
+#### Scenario: Run terminates before the loop starts
+
+- **WHEN** a Beatport run terminates `failed` because the session could not be
+  sourced, the cart list could not be fetched, or the cart could not be created
+- **OR** every track in the cart is already present on Beatport, so the queue is empty
+- **THEN** the Status panel is cleared
+- **AND** the popup does not show a running operation
+
+#### Scenario: Beatport session is lost mid-loop
+
+- **WHEN** the Beatport session stops resolving part-way through the POST loop
+- **THEN** the run is persisted as `failed` with the error `Not logged in to Beatport`
+- **AND** the Status panel is cleared rather than left at the last reported percentage

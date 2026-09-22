@@ -7,6 +7,7 @@ const {
   clearBrowserStub,
   fetchMock,
   reloadCartPushModules,
+  statusRecorder,
 } = require('../lib/cart-push-stubs')
 
 // Each test installs a fresh browser stub + re-requires the cart-push
@@ -38,8 +39,7 @@ const sessionFailHandler = () => ({
 })
 
 const listCartsHandler = (carts) => ({
-  match: (url, init) =>
-    url === 'https://api.beatport.com/v4/my/carts/' && (!init.method || init.method === 'GET'),
+  match: (url, init) => url === 'https://api.beatport.com/v4/my/carts/' && (!init.method || init.method === 'GET'),
   respond: () => ({ body: carts }),
 })
 
@@ -59,18 +59,18 @@ const cartItemsHandler = (cartId, items) => ({
 })
 
 const postItemHandler = (cartId, behavior) => ({
-  match: (url, init) =>
-    url === `https://api.beatport.com/v4/my/carts/${cartId}/items/` && init.method === 'POST',
+  match: (url, init) => url === `https://api.beatport.com/v4/my/carts/${cartId}/items/` && init.method === 'POST',
   respond: (url, init) => {
     const body = JSON.parse(init.body)
     return behavior(body.item_id)
   },
 })
 
-const makeDeps = (fetchFn, cart) => ({
+const makeDeps = (fetchFn, cart, status) => ({
   fetch: fetchFn,
   apiFetch: async () => cart,
   getAppUrl: async () => 'https://fomoplayer.test',
+  ...(status ? status.deps : {}),
 })
 
 test({
@@ -109,9 +109,7 @@ test({
       try {
         const cart = {
           name: 'set-2',
-          tracks: [
-            { id: 11, title: 'B', artists: [{ name: 'B' }], stores: [{ code: 'beatport', trackId: '200' }] },
-          ],
+          tracks: [{ id: 11, title: 'B', artists: [{ name: 'B' }], stores: [{ code: 'beatport', trackId: '200' }] }],
         }
         const existing = { id: 99, name: 'FOMO: set-2' }
         const fetch = fetchMock([
@@ -138,7 +136,12 @@ test({
           tracks: [
             { id: 1, title: 'will-add', artists: [{ name: 'A' }], stores: [{ code: 'beatport', trackId: '300' }] },
             { id: 2, title: 'in-cart', artists: [{ name: 'A' }], stores: [{ code: 'beatport', trackId: '400' }] },
-            { id: 3, title: 'no-bp', artists: [{ name: 'A' }], stores: [{ code: 'bandcamp', url: 'https://x.bc/track/y' }] },
+            {
+              id: 3,
+              title: 'no-bp',
+              artists: [{ name: 'A' }],
+              stores: [{ code: 'bandcamp', url: 'https://x.bc/track/y' }],
+            },
             { id: 4, title: 'fails', artists: [{ name: 'A' }], stores: [{ code: 'beatport', trackId: '500' }] },
           ],
         }
@@ -147,9 +150,7 @@ test({
           listCartsHandler([{ id: 7, name: 'FOMO: set-3' }]),
           cartItemsHandler(7, [400]),
           postItemHandler(7, (itemId) =>
-            itemId === 500
-              ? { ok: false, status: 403, body: 'denied', contentType: 'text/plain' }
-              : { body: {} },
+            itemId === 500 ? { ok: false, status: 403, body: 'denied', contentType: 'text/plain' } : { body: {} },
           ),
         ])
         await beatport.startBeatportRun({ fomoplayerCartId: 9 }, makeDeps(fetch, cart))
@@ -198,10 +199,7 @@ test({
           },
         }
         await state.replaceRun(partial)
-        const fetch = fetchMock([
-          sessionHandler(),
-          postItemHandler(50, () => ({ body: {} })),
-        ])
+        const fetch = fetchMock([sessionHandler(), postItemHandler(50, () => ({ body: {} }))])
         await beatport.resumeBeatportRun({ fetch })
         const run = await state.readRun()
         assert.strictEqual(run.processed, 3)
@@ -219,15 +217,9 @@ test({
       try {
         const cart = {
           name: 'no-go',
-          tracks: [
-            { id: 10, title: 'A', artists: [{ name: 'A' }], stores: [{ code: 'beatport', trackId: '1' }] },
-          ],
+          tracks: [{ id: 10, title: 'A', artists: [{ name: 'A' }], stores: [{ code: 'beatport', trackId: '1' }] }],
         }
-        const fetch = fetchMock([
-          sessionHandler(),
-          listCartsHandler([]),
-          createCartFailHandler(500),
-        ])
+        const fetch = fetchMock([sessionHandler(), listCartsHandler([]), createCartFailHandler(500)])
         await beatport.startBeatportRun({ fomoplayerCartId: 7 }, makeDeps(fetch, cart))
         const run = await state.readRun()
         assert.strictEqual(run.status, state.RunStatus.FAILED)
@@ -248,6 +240,145 @@ test({
         assert.strictEqual(run.status, state.RunStatus.FAILED)
         assert.strictEqual(run.error, 'Not logged in to Beatport')
         assert.strictEqual(fetch.calls.length, 1)
+      } finally {
+        cleanup()
+      }
+    },
+  },
+
+  'Beatport cart-push progress reporting': {
+    'reports cart name and running counts, then clears': async () => {
+      const { state, beatport } = freshModules()
+      try {
+        const cart = {
+          name: 'set-1',
+          tracks: [
+            { id: 10, title: 'A', artists: [{ name: 'Alice' }], stores: [{ code: 'beatport', trackId: '100' }] },
+            { id: 11, title: 'B', artists: [{ name: 'Bob' }], stores: [{ code: 'beatport', trackId: '200' }] },
+          ],
+        }
+        const status = statusRecorder()
+        const fetch = fetchMock([
+          sessionHandler(),
+          listCartsHandler([{ id: 42, name: 'FOMO: set-1' }]),
+          cartItemsHandler(42, []),
+          postItemHandler(42, () => ({ body: {} })),
+        ])
+        await beatport.startBeatportRun({ fomoplayerCartId: 7 }, makeDeps(fetch, cart, status))
+
+        const run = await state.readRun()
+        assert.strictEqual(run.status, state.RunStatus.COMPLETED)
+
+        const labels = status.labels()
+        // Every label names the Beatport cart being filled — this is the
+        // information the in-panel `Pushing "..." — X / Y` line used to carry
+        // before progress moved to the global Status panel.
+        assert.ok(labels.length >= 1)
+        for (const label of labels) {
+          assert.match(label, /FOMO: set-1/)
+        }
+        assert.strictEqual(labels[0], 'Pushing "FOMO: set-1" \u2014 0 / 2')
+        assert.strictEqual(labels[labels.length - 1], 'Pushing "FOMO: set-1" \u2014 2 / 2')
+        assert.deepStrictEqual(status.percents(), [0, 50, 100])
+        assert.strictEqual(status.last().type, 'clear', 'Status panel must be cleared on completion')
+      } finally {
+        cleanup()
+      }
+    },
+
+    'clears the status when the run fails on a missing session': async () => {
+      const { state, beatport } = freshModules()
+      try {
+        const cart = { name: 'x', tracks: [] }
+        const status = statusRecorder()
+        const fetch = fetchMock([sessionFailHandler()])
+        await beatport.startBeatportRun({ fomoplayerCartId: 7 }, makeDeps(fetch, cart, status))
+        const run = await state.readRun()
+        assert.strictEqual(run.status, state.RunStatus.FAILED)
+        assert.ok(status.cleared(), 'a failed run must not leave the Status panel running')
+      } finally {
+        cleanup()
+      }
+    },
+
+    'clears the status when cart creation fails': async () => {
+      const { state, beatport } = freshModules()
+      try {
+        const cart = {
+          name: 'no-go',
+          tracks: [
+            { id: 10, title: 'A', artists: [{ name: 'Alice' }], stores: [{ code: 'beatport', trackId: '100' }] },
+          ],
+        }
+        const status = statusRecorder()
+        const fetch = fetchMock([sessionHandler(), listCartsHandler([]), createCartFailHandler(500)])
+        await beatport.startBeatportRun({ fomoplayerCartId: 7 }, makeDeps(fetch, cart, status))
+        const run = await state.readRun()
+        assert.strictEqual(run.status, state.RunStatus.FAILED)
+        assert.ok(status.cleared(), 'a failed run must not leave the Status panel running')
+      } finally {
+        cleanup()
+      }
+    },
+
+    'clears the status when every track is already in the cart': async () => {
+      const { state, beatport } = freshModules()
+      try {
+        const cart = {
+          name: 'set-1',
+          tracks: [
+            { id: 10, title: 'A', artists: [{ name: 'Alice' }], stores: [{ code: 'beatport', trackId: '100' }] },
+          ],
+        }
+        const status = statusRecorder()
+        const fetch = fetchMock([
+          sessionHandler(),
+          listCartsHandler([{ id: 42, name: 'FOMO: set-1' }]),
+          cartItemsHandler(42, [100]),
+        ])
+        await beatport.startBeatportRun({ fomoplayerCartId: 7 }, makeDeps(fetch, cart, status))
+        const run = await state.readRun()
+        assert.strictEqual(run.status, state.RunStatus.COMPLETED)
+        assert.strictEqual(run.results.alreadyInCart.length, 1)
+        assert.ok(status.cleared(), 'an empty queue must still clear the Status panel')
+      } finally {
+        cleanup()
+      }
+    },
+
+    'clears the status when the session dies mid-loop': async () => {
+      const { state, beatport } = freshModules()
+      try {
+        const cart = {
+          name: 'set-1',
+          tracks: [
+            { id: 10, title: 'A', artists: [{ name: 'Alice' }], stores: [{ code: 'beatport', trackId: '100' }] },
+            { id: 11, title: 'B', artists: [{ name: 'Bob' }], stores: [{ code: 'beatport', trackId: '200' }] },
+          ],
+        }
+        const status = statusRecorder()
+        // First session lookup succeeds (run starts); later ones fail, so the
+        // loop hits its auth-failure branch part-way through the queue.
+        let sessionCalls = 0
+        const fetch = fetchMock([
+          {
+            match: (url) => url === 'https://www.beatport.com/api/auth/session',
+            respond: () => {
+              sessionCalls += 1
+              return sessionCalls <= 2
+                ? { body: { token: { accessToken: 'tk-1' } } }
+                : { ok: false, status: 401, body: 'unauthorized', contentType: 'text/plain' }
+            },
+          },
+          listCartsHandler([{ id: 42, name: 'FOMO: set-1' }]),
+          cartItemsHandler(42, []),
+          postItemHandler(42, () => ({ body: {} })),
+        ])
+        await beatport.startBeatportRun({ fomoplayerCartId: 7 }, makeDeps(fetch, cart, status))
+        const run = await state.readRun()
+        assert.strictEqual(run.status, state.RunStatus.FAILED)
+        assert.strictEqual(run.error, 'Not logged in to Beatport')
+        assert.ok(status.cleared(), 'a mid-loop auth failure must clear the Status panel')
       } finally {
         cleanup()
       }

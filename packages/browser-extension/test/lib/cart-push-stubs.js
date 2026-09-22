@@ -86,9 +86,32 @@ const reloadCartPushModules = () => {
   }
 }
 
+// Records the `setStatus` / `clearStatus` calls the cart-push modules make
+// through `deps`. In the extension these are wired to the service worker's
+// status writers, which is what the popup's Status panel renders.
+const statusRecorder = () => {
+  const calls = []
+  return {
+    calls,
+    deps: {
+      setStatus: async (label, percent) => {
+        calls.push({ type: 'set', label, percent })
+      },
+      clearStatus: async () => {
+        calls.push({ type: 'clear' })
+      },
+    },
+    labels: () => calls.filter((c) => c.type === 'set').map((c) => c.label),
+    percents: () => calls.filter((c) => c.type === 'set').map((c) => c.percent),
+    cleared: () => calls.some((c) => c.type === 'clear'),
+    last: () => calls[calls.length - 1],
+  }
+}
+
 module.exports = {
   installBrowserStub,
   clearBrowserStub,
   fetchMock,
   reloadCartPushModules,
+  statusRecorder,
 }

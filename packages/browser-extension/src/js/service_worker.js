@@ -664,7 +664,7 @@ const handleMessage = async (message) => {
         error: `A ${existing.store} push is in progress — wait or dismiss it before starting another`,
       }
     }
-    const deps = { apiFetch, getAppUrl }
+    const deps = { apiFetch, getAppUrl, setStatus, clearStatus }
     const { store, fomoplayerCartId } = message
     try {
       if (store === 'beatport') {
@@ -826,7 +826,7 @@ const onServiceWorkerStart = async () => {
   // resume is a no-op for any other run state (Bandcamp awaiting-next-batch
   // does nothing here; Bandcamp resumes on the user's `Open next batch`
   // click). `runBeatportLoop` is re-entrant, so this is safe.
-  await resumeBeatportRun({ apiFetch, getAppUrl }).catch((e) =>
+  await resumeBeatportRun({ apiFetch, getAppUrl, setStatus, clearStatus }).catch((e) =>
     console.warn('resumeBeatportRun failed', e),
   )
 }

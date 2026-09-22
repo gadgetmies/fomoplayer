@@ -51,8 +51,10 @@
 - [x] 7.1 Create `packages/browser-extension/src/js/popup/cart-push/CartPushSection.jsx` — a shared React component that takes `{ store, isCurrent }` and reads `cartPushRun` + `bandcampCartPushBatchSize` from storage on mount, subscribing to `storage.onChanged`.
 - [x] 7.2 Render the **start UI** (cart picker + push button) only when `isCurrent && (no run, or run for the other store in a terminal state already dismissed)`. Use `cart-push:list-fomo-carts` to populate the picker. The push button label is `Push to Beatport cart "FOMO: <name>"` (for Beatport) or `Open <N> tabs to push to Bandcamp` (for Bandcamp).
   - Implementation note: button label uses the generic Bandcamp wording ("Open tabs to push to Bandcamp") rather than pre-resolving N. Lazy-resolve-after-click avoids an extra round-trip to the backend just for the count; the resolved batch sizes are visible in the run UI as soon as the run starts.
+  - Implementation note: the Beatport button label is the bare `Push to Beatport cart`, not `Push to Beatport cart "FOMO: <name>"`. The picked cart's name is already shown by the picker directly above the button, so repeating it made the label wrap in the 200px popup. Spec delta updated to match.
+  - Implementation note: the picker is a custom `CartDropdown` listbox rather than a native `<select>`, so it can be styled for the popup. It re-implements the native keyboard contract (Up/Down, Home/End, Enter, Escape) and exposes `role="listbox"` / `role="option"` / `aria-selected` / `aria-activedescendant`. Spec delta updated to match.
 - [x] 7.3 When a run exists *for this store* (any status), render the run-state block regardless of `isCurrent`:
-  - `running` (Beatport): `Pushing "FOMO: <name>" — X / Y` progress line.
+  - `running` (Beatport): a short `Push in progress…` hint. **Changed from the original `Pushing "FOMO: <name>" — X / Y` in-panel line**: detailed progress now renders in the popup's global `Status` panel, the same control the other syncs use, and the label there carries the cart name and the X / Y counts (see task 12). Spec delta updated to match.
   - `awaiting-next-batch` (Bandcamp): `Batch <i+1> / <n> open (<m> tabs)` plus an `Open next batch` button that sends `cart-push:open-next-batch`.
   - `completed`: the summary block (buckets + counts + [show] expanders + Copy / Download / Dismiss buttons).
   - `failed`: the failure summary (top-level error + Dismiss).
@@ -89,3 +91,21 @@
 ## 11. Documentation
 
 - [x] 11.1 Add a short section to `packages/browser-extension/README.md` documenting the new feature, the Options-page setting, and the v1 limitations (rename creates new Beatport cart, no remove sync, etc.).
+
+## 12. Beatport push progress in the global Status panel
+
+- [x] 12.1 Pass `setStatus` / `clearStatus` into the cart-push deps from `service_worker.js`, for both `cart-push:start` and the `resumeBeatportRun` call on worker startup.
+- [x] 12.2 Report progress from `cart-push/beatport.js` as `Pushing "FOMO: <name>" — X / Y` with a 0-100 percent, at run start and after every POST. Reporting is best-effort: absent deps (unit tests) must not break the run.
+- [x] 12.3 Clear the Status panel on every terminal path — no session, cart list failed, cart create failed, empty queue, queue exhausted, and session lost mid-loop.
+  - Bug found and fixed while testing 12.3: the mid-loop auth-failure branch used `return`, which jumped past the terminal-state `clearStatus` and left the popup advertising a push that had already failed. Changed to `break` so the terminal check owns clearing. Covered by `clears the status when the session dies mid-loop`.
+- [x] 12.4 Subscribe `Root.jsx` to `browser.storage.onChanged` so the popup re-renders live while the service worker advances the run, instead of only on open. Register in `componentDidMount`, remove in `componentWillUnmount`.
+- [x] 12.5 Keep the cart push out of the popup's `running` flag: it drives the Status panel and disables the cart-push section via a separate `cartPushBusy` prop, but must not disable the unrelated per-store sync / "Send tracks" buttons. `cartPushBusy` covers `running` **and** `awaiting-next-batch`.
+- [x] 12.6 Unit tests for the progress path in `test/tests/cart-push-beatport.js`, with a `statusRecorder()` stub in `test/lib/cart-push-stubs.js`. Result: 88 passing (was 77), including five new progress cases.
+
+## 13. Demo recordings — DEFERRED
+
+- [ ] 13.1 Add the paired `demo-test` / `demo-preview` browser tests required by `CLAUDE.md` for UI changes.
+  - **Deferred by decision (2026-09-22): demo and PR-demo workflows are out of scope for this change.** Reopen if the extension popup is later brought under the demo harness. Original finding follows.
+  - **Not currently expressible in the harness.** The demo harness (`packages/back/test/lib/setup.js`) drives the **web app**: it calls `chromium.launch()` and navigates to `/tracks/recent`. Nothing in the repo loads the built extension — there is no `launchPersistentContext` and no `--load-extension` anywhere, and `packages/browser-extension`'s own `test` script is Node-only unit tests.
+  - The `demo-preview` half cannot work even with harness changes: it records against the deployed Railway PR preview, and a browser extension is not part of that deployment.
+  - Options: (a) extend the harness to launch a persistent context with the unpacked extension and make `demo-test` extension-capable, accepting that `demo-preview` cannot cover extension-only changes; (b) scope the `CLAUDE.md` demo-recording rule to the web app + admin views and exempt the extension popup; (c) record the popup manually for the PR. This change currently has unit coverage only.
