@@ -1,5 +1,6 @@
 const logger = require('fomoplayer_shared').logger(__filename)
 const { insertSource } = require('../../jobs/watches/shared/db')
+const { unsubscribeUrl } = require('../../services/email-unsubscribe')
 const {
   addArtistsOnLabelsToIgnore,
   addArtistsToIgnore,
@@ -483,6 +484,18 @@ router.patch('/notifications', async ({ user: { id: userId }, body: requested },
 router.get('/settings', async ({ user: { id: userId } }, res) => {
   const settings = await getUserSettings(userId)
   res.send(settings)
+})
+
+// The one-click unsubscribe URL for the logged-in user's own address. Read-only
+// (mints a stateless HMAC token; no suppression happens here). Lets the app —
+// and the no-login unsubscribe demo — reach the branded unsubscribe page for
+// the current account without needing the signing secret.
+router.get('/email/unsubscribe-url', async ({ user: { id: userId } }, res) => {
+  const { email } = await getUserSettings(userId)
+  if (!email) {
+    return res.status(404).send({ error: 'No email address on file' })
+  }
+  res.send({ url: unsubscribeUrl(email) })
 })
 
 router.post('/settings', async ({ user: { id: userId }, body: { email } }, res) => {

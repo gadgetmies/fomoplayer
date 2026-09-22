@@ -5,6 +5,7 @@ const { getTracksWithIds } = require('../routes/users/db')
 const { searchForTracks } = require('../routes/shared/db/search')
 const BPromise = require('bluebird')
 const { scheduleEmail } = require('../services/mailer')
+const { renderNotification } = require('../services/email-templates')
 const { queryEntityDetails } = require('../routes/shared/db/entities')
 const { frontendURL } = require('../config')
 
@@ -43,7 +44,6 @@ module.exports.updateNotifications = async () => {
           logger.info(`Scheduling notification update email for notification id: ${notificationId}`)
           const trackDetails = await getTracksWithIds(searchResults.map(R.prop('track_id')))
           const root = frontendURL
-          const notificationsUrl = `${root}/settings/notifications`
           const newTracksDetails = trackDetails.map(
             ({ artists, title, version }) =>
               `${artists.map(({ name }) => name).join(', ')} - ${title}${version ? ` (${version})` : ''}`,
@@ -52,28 +52,13 @@ module.exports.updateNotifications = async () => {
           const from = `(from ${R.init(storeNames).join(', ')}${
             storeNames.length > 1 ? ` or ${R.last(storeNames)}` : ''
           })`
-          await scheduleEmail(
-            process.env.NOTIFICATION_EMAIL_SENDER,
-            email,
-            `New results for your search '${followText}'!`,
-            `Check out the results at ${searchUrl}
-            
-            New tracks available ${from}:
-            ${newTracksDetails.join('\n')}
-            
-            Unsubscribe / adjust notification settings at: ${notificationsUrl}
-`,
-            `<h1>New results for your search '${followText}'!</h1>
-<a href="${searchUrl}">
-  Check out the results at ${searchUrl}
-</a><br/><br/>
-<strong>New tracks available</strong> ${from}:<br/>
-${newTracksDetails.join('<br/>')}
-<br/>
-<br/>
-<a href="${notificationsUrl}">Unsubscribe / adjust notification settings</a> 
-`,
-          )
+          const { subject, contentHtml, text, category } = renderNotification({
+            searchText: followText,
+            tracks: newTracksDetails,
+            searchUrl,
+            fromStores: from,
+          })
+          await scheduleEmail(process.env.NOTIFICATION_EMAIL_SENDER, email, subject, text, contentHtml, category)
         }
 
         await tx.queryAsync(

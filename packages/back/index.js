@@ -126,6 +126,11 @@ const authenticateJwt = jwtStrategies.length > 0 ? passport.authenticate(jwtStra
 
 app.use('/api', require('./routes/public.js'))
 
+// Unauthenticated, CSRF-exempt email unsubscribe endpoints (RFC 8058
+// one-click POST + no-login confirm page). Mounted before the authenticated
+// `/api` router below.
+app.use('/api/email', require('./routes/email/index.js'))
+
 if (process.env.NODE_ENV !== 'production') {
   app.use('/api/mock/', require('./routes/mock/index.js'))
 }

@@ -111,6 +111,8 @@ WHERE job_run_id = ${job_run_id}`,
           recipient,
           `URGENT! Integration test '${jobName}' failed!`,
           `The integration test job '${jobName}' failed (job_run_id: ${job_run_id}).\n\nResult: ${JSON.stringify(res)}`,
+          undefined,
+          'admin',
         )
       } catch (e) {
         logger.error(`Failed to queue failure notification email for ${jobName}: ${e.toString()}`)

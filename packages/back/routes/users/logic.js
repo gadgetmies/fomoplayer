@@ -2,6 +2,7 @@ const BPromise = require('bluebird')
 const R = require('ramda')
 const pg = require('fomoplayer_shared').db.pg
 const { scheduleEmail } = require('../../services/mailer')
+const { renderVerification } = require('../../services/email-templates')
 const { insertUserPlaylistFollow } = require('../shared/db/user')
 const {
   updateArtistTracks,
@@ -393,19 +394,8 @@ module.exports.setEmail = async (userId, email) => {
   await upsertEmail(userId, email)
   const verificationCode = await getEmailVerificationCode(userId)
   const verificationURL = `${apiURL}/verify-email/${verificationCode}`
-  await scheduleEmail(
-    process.env.VERIFICATION_EMAIL_SENDER,
-    email,
-    'Email address verification',
-    `Please verify that you would like to use this email address for receiving 
-messages from the Fomo Player by opening the following address in your browser:
-${verificationURL}`,
-    `<p>Please verify that you would like to use this email address for receiving 
-messages from the Fomo Player by clicking 
-<a href="${verificationURL}">here</a> or opening the
-following address in your browser: ${verificationURL}.
-</p>`,
-  )
+  const { subject, contentHtml, text, category } = renderVerification({ verificationUrl: verificationURL })
+  await scheduleEmail(process.env.VERIFICATION_EMAIL_SENDER, email, subject, text, contentHtml, category)
 }
 
 module.exports.getAuthorizations = queryAuthorizations

@@ -166,6 +166,15 @@ module.exports = {
   internalAuthHandoffIssuer,
   internalAuthHandoffJwksUrl,
   internalAuthApiAudience,
+  // Outbound email. resendApiKey is the Resend provider key used for the
+  // production transport; non-production sends go to `${apiURL}/mock/email`.
+  // emailUnsubscribeSecret signs the stateless HMAC unsubscribe tokens;
+  // emailUnsubscribeMailto, when set, adds a mailto: variant to the
+  // List-Unsubscribe header. Unsubscribe/manage URLs are always built from
+  // apiURL/frontendURL — never hardcoded hosts.
+  resendApiKey: process.env.RESEND_API_KEY,
+  emailUnsubscribeSecret: process.env.EMAIL_UNSUBSCRIBE_SECRET,
+  emailUnsubscribeMailto: process.env.EMAIL_UNSUBSCRIBE_MAILTO || undefined,
   extensionAccessTokenTtlSeconds: 15 * 60,
   extensionRefreshTokenTtlSeconds: 90 * 24 * 60 * 60,
   // findExactMatchForSample reads these at call time so live Railway
