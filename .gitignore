@@ -75,3 +75,28 @@ packages/infrastructure/cdk.out/
 packages/back/public/static/
 packages/front/build/
 packages/integration-tests/tests_output/
+
+# macOS
+.DS_Store
+
+# Claude Code local state (skills/commands/settings under .claude stay tracked)
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+
+# Local dev launcher: exports real credentials, must never be committed
+start-multi-store-player.sh
+
+# Front-end build output copied into the back-end by the packages/front build
+# (`react-scripts build && cp -r build/* ../back/public/`).
+# packages/back/public/auth/ is hand-written and stays tracked.
+packages/back/public/index.html
+packages/back/public/asset-manifest.json
+packages/back/public/manifest.json
+packages/back/public/favicon.png
+packages/back/public/favicon.svg
+
+# Analyser working data: large and machine-generated.
+# analyser/data/ is NOT ignored - those are the shared test fixtures.
+analyser/downloads/
+analyser/panako_db/
+analyser/panako_db_worker_*
