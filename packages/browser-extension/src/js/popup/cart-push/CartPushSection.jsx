@@ -1,5 +1,7 @@
 import React from 'react'
 import browser from '../../browser'
+import CartDropdown from './CartDropdown.jsx'
+import { RunStatus } from '../../cart-push/state'
 
 const CART_PUSH_RUN_KEY = 'cartPushRun'
 const BATCH_SIZE_KEY = 'bandcampCartPushBatchSize'
@@ -56,10 +58,7 @@ const buildFullSummaryText = (run) => {
     lines.push('')
   }
   const r = run.results || {}
-  renderBucket(
-    run.store === 'bandcamp' ? 'Tabs opened' : 'Added',
-    r.added || [],
-  )
+  renderBucket(run.store === 'bandcamp' ? 'Tabs opened' : 'Added', r.added || [])
   if (run.store === 'beatport') renderBucket('Already in cart', r.alreadyInCart || [])
   renderBucket(`Not on ${storeLabel}`, r.notOnStore || [])
   renderBucket('Failed', r.failed || [])
@@ -206,10 +205,15 @@ export default class CartPushSection extends React.Component {
                     {t.artist} — {t.title}
                   </a>
                 ) : (
-                  <span>{t.artist} — {t.title}</span>
+                  <span>
+                    {t.artist} — {t.title}
+                  </span>
                 )}
                 {t.status || t.error ? (
-                  <span className="cart-push-error"> (status: {t.status ?? ''}, error: {t.error ?? ''})</span>
+                  <span className="cart-push-error">
+                    {' '}
+                    (status: {t.status ?? ''}, error: {t.error ?? ''})
+                  </span>
                 ) : null}
               </li>
             ))}
@@ -221,14 +225,11 @@ export default class CartPushSection extends React.Component {
 
   renderRunningState() {
     const { run } = this.state
+    // Beatport progress is shown in the top-level Status panel (same UI as
+    // other syncs). The section just shows a brief hint so the user knows
+    // why the start UI is gone.
     if (run.store === 'beatport') {
-      const total = (run.queue || []).length
-      const processed = run.processed || 0
-      return (
-        <p className="cart-push-progress">
-          Pushing "{run.beatportCartName}" — {processed} / {total}
-        </p>
-      )
+      return <p className="cart-push-progress">Push in progress…</p>
     }
     // Bandcamp running before first batch is opened — rare transient state.
     return <p className="cart-push-progress">Opening Bandcamp tabs…</p>
@@ -254,11 +255,7 @@ export default class CartPushSection extends React.Component {
     return (
       <div className="cart-push-summary">
         <h4>Push complete</h4>
-        {this.renderBucketList(
-          run.store === 'bandcamp' ? 'Tabs opened' : 'Added',
-          r.added || [],
-          'added',
-        )}
+        {this.renderBucketList(run.store === 'bandcamp' ? 'Tabs opened' : 'Added', r.added || [], 'added')}
         {run.store === 'beatport' && this.renderBucketList('Already in cart', r.alreadyInCart || [], 'alreadyInCart')}
         {this.renderBucketList(`Not on ${storeLabel}`, r.notOnStore || [], 'notOnStore')}
         {this.renderBucketList('Failed', r.failed || [], 'failed')}
@@ -284,36 +281,25 @@ export default class CartPushSection extends React.Component {
   }
 
   renderStartUi() {
-    const { store, isCurrent } = this.props
+    const { store, isCurrent, busy } = this.props
     const { carts, selectedCartId, loading } = this.state
     if (!isCurrent) return null
     const cartsForPicker = carts || []
-    const buttonLabel =
-      store === 'beatport'
-        ? selectedCartId
-          ? `Push to Beatport cart "FOMO: ${(cartsForPicker.find((c) => String(c.id) === String(selectedCartId)) || {}).name || ''}"`
-          : 'Push to Beatport cart'
-        : 'Open tabs to push to Bandcamp'
+    const buttonLabel = store === 'beatport' ? 'Push to Beatport cart' : 'Open tabs to push to Bandcamp'
+    const disableInputs = loading || !!busy
     return (
       <div className="cart-push-start">
-        <label>
-          Fomo Player cart:
-          <br />
-          <select
-            value={selectedCartId}
-            onChange={(e) => this.setState({ selectedCartId: e.target.value })}
-            disabled={loading}
-          >
-            <option value="">— pick a cart —</option>
-            {cartsForPicker.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-                {c.is_default ? ' (default)' : ''}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button onClick={this.handleStart} disabled={loading || !selectedCartId}>
+        <CartDropdown
+          carts={cartsForPicker}
+          selectedCartId={selectedCartId}
+          onChange={(id) => this.setState({ selectedCartId: id })}
+          disabled={disableInputs}
+        />
+        <button
+          className="cart-push-start__action"
+          onClick={this.handleStart}
+          disabled={disableInputs || !selectedCartId}
+        >
           {buttonLabel}
         </button>
       </div>
@@ -323,22 +309,21 @@ export default class CartPushSection extends React.Component {
   render() {
     const { store } = this.props
     const { run } = this.state
-    const otherStoreLabel = store === 'beatport' ? 'Bandcamp' : 'Beatport'
 
     return (
       <div className="cart-push-section">
-        <h3>Push Fomo Player cart</h3>
+        <h3>Push cart</h3>
         {run && run.store === store ? (
           <>
-            {run.status === 'running' && this.renderRunningState()}
-            {run.status === 'awaiting-next-batch' && this.renderAwaitingNextBatch()}
-            {run.status === 'completed' && this.renderSummary()}
-            {run.status === 'failed' && this.renderFailureSummary()}
+            {run.status === RunStatus.RUNNING && this.renderRunningState()}
+            {run.status === RunStatus.AWAITING_NEXT_BATCH && this.renderAwaitingNextBatch()}
+            {run.status === RunStatus.COMPLETED && this.renderSummary()}
+            {run.status === RunStatus.FAILED && this.renderFailureSummary()}
           </>
-        ) : run && run.status !== 'completed' && run.status !== 'failed' ? (
+        ) : run && run.status !== RunStatus.COMPLETED && run.status !== RunStatus.FAILED ? (
           <p className="cart-push-other-store-hint">
-            A {run.store === 'beatport' ? 'Beatport' : 'Bandcamp'} push is in progress — wait or
-            dismiss it before starting another.
+            A {run.store === 'beatport' ? 'Beatport' : 'Bandcamp'} push is in progress — wait or dismiss it before
+            starting another.
           </p>
         ) : (
           this.renderStartUi()

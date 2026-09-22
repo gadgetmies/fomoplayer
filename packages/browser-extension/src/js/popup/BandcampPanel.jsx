@@ -100,7 +100,7 @@ export default class BandcampPanel extends React.Component {
   }
 
   render() {
-    const { running, isCurrent } = this.props
+    const { running, isCurrent, cartPushBusy } = this.props
     const { loggedIn, hasPlayables } = this.state
 
     return (
@@ -118,22 +118,14 @@ export default class BandcampPanel extends React.Component {
         ) : (
           <>
             <p>
-              <button
-                id="bandcamp-current"
-                disabled={running || !hasPlayables}
-                onClick={() => this.sendCurrentPage()}
-              >
+              <button id="bandcamp-current" disabled={running || !hasPlayables} onClick={() => this.sendCurrentPage()}>
                 Send tracks from current page
               </button>
               <br />
             </p>
             <h3>Sync{loggedIn ? '' : ' (Requires login)'}</h3>
             <p>
-              <button
-                id="bandcamp-feed"
-                disabled={running || !loggedIn}
-                onClick={() => this.sendFeed()}
-              >
+              <button id="bandcamp-feed" disabled={running || !loggedIn} onClick={() => this.sendFeed()}>
                 Feed
               </button>
             </p>
@@ -149,7 +141,7 @@ export default class BandcampPanel extends React.Component {
             </p>
           </>
         )}
-        <CartPushSection store="bandcamp" isCurrent={isCurrent} />
+        <CartPushSection store="bandcamp" isCurrent={isCurrent} busy={running || cartPushBusy} />
       </div>
     )
   }

@@ -16,14 +16,7 @@
 // continues from `queue[processed]`.
 
 const { resolveCartTracks } = require('./resolve')
-const {
-  RunStatus,
-  withRunLock,
-  readRun,
-  replaceRun,
-  newRunId,
-  emptyResults,
-} = require('./state')
+const { RunStatus, isTerminal, withRunLock, readRun, replaceRun, newRunId, emptyResults } = require('./state')
 
 const SESSION_URL = 'https://www.beatport.com/api/auth/session'
 const API_BASE = 'https://api.beatport.com/v4'
@@ -35,15 +28,27 @@ const safeJson = async (response, label) => {
   const contentType = response.headers.get('content-type') || ''
   const text = await response.text()
   if (!contentType.includes('application/json')) {
-    console.warn(`[cart-push:beatport] ${label}: non-JSON response`,
-      'status=', response.status, 'content-type=', contentType, 'body=', text.slice(0, 2000))
+    console.warn(
+      `[cart-push:beatport] ${label}: non-JSON response`,
+      'status=',
+      response.status,
+      'content-type=',
+      contentType,
+      'body=',
+      text.slice(0, 2000),
+    )
     return null
   }
   try {
     return JSON.parse(text)
   } catch (e) {
-    console.warn(`[cart-push:beatport] ${label}: JSON.parse failed`,
-      'status=', response.status, 'body=', text.slice(0, 2000))
+    console.warn(
+      `[cart-push:beatport] ${label}: JSON.parse failed`,
+      'status=',
+      response.status,
+      'body=',
+      text.slice(0, 2000),
+    )
     return null
   }
 }
@@ -134,7 +139,9 @@ const getBeatportCartItemIds = async (cartId, bearer, deps = {}) => {
   const fallback = await fetchFn(fallbackUrl, { headers: bearerHeaders(bearer) })
   if (!fallback.ok) {
     const text = await fallback.text().catch(() => '')
-    console.warn(`[cart-push:beatport] getBeatportCartItemIds fallback failed: ${fallback.status} ${text.slice(0, 500)}`)
+    console.warn(
+      `[cart-push:beatport] getBeatportCartItemIds fallback failed: ${fallback.status} ${text.slice(0, 500)}`,
+    )
     return new Set()
   }
   const fallbackBody = await safeJson(fallback, `cart ${cartId} items`)
@@ -159,6 +166,27 @@ const postBeatportCartItem = async (cartId, itemId, bearer, deps = {}) => {
   const text = await response.text().catch(() => '')
   return { ok: false, status: response.status, error: text.slice(0, 500) }
 }
+
+// Progress reporting is best-effort: the cart-push modules are also driven
+// by unit tests that don't wire `setStatus`/`clearStatus` through `deps`.
+// Skip when missing rather than blow up.
+const callDep = async (deps, name, ...args) => {
+  try {
+    if (typeof deps?.[name] === 'function') {
+      await deps[name](...args)
+    }
+  } catch (_) {}
+}
+
+// The Status panel is the only place the user sees cart-push progress, so the
+// label carries what the in-panel line used to: which Beatport cart is being
+// filled, and how far along the queue we are.
+const progressLabel = (beatportCartName, processed, total) =>
+  `Pushing "${beatportCartName}" \u2014 ${processed} / ${total}`
+
+const reportProgress = (deps, label, percent) => callDep(deps, 'setStatus', label, percent)
+
+const reportDone = (deps) => callDep(deps, 'clearStatus')
 
 const writeFailedRun = async ({ fomoplayerCartId, fomoplayerCartName, error }) => {
   const now = new Date().toISOString()
@@ -188,6 +216,7 @@ const startBeatportRun = async ({ fomoplayerCartId }, deps = {}) => {
         fomoplayerCartName: '',
         error: 'Not logged in to Beatport',
       })
+      await reportDone(deps)
       return { ok: false, error: run.error }
     }
 
@@ -204,6 +233,7 @@ const startBeatportRun = async ({ fomoplayerCartId }, deps = {}) => {
         fomoplayerCartName: cartName,
         error: e?.message || 'Could not list Beatport carts',
       })
+      await reportDone(deps)
       return { ok: false, error: run.error }
     }
 
@@ -216,6 +246,7 @@ const startBeatportRun = async ({ fomoplayerCartId }, deps = {}) => {
           fomoplayerCartName: cartName,
           error: `Could not create FOMO cart on Beatport — create a cart named '${beatportCartName}' on Beatport and re-run`,
         })
+        await reportDone(deps)
         return { ok: false, error: run.error }
       }
       beatportCart = created.cart
@@ -251,7 +282,11 @@ const startBeatportRun = async ({ fomoplayerCartId }, deps = {}) => {
       results,
     }
     await replaceRun(run)
-    if (queue.length === 0) return { ok: true, run }
+    if (queue.length === 0) {
+      await reportDone(deps)
+      return { ok: true, run }
+    }
+    await reportProgress(deps, progressLabel(beatportCartName, 0, queue.length), 0)
     await runBeatportLoop(deps)
     return { ok: true }
   })
@@ -268,12 +303,7 @@ const runBeatportLoop = async (deps = {}) => {
   loopInFlight = true
   try {
     let run = await readRun()
-    while (
-      run &&
-      run.store === 'beatport' &&
-      run.status === RunStatus.RUNNING &&
-      run.processed < run.queue.length
-    ) {
+    while (run && run.store === 'beatport' && run.status === RunStatus.RUNNING && run.processed < run.queue.length) {
       const track = run.queue[run.processed]
       const bearer = await fetchBeatportAccessToken(deps)
       if (!bearer) {
@@ -284,20 +314,32 @@ const runBeatportLoop = async (deps = {}) => {
           error: 'Not logged in to Beatport',
         }
         await replaceRun(run)
-        return
+        // `break`, not `return`: the terminal-state check below owns clearing
+        // the Status panel, and a `return` here skipped it.
+        break
       }
       const result = await postBeatportCartItem(run.beatportCartId, track.itemId, bearer, deps)
       const nextResults = {
         ...run.results,
         added: result.ok ? [...run.results.added, track] : run.results.added,
-        failed: result.ok ? run.results.failed : [...run.results.failed, { ...track, status: result.status, error: result.error }],
+        failed: result.ok
+          ? run.results.failed
+          : [...run.results.failed, { ...track, status: result.status, error: result.error }],
       }
       run = { ...run, results: nextResults, processed: run.processed + 1 }
       await replaceRun(run)
+      const percent = Math.min(100, Math.round((run.processed / run.queue.length) * 100))
+      await reportProgress(deps, progressLabel(run.beatportCartName, run.processed, run.queue.length), percent)
     }
     if (run && run.store === 'beatport' && run.status === RunStatus.RUNNING && run.processed >= run.queue.length) {
       run = { ...run, status: RunStatus.COMPLETED, completedAt: new Date().toISOString() }
       await replaceRun(run)
+    }
+    // Any terminal state for *this* worker's loop means progress should
+    // stop being advertised — clears both completion and the auth-failure
+    // FAILED branch above.
+    if (run && isTerminal(run.status)) {
+      await reportDone(deps)
     }
   } finally {
     loopInFlight = false
