@@ -96,7 +96,20 @@ packages/back/public/favicon.png
 packages/back/public/favicon.svg
 
 # Analyser working data: large and machine-generated.
-# analyser/data/ is NOT ignored - those are the shared test fixtures.
 analyser/downloads/
 analyser/panako_db/
 analyser/panako_db_worker_*
+analyser/last_fingerprint_run.json
+analyser/last_score_run.json
+
+# Source audio for the local Panako diagnostics (debug_match.py and the
+# panako-gated tests in test_parallel_preview_fingerprinting.py). These are
+# full commercial tracks, ~25 MB, and CI does not need them: the backend
+# regression test reads pre-extracted fingerprints from
+# packages/back/test/fixtures/sample-matching/ instead. Obtain them
+# out-of-band; the tests that use them skip when they are absent.
+analyser/data/
+
+# __pycache__ anywhere under analyser (the top-level rule above only covers
+# analyser/__pycache__ itself).
+analyser/**/__pycache__/
