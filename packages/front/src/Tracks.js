@@ -909,15 +909,28 @@ class Tracks extends Component {
                 </td>
               </tr>
             )}
-            <tr style={{ width: '100%', background: 'none', position: 'fixed', zIndex: 1, marginTop: 3 }}>
+            <tr
+              className="scroll-to-current-top"
+              style={{
+                margin: 0,
+                display: 'flex',
+                width: '100%',
+                height: 0,
+                background: 'none',
+                position: 'sticky',
+                zIndex: 100,
+                top: 0,
+              }}
+            >
               <td
                 style={{
                   width: '100%',
                   display: this.state.currentAboveScreen ? 'flex' : 'none',
                   justifyContent: 'center',
+                  position: 'relative',
                 }}
               >
-                {scrollToCurrentButton}
+                <div style={{ display: 'flex', position: 'absolute', top: 3 }}>{scrollToCurrentButton}</div>
               </td>
             </tr>
             {!this.props.fetchingCartDetails &&
