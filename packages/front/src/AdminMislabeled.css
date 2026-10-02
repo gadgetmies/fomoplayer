@@ -211,6 +211,67 @@
   border: 1px solid #3c5a3c;
 }
 
+.mislabeled-reassign {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.mislabeled-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mislabeled-targets li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 8px;
+  background: #2a3a4a;
+  border: 1px solid #3c5a6a;
+  border-radius: 12px;
+  font-size: 0.85em;
+}
+
+.mislabeled-target-remove {
+  padding: 0 6px;
+  line-height: 1.4;
+  background: transparent;
+  color: #ccc;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.mislabeled-target-remove:hover {
+  background: #44566a;
+  color: white;
+}
+
+.mislabeled-target-remove:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mislabeled-reassign-apply {
+  padding: 6px 12px;
+  background: var(--fp-brand-primary, #007bff);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mislabeled-reassign-apply:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .mislabeled-picker {
   display: flex;
   gap: 6px;
