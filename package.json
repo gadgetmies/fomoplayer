@@ -32,7 +32,8 @@
     "db:backup": "heroku pg:backups:capture",
     "backlog:sync": "node scripts/backlog-sync sync",
     "backlog:sync:init": "node scripts/backlog-sync init",
-    "backlog:sync:status": "node scripts/backlog-sync status"
+    "backlog:sync:status": "node scripts/backlog-sync status",
+    "postinstall": "patch-package"
   },
   "repository": {
     "type": "git",
@@ -66,6 +67,12 @@
     "**/editorconfig/minimatch": "^9.0.9",
     "**/pm2/js-yaml": "^4.3.2",
     "**/get-uri/basic-ftp": "^6.2.1",
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "@svgr/webpack": "^8.1.0",
+    "resolve-url-loader": "^5.0.0",
+    "**/react-scripts/webpack-dev-server": "^5.2.6",
+    "**/http-proxy-agent/@tootallnate/once": "^2.0.1",
+    "**/minio/stream-json": "^3.7.0",
+    "decode-uri-component": "^0.5.0"
   }
 }
