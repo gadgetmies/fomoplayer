@@ -159,7 +159,7 @@ jobs:
       # workflow.
       - name: Run coding agent
         id: agent
-        uses: anthropics/claude-code-action@v0
+        uses: anthropics/claude-code-action@v1.0.74
         continue-on-error: true
         with:
           prompt_file: ${{ steps.prompt.outputs.prompt_path }}
