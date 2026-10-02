@@ -1,7 +1,16 @@
 diff --git a/node_modules/minio/dist/esm/notification.mjs b/node_modules/minio/dist/esm/notification.mjs
-index 2fe075b..3060ac2 100644
+index 2fe075b..a07da8d 100644
 --- a/node_modules/minio/dist/esm/notification.mjs
 +++ b/node_modules/minio/dist/esm/notification.mjs
+@@ -15,7 +15,7 @@
+  */
+ 
+ import { EventEmitter } from 'eventemitter3';
+-import jsonLineParser from 'stream-json/jsonl/Parser.js';
++import jsonLineParser from 'stream-json/jsonl/parser.js';
+ import { DEFAULT_REGION } from "./helpers.mjs";
+ import { pipesetup, uriEscape } from "./internal/helper.mjs";
+ 
 @@ -176,7 +176,7 @@ export class NotificationPoller extends EventEmitter {
        bucketName: this.bucketName,
        query
@@ -12,9 +21,18 @@ index 2fe075b..3060ac2 100644
          // Data is flushed periodically (every 5 seconds), so we should
          // handle it after flushing from the JSON parser.
 diff --git a/node_modules/minio/dist/main/notification.js b/node_modules/minio/dist/main/notification.js
-index 8d8e8b3..39a76ac 100644
+index 8d8e8b3..b236da9 100644
 --- a/node_modules/minio/dist/main/notification.js
 +++ b/node_modules/minio/dist/main/notification.js
+@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
+   value: true
+ });
+ var _eventemitter = require("eventemitter3");
+-var _Parser = require("stream-json/jsonl/Parser.js");
++var _Parser = require("stream-json/jsonl/parser.js");
+ var _helpers = require("./helpers.js");
+ var _helper = require("./internal/helper.js");
+ /*
 @@ -196,7 +196,7 @@ class NotificationPoller extends _eventemitter.EventEmitter {
        bucketName: this.bucketName,
        query
