@@ -170,18 +170,30 @@ SELECT track_id
     JSON_BUILD_OBJECT('preview_id', store__track_preview_id,
                       'url', store__track_preview_url,
                       'start_ms', store__track_preview_start_ms,
-                      'end_ms', store__track_preview_end_ms)
+                      'end_ms', store__track_preview_end_ms,
+                      'store', store_name,
+                      'store_track_id', store__track_store_id,
+                      -- Bandcamp stream URLs expire and aren't stored; the analyser
+                      -- resolves them from the release page.
+                      'release_url', CASE WHEN store__track_preview_url IS NULL THEN
+                        (SELECT store__release_url
+                         FROM release__track rt
+                           JOIN store__release sr ON sr.release_id = rt.release_id
+                         WHERE rt.track_id = track.track_id
+                           AND sr.store_id = store.store_id
+                         LIMIT 1) END)
        ) AS previews
 FROM
   track
   NATURAL JOIN store__track
+  NATURAL JOIN store
   NATURAL JOIN store__track_preview p
   NATURAL LEFT JOIN track__cart
   NATURAL LEFT JOIN cart
 WHERE NOT EXISTS (SELECT 1 FROM store__track_preview_embedding e
                        WHERE p.store__track_preview_id = e.store__track_preview_id
                          AND store__track_preview_embedding_type = ${model})
-  AND store__track_preview_url IS NOT NULL
+  AND (store__track_preview_url IS NOT NULL OR store_name = 'Bandcamp')
   AND NOT store__track_preview_missing
 GROUP BY track_id, track_isrc`
       // language=

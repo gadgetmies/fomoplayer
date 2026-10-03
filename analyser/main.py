@@ -7,6 +7,7 @@ from essentia.standard import MonoLoader, TensorflowPredictEffnetDiscogs
 import json
 import requests
 from auth import auth_header, get_api_url, request_error
+import bandcamp
 
 from pydub import AudioSegment
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -17,6 +18,7 @@ import spotipy
 import sys
 import taglib
 import tempfile
+import time
 import traceback
 import urllib.request
 import urllib.parse
@@ -288,6 +290,26 @@ def get_spotify_details(isrc):
         return {}
 '''
 
+def resolve_bandcamp_url(preview):
+    """Look up the stream URL of a Bandcamp preview.
+
+    Returns the URL, None when Bandcamp has no stream for the track (the
+    preview is then reported missing), or False after a transient failure, so
+    the preview stays in the queue for a later run.
+    """
+    for attempt in range(2):
+        try:
+            return bandcamp.resolve_stream_url(preview.get("release_url"), preview.get("store_track_id"))
+        except bandcamp.RateLimited as e:
+            print(f"{e}; pausing for {bandcamp.RATE_LIMIT_PAUSE_S} s", flush=True)
+            if attempt == 0:
+                time.sleep(bandcamp.RATE_LIMIT_PAUSE_S)
+        except requests.RequestException as e:
+            print(f"Resolving Bandcamp stream for preview {preview.get('preview_id')} failed: {e}")
+            return False
+    return False
+
+
 def build_model(model_name):
     graph_filename = f"./models/{model_name}.pb"
     return TensorflowPredictEffnetDiscogs(graphFilename=graph_filename, output="PartitionedCall:1")
@@ -441,6 +463,15 @@ if __name__ == '__main__':
                 for preview in previews:
                     previewUrl = preview.get("url")
                     previewId = preview.get("preview_id")
+                    if not previewUrl and preview.get("store") == "Bandcamp":
+                        previewUrl = resolve_bandcamp_url(preview)
+                        if previewUrl is None:
+                            print(f"Bandcamp has no stream for preview {previewId}")
+                            tracks.append({"id": track.get('track_id'), "isrc": track.get('track_isrc'),
+                                           "preview_id": previewId, "missing": True})
+                            continue
+                        if previewUrl is False:
+                            continue
                     print(f"Downloading preview with id {previewId} from : {previewUrl}")
                     try:
                         local_filename, _ = urllib.request.urlretrieve(previewUrl)
