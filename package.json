@@ -67,7 +67,7 @@
     "**/editorconfig/minimatch": "^9.0.9",
     "**/pm2/js-yaml": "^4.3.2",
     "**/get-uri/basic-ftp": "^6.2.1",
-    "uuid": "^11.1.1",
+    "uuid": "^14.0.2",
     "@svgr/webpack": "^8.1.0",
     "resolve-url-loader": "^5.0.0",
     "**/react-scripts/webpack-dev-server": "^5.2.6",
