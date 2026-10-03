@@ -1,4 +1,4 @@
-const router = require('express-promise-router')()
+const router = require('express').Router()
 const { search } = require('./logic.js')
 const { getUserPlaylists, getUserFollowedArtists, followArtists } = require('./logic')
 const { getPreviewDetails } = require('../bandcamp/logic')

@@ -1,6 +1,6 @@
 const bodyParser = require('body-parser')
 
-const router = require('express-promise-router')()
+const router = require('express').Router()
 const { getPreview, searchForTracks, getFollowDetails } = require('./logic.js')
 const { Unauthorized } = require('./shared/httpErrors')
 const adminRouter = require('./admin/index.js')

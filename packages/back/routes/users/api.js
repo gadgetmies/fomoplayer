@@ -62,7 +62,6 @@ const { queryDefaultCartId } = require('../shared/db/cart.js')
 
 const { getTrackIdMappingForStoreUrl } = require('../shared/tracks.js')
 
-const typeIs = require('type-is')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
@@ -81,7 +80,7 @@ const {
   deleteHeardSince,
 } = require('./db')
 
-const router = require('express-promise-router')()
+const router = require('express').Router()
 
 // Current user's capabilities. `isAdmin` lets the client decide whether to
 // surface the admin UI; the admin API is independently guarded by
@@ -279,7 +278,7 @@ router.post('/follows/artists', async (req, res) => {
   } = req
   let addedArtists
 
-  if (typeIs(req, 'application/vnd.multi-store-player.artist-ids+json')) {
+  if (req.is('application/vnd.multi-store-player.artist-ids+json')) {
     addedArtists = await addArtistFollowsWithIds(body, userId)
   } else {
     const sourceId = await insertSource({ operation: '/follows/artists', artists: body, userId, storeUrl })
@@ -296,7 +295,7 @@ router.post('/follows/labels', async (req, res) => {
   } = req
   let addedLabels = []
 
-  if (typeIs(req, 'application/vnd.multi-store-player.label-ids+json')) {
+  if (req.is('application/vnd.multi-store-player.label-ids+json')) {
     addedLabels = await addLabelFollowsWithIds(body, userId)
   } else {
     const sourceId = await insertSource({ operation: '/follows/labels', labels: body, userId, storeUrl })
@@ -388,10 +387,6 @@ router.put('/follows/:type/:id', async ({ user: { id: userId }, params: { id, ty
 
 router.get('/carts', async ({ user: { id: userId }, query: { store: stores } }, res) => {
   res.send(await getUserCarts(userId, stores))
-})
-
-router.get('/carts?fetch=tracks', async ({ user: { id: userId }, query: { store: stores } }, res) => {
-  res.send(await getUserCartsWithTracks(userId, stores))
 })
 
 router.post('/carts', async ({ user: { id: userId }, body }, res) => {

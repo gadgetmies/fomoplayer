@@ -10,8 +10,8 @@
 // prefetchers / scanners cannot silently opt users out with a bare GET) and
 // then offers resubscribe.
 
+const express = require('express')
 const bodyParser = require('body-parser')
-const expressPromiseRouter = require('express-promise-router')
 const logger = require('fomoplayer_shared').logger(__filename)
 const {
   validateToken: defaultValidateToken,
@@ -106,7 +106,7 @@ const createEmailRouter = ({
   suppress = defaultSuppress,
   unsuppress = defaultUnsuppress,
 } = {}) => {
-  const router = expressPromiseRouter()
+  const router = express.Router()
   router.use(bodyParser.urlencoded({ extended: false }))
   router.use(bodyParser.json())
 

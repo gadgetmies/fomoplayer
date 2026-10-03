@@ -1,5 +1,5 @@
 'use strict'
-const router = require('express-promise-router')()
+const router = require('express').Router()
 const { Parser } = require('node-sql-parser')
 const { pool } = require('fomoplayer_shared').db.pg
 const pg = require('fomoplayer_shared').db.pg
