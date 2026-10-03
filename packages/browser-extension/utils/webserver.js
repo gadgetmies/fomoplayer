@@ -11,7 +11,8 @@ const port = config.PORT
 for (const entryName in webPackConfig.entry) {
   if (excludeEntriesToHotReload.indexOf(entryName) === -1) {
     webPackConfig.entry[entryName] = [
-      'webpack-dev-server/client?http://localhost:' + port,
+      // webpack-dev-server 6 only exports ./client/*, and its client reads these query params.
+      `webpack-dev-server/client/index.js?protocol=ws:&hostname=localhost&port=${port}&pathname=/ws&logging=info`,
       'webpack/hot/dev-server',
     ].concat(webPackConfig.entry[entryName])
   }
@@ -25,7 +26,7 @@ const compiler = webpack(webPackConfig)
 
 const server = new WebpackDevServer(
   {
-    https: false,
+    server: 'http',
     hot: false,
     client: false,
     host: 'localhost',
