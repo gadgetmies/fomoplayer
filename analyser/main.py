@@ -523,26 +523,36 @@ if __name__ == '__main__':
                         print("Preparing audio")
                         print("Processing audio")
                         embeddings = compute_temporal_embedding(output_wav_path, model)
-                        vector = embeddings.T.mean(1).tolist()
+                        if len(embeddings) == 0:
+                            # Too short for a single model patch (e.g. one-shots in a
+                            # Bandcamp sample pack). Report it missing so it leaves the
+                            # queue instead of being retried in every batch.
+                            print(f"Audio too short to embed ({sound.duration_seconds:.1f} s), "
+                                  f"reporting preview {track['preview_id']} missing")
+                            requests.post(f"{get_api_url()}/admin/analyse",
+                                          headers=auth_header(),
+                                          json=[{"preview_id": track["preview_id"], "missing": True}])
+                        else:
+                            vector = embeddings.T.mean(1).tolist()
 
-                        preview_id = track.get("preview_id")
-                        track_id = track.get("id")
-                        label = f"track_id={track_id}" if track_id is not None else None
-                        if not sanity.record_and_check(preview_id, vector, label=label, group_key=track_id):
-                            sys.exit(1)
+                            preview_id = track.get("preview_id")
+                            track_id = track.get("id")
+                            label = f"track_id={track_id}" if track_id is not None else None
+                            if not sanity.record_and_check(preview_id, vector, label=label, group_key=track_id):
+                                sys.exit(1)
 
-                        print(f"Processing done, sending details for preview with id: {preview_id}")
-                        data = [{"id": preview_id,
-                                 "embeddings": json.dumps(vector),
-                                 "model": model_name,
-                                 "spotify": spotify_details}]
-                        res = requests.post(f"{get_api_url()}/admin/analyse",
-                                            headers=auth_header(),
-                                            json=data)
-                        if res.status_code != 200:
-                            print(f"Error reporting results for {track['id']}")
-                            print(f"Status code: {res.status_code}")
-                            print(res.text)
+                            print(f"Processing done, sending details for preview with id: {preview_id}")
+                            data = [{"id": preview_id,
+                                     "embeddings": json.dumps(vector),
+                                     "model": model_name,
+                                     "spotify": spotify_details}]
+                            res = requests.post(f"{get_api_url()}/admin/analyse",
+                                                headers=auth_header(),
+                                                json=data)
+                            if res.status_code != 200:
+                                print(f"Error reporting results for {track['id']}")
+                                print(f"Status code: {res.status_code}")
+                                print(res.text)
                     except Exception as e:
                         print(f"Error processing {absolute_file_path}")
                         print(e)
