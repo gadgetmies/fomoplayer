@@ -13,7 +13,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.7.1",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@mebtte/react-media-session": "https://github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951",
-    "@sentry/browser": "^8.47.0",
+    "@sentry/browser": "^11.4.0",
     "babel-plugin-macros": "^3.1.0",
     "chart.js": "^4.4.1",
     "fomoplayer_shared": "1.0.0",

@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@hot-loader/react-dom": "^17.0.1",
-    "@sentry/browser": "^8.47.0",
+    "@sentry/browser": "^11.4.0",
     "dotenv": "^18.0.5",
     "fomoplayer_shared": "1.0.0",
     "new-github-issue-url": "^1.0.0",
