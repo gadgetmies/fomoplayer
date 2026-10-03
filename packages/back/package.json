@@ -40,7 +40,7 @@
     "dotenv": "^18.0.5",
     "express": "^4.22.3",
     "express-promise-router": "^4.1.1",
-    "express-rate-limit": "^7.3.1",
+    "express-rate-limit": "^8.7.0",
     "express-session": "^1.19.0",
     "fomoplayer_shared": "1.0.0",
     "hsl-to-rgb-for-reals": "^1.1.1",
