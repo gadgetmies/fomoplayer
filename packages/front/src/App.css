@@ -6,6 +6,12 @@
 @import './CartSelect.css';
 @import './Popup.css';
 
+/* Font Awesome 7 makes every icon 1.25em wide; keep the v6 natural widths the layout was built
+   for. Icons that need a fixed width can still opt in with fa-fw. */
+:root {
+  --fa-width: auto;
+}
+
 html {
   --page-container-background-color: #333;
   --top-bar-background-color: #222;

@@ -1,5 +1,4 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { icon } from '@fortawesome/fontawesome-svg-core/import.macro'
 import React, { Component } from 'react'
 import ExternalLink from './ExternalLink'
 import SpinnerButton from './SpinnerButton'

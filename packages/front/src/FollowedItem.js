@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { icon } from '@fortawesome/fontawesome-svg-core/import.macro'
+import { faStar } from '@fortawesome/free-solid-svg-icons'
+import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons'
 import React, { Component } from 'react'
 
 class FollowedItem extends Component {
@@ -24,9 +25,9 @@ class FollowedItem extends Component {
                 data-onboarding-id="star-button"
               >
                 {this.props.starred ? (
-                  <FontAwesomeIcon icon={icon({ name: 'star', style: 'solid' })} />
+                  <FontAwesomeIcon icon={faStar} />
                 ) : (
-                  <FontAwesomeIcon icon={icon({ name: 'star', style: 'regular' })} />
+                  <FontAwesomeIcon icon={faStarRegular} />
                 )}
               </button>{' '}
             </>
