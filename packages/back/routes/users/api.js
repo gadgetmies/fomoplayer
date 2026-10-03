@@ -210,12 +210,18 @@ router.patch('/ignores/artists-on-labels', async ({ user: { id: authUserId }, bo
   res.status(204).send()
 })
 
+const isIdArray = (body) =>
+  Array.isArray(body) &&
+  body.length > 0 &&
+  body.every((id) => Number.isInteger(id) || (typeof id === 'string' && /^\d+$/.test(id)))
+
 router.get('/ignores/labels', async ({ user: { id: authUserId }, query: { store: stores } }, res) => {
   const labelIgnores = await getUserLabelIgnores(authUserId, stores)
   res.send(labelIgnores)
 })
 
 router.post('/ignores/labels', async ({ user: { id: authUserId }, body }, res) => {
+  if (!isIdArray(body)) return res.status(400).json({ error: 'Body must be a non-empty array of ids' })
   await addLabelsToIgnore(authUserId, body)
   res.status(204).send()
 })
@@ -231,6 +237,7 @@ router.get('/ignores/artists', async ({ user: { id: authUserId }, query: { store
 })
 
 router.post('/ignores/artists', async ({ user: { id: authUserId }, body }, res) => {
+  if (!isIdArray(body)) return res.status(400).json({ error: 'Body must be a non-empty array of ids' })
   await addArtistsToIgnore(authUserId, body)
   res.status(204).send()
 })
@@ -241,6 +248,7 @@ router.delete('/ignores/artists/:id', async ({ user: { id: authUserId }, params:
 })
 
 router.post('/ignores/releases', async ({ user: { id: authUserId }, body }, res) => {
+  if (!isIdArray(body)) return res.status(400).json({ error: 'Body must be a non-empty array of ids' })
   await addReleasesToIgnore(authUserId, body)
   res.status(204).send()
 })
