@@ -98,5 +98,12 @@ module.exports = {
     return results
   },
 
+  getTrack: (trackId) => apiGet(`/catalog/tracks/${trackId}/`),
+
+  // The tracks collection accepts a comma-separated id filter. Callers should
+  // still match results by id, as missing/unreleased ids are silently dropped.
+  getTracksByIds: async (trackIds) =>
+    (await apiGet(`/catalog/tracks/?id=${trackIds.join(',')}&per_page=${trackIds.length}`)).results,
+
   getTracksByIsrc: async (isrc) => (await apiGet(`/catalog/tracks/?isrc=${encodeURIComponent(isrc)}`)).results,
 }

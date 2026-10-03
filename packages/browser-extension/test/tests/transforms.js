@@ -20,7 +20,7 @@ const release = (overrides) => ({
 })
 
 test({
-  'beatportTrackTransform': {
+  beatportTrackTransform: {
     'maps a Beatport track payload to the canonical shape': () => {
       const input = {
         id: 12345,
@@ -59,9 +59,82 @@ test({
       })
       assert.strictEqual(out.version, 'Extended Mix')
     },
+
+    'maps the genre and the v4 sub_genre': () => {
+      const out = beatportTrackTransform({
+        id: 1,
+        slug: 's',
+        name: 'Foo',
+        artists: [],
+        remixers: [],
+        genre: { id: 1, name: 'Drum & Bass', slug: 'drum-bass', url: 'https://api.beatport.com/v4/catalog/genres/1/' },
+        sub_genre: { id: 7, name: 'Liquid', slug: 'liquid', url: 'https://api.beatport.com/v4/catalog/sub-genres/7/' },
+      })
+      assert.deepStrictEqual(out.genres, [
+        { name: 'Drum & Bass', id: 'genres/1', url: 'https://api.beatport.com/v4/catalog/genres/1/' },
+        { name: 'Liquid', id: 'sub-genres/7', url: 'https://api.beatport.com/v4/catalog/sub-genres/7/' },
+      ])
+    },
+
+    'maps the legacy page-props subgenre key': () => {
+      const out = beatportTrackTransform({
+        id: 1,
+        slug: 's',
+        name: 'Foo',
+        artists: [],
+        remixers: [],
+        genre: { id: 5, name: 'House', slug: 'house', url: 'u1' },
+        subgenre: { id: 12, name: 'Disco House', slug: 'disco-house', url: 'u2' },
+      })
+      assert.deepStrictEqual(
+        out.genres.map(({ id }) => id),
+        ['genres/5', 'sub-genres/12'],
+      )
+    },
+
+    'keys genre and sub-genre ids apart, as Beatport numbers them separately': () => {
+      const out = beatportTrackTransform({
+        id: 1,
+        slug: 's',
+        name: 'Foo',
+        artists: [],
+        remixers: [],
+        genre: { id: 107, name: 'Pop', slug: 'pop', url: 'u1' },
+        sub_genre: { id: 107, name: 'Pop', slug: 'pop', url: 'u2' },
+      })
+      assert.deepStrictEqual(
+        out.genres.map(({ id }) => id),
+        ['genres/107', 'sub-genres/107'],
+      )
+    },
+
+    'skips a genre without an id rather than keying it by slug': () => {
+      const out = beatportTrackTransform({
+        id: 1,
+        slug: 's',
+        name: 'Foo',
+        artists: [],
+        remixers: [],
+        genre: { name: 'House', slug: 'house', url: 'u1' },
+      })
+      assert.deepStrictEqual(out.genres, [])
+    },
+
+    'skips null genre and sub_genre': () => {
+      const out = beatportTrackTransform({
+        id: 1,
+        slug: 's',
+        name: 'Foo',
+        artists: [],
+        remixers: [],
+        genre: { id: 5, name: 'House', slug: 'house', url: 'u1' },
+        sub_genre: null,
+      })
+      assert.deepStrictEqual(out.genres, [{ name: 'House', id: 'genres/5', url: 'u1' }])
+    },
   },
 
-  'bandcampTagTracksTransform': {
+  bandcampTagTracksTransform: {
     'projects to a list of {id} entries from Bandcamp tag-feed payloads': () => {
       const out = bandcampTagTracksTransform([
         { item_id: 1, title: 'Foo' },
@@ -71,7 +144,7 @@ test({
     },
   },
 
-  'bandcampReleasesTransform': {
+  bandcampReleasesTransform: {
     'keeps the subdomain as the artist id/url and emits no label on an artist page': () => {
       const [track] = bandcampReleasesTransform([
         release({ url: 'https://ivylab.bandcamp.com/album/blonde-e-p', pageType: 'artist', pageName: 'Ivy Lab' }),
