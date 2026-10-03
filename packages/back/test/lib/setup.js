@@ -87,7 +87,7 @@ const dismissOnboarding = async (page) => {
     return
   }
 
-  const skipButton = page.locator('[data-test-id="button-skip"]').first()
+  const skipButton = page.locator('.react-joyride__tooltip [data-action="skip"]').first()
   try {
     await waitForWithTimeoutMessage(
       () => skipButton.waitFor({ state: 'visible', timeout: 500 }),
