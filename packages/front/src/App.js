@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import * as R from 'ramda'
 import { BrowserRouter as Router, Redirect, Route, withRouter } from 'react-router-dom'
 import { ErrorBoundary } from 'react-error-boundary'
+import { CrashTest, ErrorFallback, reportRenderError } from './ErrorFallback.js'
 import Login from './UserLogin.js'
 import Player from './Player.js'
 import './App.css'
@@ -1092,11 +1093,8 @@ class App extends Component {
     const googleLoginPath = `${config.apiURL}/auth/login/google?returnPath=${encodeURIComponent(buildLoginReturnPath())}`
 
     return (
-      <ErrorBoundary
-        onError={(error, errorInfo) =>
-          requestWithCredentials({ url: `/log/error`, method: 'POST', body: { error, errorInfo } })
-        }
-      >
+      <ErrorBoundary FallbackComponent={ErrorFallback} onError={reportRenderError}>
+        <CrashTest />
         <Root
           className={`${this.state.listState === 'search' ? 'search-expanded' : ''} ${
             this.state.isMobile ? 'mobile' : 'desktop'
