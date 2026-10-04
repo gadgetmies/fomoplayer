@@ -159,6 +159,21 @@ class EmbeddingSanityChecker:
             for old in collisions:
                 self._append_collision(signature, new_entry, old)
 
+            # One earlier match is usually the same recording released twice
+            # (e.g. a Bandcamp single and its album), so don't stop for it. A
+            # broken model gives the same vector for many tracks in a row.
+            other_sources = {e.get("group_key") or e.get("id") for e in collisions}
+            if len(other_sources) == 1:
+                print(
+                    f"[sanity] {self._describe(item_id_str, label)} matches "
+                    f"{self._describe(collisions[0]['id'], collisions[0].get('label'))} "
+                    "bit-for-bit; treating it as a duplicate release.",
+                    flush=True,
+                )
+                self.entries.append(new_entry)
+                self._persist()
+                return True
+
             first = collisions[0]
             new_desc = self._describe(item_id_str, label)
             old_desc = self._describe(first["id"], first.get("label"))
