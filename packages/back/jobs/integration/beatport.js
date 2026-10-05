@@ -3,6 +3,16 @@ const logger = require('fomoplayer_shared').logger(__filename)
 const sql = require('sql-template-strings')
 const pg = require('fomoplayer_shared').db.pg
 
+// Structural properties that indicate a healthy integration — their absence
+// means the fetch/transform is broken. Optional per-track metadata that is
+// legitimately absent on some tracks is deliberately NOT asserted here:
+//   - `isrc`: often null on new/promo tracks (the transform emits it as null),
+//     and the artist feed is ordered newest-first, so tracks[0] is the most
+//     likely to lack one.
+//   - `key`: null when Beatport has no detected key; the transform omits the
+//     property entirely in that case.
+// Requiring either produced false "Missing properties" failures without
+// signalling a real integration problem.
 const requiredTrackProperties = [
   'title',
   'id',
@@ -16,9 +26,7 @@ const requiredTrackProperties = [
   'previews',
   'label',
   'waveform',
-  'key',
   'bpm',
-  'isrc',
   'track_number',
   'store_details',
 ]
