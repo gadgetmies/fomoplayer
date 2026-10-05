@@ -3,6 +3,8 @@ const logger = require('fomoplayer_shared').logger(__filename)
 const sql = require('sql-template-strings')
 const pg = require('fomoplayer_shared').db.pg
 
+// `track_number` is not checked: the v4 list endpoints (artist, label, top-100)
+// omit a track's position on its release; only the single-track route has it.
 const requiredTrackProperties = [
   'title',
   'id',
@@ -19,9 +21,11 @@ const requiredTrackProperties = [
   'key',
   'bpm',
   'isrc',
-  'track_number',
   'store_details',
 ]
+
+// Errors are stored in job_run_result as JSON, where an Error serialises to {}.
+const describeError = (e) => e?.toString?.() ?? String(e)
 
 async function getArtistDetails() {
   const [details] = await pg.queryRowsAsync(sql`
@@ -71,7 +75,7 @@ module.exports = async () => {
       for await (const { tracks, errors } of generator) {
         if (errors.length > 0) {
           logger.error(`Errors in fetching tracks for (${details.url}): ${JSON.stringify(errors)}`)
-          combinedErrors.push(...errors)
+          combinedErrors.push(...errors.map(describeError))
         }
 
         if (tracks.length === 0) {
@@ -95,7 +99,7 @@ module.exports = async () => {
       }
     } catch (e) {
       logger.error(`Beatport integration test ${fn.name} failed: ${e.toString().substring(0, 100)}`)
-      combinedErrors.push(e)
+      combinedErrors.push(`Fetching tracks for (${details.url}) failed: ${describeError(e)}`)
     }
   }
 
