@@ -1,5 +1,5 @@
 const logger = require('fomoplayer_shared').logger(__filename)
-const router = require('express-promise-router')()
+const router = require('express').Router()
 const { runJob } = require('../../job-scheduling')
 const {
   mergeTracks,

@@ -1,8 +1,8 @@
 const logger = require('fomoplayer_shared').logger(__filename)
-const router = require('express-promise-router')()
+const router = require('express').Router()
 const jobScheduling = require('../../job-scheduling')
 
-router.use('/email/*', ({ headers, body }, res) => {
+router.use('/email/{*splat}',({ headers, body }, res) => {
   logger.debug('Received email sending request', { headers, body })
   res.send({})
 })

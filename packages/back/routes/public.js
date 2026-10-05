@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
+const express = require('express')
 const bodyParser = require('body-parser')
-const expressPromiseRouter = require('express-promise-router')
 const defaultConfig = require('../config')
 const logger = require('fomoplayer_shared').logger(__filename)
 const { verifyEmail, getCartDetails } = require('./logic.js')
@@ -12,7 +12,7 @@ const createPublicRouter = ({
   queryAccountCount = defaultQueryAccountCount,
   addEmailToWaitingList = defaultAddEmailToWaitingList,
 } = {}) => {
-  const router = expressPromiseRouter()
+  const router = express.Router()
   router.use(bodyParser.json())
 
   router.get('/carts/:uuid', async ({ params: { uuid }, user, query: { since, offset, limit, store: stores } }, res) => {

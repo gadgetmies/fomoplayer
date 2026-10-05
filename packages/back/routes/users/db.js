@@ -1189,7 +1189,7 @@ WHERE
 
 module.exports.addArtistsToIgnore = async (tx, artistIds, userId) => {
   for (const artistId of artistIds) {
-    tx.queryAsync(
+    await tx.queryAsync(
       // language=PostgreSQL
       sql`--addToIgnore
 INSERT INTO user__artist_ignore

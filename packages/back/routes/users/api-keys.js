@@ -1,5 +1,5 @@
 'use strict'
-const router = require('express-promise-router')()
+const router = require('express').Router()
 const { listApiKeys, revokeApiKey } = require('../../db/api-key')
 
 router.get('/', async ({ user: { id: userId } }, res) => {

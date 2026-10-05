@@ -1,4 +1,4 @@
-import Joyride, { ACTIONS, STATUS } from 'react-joyride'
+import { Joyride, STATUS } from 'react-joyride'
 import React, { Component } from 'react'
 class Help extends Component {
   constructor(props) {
@@ -23,31 +23,26 @@ class Help extends Component {
   render() {
     return (
       <Joyride
-        disableScrollParentFix={true}
         steps={Object.values(this.props.steps)}
         run={this.state.active}
-        spotlightClicks={true}
-        styles={{
-          options: {
-            zIndex: 10000,
-          },
-        }}
-        showProgress
         continuous
-        getHelpers={(helpers) => {
-          this.setState({ helpers })
+        options={{
+          zIndex: 10000,
+          // react-joyride 2's default accent; v3 defaults to black.
+          primaryColor: '#f04',
+          blockTargetInteraction: false,
+          showProgress: true,
+          // The close button ends the help instead of moving on to the next step.
+          closeButtonAction: 'skip',
         }}
-        callback={(state) => {
-          let active = state.status === STATUS.RUNNING
-          if (this.state.run !== active) {
+        locale={{ nextWithProgress: 'Next (Step {current} of {total})' }}
+        onEvent={(state) => {
+          const active = state.status === STATUS.RUNNING
+          if (this.state.active !== active) {
             this.props.onActiveChanged && this.props.onActiveChanged(active)
           }
           this.setState({ state, active })
           this.props.onStateChanged && this.props.onStateChanged()
-
-          if ([ACTIONS.CLOSE, ACTIONS.SKIP].includes(state.action)) {
-            this.setState({ run: false })
-          }
         }}
       />
     )

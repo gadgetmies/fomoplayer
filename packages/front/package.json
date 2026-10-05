@@ -7,14 +7,13 @@
     "node": "22.x"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "6.5.2",
-    "@fortawesome/free-brands-svg-icons": "^6.7.1",
-    "@fortawesome/free-regular-svg-icons": "^6.7.1",
-    "@fortawesome/free-solid-svg-icons": "^6.7.1",
-    "@fortawesome/react-fontawesome": "^0.2.2",
+    "@fortawesome/fontawesome-svg-core": "^7.3.1",
+    "@fortawesome/free-brands-svg-icons": "^7.3.1",
+    "@fortawesome/free-regular-svg-icons": "^7.3.1",
+    "@fortawesome/free-solid-svg-icons": "^7.3.1",
+    "@fortawesome/react-fontawesome": "^3.5.0",
     "@mebtte/react-media-session": "https://github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951",
-    "@sentry/browser": "^8.47.0",
-    "babel-plugin-macros": "^3.1.0",
+    "@sentry/browser": "^11.4.0",
     "chart.js": "^4.4.1",
     "fomoplayer_shared": "1.0.0",
     "js-beautify": "^1.15.4",
@@ -28,8 +27,8 @@
     "react-chartjs-2": "^5.2.0",
     "react-device-detect": "^2.1.2",
     "react-dom": "^18.2.0",
-    "react-error-boundary": "^4.0.11",
-    "react-joyride": "^2.7.0",
+    "react-error-boundary": "^6.1.6",
+    "react-joyride": "^3.2.0",
     "react-router-dom": "^5.3.4",
     "react-scripts": "^5.0.1",
     "typeface-lato": "^1.1.13",
@@ -58,6 +57,6 @@
     "not op_mini all"
   ],
   "devDependencies": {
-    "http-proxy-middleware": "^3.0.3"
+    "http-proxy-middleware": "^4.2.0"
   }
 }

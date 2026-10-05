@@ -158,16 +158,11 @@ module.exports.removeArtistsOnLabelsIgnores = async (artistOnLabelIgnoreIds) => 
   await deleteArtistsOnLabelsIgnores(artistOnLabelIgnoreIds)
 }
 
-module.exports.addArtistsToIgnore = async (userId, artistIds) => {
-  try {
-    BPromise.using(pg.getTransaction(), async (tx) => {
-      await addArtistsToIgnore(tx, artistIds, userId)
-      await updateIgnoresInUserTracks(tx, [userId])
-    })
-  } catch (e) {
-    logger.error('Adding artists to ignore failed', e)
-  }
-}
+module.exports.addArtistsToIgnore = async (userId, artistIds) =>
+  BPromise.using(pg.getTransaction(), async (tx) => {
+    await addArtistsToIgnore(tx, artistIds, userId)
+    await updateIgnoresInUserTracks(tx, [userId])
+  })
 
 module.exports.addLabelsToIgnore = async (userId, labelIds) =>
   BPromise.using(pg.getTransaction(), async (tx) => {
@@ -175,12 +170,11 @@ module.exports.addLabelsToIgnore = async (userId, labelIds) =>
     await updateIgnoresInUserTracks(tx, [userId])
   })
 
-module.exports.addReleasesToIgnore = async (userId, releaseIds) => {
+module.exports.addReleasesToIgnore = async (userId, releaseIds) =>
   BPromise.using(pg.getTransaction(), async (tx) => {
     await addReleasesToIgnore(tx, releaseIds, userId)
     await updateIgnoresInUserTracks(tx, [userId])
   })
-}
 
 module.exports.removeArtistWatchesFromUser = deleteArtistWatchesFromUser
 module.exports.removeArtistWatchFromUser = deleteArtistWatchFromUser

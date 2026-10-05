@@ -118,15 +118,15 @@ class FomoPlayerClient {
   }
 
   async addArtistIgnore(id) {
-    return this.post('/me/ignores/artists', { id })
+    return this.post('/me/ignores/artists', [id])
   }
 
   async addLabelIgnore(id) {
-    return this.post('/me/ignores/labels', { id })
+    return this.post('/me/ignores/labels', [id])
   }
 
   async addReleaseIgnore(id) {
-    return this.post('/me/ignores/releases', { id })
+    return this.post('/me/ignores/releases', [id])
   }
 
   async removeArtistIgnore(id) {

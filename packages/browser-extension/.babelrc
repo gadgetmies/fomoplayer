@@ -1,4 +1,4 @@
 {
-  "presets": ["@babel/react"],
+  "presets": [["@babel/react", { "runtime": "classic" }]],
   "plugins": ["react-hot-loader/babel"]
 }

@@ -57,6 +57,8 @@ const cookieSecure = isPreviewEnv || isProduction
 
 const app = express()
 app.set('trust proxy', 1)
+// Express 5 defaults to the "simple" parser; keep qs-style nested/array query parsing.
+app.set('query parser', 'extended')
 app.use(morgan('combined'))
 app.use(compression())
 app.use(
@@ -103,7 +105,7 @@ const corsOptions = {
 }
 
 app.use(cors(corsOptions))
-app.options('*', cors(corsOptions)) // include before other routes
+app.options('/{*splat}', cors(corsOptions)) // include before other routes
 
 // Sentry triage webhook. Mounted BEFORE the general JSON body parser so its
 // raw-body middleware can verify the HMAC signature against the exact bytes
@@ -113,9 +115,19 @@ app.use('/api/sentry-webhook', require('./routes/sentry-webhook.js')())
 app.use('/api/admin', bodyParser.json({ limit: '20mb', extended: true, type: ['application/json', 'application/*+json'] }))
 app.use(bodyParser.json({ limit: '1mb', extended: true, type: ['application/json', 'application/*+json'] }))
 
+// body-parser 2 leaves req.body undefined when no body was parsed; handlers destructure it.
 app.use((req, res, next) => {
-  const val = req.query.store
-  req.query.store = val && !Array.isArray(val) ? [val] : val
+  if (req.body === undefined) req.body = {}
+  next()
+})
+
+app.use((req, res, next) => {
+  // Express 5 makes req.query a getter that re-parses on each access, so writes to it are
+  // lost; pin a normalized copy instead.
+  const query = { ...req.query }
+  const val = query.store
+  query.store = val && !Array.isArray(val) ? [val] : val
+  Object.defineProperty(req, 'query', { value: query, writable: true, configurable: true, enumerable: true })
   next()
 })
 
@@ -248,7 +260,7 @@ const sendIndex = (_, res) => {
   res.end()
 }
 
-app.get('/*', sendIndex)
+app.get('/{*splat}', sendIndex)
 
 const handleErrors = (err, req, res, _) => {
   logRequestError(logger, err, {

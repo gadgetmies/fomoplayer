@@ -1,6 +1,6 @@
 const nodeEnv = process.env.NODE_ENV || 'development'
 process.env.NODE_ENV = nodeEnv
-require('dotenv').config({ path: `.env.${nodeEnv}` })
+require('dotenv').config({ path: `.env.${nodeEnv}`, quiet: true })
 
 const resolveServiceURL = require('fomoplayer_shared').resolveServiceURL
 const sharedConfig = require('fomoplayer_shared/config')(nodeEnv).config

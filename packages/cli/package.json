@@ -7,14 +7,14 @@
   },
   "main": "./src/index.js",
   "dependencies": {
-    "@sentry/node": "^10.75.3",
-    "conf": "^10.2.0",
-    "yargs": "^17.0.0",
-    "open": "^8.4.2"
+    "@sentry/node": "^11.4.0",
+    "conf": "^15.1.0",
+    "open": "^11.0.4",
+    "yargs": "^18.2.0"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "cascade-test": "^0.2.3",
-    "chai": "^4.0.0"
+    "chai": "^6.3.0"
   }
 }
