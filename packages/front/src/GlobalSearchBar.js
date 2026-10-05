@@ -18,6 +18,8 @@ const getTermLabel = (term) => {
       return term.name ?? `${term.id}`
     case 'track':
       return term.similar ? `~${term.name ?? term.id ?? ''}` : term.name ?? `${term.id ?? ''}`
+    case 'cart':
+      return `~${term.name ?? 'cart'}`
     case 'artist':
     case 'label':
     case 'release':

@@ -350,6 +350,11 @@ class Player extends Component {
           follows={this.props.follows}
           notificationsEnabled={this.props.notificationsEnabled}
           searchTerms={this.props.searchTerms}
+          cartSearch={this.props.cartSearch}
+          onCartSearchChange={this.props.onCartSearchChange}
+          onCartSearchMiss={this.props.onCartSearchMiss}
+          onSaveCartSearchGroup={this.props.onSaveCartSearchGroup}
+          onFindSimilarToCart={this.props.onFindSimilarToCart}
           searchInProgress={this.props.searchInProgress}
           searchError={this.props.searchError}
           sort={this.props.sort}
