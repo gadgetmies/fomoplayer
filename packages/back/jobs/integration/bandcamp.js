@@ -1,7 +1,5 @@
-const { getArtistTracks, getLabelTracks, getPlaylistTracks, storeName } = require('../../routes/stores/bandcamp/logic')
+const { getPageReleaseTracks, getPlaylistTracks } = require('../../routes/stores/bandcamp/logic')
 const logger = require('fomoplayer_shared').logger(__filename)
-const sql = require('sql-template-strings')
-const pg = require('fomoplayer_shared').db.pg
 
 // Must be present AND non-null on every fetched track.
 const requiredTrackProperties = [
@@ -21,95 +19,72 @@ const requiredTrackProperties = [
 // `label` is null on artist pages (the subdomain is the artist, not a label).
 const nullableTrackProperties = ['version', 'label']
 
-async function getArtistDetails() {
-  const [details] = await pg.queryRowsAsync(sql`
-    -- Bandcamp integration test job get artist store id
-    SELECT store__artist_store_id AS "artistStoreId", store__artist_url AS url
-    FROM
-      store__artist
-      NATURAL JOIN artist
-      NATURAL JOIN store
-    WHERE artist_name = 'Noisia'
-      AND store_name = ${storeName}
-  `)
-  return details
+// Errors are stored in job_run_result as JSON, where an Error serialises to {}.
+const describeError = (e) => (Array.isArray(e) ? e.map(describeError).join(': ') : (e?.toString?.() ?? String(e)))
+
+const missingProperties = (track) =>
+  requiredTrackProperties
+    .filter((prop) => !track.hasOwnProperty(prop) || track[prop] === null)
+    .concat(nullableTrackProperties.filter((prop) => !track.hasOwnProperty(prop)))
+
+// The followed-entity watch generators (getArtistTracks / getLabelTracks) only
+// fetch releases that are not yet in the database, and production already has
+// every release of these pages, so they would yield no tracks at all. Exercise
+// the same scraping directly instead: list the page's releases and fetch the
+// newest one with the page context the watch job would use.
+const fetchFromPage = (entityType) => async (url) => getPageReleaseTracks(url, entityType)
+
+// The tag playlist has no known-release filter. Stop at the first release that
+// yields tracks rather than scraping the whole discover listing.
+const fetchFromPlaylist = async (url) => {
+  const errors = []
+  for await (const { tracks, errors: releaseErrors } of getPlaylistTracks({ playlistStoreId: url, type: 'tag' })) {
+    errors.push(...(releaseErrors || []))
+    if (tracks && tracks.length > 0) {
+      return { tracks, errors }
+    }
+  }
+  return { tracks: [], errors }
 }
 
-async function getLabelDetails() {
-  const [details] = await pg.queryRowsAsync(sql`
-    -- Bandcamp integration test job get artist store id
-    SELECT store__label_store_id AS "labelStoreId", store__label_url AS url
-    FROM
-      store__label
-      NATURAL JOIN label
-      NATURAL JOIN store
-    WHERE label_name = 'VISION'
-      AND store_name = ${storeName}
-  `)
-  return details
-}
+const checks = [
+  { url: 'https://noisia.bandcamp.com', fetch: fetchFromPage('artist') },
+  { url: 'https://visionrecordings.bandcamp.com', fetch: fetchFromPage('label') },
+  { url: 'https://bandcamp.com/discover/electronic?tags=drum-bass', fetch: fetchFromPlaylist },
+]
 
 module.exports = async () => {
-  const artistDetails = await getArtistDetails()
-  const labelDetails = await getLabelDetails()
-
-  const drumAndBassPlaylist = 'https://bandcamp.com/discover/electronic?tags=drum-bass'
-  const detailsAndFunctions = [
-    [artistDetails, getArtistTracks],
-    [labelDetails, getLabelTracks],
-    [{ playlistStoreId: drumAndBassPlaylist, url: drumAndBassPlaylist }, getPlaylistTracks],
-  ]
-
-  let combinedErrors = []
-  for (const [details, fn] of detailsAndFunctions) {
-    // Bandcamp generators stream incrementally: the first yield is a bookkeeping
-    // progress object with empty `tracks`, then each subsequent yield carries the
-    // tracks (and any errors) for a single release. Accumulate across all yields
-    // so a single empty/failed release does not look like a total failure.
-    const fetchedTracks = []
-    const perReleaseErrors = []
+  const combinedErrors = []
+  for (const { url, fetch } of checks) {
+    let result
     try {
-      const generator = fn(details)
-      for await (const { tracks, errors } of generator) {
-        if (errors && errors.length > 0) {
-          perReleaseErrors.push(...errors)
-        }
-        if (tracks && tracks.length > 0) {
-          fetchedTracks.push(...tracks)
-        }
-      }
+      result = await fetch(url)
     } catch (e) {
-      logger.error(`Bandcamp integration test ${fn.name} failed: ${e.toString().substring(0, 100)}`)
-      combinedErrors.push(e)
-      continue
-    }
-
-    // Per-release errors are partial (a deleted/region-locked/prerelease release
-    // can fail on its own) and expected at scale, so surface them for visibility
-    // but do not fail the smoke test on them — total failure is "no tracks at all"
-    // or a structurally broken track, checked below.
-    if (perReleaseErrors.length > 0) {
-      logger.warn(
-        `Per-release errors while fetching tracks for (${details.url}): ${JSON.stringify(perReleaseErrors)}`,
-      )
-    }
-
-    if (fetchedTracks.length === 0) {
-      const error = `No tracks fetched for (${details.url})`
+      const error = `Fetching tracks for (${url}) failed: ${describeError(e)}`
       logger.error(error)
       combinedErrors.push(error)
       continue
     }
 
-    const track = fetchedTracks[0]
-    const missingTrackProperties = requiredTrackProperties
-      .filter((prop) => !track.hasOwnProperty(prop) || track[prop] === null)
-      .concat(nullableTrackProperties.filter((prop) => !track.hasOwnProperty(prop)))
+    // A single release can fail on its own (deleted, region-locked, prerelease),
+    // so surface per-release errors for visibility but only fail the smoke test
+    // when no tracks come back at all or a track is structurally broken.
+    if (result.errors.length > 0) {
+      logger.warn(`Per-release errors while fetching tracks for (${url}): ${result.errors.map(describeError)}`)
+    }
 
-    if (missingTrackProperties.length !== 0) {
-      const error = `Missing properties in fetched tracks for (${details.url}): ${missingTrackProperties.join(
-        ', ',
-      )}`
+    if (result.tracks.length === 0) {
+      const error = `No tracks fetched for (${url})${
+        result.errors.length > 0 ? `: ${result.errors.map(describeError).join('; ')}` : ''
+      }`
+      logger.error(error)
+      combinedErrors.push(error)
+      continue
+    }
+
+    const missing = missingProperties(result.tracks[0])
+    if (missing.length !== 0) {
+      const error = `Missing properties in fetched tracks for (${url}): ${missing.join(', ')}`
       logger.error(error)
       combinedErrors.push(error)
     }
