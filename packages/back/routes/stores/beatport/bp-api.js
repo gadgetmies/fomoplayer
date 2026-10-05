@@ -33,7 +33,7 @@ const apiGet = async (path, { retried = false } = {}) => {
 // The only followable Beatport playlists are top-100 lists; resolve the kind +
 // numeric id so the right v4 catalog route can be built:
 //   /genre/{slug}/{id}/top-100  -> genre top 100 (/catalog/genres/{id}/top/100/)
-//   /top-100                    -> overall top 100 (/catalog/top/100/)
+//   /top-100                    -> overall top 100 (/catalog/tracks/top/100/)
 // The /top-100 suffix on genre URLs is optional so legacy bare /genre/{slug}/{id}
 // follows keep working until the migration appends it.
 const parsePlaylistUrl = (url) => {
@@ -53,6 +53,13 @@ const requireParsedPlaylist = (url) => {
   return parsed
 }
 
+// Both top-100 routes page at 10 tracks by default, so ask for the full list.
+const playlistTracksPath = (url) => {
+  const parsed = requireParsedPlaylist(url)
+  const route = parsed.kind === 'genre-top' ? `/catalog/genres/${parsed.id}/top/100/` : `/catalog/tracks/top/100/`
+  return `${route}?per_page=${PER_PAGE}`
+}
+
 // Top-100 lists have no detail endpoint that carries a name, so synthesise one
 // from the cached genre catalog.
 const synthesizedPlaylistName = (parsed) => {
@@ -63,6 +70,7 @@ const synthesizedPlaylistName = (parsed) => {
 
 module.exports = {
   parsePlaylistUrl,
+  playlistTracksPath,
 
   search: (query) => apiGet(`/catalog/search/?q=${encodeURIComponent(query)}`),
 
@@ -80,11 +88,7 @@ module.exports = {
     (await apiGet(`/catalog/tracks/?label_id=${labelId}&page=${page}&per_page=${PER_PAGE}&order_by=-publish_date`))
       .results,
 
-  getPlaylistTracks: async (url) => {
-    const parsed = requireParsedPlaylist(url)
-    if (parsed.kind === 'genre-top') return (await apiGet(`/catalog/genres/${parsed.id}/top/100/`)).results
-    return (await apiGet(`/catalog/top/100/`)).results
-  },
+  getPlaylistTracks: async (url) => (await apiGet(playlistTracksPath(url))).results,
 
   // Full genre catalog, following pagination. Used by the genre-drift job.
   getGenres: async () => {

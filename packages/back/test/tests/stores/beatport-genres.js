@@ -1,7 +1,7 @@
 const assert = require('assert')
 const { test } = require('cascade-test')
 
-const { parsePlaylistUrl } = require('../../../routes/stores/beatport/bp-api')
+const { parsePlaylistUrl, playlistTracksPath } = require('../../../routes/stores/beatport/bp-api')
 const { searchGenres, genreTop100Url, genreById } = require('../../../routes/stores/beatport/genres')
 
 test({
@@ -19,6 +19,15 @@ test({
   },
   'overall top-100 resolves to the top kind': async () => {
     assert.deepEqual(parsePlaylistUrl('https://www.beatport.com/top-100'), { kind: 'top' })
+  },
+  'genre top-100 fetches all 100 tracks from the genre route': async () => {
+    assert.equal(
+      playlistTracksPath('https://www.beatport.com/genre/uk-garage-bassline/86/top-100'),
+      '/catalog/genres/86/top/100/?per_page=100',
+    )
+  },
+  'overall top-100 fetches all 100 tracks from the tracks route': async () => {
+    assert.equal(playlistTracksPath('https://www.beatport.com/top-100'), '/catalog/tracks/top/100/?per_page=100')
   },
   'chart and user-playlist URLs no longer resolve as followable playlists': async () => {
     assert.equal(parsePlaylistUrl('https://www.beatport.com/chart/some-chart/12345'), null)
