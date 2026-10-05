@@ -36,7 +36,7 @@ const {
   removeArtistUrl,
   ignoreMislabeledEntity,
   flagMislabeledEntity,
-  convertArtistToLabel,
+  convertArtistToLabelAndQueueRefetch,
   refetchBandcampLabelArtists,
   refetchBandcampArtistTracks,
   getArtistNameMismatches,
@@ -387,7 +387,7 @@ router.post('/mislabeled/:type/:id/flag', async ({ params: { type, id } }, res) 
 })
 
 router.post('/mislabeled/artist/:id/convert-to-label', async ({ params: { id } }, res) => {
-  res.send(await convertArtistToLabel(id))
+  res.send(await convertArtistToLabelAndQueueRefetch(id))
 })
 
 router.post('/mislabeled/artist/:id/remove-url', async ({ params: { id } }, res) => {

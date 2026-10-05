@@ -1245,6 +1245,16 @@ const convertArtistToLabel = async (id) => {
 
 module.exports.convertArtistToLabel = convertArtistToLabel
 
+// The conversion removes the artist's track credits, so the label re-fetch that
+// re-credits the tracks to their real artists is always queued with it.
+// Otherwise tracks whose only artist was converted stay without artists, and
+// the track lists hide them.
+module.exports.convertArtistToLabelAndQueueRefetch = async (id) => {
+  const result = await convertArtistToLabel(id)
+  await enqueueLabelArtistRefetch(result.labelId)
+  return { ...result, labelRefetchQueued: true }
+}
+
 const mergeCounts = (flagged, counts) => {
   const byId = new Map(counts.map((c) => [c.id, c]))
   return flagged.map((row) => ({
