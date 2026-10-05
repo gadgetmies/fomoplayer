@@ -107,7 +107,7 @@ const warnOnNameSubdomainMismatch = (url, pageType, pageName) => {
   }
 }
 
-const getPageSource = async (url) => {
+const getPageSource = async (url, options = {}) => {
   if (suspendedUntil) {
     if (suspendedUntil < Date.now()) {
       suspendedUntil = null
@@ -119,7 +119,7 @@ const getPageSource = async (url) => {
     }
   }
   requestCount++
-  const res = await fetch(url, { method: 'GET' })
+  const res = await fetch(url, { method: 'GET', ...options })
   if ([429, 403].includes(res.status)) {
     suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
     logger.error(
@@ -233,16 +233,47 @@ const getTagDetails = (tags, callback) => {
   })
 }
 
+// The discover page is rendered client-side, so its HTML no longer carries any
+// release links. Query the JSON endpoint the page itself calls instead.
+const DISCOVER_API_URL = 'https://bandcamp.com/api/discover/1/discover_web'
+const DISCOVER_RESULT_COUNT = 60
+// Ids of the discover page's format filter, keyed by the slug used in its URL.
+const discoverCategoryIds = { all: 0, digital: 1, vinyl: 2, cd: 3, cassette: 4, tshirt: 5 }
+
+const getDiscoverParams = (tags) => ({
+  category_id: discoverCategoryIds[tags.format] ?? 0,
+  tag_norm_names: [tags.genre, tags.subgenre]
+    .filter((part) => part && part !== 'all')
+    .flatMap((part) => part.split('+')),
+  geoname_id: 0,
+  slice: 'top',
+  time_facet_id: null,
+  cursor: '*',
+  size: DISCOVER_RESULT_COUNT,
+  include_result_types: ['a', 's'],
+})
+
+const getDiscoverReleaseUrls = ({ results }) =>
+  R.uniq(
+    results.map(({ item_url }) => {
+      const url = new URL(item_url)
+      url.searchParams.delete('from')
+      return url.toString()
+    }),
+  )
+
 const getTagReleases = (tags, callback) => {
-  const url = getTagUrl(tags instanceof String ? JSON.parse(tags) : tags)
-  return getPageSource(url)
-    .then(decode)
+  const parsedTags = tags instanceof String ? JSON.parse(tags) : tags
+  return getPageSource(DISCOVER_API_URL, {
+    method: 'POST',
+    body: JSON.stringify(getDiscoverParams(parsedTags)),
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+  })
     .then((res) => {
-      const dom = new JSDOM(res)
       return callback(null, {
-        id: url,
-        name: getTagName(tags),
-        releaseUrls: getReleaseUrls(url, dom),
+        id: getTagUrl(parsedTags),
+        name: getTagName(parsedTags),
+        releaseUrls: getDiscoverReleaseUrls(JSON.parse(res)),
       })
     })
     .catch((e) => callback(e))
@@ -317,6 +348,8 @@ module.exports = {
     getTagName,
     getTagUrl,
     getTagSlug,
+    getDiscoverParams,
+    getDiscoverReleaseUrls,
     isRateLimited,
     resetRequestCount,
     getRequestCount,

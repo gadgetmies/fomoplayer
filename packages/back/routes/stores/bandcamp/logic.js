@@ -196,6 +196,17 @@ const filterToUnknownUrls = async (urls) => {
   return { unknownUrls, skipped: known.size }
 }
 
+// Fetch the first listed release of an artist/label page with the same page
+// context the watch generators use, ignoring whether it is already stored. Used
+// by the integration test, which must see tracks even when every release is known.
+module.exports.getPageReleaseTracks = async (url, entityType) => {
+  const { type, name, releaseUrls } = await (entityType === 'label' ? getLabelAsync : getArtistAsync)(url)
+  if (releaseUrls.length === 0) {
+    return { tracks: [], errors: [`No releases listed on ${url}`] }
+  }
+  return getTracksFromReleases(releaseUrls.slice(0, 1), { pageType: type, pageName: name })
+}
+
 module.exports.getArtistTracks = async function* ({ url }) {
   try {
     const { type, name, releaseUrls } = await getArtistAsync(url)
