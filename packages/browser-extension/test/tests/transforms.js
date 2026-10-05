@@ -189,5 +189,135 @@ test({
       assert.deepStrictEqual(withReal.artists, [{ name: 'SATL', role: 'author', id: null, url: null }])
       assert.deepStrictEqual(intro.artists, [{ name: 'Fokuz Recordings', role: 'author', id: null, url: null }])
     },
+
+    'remixes': {
+      'keeps the author of a self-remix': () => {
+        const [track] = bandcampReleasesTransform([
+          release({
+            url: 'https://hospitalrecords.bandcamp.com/album/hospital30-2',
+            artist: 'Hospital Records',
+            pageType: 'label',
+            pageName: 'Hospital Records',
+            trackinfo: [
+              {
+                id: 21,
+                title: 'Cyantific - Ghetto Blaster (Cyantific Remix)',
+                artist: 'Cyantific',
+                file: { 'mp3-128': 'x' },
+                duration: 200,
+              },
+            ],
+          }),
+        ])
+        assert.strictEqual(track.title, 'Ghetto Blaster')
+        assert.strictEqual(track.version, 'Cyantific Remix')
+        assert.deepStrictEqual(track.artists, [
+          { name: 'Cyantific', role: 'author', id: null, url: null },
+          { name: 'Cyantific', role: 'remixer', id: null, url: null },
+        ])
+      },
+
+      'still drops a remixer listed among several authors': () => {
+        const [track] = bandcampReleasesTransform([
+          release({
+            url: 'https://hospitalrecords.bandcamp.com/album/hospital30-2',
+            artist: 'Hospital Records',
+            pageType: 'label',
+            pageName: 'Hospital Records',
+            trackinfo: [
+              {
+                id: 22,
+                title: 'Emz, Nasser, Valor, Hoax - Free (Hoax Remix)',
+                artist: 'Emz, Nasser, Valor, Hoax',
+                file: { 'mp3-128': 'x' },
+                duration: 200,
+              },
+            ],
+          }),
+        ])
+        assert.deepStrictEqual(
+          track.artists.map(({ name, role }) => `${name}:${role}`),
+          ['Emz:author', 'Nasser:author', 'Valor:author', 'Hoax:remixer'],
+        )
+      },
+
+      'keeps an artist named like its own label as the author and as a remixer': () => {
+        const [ganjaPeople, saveOurSoul] = bandcampReleasesTransform([
+          release({
+            url: 'https://sl8rdnb.bandcamp.com/album/rough-grooves-ep-2',
+            artist: 'Sl8r & Duality',
+            pageType: 'label',
+            pageName: 'Sl8r',
+            trackinfo: [
+              {
+                id: 23,
+                title: 'Sl8r - Ganja People (Duality Remix)',
+                artist: 'Sl8r',
+                file: { 'mp3-128': 'x' },
+                duration: 200,
+              },
+              {
+                id: 24,
+                title: 'Duality - Save Our Soul (Sl8r Remix)',
+                artist: 'Duality',
+                file: { 'mp3-128': 'x' },
+                duration: 200,
+              },
+            ],
+          }),
+        ])
+        assert.deepStrictEqual(
+          ganjaPeople.artists.map(({ name, role }) => `${name}:${role}`),
+          ['Sl8r:author', 'Duality:remixer'],
+        )
+        assert.deepStrictEqual(
+          saveOurSoul.artists.map(({ name, role }) => `${name}:${role}`),
+          ['Duality:author', 'Sl8r:remixer'],
+        )
+      },
+
+      'reads the authors after a remixer prefix': () => {
+        const [track] = bandcampReleasesTransform([
+          release({
+            url: 'https://phace.bandcamp.com/track/noisia-phace-cannonball-emperor-remix',
+            artist: 'Emperor',
+            pageType: 'artist',
+            pageName: 'phace',
+            trackinfo: [
+              {
+                id: 25,
+                title: 'Emperor - Noisia & Phace - Cannonball (Emperor Remix)',
+                artist: 'Emperor',
+                file: { 'mp3-128': 'x' },
+                duration: 200,
+              },
+            ],
+          }),
+        ])
+        assert.strictEqual(track.title, 'Cannonball')
+        assert.deepStrictEqual(
+          track.artists.map(({ name, role }) => `${name}:${role}`),
+          ['Noisia:author', 'Phace:author', 'Emperor:remixer'],
+        )
+      },
+
+      'keeps the release artist as the author of a compilation remix with no other artist': () => {
+        const [track] = bandcampReleasesTransform([
+          release({
+            url: 'https://fokuzrecordings.bandcamp.com/album/heaven-in-me-sampler',
+            artist: 'Various Artists',
+            pageType: 'label',
+            pageName: 'Fokuz Recordings',
+            trackinfo: [
+              { id: 26, title: 'Heaven In Me (Outer Bass Remix)', artist: null, file: { 'mp3-128': 'x' }, duration: 200 },
+            ],
+          }),
+        ])
+        assert.deepStrictEqual(
+          track.artists.map(({ name, role }) => `${name}:${role}`),
+          ['Various Artists:author', 'Outer Bass:remixer'],
+        )
+      },
+    },
   },
 })
