@@ -1,4 +1,5 @@
 const logger = require('fomoplayer_shared').logger(__filename)
+const { searchSimilarToCart } = require('../shared/cart-similarity')
 const { insertSource } = require('../../jobs/watches/shared/db')
 const { unsubscribeUrl } = require('../../services/email-unsubscribe')
 const {
@@ -432,6 +433,15 @@ router.get(
     res.send(
       await getCartDetails(userId, resolvedId, stores, { offset: parseInt(tracksOffset), limit: parseInt(tracksLimit) }),
     )
+  },
+)
+
+// Tracks similar to the cart, searched per group of similar cart tracks. `misses` are the session's "Not this"
+// tracks: the search is pushed away from them, and they are never stored.
+router.get(
+  '/carts/:uuid/similar',
+  async ({ user: { id: userId }, params: { uuid }, query: { k, newOnly, misses, limit } }, res) => {
+    res.send(await searchSimilarToCart({ userId, cartUuid: uuid, k, newOnly, misses, limit }))
   },
 )
 

@@ -64,7 +64,8 @@ a new cart.
    and returns the merged result list (keeps the `/api/tracks?q=` API and CLI consistent).
 
 Limits: grouping uses at most the 600 most recently added cart tracks; `k` ranges 1…`min(8, ⌊n/3⌋)`;
-candidate pool 1,500 per group with `hnsw.ef_search` raised for the transaction; up to 50 results per group.
+a candidate budget of 1,600 previews split across groups (300–1,000 per group, `hnsw.ef_search` raised to match;
+1,000 is pgvector's maximum); up to 50 results per group. The collection mean is cached per user for an hour.
 
 ### Frontend
 

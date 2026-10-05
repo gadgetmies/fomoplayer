@@ -28,8 +28,10 @@ centring, push-away strength and the Fit scale. The UI was approved through a mo
   the user's carts. It scored best in the research and needs no stored state. Alternative: a fixed catalogue mean —
   scored lower and needs refreshing.
 - **ANN in raw space, scoring in centred space.** The index is on raw vectors, so each group's raw mean (minus the
-  raw push-away term) queries the index for a 1,500-track pool (with `SET LOCAL hnsw.ef_search = 1500`). The pool's
-  embeddings are then scored in JS against every group's centred, pushed centroid. Alternative: centred vectors in the
+  raw push-away term) queries the index. A fixed budget of 1,600 previews is split across the groups (300–1,000 per group; 1,000 is the
+  pgvector `hnsw.ef_search` maximum), because every HNSW scan costs about the same (~1.5 s cold on production). The pool is
+  then scored inside Postgres against every group's centred, pushed centroid (pgvector `-`, `<=>`, `<#>`), so only
+  similarities and map projections travel to Node. Alternative: centred vectors in the
   index — requires a per-user index, rejected.
 - **Exclusions in SQL on the pool.** Heard (`user__track_heard`), ignores (artist, label, release, artist on label),
   purchased cart, searched cart and, optionally, followed or purchased artists are filtered while fetching the pool,
@@ -46,7 +48,9 @@ centring, push-away strength and the Fit scale. The UI was approved through a mo
 ## Risks / Trade-offs
 
 - [Large carts are slow to cluster] → cap grouping at the 600 most recently added embedded tracks.
-- [Heard tracks thin out the pool (565 of 1,303 in the research cart)] → pool of 1,500 per group; per-group limit 50.
+- [The collection mean scans the whole collection (~5 s for 5,000 tracks)] → cached per user for an hour; the first
+  search after that is slow (measured ~17 s cold on production, ~3 s warm). Precomputing it is a possible follow-up.
+- [Heard tracks thin out the pool (565 of 1,303 in the research cart)] → 1,600-preview budget split across groups (300–1,000 each); per-group limit 50.
 - [Raw-space ANN can miss candidates that are close only in the centred space] → generous pool, re-scored in the
   centred space; acceptable for a first version and measurable in research change A.
 - [Synthetic embeddings in tests do not reflect real audio] → tests check mechanics (grouping, exclusions,
