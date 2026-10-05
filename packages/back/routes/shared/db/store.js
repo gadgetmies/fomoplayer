@@ -7,7 +7,7 @@ const logger = require('fomoplayer_shared').logger(__filename)
 // Recompute the cached track_details JSON (used by track search results) for a
 // set of tracks after their artist/label credits change, so search reflects the
 // new attribution instead of stale credits. Accepts a transaction or the pool.
-module.exports.refreshTrackDetails = async (queryable, trackIds) => {
+const refreshTrackDetails = (module.exports.refreshTrackDetails = async (queryable, trackIds) => {
   const ids = [...new Set((trackIds || []).filter((id) => Number.isInteger(id)))]
   if (ids.length === 0) return
   await queryable.queryAsync(
@@ -23,7 +23,7 @@ ON CONFLICT ON CONSTRAINT track_details_track_id_key DO UPDATE
     , track_details_updated = NOW()
 `,
   )
-}
+})
 
 module.exports.queryStoreId = (storeName) =>
   pg
@@ -494,19 +494,6 @@ ON CONFLICT DO NOTHING
   }
 })
 
-// Rebuilds the denormalised track_details row the track lists read from.
-const refreshTrackDetails = (module.exports.refreshTrackDetails = (tx, trackId) =>
-  tx.queryAsync(
-    // language=PostgreSQL
-    sql`-- refreshTrackDetails INSERT INTO track_details
-    INSERT INTO track_details (track_id, track_details)
-    SELECT ${trackId}, ROW_TO_JSON(track_details(ARRAY_AGG(${trackId}::INT)))
-    ON CONFLICT ON CONSTRAINT track_details_track_id_key DO UPDATE
-      SET track_details         = EXCLUDED.track_details
-        , track_details_updated = NOW()
-    `,
-  ))
-
 const queryStoreId = async (tx, storeUrl) =>
   await tx
     .queryRowsAsync(
@@ -882,7 +869,7 @@ WHERE release_id = ${releaseId}
     )
   }
 
-  await refreshTrackDetails(tx, trackId)
+  await refreshTrackDetails(tx, [trackId])
 
   return trackId
 }

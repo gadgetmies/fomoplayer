@@ -78,7 +78,7 @@ const writeGenres = (storeId, trackId, genres) =>
       )
     ).map(({ artistId }) => artistId)
     await addGenresToTrack(tx, storeId, trackId, artistIds, genres)
-    await refreshTrackDetails(tx, trackId)
+    await refreshTrackDetails(tx, [trackId])
   })
 
 const backfillBeatportGenres = (module.exports.backfillBeatportGenres = async ({

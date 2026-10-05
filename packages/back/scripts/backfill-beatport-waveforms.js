@@ -149,7 +149,7 @@ INTO store__track_preview_waveform
 SELECT UNNEST(${previewIds}::INT[]), ${waveformUrl}, ${sourceId}
 ON CONFLICT ON CONSTRAINT store__track_preview_waveform_store__track_preview_id_url_key DO NOTHING
 `)
-    await refreshTrackDetails(tx, trackId)
+    await refreshTrackDetails(tx, [trackId])
   })
 
 const backfillBeatportWaveforms = (module.exports.backfillBeatportWaveforms = async ({
