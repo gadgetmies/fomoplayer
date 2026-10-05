@@ -10,6 +10,7 @@ import Collection from './Collection'
 import Spinner from './Spinner'
 import StoreIcon from './StoreIcon'
 import { followableNameLinks, namesToString, trackArtistsAndTitle } from './trackFunctions'
+import { getWaveformTimeline } from './waveformTimeline'
 import CopyToClipboardButton from './CopyToClipboardButton'
 import ShareLink from './ShareLink'
 import { CartDropDownButton } from './CartDropDownButton'
@@ -364,20 +365,14 @@ class Preview extends Component {
     const currentTrack = this.props.currentTrack
     const mp3Preview = this.state.mp3Preview
     const waveform = this.state.waveform
-    let totalDuration = 0
-    let startOffset = 0
-    let endPosition = 0
     const previewDetails = this.getPreviewDetails()
     const shouldSkip = this.getShouldSkip()
-
-    const toPositionPercent = (currentPosition) =>
-      previewDetails ? ((currentPosition + (shouldSkip ? 0 : previewDetails.start_ms)) / totalDuration) * 100 : 0
-
-    if (currentTrack && mp3Preview) {
-      totalDuration = this.state.totalDuration || currentTrack.duration
-      startOffset = previewDetails?.start_ms || 0
-      endPosition = previewDetails?.end_ms || this.state.totalDuration
-    }
+    const { totalDuration, startOffset, endPosition, toPositionPercent } = getWaveformTimeline({
+      previewDetails: currentTrack ? previewDetails : null,
+      trackDuration: currentTrack?.duration,
+      generatedWaveformDuration: this.state.totalDuration,
+      shouldSkip,
+    })
 
     const searchString = currentTrack
       ? encodeURIComponent(
