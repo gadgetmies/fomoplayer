@@ -117,7 +117,7 @@ module.exports.seedCartSimilarityViaApi = async (page) => {
     'Finding the demo tracks',
     await fetchViaBrowser(page, `/api/tracks?q=${encodeURIComponent(TOKEN)}&limit=100&sort=-released`),
   )
-  const byTitle = new Map((search.json || []).map((t) => [t.title, t]))
+  const byTitle = new Map((search.json?.tracks || []).map((t) => [t.title, t]))
   const seeded = DEMO_TRACKS.map((d, index) => ({ ...d, index, track: byTitle.get(titleOf(d.key)) }))
   const missing = seeded.filter(({ track }) => !track).map(({ key }) => key)
   if (missing.length > 0) throw new Error(`Demo tracks not found after seeding: ${missing.join(', ')}`)

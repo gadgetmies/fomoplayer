@@ -11,8 +11,9 @@ collection-centred embeddings 0.65 → 0.69).
 - New backend cart search: groups a cart's tracks (Ward clustering on Discogs-EffNet embeddings centred on the
   user's collection), searches the catalogue per group through the existing HNSW index, and scores each result
   with a Fit value (0–100) that is comparable across groups.
-- New API `GET /api/me/carts/:uuid/similar` with a coarse ↔ fine group count (`k`, automatic by default),
-  session-only "Not this" push-away (`misses`), and a New-artists-only filter (`newOnly`).
+- A `cart:~<uuid>` search term on `GET /api/tracks` with a coarse ↔ fine group count (`k`, automatic by default),
+  session-only "Not this" push-away (`misses`), and a New-artists-only filter (`newArtistsOnly`). The
+  response's `meta.cartSearch` holds the groups, map and excluded counts. The other search terms filter the results.
 - Results always exclude tracks the user has heard, ignored (artist, label, release, artist on label), purchased,
   or already has in the searched cart.
 - New search mode `cart:~<cart uuid>`; the existing `/api/tracks?q=` search delegates it to the cart search.
@@ -25,7 +26,7 @@ collection-centred embeddings 0.65 → 0.69).
 
 ### New Capabilities
 - `cart-similarity-search`: grouping of a cart's tracks, per-group catalogue search, push-away, Fit scoring,
-  exclusions, the `/api/me/carts/:uuid/similar` API and the `cart:~<uuid>` search term on `/api/tracks`.
+  exclusions, and the `cart:~<uuid>` search term on `/api/tracks` with its options and filters.
 - `cart-similarity-search-ui`: the Find similar entry point, the results controls (slider, New artists only, Map),
   group chips, Fit pill and tooltip, "Not this" column and session misses, the map, and Save group as cart.
 

@@ -54,6 +54,10 @@
   width: 100%;
 }
 
+.cart-search-limit {
+  color: #999;
+}
+
 .cart-search-toast {
   color: #ffd6f2;
 }
@@ -72,9 +76,12 @@
   vertical-align: middle;
 }
 
+/* The settings' tab control, at the smaller button height. */
 .cart-search-chips {
-  gap: 2px;
+  align-self: center;
+  align-items: center;
   max-width: 100%;
+  box-sizing: border-box;
 }
 
 .cart-search-chip {
@@ -85,9 +92,10 @@
   gap: 6px;
   min-width: 0;
   max-width: 100%;
+  box-sizing: border-box;
+  line-height: 1;
   white-space: nowrap;
   color: white;
-  border-radius: 0.25rem;
 }
 
 .cart-search-chip:hover {
@@ -170,6 +178,11 @@
   color: #999;
 }
 
+/* "Not this" is an action, so it is shown at full strength like the other primary buttons. */
+.table-cell-button.cart-search-not-this {
+  opacity: 1;
+}
+
 /* Fit pill: dot and number on one line, centred in the column with a gap on both sides. */
 .cart-search-fit-cell {
   display: flex !important;
@@ -196,7 +209,6 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 

@@ -404,7 +404,12 @@ class Track extends Component {
           <td className={'follow-ignore-cart-cell tracks-cell'}>
             <div
               className={`${this.props.similarity !== undefined || this.props.cartSearch ? 'similarity-cell' : 'score-cell'} track-table-cell ${this.props.cartSearch ? 'cart-search-fit-cell' : ''}`}
-              style={{ overflow: 'visible', paddingRight: this.props.cartSearch ? 0 : 5, paddingBottom: 0 }}
+              // The Fit pill keeps the cell's bottom padding so it is centred like the buttons in the other cells.
+              style={{
+                overflow: 'visible',
+                paddingRight: this.props.cartSearch ? 0 : 5,
+                paddingBottom: this.props.cartSearch ? undefined : 0,
+              }}
             >
               {this.props.cartSearch && this.renderFitPill()}
               {!this.props.cartSearch && this.props.similarity !== undefined && (
@@ -540,7 +545,7 @@ class Track extends Component {
             {this.props.cartSearch ? (
               <span className={'table-cell-button-row'}>
                 <button
-                  className={'button button-push_button button-push_button-small button-push_button-primary table-cell-button'}
+                  className={'button button-push_button button-push_button-small button-push_button-primary table-cell-button cart-search-not-this'}
                   title={'Not this: hide it and push the search away from it (this session only)'}
                   aria-label={'Not this'}
                   data-testid="cart-search-not-this"

@@ -52,6 +52,16 @@ const logoutPath = '/auth/logout'
 const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
 const CART_TRACKS_PAGE_SIZE = 20
+// Cart search details when the cart is not found (meta.cartSearch is then null).
+const emptyCartSearchResult = {
+  k: 0,
+  autoK: 0,
+  maxK: 0,
+  groups: [],
+  map: { members: [] },
+  excluded: { heard: 0, ignored: 0, purchased: 0, knownArtists: 0 },
+  cartTracks: null,
+}
 
 const buildLoginReturnPath = () => {
   const params = new URLSearchParams(window.location.search)
@@ -205,6 +215,7 @@ class App extends Component {
       searchError: undefined,
       searchResults: [],
       cartSearch: null,
+      searchBarResetCount: 0,
       listState: initialListState,
       currentTrack,
       heardTracks: defaultTracksData.tracks.heard,
@@ -941,10 +952,12 @@ class App extends Component {
     if (query === '') return
     const cartTerm = findCartSearchTerm(searchTerms)
     if (cartTerm) {
-      if (!append) await this.startCartSearch(searchTerms, cartTerm)
+      if (!append) await this.startCartSearch(searchTerms, cartTerm, filters)
       return
     }
     if (this.state.cartSearch) this.setState({ cartSearch: null })
+    // Only the newest search (this or a cart search) may update the list.
+    const requestId = (this.searchRequestId = (this.searchRequestId || 0) + 1)
     const { trackOffsets } = this.state
     const offset = append ? trackOffsets.search : 0
     if (!append) {
@@ -958,11 +971,15 @@ class App extends Component {
       window.history.pushState(undefined, undefined, `/search?${parameters}`)
     }
     try {
-      const searchResults = await (
+      const { tracks: searchResults } = await (
         await requestWithCredentials({
           path: `/tracks?${parameters}`,
         })
       ).json()
+      if (requestId !== this.searchRequestId) {
+        if (append) this.setState({ loadingMore: false })
+        return undefined
+      }
       if (append) {
         const existingSearchResults = this.state.searchResults
         const uniqueSearchResults = deduplicateTracks(existingSearchResults, searchResults)
@@ -980,33 +997,41 @@ class App extends Component {
       }
       return undefined
     } catch (e) {
+      if (requestId !== this.searchRequestId) {
+        if (append) this.setState({ loadingMore: false })
+        return undefined
+      }
       console.error('Search failed', e)
       this.setState({ searchError: 'Search failed, please try again.', loadingMore: false })
     } finally {
-      if (!append) {
+      if (!append && requestId === this.searchRequestId) {
         this.setState({ searchInProgress: false })
       }
     }
   }
 
   // Cart similarity search: the cart is split into groups of similar tracks and each group is searched separately.
-  // The settings below live only in this browser session; "Not this" tracks are sent with every request and never
-  // stored on the server.
-  async startCartSearch(searchTerms, cartTerm) {
+  // It runs through the track search like any other query, so the other search terms (text, artist, label, …) filter
+  // the results. The settings below live only in this browser session; "Not this" tracks are sent with every request
+  // and never stored on the server.
+  async startCartSearch(searchTerms, cartTerm, filters = {}) {
     const cart = this.state.carts.find(({ uuid }) => uuid === cartTerm.id)
     const name = cartTerm.name || cart?.name
     const terms = searchTerms.map((term) => (term === cartTerm && name ? { ...term, name } : term))
+    const query = searchTermsToQueryString(terms)
     const names = entityNamesToUrlParam(terms)
     window.history.pushState(
       undefined,
       undefined,
-      `/search?q=${encodeURIComponent(searchTermsToQueryString(terms))}${names ? `&names=${encodeURIComponent(names)}` : ''}`,
+      `/search?q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}`,
     )
     const cartSearch = {
       uuid: cartTerm.id,
       name,
+      query,
+      addedSince: filters.addedSince || null,
       k: null,
-      newOnly: false,
+      newArtistsOnly: false,
       misses: [],
       chip: 'all',
       mapOpen: false,
@@ -1014,7 +1039,7 @@ class App extends Component {
       result: null,
       toast: '',
     }
-    this.setState({ listState: 'search', searchTerms: terms, searchError: undefined, cartSearch })
+    this.setState({ listState: 'search', searchTerms: terms, searchError: undefined, searchResults: [], cartSearch })
     await this.fetchCartSearch(cartSearch)
   }
 
@@ -1027,17 +1052,19 @@ class App extends Component {
   }
 
   async fetchCartSearch(cartSearch) {
-    const requestId = (this.cartSearchRequestId = (this.cartSearchRequestId || 0) + 1)
-    const params = new URLSearchParams()
+    const requestId = (this.searchRequestId = (this.searchRequestId || 0) + 1)
+    const params = new URLSearchParams({ q: cartSearch.query })
     if (cartSearch.k !== null && cartSearch.k !== undefined) params.set('k', cartSearch.k)
-    if (cartSearch.newOnly) params.set('newOnly', 'true')
+    if (cartSearch.newArtistsOnly) params.set('newArtistsOnly', 'true')
     if (cartSearch.misses.length > 0) params.set('misses', cartSearch.misses.map(({ id }) => id).join(','))
+    if (cartSearch.addedSince) params.set('addedSince', cartSearch.addedSince)
     this.setState({ searchInProgress: true, searchError: undefined })
     try {
-      const result = await requestJSONwithCredentials({
-        path: `/me/carts/${cartSearch.uuid}/similar?${params.toString()}`,
-      })
-      if (requestId !== this.cartSearchRequestId) return
+      const { tracks, meta } = await requestJSONwithCredentials({ path: `/tracks?${params.toString()}` })
+      if (requestId !== this.searchRequestId) return
+      const result = meta.cartSearch
+        ? { ...meta.cartSearch, tracks }
+        : { ...emptyCartSearchResult, tracks, reason: 'Cart not found.' }
       const next = { ...this.state.cartSearch, ...cartSearch, result, k: result.k }
       if (next.chip !== 'all' && next.chip >= result.groups.length) next.chip = 'all'
       this.setState({
@@ -1047,11 +1074,11 @@ class App extends Component {
         trackOffsets: { ...this.state.trackOffsets, search: 0 },
       })
     } catch (e) {
-      if (requestId !== this.cartSearchRequestId) return
+      if (requestId !== this.searchRequestId) return
       console.error('Cart search failed', e)
       this.setState({ searchError: 'Search failed, please try again.' })
     } finally {
-      if (requestId === this.cartSearchRequestId) this.setState({ searchInProgress: false })
+      if (requestId === this.searchRequestId) this.setState({ searchInProgress: false })
     }
   }
 
@@ -1061,7 +1088,7 @@ class App extends Component {
     if (!current) return
     const next = { ...current, ...changes }
     if ('k' in changes && changes.k !== current.k) next.chip = 'all'
-    const refetch = ['k', 'newOnly', 'misses'].some((key) => key in changes && changes[key] !== current[key])
+    const refetch = ['k', 'newArtistsOnly', 'misses'].some((key) => key in changes && changes[key] !== current[key])
     this.setState({ cartSearch: next, searchResults: this.visibleCartSearchResults(next) })
     if (refetch) await this.fetchCartSearch(next)
   }
@@ -1098,9 +1125,11 @@ class App extends Component {
     }
   }
 
+  // Starts a fresh cart search: whatever was in the search bar is cleared.
   findSimilarToCart(cart) {
     if (!cart?.uuid) return
     const term = { type: 'cart', value: `cart:~${cart.uuid}`, id: cart.uuid, similar: true, name: cart.name }
+    this.setState({ searchBarResetCount: this.state.searchBarResetCount + 1 })
     this.search([term], this.state.searchFilters)
   }
 
@@ -1367,6 +1396,7 @@ class App extends Component {
                   listState={this.state.listState}
                   notifications={this.state.notifications}
                   searchTerms={this.state.searchTerms}
+                  searchBarResetCount={this.state.searchBarResetCount}
                   searchFilters={this.state.searchFilters}
                   userSettings={this.state.userSettings}
                   isAdmin={this.state.isAdmin}
