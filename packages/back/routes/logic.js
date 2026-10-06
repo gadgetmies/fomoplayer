@@ -53,7 +53,10 @@ module.exports.getPreview = async (id, stores, format, offset) => {
 
 module.exports.getCartDetails = async (uuid, userId, stores = undefined, tracksFilter) => {
   logger.info(`Getting cart details for user: ${userId}, uuid: ${uuid}`)
-  const { isPublic, id } = await queryCartDetailsByUuid(uuid)
+  if (!/^[0-9a-f-]{36}$/i.test(String(uuid))) return null
+  const details = await queryCartDetailsByUuid(uuid)
+  if (!details) return null
+  const { isPublic, id } = details
   logger.info(`Cart is public: ${isPublic}, id: ${id}`)
   const [{ ownerUserId }] = await queryCartOwner(id)
   logger.info(`Cart owner: ${ownerUserId}`)

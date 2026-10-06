@@ -1,6 +1,7 @@
 'use strict'
 
 const assert = require('assert')
+const { cartResponse } = require('../lib/cart-response')
 const { test } = require('cascade-test')
 const { installBrowserStub, clearBrowserStub, reloadCartPushModules } = require('../lib/cart-push-stubs')
 
@@ -28,7 +29,7 @@ const cartFixture = (count) => ({
 })
 
 const makeDeps = (cart) => ({
-  apiFetch: async () => cart,
+  apiFetch: async () => cartResponse(cart),
   getAppUrl: async () => 'https://fomoplayer.test',
 })
 

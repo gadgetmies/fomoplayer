@@ -98,7 +98,7 @@ test({
         const { searchParams } = new URL(url)
         const offset = Number(searchParams.get('offset'))
         const limit = Number(searchParams.get('limit'))
-        const body = { track_count: all.length, tracks: all.slice(offset, offset + limit) }
+        const body = { cart: {}, tracks: all.slice(offset, offset + limit), page: { offset, limit, total: all.length } }
         return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) }
       }
       const client = new FomoPlayerClient({ apiUrl: 'http://localhost:3000/api', apiKey: 'fp_test-key' })

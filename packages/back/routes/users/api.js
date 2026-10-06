@@ -60,7 +60,7 @@ const {
   setCartTracks,
   CART_TRACKS_PAGE,
 } = require('../shared/cart.js')
-const { parsePage } = require('../shared/paging')
+const { parsePage, parseStores, parseDate } = require('../shared/request-params')
 const { BadRequest } = require('../shared/httpErrors')
 
 const { queryDefaultCartId } = require('../shared/db/cart.js')
@@ -131,15 +131,10 @@ const upload = multer({
 const USER_TRACKS_PAGE = { defaultLimit: 20, maxLimit: 200 }
 
 const parseUserTrackFilters = ({ store: stores, notHeardBefore }) => {
-  const normalizedStores = (Array.isArray(stores) ? stores : stores ? [stores] : [])
-    .map((store) => (typeof store === 'string' ? store.toLowerCase().trim() : ''))
-    .filter(Boolean)
-  if (notHeardBefore !== undefined && Number.isNaN(new Date(notHeardBefore).getTime())) {
-    throw new BadRequest(`notHeardBefore must be a date, got: ${notHeardBefore}`)
-  }
+  const notHeardBeforeDate = parseDate('notHeardBefore', notHeardBefore)
   return {
-    stores: normalizedStores.length > 0 ? normalizedStores : null,
-    notHeardBefore: notHeardBefore ? new Date(notHeardBefore) : undefined,
+    stores: parseStores(stores),
+    notHeardBefore: notHeardBeforeDate ? new Date(notHeardBeforeDate) : undefined,
   }
 }
 
@@ -437,7 +432,8 @@ router.get(
       resolvedId = await queryDefaultCartId(userId)
       if (!resolvedId) return res.status(404).send()
     }
-    res.send(await getCartDetails(userId, resolvedId, query.store, page))
+    const filter = { since: parseDate('since', query.since), ...page }
+    res.send(await getCartDetails(userId, resolvedId, parseStores(query.store), filter))
   },
 )
 

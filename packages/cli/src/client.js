@@ -103,13 +103,16 @@ class FomoPlayerClient {
 
   // One page of a cart's tracks when a limit is given, otherwise every track (the API returns at most a page at a time).
   async getCartTracks(cartId, { offset, limit, store } = {}) {
-    const cartPath = (o, l) => `/me/carts/${cartId}?${new URLSearchParams(definedParams({ offset: o, limit: l, store }))}`
+    const cartPath = (o, l) =>
+      `/me/carts/${cartId}?${new URLSearchParams(definedParams({ offset: o, limit: l, store }))}`
     if (limit !== undefined) return (await (await this.get(cartPath(offset, limit))).json()).tracks
     const tracks = []
     for (;;) {
-      const cart = await (await this.get(cartPath((offset ?? 0) + tracks.length, CART_PAGE_SIZE))).json()
-      tracks.push(...cart.tracks)
-      if (cart.tracks.length < CART_PAGE_SIZE || (offset ?? 0) + tracks.length >= cart.track_count) return tracks
+      const { tracks: pageTracks, page } = await (
+        await this.get(cartPath((offset ?? 0) + tracks.length, CART_PAGE_SIZE))
+      ).json()
+      tracks.push(...pageTracks)
+      if (pageTracks.length < CART_PAGE_SIZE || (offset ?? 0) + tracks.length >= page.total) return tracks
     }
   }
 

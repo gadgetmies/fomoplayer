@@ -140,7 +140,7 @@ module.exports.seedCartSimilarityViaApi = async (page) => {
       'Creating the demo cart',
       await fetchViaBrowser(page, '/api/me/carts', {
         method: 'POST',
-        body: { name: CART_NAME, tracks: cartTrackIds.map((track_id) => ({ track_id })) },
+        body: { name: CART_NAME, tracks: cartTrackIds.map((trackId) => ({ trackId })) },
       }),
     ).json
   } else {

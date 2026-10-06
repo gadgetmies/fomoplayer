@@ -4,10 +4,11 @@ const assert = require('assert')
 const { test } = require('cascade-test')
 const { resolveCartTracks } = require('../../src/js/cart-push/resolve')
 const { CART_PAGE_SIZE } = require('../../src/js/cart-tracks')
+const { cartResponse } = require('../lib/cart-response')
 
 const makeApiFetch = (cart) => async (path) => {
   if (!path.startsWith('/api/me/carts/')) throw new Error('unexpected path ' + path)
-  return cart
+  return cartResponse(cart)
 }
 
 const makeDeps = (cart) => ({
@@ -111,7 +112,7 @@ test({
         const { searchParams } = new URL(path, 'https://fomoplayer.test')
         const offset = Number(searchParams.get('offset'))
         const limit = Number(searchParams.get('limit'))
-        return { name: 'big', track_count: all.length, tracks: all.slice(offset, offset + limit) }
+        return { cart: { name: 'big' }, tracks: all.slice(offset, offset + limit), page: { offset, limit, total: all.length } }
       }
       const bp = await resolveCartTracks(
         { store: 'beatport', fomoplayerCartId: 3 },

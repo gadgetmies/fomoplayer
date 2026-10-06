@@ -41,18 +41,18 @@ module.exports.removeCart = async (userId, cartId) => {
 
 module.exports.updateCartDetails = async (userId, cartId, properties) => {
   await verifyCartOwnership(userId, cartId)
-  const { name, is_public } = properties
+  const { name, isPublic } = properties
   await BPromise.using(pg.getTransaction(), async (tx) => {
-    if (name !== undefined || is_public !== undefined) {
+    if (name !== undefined || isPublic !== undefined) {
       try {
-        await updateCartProperties(tx, cartId, properties)
+        await updateCartProperties(tx, cartId, { name, isPublic })
       } catch (e) {
         const error = `Updating cart properties failed, error: ${e.toString()}`
         logger.error(error)
         throw new Error(error)
       }
     } else {
-      const message = `Missing cart details (name, is_public), provided: ${JSON.stringify(properties, null, 2)}`
+      const message = `Missing cart details (name, isPublic), provided: ${JSON.stringify(properties, null, 2)}`
       logger.error(message)
       throw new Error(message)
     }
@@ -168,7 +168,7 @@ module.exports.importPlaylistAsCart = async (userId, url) => {
   logger.debug(
     `Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}, tracks: ${storedTracks.length}`,
   )
-  const createdCart = await insertCart(userId, `${storeModule.logic.storeName}: ${title}`)
+  const createdCart = await insertCart(userId, { name: `${storeModule.logic.storeName}: ${title}` })
   logger.debug(`Importing playlist as cart, user: ${userId}, url: ${url}, title: ${title}, cart: ${createdCart.id}`)
   await insertTracksToCart(createdCart.id, storedTracks.map((trackId) => ({ trackId })))
   return createdCart
@@ -176,7 +176,10 @@ module.exports.importPlaylistAsCart = async (userId, url) => {
 
 module.exports.enableCartSync = async (userId, cartId, storeName) => {
   try {
-    const { name, tracks } = await queryCartDetails(cartId, [storeName.toLowerCase()], { all: true })
+    const {
+      cart: { name },
+      tracks,
+    } = await queryCartDetails(cartId, [storeName.toLowerCase()], { all: true })
     const { id: spotifyPlaylistId, url, versionId } = await createCart(userId, `Fomo Player: ${name}`, tracks)
     await insertCartStoreDetails(cartId, storeName, spotifyPlaylistId, url, versionId)
   } catch (e) {

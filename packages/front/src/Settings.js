@@ -394,7 +394,7 @@ class Settings extends Component {
       path: `/me/carts/${cartId}`,
       method: 'POST',
       body: {
-        is_public: setPublic,
+        isPublic: setPublic,
       },
     })
     const updatedPublicCarts = new Set(this.state.publicCarts)
@@ -697,12 +697,19 @@ class Settings extends Component {
     this.setState({ cloningCartId: id })
 
     try {
-      const cart = await requestJSONwithCredentials({ path: `/me/carts/${id}` })
-      delete cart.id
+      // The cart is returned a page at a time; the copy gets every track.
+      const trackIds = []
+      let cart
+      for (;;) {
+        const response = await requestJSONwithCredentials({ path: `/me/carts/${id}?offset=${trackIds.length}&limit=500` })
+        cart = response.cart
+        trackIds.push(...response.tracks.map((track) => track.id))
+        if (response.tracks.length === 0 || trackIds.length >= response.page.total) break
+      }
       const createdCart = await requestJSONwithCredentials({
         path: `/me/carts`,
         method: 'POST',
-        body: { ...cart, name: `${cart.name} - Copy` },
+        body: { name: `${cart.name} - Copy`, tracks: trackIds.map((trackId) => ({ trackId })) },
       })
       await this.props.onUpdateCarts()
       if (createdCart) {

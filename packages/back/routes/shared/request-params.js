@@ -18,3 +18,22 @@ module.exports.parsePage = ({ offset, limit } = {}, { defaultLimit, maxLimit }) 
   }
   return { offset: parsedOffset, limit: parsedLimit }
 }
+
+/**
+ * The `store` query parameter (given once or repeated) as lower-case store names, or null when no store is given.
+ */
+module.exports.parseStores = (stores) => {
+  const names = (Array.isArray(stores) ? stores : stores ? [stores] : [])
+    .map((store) => (typeof store === 'string' ? store.toLowerCase().trim() : ''))
+    .filter(Boolean)
+  return names.length > 0 ? names : null
+}
+
+/**
+ * An optional date query parameter (e.g. `since`): undefined when not given, otherwise it must parse as a date.
+ */
+module.exports.parseDate = (name, value) => {
+  if (isMissing(value)) return undefined
+  if (Number.isNaN(new Date(value).getTime())) throw new BadRequest(`${name} must be a date, got: ${value}`)
+  return value
+}

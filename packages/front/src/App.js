@@ -122,6 +122,9 @@ export const patchTrackCartMembership = (slices, trackId, cartUuid, op) => {
   }
 }
 
+// A cart response ({ cart, tracks, page }) as the cart record kept in the state: the cart's fields with its tracks.
+export const cartRecord = ({ cart, tracks }) => ({ ...cart, tracks })
+
 // Merges PATCH /carts/:id/tracks response onto an existing cart record without
 // replacing the in-memory `tracks` array wholesale. The PATCH response carries
 // the cart's first page; we keep the user's already-loaded tracks (which may
@@ -266,19 +269,14 @@ class App extends Component {
       if (!cartPagination || cartPagination.loadingMore || !selectedCartUuid || !selectedCart) return
       this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
       const nextOffset = cartPagination.offset + cartPagination.count
-      const response = await requestJSONwithCredentials({
+      const { cart, tracks: appendedTracks, page } = await requestJSONwithCredentials({
         path: `/carts/${selectedCartUuid}?offset=${nextOffset}&limit=${CART_TRACKS_PAGE_SIZE}`,
       })
-      const appendedTracks = response.tracks || []
       const carts = this.state.carts.slice()
       const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
       if (cartIndex !== -1) {
         const existingTracks = carts[cartIndex].tracks || []
-        carts[cartIndex] = {
-          ...carts[cartIndex],
-          tracks: existingTracks.concat(appendedTracks),
-          track_count: response.track_count != null ? response.track_count : carts[cartIndex].track_count,
-        }
+        carts[cartIndex] = { ...carts[cartIndex], ...cart, tracks: existingTracks.concat(appendedTracks) }
       }
       const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
       this.setState({
@@ -287,7 +285,7 @@ class App extends Component {
         cartPagination: {
           offset: 0,
           count: cartPagination.count + appendedTracks.length,
-          total: response.track_count != null ? response.track_count : cartPagination.total,
+          total: page.total,
           loadingMore: false,
         },
       })
@@ -470,21 +468,25 @@ class App extends Component {
   }
 
   async addToCart(cartId, trackId) {
-    const cartDetails = await requestJSONwithCredentials({
-      path: `/me/carts/${cartId}/tracks`,
-      method: 'PATCH',
-      body: [{ op: 'add', trackId }],
-    })
+    const cartDetails = cartRecord(
+      await requestJSONwithCredentials({
+        path: `/me/carts/${cartId}/tracks`,
+        method: 'PATCH',
+        body: [{ op: 'add', trackId }],
+      }),
+    )
 
     this.applyCartMutation(cartDetails, { trackId, cartId, op: 'add' })
   }
 
   async removeFromCart(cartId, trackId) {
-    const cartDetails = await requestJSONwithCredentials({
-      path: `/me/carts/${cartId}/tracks`,
-      method: 'PATCH',
-      body: [{ op: 'remove', trackId }],
-    })
+    const cartDetails = cartRecord(
+      await requestJSONwithCredentials({
+        path: `/me/carts/${cartId}/tracks`,
+        method: 'PATCH',
+        body: [{ op: 'remove', trackId }],
+      }),
+    )
 
     this.applyCartMutation(cartDetails, { trackId, cartId, op: 'remove' })
   }
@@ -1048,7 +1050,7 @@ class App extends Component {
     await requestJSONwithCredentials({
       path: `/me/carts`,
       method: 'POST',
-      body: { name: cartName, tracks: trackIds.map((trackId) => ({ track_id: trackId })) },
+      body: { name: cartName, tracks: trackIds.map((trackId) => ({ trackId })) },
     })
     await this.updateCarts()
     const latest = this.state.cartSearch
@@ -1122,7 +1124,8 @@ class App extends Component {
   async selectCart(selectedCartUuid) {
     this.setState({ selectedCartUuid, fetchingCartDetails: true, cartPagination: null })
     const path = `/carts/${selectedCartUuid}?offset=0&limit=${CART_TRACKS_PAGE_SIZE}`
-    const cartDetails = await requestJSONwithCredentials({ path })
+    const response = await requestJSONwithCredentials({ path })
+    const cartDetails = cartRecord(response)
     let updatedCarts = this.state.carts.slice()
     let cartIndex = updatedCarts.findIndex(({ uuid }) => uuid === selectedCartUuid)
     if (cartIndex === -1) {
@@ -1138,8 +1141,8 @@ class App extends Component {
       fetchingCartDetails: false,
       cartPagination: {
         offset: 0,
-        count: (cartDetails.tracks || []).length,
-        total: cartDetails.track_count || 0,
+        count: response.tracks.length,
+        total: response.page.total,
         loadingMore: false,
       },
     })

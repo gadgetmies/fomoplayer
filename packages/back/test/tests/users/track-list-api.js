@@ -65,9 +65,9 @@ const makeRequest = (baseUrl, rawKey) => async (method, path, body) => {
 
 const addedDates = async (cartId) =>
   Object.fromEntries(
-    (
-      await pg.queryRowsAsync(sql`SELECT track_id, track__cart_added FROM track__cart WHERE cart_id = ${cartId}`)
-    ).map(({ track_id, track__cart_added }) => [track_id, track__cart_added.toISOString()]),
+    (await pg.queryRowsAsync(sql`SELECT track_id, track__cart_added FROM track__cart WHERE cart_id = ${cartId}`)).map(
+      ({ track_id, track__cart_added }) => [track_id, track__cart_added.toISOString()],
+    ),
   )
 
 test({
@@ -129,6 +129,63 @@ test({
     expect(first.json.tracks.map(({ id }) => id)).to.deep.equal([trackIds[4], trackIds[3]])
     const second = await req('GET', `/api/me/carts/${cart.id}?offset=2&limit=2`)
     expect(second.json.tracks.map(({ id }) => id)).to.deep.equal([trackIds[2], trackIds[1]])
+  },
+
+  'GET /me/carts/:id returns the cart, one page of its tracks and the page': async ({ req, cart }) => {
+    const { status, json } = await req('GET', `/api/me/carts/${cart.id}?limit=2`)
+    expect(status).to.equal(200)
+    expect(json).to.have.all.keys('cart', 'tracks', 'page', 'meta')
+    expect(json.cart).to.include({
+      id: cart.id,
+      uuid: cart.uuid,
+      name: 'track list api fixture',
+      track_count: TRACK_COUNT,
+    })
+    expect(json.cart).to.not.have.property('tracks')
+    expect(json.page).to.deep.equal({ offset: 0, limit: 2, total: TRACK_COUNT })
+    expect(json.meta).to.deep.equal({})
+  },
+
+  'page.total counts only the tracks matching the filters': async ({ req, cart }) => {
+    // The two newest tracks were added less than 2.5 hours ago.
+    const since = new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString()
+    const { json } = await req('GET', `/api/me/carts/${cart.id}?since=${encodeURIComponent(since)}`)
+    expect(json.page.total).to.equal(2)
+    expect(json.tracks).to.have.length(2)
+    expect(json.cart.track_count).to.equal(TRACK_COUNT)
+  },
+
+  'GET /carts/:uuid answers 404 for an unknown cart': async ({ req }) => {
+    for (const uuid of ['00000000-0000-4000-8000-000000000000', 'not-a-uuid']) {
+      const { status } = await req('GET', `/api/carts/${uuid}`)
+      expect(status, uuid).to.equal(404)
+    }
+  },
+
+  'cart request bodies are camelCase': async ({ req, trackIds }) => {
+    const created = await req('POST', '/api/me/carts', {
+      name: 'track list api camelCase',
+      tracks: trackIds.slice(0, 2).map((trackId) => ({ trackId })),
+    })
+    expect(created.status).to.equal(200)
+    try {
+      const updated = await req('POST', `/api/me/carts/${created.json.id}`, { isPublic: true })
+      expect(updated.status).to.equal(204)
+      const { json } = await req('GET', `/api/me/carts/${created.json.id}`)
+      expect(json.cart.is_public).to.equal(true)
+      expect(json.tracks.map(({ id }) => id)).to.have.members(trackIds.slice(0, 2))
+    } finally {
+      await pg.queryAsync(sql`DELETE FROM track__cart WHERE cart_id = ${created.json.id}`)
+      await pg.queryAsync(sql`DELETE FROM cart WHERE cart_id = ${created.json.id}`)
+    }
+  },
+
+  'PATCH /me/carts/:id/tracks answers with the cart envelope': async ({ req, cart, trackIds }) => {
+    const { status, json } = await req('PATCH', `/api/me/carts/${cart.id}/tracks`, [
+      { op: 'add', trackId: trackIds[0] },
+    ])
+    expect(status).to.equal(200)
+    expect(json).to.have.all.keys('cart', 'tracks', 'page', 'meta')
   },
 
   'PUT /me/carts/:id/tracks makes the cart contain exactly the given tracks': async ({ req, cart, trackIds }) => {
