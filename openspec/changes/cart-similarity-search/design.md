@@ -43,8 +43,8 @@ centring, push-away strength and the Fit scale. The UI was approved through a mo
   requests. UMAP looked nicer offline but would need a native/JS dependency at request time.
 - **One search route.** The cart search is the `cart:~<uuid>` term of `GET /api/tracks`, like the other similarity
   terms, so the API stays consistent and the other terms filter the results. Every search response is
-  `{ tracks, meta: { total, offset, limit, count } }`, like the track lists' `{ tracks, meta }`; a cart search adds
-  the groups, counts and map as `meta.cartSearch`.
+  `{ tracks, page: { offset, limit, total }, meta }`, the same envelope as one of the user's track lists; a cart
+  search adds the groups, counts and map as `meta.cartSearch`.
   Alternative: a separate `/api/me/carts/:uuid/similar` endpoint (the first version) — dropped for consistency.
 - **Filters: score directly when selective, otherwise filter the nearest.** An artist, label, release, track, genre,
   key or bpm term matching at most 2,000 tracks is scored directly, so e.g. a label's most cart-like tracks are found

@@ -42,5 +42,5 @@
 - [x] 6.3 Use only the 300 most recently added analysed cart tracks and report `cartTracks`; show the limit in the UI
 - [x] 6.4 Keep the Purchased cart under the 25 s response timeout (newest-first loading, parallel queries, primary-key track lookup, smaller pool, background collection mean)
 - [x] 6.5 UI: settings-style tabs for the groups, search spinner, opaque Not this button, clear the search bar on Find similar, ignore superseded search responses
-- [x] 6.6 Return every track search as `{ tracks, meta: { total, offset, limit, count } }` (cart searches add `meta.cartSearch`); count the matches alongside the page query
+- [x] 6.6 Return every track search as `{ tracks, page: { offset, limit, total }, meta }` (cart searches add `meta.cartSearch`); count the matches alongside the page query
 - [x] 6.7 Align the Fit pill with the row's buttons

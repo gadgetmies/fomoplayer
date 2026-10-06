@@ -52,6 +52,8 @@ const logoutPath = '/auth/logout'
 const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
 const CART_TRACKS_PAGE_SIZE = 20
+// The API names of the user's track lists, by list state.
+const USER_TRACK_LISTS = { new: 'new', heard: 'heard', recent: 'recentlyAdded' }
 // Cart search details when the cart is not found (meta.cartSearch is then null).
 const emptyCartSearchResult = {
   k: 0,
@@ -224,7 +226,8 @@ class App extends Component {
       mode: undefined,
       loadingMore: false,
       trackOffsets: { new: 0, heard: 0, recent: 0, search: 0 },
-      pagination: null,
+      // The latest page ({ offset, limit, total }) of each list, by list state.
+      pages: {},
       cartPagination: null,
       notHeardBefore: null,
     }
@@ -238,15 +241,10 @@ class App extends Component {
   }
 
   hasMoreTracks() {
-    const { listState, pagination, trackOffsets, searchResults, cartPagination } = this.state
-    if (listState === 'search') {
-      return searchResults.length % (this.state.searchFilters.limit || 100) === 0 && searchResults.length > 0
-    } else if (['new', 'heard', 'recent'].includes(listState) && pagination) {
-      const category = listState === 'recent' ? 'recent' : listState
-      const categoryPagination = pagination[category]
-      if (categoryPagination) {
-        return categoryPagination.offset + categoryPagination.count < categoryPagination.total
-      }
+    const { listState, pages, trackOffsets, cartPagination } = this.state
+    if (['new', 'heard', 'recent', 'search'].includes(listState)) {
+      const page = pages[listState]
+      return page ? trackOffsets[listState] < page.total : false
     } else if (listState === 'carts') {
       return cartPagination ? cartPagination.offset + cartPagination.count < cartPagination.total : false
     }
@@ -614,114 +612,50 @@ class App extends Component {
 
   async updateTracks(append = false) {
     const { trackOffsets, listState, notHeardBefore } = this.state
-    let queryParams = []
-    
-    if (append) {
-      const category = listState === 'recent' ? 'recent' : listState
-      if (['new', 'heard', 'recent'].includes(category)) {
-        const offset = trackOffsets[category]
-        queryParams.push(`offset_${category}=${offset}`)
-        queryParams.push(`limit_${category}=20`)
-        
-        if (category !== 'new') queryParams.push('limit_new=0')
-        if (category !== 'heard') queryParams.push('limit_heard=0')
-        if (category !== 'recent') queryParams.push('limit_recent=0')
-      }
-    }
-    
-    if (notHeardBefore) {
-      queryParams.push(`not_heard_before=${encodeURIComponent(notHeardBefore)}`)
-    }
-    
-    const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : ''
-    const {
-      meta: { new: newTracks, total: totalTracks },
-      tracks,
-      pagination,
-      notHeardBefore: responseNotHeardBefore,
-    } = await requestJSONwithCredentials({
-      path: `/me/tracks${queryString}`,
-    })
-    
-    if (responseNotHeardBefore && !this.state.notHeardBefore) {
-      this.setState({ notHeardBefore: responseNotHeardBefore })
-    }
+    const notHeardBeforeParam = notHeardBefore ? `notHeardBefore=${encodeURIComponent(notHeardBefore)}` : ''
 
     if (append) {
-      const category = listState === 'recent' ? 'recent' : listState
-      const existingNew = this.state.tracksData.tracks.new
-      const existingHeard = this.state.tracksData.tracks.heard
-      const existingRecent = this.state.tracksData.tracks.recentlyAdded
-      const existingHeardTracks = this.state.heardTracks
-
-      let uniqueNew = existingNew
-      let uniqueHeard = existingHeard
-      let uniqueRecent = existingRecent
-      let uniqueHeardTracks = existingHeardTracks
-
-      if (category === 'new') {
-        uniqueNew = deduplicateTracks(existingNew, tracks.new)
-      } else if (category === 'heard') {
-        uniqueHeard = deduplicateTracks(existingHeard, tracks.heard)
-        uniqueHeardTracks = deduplicateTracks(existingHeardTracks, tracks.heard)
-      } else if (category === 'recent') {
-        uniqueRecent = deduplicateTracks(existingRecent, tracks.recentlyAdded)
+      const list = USER_TRACK_LISTS[listState]
+      if (!list) {
+        this.setState({ loadingMore: false })
+        return
       }
-
-      const updatedOffsets = { ...trackOffsets }
-      if (pagination) {
-        if (pagination.new) {
-          updatedOffsets.new = pagination.new.offset + pagination.new.count
-        }
-        if (pagination.heard) {
-          updatedOffsets.heard = pagination.heard.offset + pagination.heard.count
-        }
-        if (pagination.recent) {
-          updatedOffsets.recent = pagination.recent.offset + pagination.recent.count
-        }
-      } else {
-        if (category === 'new') {
-          updatedOffsets.new = trackOffsets.new + (uniqueNew.length - existingNew.length)
-        } else if (category === 'heard') {
-          updatedOffsets.heard = trackOffsets.heard + (uniqueHeard.length - existingHeard.length)
-        } else if (category === 'recent') {
-          updatedOffsets.recent = trackOffsets.recent + (uniqueRecent.length - existingRecent.length)
-        }
-      }
-
+      const params = [`offset=${trackOffsets[listState]}`, 'limit=20', notHeardBeforeParam].filter(Boolean).join('&')
+      const { tracks, page } = await requestJSONwithCredentials({ path: `/me/tracks/${list}?${params}` })
+      const existing = this.state.tracksData.tracks[list]
+      const updatedTracks = deduplicateTracks(existing, tracks)
       this.setState({
         tracksData: {
-          tracks: {
-            new: uniqueNew,
-            heard: uniqueHeard,
-            recentlyAdded: uniqueRecent,
-          },
-          meta: { newTracks, totalTracks },
+          ...this.state.tracksData,
+          tracks: { ...this.state.tracksData.tracks, [list]: updatedTracks },
         },
-        heardTracks: uniqueHeardTracks,
-        trackOffsets: updatedOffsets,
-        pagination: pagination || this.state.pagination,
+        ...(list === 'heard' ? { heardTracks: deduplicateTracks(this.state.heardTracks, tracks) } : {}),
+        trackOffsets: { ...this.state.trackOffsets, [listState]: page.offset + tracks.length },
+        pages: { ...this.state.pages, [listState]: page },
         loadingMore: false,
       })
-    } else {
-      this.setState({
-        tracksData: { tracks, meta: { newTracks, totalTracks } },
-        heardTracks: tracks.heard,
-        onboarding: tracks.new.length === 0 && tracks.heard.length === 0,
-        trackOffsets: pagination ? {
-          new: pagination.new.offset + pagination.new.count,
-          heard: pagination.heard.offset + pagination.heard.count,
-          recent: pagination.recent.offset + pagination.recent.count,
-          search: this.state.trackOffsets.search,
-        } : {
-          new: tracks.new.length,
-          heard: tracks.heard.length,
-          recent: tracks.recentlyAdded.length,
-          search: this.state.trackOffsets.search,
-        },
-        pagination: pagination || null,
-      })
+      return
     }
+
+    const { lists, meta } = await requestJSONwithCredentials({
+      path: `/me/tracks${notHeardBeforeParam ? `?${notHeardBeforeParam}` : ''}`,
+    })
+    if (meta.notHeardBefore && !this.state.notHeardBefore) {
+      this.setState({ notHeardBefore: meta.notHeardBefore })
+    }
+    const tracks = R.map(R.prop('tracks'), lists)
+    this.setState({
+      tracksData: { tracks, meta: { newTracks: lists.new.page.total, totalTracks: meta.totalTracks } },
+      heardTracks: tracks.heard,
+      onboarding: tracks.new.length === 0 && tracks.heard.length === 0,
+      trackOffsets: {
+        new: lists.new.page.offset + tracks.new.length,
+        heard: lists.heard.page.offset + tracks.heard.length,
+        recent: lists.recentlyAdded.page.offset + tracks.recentlyAdded.length,
+        search: this.state.trackOffsets.search,
+      },
+      pages: { ...this.state.pages, new: lists.new.page, heard: lists.heard.page, recent: lists.recentlyAdded.page },
+    })
   }
 
   async markHeard(track) {
@@ -971,7 +905,7 @@ class App extends Component {
       window.history.pushState(undefined, undefined, `/search?${parameters}`)
     }
     try {
-      const { tracks: searchResults } = await (
+      const { tracks: searchResults, page } = await (
         await requestWithCredentials({
           path: `/tracks?${parameters}`,
         })
@@ -985,14 +919,16 @@ class App extends Component {
         const uniqueSearchResults = deduplicateTracks(existingSearchResults, searchResults)
         this.setState({
           searchResults: uniqueSearchResults,
-          trackOffsets: { ...this.state.trackOffsets, search: this.state.trackOffsets.search + (uniqueSearchResults.length - existingSearchResults.length) },
+          trackOffsets: { ...this.state.trackOffsets, search: page.offset + searchResults.length },
+          pages: { ...this.state.pages, search: page },
           loadingMore: false,
         })
       } else {
-        this.setState({ 
-          searchResults, 
+        this.setState({
+          searchResults,
           searchError: undefined,
-          trackOffsets: { ...this.state.trackOffsets, search: searchResults.length },
+          trackOffsets: { ...this.state.trackOffsets, search: page.offset + searchResults.length },
+          pages: { ...this.state.pages, search: page },
         })
       }
       return undefined
@@ -1060,7 +996,7 @@ class App extends Component {
     if (cartSearch.addedSince) params.set('addedSince', cartSearch.addedSince)
     this.setState({ searchInProgress: true, searchError: undefined })
     try {
-      const { tracks, meta } = await requestJSONwithCredentials({ path: `/tracks?${params.toString()}` })
+      const { tracks, page, meta } = await requestJSONwithCredentials({ path: `/tracks?${params.toString()}` })
       if (requestId !== this.searchRequestId) return
       const result = meta.cartSearch
         ? { ...meta.cartSearch, tracks }
@@ -1071,7 +1007,8 @@ class App extends Component {
         cartSearch: next,
         searchResults: this.visibleCartSearchResults(next),
         searchError: result.reason,
-        trackOffsets: { ...this.state.trackOffsets, search: 0 },
+        trackOffsets: { ...this.state.trackOffsets, search: page.offset + tracks.length },
+        pages: { ...this.state.pages, search: page },
       })
     } catch (e) {
       if (requestId !== this.searchRequestId) return
@@ -1107,10 +1044,11 @@ class App extends Component {
     const current = this.state.cartSearch
     const group = current?.result?.groups?.[groupIndex]
     if (!group || !cartName) return
+    const trackIds = current.result.map.members.filter((m) => m.group === groupIndex).map(({ trackId }) => trackId)
     await requestJSONwithCredentials({
       path: `/me/carts`,
       method: 'POST',
-      body: { name: cartName, tracks: group.trackIds.map((trackId) => ({ track_id: trackId })) },
+      body: { name: cartName, tracks: trackIds.map((trackId) => ({ track_id: trackId })) },
     })
     await this.updateCarts()
     const latest = this.state.cartSearch
@@ -1119,7 +1057,7 @@ class App extends Component {
         cartSearch: {
           ...latest,
           saved: [...latest.saved, { k: latest.k, group: groupIndex, name: cartName }],
-          toast: `Created cart “${cartName}” with ${group.trackIds.length} tracks.`,
+          toast: `Created cart “${cartName}” with ${trackIds.length} tracks.`,
         },
       })
     }

@@ -612,11 +612,9 @@ class Settings extends Component {
       try {
         this.setState({ updatingTracks: true })
 
-        const { tracks } = await requestJSONwithCredentials({
-          path: `/me/tracks?limit_new=10&limit_recent=0&limit_heard=0`,
-        })
+        const { tracks } = await requestJSONwithCredentials({ path: `/me/tracks/new?limit=10` })
 
-        this.setState({ tracks, updatingTracks: false })
+        this.setState({ tracks: { ...this.state.tracks, new: tracks }, updatingTracks: false })
       } catch (e) {
         console.error(e)
         this.setState({ updatingTracks: false })

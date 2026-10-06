@@ -83,6 +83,7 @@ const {
   queryNotificationAudioSamples: getNotificationAudioSamples,
   deleteNotificationAudioSample,
   deleteHeardSince,
+  USER_TRACK_LISTS,
 } = require('./db')
 
 const router = require('express').Router()
@@ -127,44 +128,43 @@ const upload = multer({
   },
 })
 
-router.get(
-  '/tracks',
-  async (
-    {
-      user: { id: authUserId },
-      query: { 
-        limit_new: limitNew = 20, 
-        limit_recent: limitRecent = 20, 
-        limit_heard: limitHeard = 20,
-        offset_new: offsetNew = 0,
-        offset_recent: offsetRecent = 0,
-        offset_heard: offsetHeard = 0,
-        store: stores,
-        not_heard_before: notHeardBefore
-      },
-    },
-    res,
-  ) => {
-    const normalizedStores = (Array.isArray(stores) ? stores : stores ? [stores] : [])
-      .map((store) => (typeof store === 'string' ? store.toLowerCase().trim() : ''))
-      .filter(Boolean)
-    const storeFilter = normalizedStores.length > 0 ? normalizedStores : null
+const USER_TRACKS_PAGE = { defaultLimit: 20, maxLimit: 200 }
 
-    logger.info(`Got stores: ${JSON.stringify(storeFilter)}`)
-    const userTracks = await getUserTracks(
-      authUserId, 
-      storeFilter, 
-      { new: limitNew, recent: limitRecent, heard: limitHeard },
-      { new: offsetNew, recent: offsetRecent, heard: offsetHeard },
-      notHeardBefore ? new Date(notHeardBefore) : undefined
-    )
-    res.json(userTracks)
-  },
-)
+const parseUserTrackFilters = ({ store: stores, notHeardBefore }) => {
+  const normalizedStores = (Array.isArray(stores) ? stores : stores ? [stores] : [])
+    .map((store) => (typeof store === 'string' ? store.toLowerCase().trim() : ''))
+    .filter(Boolean)
+  if (notHeardBefore !== undefined && Number.isNaN(new Date(notHeardBefore).getTime())) {
+    throw new BadRequest(`notHeardBefore must be a date, got: ${notHeardBefore}`)
+  }
+  return {
+    stores: normalizedStores.length > 0 ? normalizedStores : null,
+    notHeardBefore: notHeardBefore ? new Date(notHeardBefore) : undefined,
+  }
+}
 
-router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
-  getTracksM3u(userId).tap((m3u) => res.send(m3u)),
-)
+// The first page of each of the user's track lists: { lists: { new, heard, recentlyAdded }, meta }. `limit` is the
+// page size of every list.
+router.get('/tracks', async ({ user: { id: userId }, query }, res) => {
+  const { limit } = parsePage({ limit: query.limit }, USER_TRACKS_PAGE)
+  const limits = Object.fromEntries(USER_TRACK_LISTS.map((list) => [list, limit]))
+  res.json(await getUserTracks(userId, { ...parseUserTrackFilters(query), limits }))
+})
+
+// One page of one of the user's track lists: { tracks, page, meta }. Pass the notHeardBefore of the first response
+// to keep the lists stable while tracks are being marked heard.
+router.get(USER_TRACK_LISTS.map((list) => `/tracks/${list}`), async ({ user: { id: userId }, path, query }, res) => {
+  const list = path.split('/').pop()
+  const { offset, limit } = parsePage(query, USER_TRACKS_PAGE)
+  const limits = Object.fromEntries(USER_TRACK_LISTS.map((l) => [l, l === list ? limit : 0]))
+  const offsets = Object.fromEntries(USER_TRACK_LISTS.map((l) => [l, l === list ? offset : 0]))
+  const { lists, meta } = await getUserTracks(userId, { ...parseUserTrackFilters(query), limits, offsets })
+  res.json({ ...lists[list], meta })
+})
+
+router.get('/tracks/playlist.pls', async ({ user: { id: userId } }, res) => {
+  res.send(await getTracksM3u(userId))
+})
 
 router.post('/tracks/heard-lookup', async ({ user: { id: userId }, body }, res) => {
   const store = body?.store

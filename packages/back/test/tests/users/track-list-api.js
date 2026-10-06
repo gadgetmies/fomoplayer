@@ -145,6 +145,53 @@ test({
     expect(readded.json).to.deep.equal({ added: 2, removed: 0 })
   },
 
+  'GET /me/tracks returns the first page of each list and the user totals': async ({ req, userId, trackIds }) => {
+    const { status, json } = await req('GET', '/api/me/tracks?limit=2')
+    expect(status).to.equal(200)
+    expect(json.lists).to.have.all.keys('new', 'heard', 'recentlyAdded')
+    for (const list of Object.values(json.lists)) {
+      expect(list).to.have.all.keys('tracks', 'page')
+      expect(list.page).to.include({ offset: 0, limit: 2 })
+      expect(list.tracks.length).to.be.at.most(2)
+    }
+    expect(json.lists.new.page.total).to.equal(TRACK_COUNT)
+    expect(json.lists.recentlyAdded.page.total).to.equal(TRACK_COUNT)
+    expect(json.meta).to.have.all.keys('totalTracks', 'notHeardBefore')
+    // Every one of the user's tracks, purchased ones included, each counted once.
+    const [{ count }] = await pg.queryRowsAsync(
+      sql`SELECT COUNT(DISTINCT track_id)::INT AS count FROM user__track WHERE meta_account_user_id = ${userId}`,
+    )
+    expect(json.meta.totalTracks).to.equal(count)
+    expect(count).to.be.at.least(trackIds.length)
+  },
+
+  'GET /me/tracks/:list pages through one list': async ({ req }) => {
+    const first = await req('GET', '/api/me/tracks/recentlyAdded?limit=2')
+    expect(first.status).to.equal(200)
+    expect(first.json).to.have.all.keys('tracks', 'page', 'meta')
+    expect(first.json.page).to.deep.equal({ offset: 0, limit: 2, total: TRACK_COUNT })
+    const { notHeardBefore } = first.json.meta
+    const rest = await req(
+      'GET',
+      `/api/me/tracks/recentlyAdded?offset=2&limit=10&notHeardBefore=${encodeURIComponent(notHeardBefore)}`,
+    )
+    expect(rest.json.page).to.deep.equal({ offset: 2, limit: 10, total: TRACK_COUNT })
+    const ids = [...first.json.tracks, ...rest.json.tracks].map(({ id }) => id)
+    expect(new Set(ids).size).to.equal(TRACK_COUNT)
+  },
+
+  'GET /me/tracks rejects invalid paging and dates': async ({ req }) => {
+    for (const path of [
+      '/api/me/tracks?limit=0',
+      '/api/me/tracks/new?limit=0',
+      '/api/me/tracks/heard?offset=-1',
+      '/api/me/tracks/new?notHeardBefore=yesterday',
+    ]) {
+      const { status } = await req('GET', path)
+      expect(status, path).to.equal(400)
+    }
+  },
+
   'PUT /me/carts/:id/tracks rejects a body that is not a list of ids': async ({ req, cart }) => {
     const { status } = await req('PUT', `/api/me/carts/${cart.id}/tracks`, { trackIds: [1] })
     expect(status).to.equal(400)

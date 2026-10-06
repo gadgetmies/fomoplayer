@@ -143,7 +143,7 @@ const GlobalSearchBar = ({
         (async () => {
           try {
             if (t.type === 'track') {
-              const tracks = await requestJSONwithCredentials({
+              const { tracks } = await requestJSONwithCredentials({
                 path: `/tracks/?q=${encodeURIComponent(`track:${t.id}`)}&limit=1&offset=0`,
               })
               const track = tracks?.[0]

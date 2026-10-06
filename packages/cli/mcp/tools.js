@@ -43,20 +43,17 @@ const defineTools = (client) => [
   },
   {
     name: 'get_tracks',
-    description: 'Get tracks from the user library',
+    description:
+      "Get the first page of the user's track lists: { lists: { new, heard, recentlyAdded }, meta }, each list " +
+      'as { tracks, page: { offset, limit, total } }',
     inputSchema: {
       type: 'object',
       properties: {
         store: { type: 'string', description: 'Filter by store' },
-        limit: { type: 'number', description: 'Maximum number of tracks to return' },
+        limit: { type: 'number', description: 'Number of tracks from each list (1–200, default 20)' },
       },
     },
-    handler: async ({ store, limit } = {}) => {
-      const params = {}
-      if (store !== undefined) params.store = store
-      if (limit !== undefined) params.limit_new = limit
-      return client.getTracks(params)
-    },
+    handler: async ({ store, limit } = {}) => client.getTracks({ store, limit }),
   },
   {
     name: 'mark_track_heard',
