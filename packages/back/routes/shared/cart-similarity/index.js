@@ -224,7 +224,6 @@ module.exports.searchSimilarToCart = async ({
       index: gi,
       name: groupName(trackIds, detailsById),
       size: idx.length,
-      trackIds,
       resultCount: perGroup[gi].length,
       pushedAwayFrom: missesByGroup[gi].length,
     }

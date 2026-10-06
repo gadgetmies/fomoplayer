@@ -58,7 +58,7 @@ a new cart.
 3. **`routes/shared/cart-similarity/index.js`** — orchestration: groups → push-away → candidate scoring in the
    centred space → per-group top N → Fit, percentile, next-best group → 2D coordinates → `track_details` rows.
 4. **API**: the track search, `GET /api/tracks?q=cart:~<uuid> [other terms]&k=&newArtistsOnly=&misses=<id,id>`,
-   returns `{ tracks: [... track_details + cartSearch ], meta: { total, offset, limit, count, cartSearch: { cart, cartTracks, k, autoK, maxK, groups: [{ index, name, size, resultCount }], map: { members: [{ x, y, group }] }, excluded: { heard, ignored, purchased, knownArtists } } } }`.
+   returns `{ tracks: [... track_details + cartSearch ], page: { offset, limit, total }, meta: { cartSearch: { cart, cartTracks, k, autoK, maxK, groups: [{ index, name, size, resultCount }], map: { members: [{ x, y, group }] }, excluded: { heard, ignored, purchased, knownArtists } } } }`.
    Each result track carries `cartSearch: { group, fit, closerThan, similarity, nextGroup, nextFit, x, y }`.
    Every track search uses the same `{ tracks, meta }` envelope. The other terms of the query (text, artist,
    label, genre, …) and `store` / `addedSince` filter the results.

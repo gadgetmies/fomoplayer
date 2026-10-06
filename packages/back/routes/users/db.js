@@ -651,7 +651,23 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = async (userId, stores = undefined, limits = { new: 80, recent: 50, heard: 20 }, offsets = { new: 0, recent: 0, heard: 0 }, notHeardBefore = undefined) => {
+const USER_TRACK_LISTS = (module.exports.USER_TRACK_LISTS = ['new', 'heard', 'recentlyAdded'])
+
+/**
+ * The user's track lists: new (by score), heard (most recently heard first) and recentlyAdded, each as one page:
+ * `{ lists: { <list>: { tracks, page: { offset, limit, total } } }, meta: { totalTracks, notHeardBefore } }`.
+ * A list with a limit of 0 is not read (its tracks are empty; the total is still counted). `totalTracks` is the number
+ * of the user's tracks in the selected stores, each track counted once.
+ */
+module.exports.queryUserTracks = async (
+  userId,
+  {
+    stores = undefined,
+    limits = { new: 20, heard: 20, recentlyAdded: 20 },
+    offsets = { new: 0, heard: 0, recentlyAdded: 0 },
+    notHeardBefore = undefined,
+  } = {},
+) => {
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC NULLS LAST, score DESC NULLS LAST`
 
@@ -694,20 +710,16 @@ WITH
 )
   , user_tracks_meta AS (
     SELECT
-        COUNT(*)                                          AS total
-      , COUNT(*) FILTER (WHERE user__track_heard IS NULL) AS new
+        COUNT(DISTINCT track_id) AS total
     FROM
         user__track
             NATURAL JOIN logged_user
             NATURAL JOIN store__track
             NATURAL JOIN stores
-    WHERE
-        track_id NOT IN (SELECT track_id FROM user_purchased_tracks) AND
-        (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
   )
   , heard_tracks_meta AS (
     SELECT
-        COUNT(*) AS total
+        COUNT(DISTINCT track_id) AS total
     FROM
         user__track
             NATURAL JOIN logged_user
@@ -727,7 +739,7 @@ WITH
             NATURAL JOIN store__track
             NATURAL JOIN stores
     WHERE
-        user__track_heard IS NULL AND
+        (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP)) AND
         (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
   )
   , new_tracks AS (
@@ -1034,7 +1046,7 @@ WITH
             NATURAL JOIN stores
           WHERE (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP))
           ORDER BY track_added DESC NULLS LAST
-          LIMIT ${sql`${limits.recent}`} OFFSET ${sql`${offsets.recent}`}
+          LIMIT ${sql`${limits.recentlyAdded}`} OFFSET ${sql`${offsets.recentlyAdded}`}
       )
          , limited_tracks AS (
           SELECT DISTINCT track_id
@@ -1101,27 +1113,10 @@ WITH
               'heard', CASE WHEN heard_tracks IS NULL THEN '[]'::JSON ELSE heard_tracks END,
               'recentlyAdded', CASE WHEN recently_added IS NULL THEN '[]'::JSON ELSE recently_added END
           ) AS tracks
-           , JSON_BUILD_OBJECT(
-              'total', user_tracks_meta.total,
-              'new', user_tracks_meta.new
-          ) AS meta
-           , JSON_BUILD_OBJECT(
-              'new', JSON_BUILD_OBJECT(
-                'offset', ${sql`${offsets.new}`}::INT,
-                'total', new,
-                'count', CASE WHEN new_tracks IS NULL THEN 0 ELSE jsonb_array_length(new_tracks::jsonb) END
-              ),
-              'heard', JSON_BUILD_OBJECT(
-                'offset', ${sql`${offsets.heard}`}::INT,
-                'total', COALESCE(heard_tracks_meta.total, 0),
-                'count', CASE WHEN heard_tracks IS NULL THEN 0 ELSE jsonb_array_length(heard_tracks::jsonb) END
-              ),
-              'recent', JSON_BUILD_OBJECT(
-                'offset', ${sql`${offsets.recent}`}::INT,
-                'total', COALESCE(recent_tracks_meta.total, 0),
-                'count', CASE WHEN recently_added IS NULL THEN 0 ELSE jsonb_array_length(recently_added::jsonb) END
-              )
-          ) AS pagination
+           , (SELECT COUNT(*) FROM new_tracks) :: INT AS "newTotal"
+           , COALESCE(heard_tracks_meta.total, 0) :: INT AS "heardTotal"
+           , COALESCE(recent_tracks_meta.total, 0) :: INT AS "recentlyAddedTotal"
+           , user_tracks_meta.total :: INT AS "totalTracks"
            , COALESCE(${sql`${notHeardBefore}`}::TIMESTAMP, NOW()) AS "notHeardBefore"
       FROM new_tracks_with_details
          , heard_tracks_with_details
@@ -1133,32 +1128,19 @@ WITH
       .then(R.head)
   })
 
-  const uniqueNewTracks = R.uniqBy(R.prop('track_id'), res.tracks.new)
-  const uniqueHeardTracks = R.uniqBy(R.prop('track_id'), res.tracks.heard)
-  const uniqueAddedTracks = R.uniqBy(R.prop('track_id'), res.tracks.recentlyAdded)
-
-  const duplicateNewTracks = R.difference(res.tracks.new, uniqueNewTracks)
-  const duplicateHeardTracks = R.difference(res.tracks.heard, uniqueHeardTracks)
-  const duplicateAddedTracks = R.difference(res.tracks.recentlyAdded, uniqueAddedTracks)
-
-  if (duplicateNewTracks.length > 0 || duplicateHeardTracks.length > 0 || duplicateAddedTracks.length > 0) {
-    logger.error('Duplicate tracks found in user tracks', {
-      duplicateNewTracks,
-      duplicateHeardTracks,
-      duplicateAddedTracks,
-    })
+  const lists = {}
+  for (const list of USER_TRACK_LISTS) {
+    const tracks = R.uniqBy(R.prop('track_id'), res.tracks[list])
+    if (tracks.length < res.tracks[list].length) {
+      logger.error('Duplicate tracks found in user tracks', { list, duplicates: R.difference(res.tracks[list], tracks) })
+    }
+    lists[list] = {
+      tracks,
+      page: { offset: Number(offsets[list]), limit: Number(limits[list]), total: res[`${list}Total`] },
+    }
   }
 
-  return {
-    ...res,
-    tracks: {
-      new: uniqueNewTracks,
-      heard: uniqueHeardTracks,
-      recentlyAdded: uniqueAddedTracks,
-    },
-    pagination: res.pagination,
-    notHeardBefore: res.notHeardBefore,
-  }
+  return { lists, meta: { totalTracks: res.totalTracks, notHeardBefore: res.notHeardBefore } }
 }
 
 module.exports.addArtistOnLabelToIgnore = (tx, artistId, labelId, userId) =>

@@ -57,7 +57,11 @@ const {
   getCartDetails,
   updateCartContents,
   updateAllCartContents,
+  setCartTracks,
+  CART_TRACKS_PAGE,
 } = require('../shared/cart.js')
+const { parsePage, parseStores, parseDate } = require('../shared/request-params')
+const { BadRequest } = require('../shared/httpErrors')
 
 const { queryDefaultCartId } = require('../shared/db/cart.js')
 
@@ -79,6 +83,7 @@ const {
   queryNotificationAudioSamples: getNotificationAudioSamples,
   deleteNotificationAudioSample,
   deleteHeardSince,
+  USER_TRACK_LISTS,
 } = require('./db')
 
 const router = require('express').Router()
@@ -123,44 +128,38 @@ const upload = multer({
   },
 })
 
-router.get(
-  '/tracks',
-  async (
-    {
-      user: { id: authUserId },
-      query: { 
-        limit_new: limitNew = 20, 
-        limit_recent: limitRecent = 20, 
-        limit_heard: limitHeard = 20,
-        offset_new: offsetNew = 0,
-        offset_recent: offsetRecent = 0,
-        offset_heard: offsetHeard = 0,
-        store: stores,
-        not_heard_before: notHeardBefore
-      },
-    },
-    res,
-  ) => {
-    const normalizedStores = (Array.isArray(stores) ? stores : stores ? [stores] : [])
-      .map((store) => (typeof store === 'string' ? store.toLowerCase().trim() : ''))
-      .filter(Boolean)
-    const storeFilter = normalizedStores.length > 0 ? normalizedStores : null
+const USER_TRACKS_PAGE = { defaultLimit: 20, maxLimit: 200 }
 
-    logger.info(`Got stores: ${JSON.stringify(storeFilter)}`)
-    const userTracks = await getUserTracks(
-      authUserId, 
-      storeFilter, 
-      { new: limitNew, recent: limitRecent, heard: limitHeard },
-      { new: offsetNew, recent: offsetRecent, heard: offsetHeard },
-      notHeardBefore ? new Date(notHeardBefore) : undefined
-    )
-    res.json(userTracks)
-  },
-)
+const parseUserTrackFilters = ({ store: stores, notHeardBefore }) => {
+  const notHeardBeforeDate = parseDate('notHeardBefore', notHeardBefore)
+  return {
+    stores: parseStores(stores),
+    notHeardBefore: notHeardBeforeDate ? new Date(notHeardBeforeDate) : undefined,
+  }
+}
 
-router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
-  getTracksM3u(userId).tap((m3u) => res.send(m3u)),
-)
+// The first page of each of the user's track lists: { lists: { new, heard, recentlyAdded }, meta }. `limit` is the
+// page size of every list.
+router.get('/tracks', async ({ user: { id: userId }, query }, res) => {
+  const { limit } = parsePage({ limit: query.limit }, USER_TRACKS_PAGE)
+  const limits = Object.fromEntries(USER_TRACK_LISTS.map((list) => [list, limit]))
+  res.json(await getUserTracks(userId, { ...parseUserTrackFilters(query), limits }))
+})
+
+// One page of one of the user's track lists: { tracks, page, meta }. Pass the notHeardBefore of the first response
+// to keep the lists stable while tracks are being marked heard.
+router.get(USER_TRACK_LISTS.map((list) => `/tracks/${list}`), async ({ user: { id: userId }, path, query }, res) => {
+  const list = path.split('/').pop()
+  const { offset, limit } = parsePage(query, USER_TRACKS_PAGE)
+  const limits = Object.fromEntries(USER_TRACK_LISTS.map((l) => [l, l === list ? limit : 0]))
+  const offsets = Object.fromEntries(USER_TRACK_LISTS.map((l) => [l, l === list ? offset : 0]))
+  const { lists, meta } = await getUserTracks(userId, { ...parseUserTrackFilters(query), limits, offsets })
+  res.json({ ...lists[list], meta })
+})
+
+router.get('/tracks/playlist.pls', async ({ user: { id: userId } }, res) => {
+  res.send(await getTracksM3u(userId))
+})
 
 router.post('/tracks/heard-lookup', async ({ user: { id: userId }, body }, res) => {
   const store = body?.store
@@ -425,16 +424,16 @@ router.get(
   async ({
     user: { id: userId },
     params: { id: cartId },
-    query: { offset: tracksOffset, limit: tracksLimit, store: stores },
+    query,
   }, res) => {
+    const page = parsePage(query, CART_TRACKS_PAGE)
     let resolvedId = cartId
     if (cartId === 'default') {
       resolvedId = await queryDefaultCartId(userId)
       if (!resolvedId) return res.status(404).send()
     }
-    res.send(
-      await getCartDetails(userId, resolvedId, stores, { offset: parseInt(tracksOffset), limit: parseInt(tracksLimit) }),
-    )
+    const filter = { since: parseDate('since', query.since), ...page }
+    res.send(await getCartDetails(userId, resolvedId, parseStores(query.store), filter))
   },
 )
 
@@ -457,6 +456,15 @@ router.patch('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: c
     logger.error(message, e)
     return res.status(500).send(message)
   }
+})
+
+// Replaces the cart's tracks with the given track ids (the body is an array of ids). Tracks already in the cart keep
+// their added date; the response tells how many tracks were added and removed.
+router.put('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: cartId }, body: trackIds }, res) => {
+  if (!Array.isArray(trackIds) || !trackIds.every((id) => Number.isInteger(Number(id)))) {
+    throw new BadRequest('The body must be an array of track ids')
+  }
+  res.send(await setCartTracks(userId, cartId, trackIds))
 })
 
 router.patch('/carts', async ({ user: { id: userId }, body: operations }, res) => {

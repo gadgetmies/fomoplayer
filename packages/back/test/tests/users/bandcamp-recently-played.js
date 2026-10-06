@@ -38,10 +38,10 @@ const bandcampTrack = (label) => ({
 })
 
 const fetchHeardBucket = (userId) =>
-  queryUserTracks(userId, ['bandcamp'], { new: 0, recent: 0, heard: 20 }, { new: 0, recent: 0, heard: 0 })
+  queryUserTracks(userId, { stores: ['bandcamp'], limits: { new: 0, recentlyAdded: 0, heard: 20 } })
 
 const findHeardEntry = (result, trackId) =>
-  (result?.tracks?.heard || []).find((t) => Number(t.id) === Number(trackId))
+  (result?.lists?.heard?.tracks || []).find((t) => Number(t.id) === Number(trackId))
 
 test({
   setup: async () => {
@@ -76,7 +76,7 @@ test({
     await setTrackHeard(trackA, userId, true)
     await new Promise((r) => setTimeout(r, 25))
     await setTrackHeard(trackB, userId, true)
-    const heardIds = (await fetchHeardBucket(userId)).tracks.heard.map((t) => Number(t.id))
+    const heardIds = (await fetchHeardBucket(userId)).lists.heard.tracks.map((t) => Number(t.id))
     const positionA = heardIds.indexOf(Number(trackA))
     const positionB = heardIds.indexOf(Number(trackB))
     assert.ok(positionA >= 0, 'track A must be in heard bucket')
@@ -99,7 +99,7 @@ test({
     await setTrackHeard(trackB, userId, true)
 
     const initial = await fetchHeardBucket(userId)
-    const initialHeardIds = initial.tracks.heard.map((t) => Number(t.id))
+    const initialHeardIds = initial.lists.heard.tracks.map((t) => Number(t.id))
     assert.strictEqual(initialHeardIds.indexOf(Number(trackB)), 0, 'B starts at top')
 
     const beforeReheard = findHeardEntry(initial, trackA).heard
@@ -107,7 +107,7 @@ test({
     await setTrackHeard(trackA, userId, true)
 
     const after = await fetchHeardBucket(userId)
-    const afterHeardIds = after.tracks.heard.map((t) => Number(t.id))
+    const afterHeardIds = after.lists.heard.tracks.map((t) => Number(t.id))
     assert.strictEqual(
       afterHeardIds.indexOf(Number(trackA)),
       0,

@@ -28,6 +28,7 @@ import { startBeatportRun, resumeBeatportRun } from './cart-push/beatport'
 import { startBandcampRun, openNextBandcampBatch } from './cart-push/bandcamp'
 import { readRun, clearRun, RunStatus, BANDCAMP_BATCH_SIZE_KEY } from './cart-push/state'
 import { normalizeAppUrl } from './app-url'
+import { fetchCartWithAllTracks } from './cart-tracks'
 // Importing audio-player has no effect in a service-worker (no DOM) but
 // installs the audio host inside the Firefox background page.
 import './audio-player'
@@ -498,22 +499,11 @@ const findOrCreateWishlistCart = async () => {
 
 const reconcileWishlistCart = async (wishlistReleases) => {
   const { mapping } = await ingestBandcampReleases(wishlistReleases)
-  const wishlistTrackIds = Object.values(mapping).filter(Boolean)
+  const wishlistTrackIds = [...new Set(Object.values(mapping).filter(Boolean))]
   const cart = await findOrCreateWishlistCart()
-  // Use ?fetch=tracks to learn which tracks the cart already has.
-  const detail = await apiFetch(`/api/me/carts/${cart.id}`)
-  const existingTrackIds = new Set((detail?.tracks || []).map((t) => t.id))
-  const operations = []
-  for (const trackId of wishlistTrackIds) {
-    if (!existingTrackIds.has(trackId)) operations.push({ op: 'add', trackId, addedAt: new Date().toISOString() })
-  }
-  for (const trackId of existingTrackIds) {
-    if (!wishlistTrackIds.includes(trackId)) operations.push({ op: 'remove', trackId })
-  }
-  if (operations.length > 0) {
-    await updateCartContents(cart.id, operations)
-  }
-  return { cartId: cart.id, addedCount: operations.filter((o) => o.op === 'add').length, removedCount: operations.filter((o) => o.op === 'remove').length }
+  // The server makes the cart match the wishlist; tracks already in the cart keep their added date.
+  const { added, removed } = await apiFetch(`/api/me/carts/${cart.id}/tracks`, { method: 'PUT', body: wishlistTrackIds })
+  return { cartId: cart.id, addedCount: added, removedCount: removed }
 }
 
 const handleMessage = async (message) => {
@@ -601,7 +591,7 @@ const handleMessage = async (message) => {
     const annotated = await Promise.all(
       (carts || []).map(async (cart) => {
         try {
-          const detail = await apiFetch(`/api/me/carts/${cart.id}`)
+          const detail = await fetchCartWithAllTracks(apiFetch, cart.id)
           const containsTrackIds = (detail?.tracks || [])
             .map((t) => t.id)
             .filter((id) => requestedIds.has(id))

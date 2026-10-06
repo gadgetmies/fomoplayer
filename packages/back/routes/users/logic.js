@@ -126,7 +126,8 @@ const { insertSource } = require('../../jobs/watches/shared/db')
 const { getStoreDetailsFromUrl } = require('../stores/logic')
 
 module.exports.getTracksM3u = (userId) =>
-  queryUserTracks(userId).then((userTracks) => {
+  queryUserTracks(userId).then(({ lists }) => {
+    const userTracks = lists.new.tracks
     return (
       '[playlist]\n\n' +
       userTracks

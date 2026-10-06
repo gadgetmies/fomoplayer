@@ -86,11 +86,12 @@ const makeRequest = (baseUrl, rawKey) => async (method, path, body) => {
   return { status: res.status, json, text }
 }
 
-// Cart search through the track search route: meta.cartSearch holds the groups, the map and the excluded counts.
+// Cart search through the track search route: { tracks, page, meta }, where meta.cartSearch holds the groups, the map
+// and the excluded counts.
 const cartSearch = async (req, cartUuid, { terms = '', ...params } = {}) => {
   const query = new URLSearchParams({ q: `cart:~${cartUuid}${terms ? ` ${terms}` : ''}`, ...params })
   const { status, json } = await req('GET', `/api/tracks?${query}`)
-  return { status, json: json && { ...json.meta.cartSearch, tracks: json.tracks }, meta: json?.meta }
+  return { status, json: json && { ...json.meta.cartSearch, tracks: json.tracks }, meta: json?.meta, page: json?.page }
 }
 
 const titlesOf = (tracks) => tracks.map(({ title }) => title.replace('cart similarity ', ''))
@@ -189,7 +190,12 @@ test({
     expect(json.autoK).to.equal(2)
     expect(json.k).to.equal(2)
     expect(json.maxK).to.equal(2)
-    const groupsAsSets = json.groups.map((g) => [...g.trackIds].sort())
+    const groupsAsSets = json.groups.map((g) =>
+      json.map.members
+        .filter((m) => m.group === g.index)
+        .map(({ trackId }) => trackId)
+        .sort(),
+    )
     expect(groupsAsSets).to.have.deep.members([
       [trackIdByKey.cartA1, trackIdByKey.cartA2, trackIdByKey.cartA3].sort(),
       [trackIdByKey.cartB1, trackIdByKey.cartB2, trackIdByKey.cartB3].sort(),
@@ -273,21 +279,22 @@ test({
     expect(res.meta.cartSearch).to.equal(null)
   },
 
-  'reports the cart search page in meta': async ({ req, cartUuid }) => {
-    const { json, meta } = await cartSearch(req, cartUuid)
-    expect(meta).to.include({ total: json.tracks.length, offset: 0, count: json.tracks.length, limit: 2 * 50 })
+  'returns every cart search result on one page': async ({ req, cartUuid }) => {
+    const { json, page, meta } = await cartSearch(req, cartUuid)
+    expect(page).to.deep.equal({ offset: 0, limit: 2 * 50, total: json.tracks.length })
     expect(meta.cartSearch.limitPerGroup).to.equal(50)
   },
 
-  'reports the total, offset and limit of a normal search in meta': async ({ req }) => {
+  'reports the offset, limit and total of a normal search in page': async ({ req }) => {
     const all = await req('GET', `/api/tracks?q=${encodeURIComponent('cart similarity')}&limit=100`)
     expect(all.status).to.equal(200)
-    const total = all.json.meta.total
+    const { total } = all.json.page
     expect(total).to.be.at.least(FIXTURES.length)
-    expect(all.json.meta).to.deep.equal({ total, offset: 0, limit: 100, count: all.json.tracks.length })
+    expect(all.json.page).to.deep.equal({ offset: 0, limit: 100, total })
+    expect(all.json.meta).to.deep.equal({})
 
     const page = await req('GET', `/api/tracks?q=${encodeURIComponent('cart similarity')}&limit=5&offset=2`)
-    expect(page.json.meta).to.deep.equal({ total, offset: 2, limit: 5, count: 5 })
+    expect(page.json.page).to.deep.equal({ offset: 2, limit: 5, total })
     expect(page.json.tracks.map((t) => t.id)).to.deep.equal(all.json.tracks.slice(2, 7).map((t) => t.id))
   },
 })

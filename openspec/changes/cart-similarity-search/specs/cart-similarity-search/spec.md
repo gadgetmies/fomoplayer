@@ -84,29 +84,30 @@ The response SHALL report how many retrieved candidates were excluded as heard, 
 
 The cart search SHALL run through the track search: `GET /api/tracks?q=cart:~<uuid>` for the authenticated user's
 cart, accepting `k`, `newArtistsOnly`, `misses` (comma-separated track ids) and the usual `store` and `addedSince`
-parameters. Like every track search it SHALL return `{ tracks, meta: { total, offset, limit, count } }`, with the
+parameters. Like every track search it SHALL return `{ tracks, page: { offset, limit, total }, meta }`, with the
 tracks ordered by Fit and each including `cartSearch`. `meta.cartSearch` SHALL be
 `{ cart, cartTracks, limitPerGroup, k, autoK, maxK, groups, map, excluded }`, or null when the cart does not exist or
-belongs to another user (then there are no tracks). All results are returned at once: `limit` is `limitPerGroup × k`
-and an `offset` above 0 returns no tracks.
+belongs to another user (then there are no tracks). Group membership SHALL be read from `map.members[].group`. All
+results are returned at once: `page.limit` is `limitPerGroup × k`, `page.total` the number of tracks returned, and an
+`offset` above 0 returns no tracks.
 
 #### Scenario: Another user's cart
 - **WHEN** a user searches with the uuid of a cart owned by someone else
 - **THEN** the response is 200 with no tracks
 
-#### Scenario: The page is reported in meta
+#### Scenario: All results on one page
 - **WHEN** the track search is called with `q=cart:~<uuid of the user's cart with two groups>`
-- **THEN** `meta` is `{ total: n, offset: 0, limit: 100, count: n }` where `n` is the number of tracks, and `meta.cartSearch.limitPerGroup` is 50
+- **THEN** `page` is `{ offset: 0, limit: 100, total: n }` where `n` is the number of tracks, and `meta.cartSearch.limitPerGroup` is 50
 
 ### Requirement: Track search responses report the page
 
-Every track search (`GET /api/tracks?q=…`) SHALL return `{ tracks, meta: { total, offset, limit, count } }`: `total`
-SHALL be the number of tracks matching the query, `offset` and `limit` the requested page, and `count` the number of
-tracks returned.
+Every track search (`GET /api/tracks?q=…`) SHALL return `{ tracks, page: { offset, limit, total }, meta }`, the same
+envelope as one of the user's track lists: `total` SHALL be the number of tracks the search can page through and
+`offset` and `limit` the requested page. A `limit` outside 1–500 or a negative `offset` SHALL be rejected with 400.
 
 #### Scenario: A later page
 - **WHEN** a query matches 14 tracks and the search is called with `limit=5&offset=2`
-- **THEN** `meta` is `{ total: 14, offset: 2, limit: 5, count: 5 }` and the tracks are the 3rd to 7th of the full result
+- **THEN** `page` is `{ offset: 2, limit: 5, total: 14 }` and the tracks are the 3rd to 7th of the full result
 
 ### Requirement: Other search terms filter the cart search
 

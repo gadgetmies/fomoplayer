@@ -238,13 +238,13 @@ const searchByCart = async (
 }
 
 /**
- * Track search response in an envelope like the track lists' (`GET /api/me/tracks`):
- * `{ tracks, meta: { total, offset, limit, count } }`. `total` is the number of matching tracks, `offset` and `limit`
- * the page that was fetched and `count` the number of tracks on it.
+ * Track search response, in the same envelope as the user's track lists: `{ tracks, page: { offset, limit, total },
+ * meta }`. `total` is the number of tracks the search can page through (for a track:~ search, those in its nearest
+ * neighbour pool).
  *
- * A cart search (cart:~<uuid>) returns every result at once, ordered by Fit: `limit` is the most results it can
- * return (results per group × groups) and `meta.cartSearch` holds the groups, the map and the excluded counts (null
- * when the cart is not found).
+ * A cart search (cart:~<uuid>) returns every result at once, ordered by Fit: `page.limit` is the most results it can
+ * return (results per group × groups), `page.total` the number returned, and `meta.cartSearch` holds the groups, the
+ * map and the excluded counts (null when the cart is not found).
  */
 module.exports.searchForTracksResponse = async (originalQueryString, options = {}) => {
   const cart = await searchByCart(originalQueryString, options)
@@ -252,10 +252,10 @@ module.exports.searchForTracksResponse = async (originalQueryString, options = {
     const { tracks, cartSearch } = cart
     const offset = parseInt(options.offset, 10) || 0
     const limit = cartSearch ? cartSearch.limitPerGroup * cartSearch.k : 0
-    return { tracks, meta: { total: tracks.length, offset, limit, count: tracks.length, cartSearch } }
+    return { tracks, page: { offset, limit, total: offset + tracks.length }, meta: { cartSearch } }
   }
   const { tracks, total, limit, offset } = await searchTrackPage(originalQueryString, options)
-  return { tracks, meta: { total, offset, limit, count: tracks.length } }
+  return { tracks, page: { offset, limit, total }, meta: {} }
 }
 
 module.exports.searchForTracks = async (originalQueryString, options = {}) => {

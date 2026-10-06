@@ -132,16 +132,21 @@ module.exports.queryUserCartDetailsWithTracks = async (userId, stores) =>
     `,
   )
 
+/**
+ * A cart and one page of its tracks, newest first: `{ cart, tracks, page: { offset, limit, total }, meta: {} }`.
+ * `cart` has the same fields as a row of the user's cart list (`track_count` counts the whole cart); `page.total`
+ * counts the tracks matching the store and since filters. `all` (for internal callers such as the playlist sync)
+ * returns every track.
+ */
 module.exports.queryCartDetails = async (
   cartId,
   stores = undefined,
   tracksFilter = { since: undefined, offset: 0, limit: 200 },
 ) => {
-  const limit = tracksFilter?.limit === 0 ? null : parseInt(tracksFilter?.limit) || 200
+  const limit = tracksFilter?.all ? null : parseInt(tracksFilter?.limit) || 200
   const offset = parseInt(tracksFilter?.offset) || 0
-  logger.info(
-    `Querying cart details for cartId: ${cartId}, limit: ${limit}, offset: ${offset}, since: ${tracksFilter?.since}`,
-  )
+  const since = tracksFilter?.since || null
+  logger.info(`Querying cart details for cartId: ${cartId}, limit: ${limit}, offset: ${offset}, since: ${since}`)
   const query =
     // language=PostgreSQL
     sql`--queryCartDetails
@@ -151,13 +156,12 @@ module.exports.queryCartDetails = async (
                                , cart_is_public
                                , cart_is_purchased
                                , cart_uuid
-                               , cart_deleted
                                , COUNT(track_id) AS track_count
                           FROM
                             cart
                             NATURAL LEFT JOIN track__cart
                           WHERE cart_id = ${cartId}
-                          GROUP BY 1, 2, 3, 4, 5, 6, 7)
+                          GROUP BY 1, 2, 3, 4, 5, 6)
        , cart_store_details AS
       (SELECT cart_id
             , JSON_AGG(
@@ -172,25 +176,21 @@ module.exports.queryCartDetails = async (
          NATURAL JOIN cart__store
          NATURAL JOIN store
        GROUP BY 1)
-       , cart_tracks AS (SELECT DISTINCT ON (track__cart_added, track_id) track_id
-                              , track_details
-                              , cart_id
-                              , track__cart_added
-                         FROM
-                           track__cart
-                           NATURAL JOIN track_details
-                           NATURAL JOIN store__track
-                           NATURAL JOIN store
-                         WHERE cart_id = ${cartId} AND
-                               (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))`
-  if (tracksFilter?.since) {
-    query.append(sql` AND track__cart_added > ${tracksFilter.since}::TIMESTAMPTZ`)
-  }
-
-  query.append(
-    // language=PostgreSQL
-    sql`
-  ORDER BY track__cart_added DESC
+       , matching_tracks AS (SELECT DISTINCT ON (track__cart_added, track_id) track_id
+                                  , track_details
+                                  , cart_id
+                                  , track__cart_added
+                             FROM
+                               track__cart
+                               NATURAL JOIN track_details
+                               NATURAL JOIN store__track
+                               NATURAL JOIN store
+                             WHERE cart_id = ${cartId}
+                               AND (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
+                               AND (${since}::TIMESTAMPTZ IS NULL OR track__cart_added > ${since}::TIMESTAMPTZ))
+       , cart_tracks AS (SELECT *
+                         FROM matching_tracks
+                         ORDER BY track__cart_added DESC
                          LIMIT ${limit} OFFSET ${offset})
        , user_track_carts AS (
                 SELECT track_id, JSON_AGG(JSON_BUILD_OBJECT('uuid', cart_uuid)) AS carts
@@ -214,32 +214,29 @@ module.exports.queryCartDetails = async (
                   NATURAL LEFT JOIN user__track
                   NATURAL LEFT JOIN user_track_carts)
        , tracks AS (SELECT JSON_AGG(td ORDER BY track__cart_added DESC) AS tracks FROM td)
-    SELECT cart_id                                                                AS id
-         , cart_name                                                              AS name
-         , cart_is_default IS NOT NULL                                            AS is_default
-         , cart_is_public                                                         AS is_public
-         , cart_is_purchased IS NOT NULL                                          AS is_purchased
-         , cart_uuid                                                              AS uuid
-         , cart_deleted                                                           AS deleted
-         , track_count :: INT                                                     AS track_count
+    SELECT JSON_BUILD_OBJECT(
+               'id', cart_id
+             , 'name', cart_name
+             , 'is_default', COALESCE(cart_is_default, FALSE)
+             , 'is_public', cart_is_public
+             , 'is_purchased', COALESCE(cart_is_purchased, FALSE)
+             , 'uuid', cart_uuid
+             , 'store_details', CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END
+             , 'track_count', track_count :: INT
+           )                                                                      AS cart
          , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
-         , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS store_details
+         , (SELECT COUNT(*) FROM matching_tracks) :: INT                          AS total
     FROM
       cart_details
       NATURAL JOIN tracks
       NATURAL LEFT JOIN cart_store_details
-    ORDER BY cart_is_default, cart_is_purchased, cart_name
-    `,
-  )
-
-  logger.info('Cart query', query)
-
-  logger.info(`Querying finished for cartId: ${cartId}, limit: ${limit}, offset: ${offset}`)
+    `
 
   const [details] = await pg.queryRowsAsync(query)
-  logger.info('details')
-
-  return { limit, offset, ...details }
+  logger.info(`Querying finished for cartId: ${cartId}, limit: ${limit}, offset: ${offset}`)
+  if (!details) return null
+  const { cart, tracks, total } = details
+  return { cart, tracks, page: { offset, limit, total }, meta: {} }
 }
 
 module.exports.deleteCart = async (cartId) =>
@@ -252,14 +249,14 @@ module.exports.deleteCart = async (cartId) =>
     `,
   )
 
-module.exports.updateCartProperties = async (tx, cartId, { name, is_public }) => {
+module.exports.updateCartProperties = async (tx, cartId, { name, isPublic }) => {
   await tx.queryAsync(
     // language=PostgreSQL
     sql`---updateCartProperties
     UPDATE cart
     SET
         cart_name      = COALESCE(${name} :: TEXT, cart_name)
-      , cart_is_public = COALESCE(${is_public}, cart_is_public)
+      , cart_is_public = COALESCE(${isPublic}, cart_is_public)
     WHERE
         cart_id = ${cartId}
     `,
@@ -299,7 +296,7 @@ RETURNING cart_id AS id, cart_uuid AS uuid, cart_name AS name
       sql`--insertCart
 INSERT INTO track__cart
   (cart_id, track_id)
-SELECT ${createdCart.id}, track_id FROM json_to_recordset(${JSON.stringify(cart.tracks)}) AS w(track_id BIGINT)
+SELECT ${createdCart.id}, track_id FROM unnest(${cart.tracks.map(({ trackId }) => trackId)}::BIGINT[]) AS track_id
 ON CONFLICT DO NOTHING
 `,
     )
@@ -346,6 +343,18 @@ DO UPDATE SET track__cart_added = EXCLUDED.track__cart_added`,
     )
   }
 }
+
+module.exports.queryCartTrackIds = async (cartId) =>
+  (
+    await pg.queryRowsAsync(
+      // language=PostgreSQL
+      sql`--queryCartTrackIds
+SELECT track_id AS id
+FROM track__cart
+WHERE cart_id = ${cartId}
+`,
+    )
+  ).map(({ id }) => id)
 
 module.exports.deleteTracksFromCart = async (cartId, trackIds) =>
   pg.queryRowsAsync(
