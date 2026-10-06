@@ -7,7 +7,7 @@
     "start": "supervisor -- --inspect index.js",
     "start:prod": "node index.js",
     "migrate": "db-migrate -e development up",
-    "db-migrate:prod": "db-migrate -v --config ${PWD}/database.json -e prod up",
+    "db-migrate:prod": "db-migrate --config ${PWD}/database.json -e prod up",
     "db-migrate:prod:retry": "node scripts/db-migrate-with-retry.js",
     "db:wait": "node scripts/wait-for-db.js",
     "test": "NODE_ENV=test dotenv -e .env.test -- npx cascade-test ./test/tests",

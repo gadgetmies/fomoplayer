@@ -17,7 +17,7 @@ const runMigrate = () =>
     const env = process.env.NODE_ENV === 'ci' ? 'ci' : 'prod'
     const child = spawn(
       'npx',
-      ['db-migrate', '-v', '--config', configPath, '-e', env, 'up'],
+      ['db-migrate', '--config', configPath, '-e', env, 'up'],
       { stdio: ['inherit', 'pipe', 'pipe'] },
     )
 
