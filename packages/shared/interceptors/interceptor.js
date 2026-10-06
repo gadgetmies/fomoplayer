@@ -120,7 +120,8 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
         }
       } else if (mock !== undefined) {
         logger.info(`Mocking request: ${url}`)
-        mockedRequests.push({ url, request })
+        const requestBody = request.body ? await request.clone().text() : undefined
+        mockedRequests.push({ url, request, body: requestBody })
         const { body, options } = mock.getResponse(requestDetails)
 
         try {

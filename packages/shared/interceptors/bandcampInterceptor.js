@@ -17,22 +17,7 @@ const bandcampResonanceVIMock = readFileSync(path.resolve(`${__dirname}/fixtures
   'utf-8',
 )
 
-const bandcampElectronicMock = readFileSync(path.resolve(`${__dirname}/fixtures/bandcamp-electronic.html`)).toString(
-  'utf-8',
-)
-const bandcampAllMock = readFileSync(path.resolve(`${__dirname}/fixtures/bandcamp-all.html`)).toString('utf-8')
-const bandcampAllDigitalMock = readFileSync(path.resolve(`${__dirname}/fixtures/bandcamp-all-digital.html`)).toString(
-  'utf-8',
-)
-const bandcampElectronicDigitalMock = readFileSync(
-  path.resolve(`${__dirname}/fixtures/bandcamp-electronic-digital.html`),
-).toString('utf-8')
-const bandcampElectronicDnbMock = readFileSync(
-  path.resolve(`${__dirname}/fixtures/bandcamp-electronic-drum-and-bass.html`),
-).toString('utf-8')
-const bandcampElectronicDigitalDnbMock = readFileSync(
-  path.resolve(`${__dirname}/fixtures/bandcamp-electronic-digital-drum-and-bass.html`),
-).toString('utf-8')
+const bandcampDiscoverMock = require('./fixtures/bandcamp-discover.json')
 
 const respondWith =
   (body, contentType = 'application/json') =>
@@ -89,12 +74,7 @@ module.exports.init = () => {
         'https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music',
         bandcampDifferentEyesMock,
       ],
-      ['https://bandcamp.com/discover', bandcampAllMock],
-      ['https://bandcamp.com/discover/all/digital', bandcampAllDigitalMock],
-      ['https://bandcamp.com/discover/electronic', bandcampElectronicMock],
-      ['https://bandcamp.com/discover/electronic/digital', bandcampElectronicDigitalMock],
-      ['https://bandcamp.com/discover/electronic?tags=drum-bass', bandcampElectronicDnbMock],
-      ['https://bandcamp.com/discover/electronic/digital?tags=drum-bass', bandcampElectronicDigitalDnbMock],
+      [({ pathname }) => pathname === '/api/discover/1/discover_web', bandcampDiscoverMock],
     ]),
     name: 'Bandcamp',
     regex: BandcampUrlRegex,
