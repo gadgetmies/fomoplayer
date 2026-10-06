@@ -9,6 +9,7 @@ import scoreWeights from './scoreWeights'
 import { followableNameLinks, namesToString } from './trackFunctions'
 import { Link } from 'react-router-dom'
 import Popup from './Popup'
+import { GroupDot } from './CartSearchControls'
 import { CartDropDownButton } from './CartDropDownButton'
 
 const isNumber = (value) => typeof value === 'number' && !Number.isNaN(value)
@@ -402,10 +403,11 @@ class Track extends Component {
         {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'}>
             <div
-              className={`${this.props.similarity !== undefined ? 'similarity-cell' : 'score-cell'} track-table-cell`}
-              style={{ overflow: 'visible', paddingRight: 5, paddingBottom: 0 }}
+              className={`${this.props.similarity !== undefined || this.props.cartSearch ? 'similarity-cell' : 'score-cell'} track-table-cell ${this.props.cartSearch ? 'cart-search-fit-cell' : ''}`}
+              style={{ overflow: 'visible', paddingRight: this.props.cartSearch ? 0 : 5, paddingBottom: 0 }}
             >
-              {this.props.similarity !== undefined && (
+              {this.props.cartSearch && this.renderFitPill()}
+              {!this.props.cartSearch && this.props.similarity !== undefined && (
                 <PillButton
                   className={'table-cell-button'}
                   style={{ display: 'flex', paddingBottom: 7, justifyContent: 'center' }}
@@ -535,28 +537,104 @@ class Track extends Component {
         ) : null}
         <td className={'open-share-cell tracks-cell'}>
           <div className={'open-cell track-table-cell'} style={{ overflow: 'visible' }}>
-            {R.intersperse(' ', actions || [])}{' '}
-            {(this.props.listState !== 'carts' ||
-              this.props.mode !== 'app' ||
-              this.props.enabledStoreSearch?.includes('Youtube')) &&
-              this.props.stores.length !== 1 && (
-                <a
-                  className="pill pill-link pill-link-collapse table-cell-button"
-                  href={`https://www.youtube.com/results?search_query=${searchString}`}
-                  title={'Search from Youtube'}
+            {this.props.cartSearch ? (
+              <span className={'table-cell-button-row'}>
+                <button
+                  className={'button button-push_button button-push_button-small button-push_button-primary table-cell-button'}
+                  title={'Not this: hide it and push the search away from it (this session only)'}
+                  aria-label={'Not this'}
+                  data-testid="cart-search-not-this"
                   onClick={(e) => {
                     e.stopPropagation()
+                    this.props.onCartSearchMiss()
                   }}
-                  target={'_blank'}
                 >
-                  <FontAwesomeIcon icon={['fab', 'youtube']} />
-                  <span className={'pill-link-text'}>Youtube</span>
-                  <FontAwesomeIcon icon={'search'} />
-                </a>
-              )}
+                  <FontAwesomeIcon icon="ban" />
+                </button>
+              </span>
+            ) : (
+              <>
+                {R.intersperse(' ', actions || [])}{' '}
+                {(this.props.listState !== 'carts' ||
+                  this.props.mode !== 'app' ||
+                  this.props.enabledStoreSearch?.includes('Youtube')) &&
+                  this.props.stores.length !== 1 && (
+                    <a
+                      className="pill pill-link pill-link-collapse table-cell-button"
+                      href={`https://www.youtube.com/results?search_query=${searchString}`}
+                      title={'Search from Youtube'}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                      }}
+                      target={'_blank'}
+                    >
+                      <FontAwesomeIcon icon={['fab', 'youtube']} />
+                      <span className={'pill-link-text'}>Youtube</span>
+                      <FontAwesomeIcon icon={'search'} />
+                    </a>
+                  )}
+              </>
+            )}
           </div>
         </td>
       </tr>
+    )
+  }
+
+  // Fit 0–100 for a cart similarity search result, with the explanation in a hover/tap popup.
+  renderFitPill() {
+    const { group, fit, closerThan, similarity, nextGroup, nextFit } = this.props.cartSearch
+    const groups = this.props.cartSearchGroups || []
+    const groupName = groups[group]?.name || `Group ${group + 1}`
+    const nextName = nextGroup !== null && nextGroup !== undefined ? groups[nextGroup]?.name : null
+    const groupSize = groups[group]?.size
+    return (
+      <Popup
+        className={'cart-search-fit-popup'}
+        popupClassName={'popup_content-left'}
+        popupAbove={this.props.popupAbove}
+        anchor={
+          <PillButton
+            className={'table-cell-button cart-search-fit'}
+            style={{ display: 'flex' }}
+            data-testid="cart-search-fit"
+          >
+            <GroupDot group={group} />
+            <span>{fit}</span>
+          </PillButton>
+        }
+      >
+        <div className={'cart-search-tooltip'}>
+          <strong style={{ fontSize: '115%' }}>Fit {fit}</strong>
+          <div>
+            Matched to <strong>{groupName}</strong>:{' '}
+            {fit >= 50 ? 'closer to the centre than a typical track in the group' : 'further from the centre than a typical track in the group'}.
+            100 is the group's centre, 50 a typical track in the group, 0 twice as far.
+          </div>
+          <table>
+            <tbody>
+              <tr>
+                <td>Closer than</td>
+                <td>
+                  {closerThan}% of the group's {groupSize} tracks
+                </td>
+              </tr>
+              <tr>
+                <td>Similarity</td>
+                <td>{similarity}</td>
+              </tr>
+              {nextName && (
+                <tr>
+                  <td>Next group</td>
+                  <td>
+                    {nextName}, Fit {nextFit}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Popup>
     )
   }
 }

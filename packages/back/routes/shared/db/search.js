@@ -3,6 +3,7 @@ const sql = require('sql-template-strings')
 const BPromise = require('bluebird')
 const R = require('ramda')
 const logger = require('fomoplayer_shared').logger(__filename)
+const { NotFound } = require('../httpErrors')
 
 // TODO: would it be possible to somehow derive these from the track_details function?
 const aliasToColumn = {
@@ -36,6 +37,18 @@ module.exports.searchForTracks = async (
   const ANN_CANDIDATE_POOL_SIZE = 1000
 
   const queryString = originalQueryString.replace(/(\S+:\S+)\s*/g, '').trim()
+
+  // cart:~<uuid> searches by a whole cart (grouped); the result is the merged, Fit-ordered list.
+  const cartSearchUuid = originalQueryString.match(/cart:~([0-9a-f-]{36})/i)?.[1]
+  if (cartSearchUuid) {
+    const { searchSimilarToCart } = require('../cart-similarity')
+    try {
+      return (await searchSimilarToCart({ userId, cartUuid: cartSearchUuid, limit: l })).tracks
+    } catch (e) {
+      if (e instanceof NotFound) return []
+      throw e
+    }
+  }
 
   const hasUnresolvedEntityFilter = fieldFilters.some(([key, value]) => {
     if (!['artist', 'label', 'release', 'track', 'genre'].includes(key)) return false

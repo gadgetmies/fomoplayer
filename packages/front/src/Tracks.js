@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom'
 import ToggleButton from './ToggleButton'
 import GlobalSearchBar from './GlobalSearchBar'
 import Popup from './Popup'
+import CartSearchControls from './CartSearchControls'
 import { isMobile } from 'react-device-detect'
 import { trackMatchesAllTerms } from './searchTerms'
 import { requestJSONwithCredentials } from './request-json-with-credentials'
@@ -418,6 +419,14 @@ class Tracks extends Component {
     }
   }
 
+  scrollToTrack(trackId) {
+    const tracks = this.props.tracks || []
+    const index = tracks.findIndex(({ id }) => id === trackId)
+    this.setState({ selectedTrack: trackId })
+    if (index < 0 || !this.tbodyRef?.current) return
+    this.tbodyRef.current.scrollTo({ top: this.getTotalHeightUpToIndex(index, tracks.length), behavior: 'smooth' })
+  }
+
   scrollCurrentIntoView() {
     const current = document.querySelector('.playing')
     const currentRect = current.getBoundingClientRect()
@@ -565,6 +574,9 @@ class Tracks extends Component {
                 score={score}
                 scoreDetails={score_details}
                 similarity={similarity}
+                cartSearch={this.props.cartSearch ? track.cartSearch : undefined}
+                cartSearchGroups={this.props.cartSearch?.result?.groups}
+                onCartSearchMiss={() => this.props.onCartSearchMiss(track)}
                 trackStores={stores}
                 stores={this.props.stores}
                 selected={this.state.selectedTrack === id}
@@ -739,6 +751,17 @@ class Tracks extends Component {
                       <span className={'cart-details'}>
                         Tracks in cart: {this.props.selectedCart?.track_count}
                       </span>
+                      {this.props.onFindSimilarToCart && this.props.selectedCart?.uuid && (
+                        <button
+                          type="button"
+                          className="button button-push_button button-push_button-small button-push_button-primary"
+                          data-testid="cart-find-similar"
+                          title="Find tracks that sound like this cart, group by group"
+                          onClick={() => this.props.onFindSimilarToCart(this.props.selectedCart)}
+                        >
+                          <FontAwesomeIcon icon="magnifying-glass" /> Find similar
+                        </button>
+                      )}
                     </>
                   ) : (
                     <span className="select_button-button select_button-button select_button-button__active">
@@ -749,10 +772,29 @@ class Tracks extends Component {
               </tr>
             )}
 
-            {listInfo && (
-              <tr style={{ display: 'block', borderBottom: '1px solid black', padding: '0 8px', background: '#222' }}>
-                {listInfo}
-              </tr>
+            {this.props.cartSearch ? (
+              <>
+                <CartSearchControls
+                  cartSearch={this.props.cartSearch}
+                  tracks={tracks}
+                  searchInProgress={this.props.searchInProgress}
+                  highlightedTrackId={this.state.selectedTrack}
+                  onChange={this.props.onCartSearchChange}
+                  onSaveGroup={this.props.onSaveCartSearchGroup}
+                  onPointClick={(trackId) => this.scrollToTrack(trackId)}
+                />
+                {!this.props.searchInProgress && tracks.length === 0 && (
+                  <tr style={{ display: 'block', borderBottom: '1px solid black', padding: '0 8px', background: '#222' }}>
+                    <th>{this.props.searchError || 'No results. Untick “New artists only” or clear the Not this list.'}</th>
+                  </tr>
+                )}
+              </>
+            ) : (
+              listInfo && (
+                <tr style={{ display: 'block', borderBottom: '1px solid black', padding: '0 8px', background: '#222' }}>
+                  {listInfo}
+                </tr>
+              )
             )}
 
             <tr className={'noselect tracks-table-header-columns'}>
@@ -783,12 +825,14 @@ class Tracks extends Component {
               </th>
               {this.props.mode === 'app' && (
                 <th className={'follow-ignore-cart-cell tracks-cell'}>
-                  <div className={'score-cell track-table-cell'}>
+                  <div className={'score-cell track-table-cell'} style={this.props.cartSearch ? { textAlign: 'center' } : undefined}>
                     {this.props.listState === 'new'
                       ? 'Score'
-                      : this.props.listState === 'search' && tracks[0]?.similarity !== undefined
-                        ? 'Diff'
-                        : ''}
+                      : this.props.cartSearch
+                        ? 'Fit'
+                        : this.props.listState === 'search' && tracks[0]?.similarity !== undefined
+                          ? 'Diff'
+                          : ''}
                   </div>
                   <div className={'cart-cell track-table-cell'}>Cart</div>
                 </th>
@@ -809,7 +853,11 @@ class Tracks extends Component {
                           ''
                         }`}
                       >
-                        Open {this.props.listState === 'carts' && <FontAwesomeIcon icon="caret-down" />}
+                        {this.props.cartSearch ? (
+                          <span title="Hide a result and push the search away from it (this session only)">Not this</span>
+                        ) : (
+                          <>Open {this.props.listState === 'carts' && <FontAwesomeIcon icon="caret-down" />}</>
+                        )}
                       </div>
                     }
                   >

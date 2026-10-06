@@ -1,0 +1,253 @@
+.tracks-table > thead > tr.cart-search-row {
+  display: block;
+  background: #222;
+  border-bottom: 1px solid black;
+  line-height: normal;
+}
+
+.cart-search-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 6px 8px;
+  font-weight: 400;
+  text-align: left;
+  font-size: 85%;
+}
+
+.cart-search-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: #ccc;
+}
+
+.cart-search-control input[type='checkbox'] {
+  accent-color: var(--fp-brand-primary);
+}
+
+/* Fixed width, so the controls after the slider do not move when the label changes. */
+.cart-search-group-count {
+  display: inline-block;
+  min-width: 7.2em;
+  color: white;
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-search-toggle .select_button-button {
+  color: white;
+}
+
+.cart-search-counts {
+  margin-left: auto;
+  text-align: right;
+  color: #999;
+}
+
+.cart-search-counts b {
+  color: white;
+}
+
+.cart-search-line {
+  width: 100%;
+}
+
+.cart-search-toast {
+  color: #ffd6f2;
+}
+
+.cart-search-misses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.cart-search-dot {
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.cart-search-chips {
+  gap: 2px;
+  max-width: 100%;
+}
+
+.cart-search-chip {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  color: white;
+  border-radius: 0.25rem;
+}
+
+.cart-search-chip:hover {
+  opacity: 1;
+}
+
+.cart-search-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.cart-search-chip small {
+  opacity: 0.75;
+  font-size: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-search-save {
+  margin-left: auto;
+}
+
+.cart-search-save-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.cart-search-save-form input {
+  min-width: 0;
+  width: 16rem;
+  max-width: 100%;
+}
+
+.cart-search-saved {
+  color: #cfe9c6;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cart-search-map {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  width: 100%;
+  background: #1d1d1d;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.cart-search-map svg {
+  width: 380px;
+  max-width: 100%;
+  height: auto;
+}
+
+.cart-search-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  color: #ccc;
+  font-size: 90%;
+  flex: 1;
+  min-width: 12rem;
+}
+
+.cart-search-map-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.cart-search-map-note {
+  width: 100%;
+  white-space: normal !important;
+  color: #999;
+}
+
+/* Fit pill: dot and number on one line, centred in the column with a gap on both sides. */
+.cart-search-fit-cell {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+}
+
+.cart-search-fit {
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 1 1 auto;
+  max-width: calc(100% - 8px);
+  margin: 0 4px !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.cart-search-fit .pill-button-contents {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The app's pill inverts its contents; invert the dot back so the group colour shows. */
+.cart-search-fit .cart-search-dot {
+  filter: invert(1);
+}
+
+.cart-search-tooltip {
+  padding: 8px 10px;
+  min-width: 220px;
+  max-width: 280px;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+}
+
+.cart-search-tooltip table {
+  border-collapse: collapse;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.cart-search-tooltip td {
+  padding: 1px 4px 1px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 769px) {
+  .similarity-cell button.cart-search-fit::before {
+    content: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .similarity-cell button.cart-search-fit::before {
+    content: 'Fit: ';
+  }
+
+  .cart-search-fit .pill-button-contents {
+    margin: 0;
+  }
+
+  .cart-search-counts {
+    width: 100%;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .cart-search-save {
+    margin-left: 0;
+    width: 100%;
+  }
+}

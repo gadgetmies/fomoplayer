@@ -40,6 +40,7 @@ import {
   addEntityTerm,
   entityNamesToUrlParam,
   applyEntityNamesFromUrlParam,
+  findCartSearchTerm,
 } from './searchTerms'
 
 library.add(fas, far, fab)
@@ -203,6 +204,7 @@ class App extends Component {
       searchInProgress: false,
       searchError: undefined,
       searchResults: [],
+      cartSearch: null,
       listState: initialListState,
       currentTrack,
       heardTracks: defaultTracksData.tracks.heard,
@@ -937,6 +939,12 @@ class App extends Component {
 
     const query = searchTermsToQueryString(searchTerms)
     if (query === '') return
+    const cartTerm = findCartSearchTerm(searchTerms)
+    if (cartTerm) {
+      if (!append) await this.startCartSearch(searchTerms, cartTerm)
+      return
+    }
+    if (this.state.cartSearch) this.setState({ cartSearch: null })
     const { trackOffsets } = this.state
     const offset = append ? trackOffsets.search : 0
     if (!append) {
@@ -979,6 +987,121 @@ class App extends Component {
         this.setState({ searchInProgress: false })
       }
     }
+  }
+
+  // Cart similarity search: the cart is split into groups of similar tracks and each group is searched separately.
+  // The settings below live only in this browser session; "Not this" tracks are sent with every request and never
+  // stored on the server.
+  async startCartSearch(searchTerms, cartTerm) {
+    const cart = this.state.carts.find(({ uuid }) => uuid === cartTerm.id)
+    const name = cartTerm.name || cart?.name
+    const terms = searchTerms.map((term) => (term === cartTerm && name ? { ...term, name } : term))
+    const names = entityNamesToUrlParam(terms)
+    window.history.pushState(
+      undefined,
+      undefined,
+      `/search?q=${encodeURIComponent(searchTermsToQueryString(terms))}${names ? `&names=${encodeURIComponent(names)}` : ''}`,
+    )
+    const cartSearch = {
+      uuid: cartTerm.id,
+      name,
+      k: null,
+      newOnly: false,
+      misses: [],
+      chip: 'all',
+      mapOpen: false,
+      saved: [],
+      result: null,
+      toast: '',
+    }
+    this.setState({ listState: 'search', searchTerms: terms, searchError: undefined, cartSearch })
+    await this.fetchCartSearch(cartSearch)
+  }
+
+  visibleCartSearchResults(cartSearch) {
+    const tracks = cartSearch?.result?.tracks || []
+    const missed = new Set(cartSearch.misses.map(({ id }) => id))
+    return tracks.filter(
+      (track) => !missed.has(track.id) && (cartSearch.chip === 'all' || track.cartSearch?.group === cartSearch.chip),
+    )
+  }
+
+  async fetchCartSearch(cartSearch) {
+    const requestId = (this.cartSearchRequestId = (this.cartSearchRequestId || 0) + 1)
+    const params = new URLSearchParams()
+    if (cartSearch.k !== null && cartSearch.k !== undefined) params.set('k', cartSearch.k)
+    if (cartSearch.newOnly) params.set('newOnly', 'true')
+    if (cartSearch.misses.length > 0) params.set('misses', cartSearch.misses.map(({ id }) => id).join(','))
+    this.setState({ searchInProgress: true, searchError: undefined })
+    try {
+      const result = await requestJSONwithCredentials({
+        path: `/me/carts/${cartSearch.uuid}/similar?${params.toString()}`,
+      })
+      if (requestId !== this.cartSearchRequestId) return
+      const next = { ...this.state.cartSearch, ...cartSearch, result, k: result.k }
+      if (next.chip !== 'all' && next.chip >= result.groups.length) next.chip = 'all'
+      this.setState({
+        cartSearch: next,
+        searchResults: this.visibleCartSearchResults(next),
+        searchError: result.reason,
+        trackOffsets: { ...this.state.trackOffsets, search: 0 },
+      })
+    } catch (e) {
+      if (requestId !== this.cartSearchRequestId) return
+      console.error('Cart search failed', e)
+      this.setState({ searchError: 'Search failed, please try again.' })
+    } finally {
+      if (requestId === this.cartSearchRequestId) this.setState({ searchInProgress: false })
+    }
+  }
+
+  // Changes that only affect what is shown (chip, map) are applied locally; the rest re-run the search.
+  async updateCartSearch(changes) {
+    const current = this.state.cartSearch
+    if (!current) return
+    const next = { ...current, ...changes }
+    if ('k' in changes && changes.k !== current.k) next.chip = 'all'
+    const refetch = ['k', 'newOnly', 'misses'].some((key) => key in changes && changes[key] !== current[key])
+    this.setState({ cartSearch: next, searchResults: this.visibleCartSearchResults(next) })
+    if (refetch) await this.fetchCartSearch(next)
+  }
+
+  async markCartSearchMiss(track) {
+    const current = this.state.cartSearch
+    if (!current || current.misses.some(({ id }) => id === track.id)) return
+    const label = `${(track.artists || []).map(({ name }) => name)[0] || ''} – ${track.title}`
+    await this.updateCartSearch({
+      misses: [...current.misses, { id: track.id, label }],
+      toast: `Hidden ${label} and pushed the search away from it.`,
+    })
+  }
+
+  async saveCartSearchGroup(groupIndex, cartName) {
+    const current = this.state.cartSearch
+    const group = current?.result?.groups?.[groupIndex]
+    if (!group || !cartName) return
+    await requestJSONwithCredentials({
+      path: `/me/carts`,
+      method: 'POST',
+      body: { name: cartName, tracks: group.trackIds.map((trackId) => ({ track_id: trackId })) },
+    })
+    await this.updateCarts()
+    const latest = this.state.cartSearch
+    if (latest) {
+      this.setState({
+        cartSearch: {
+          ...latest,
+          saved: [...latest.saved, { k: latest.k, group: groupIndex, name: cartName }],
+          toast: `Created cart “${cartName}” with ${group.trackIds.length} tracks.`,
+        },
+      })
+    }
+  }
+
+  findSimilarToCart(cart) {
+    if (!cart?.uuid) return
+    const term = { type: 'cart', value: `cart:~${cart.uuid}`, id: cart.uuid, similar: true, name: cart.name }
+    this.search([term], this.state.searchFilters)
   }
 
   logout = async () => {
@@ -1335,6 +1458,11 @@ class App extends Component {
                           searchError={this.state.searchError}
                           searchInProgress={this.state.searchInProgress}
                           searchResults={this.state.searchResults}
+                          cartSearch={this.state.listState === 'search' ? this.state.cartSearch : null}
+                          onCartSearchChange={this.updateCartSearch.bind(this)}
+                          onCartSearchMiss={this.markCartSearchMiss.bind(this)}
+                          onSaveCartSearchGroup={this.saveCartSearchGroup.bind(this)}
+                          onFindSimilarToCart={this.findSimilarToCart.bind(this)}
                           selectedCart={this.state.listState === 'carts' ? this.state.selectedCart : undefined}
                           stores={this.state.stores}
                           totalTracks={this.state.tracksData.meta.totalTracks}
