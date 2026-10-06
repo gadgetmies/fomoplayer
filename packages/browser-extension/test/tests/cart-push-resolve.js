@@ -3,6 +3,7 @@
 const assert = require('assert')
 const { test } = require('cascade-test')
 const { resolveCartTracks } = require('../../src/js/cart-push/resolve')
+const { CART_PAGE_SIZE } = require('../../src/js/cart-tracks')
 
 const makeApiFetch = (cart) => async (path) => {
   if (!path.startsWith('/api/me/carts/')) throw new Error('unexpected path ' + path)
@@ -98,6 +99,26 @@ test({
       const bp = await resolveCartTracks({ store: 'beatport', fomoplayerCartId: 1 }, makeDeps(cart))
       assert.strictEqual(bp.queue.length, 0)
       assert.strictEqual(bp.notOnStore.length, 2)
+    },
+
+    'reads every page of a cart larger than one page': async () => {
+      const all = Array.from({ length: CART_PAGE_SIZE + 3 }, (_, i) =>
+        track(i + 1, `T${i}`, [{ name: 'A' }], [{ code: 'beatport', trackId: String(i + 1) }]),
+      )
+      const paths = []
+      const apiFetch = async (path) => {
+        paths.push(path)
+        const { searchParams } = new URL(path, 'https://fomoplayer.test')
+        const offset = Number(searchParams.get('offset'))
+        const limit = Number(searchParams.get('limit'))
+        return { name: 'big', track_count: all.length, tracks: all.slice(offset, offset + limit) }
+      }
+      const bp = await resolveCartTracks(
+        { store: 'beatport', fomoplayerCartId: 3 },
+        { apiFetch, getAppUrl: async () => 'https://fomoplayer.test' },
+      )
+      assert.strictEqual(bp.queue.length, all.length)
+      assert.strictEqual(paths.length, 2)
     },
   },
 })

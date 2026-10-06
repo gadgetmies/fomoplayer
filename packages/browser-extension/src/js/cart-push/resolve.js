@@ -12,6 +12,8 @@
 // Tracks lacking the identifier go into `notOnStore`; the rest become the
 // `queue`.
 
+const { fetchCartWithAllTracks } = require('../cart-tracks')
+
 const formatArtist = (artists) => {
   if (!Array.isArray(artists) || artists.length === 0) return ''
   return artists.map((a) => a && a.name).filter(Boolean).join(', ')
@@ -44,7 +46,7 @@ const fomoplayerTrackUrl = (appUrl, trackId) =>
 
 const resolveCartTracks = async ({ store, fomoplayerCartId }, deps) => {
   const { apiFetch, getAppUrl } = deps
-  const cart = await apiFetch(`/api/me/carts/${fomoplayerCartId}`)
+  const cart = await fetchCartWithAllTracks(apiFetch, fomoplayerCartId)
   const appUrl = getAppUrl ? await getAppUrl() : ''
   const tracks = (cart && cart.tracks) || []
   const cartName = (cart && cart.name) || ''

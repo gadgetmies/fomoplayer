@@ -34,7 +34,7 @@ module.exports.syncCarts = async () => {
       const api = await getApiForUser(userId)
       for (const { cartId, cartStoreId, cartVersionId } of cartDetails) {
         try {
-          const { tracks } = await getCartDetails(userId, cartId)
+          const { tracks } = await getCartDetails(userId, cartId, undefined, { all: true })
           const playlist = await api.getPlaylist(cartStoreId)
 
           if (cartVersionId === playlist.snapshot_id) {

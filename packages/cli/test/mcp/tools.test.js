@@ -37,4 +37,8 @@ test({
     const d = await tools.find((t) => t.name === 'list_carts').handler({})
     expect(d).to.be.an('array')
   },
+  'search for tracks returns the matching tracks': async ({ tools }) => {
+    const d = await tools.find((t) => t.name === 'search').handler({ type: 'tracks', query: 'noisia' })
+    expect(d).to.be.an('array')
+  },
 })

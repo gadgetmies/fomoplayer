@@ -57,7 +57,11 @@ const {
   getCartDetails,
   updateCartContents,
   updateAllCartContents,
+  setCartTracks,
+  CART_TRACKS_PAGE,
 } = require('../shared/cart.js')
+const { parsePage } = require('../shared/paging')
+const { BadRequest } = require('../shared/httpErrors')
 
 const { queryDefaultCartId } = require('../shared/db/cart.js')
 
@@ -425,16 +429,15 @@ router.get(
   async ({
     user: { id: userId },
     params: { id: cartId },
-    query: { offset: tracksOffset, limit: tracksLimit, store: stores },
+    query,
   }, res) => {
+    const page = parsePage(query, CART_TRACKS_PAGE)
     let resolvedId = cartId
     if (cartId === 'default') {
       resolvedId = await queryDefaultCartId(userId)
       if (!resolvedId) return res.status(404).send()
     }
-    res.send(
-      await getCartDetails(userId, resolvedId, stores, { offset: parseInt(tracksOffset), limit: parseInt(tracksLimit) }),
-    )
+    res.send(await getCartDetails(userId, resolvedId, query.store, page))
   },
 )
 
@@ -457,6 +460,15 @@ router.patch('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: c
     logger.error(message, e)
     return res.status(500).send(message)
   }
+})
+
+// Replaces the cart's tracks with the given track ids (the body is an array of ids). Tracks already in the cart keep
+// their added date; the response tells how many tracks were added and removed.
+router.put('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: cartId }, body: trackIds }, res) => {
+  if (!Array.isArray(trackIds) || !trackIds.every((id) => Number.isInteger(Number(id)))) {
+    throw new BadRequest('The body must be an array of track ids')
+  }
+  res.send(await setCartTracks(userId, cartId, trackIds))
 })
 
 router.patch('/carts', async ({ user: { id: userId }, body: operations }, res) => {

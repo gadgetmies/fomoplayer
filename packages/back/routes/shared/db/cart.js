@@ -137,7 +137,8 @@ module.exports.queryCartDetails = async (
   stores = undefined,
   tracksFilter = { since: undefined, offset: 0, limit: 200 },
 ) => {
-  const limit = tracksFilter?.limit === 0 ? null : parseInt(tracksFilter?.limit) || 200
+  // `all` (for internal callers such as the playlist sync) returns every track.
+  const limit = tracksFilter?.all ? null : parseInt(tracksFilter?.limit) || 200
   const offset = parseInt(tracksFilter?.offset) || 0
   logger.info(
     `Querying cart details for cartId: ${cartId}, limit: ${limit}, offset: ${offset}, since: ${tracksFilter?.since}`,
@@ -346,6 +347,18 @@ DO UPDATE SET track__cart_added = EXCLUDED.track__cart_added`,
     )
   }
 }
+
+module.exports.queryCartTrackIds = async (cartId) =>
+  (
+    await pg.queryRowsAsync(
+      // language=PostgreSQL
+      sql`--queryCartTrackIds
+SELECT track_id AS id
+FROM track__cart
+WHERE cart_id = ${cartId}
+`,
+    )
+  ).map(({ id }) => id)
 
 module.exports.deleteTracksFromCart = async (cartId, trackIds) =>
   pg.queryRowsAsync(

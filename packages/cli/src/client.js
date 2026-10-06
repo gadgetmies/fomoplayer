@@ -5,6 +5,11 @@
 
 const { getApiKey, getApiUrl } = require('./config')
 
+// Cart tracks are read this many at a time (the API's maximum page).
+const CART_PAGE_SIZE = 500
+
+const definedParams = (params) => Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined))
+
 class FomoPlayerClient {
   constructor({ apiUrl, apiKey } = {}) {
     this.apiUrl = apiUrl ?? getApiUrl()
@@ -49,7 +54,7 @@ class FomoPlayerClient {
   }
 
   async getTracks(params = {}) {
-    return (await this.get(`/me/tracks?${new URLSearchParams(params)}`)).json()
+    return (await this.get(`/me/tracks?${new URLSearchParams(definedParams(params))}`)).json()
   }
 
   async markTrackHeard(id, heard = true) {
@@ -96,9 +101,16 @@ class FomoPlayerClient {
     return (await this.get('/me/carts')).json()
   }
 
-  async getCartTracks(cartId, params = {}) {
-    const r = await (await this.get(`/me/carts/${cartId}?${new URLSearchParams(params)}`)).json()
-    return r.tracks ?? r
+  // One page of a cart's tracks when a limit is given, otherwise every track (the API returns at most a page at a time).
+  async getCartTracks(cartId, { offset, limit, store } = {}) {
+    const cartPath = (o, l) => `/me/carts/${cartId}?${new URLSearchParams(definedParams({ offset: o, limit: l, store }))}`
+    if (limit !== undefined) return (await (await this.get(cartPath(offset, limit))).json()).tracks
+    const tracks = []
+    for (;;) {
+      const cart = await (await this.get(cartPath((offset ?? 0) + tracks.length, CART_PAGE_SIZE))).json()
+      tracks.push(...cart.tracks)
+      if (cart.tracks.length < CART_PAGE_SIZE || (offset ?? 0) + tracks.length >= cart.track_count) return tracks
+    }
   }
 
   async createCart(name) {
@@ -187,8 +199,7 @@ class FomoPlayerClient {
 
   async search(type, query) {
     if (type === 'tracks') {
-      const d = await this.getTracks({ q: query })
-      return [...(d.tracks?.new ?? []), ...(d.tracks?.recent ?? []), ...(d.tracks?.heard ?? [])]
+      return (await (await this.get(`/tracks?${new URLSearchParams({ q: query })}`)).json()).tracks
     }
     const all = type === 'artists' ? await this.getArtistFollows() : await this.getLabelFollows()
     const q = query.toLowerCase()

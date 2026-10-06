@@ -11,6 +11,7 @@ const {
   insertCartStoreDetails,
   deleteCartStoreDetails,
   queryCartStoreDetails,
+  queryCartTrackIds,
 } = require('./db/cart.js')
 const BPromise = require('bluebird')
 const pg = require('fomoplayer_shared').db.pg
@@ -26,6 +27,9 @@ const { getTrackDetails, addStoreTracksToUsers } = require('./tracks')
 const { updateCartStoreVersionId, deleteUserCartStoreDetails } = require('./db/cart')
 const { getStoreModuleForPlaylistByUrl } = require('./stores')
 const logger = require('fomoplayer_shared').logger(__filename)
+
+// Paging of a cart's tracks in the API (`offset`, `limit`).
+module.exports.CART_TRACKS_PAGE = { defaultLimit: 200, maxLimit: 500 }
 
 module.exports.getUserCarts = queryUserCartDetails
 module.exports.getUserCartsWithTracks = queryUserCartDetailsWithTracks
@@ -107,6 +111,19 @@ module.exports.updateCartContents = async (userId, cartId, operations) => {
   }
 }
 
+// Makes the cart contain exactly the given tracks. Tracks already in the cart keep their added date.
+module.exports.setCartTracks = async (userId, cartId, trackIds) => {
+  await verifyCartOwnership(userId, cartId)
+  const wanted = new Set(trackIds.map(Number))
+  const existing = await queryCartTrackIds(cartId)
+  const existingSet = new Set(existing)
+  const removed = existing.filter((id) => !wanted.has(id))
+  const added = [...wanted].filter((id) => !existingSet.has(id))
+  if (removed.length > 0) await removeTracksFromCart(userId, cartId, removed)
+  if (added.length > 0) await addTracksToCart(userId, cartId, added.map((trackId) => ({ trackId })))
+  return { added: added.length, removed: removed.length }
+}
+
 module.exports.updateAllCartContents = async (userId, operations, excludePurchased = true) => {
   const tracksToBeRemoved = operations.filter(R.propEq('remove', 'op')).map(R.prop('trackId'))
   const tracksToBeAdded = operations
@@ -159,7 +176,7 @@ module.exports.importPlaylistAsCart = async (userId, url) => {
 
 module.exports.enableCartSync = async (userId, cartId, storeName) => {
   try {
-    const { name, tracks } = await queryCartDetails(cartId, storeName)
+    const { name, tracks } = await queryCartDetails(cartId, [storeName.toLowerCase()], { all: true })
     const { id: spotifyPlaylistId, url, versionId } = await createCart(userId, `Fomo Player: ${name}`, tracks)
     await insertCartStoreDetails(cartId, storeName, spotifyPlaylistId, url, versionId)
   } catch (e) {
