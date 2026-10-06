@@ -1,6 +1,6 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "preDeployCommand": "/bin/sh -c 'yarn db:wait && yarn db-migrate:prod:retry'"
+    "preDeployCommand": "/bin/sh -c 'unset PGSSLMODE; yarn db:wait && yarn db-migrate:prod:retry'"
   }
 }
