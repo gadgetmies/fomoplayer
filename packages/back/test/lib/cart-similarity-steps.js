@@ -73,7 +73,7 @@ module.exports.toggleMap = async ({ page }) => {
 module.exports.selectGroupAndMarkNotThis = async ({ page }) => {
   await page.click('[data-testid="cart-search-chip"] >> nth=0')
   await waitForWithTimeoutMessage(
-    () => page.waitForSelector('[data-testid="cart-search-chip"][aria-checked="true"]', { timeout: 10000 }),
+    () => page.waitForSelector('#cart-search-chip-0:checked', { state: 'attached', timeout: 10000 }),
     'Select the first group chip.',
   )
   await pause(page)

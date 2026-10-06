@@ -1,6 +1,6 @@
 const { apiURL } = require('../config.js')
 const { queryLongestPreviewForTrack, searchForArtistsAndLabels } = require('./db.js')
-const { searchForTracks } = require('./shared/db/search.js')
+const { searchForTracks, searchForTracksResponse } = require('./shared/db/search.js')
 const { queryPreviewDetails } = require('./shared/db/preview')
 const { queryCartDetails, queryCartOwner } = require('./shared/db/cart')
 const { queryCartDetailsByUuid, verifyEmail, queryEmbedding } = require('./db')
@@ -17,6 +17,7 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
 }
 
 module.exports.searchForTracks = searchForTracks
+module.exports.searchForTracksResponse = searchForTracksResponse
 
 module.exports.getFollowDetails = async (query, stores) => {
   let details

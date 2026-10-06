@@ -34,3 +34,13 @@
 - [x] 5.1 Add API-only seeding (tracks, synthetic embeddings via `POST /api/admin/analyse`, cart) in `test/lib/cart-similarity-seed.js`
 - [x] 5.2 Add shared steps `test/lib/cart-similarity-steps.js` and the `cart-similarity-local.js` / `cart-similarity-preview.js` entry files
 - [x] 5.3 Run the backend tests and the local demo test; fix failures
+
+## 6. Refinements after the first review
+
+- [x] 6.1 Run the cart search through `GET /api/tracks?q=cart:~<uuid>` (groups and map in `meta.cartSearch`); drop `/api/me/carts/:uuid/similar`
+- [x] 6.2 Filter the cart search with the other search terms, `store` and `addedSince`
+- [x] 6.3 Use only the 300 most recently added analysed cart tracks and report `cartTracks`; show the limit in the UI
+- [x] 6.4 Keep the Purchased cart under the 25 s response timeout (newest-first loading, parallel queries, primary-key track lookup, smaller pool, background collection mean)
+- [x] 6.5 UI: settings-style tabs for the groups, search spinner, opaque Not this button, clear the search bar on Find similar, ignore superseded search responses
+- [x] 6.6 Return every track search as `{ tracks, meta: { total, offset, limit, count } }` (cart searches add `meta.cartSearch`); count the matches alongside the page query
+- [x] 6.7 Align the Fit pill with the row's buttons

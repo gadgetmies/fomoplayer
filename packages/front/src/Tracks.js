@@ -783,9 +783,16 @@ class Tracks extends Component {
                   onSaveGroup={this.props.onSaveCartSearchGroup}
                   onPointClick={(trackId) => this.scrollToTrack(trackId)}
                 />
+                {this.props.searchInProgress && (
+                  <tr style={{ display: 'block', borderBottom: '1px solid black', padding: '0 8px', background: '#222' }}>
+                    <th>
+                      Searching <Spinner />
+                    </th>
+                  </tr>
+                )}
                 {!this.props.searchInProgress && tracks.length === 0 && (
                   <tr style={{ display: 'block', borderBottom: '1px solid black', padding: '0 8px', background: '#222' }}>
-                    <th>{this.props.searchError || 'No results. Untick “New artists only” or clear the Not this list.'}</th>
+                    <th>{this.props.searchError || 'No results. Untick “New artists only”, clear the Not this list or remove other search terms.'}</th>
                   </tr>
                 )}
               </>

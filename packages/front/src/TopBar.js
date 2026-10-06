@@ -82,6 +82,12 @@ class TopBar extends Component {
   }
 
   componentDidUpdate(prevProps) {
+    // A reset (e.g. "Find similar" on a cart) replaces everything in the search bar, typed text included.
+    if (prevProps.searchBarResetCount !== this.props.searchBarResetCount) {
+      if (this.state.searchDebounce) clearTimeout(this.state.searchDebounce)
+      this.setState({ committedTerms: this.props.searchTerms || [], inputValue: '', searchDebounce: undefined })
+      return
+    }
     if (prevProps.searchTerms !== this.props.searchTerms) {
       // Only sync entity terms from props. Text terms must never flow back into
       // committedTerms from App state — that would promote in-progress typed text
@@ -181,6 +187,7 @@ class TopBar extends Component {
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className={`menu_search`}>
             <GlobalSearchBar
+              key={this.props.searchBarResetCount || 0}
               terms={this.state.committedTerms}
               onChange={this.handleChange.bind(this)}
               onSearch={this.handleSearch.bind(this)}

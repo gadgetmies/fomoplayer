@@ -79,7 +79,7 @@ const CartSearchControls = ({
   onSaveGroup,
   onPointClick,
 }) => {
-  const { result, chip, k, newOnly, misses, mapOpen, saved, toast } = cartSearch
+  const { result, chip, k, newArtistsOnly, misses, mapOpen, saved, toast } = cartSearch
   const [saving, setSaving] = useState(null)
   const [saveName, setSaveName] = useState('')
   const [saveInProgress, setSaveInProgress] = useState(false)
@@ -90,7 +90,8 @@ const CartSearchControls = ({
 
   const groups = result?.groups || []
   const maxK = Math.max(1, result?.maxK || 1)
-  const excluded = result?.excluded || { heard: 0, ignored: 0, purchased: 0, newOnly: 0 }
+  const excluded = result?.excluded || { heard: 0, ignored: 0, purchased: 0, knownArtists: 0 }
+  const cartTracks = result?.cartTracks
   const selectedGroup = chip === 'all' ? null : groups[chip]
   const savedGroup = selectedGroup && saved.find((s) => s.k === k && s.group === chip)
   const cartLabel = (cartSearch.name || '').replace(/^zz \S+ /, '')
@@ -141,9 +142,9 @@ const CartSearchControls = ({
           <label className="cart-search-control">
             <input
               type="checkbox"
-              checked={newOnly}
+              checked={newArtistsOnly}
               data-testid="cart-search-new-only"
-              onChange={(e) => onChange({ newOnly: e.target.checked })}
+              onChange={(e) => onChange({ newArtistsOnly: e.target.checked })}
             />
             New artists only
           </label>
@@ -163,14 +164,28 @@ const CartSearchControls = ({
             className="cart-search-counts"
             title={`Always left out: ${excluded.heard} heard, ${excluded.ignored} ignored (artist, label, release or artist on label), ${excluded.purchased} purchased`}
           >
-            <b>{searchInProgress ? 'Searching…' : `${resultCount} results`}</b>
-            {!searchInProgress && newOnly && excluded.newOnly > 0 && (
-              <span> ({excluded.newOnly} by known artists hidden)</span>
-            )}{' '}
-            <span>
-              · left out {excluded.heard} heard, {excluded.ignored} ignored, {excluded.purchased} purchased
-            </span>
+            {!searchInProgress && result && (
+              <>
+                <b>{resultCount} results</b>
+                {newArtistsOnly && excluded.knownArtists > 0 && (
+                  <span> ({excluded.knownArtists} by known artists hidden)</span>
+                )}{' '}
+                <span>
+                  · left out {excluded.heard} heard, {excluded.ignored} ignored, {excluded.purchased} purchased
+                </span>
+              </>
+            )}
           </span>
+          {cartTracks && cartTracks.used < cartTracks.total && (
+            <span className="cart-search-limit cart-search-line" data-testid="cart-search-limit">
+              <FontAwesomeIcon icon="circle-info" /> Groups formed from the {cartTracks.used} most recently added of the
+              cart’s {cartTracks.total} tracks
+              {cartTracks.analysed < cartTracks.total
+                ? ` (${cartTracks.total - cartTracks.analysed} not analysed yet)`
+                : ''}
+              {cartTracks.used === cartTracks.limit ? ` · at most ${cartTracks.limit} tracks are used` : ''}
+            </span>
+          )}
           {toast && <span className="cart-search-toast cart-search-line">{toast}</span>}
           {misses.length > 0 && (
             <span className="cart-search-misses cart-search-line">
@@ -198,35 +213,50 @@ const CartSearchControls = ({
       {groups.length > 0 && (
         <tr className="cart-search-row">
           <th className="cart-search-cell">
-            <span className="select-button--container cart-search-chips" role="radiogroup" aria-label="Groups">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={chip === 'all'}
-                className={`select_button-button select_button-button__small cart-search-chip ${chip === 'all' ? 'select_button-button__active' : ''}`}
+            <div
+              className="select-button select-button--container state-select-button--container noselect cart-search-chips"
+              role="radiogroup"
+              aria-label="Groups"
+            >
+              <input
+                type="radio"
+                id="cart-search-chip-all"
+                name="cart-search-chip"
+                checked={chip === 'all'}
+                onChange={() => onChange({ chip: 'all' })}
+              />
+              <label
+                className="select_button-button select_button-button__small cart-search-chip"
+                htmlFor="cart-search-chip-all"
                 data-testid="cart-search-chip-all"
-                onClick={() => onChange({ chip: 'all' })}
               >
                 All <small>{result.tracks.length}</small>
-              </button>
+              </label>
               {groups.map((group) => (
-                <button
-                  key={group.index}
-                  type="button"
-                  role="radio"
-                  aria-checked={chip === group.index}
-                  className={`select_button-button select_button-button__small cart-search-chip ${chip === group.index ? 'select_button-button__active' : ''}`}
-                  data-testid="cart-search-chip"
-                  title={`${group.size} cart tracks`}
-                  onClick={() => onChange({ chip: group.index })}
-                >
-                  <GroupDot group={group.index} size={11} />
-                  <span className="cart-search-chip-name">{shortName(group.name)}</span>
-                  <small>{group.resultCount}</small>
-                  {saved.some((s) => s.k === k && s.group === group.index) && <FontAwesomeIcon icon="cart-shopping" />}
-                </button>
+                <React.Fragment key={group.index}>
+                  <input
+                    type="radio"
+                    id={`cart-search-chip-${group.index}`}
+                    name="cart-search-chip"
+                    checked={chip === group.index}
+                    onChange={() => onChange({ chip: group.index })}
+                  />
+                  <label
+                    className="select_button-button select_button-button__small cart-search-chip"
+                    htmlFor={`cart-search-chip-${group.index}`}
+                    data-testid="cart-search-chip"
+                    title={`${group.size} cart tracks`}
+                  >
+                    <GroupDot group={group.index} size={11} />
+                    <span className="cart-search-chip-name">{shortName(group.name)}</span>
+                    <small>{group.resultCount}</small>
+                    {saved.some((s) => s.k === k && s.group === group.index) && (
+                      <FontAwesomeIcon icon="cart-shopping" />
+                    )}
+                  </label>
+                </React.Fragment>
               ))}
-            </span>
+            </div>
             {savedGroup ? (
               <span className="cart-search-save cart-search-saved">
                 <FontAwesomeIcon icon="check" /> Saved as cart “{savedGroup.name}” · {selectedGroup.size} tracks

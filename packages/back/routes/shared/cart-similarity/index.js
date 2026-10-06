@@ -2,16 +2,22 @@ const R = require('ramda')
 const { NotFound } = require('../httpErrors')
 const g = require('./grouping')
 const db = require('../db/cart-similarity')
+const { hasSearchFilters, hasSelectiveSearchFilters, queryFilteredTrackIds } = require('../db/search')
 
 // Nearest previews fetched per group. pgvector caps hnsw.ef_search at 1000, which bounds one HNSW scan. Each scan
-// costs roughly the same, so a fixed budget is split across the groups: more groups → a smaller pool per group.
-const CANDIDATE_POOL_BUDGET = 1600
-const MIN_POOL_PER_GROUP = 300
-const MAX_POOL_PER_GROUP = 1000
+// costs roughly the same and reads its index pages from disk when they are not cached, so a fixed budget is split
+// across the groups: more groups → a smaller pool per group.
+const CANDIDATE_POOL_BUDGET = 1000
+const MIN_POOL_PER_GROUP = 200
+const MAX_POOL_PER_GROUP = 500
 const poolSizeFor = (groupCount) =>
   Math.max(MIN_POOL_PER_GROUP, Math.min(MAX_POOL_PER_GROUP, Math.round(CANDIDATE_POOL_BUDGET / groupCount)))
 const DEFAULT_RESULTS_PER_GROUP = 50
 const MAX_RESULTS_PER_GROUP = 100
+// With an artist, label, release, genre, key or bpm term the matching tracks are scored directly when there are at
+// most this many of them. With more, or with only free text or stores, the nearest tracks are fetched as usual and the
+// terms filter them.
+const MAX_DIRECTLY_SCORED_TRACKS = 2000
 
 const parseIdList = (value) =>
   R.uniq(
@@ -35,17 +41,32 @@ const groupName = (trackIds, detailsById) => {
   return top.map(([name]) => name).join(', ') || `Group`
 }
 
-const emptyResult = (cart, reason) => ({
+const emptyResult = (cart, cartTracks, reason) => ({
   cart,
+  cartTracks,
+  limitPerGroup: 0,
   k: 0,
   autoK: 0,
   maxK: 0,
   groups: [],
   tracks: [],
   map: { members: [] },
-  excluded: { heard: 0, ignored: 0, purchased: 0, newOnly: 0 },
+  excluded: { heard: 0, ignored: 0, purchased: 0, knownArtists: 0 },
   reason,
 })
+
+// The tracks to score: the nearest tracks to each group, filtered by the other search terms. With a selective term
+// (artist, label, genre, …) every matching track is scored instead when there are few enough of them, so that e.g. a
+// label's tracks are found even when none of them is among the nearest.
+const findCandidateTrackIds = async ({ cartId, queries, poolSize, query, stores, addedSince }) => {
+  if (!hasSearchFilters(query, { stores, addedSince })) return db.queryNearestTrackIds({ cartId, queries, poolSize })
+  if (hasSelectiveSearchFilters(query)) {
+    const matching = await queryFilteredTrackIds(query, { stores, addedSince, limit: MAX_DIRECTLY_SCORED_TRACKS + 1 })
+    if (matching.length <= MAX_DIRECTLY_SCORED_TRACKS) return matching
+  }
+  const nearest = await db.queryNearestTrackIds({ cartId, queries, poolSize })
+  return queryFilteredTrackIds(query, { stores, addedSince, trackIds: nearest })
+}
 
 /**
  * Tracks similar to a cart, searched per group of similar cart tracks.
@@ -54,20 +75,40 @@ const emptyResult = (cart, reason) => ({
  * @param {number} options.userId
  * @param {string} options.cartUuid
  * @param {number} [options.k] number of groups; defaults to the best-separated split
- * @param {boolean} [options.newOnly] hide tracks by followed or purchased artists
+ * @param {boolean} [options.newArtistsOnly] hide tracks by followed or purchased artists
  * @param {number[]|string} [options.misses] session "Not this" track ids; the search is pushed away from them
  * @param {number} [options.limit] results per group
+ * @param {string} [options.query] the whole search query: its other terms (text, artist, label, …) filter the results
+ * @param {string[]} [options.stores] only tracks from these stores
+ * @param {string} [options.addedSince] only tracks added after this time
  */
-module.exports.searchSimilarToCart = async ({ userId, cartUuid, k, newOnly, misses, limit }) => {
+module.exports.searchSimilarToCart = async ({
+  userId,
+  cartUuid,
+  k,
+  newArtistsOnly,
+  misses,
+  limit,
+  query = '',
+  stores,
+  addedSince,
+}) => {
   const cart = await db.queryUserCartByUuid(userId, cartUuid)
   if (!cart) throw new NotFound(`Cart not found: ${cartUuid}`)
 
-  const members = await db.queryCartTrackEmbeddings(cart.id)
+  // Independent queries run in parallel: each one mostly waits for disk reads.
+  const [members, counts, cachedCollectionMean] = await Promise.all([
+    db.queryCartTrackEmbeddings(cart.id),
+    db.queryCartTrackCounts(cart.id),
+    db.queryCollectionMean(userId),
+  ])
+  // The groups are formed from the most recently added analysed tracks only.
+  const cartTracks = { ...counts, used: members.length, limit: db.MAX_GROUPED_TRACKS }
   if (members.length < 2) {
-    return emptyResult(cart, 'The cart needs at least two analysed tracks to find similar tracks.')
+    return emptyResult(cart, cartTracks, 'The cart needs at least two analysed tracks to find similar tracks.')
   }
 
-  const collectionMean = (await db.queryCollectionMean(userId)) || g.meanVector(members.map((m) => m.embedding))
+  const collectionMean = cachedCollectionMean || g.meanVector(members.map((m) => m.embedding))
   const vectors = g.centre(
     members.map((m) => m.embedding),
     collectionMean,
@@ -111,19 +152,26 @@ module.exports.searchSimilarToCart = async ({ userId, cartUuid, k, newOnly, miss
   const queries = centroids.map((c) => collectionMean.map((x, i) => x + c[i] * rawRadius))
 
   const { mean: pcaMean, axes } = g.pcaAxes(vectors)
-  const candidates = await db.queryCandidates({
-    userId,
+  const candidateTrackIds = await findCandidateTrackIds({
     cartId: cart.id,
     queries,
+    poolSize: poolSizeFor(groupCount),
+    query,
+    stores,
+    addedSince,
+  })
+  const candidates = await db.scoreCandidates({
+    userId,
+    cartId: cart.id,
+    trackIds: candidateTrackIds,
     centroids,
     mean: collectionMean,
     axes,
-    poolSize: poolSizeFor(groupCount),
     excludeTrackIds: missIds,
   })
 
-  const showNewOnly = parseBoolean(newOnly)
-  const excluded = { heard: 0, ignored: 0, purchased: 0, newOnly: 0 }
+  const showNewOnly = parseBoolean(newArtistsOnly)
+  const excluded = { heard: 0, ignored: 0, purchased: 0, knownArtists: 0 }
   const visible = []
   for (const c of candidates) {
     if (c.heard) excluded.heard++
@@ -131,7 +179,7 @@ module.exports.searchSimilarToCart = async ({ userId, cartUuid, k, newOnly, miss
     if (c.purchased) excluded.purchased++
     if (c.heard || c.ignored || c.purchased) continue
     if (showNewOnly && (c.artist_followed || c.artist_purchased)) {
-      excluded.newOnly++
+      excluded.knownArtists++
       continue
     }
     visible.push(c)
@@ -205,6 +253,8 @@ module.exports.searchSimilarToCart = async ({ userId, cartUuid, k, newOnly, miss
 
   return {
     cart,
+    cartTracks,
+    limitPerGroup: perGroupLimit,
     k: groupCount,
     autoK,
     maxK,

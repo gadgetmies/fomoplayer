@@ -20,16 +20,17 @@ centring, push-away strength and the Fit scale. The UI was approved through a mo
 
 ## Decisions
 
-- **Clustering in Node, not SQL or Python.** Carts are small (grouping is capped at 600 tracks), so a
-  nearest-neighbour-chain Ward implementation (O(n²) time and memory) in JS is fast enough (< 100 ms at 600) and
+- **Clustering in Node, not SQL or Python.** Carts are small (grouping is capped at the 300 newest tracks), so a
+  nearest-neighbour-chain Ward implementation (O(n²) time and memory) in JS is fast enough (Ward and the automatic `k` take < 1 s at 300) and
   avoids a new service. Alternative: run the clustering in the Python analyser — rejected, it is an offline batch
   worker, not a request-time service.
 - **Centring on the user's collection mean.** Computed per request with `AVG(embedding)` over the tracks in all of
   the user's carts. It scored best in the research and needs no stored state. Alternative: a fixed catalogue mean —
   scored lower and needs refreshing.
 - **ANN in raw space, scoring in centred space.** The index is on raw vectors, so each group's raw mean (minus the
-  raw push-away term) queries the index. A fixed budget of 1,600 previews is split across the groups (300–1,000 per group; 1,000 is the
-  pgvector `hnsw.ef_search` maximum), because every HNSW scan costs about the same (~1.5 s cold on production). The pool is
+  raw push-away term) queries the index. A fixed budget of 1,000 previews is split across the groups (200–500 per group; pgvector caps
+  `hnsw.ef_search` at 1,000), because every HNSW scan costs about the same and reads its index pages from disk when
+  they are not cached (up to ~10 s cold on production for two groups). The pool is
   then scored inside Postgres against every group's centred, pushed centroid (pgvector `-`, `<=>`, `<#>`), so only
   similarities and map projections travel to Node. Alternative: centred vectors in the
   index — requires a per-user index, rejected.
@@ -40,17 +41,28 @@ centring, push-away strength and the Fit scale. The UI was approved through a mo
   saturate the way a within-group percentile does; the percentile is still returned for the tooltip.
 - **2D map by PCA, not UMAP.** PCA of the centred member and result vectors needs no dependency and is stable between
   requests. UMAP looked nicer offline but would need a native/JS dependency at request time.
-- **Separate endpoint plus search-term delegation.** The UI needs groups, counts and map data, which do not fit the
-  flat `/api/tracks` response, so it calls `GET /api/me/carts/:uuid/similar`. `/api/tracks?q=cart:~<uuid>` delegates
-  to the same function for API/CLI consistency.
+- **One search route.** The cart search is the `cart:~<uuid>` term of `GET /api/tracks`, like the other similarity
+  terms, so the API stays consistent and the other terms filter the results. Every search response is
+  `{ tracks, meta: { total, offset, limit, count } }`, like the track lists' `{ tracks, meta }`; a cart search adds
+  the groups, counts and map as `meta.cartSearch`.
+  Alternative: a separate `/api/me/carts/:uuid/similar` endpoint (the first version) — dropped for consistency.
+- **Filters: score directly when selective, otherwise filter the nearest.** An artist, label, release, track, genre,
+  key or bpm term matching at most 2,000 tracks is scored directly, so e.g. a label's most cart-like tracks are found
+  even when none is among the nearest. Free text and stores match most of the catalogue, so they only filter the
+  nearest tracks.
 - **Session misses in React state.** Sent as `misses=` on every request; nothing is stored server-side.
 
 ## Risks / Trade-offs
 
-- [Large carts are slow to cluster] → cap grouping at the 600 most recently added embedded tracks.
-- [The collection mean scans the whole collection (~5 s for 5,000 tracks)] → cached per user for an hour; the first
-  search after that is slow (measured ~17 s cold on production, ~3 s warm). Precomputing it is a possible follow-up.
-- [Heard tracks thin out the pool (565 of 1,303 in the research cart)] → 1,600-preview budget split across groups (300–1,000 each); per-group limit 50.
+- [Large carts are slow to cluster and to load] → only the 300 most recently added analysed tracks are used; they are
+  picked before any embedding is averaged, and the UI says how many of the cart's tracks were used.
+- [The collection mean reads the whole collection (5–10 s cold on production)] → cached per user; it is computed in
+  the background when the carts load, and after an hour the stale value is used while a fresh one is computed.
+- [Production responses time out after 25 s] → the independent queries run in parallel, the previews are resolved to
+  tracks by primary key (a hash join scanned all of `store__track` and pushed the vector index out of the cache), and
+  the pool budget is 1,000. Measured on the 3,648-track Purchased cart: ~19 s cold, 4–10 s warm.
+- [Heard tracks thin out the pool (565 of 1,303 in the research cart)] → per-group limit 50 from a 200–500 preview pool
+  per group.
 - [Raw-space ANN can miss candidates that are close only in the centred space] → generous pool, re-scored in the
   centred space; acceptable for a first version and measurable in research change A.
 - [Synthetic embeddings in tests do not reflect real audio] → tests check mechanics (grouping, exclusions,

@@ -86,6 +86,13 @@ const makeRequest = (baseUrl, rawKey) => async (method, path, body) => {
   return { status: res.status, json, text }
 }
 
+// Cart search through the track search route: meta.cartSearch holds the groups, the map and the excluded counts.
+const cartSearch = async (req, cartUuid, { terms = '', ...params } = {}) => {
+  const query = new URLSearchParams({ q: `cart:~${cartUuid}${terms ? ` ${terms}` : ''}`, ...params })
+  const { status, json } = await req('GET', `/api/tracks?${query}`)
+  return { status, json: json && { ...json.meta.cartSearch, tracks: json.tracks }, meta: json?.meta }
+}
+
 const titlesOf = (tracks) => tracks.map(({ title }) => title.replace('cart similarity ', ''))
 
 test({
@@ -177,7 +184,7 @@ test({
   },
 
   'groups the cart into its two styles automatically': async ({ req, cartUuid, trackIdByKey }) => {
-    const { status, json } = await req('GET', `/api/me/carts/${cartUuid}/similar`)
+    const { status, json } = await cartSearch(req, cartUuid)
     expect(status).to.equal(200)
     expect(json.autoK).to.equal(2)
     expect(json.k).to.equal(2)
@@ -191,7 +198,7 @@ test({
   },
 
   'returns similar tracks per group with Fit and leaves known tracks out': async ({ req, cartUuid }) => {
-    const { json } = await req('GET', `/api/me/carts/${cartUuid}/similar`)
+    const { json } = await cartSearch(req, cartUuid)
     const titles = titlesOf(json.tracks)
     expect(titles).to.include.members(['nearA1', 'nearA2', 'nearB1', 'nearB2'])
     expect(titles).to.not.include.members(['heardA'])
@@ -215,18 +222,18 @@ test({
   },
 
   'clamps the group count and accepts one group': async ({ req, cartUuid }) => {
-    const many = await req('GET', `/api/me/carts/${cartUuid}/similar?k=50`)
+    const many = await cartSearch(req, cartUuid, { k: 50 })
     expect(many.json.k).to.equal(2)
-    const one = await req('GET', `/api/me/carts/${cartUuid}/similar?k=1`)
+    const one = await cartSearch(req, cartUuid, { k: 1 })
     expect(one.json.k).to.equal(1)
     expect(one.json.groups).to.have.length(1)
     expect(one.json.groups[0].size).to.equal(6)
   },
 
   'pushes the search away from session misses without storing them': async ({ req, cartUuid, trackIdByKey }) => {
-    const before = await req('GET', `/api/me/carts/${cartUuid}/similar`)
+    const before = await cartSearch(req, cartUuid)
     const missId = trackIdByKey.nearA1
-    const after = await req('GET', `/api/me/carts/${cartUuid}/similar?misses=${missId}`)
+    const after = await cartSearch(req, cartUuid, { misses: missId })
     expect(after.json.tracks.map((t) => t.id)).to.not.include(missId)
     const pushedGroup = after.json.groups.find((g) => g.pushedAwayFrom === 1)
     expect(pushedGroup).to.exist
@@ -234,21 +241,53 @@ test({
     expect(fitOf(after, 'nearA2')).to.be.at.most(fitOf(before, 'nearA2'))
   },
 
-  'hides followed or purchased artists with newOnly': async ({ req, cartUuid }) => {
-    const { json } = await req('GET', `/api/me/carts/${cartUuid}/similar?newOnly=true`)
-    expect(json.excluded.newOnly).to.be.a('number')
-    expect(json.tracks.length).to.be.at.most((await req('GET', `/api/me/carts/${cartUuid}/similar`)).json.tracks.length)
+  'hides followed or purchased artists with newArtistsOnly': async ({ req, cartUuid }) => {
+    const { json } = await cartSearch(req, cartUuid, { newArtistsOnly: 'true' })
+    expect(json.excluded.knownArtists).to.be.a('number')
+    expect(json.tracks.length).to.be.at.most((await cartSearch(req, cartUuid)).json.tracks.length)
   },
 
-  'returns 404 for a cart that is not the user’s': async ({ req }) => {
-    const res = await req('GET', '/api/me/carts/00000000-0000-4000-8000-000000000000/similar')
-    expect(res.status).to.equal(404)
+  'reports the cart tracks the groups are formed from': async ({ req, cartUuid }) => {
+    const { json } = await cartSearch(req, cartUuid)
+    expect(json.cartTracks).to.deep.equal({ total: 6, analysed: 6, used: 6, limit: 300 })
   },
 
-  'the cart:~ search term returns the same tracks': async ({ req, cartUuid }) => {
-    const api = await req('GET', `/api/me/carts/${cartUuid}/similar`)
-    const search = await req('GET', `/api/tracks?q=${encodeURIComponent(`cart:~${cartUuid}`)}`)
-    expect(search.status).to.equal(200)
-    expect(search.json.map((t) => t.id)).to.deep.equal(api.json.tracks.map((t) => t.id))
+  'filters the results with free text': async ({ req, cartUuid }) => {
+    const { json } = await cartSearch(req, cartUuid, { terms: 'nearA1' })
+    expect(titlesOf(json.tracks)).to.deep.equal(['nearA1'])
+    expect(json.groups).to.have.length(2)
+  },
+
+  'filters the results by artist': async ({ req, cartUuid, trackIdByKey }) => {
+    const [{ artist_id }] = await pg.queryRowsAsync(
+      sql`SELECT artist_id FROM track__artist WHERE track_id = ${trackIdByKey.nearB2}`,
+    )
+    const { json } = await cartSearch(req, cartUuid, { terms: `artist:${artist_id}` })
+    expect(titlesOf(json.tracks)).to.deep.equal(['nearB2'])
+  },
+
+  'returns no tracks for a cart that is not the user’s': async ({ req }) => {
+    const res = await cartSearch(req, '00000000-0000-4000-8000-000000000000')
+    expect(res.status).to.equal(200)
+    expect(res.json.tracks).to.deep.equal([])
+    expect(res.meta.cartSearch).to.equal(null)
+  },
+
+  'reports the cart search page in meta': async ({ req, cartUuid }) => {
+    const { json, meta } = await cartSearch(req, cartUuid)
+    expect(meta).to.include({ total: json.tracks.length, offset: 0, count: json.tracks.length, limit: 2 * 50 })
+    expect(meta.cartSearch.limitPerGroup).to.equal(50)
+  },
+
+  'reports the total, offset and limit of a normal search in meta': async ({ req }) => {
+    const all = await req('GET', `/api/tracks?q=${encodeURIComponent('cart similarity')}&limit=100`)
+    expect(all.status).to.equal(200)
+    const total = all.json.meta.total
+    expect(total).to.be.at.least(FIXTURES.length)
+    expect(all.json.meta).to.deep.equal({ total, offset: 0, limit: 100, count: all.json.tracks.length })
+
+    const page = await req('GET', `/api/tracks?q=${encodeURIComponent('cart similarity')}&limit=5&offset=2`)
+    expect(page.json.meta).to.deep.equal({ total, offset: 2, limit: 5, count: 5 })
+    expect(page.json.tracks.map((t) => t.id)).to.deep.equal(all.json.tracks.slice(2, 7).map((t) => t.id))
   },
 })

@@ -57,22 +57,21 @@ a new cart.
      filter), returning candidate track ids with their mean embeddings
 3. **`routes/shared/cart-similarity/index.js`** — orchestration: groups → push-away → candidate scoring in the
    centred space → per-group top N → Fit, percentile, next-best group → 2D coordinates → `track_details` rows.
-4. **API**: `GET /api/me/carts/:uuid/similar?k=&newOnly=&misses=<id,id>&limit=` returns
-   `{ cart, k, autoK, maxK, groups: [{ index, name, size, resultCount }], tracks: [... track_details + cartSearch ], map: { members: [{ x, y, group }] }, excluded: { heard, ignored, purchased } }`.
+4. **API**: the track search, `GET /api/tracks?q=cart:~<uuid> [other terms]&k=&newArtistsOnly=&misses=<id,id>`,
+   returns `{ tracks: [... track_details + cartSearch ], meta: { total, offset, limit, count, cartSearch: { cart, cartTracks, k, autoK, maxK, groups: [{ index, name, size, resultCount }], map: { members: [{ x, y, group }] }, excluded: { heard, ignored, purchased, knownArtists } } } }`.
    Each result track carries `cartSearch: { group, fit, closerThan, similarity, nextGroup, nextFit, x, y }`.
-5. **`searchForTracks`**: a query containing `cart:~<uuid>` delegates to the cart search at the automatic split
-   and returns the merged result list (keeps the `/api/tracks?q=` API and CLI consistent).
+   Every track search uses the same `{ tracks, meta }` envelope. The other terms of the query (text, artist,
+   label, genre, …) and `store` / `addedSince` filter the results.
 
-Limits: grouping uses at most the 600 most recently added cart tracks; `k` ranges 1…`min(8, ⌊n/3⌋)`;
-a candidate budget of 1,600 previews split across groups (300–1,000 per group, `hnsw.ef_search` raised to match;
-1,000 is pgvector's maximum); up to 50 results per group. The collection mean is cached per user for an hour.
+Limits: grouping uses the 300 most recently added analysed cart tracks (shown in the UI); `k` ranges 1…`min(8, ⌊n/3⌋)`;
+a candidate budget of 1,000 previews split across groups (200–500 per group, `hnsw.ef_search` raised to match); up to 50 results per group. The collection mean is cached per user for an hour.
 
 ### Frontend
 
 - `searchTerms.js`: `cart:~<uuid>` parses to `{ type: 'cart', id: <uuid>, similar: true }`; the pill shows the cart
   name (via the existing `names` URL parameter).
 - `App.search`: a cart term routes to the new endpoint; the response's tracks become `searchResults` and the rest
-  is kept in `cartSearch` state (k, newOnly, misses, chip, mapOpen, groups, excluded, map).
+  is kept in `cartSearch` state (k, newArtistsOnly, misses, chip, mapOpen, groups, excluded, map).
 - `CartSearchControls` (new) renders in the track table header: the controls row (slider, New artists only,
   Map toggle, counts), the "Not this" pills (undo / clear all), the group chips and the Save group as cart button,
   and the map when toggled.
