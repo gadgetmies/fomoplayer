@@ -49,7 +49,9 @@ module.exports.searchEntitiesByName = async (entityType, query, limit = 10) => {
   })
 }
 
-module.exports.queryEntityDetails = async (entityType, entityId) => {
+// `stores` (lower-case store names) limits the returned store rows the same way
+// the follow lists are limited, so callers comparing the two see the same stores.
+module.exports.queryEntityDetails = async (entityType, entityId, stores = undefined) => {
   const parsedId = parseInt(entityId, 10)
   if (Number.isNaN(parsedId) || parsedId <= 0) throw new Error('Invalid entity id')
   return BPromise.using(pg.getTransaction(), async (tx) => {
@@ -59,7 +61,7 @@ SELECT `
     query.append(`
     ${tx.escapeIdentifier(`${entityType}_id`)} as id,
     ${tx.escapeIdentifier(`${entityType}_name`)} as name,
-    JSON_AGG(JSON_BUILD_OBJECT(
+    COALESCE(JSON_AGG(JSON_BUILD_OBJECT(
       'store', JSON_BUILD_OBJECT(
         'id', store_id,
         'name', store_name
@@ -67,10 +69,12 @@ SELECT `
       'id', ${tx.escapeIdentifier(`store__${entityType}_id`)},
       'storeId', ${tx.escapeIdentifier(`store__${entityType}_store_id`)},
       'url', ${tx.escapeIdentifier(`store__${entityType}_url`)}
-    )) AS stores
+    )) FILTER (WHERE store_id IS NOT NULL AND (`)
+    query.append(sql`${stores}::TEXT[] IS NULL OR LOWER(store_name) = ANY(${stores})`)
+    query.append(`)), '[]') AS stores
 FROM ${tx.escapeIdentifier(entityType)}
-NATURAL JOIN ${tx.escapeIdentifier(`store__${entityType}`)}
-NATURAL JOIN store
+NATURAL LEFT JOIN ${tx.escapeIdentifier(`store__${entityType}`)}
+NATURAL LEFT JOIN store
 WHERE `)
     query.append(`${tx.escapeIdentifier(`${entityType}_id`)} = `)
     query.append(sql`${parsedId}

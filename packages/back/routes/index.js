@@ -48,12 +48,12 @@ router.get('/tracks/', async ({ query: { q, store: stores }, user: { id: userId 
   res.send(await searchForTracksResponse(q, { ...options, ...page, stores, userId }))
 })
 
-router.get('/artists/:id', async ({ params: { id } }, res) => {
-  res.send(await getEntityDetails('artist', id))
+router.get('/artists/:id', async ({ params: { id }, query: { store: stores } }, res) => {
+  res.send(await getEntityDetails('artist', id, stores))
 })
 
-router.get('/labels/:id', async ({ params: { id } }, res) => {
-  res.send(await getEntityDetails('label', id))
+router.get('/labels/:id', async ({ params: { id }, query: { store: stores } }, res) => {
+  res.send(await getEntityDetails('label', id, stores))
 })
 
 router.get('/releases/:id', async ({ params: { id } }, res) => {

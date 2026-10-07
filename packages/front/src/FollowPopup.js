@@ -90,10 +90,9 @@ class FollowPopup extends Component {
                         await this.props.onFollowStoreArtist(id, url, artist.name, !following)
                       } catch (e) {
                         console.error('Following store artist failed', e)
-                        throw e
+                      } finally {
+                        this.setState({ subscribingToStoreArtist: null })
                       }
-
-                      this.setState({ subscribingToStoreArtist: null })
                     }}
                   />
                 )
@@ -146,17 +145,15 @@ class FollowPopup extends Component {
                         loading={this.state.subscribingToStoreLabel === id}
                         disabled={this.state.subscribingToStoreLabel || this.state.subscribingToAllStoreLabels}
                         onClick={async () => {
-                          this.setState({ subscribingToAllStoreLabel: id })
-                          const following = this.getFollowingLabel(id)
+                          this.setState({ subscribingToStoreLabel: id })
 
                           try {
                             await this.props.onFollowStoreLabel(id, url, label.name, !following)
                           } catch (e) {
-                            console.error('Following store artist failed', e)
-                            throw e
+                            console.error('Following store label failed', e)
+                          } finally {
+                            this.setState({ subscribingToStoreLabel: null })
                           }
-
-                          this.setState({ subscribingToStoreLabel: null })
                         }}
                       />
                     )

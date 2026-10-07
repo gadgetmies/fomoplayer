@@ -392,12 +392,12 @@ ON CONFLICT DO NOTHING
     FROM
       store__artist
       NATURAL JOIN store
-    WHERE store__artist_store_id = ${artist.id} OR 
-          store__artist_url = ${artist.url} OR
-          (
-            store_url = 'https://bandcamp.com' -- TODO: remove hardcoded value
-            AND artist_id = ${artistId}
-          ) 
+    WHERE store_url = ${storeUrl}
+      AND (store__artist_store_id = ${artist.id} OR store__artist_url = ${artist.url} OR artist_id = ${artistId})
+    -- Without the store scope this used to return the artist's row in another
+    -- store (e.g. a URL-less Bandcamp row) and the follow was stored there.
+    ORDER BY artist_id = ${artistId} DESC, store__artist_id
+    LIMIT 1
     `,
   )
 
