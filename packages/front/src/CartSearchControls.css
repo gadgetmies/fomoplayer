@@ -28,12 +28,55 @@
   accent-color: var(--fp-brand-primary);
 }
 
-/* Fixed width, so the controls after the slider do not move when the label changes. */
-.cart-search-group-count {
-  display: inline-block;
-  min-width: 7.2em;
+/* Group detail, New artists only and Map stay on one row, also on a phone. */
+.cart-search-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* − [k] +: the buttons and the box share one height, joined into a single control. */
+.cart-search-stepper {
+  gap: 0;
+}
+
+.cart-search-stepper > .button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+}
+
+.cart-search-stepper > .button:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.cart-search-stepper > .button:last-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* 16px keeps iOS from zooming in when the box is focused. */
+.cart-search-stepper > input.text-input {
+  box-sizing: border-box;
+  width: 2.6em;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: #111;
   color: white;
+  font-size: 16px;
+  text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* The map toggle and the group chips sit on a darker strip, so they stand out from the controls row. */
+.cart-search-row .select-button--container {
+  background-color: #111;
 }
 
 .cart-search-toggle .select_button-button {
@@ -76,11 +119,16 @@
   vertical-align: middle;
 }
 
-/* The settings' tab control, at the smaller button height. */
-.cart-search-chips {
+/* The settings' tab control, at the smaller button height. The chips stay on one line and scroll sideways, so
+   any number of groups takes a single row. */
+.cart-search-row .cart-search-chips {
   align-self: center;
   align-items: center;
+  flex-wrap: nowrap;
   max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
   box-sizing: border-box;
 }
 
@@ -89,9 +137,9 @@
   flex-direction: row !important;
   flex-wrap: nowrap;
   align-items: center;
+  flex: none;
   gap: 6px;
-  min-width: 0;
-  max-width: 100%;
+  max-width: 16rem;
   box-sizing: border-box;
   line-height: 1;
   white-space: nowrap;
@@ -252,10 +300,66 @@
     margin: 0;
   }
 
+  .cart-search-toolbar {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .cart-search-chips {
+    width: 100%;
+  }
+
   .cart-search-counts {
     width: 100%;
     margin-left: 0;
     text-align: left;
+  }
+
+  /* Fit, the cart button and "Not this" share one column of equal width beside the track details. The row is an
+     inline flexbox (Track.js), so it is switched to a grid here. */
+  .tracks-table > tbody > tr.cart-search-track {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) 96px;
+    grid-template-rows: auto 1fr;
+  }
+
+  .cart-search-track > .new-cell,
+  .cart-search-track > .track-details {
+    grid-row: 1 / -1;
+  }
+
+  .cart-search-track > .follow-ignore-cart-cell {
+    grid-column: 3;
+    grid-row: 1;
+    width: auto;
+    max-width: none;
+  }
+
+  .cart-search-track > .open-share-cell {
+    grid-column: 3;
+    grid-row: 2;
+    display: block;
+  }
+
+  .cart-search-track .open-cell {
+    max-width: none;
+  }
+
+  .cart-search-track .cart-search-fit-cell {
+    padding-right: 4px !important;
+  }
+
+  .cart-search-fit-popup,
+  .cart-search-fit-popup > .popup-anchor {
+    display: flex;
+    width: 100%;
+  }
+
+  .cart-search-fit {
+    flex: 1 1 100%;
+    max-width: 100%;
+    margin: 0 !important;
   }
 
   .cart-search-save {
