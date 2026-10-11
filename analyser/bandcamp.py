@@ -24,7 +24,9 @@ _release_cache = {}
 
 
 class RateLimited(Exception):
-    pass
+    def __init__(self, message, status_code=None):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 def parse_release_info(page_source):
@@ -53,7 +55,7 @@ def _get_release_info(release_url):
 
     res = requests.get(release_url, timeout=30)
     if res.status_code in (403, 429):
-        raise RateLimited(f"Bandcamp returned {res.status_code} for {release_url}")
+        raise RateLimited(f"Bandcamp returned {res.status_code} for {release_url}", res.status_code)
     if res.status_code in (404, 410):
         info = None
     else:

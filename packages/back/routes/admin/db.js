@@ -263,10 +263,20 @@ SELECT store__track_id               AS id
      , store__track_preview_start_ms AS preview_start_ms
      , store__track_preview_end_ms   AS preview_end_ms
      , store__track_url              AS url
+     , store__track_store_id         AS store_track_id
+     -- Bandcamp stream URLs expire and aren't stored; the analyser resolves
+     -- them from the release page.
+     , CASE WHEN store__track_preview_url IS NULL THEN
+         (SELECT store__release_url
+          FROM release__track rt
+            JOIN store__release sr ON sr.release_id = rt.release_id
+          WHERE rt.track_id = store__track.track_id
+            AND sr.store_id = store.store_id
+          LIMIT 1) END               AS release_url
 FROM
   store__track
   NATURAL JOIN store
-  NATURAL LEFT JOIN store__track_preview
+  NATURAL JOIN store__track_preview
   NATURAL LEFT JOIN store__track_preview_waveform
 WHERE store__track_preview_waveform_url IS NULL
   AND (${stores}::TEXT[] IS NULL OR store_name = ANY(${stores}))

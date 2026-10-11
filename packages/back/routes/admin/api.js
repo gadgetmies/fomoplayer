@@ -12,7 +12,6 @@ const {
   queryNextTracksToAnalyse,
   insertWaveforms,
   queryTracksWithoutWaveform,
-  setPreviewMissing,
   updateTrackDetailsForPreviewTracks,
   markPreviewsMissing,
   queryNotificationAudioSamplesWithoutEmbedding,
@@ -51,7 +50,6 @@ const {
   addArtistCredit,
   removeArtistCredit,
 } = require('./db')
-const { getPreviewDetails } = require('../stores/bandcamp/logic')
 const { ensureIsAdmin } = require('../shared/auth.js')
 const config = require('../../config')
 const { isDatabaseResetAllowed } = require('./database-reset-policy')
@@ -134,24 +132,12 @@ router.post('/radiator/config', async ({ body: { name, lens, config } }, res) =>
   res.status(201).send(storedConfig)
 })
 
+// Bandcamp stream URLs expire and are not stored. The analyser resolves them
+// itself from the release page (store_track_id and release_url), throttled and
+// pausing on rate limits: resolving them here would fetch Bandcamp from the
+// production server, and a rate limit there suspends playback for all users.
 router.get('/analyse', async ({ query }, res) => {
-  const tracks = await queryNextTracksToAnalyse(query)
-  const previews = []
-  for (const track of tracks) {
-    const firstPreview = track.previews[0]
-    if (track.previews.length === 1 && !firstPreview.url && firstPreview.store_name === 'Bandcamp') {
-      try {
-        const { url } = await getPreviewDetails(firstPreview.preview_id)
-        previews.push({ ...track, previews: [{ ...firstPreview, preview_url: url }] })
-      } catch (e) {
-        logger.warn(`Unable to find preview url for track with preview id: ${track.preview_id}`, { track })
-        await setPreviewMissing(track.preview_id)
-      }
-    } else {
-      previews.push(track)
-    }
-  }
-  res.send(previews)
+  res.send(await queryNextTracksToAnalyse(query))
 })
 
 router.post('/analyse', async ({ body }, res) => {
@@ -164,22 +150,7 @@ router.post('/analyse', async ({ body }, res) => {
 })
 
 router.get('/preview', async ({ query: { limit, stores } }, res) => {
-  const tracks = await queryTracksWithoutWaveform(limit, stores.split(','))
-  const previews = []
-  for (const track of tracks) {
-    if (track.preview_url) {
-      previews.push(track)
-    } else if (track.store_name === 'Bandcamp') {
-      try {
-        const { url } = await getPreviewDetails(track.preview_id)
-        previews.push({ ...track, preview_url: url })
-      } catch (e) {
-        logger.warn(`Unable to find preview url for track with preview id: ${track.preview_id}`, { track })
-        await setPreviewMissing(track.preview_id)
-      }
-    }
-  }
-  res.send(previews)
+  res.send(await queryTracksWithoutWaveform(limit, stores.split(',')))
 })
 
 router.post('/waveform', async ({ body }, res) => {
