@@ -187,8 +187,8 @@ def process_batch(previews, backoff, attempts):
                 generate_waveform(output_wav_path, waveform_png_path)
                 waveform_url = upload_waveform(waveform_png_path)
                 waveform_details.append({"id": preview_id, "waveform_url": waveform_url,
-                                         "start_ms": preview.get("preview_start_ms"),
-                                         "end_ms": preview.get("preview_end_ms")})
+                                         "waveform_start_ms": preview.get("preview_start_ms"),
+                                         "waveform_end_ms": preview.get("preview_end_ms")})
             except Exception as e:
                 attempts[preview_id] = attempts.get(preview_id, 0) + 1
                 print(f"Preview {preview_id} failed (attempt {attempts[preview_id]}/{MAX_ATTEMPTS}): {e!r}")
