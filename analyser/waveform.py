@@ -57,15 +57,33 @@ def get_next_waveform_previews(batch_size):
     return res.json()
 
 
+# One pixel column per this many samples, as in the waveforms generated so far.
+SAMPLES_PER_PIXEL = 6000
+# Samples per min/max block of the drawn envelope (several blocks per pixel).
+ENVELOPE_BLOCK = 1000
+
+
+def envelope(data, block):
+    """Min and max of each block of samples, the last block possibly shorter."""
+    full = len(data) // block * block
+    mins = data[:full].reshape(-1, block).min(axis=1)
+    maxs = data[:full].reshape(-1, block).max(axis=1)
+    if full < len(data):
+        mins = numpy.append(mins, data[full:].min())
+        maxs = numpy.append(maxs, data[full:].max())
+    return mins, maxs
+
+
 def generate_waveform(file_path, output_path):
     samplerate, data = wavfile.read(file_path)
     if data.ndim > 1:
         data = data[:, 0]
     length = data.shape[0] / samplerate
-    time = numpy.linspace(0., length, data.shape[0])
 
-    fig = pyplot.figure(frameon=False)
-    fig.set_size_inches(data.shape[0] / 6000, 250)
+    # The figure is drawn at its own dpi before savefig: at the default 100 dpi
+    # that is a canvas 100x the size of the 1-dpi image.
+    fig = pyplot.figure(frameon=False, dpi=1)
+    fig.set_size_inches(data.shape[0] / SAMPLES_PER_PIXEL, 250)
     ax = pyplot.axes([0, 0, 1, 1], frameon=False)
 
     # Then we disable our xaxis and yaxis completely. If we just say plt.axis('off'),
@@ -73,12 +91,14 @@ def generate_waveform(file_path, output_path):
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 
-    # Even though our axes (plot region) are set to cover the whole image with [0,0,1,1],
-    # by default they leave padding between the plotted data and the frame. We use tigher=True
-    # to make sure the data gets scaled to the full extents of the axes.
-    pyplot.autoscale(tight=True)
-
-    ax.plot(time, data, color='white', linewidth=1, antialiased=False)
+    # Plotting every sample of a full Bandcamp track (millions of points)
+    # overflows the Agg renderer; at a few hundred pixels per minute the
+    # per-block min/max envelope draws the same image.
+    mins, maxs = envelope(data, ENVELOPE_BLOCK)
+    time = numpy.arange(len(mins)) * ENVELOPE_BLOCK / samplerate
+    ax.fill_between(time, mins, maxs, color='white', linewidth=1, antialiased=False)
+    ax.set_xlim(0, length)
+    ax.set_ylim(data.min(), data.max())
 
     pyplot.savefig(output_path, dpi=1)
     pyplot.close(fig)
@@ -226,7 +246,9 @@ if __name__ == '__main__':
             continue
         if len(previews) == 0:
             print("No previews to process")
-            sys.exit(2)
+            # A finished --loop run is a success; a single run keeps exit 2,
+            # which the analyse_all.sh loop treats as "queue drained".
+            sys.exit(0 if args.loop else 2)
         # Cached release pages hold stream URLs that expire; keep them for one batch only.
         bandcamp._release_cache.clear()
         done, missing = process_batch(previews, backoff, attempts)
