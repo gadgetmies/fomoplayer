@@ -83,9 +83,9 @@ const CartSearchControls = ({
   const [saving, setSaving] = useState(null)
   const [saveName, setSaveName] = useState('')
   const [saveInProgress, setSaveInProgress] = useState(false)
-  const [sliderValue, setSliderValue] = useState(k || 1)
+  const [kInput, setKInput] = useState(String(k || ''))
 
-  useEffect(() => setSliderValue(k || 1), [k])
+  useEffect(() => setKInput(String(k || '')), [k])
   useEffect(() => setSaving(null), [chip, k])
 
   const groups = result?.groups || []
@@ -95,6 +95,14 @@ const CartSearchControls = ({
   const selectedGroup = chip === 'all' ? null : groups[chip]
   const savedGroup = selectedGroup && saved.find((s) => s.k === k && s.group === chip)
   const cartLabel = (cartSearch.name || '').replace(/^zz \S+ /, '')
+  const currentK = Math.min(k || 1, maxK)
+
+  // Fewer groups is coarser, more is finer. An empty or out-of-range entry snaps back into 1…maxK.
+  const commitK = (value) => {
+    const next = Math.min(Math.max(1, Math.round(value) || currentK), maxK)
+    setKInput(String(next))
+    if (next !== k) onChange({ k: next })
+  }
 
   const startSaving = () => {
     setSaving(chip)
@@ -118,48 +126,65 @@ const CartSearchControls = ({
     <>
       <tr className="cart-search-row">
         <th className="cart-search-cell">
-          <label className="cart-search-control">
-            Coarse
-            <input
-              type="range"
-              min={1}
-              max={maxK}
-              step={1}
-              value={Math.min(sliderValue, maxK)}
-              disabled={!result || maxK < 2}
-              aria-label="Group detail, coarse to fine"
-              data-testid="cart-search-slider"
-              onChange={(e) => setSliderValue(Number(e.target.value))}
-              onMouseUp={(e) => onChange({ k: Number(e.target.value) })}
-              onTouchEnd={(e) => onChange({ k: Number(e.target.value) })}
-              onKeyUp={(e) => onChange({ k: Number(e.target.value) })}
-            />
-            Fine
-            <output className="cart-search-group-count">
-              {k ? `${k} group${k > 1 ? 's' : ''}${result && k === result.autoK ? ' (auto)' : ''}` : '…'}
-            </output>
-          </label>
-          <label className="cart-search-control">
-            <input
-              type="checkbox"
-              checked={newArtistsOnly}
-              data-testid="cart-search-new-only"
-              onChange={(e) => onChange({ newArtistsOnly: e.target.checked })}
-            />
-            New artists only
-          </label>
-          <span className="select-button--container cart-search-toggle">
-            <button
-              type="button"
-              className={`select_button-button select_button-button__small ${mapOpen ? 'select_button-button__active' : ''}`}
-              aria-pressed={mapOpen}
-              title={`${mapOpen ? 'Hide' : 'Show'} the map`}
-              data-testid="cart-search-map-toggle"
-              onClick={() => onChange({ mapOpen: !mapOpen })}
-            >
-              <FontAwesomeIcon icon="map" /> Map
-            </button>
-          </span>
+          <div className="cart-search-toolbar">
+            <span className="cart-search-control cart-search-stepper" role="group" aria-label="Groups, coarse to fine">
+              <button
+                type="button"
+                className="button button-push_button button-push_button-small button-push_button-primary"
+                disabled={!result || currentK <= 1}
+                title="Coarser: fewer, broader groups"
+                aria-label="Coarser"
+                data-testid="cart-search-coarser"
+                onClick={() => commitK(currentK - 1)}
+              >
+                <FontAwesomeIcon icon="minus" />
+              </button>
+              <input
+                className="text-input text-input-small text-input-dark"
+                inputMode="numeric"
+                value={kInput}
+                disabled={!result || maxK < 2}
+                title={`Number of groups, 1–${maxK}`}
+                aria-label="Number of groups"
+                data-testid="cart-search-k"
+                onChange={(e) => setKInput(e.target.value.replace(/\D/g, ''))}
+                onBlur={() => commitK(Number(kInput))}
+                onKeyDown={(e) => e.key === 'Enter' && commitK(Number(kInput))}
+              />
+              <button
+                type="button"
+                className="button button-push_button button-push_button-small button-push_button-primary"
+                disabled={!result || currentK >= maxK}
+                title="Finer: more, narrower groups"
+                aria-label="Finer"
+                data-testid="cart-search-finer"
+                onClick={() => commitK(currentK + 1)}
+              >
+                <FontAwesomeIcon icon="plus" />
+              </button>
+            </span>
+            <label className="cart-search-control">
+              <input
+                type="checkbox"
+                checked={newArtistsOnly}
+                data-testid="cart-search-new-only"
+                onChange={(e) => onChange({ newArtistsOnly: e.target.checked })}
+              />
+              New artists only
+            </label>
+            <span className="select-button--container cart-search-toggle">
+              <button
+                type="button"
+                className={`select_button-button select_button-button__small ${mapOpen ? 'select_button-button__active' : ''}`}
+                aria-pressed={mapOpen}
+                title={`${mapOpen ? 'Hide' : 'Show'} the map`}
+                data-testid="cart-search-map-toggle"
+                onClick={() => onChange({ mapOpen: !mapOpen })}
+              >
+                <FontAwesomeIcon icon="map" /> Map
+              </button>
+            </span>
+          </div>
           <span
             className="cart-search-counts"
             title={`Always left out: ${excluded.heard} heard, ${excluded.ignored} ignored (artist, label, release or artist on label), ${excluded.purchased} purchased`}
