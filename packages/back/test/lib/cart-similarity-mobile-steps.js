@@ -4,6 +4,7 @@
 
 const { expect } = require('chai')
 const { waitForWithTimeoutMessage } = require('./setup')
+const { SEARCH_TIMEOUT } = require('./cart-similarity-steps')
 
 const pause = (page, ms = 800) => page.waitForTimeout(ms)
 
@@ -73,7 +74,7 @@ module.exports.stepGroups = async ({ page }) => {
       page.waitForFunction(
         (count) => document.querySelectorAll('[data-testid="cart-search-chip"]').length === count,
         before - 1,
-        { timeout: 60000 },
+        { timeout: SEARCH_TIMEOUT },
       ),
     'Show one group fewer after tapping the coarser (−) button.',
   )
@@ -87,7 +88,7 @@ module.exports.stepGroups = async ({ page }) => {
       page.waitForFunction(
         (count) => document.querySelectorAll('[data-testid="cart-search-chip"]').length === count,
         before,
-        { timeout: 60000 },
+        { timeout: SEARCH_TIMEOUT },
       ),
     'Return to the original number of groups after typing it into the group box.',
   )

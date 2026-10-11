@@ -6,13 +6,15 @@ const { getSharedContext, teardownSharedContext } = require('../lib/setup')
 const { seedCartSimilarityViaApi } = require('../lib/cart-similarity-seed')
 const steps = require('../lib/cart-similarity-steps')
 
+const { SEARCH_TIMEOUT } = steps
+
 test({
   teardown: teardownSharedContext,
   setup: async () => {
     const { page } = await getSharedContext()
     const { cart } = await seedCartSimilarityViaApi(page)
     await steps.openCartAndFindSimilar(page, cart)
-    return { page, timeout: 90000 }
+    return { page, timeout: 2 * SEARCH_TIMEOUT + 60000 }
   },
 
   'finds tracks similar to the cart, group by group': steps.assertGroupedResults,
