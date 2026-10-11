@@ -16,6 +16,11 @@ const cartTitles = DEMO_TRACKS.filter(({ inCart }) => inCart).map(({ key }) => t
 
 const pause = (page, ms = 800) => page.waitForTimeout(ms)
 
+// A cart search on the Railway preview can take well over a minute: the service may have just woken from sleep and
+// the search runs on the preview's small database instance.
+const SEARCH_TIMEOUT = process.env.PREVIEW_URL ? 180000 : 60000
+module.exports.SEARCH_TIMEOUT = SEARCH_TIMEOUT
+
 module.exports.openCartAndFindSimilar = async (page, cart) => {
   await page.goto(`/carts/${cart.uuid}`)
   await waitForWithTimeoutMessage(
@@ -25,7 +30,7 @@ module.exports.openCartAndFindSimilar = async (page, cart) => {
   await pause(page)
   await page.click('[data-testid="cart-find-similar"]')
   await waitForWithTimeoutMessage(
-    () => page.waitForSelector('[data-testid="cart-search-chip"]', { timeout: 60000 }),
+    () => page.waitForSelector('[data-testid="cart-search-chip"]', { timeout: SEARCH_TIMEOUT }),
     'Show the group chips once the cart similarity search has returned.',
   )
   await waitForWithTimeoutMessage(
@@ -90,7 +95,7 @@ module.exports.selectGroupAndMarkNotThis = async ({ page }) => {
             (c) => c.textContent.trim() === title,
           ),
         missed,
-        { timeout: 60000 },
+        { timeout: SEARCH_TIMEOUT },
       ),
     'Hide the track marked "Not this" and list it in the Not this pills.',
   )

@@ -4,7 +4,7 @@
 const { test } = require('cascade-test')
 const { getSharedContext, getMobileContext, teardownSharedContext } = require('../lib/setup')
 const { seedCartSimilarityViaApi } = require('../lib/cart-similarity-seed')
-const { openCartAndFindSimilar } = require('../lib/cart-similarity-steps')
+const { openCartAndFindSimilar, SEARCH_TIMEOUT } = require('../lib/cart-similarity-steps')
 const steps = require('../lib/cart-similarity-mobile-steps')
 
 test({
@@ -14,7 +14,7 @@ test({
     const { cart } = await seedCartSimilarityViaApi(desktopPage)
     const { page } = await getMobileContext()
     await openCartAndFindSimilar(page, cart)
-    return { page, timeout: 90000 }
+    return { page, timeout: 2 * SEARCH_TIMEOUT + 60000 }
   },
 
   'fits the search controls into two compact rows': steps.assertCompactControls,
