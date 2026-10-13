@@ -57,6 +57,24 @@ def get_next_waveform_previews(batch_size):
     return res.json()
 
 
+def post_to_api(path, payload):
+    """POST to our own API, retrying through transient network outages.
+
+    A dropped connection (e.g. the laptop sleeping) must not crash the worker
+    and throw away a whole batch's rendered waveforms, so keep retrying until
+    the request goes through rather than letting the RequestException escape.
+    """
+    while True:
+        try:
+            res = requests.post(f"{get_api_url()}{path}", headers=auth_header(), json=payload)
+            if res.status_code != 200:
+                print(f"POST {path} failed: {res.status_code} {res.text[:500]}", flush=True)
+            return
+        except requests.RequestException as e:
+            print(f"POST {path} failed: {e!r}; retrying in 60 s", flush=True)
+            time.sleep(60)
+
+
 # One pixel column per this many samples, as in the waveforms generated so far.
 SAMPLES_PER_PIXEL = 6000
 # Samples per min/max block of the drawn envelope (several blocks per pixel).
@@ -216,13 +234,9 @@ def process_batch(previews, backoff, attempts):
                     missing_previews.append({"preview_id": preview_id, "missing": True})
 
     if waveform_details:
-        res = requests.post(f"{get_api_url()}/admin/waveform", headers=auth_header(), json=waveform_details)
-        if res.status_code != 200:
-            print(f"Sending waveform details failed: {res.status_code} {res.text[:500]}")
+        post_to_api("/admin/waveform", waveform_details)
     if missing_previews:
-        res = requests.post(f"{get_api_url()}/admin/analyse", headers=auth_header(), json=missing_previews)
-        if res.status_code != 200:
-            print(f"Reporting missing previews failed: {res.status_code} {res.text[:500]}")
+        post_to_api("/admin/analyse", missing_previews)
     return len(waveform_details), len(missing_previews)
 
 
