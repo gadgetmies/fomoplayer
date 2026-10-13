@@ -640,7 +640,7 @@ const handleMessage = async (message) => {
       const carts = (await getUserCarts()) || []
       // Filter to non-deleted, non-purchased carts — the picker only shows
       // carts the user might want to actively push.
-      const filtered = carts.filter((c) => !c.deleted && !c.is_purchased)
+      const filtered = carts.filter((c) => !c.deleted && !c.isPurchased)
       return { ok: true, carts: filtered }
     } catch (e) {
       return { ok: false, error: e?.message || 'Failed to list carts' }

@@ -139,11 +139,22 @@ test({
       id: cart.id,
       uuid: cart.uuid,
       name: 'track list api fixture',
-      track_count: TRACK_COUNT,
+      trackCount: TRACK_COUNT,
     })
     expect(json.cart).to.not.have.property('tracks')
     expect(json.page).to.deep.equal({ offset: 0, limit: 2, total: TRACK_COUNT })
     expect(json.meta).to.deep.equal({})
+  },
+
+  'the cart and the cart list rows have the same camelCase fields': async ({ req, cart }) => {
+    const fields = ['id', 'name', 'isDefault', 'isPublic', 'isPurchased', 'uuid', 'storeDetails', 'trackCount']
+    const { json } = await req('GET', `/api/me/carts/${cart.id}`)
+    expect(json.cart).to.have.all.keys(...fields)
+    const list = await req('GET', '/api/me/carts')
+    expect(list.status).to.equal(200)
+    const row = list.json.find(({ id }) => id === cart.id)
+    expect(row).to.have.all.keys(...fields)
+    expect(Number(row.trackCount)).to.equal(TRACK_COUNT)
   },
 
   'page.total counts only the tracks matching the filters': async ({ req, cart }) => {
@@ -152,7 +163,7 @@ test({
     const { json } = await req('GET', `/api/me/carts/${cart.id}?since=${encodeURIComponent(since)}`)
     expect(json.page.total).to.equal(2)
     expect(json.tracks).to.have.length(2)
-    expect(json.cart.track_count).to.equal(TRACK_COUNT)
+    expect(json.cart.trackCount).to.equal(TRACK_COUNT)
   },
 
   'GET /carts/:uuid answers 404 for an unknown cart': async ({ req }) => {
@@ -172,7 +183,7 @@ test({
       const updated = await req('POST', `/api/me/carts/${created.json.id}`, { isPublic: true })
       expect(updated.status).to.equal(204)
       const { json } = await req('GET', `/api/me/carts/${created.json.id}`)
-      expect(json.cart.is_public).to.equal(true)
+      expect(json.cart.isPublic).to.equal(true)
       expect(json.tracks.map(({ id }) => id)).to.have.members(trackIds.slice(0, 2))
     } finally {
       await pg.queryAsync(sql`DELETE FROM track__cart WHERE cart_id = ${created.json.id}`)

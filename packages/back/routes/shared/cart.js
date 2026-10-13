@@ -131,8 +131,8 @@ module.exports.updateAllCartContents = async (userId, operations, excludePurchas
     .map(({ trackId, addedAt }) => ({ trackId, addedAt }))
 
   const carts = await queryUserCartDetails(userId)
-  for (const { id, is_purchased } of carts) {
-    if (excludePurchased && is_purchased) {
+  for (const { id, isPurchased } of carts) {
+    if (excludePurchased && isPurchased) {
       continue
     }
     await removeTracksFromCart(userId, id, tracksToBeRemoved)
