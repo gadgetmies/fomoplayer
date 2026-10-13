@@ -32,7 +32,7 @@ The frontend's "in default cart" and "in cart X" badges (rendered by `Tracks.js`
 
 #### Scenario: User views the main tracklist and a track is in the default cart
 
-- **WHEN** the user has a default cart with uuid `<A>` (`cart.is_default = true`)
+- **WHEN** the user has a default cart with uuid `<A>` (`cart.isDefault = true`)
 - **AND** a rendered track row carries `carts: [{ uuid: '<A>' }]`
 - **THEN** the row's "in default cart" badge is shown
 - **AND** the badge logic does not depend on the default cart's `tracks` array having been fetched
@@ -46,7 +46,7 @@ The frontend's "in default cart" and "in cart X" badges (rendered by `Tracks.js`
 
 ### Requirement: `updateDefaultCart` is removed
 
-The frontend SHALL NOT issue any separate fetch for the default cart's tracks on app load. The default-cart-membership badge is powered exclusively by the `carts` field on each track row, which is populated by the existing track-fetching endpoints. The default cart's metadata (`id`, `name`, `is_default`, `uuid`) continues to come from the carts list (`GET /me/carts`), which does not carry a `tracks` array.
+The frontend SHALL NOT issue any separate fetch for the default cart's tracks on app load. The default-cart-membership badge is powered exclusively by the `carts` field on each track row, which is populated by the existing track-fetching endpoints. The default cart's metadata (`id`, `name`, `isDefault`, `uuid`) continues to come from the carts list (`GET /me/carts`), which does not carry a `tracks` array.
 
 #### Scenario: App mounts and loads initial state
 

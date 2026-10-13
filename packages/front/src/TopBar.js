@@ -160,7 +160,7 @@ class TopBar extends Component {
                   label="Carts"
                   icon={<FontAwesomeIcon icon="cart-shopping" />}
                   selected={this.props.listState === 'carts'}
-                  to={isMobile ? '' : `/carts/${this.props.carts.find(R.prop('is_default')).uuid}`}
+                  to={isMobile ? '' : `/carts/${this.props.carts.find(R.prop('isDefault')).uuid}`}
                 />
               }
               open={this.state.cartsMenuOpen}

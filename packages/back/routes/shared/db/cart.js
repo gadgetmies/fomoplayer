@@ -24,8 +24,8 @@ module.exports.queryUserCartDetails = async (userId, stores) => {
                                      , JSON_AGG(JSON_BUILD_OBJECT(
           'id', cart__store_cart_store_id,
           'url', cart__store_cart_url,
-          'store_name', store_name,
-          'version_id', cart__store_store_version_id
+          'storeName', store_name,
+          'versionId', cart__store_store_version_id
                                                 )) AS store_details
                                 FROM
                                   cart
@@ -41,12 +41,12 @@ module.exports.queryUserCartDetails = async (userId, stores) => {
                           GROUP BY 1)
     SELECT cart_id                                                                AS id
          , cart_name                                                              AS name
-         , COALESCE(cart_is_default, FALSE)                                       AS is_default
-         , cart_is_public                                                         AS is_public
-         , COALESCE(cart_is_purchased, FALSE)                                     AS is_purchased
+         , COALESCE(cart_is_default, FALSE)                                       AS "isDefault"
+         , cart_is_public                                                         AS "isPublic"
+         , COALESCE(cart_is_purchased, FALSE)                                     AS "isPurchased"
          , cart_uuid                                                              AS uuid
-         , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS store_details
-         , track_count                                                            AS track_count
+         , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS "storeDetails"
+         , track_count                                                            AS "trackCount"
     FROM
       cart
       NATURAL LEFT JOIN cart_store_details
@@ -105,8 +105,8 @@ module.exports.queryUserCartDetailsWithTracks = async (userId, stores) =>
                                      , JSON_AGG(JSON_BUILD_OBJECT(
           'id', cart__store_cart_store_id,
           'url', cart__store_cart_url,
-          'store_name', store_name,
-          'version_id', cart__store_store_version_id
+          'storeName', store_name,
+          'versionId', cart__store_store_version_id
                                                 )) AS store_details
                                 FROM
                                   cart_details
@@ -115,13 +115,13 @@ module.exports.queryUserCartDetailsWithTracks = async (userId, stores) =>
                                 GROUP BY 1)
     SELECT cart_id                                                                AS id
          , cart_name                                                              AS name
-         , cart_is_default IS NOT NULL                                            AS is_default
-         , cart_is_public                                                         AS is_public
-         , cart_is_purchased IS NOT NULL                                          AS is_purchased
+         , cart_is_default IS NOT NULL                                            AS "isDefault"
+         , cart_is_public                                                         AS "isPublic"
+         , cart_is_purchased IS NOT NULL                                          AS "isPurchased"
          , cart_uuid                                                              AS uuid
          , cart_deleted                                                           AS deleted
          , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
-         , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS store_details
+         , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS "storeDetails"
     FROM
       cart_details
       NATURAL LEFT JOIN
@@ -134,7 +134,7 @@ module.exports.queryUserCartDetailsWithTracks = async (userId, stores) =>
 
 /**
  * A cart and one page of its tracks, newest first: `{ cart, tracks, page: { offset, limit, total }, meta: {} }`.
- * `cart` has the same fields as a row of the user's cart list (`track_count` counts the whole cart); `page.total`
+ * `cart` has the same fields as a row of the user's cart list (`trackCount` counts the whole cart); `page.total`
  * counts the tracks matching the store and since filters. `all` (for internal callers such as the playlist sync)
  * returns every track.
  */
@@ -168,8 +168,8 @@ module.exports.queryCartDetails = async (
             JSON_BUILD_OBJECT(
                 'id', cart__store_cart_store_id,
                 'url', cart__store_cart_url,
-                'store_name', store_name,
-                'version_id', cart__store_store_version_id
+                'storeName', store_name,
+                'versionId', cart__store_store_version_id
             )) AS store_details
        FROM
          cart_details
@@ -217,12 +217,12 @@ module.exports.queryCartDetails = async (
     SELECT JSON_BUILD_OBJECT(
                'id', cart_id
              , 'name', cart_name
-             , 'is_default', COALESCE(cart_is_default, FALSE)
-             , 'is_public', cart_is_public
-             , 'is_purchased', COALESCE(cart_is_purchased, FALSE)
+             , 'isDefault', COALESCE(cart_is_default, FALSE)
+             , 'isPublic', cart_is_public
+             , 'isPurchased', COALESCE(cart_is_purchased, FALSE)
              , 'uuid', cart_uuid
-             , 'store_details', CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END
-             , 'track_count', track_count :: INT
+             , 'storeDetails', CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END
+             , 'trackCount', track_count :: INT
            )                                                                      AS cart
          , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
          , (SELECT COUNT(*) FROM matching_tracks) :: INT                          AS total
