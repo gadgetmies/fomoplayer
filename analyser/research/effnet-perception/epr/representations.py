@@ -242,6 +242,15 @@ def run(workers=3, extra=extra_representations):
     reps = build(have, patches, loud)
     if extra:
         reps.update(extra(have))
+    if 'stem-drums' in reps and out_path(STEP, 'unit.json').exists():
+        # The stems cover the unit only: the unit section on the same tracks is their baseline.
+        u = unit()
+        name = f"section-{u.get('seconds')}s-{u.get('method')}"
+        if name in reps:
+            kind, sids, sdata = reps[name]
+            keep = set(reps['stem-drums'][1])
+            sel = [j for j, i in enumerate(sids) if i in keep]
+            reps[f'{name}@stem-tracks'] = (kind, [sids[j] for j in sel], [sdata[j] for j in sel])
     step = Step(STEP)
     _, ref_ids, ref_data = reps['mean']
     ref_d = distances('vec', ref_data)

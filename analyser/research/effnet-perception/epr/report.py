@@ -14,7 +14,7 @@ from .config import out_path
 
 CHART_DIR = Path(__file__).resolve().parents[4] / 'openspec' / 'changes' / 'effnet-perception-research' / 'findings'
 GROUP_COLORS = {'control': '#2a78d6', 'tempo-key': '#eb6834', 'quality': '#1baf7a', 'mix': '#eda100',
-                'structure': '#e87ba4', 'stems': '#008300', 'baseline': '#6250d6'}
+                'structure': '#e87ba4', 'stems': '#6250d6', 'baseline': '#6b6a63'}
 INK, MUTED, GRID = '#1f1f1e', '#6b6a63', '#e4e3dd'
 
 
@@ -31,7 +31,7 @@ def _style(ax):
         ax.spines[side].set_visible(False)
     for side in ('left', 'bottom'):
         ax.spines[side].set_color(GRID)
-    ax.tick_params(colors=MUTED, labelsize=8)
+    ax.tick_params(which='both', colors=MUTED, labelsize=8)
     ax.grid(axis='x', color=GRID, linewidth=0.6)
     ax.set_axisbelow(True)
 
@@ -130,18 +130,21 @@ def chart_changes(summary, path):
         ax.plot([lo, hi], [yi, yi], color=c, linewidth=2, solid_capstyle='round')
         ax.plot(max(v['shift_median'], 1e-4), yi, 'o', markersize=5, color=c, markeredgecolor='white',
                 markeredgewidth=1)
+        if v['shift_p75'] == 0:  # identical embedding; the log axis cannot show 0
+            ax.text(1.3e-4, yi, '0 (identical)', va='center', fontsize=6.5, color=MUTED)
         ax.text(12, yi, f"{v['self_retrieval'] * 100:.0f}%", va='center', fontsize=6.5, color=MUTED)
     ax.set_xscale('log')
     ax.set_xlim(1e-4, 20)
     ax.axvline(1, color=MUTED, linewidth=1, linestyle='--')
-    ax.text(1.05, -1.2, "= distance to the track's\n10th nearest neighbour", fontsize=6.5, color=MUTED, va='top')
     ax.text(12, len(items) - 0.2, 'finds\noriginal', fontsize=6.5, color=MUTED, ha='left')
     ax.set_yticks(range(len(items)), [k for k, _ in items], fontsize=7, color=INK)
-    ax.set_ylim(-2, len(items) + 0.8)
-    ax.set_xlabel('normalised shift: median and interquartile range (log scale)', fontsize=8, color=MUTED)
+    ax.set_ylim(-0.8, len(items) + 0.8)
+    ax.set_xlabel('normalised shift: median and interquartile range (log scale)\n'
+                  "dashed line = the distance to the track's 10th nearest neighbour", fontsize=8, color=MUTED)
     handles = [Line2D([0], [0], marker='o', color=c, linewidth=2, label=g) for g, c in GROUP_COLORS.items()
                if any(v['group'] == g for _, v in items)]
-    ax.legend(handles=handles, loc='lower right', fontsize=7, frameon=False)
+    ax.legend(handles=handles, loc='lower center', bbox_to_anchor=(0.45, 1.0), ncol=len(handles), fontsize=7,
+              frameon=False)
     _style(ax)
     fig.tight_layout()
     fig.savefig(path)
@@ -191,7 +194,7 @@ def chart_offsets(summary, path):
     ax.set_yscale('log')
     ax.set_xticks(range(len(offs)), ['1/16 note', '1 beat', '1 bar', '37 ms (off grid)'], fontsize=8)
     ax.set_ylabel('distance to unshifted\n(median)', fontsize=8, color=MUTED)
-    ax.legend(fontsize=7, frameon=False, ncol=3, loc='upper left')
+    ax.legend(fontsize=7, frameon=False, ncol=3, loc='lower center', bbox_to_anchor=(0.5, 1.0))
     _style(ax)
     ax.grid(axis='y', color=GRID, linewidth=0.6)
     fig.tight_layout()

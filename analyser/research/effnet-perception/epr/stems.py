@@ -5,7 +5,7 @@ whole tracks took ~6 minutes per track on the shared machine; the swaps, offsets
 The region's start is stored in OUT/stems/<track_id>/region.json, and read() maps absolute track times onto it.
 
 Demucs runs in a venv that has torch (DEMUCS_PYTHON, default the dj-automation venv), one track at a time on MPS.
-Stems are 16-bit 44.1 kHz stereo WAVs under OUT/stems/<track_id>/<stem>.wav; embeddings of each stem over the unit
+Stems are float32 44.1 kHz stereo WAVs under OUT/stems/<track_id>/<stem>.wav; embeddings of each stem over the unit
 under OUT/stems/patches/<track_id>-<stem>.npy.
 """
 import json
@@ -41,19 +41,40 @@ def load_patches(track_id, stem):
 REGION_MARGIN = 6.0
 
 
+def _region(track_id):
+    return json.loads(out_path(STEP, str(track_id), 'region.json').read_text())
+
+
 def region_start(track_id):
-    p = out_path(STEP, str(track_id), 'region.json')
-    return json.loads(p.read_text())['start'] if p.exists() else 0.0
+    return _region(track_id)['start']
+
+
+def gain(track_id, track_path=None):
+    """One gain for all four stems so that their sum matches the original's level over the region (least squares).
+    htdemucs' stems summed up to 15 % quieter than the mix on loud masters, with the balance between them intact;
+    the gain removes the level mismatch without touching the balance. Computed once and stored in region.json."""
+    r = _region(track_id)
+    if 'gain' not in r:
+        if track_path is None:
+            from . import sample
+            track_path = next(t['track_path'] for t in sample.read('stems') if t['track_id'] == track_id)
+        n = int(round((r['end'] - r['start']) * audio.HQ_SR))
+        mix = sum(audio.read_wav(stem_path(track_id, s), 0, n)[0] for s in STEMS).mean(axis=1)
+        orig = audio.load_stereo(track_path, r['start'], r['end']).mean(axis=1)
+        k = min(len(mix), len(orig))
+        r['gain'] = float(np.dot(orig[:k], mix[:k]) / (np.dot(mix[:k], mix[:k]) + 1e-12))
+        out_path(STEP, str(track_id), 'region.json').write_text(json.dumps(r))
+    return r['gain']
 
 
 def read(track_id, stem, start, end):
-    """Stem audio between absolute track times start and end (seconds)."""
+    """Stem audio between absolute track times start and end (seconds), level-corrected by gain()."""
     off = region_start(track_id)
     if start < off - 1e-6:
         raise ValueError(f'{start} is before the separated region ({off})')
     x, sr = audio.read_wav(stem_path(track_id, stem), int(round((start - off) * audio.HQ_SR)),
                            int(round((end - off) * audio.HQ_SR)))
-    return x
+    return x * gain(track_id)
 
 
 def available(track_id):
@@ -68,7 +89,9 @@ def separate(t, start, end):
     cut = work / 'region.wav'
     audio.write_wav(cut, audio.load_stereo(t['track_path'], start, end))
     cmd = [DEMUCS_PYTHON, '-m', 'demucs', '-n', 'htdemucs', '-d', os.environ.get('DEMUCS_DEVICE', 'mps'),
-           '-o', str(work / 'out'), '--filename', '{stem}.{ext}', str(cut)]
+           # float32: the default int16 output rescales every stem that would clip, each on its own, which changes
+           # the balance of the stems and made their sum 0.6-1.2 dB quieter than the mix on loud masters.
+           '--float32', '-o', str(work / 'out'), '--filename', '{stem}.{ext}', str(cut)]
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError(f'demucs failed: {r.stderr[-1500:]}')

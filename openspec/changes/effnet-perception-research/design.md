@@ -63,9 +63,15 @@ Demucs (`python -m demucs -n htdemucs -d mps`, from the dj-automation venv, whic
 unit plus 6 s on each side, one track at a time. Separating whole tracks took ~6 minutes per track on the shared
 machine (Traktor analysis, the AKIN extractor and the analyser jobs were running), ~20 hours for 200 tracks. The swaps,
 offsets and stem changes only use the unit. The stem representations in Part 1 therefore cover the unit, not the
-whole track, and are read against the matching `section-*` row. Stems are cached per track in
+whole track, and are read against the unit section restricted to the same tracks (`section-30s-typical@stem-tracks`). Stems are cached per track in
 `<out>/stems/<track_id>/` with the region's start in `region.json`. The 17 whole-track stem sets in AKIN are not used,
 because they do not cover the same region.
+
+**Stem level.** Demucs writes float32 stems. With the default 16-bit output, every stem that would clip is rescaled
+on its own, which changes the balance between stems. Even in float32, htdemucs' stems summed 2–21 % quieter than the
+mix on loud masters. Each track's stems are therefore scaled by one least-squares gain that matches their sum to the
+original over the region; the gain is stored in `region.json`. The residual after that (−15 to −28 dB) is real
+separation loss, which the stem-sum control and the offsets' separation-loss row measure.
 
 ### Changes
 | Change | Tool |
@@ -120,7 +126,8 @@ sample embedded with the same unit. For stem offsets the "original" is the unshi
 | Part 3 | all stored means |
 
 Jobs run with `nice -n 10` and ≤ 3 workers beside the analyser's tmux jobs. The output volume is FAT32, so each step
-records finished items in one append-only `done.txt`, not one marker file per item.
+records finished items in one append-only `done.txt`, not one marker file per item. macOS also writes `._*`
+AppleDouble companions next to files there, so every directory listing skips names starting with `._`.
 
 ### Style probabilities
 Optional. `discogs-effnet-bs64-1.pb` outputs the 400 Discogs style probabilities directly (`PartitionedCall:0`), so no

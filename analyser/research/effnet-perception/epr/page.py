@@ -23,6 +23,11 @@ def _csv(*parts):
     return list(csv.DictReader(open(p, newline=''))) if p.exists() else []
 
 
+def _wavs(d):
+    # FAT32 volumes get macOS AppleDouble '._*' companions; they are not audio.
+    return [p for p in d.glob('*.wav') if not p.name.startswith('._')]
+
+
 def _flac(src, rel):
     dst = out_path('page', 'audio', rel)
     if not dst.exists():
@@ -61,7 +66,7 @@ def changes_section(by_id, measures):
             continue
         m = {(r['change']): r for r in measures if r['track_id'] == d.name}
         items = []
-        files = sorted(d.glob('*.wav'), key=lambda p: (float(m.get(p.stem, {}).get('shift', 0) or 0), p.stem))
+        files = sorted(_wavs(d), key=lambda p: (float(m.get(p.stem, {}).get('shift', 0) or 0), p.stem))
         for f in files:
             r = m.get(f.stem, {})
             sub = f"shift {float(r['shift']):.3f}" if r else ''
@@ -111,7 +116,7 @@ def offsets_section(by_id):
         dist = {(r['layer'], r['offset'].replace('/', '_')): r['d_to_unshifted'] for r in rows
                 if r['track_id'] == d.name}
         items = [_clip(_flac(d / 'unshifted.wav', f'offsets/{d.name}/unshifted.flac'), 'unshifted')]
-        for f in sorted(d.glob('*.wav')):
+        for f in sorted(_wavs(d)):
             if f.stem == 'unshifted':
                 continue
             layer, off = f.stem.split('-', 1)

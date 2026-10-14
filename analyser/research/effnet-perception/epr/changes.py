@@ -150,6 +150,8 @@ def measure():
     rows = []
     for step in ('changes', 'changes-stems'):
         for p in sorted(out_path(step, 'means', 'x').parent.glob('*.npz')):
+            if p.name.startswith('._'):
+                continue
             tid = int(p.stem)
             if tid not in pos:
                 continue

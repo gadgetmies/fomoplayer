@@ -11,7 +11,7 @@
 - [x] 2.1 Full-track per-patch embeddings for the Part 1 sample (500)
 - [x] 2.2 Pooled representations: mean, median, mean ⊕ std, centred, PCA-whitened, k-means multi-vector
 - [x] 2.3 Section representations: 30/60 s at fixed position, most typical window, loudest window; phrase-aligned 16/32-bar sections on the beat grid
-- [ ] 2.4 Stem embeddings (htdemucs) with weighted combination; style probabilities when the model is present
+- [x] 2.4 Stem embeddings (htdemucs) with weighted combination; style probabilities when the model is present
 - [x] 2.5 Comparison: top-10 overlap, rank correlation, attributes of changed neighbours, largest disagreements
 - [x] 2.6 Unit selection for Part 2, recorded in the summary
 
@@ -19,20 +19,20 @@
 
 - [x] 3.1 Change generators with verifiers (tempo, pitch, varispeed, codecs, filters, EQ, compression, mono/width, resample, noise, reverb, bar shuffle, reverse, stem removal/solo)
 - [x] 3.2 Tests for verifiers: pitch, duration ratio, filter band energy, codec bitrate
-- [ ] 3.3 Run changes on the Part 2 sample (300) and record distance, normalised shift and self-retrieval
+- [x] 3.3 Run changes on the Part 2 sample (300) and record distance, normalised shift and self-retrieval
 - [x] 3.4 Stem-swap renderer (bar cut, sox stretch, level match) with provenance note, and tests
-- [ ] 3.5 Run swaps (200 pairs × 3 layers) and record host/donor positions
-- [ ] 3.6 Stem offsets: unshifted recombination (separation loss) and 1/16, beat, bar, off-grid shifts per layer (50 tracks), with an offset-on-grid test
+- [x] 3.5 Run swaps (200 pairs × 3 layers) and record host/donor positions
+- [x] 3.6 Stem offsets: unshifted recombination (separation loss) and 1/16, beat, bar, off-grid shifts per layer (50 tracks), with an offset-on-grid test
 
 ## 4. Part 3: what explains closeness
 
-- [ ] 4.1 Decode AKIN stored means; parity check against recomputed means
-- [ ] 4.2 Pairwise distance vs BPM difference, Camelot distance, shared genre/label/artist, energy difference
-- [ ] 4.3 Cross-validated linear probes for BPM, key and genre with chance baselines
+- [x] 4.1 Decode AKIN stored means; parity check against recomputed means
+- [x] 4.2 Pairwise distance vs BPM difference, Camelot distance, shared genre/label/artist, energy difference
+- [x] 4.3 Cross-validated linear probes for BPM, key and genre with chance baselines
 - [x] 4.4 Literature review notes
 
 ## 5. Deliverables
 
-- [ ] 5.1 Charts and `FINDINGS.md` with the "what the model listens to" summary
-- [ ] 5.2 Local listening page on `/Volumes/DJ/research/effnet-perception/page/`
-- [ ] 5.3 Commit the tooling and findings (no personal audio or track lists), push the branch
+- [x] 5.1 Charts and `FINDINGS.md` with the "what the model listens to" summary
+- [x] 5.2 Local listening page on `/Volumes/DJ/research/effnet-perception/page/`
+- [x] 5.3 Commit the tooling and findings (no personal audio or track lists), push the branch
