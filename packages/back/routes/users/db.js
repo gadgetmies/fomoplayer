@@ -771,7 +771,9 @@ WITH
             NATURAL LEFT JOIN track__label
             NATURAL LEFT JOIN store__label
             NATURAL LEFT JOIN store__label_watch
-            NATURAL LEFT JOIN store__label_watch__user
+            NATURAL LEFT JOIN (
+                SELECT * FROM store__label_watch__user WHERE meta_account_user_id = ${sql`${userId}`}
+            ) AS user_label_watch
     GROUP BY 1
 )
   , artist_scores AS (
@@ -790,13 +792,15 @@ WITH
             SELECT DISTINCT ON (track_id, artist_id)
                 track_id
               , COALESCE(BOOL_OR(store__artist_watch__user_starred), FALSE) AS artist_starred
-              , CASE WHEN BOOL_OR(store__artist_watch_id IS NOT NULL) THEN 1 ELSE 0 END AS score
+              , CASE WHEN BOOL_OR(meta_account_user_id IS NOT NULL) THEN 1 ELSE 0 END AS score
             FROM
                 tracks_to_score
                     NATURAL JOIN track__artist
                     NATURAL JOIN store__artist
                     NATURAL LEFT JOIN store__artist_watch
-                    NATURAL LEFT JOIN store__artist_watch__user
+                    NATURAL LEFT JOIN (
+                        SELECT * FROM store__artist_watch__user WHERE meta_account_user_id = ${sql`${userId}`}
+                    ) AS user_artist_watch
             GROUP BY 1, artist_id
         )
     SELECT
