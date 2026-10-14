@@ -1022,7 +1022,8 @@ WITH
           LIMIT ${sql`${limits.new}`} OFFSET ${sql`${offsets.new}`}
       )
         , heard_tracks AS (
-          SELECT track_id, user__track_heard
+          -- DISTINCT: a track sold in several stores has a store__track row per store
+          SELECT DISTINCT track_id, user__track_heard
           FROM user__track
             NATURAL JOIN logged_user
             NATURAL JOIN store__track
