@@ -58,21 +58,42 @@ correlation inputs only, and a parity check on 20 tracks (cosine ≥ 0.99) runs 
 AKIN documents a cosine drop to ~0.98 from that. Stems are made at 44.1 kHz stereo from the original file, then
 downmixed in the same way.
 
-### Stem separation
-The `demucs` CLI runs with `-n htdemucs` on MPS (`-d mps`) and `--float32`, one track at a time. Stems are cached per
-track in `<out>/stems/<track_id>/`. The 17 tracks that already have `htdemucs` stems in AKIN reuse them.
+### Stem separation: only the unit region
+Demucs (`python -m demucs -n htdemucs -d mps`, from the dj-automation venv, which has torch) separates only the Part 2
+unit plus 6 s on each side, one track at a time. Separating whole tracks took ~6 minutes per track on the shared
+machine (Traktor analysis, the AKIN extractor and the analyser jobs were running), ~20 hours for 200 tracks. The swaps,
+offsets and stem changes only use the unit. The stem representations in Part 1 therefore cover the unit, not the
+whole track, and are read against the matching `section-*` row. Stems are cached per track in
+`<out>/stems/<track_id>/` with the region's start in `region.json`. The 17 whole-track stem sets in AKIN are not used,
+because they do not cover the same region.
 
 ### Changes
 | Change | Tool |
 |---|---|
-| Time-stretch, pitch shift | `rubberband` (`-t`, `-p`, `--fine`) |
+| Time-stretch, pitch shift | `sox` (`tempo -m`, `pitch`) |
 | Varispeed | resampling |
 | Codecs | `ffmpeg` (libmp3lame CBR, aac) |
-| Filters, EQ, compression, reverb | `sox` |
+| Filters, EQ | scipy Butterworth (sosfiltfilt) |
+| Limiting | numpy lookahead brickwall limiter, +12 dB past the peak |
+| Reverb | `sox` |
 | Mono, width, noise, bar shuffle, reverse | numpy |
 
+**Why sox and not rubberband.** In a trial on three tracks, the stretcher itself moved the embedding by more than
+the tempo did:
+- rubberband's R3 engine (`--fine`) moved it 0.06–0.13 at an inaudible 0.1 % tempo change, and also on a round trip
+  (+4 % then back);
+- the R2 engine moved it 0.008–0.04;
+- sox's WSOLA `tempo` moved it only 0.0002–0.0006.
+
+The run therefore uses sox. It keeps near-zero controls (0.1 % tempo, 0.02 semitones), so engine artefacts are
+measured rather than assumed, and one R3 control documents the effect.
+
+**Why a limiter and not a compressor.** A sox compander changed the crest factor of mastered DnB by only 0.4 dB, so
+the "heavy compression" item is a +12 dB push into a brickwall limiter instead.
+
 Every change has a verifier:
-- pitch: the cross-correlation of the chroma (or the CQT) shifted by the requested semitones;
+- pitch: the cross-correlation of whitened log-frequency spectra. The spectral envelope is removed; without that,
+  drum-heavy tracks read 0 for shifts of 2 or more semitones;
 - tempo: the duration ratio;
 - filters: the band-energy ratio;
 - codecs: the bitrate from ffprobe.
@@ -80,7 +101,7 @@ Every change has a verifier:
 A change that fails its verifier is recorded as a failure.
 
 ### Stem swaps: adapt, do not import
-The bar-aligned cut, the rubberband stretch to the host BPM and the level match (donor stem RMS = host stem RMS over
+The bar-aligned cut, the stretch to the host BPM (sox, for the reason above) and the level match (donor stem RMS = host stem RMS over
 the busiest 32 bars, ±12 dB cap) are re-implemented in about 150 lines, following `cue_model/mashup`. A header comment
 names the source path and commit. Importing would tie the research to another repo's internals and its venv. Swaps
 are drawn within ±15 % BPM (half and double time folded) to keep stretching mild.
@@ -98,12 +119,13 @@ sample embedded with the same unit. For stem offsets the "original" is the unshi
 | Offsets | 50 tracks × 3 layers × 4 offsets |
 | Part 3 | all stored means |
 
-Jobs run with `nice -n 10` and ≤ 4 workers beside the analyser's tmux jobs.
+Jobs run with `nice -n 10` and ≤ 3 workers beside the analyser's tmux jobs. The output volume is FAT32, so each step
+records finished items in one append-only `done.txt`, not one marker file per item.
 
 ### Style probabilities
-Optional. If `discogs-effnet-bs64-1.pb` (with its `.json`) is in `analyser/models/`, the
-`genre_discogs400-discogs-effnet-1` head runs on its embeddings; otherwise the representation is reported as skipped.
-Model files are not committed.
+Optional. `discogs-effnet-bs64-1.pb` outputs the 400 Discogs style probabilities directly (`PartitionedCall:0`), so no
+separate head is needed. It is fetched under its own licence terms into `<out>/models/`, never into the repo. When it
+is absent, the representation is reported as skipped.
 
 ### Outputs and privacy
 `FINDINGS.md` in the change holds aggregate numbers, charts (PNG saved next to it) and conclusions. It holds no track
