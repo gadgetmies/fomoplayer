@@ -20,8 +20,8 @@ test({
 
     // A track available in more than one store has a store__track row per store.
     await pg.queryRowsAsync(sql`
-INSERT INTO store__track (track_id, store_id, store__track_store_id, store__track_store_details)
-SELECT track_id, store_id, ${EXTRA_STORE_TRACK_ID}, '{}'::JSONB
+INSERT INTO store__track (track_id, store_id, store__track_store_id)
+SELECT track_id, store_id, ${EXTRA_STORE_TRACK_ID}
 FROM store__track
 WHERE track_id = ${trackId}
 LIMIT 1`)

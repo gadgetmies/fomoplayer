@@ -31,8 +31,8 @@ const seed = async () => {
     trackIds.push(trackId)
     await pg.queryAsync(sql`INSERT INTO track__artist (track_id, artist_id) VALUES (${trackId}, ${artistId})`)
     const [{ store__track_id: storeTrackId }] = await pg.queryRowsAsync(sql`
-      INSERT INTO store__track (track_id, store_id, store__track_store_id, store__track_store_details)
-      VALUES (${trackId}, 1, ${`sample-match-${name}`}, '{}')
+      INSERT INTO store__track (track_id, store_id, store__track_store_id)
+      VALUES (${trackId}, 1, ${`sample-match-${name}`})
       RETURNING store__track_id
     `)
     const [{ store__track_preview_id: previewId }] = await pg.queryRowsAsync(sql`

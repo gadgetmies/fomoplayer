@@ -75,6 +75,18 @@ module.exports.queryStoreRegexes = async () =>
 
 const getFieldFromResult = (field) => R.path([0, field])
 
+const upsertStoreTrackStoreDetails = (tx, storeTrackId, track) =>
+  tx.queryAsync(
+    // language=PostgreSQL
+    sql`-- upsertStoreTrackStoreDetails
+    INSERT
+    INTO store__track_store_details (store__track_id, store__track_store_details)
+    VALUES (${storeTrackId}, ${track})
+    ON CONFLICT (store__track_id)
+      DO UPDATE SET store__track_store_details = excluded.store__track_store_details
+    `,
+  )
+
 async function queryStoreLabelIdForUrl(tx, url) {
   return await tx.queryRowsAsync(
     // language=PostgreSQL
@@ -655,7 +667,6 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
         , store__track_released      = ${track.released}
         , store__track_published     = ${track.published}
         , store__track_bpm           = ${track.bpm}
-        , store__track_store_details = ${track}
       WHERE store__track_store_id = ${track.id}
         AND store_id = ${storeId}
         AND NOT EXISTS (SELECT 1
@@ -667,7 +678,9 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
         `,
     )
 
-    if (res.length === 0) {
+    if (res.length > 0) {
+      await upsertStoreTrackStoreDetails(tx, res[0].store__track_id, track)
+    } else {
       const [{ track_id, release_id, store__track_id }] = await tx.queryRowsAsync(sql`
         SELECT track_id, release_id, store__track_id
         FROM
@@ -685,15 +698,15 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
     }
   } else {
     try {
-      await tx.queryRowsAsync(
+      const [{ store__track_id }] = await tx.queryRowsAsync(
         // language=PostgreSQL
         sql`-- addStoreTrack INSERT INTO store__track
         INSERT
         INTO store__track
         ( track_id, store_id, store__track_store_id, store__track_url, store__track_released, store__track_published
-        , store__track_bpm, store__track_store_details, store__track_source)
+        , store__track_bpm, store__track_source)
         VALUES ( ${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track.bpm}
-               , ${track}, ${sourceId})
+               , ${sourceId})
         ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_key
           DO UPDATE
           SET track_id                   = excluded.track_id
@@ -701,9 +714,10 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
             , store__track_released      = excluded.store__track_released
             , store__track_published     = excluded.store__track_published
             , store__track_bpm           = excluded.store__track_bpm
-            , store__track_store_details = excluded.store__track_store_details
+        RETURNING store__track_id
         `,
       )
+      await upsertStoreTrackStoreDetails(tx, store__track_id, track)
     } catch (e) {
       logger.error(`addStoreTrack INSERT INTO store__track failed for track: ${e.toString()}, ${JSON.stringify(track)}`)
       logger.error(e)
