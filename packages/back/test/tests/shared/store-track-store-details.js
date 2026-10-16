@@ -25,10 +25,9 @@ test({
     const rows = await pg.queryRowsAsync(sql`
 SELECT store__track_id
      , store__track_store_id
-     , details.store__track_store_details ->> 'id' AS details_store_track_id
+     , store__track_store_details ->> 'id' AS details_store_track_id
 FROM store__track
-  -- USING rather than NATURAL: until 20261017130000 drops it, store__track still has a (NULL) column with the same name
-  LEFT JOIN store__track_store_details AS details USING (store__track_id)
+  NATURAL LEFT JOIN store__track_store_details
 WHERE track_id = ANY (${addedTracks})`)
     assert.ok(rows.length > 0, 'the seeded tracks must have store__track rows')
     for (const { store__track_id, store__track_store_id, details_store_track_id } of rows) {
