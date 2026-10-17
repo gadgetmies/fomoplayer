@@ -220,6 +220,23 @@ small (a few KB) and rotated to its size cap on every write; the
 collisions file grows unbounded — rotate or `truncate` it manually
 when you're done investigating.
 
+## Java runtime for Panako
+
+`panako` is a bash launcher that invokes bare `java`. On macOS the Apple
+`/usr/bin/java` stub only works while a JDK is registered under
+`/Library/Java/JavaVirtualMachines`, and that registration has been lost
+on reboot/OS update before (2026-10-14), making every `panako store` fail
+instantly with rc=1 and an empty error. Homebrew's OpenJDK does not
+register itself; prepend it to `PATH` for every worker invocation:
+
+```bash
+export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+java -version   # must print an OpenJDK version, not "Unable to locate a Java Runtime"
+```
+
+`panako_processor.py` exits non-zero when an entire batch fails so driver
+loops back off instead of silently refetching the same batch forever.
+
 ## Authentication
 
 The analyser authenticates to the Fomo Player backend with a long-lived Fomo
@@ -378,6 +395,120 @@ was latent (matcher pre-fix ignored positions). A one-shot operator
 migration ships at
 `packages/back/migrations/manual/scale-fingerprint-positions.sql` —
 run exactly once after deploying the analyser update.
+
+### Drain failure modes seen in production (2026-10-14/15)
+
+Both bit silently — the drain looked alive while uploading nothing.
+Check `MAX(store__track_preview_fingerprint_extracted_at)` against the
+wall clock when in doubt; it should trail by minutes, not hours.
+
+1. **Hung HTTP calls pinned every worker.** None of the pipeline's
+   HTTP calls had timeouts, so one silently-dropped connection blocks
+   a worker forever. Seen twice: stalled Beatport CDN downloads
+   (`urllib.request.urlretrieve`, 4 workers frozen 6.5 h) and dropped
+   backend upload connections (`requests.post`, 4 workers frozen
+   9+ h with all four stuck on ESTABLISHED sockets the server had
+   forgotten). Every download, fetch and upload now carries a
+   timeout (downloads retry 3×; a timed-out upload is retried via
+   the without-fingerprint queue).
+2. **Zero-fingerprint previews poison the queue.** Some Beatport
+   previews are ~3-second stubs; Panako extracts nothing from them.
+   The deployed backend only wrote the `*_fingerprint_meta` row when
+   fingerprints existed, so such previews re-entered the
+   newest-first `without-fingerprint` queue on every fetch (~6 per
+   200-batch observed — enough to wedge the drain within a day).
+   Fixed twice over:
+   - backend `upsertPreviewFingerprints` now upserts the meta row
+     (count 0) even for empty uploads — takes effect on next deploy;
+   - until then `panako_processor.py` records them in
+     `analyser/zero_fingerprint_previews.txt`, over-fetches the batch
+     by the skiplist size and filters them out. The skiplist is inert
+     once the backend fix is live.
+3. **A multi-hour track wedges the Panako JVM forever (2026-10-16,
+   Bandcamp).** Bandcamp previews are full tracks; a ~2 h track makes a
+   365 MB wav whose fingerprints exhaust Panako's 256 MB heap. The decode
+   aborts mid-file, TarsosDSP's `PipeDecoder` leaves non-daemon threads
+   waiting on an ffmpeg child that is blocked writing to a pipe nobody
+   reads any more, so the JVM never exits — and the worker's untimed
+   `subprocess.run` waited on it indefinitely (4.5 h stall observed;
+   `jstack` shows the main thread in `DestroyJavaVM` and a "Decoding
+   Pipe" thread in `Process.waitFor`). The OOM is in jgaborator's
+   `gaborTransform` (`~/.panako/log/panako_stderr.log` has the traces —
+   the wrapper sends JVM stderr there), which buffers the whole file's
+   spectral coefficients on the heap, so heap need grows with duration
+   and ~15+ min of audio blows 256 MB. Fixed three ways in
+   `extraction.py`:
+   - `_run_panako` sets `_JAVA_OPTIONS` (which outranks the wrapper's
+     command-line `-Xmx256m`) to `PANAKO_JAVA_OPTIONS`, default
+     `-Xmx1g` — the actual cure: the very file that wedged forever
+     stores in 12 s at 1 g (46k fingerprints);
+   - `_preview_to_wav` caps decode length at `PREVIEW_MAX_DURATION_S`
+     (default 1200 s; env-overridable) — bounds heap use, wav disk
+     footprint and upload payloads; content past the cap is
+     unmatchable, which is the accepted trade-off;
+   - every panako invocation goes through `_run_panako`, which runs the
+     command in its own session group and `killpg`s the whole
+     wrapper+JVM+ffmpeg tree after `PANAKO_TIMEOUT_S` (default 1800 s).
+     A plain `subprocess.run(timeout=…)` is NOT enough: it kills only
+     the `panako` bash wrapper, the JVM keeps the pipe fds open and
+     `communicate()` still never returns.
+
+   Without the timeout net, a single such track poisons the drain
+   permanently: it never gets a meta row, so the queue/export re-serves
+   it every batch and each encounter stalls a worker again.
+4. **Zero-fingerprint sample packs fake a DRAINED Bandcamp queue
+   (2026-10-17).** Bandcamp sells sample packs whose "tracks" are
+   drum one-shots of a few hundred milliseconds; Panako extracts zero
+   fingerprints from them, and until the `upsertPreviewFingerprints`
+   fix deploys the backend writes no meta row for empty uploads, so
+   they are re-exported every batch. The worker skiplists them, but
+   `drain_bandcamp.sh`'s export is ordered by release_url — one such
+   release eventually occupied all 50 slots, the worker filtered every
+   job and returned rc=2 ("empty queue"), and the loop exited DRAINED
+   with ~53k previews left. Fixed three ways:
+   - the 57 skiplisted previews got count-0 meta rows written directly
+     (panako had genuinely produced zero fingerprints for each);
+   - the export now excludes ids in `zero_fingerprint_previews.txt`;
+   - `process_previews` in jobs-file mode returns 1 (back off, retry),
+     not 2 (drained), when jobs existed but all were skiplisted.
+5. **Upload congestion collapse under full-track payloads
+   (2026-10-17).** The server keeps executing the upsert's bulk INSERT
+   after its 25 s response timeout; the worker sees the 500 and fires
+   its next upload, stacking another INSERT on the still-running one.
+   Beatport payloads (~4k fingerprints) stayed fast enough that this
+   never compounded, but Bandcamp full tracks (10–70k) pushed single
+   INSERTs into tens of seconds against the 31 GB fingerprint table,
+   and 4 workers snowballed to 10+ concurrent INSERTs — each slowing
+   the others until some crossed the backend's 180 s
+   `STATEMENT_TIMEOUT` and rolled back (losing the work and re-queuing
+   the preview), with hourly throughput halving. Fix:
+   `upload_preview_fingerprints` serializes uploads across all worker
+   processes with an `flock` on `analyser/.upload_lock`, so at most
+   one INSERT is in flight from this machine; extraction still runs in
+   parallel. The proper backend fix remains moving fingerprint uploads
+   and bulk scoring off the request path (background job / per-route
+   timeout).
+
+### Bandcamp previews (2026-10-16)
+
+Bandcamp previews (~54k) store no URL — their stream URLs expire, so they
+are resolved on demand from the release page — which is why the original
+drain never served them. They are also full tracks, so expect ~4–8k
+fingerprints per preview (LOFI-equivalent 128kbps mp3s of full tracks)
+and correspondingly bigger uploads.
+
+Two paths serve them:
+
+- **Deployed backend (after next deploy):** `queryPreviewsWithoutFingerprint`
+  now includes URL-less Bandcamp previews with `store_track_id` (the
+  store's own track id) and `release_url`; `panako_processor.py` resolves
+  the stream URL per preview via `bandcamp.py` (rate-limited, one page per
+  release, sequential in the main process), marks unstreamable previews
+  missing via `POST /admin/analyse`, and defers transient failures.
+- **Until the deploy:** `./drain_bandcamp.sh` exports the job list straight
+  from the production DB (ordered by release_url to maximise the
+  resolver's per-release page cache) and feeds it to
+  `panako_processor.py --previews --jobs-file bandcamp_jobs.json`.
 
 ### Fixture fingerprint re-extraction
 

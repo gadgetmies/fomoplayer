@@ -9,10 +9,12 @@ compatibility.
 """
 
 import datetime
+import fcntl
 import hashlib
 import json
 import os
 import shutil
+import signal
 import stat
 import subprocess
 import time
@@ -140,7 +142,22 @@ def download_and_manage_file(url, file_id, file_type, filename=None, downloads_d
     temp_download_path = os.path.join(downloads_dir, f"{target_filename}.tmp")
 
     print(f"Downloading {file_type} with id {file_id} from: {url}")
-    urllib.request.urlretrieve(url, temp_download_path)
+    # urlretrieve has no timeout, so one stalled CDN connection can hang a
+    # worker (and with it the whole batch) indefinitely — observed 2026-10-14
+    # when 4 stalled downloads pinned all 4 drain workers for 6+ hours.
+    # The timeout applies per socket operation, so an idle connection raises.
+    for attempt in range(1, 4):
+        try:
+            with urllib.request.urlopen(url, timeout=60) as response, open(temp_download_path, 'wb') as out:
+                shutil.copyfileobj(response, out)
+            break
+        except Exception as e:
+            if os.path.exists(temp_download_path):
+                os.remove(temp_download_path)
+            if attempt == 3:
+                raise
+            print(f"  download attempt {attempt} failed ({e}), retrying in 5s")
+            time.sleep(5)
 
     if not os.path.exists(temp_download_path):
         raise RuntimeError(f"Downloaded file does not exist: {temp_download_path}")
@@ -248,6 +265,57 @@ def get_panako_config_args(db_path=None):
     return args
 
 
+# Hard ceiling on one panako invocation. Normal batches finish in well under
+# five minutes; only a wedged JVM runs longer (see _run_panako).
+PANAKO_TIMEOUT_S = int(os.environ.get('PANAKO_TIMEOUT_S', 1800))
+
+# Previews longer than this are fingerprinted only up to the cap. Bandcamp
+# "previews" are full tracks and occasionally hours long (a 2h track makes a
+# 365MB wav whose fingerprints blow Panako's 256MB heap — the decode then
+# aborts mid-file and the JVM wedges, see _run_panako). 20 minutes covers
+# practically every single track; content past the cap is unmatchable.
+PREVIEW_MAX_DURATION_S = int(os.environ.get('PREVIEW_MAX_DURATION_S', 1200))
+
+# The panako wrapper hardcodes -Xmx256m, and jgaborator buffers the whole
+# file's spectral coefficients on the heap, so ~15+ minute tracks OOM —
+# and a mid-decode OOM is exactly what wedges the JVM (see _run_panako).
+# _JAVA_OPTIONS outranks command-line JVM flags, so this raises the ceiling
+# without touching the wrapper. 1g handles an hour of audio comfortably.
+PANAKO_JAVA_OPTIONS = os.environ.get('PANAKO_JAVA_OPTIONS', '-Xmx1g')
+
+
+def _run_panako(cmd):
+    """`subprocess.run(capture_output=True)` with a process-GROUP timeout.
+
+    A plain `timeout=` kills only the direct child (the `panako` bash
+    wrapper); the JVM and its ffmpeg decoder survive, keep the pipe fds
+    open, and `communicate()` never returns. Observed 2026-10-16: when a
+    huge track aborts decoding, TarsosDSP's PipeDecoder leaves non-daemon
+    threads waiting on an ffmpeg that is blocked writing to a full pipe,
+    so the JVM never exits and an untimed wait stalls the worker forever.
+    Killing the whole session group reaps wrapper + JVM + ffmpeg."""
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+        env={**os.environ, '_JAVA_OPTIONS': PANAKO_JAVA_OPTIONS},
+    )
+    try:
+        out, err = proc.communicate(timeout=PANAKO_TIMEOUT_S)
+        rc = proc.returncode
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        out, err = proc.communicate()
+        rc = -signal.SIGKILL
+        err = (err or '') + f'\n[panako killed after {PANAKO_TIMEOUT_S}s timeout]'
+    return subprocess.CompletedProcess(cmd, rc, out, err)
+
+
 def extract_panako_fingerprints(audio_path):
     """
     Extract Panako fingerprints from an audio file.
@@ -270,7 +338,7 @@ def extract_panako_fingerprints(audio_path):
         panako_config_args = get_panako_config_args(db_path)
 
         resolve_cmd = ['panako', 'resolve', audio_path_abs] + panako_config_args
-        resolve_result = subprocess.run(resolve_cmd, capture_output=True, text=True, check=False)
+        resolve_result = _run_panako(resolve_cmd)
         log_panako_call(resolve_cmd, resolve_result, "Panako resolve (check existing)")
 
         if resolve_result.returncode == 0:
@@ -280,13 +348,13 @@ def extract_panako_fingerprints(audio_path):
                 if file_ids:
                     print(f"File already exists in database with ID(s): {', '.join(file_ids)}, deleting...")
                     delete_cmd = ['panako', 'delete', audio_path_abs] + panako_config_args
-                    delete_result = subprocess.run(delete_cmd, capture_output=True, text=True, check=False)
+                    delete_result = _run_panako(delete_cmd)
                     log_panako_call(delete_cmd, delete_result, "Panako delete")
                     if delete_result.returncode != 0:
                         print(f"Warning: Failed to delete file from database")
 
         store_cmd = ['panako', 'store', audio_path_abs] + list(PANAKO_STORE_EXTRA_ARGS) + panako_config_args
-        store_result = subprocess.run(store_cmd, capture_output=True, text=True, check=False)
+        store_result = _run_panako(store_cmd)
         log_panako_call(store_cmd, store_result, "Panako store")
 
         if store_result.returncode != 0:
@@ -294,7 +362,7 @@ def extract_panako_fingerprints(audio_path):
 
         # Get file ID after storing
         resolve_cmd = ['panako', 'resolve', audio_path_abs] + panako_config_args
-        resolve_result = subprocess.run(resolve_cmd, capture_output=True, text=True, check=False)
+        resolve_result = _run_panako(resolve_cmd)
         log_panako_call(resolve_cmd, resolve_result, "Panako resolve (get ID)")
 
         if resolve_result.returncode != 0:
@@ -410,7 +478,7 @@ def _batched_panako_store(audio_paths, cache_dir):
     `resolve → delete` dedup is needed — the batch always stores fresh."""
     panako_args = list(PANAKO_CONFIG_ARGS) + [f'PANAKO_CACHE_FOLDER={cache_dir}']
     store_cmd = ['panako', 'store', *audio_paths, *PANAKO_STORE_EXTRA_ARGS, *panako_args]
-    store_result = subprocess.run(store_cmd, capture_output=True, text=True, check=False)
+    store_result = _run_panako(store_cmd)
     if store_result.returncode != 0:
         raise RuntimeError(
             f'panako batch store failed (rc={store_result.returncode}): '
@@ -418,7 +486,7 @@ def _batched_panako_store(audio_paths, cache_dir):
         )
 
     resolve_cmd = ['panako', 'resolve', *audio_paths, *panako_args]
-    resolve_result = subprocess.run(resolve_cmd, capture_output=True, text=True, check=False)
+    resolve_result = _run_panako(resolve_cmd)
     if resolve_result.returncode != 0:
         raise RuntimeError(
             f'panako batch resolve failed (rc={resolve_result.returncode}): '
@@ -455,11 +523,27 @@ def upload_preview_fingerprints(preview_id, fingerprints):
         print(f"  Sample fingerprint: {fingerprints[0]}")
     print(f"  Payload size: {len(json.dumps(data))} bytes")
 
-    res = requests.post(
-        f"{get_api_url()}/admin/exact-match/previews/fingerprints",
-        headers=auth_header(),
-        json=data,
-    )
+    # Serialize uploads across ALL worker processes on this machine. The
+    # server keeps executing the upsert's bulk INSERT after its 25s response
+    # timeout, so a worker that fires its next upload on a 500 stacks another
+    # heavy INSERT on top of the still-running one. With 4 workers and
+    # full-track payloads (10-70k fingerprints) this snowballed into 10+
+    # concurrent INSERTs contending on the 31GB fingerprint table until some
+    # crossed the backend's 180s statement timeout and rolled back (observed
+    # 2026-10-17). One upload in flight keeps each INSERT fast; extraction
+    # still runs in parallel, only this final step queues.
+    lock_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.upload_lock')
+    with open(lock_path, 'w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        res = requests.post(
+            f"{get_api_url()}/admin/exact-match/previews/fingerprints",
+            headers=auth_header(),
+            json=data,
+            # No timeout hangs the worker on a dropped connection (observed
+            # 2026-10-15: all 4 drain workers pinned mid-upload for 9+ hours).
+            # A timed-out upload is retried via the without-fingerprint queue.
+            timeout=120,
+        )
     if res.status_code != 200:
         raise Exception(request_error("Upload fingerprints request", res))
     return res.json()
@@ -474,7 +558,10 @@ def _preview_to_wav(downloaded_path, preview_id, downloads_dir):
     file_ext = os.path.splitext(downloaded_path)[1].lower()
     if file_ext in ('.mp3', '.mpeg', '.lofi', ''):
         from pydub import AudioSegment
-        sound = AudioSegment.from_file(downloaded_path)
+        # Cap decode length (ffmpeg -t): Bandcamp previews are full tracks and
+        # can run to hours, which wedges Panako (see PREVIEW_MAX_DURATION_S).
+        # The cap also bounds the transient wav's disk footprint.
+        sound = AudioSegment.from_file(downloaded_path, duration=PREVIEW_MAX_DURATION_S)
         wav_filename = os.path.join(downloads_dir, f"preview_{preview_id}.wav")
         sound.export(wav_filename, format='wav')
         if not os.path.exists(wav_filename) or os.path.getsize(wav_filename) == 0:

@@ -1,0 +1,4 @@
+# drain_bandcamp.sh / panako_processor.py runtime state
+.upload_lock
+bandcamp_jobs.json
+zero_fingerprint_previews.txt

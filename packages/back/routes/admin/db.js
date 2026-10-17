@@ -383,11 +383,25 @@ module.exports.queryPreviewsWithoutFingerprint = async (limit) => {
 SELECT
   store__track_preview_id AS "preview_id",
   store__track_preview_url AS url,
-  store__track_id AS "store_track_id"
+  -- The store's own track id (not store__track_id): what
+  -- bandcamp.resolve_stream_url matches against the release page, same as
+  -- queryNextTracksToAnalyse serves the embeddings worker.
+  store__track_store_id AS "store_track_id",
+  -- Bandcamp stream URLs expire and aren't stored; the analyser resolves
+  -- them from the release page.
+  CASE WHEN store__track_preview_url IS NULL THEN
+    (SELECT store__release_url
+     FROM release__track rt
+       JOIN store__release sr ON sr.release_id = rt.release_id
+     WHERE rt.track_id = store__track.track_id
+       AND sr.store_id = store.store_id
+     LIMIT 1) END AS "release_url"
 FROM store__track_preview
+  NATURAL JOIN store__track
+  NATURAL JOIN store
   NATURAL LEFT JOIN store__track_preview_fingerprint_meta
 WHERE store__track_preview_fingerprint_meta.store__track_preview_id IS NULL
-  AND store__track_preview_url IS NOT NULL
+  AND (store__track_preview_url IS NOT NULL OR store_name = 'Bandcamp')
   AND NOT store__track_preview_missing
 ORDER BY store__track_preview_id DESC
 LIMIT ${limit || 100}
@@ -430,22 +444,27 @@ module.exports.upsertPreviewFingerprints = async (previewId, fingerprints) => {
         FROM json_to_recordset(${JSON.stringify(fingerprintValues)}::json) AS rec (preview_id TEXT, hash TEXT, position TEXT, f1 TEXT)
         `,
       )
-
-      await tx.queryAsync(
-        // language=PostgreSQL
-        sql`-- Upsert fingerprint metadata
-        INSERT INTO store__track_preview_fingerprint_meta (
-          store__track_preview_id,
-          store__track_preview_fingerprint_count,
-          store__track_preview_fingerprint_extracted_at
-        )
-        VALUES (${previewId}, ${fingerprints.length}, NOW())
-        ON CONFLICT (store__track_preview_id) DO UPDATE
-          SET store__track_preview_fingerprint_count = ${fingerprints.length}
-            , store__track_preview_fingerprint_extracted_at = NOW()
-        `,
-      )
     }
+
+    // The meta row must be written even when extraction produced zero
+    // fingerprints (e.g. a 3-second preview): queryPreviewsWithoutFingerprint
+    // treats previews without a meta row as pending, so skipping it re-queues
+    // the preview on every fetch, forever.
+    const fingerprintCount = fingerprints ? fingerprints.length : 0
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- Upsert fingerprint metadata
+      INSERT INTO store__track_preview_fingerprint_meta (
+        store__track_preview_id,
+        store__track_preview_fingerprint_count,
+        store__track_preview_fingerprint_extracted_at
+      )
+      VALUES (${previewId}, ${fingerprintCount}, NOW())
+      ON CONFLICT (store__track_preview_id) DO UPDATE
+        SET store__track_preview_fingerprint_count = ${fingerprintCount}
+          , store__track_preview_fingerprint_extracted_at = NOW()
+      `,
+    )
   })
 }
 
