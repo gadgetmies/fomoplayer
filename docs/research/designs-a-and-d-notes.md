@@ -6,6 +6,45 @@ Legend: **[USER]** is the user's own words. **[DECIDED]** was agreed. **[MEASURE
 
 The legal assessment of training data and the licence-workaround discussion are kept out of this public repo.
 
+## How to pick these up
+
+Each item below is meant for a new session. Start it with the prompt given, from a worktree off master.
+
+**Design A (group formation): on hold until the cart reviews are done.** The pending reviews are the zz crates
+46–62, the "0 höyge" and Halftime split carts, and the 07/11/16 split carts. The reviews live in the carts themselves
+(kept tracks stay, removed tracks are the negatives), so nothing else needs saving. When they are done:
+
+> Spec design A (group-formation research) with brainstorm-to-openspec. Start from
+> `docs/research/designs-a-and-d-notes.md` section 1; the design section there was presented twice but never
+> approved. My reviews of all zz crates, the höyge/Halftime splits and the 07/11/16 splits are done. Recompute the
+> 0.69 removal-ranking baseline on the full reviewed set first, because the scripts behind it are gone.
+
+**Design D (fine-tuning or retraining, plus embedding arithmetic): ready to brainstorm.** The blocking question is
+answered (2026-10-17): **Fomo Player is not commercial**, and the user does not expect it to become a business,
+since it relies on data scraped from the stores. That makes the non-commercial Discogs-EffNet licence workable for
+the service, so fine-tuning EffNet is back on the table next to permissive models and training from scratch.
+Still open: which training audio may be used (see the private legal notes on `/Volumes/DJ/research/`), the
+share-alike vs no-derivatives wording of the model licence (relevant if a fine-tuned model is shared), and the
+label source.
+
+> Brainstorm design D (fine-tuning or retraining for EDM, plus embedding arithmetic) with brainstorm-to-openspec.
+> Start from `docs/research/designs-a-and-d-notes.md` section 2 and the findings in
+> `openspec/changes/archive/2026-10-17-effnet-perception-research/FINDINGS.md`. Fomo Player is not commercial.
+> Compute: local Mac. Include permissive models and training from scratch.
+
+**Preview vs full-track check: a separate small OpenSpec change.** The perception research found that a 30 s excerpt
+at a fixed position keeps only about 6.4 of the full-track mean's 10 nearest neighbours, against 8.1 for the most
+typical 30 s. Production embeds store previews, cut at a position the store chooses. The check: for AKIN tracks that
+also exist in fomoplayer, embed the Beatport preview with the analyser model and compare it with the full-track mean
+and the typical 30 s, using the same top-10 overlap on the same reference set. It reuses `epr`
+(`analyser/research/effnet-perception/`), reads production read-only, and about a day of work. The result decides
+whether D is about fixing the input or about changing the model.
+
+> Propose an OpenSpec change `preview-vs-full-track-embeddings` with brainstorm-to-openspec: measure how well
+> production's store-preview embeddings stand in for full-track embeddings on AKIN tracks that are also in
+> fomoplayer, reusing `analyser/research/effnet-perception/` (see "Preview vs full-track check" in
+> `docs/research/designs-a-and-d-notes.md`).
+
 ---
 
 ## 0. How A and D came about (shared context)
@@ -459,7 +498,7 @@ The cloud cost estimates were informational. The user didn't choose cloud; the d
 
 ### 2.6 Open questions for D
 
-- **[OPEN] Is Fomo Player commercial, or will it be?** Raised as the deciding question. Never answered.
+- **[ANSWERED 2026-10-17] Is Fomo Player commercial, or will it be?** No: it is not commercial, and the user does not expect it to become a business because it relies on data scraped from the stores.
 - **[OPEN]** Whether to contact MTG about a commercial licence, which would also settle the ND vs. SA question.
 - **[OPEN]** Which training audio is allowed to be used (see the private legal notes).
 - **[OPEN]** Which training audio to use:
@@ -491,4 +530,4 @@ The cloud cost estimates were informational. The user didn't choose cloud; the d
   - one measured stand-in for fine-tuning (LDA 0.71 → 0.73, 0.77 with push-away);
   - B's findings as input.
 
-  There was **no design section, no approach options and no spec**. The key blocker question, whether Fomo Player is commercial, was never answered.
+  There was **no design section, no approach options and no spec**. The key blocker question, whether Fomo Player is commercial, was answered on 2026-10-17: it is not.

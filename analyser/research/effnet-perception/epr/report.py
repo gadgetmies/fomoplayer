@@ -12,7 +12,8 @@ import numpy as np
 
 from .config import out_path
 
-CHART_DIR = Path(__file__).resolve().parents[4] / 'openspec' / 'changes' / 'effnet-perception-research' / 'findings'
+CHART_DIR = (Path(__file__).resolve().parents[4] / 'openspec' / 'changes' / 'archive' / '2026-10-17-effnet-perception-research'
+             / 'findings')
 GROUP_COLORS = {'control': '#2a78d6', 'tempo-key': '#eb6834', 'quality': '#1baf7a', 'mix': '#eda100',
                 'structure': '#e87ba4', 'stems': '#6250d6', 'baseline': '#6b6a63'}
 INK, MUTED, GRID = '#1f1f1e', '#6b6a63', '#e4e3dd'

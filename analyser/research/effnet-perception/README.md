@@ -1,8 +1,8 @@
 # EffNet perception research (`epr`)
 
-Research tooling for the OpenSpec change `effnet-perception-research`: what `discogs_multi_embeddings-effnet-bs64-1`
+Research tooling for the (archived) OpenSpec change `effnet-perception-research`: what `discogs_multi_embeddings-effnet-bs64-1`
 treats as similar, measured on full tracks from the AKIN catalog. The design and the reasons behind it are in
-`openspec/changes/effnet-perception-research/`, and the results are in `FINDINGS.md` there.
+`openspec/changes/archive/2026-10-17-effnet-perception-research/`, and the results are in `FINDINGS.md` there.
 
 The tooling reads the AKIN catalog read-only (through a snapshot) and writes only under `EPR_OUT`, default
 `/Volumes/DJ/research/effnet-perception`. Nothing touches production or the catalog itself.
