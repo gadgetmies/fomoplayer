@@ -144,6 +144,59 @@ function EntityPicker({ onPick, processing, fixedType }) {
   )
 }
 
+// Pick one or more reassignment targets for a single track, then apply them all
+// at once. Each picked target shows as a removable chip; choosing several
+// artists re-credits the track to a collaboration rather than moving it to a
+// single artist. Applying clears the pending list via the `onApplied` callback.
+function TrackReassign({ onReassign, processing }) {
+  const [targets, setTargets] = useState([])
+
+  const addTarget = (target) =>
+    setTargets((prev) =>
+      prev.some(
+        (t) => t.targetType === target.targetType && t.targetId === target.targetId && t.targetName === target.targetName,
+      )
+        ? prev
+        : [...prev, target],
+    )
+
+  return (
+    <div className="mislabeled-reassign">
+      {targets.length > 0 && (
+        <ul className="mislabeled-targets">
+          {targets.map((t, i) => (
+            <li key={`${t.targetType}:${t.targetId ?? 'new'}:${t.targetName}`}>
+              <span>
+                {t.targetName} <span className="muted">{t.targetId ? `(${t.targetId})` : '(new)'} · {t.targetType}</span>
+              </span>
+              <button
+                type="button"
+                className="mislabeled-target-remove"
+                disabled={processing}
+                aria-label={`Remove ${t.targetName}`}
+                onClick={() => setTargets((prev) => prev.filter((_, idx) => idx !== i))}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <EntityPicker processing={processing} onPick={addTarget} />
+      {targets.length > 0 && (
+        <button
+          type="button"
+          className="mislabeled-reassign-apply"
+          disabled={processing}
+          onClick={() => onReassign(targets, () => setTargets([]))}
+        >
+          Reassign to {targets.length} {targets.length === 1 ? 'target' : 'targets'}
+        </button>
+      )}
+    </div>
+  )
+}
+
 function AdminMislabeled() {
   const history = useHistory()
   const [type, setType] = useState('artist')
@@ -202,23 +255,20 @@ function AdminMislabeled() {
     }
   }
 
-  const reassign = async (track, { targetType, targetId, targetName }) => {
-    if (
-      !window.confirm(
-        `Reassign "${track.title}" from ${type} "${selected.name}" to ${targetType} "${targetName}" ${
-          targetId ? `(${targetId})` : '(new)'
-        }?`,
-      )
-    )
-      return
+  const reassign = async (track, targets, onApplied) => {
+    const targetList = targets
+      .map(({ targetType, targetId, targetName }) => `${targetType} "${targetName}" ${targetId ? `(${targetId})` : '(new)'}`)
+      .join(', ')
+    if (!window.confirm(`Reassign "${track.title}" from ${type} "${selected.name}" to ${targetList}?`)) return
     setProcessing(true)
     try {
       await requestJSONwithCredentials({
         url: `${apiURL}/admin/mislabeled/reassign`,
         method: 'POST',
-        body: { sourceType: type, sourceId: selected.id, targetType, targetId, targetName, trackId: track.id, role: track.role },
+        body: { sourceType: type, sourceId: selected.id, targets, trackId: track.id, role: track.role },
       })
       setTracks((prev) => prev.filter((t) => t.id !== track.id))
+      if (onApplied) onApplied()
     } catch (e) {
       console.error(e)
       window.alert('Reassign failed')
@@ -657,9 +707,10 @@ function AdminMislabeled() {
           <ul>
             <li>
               <strong>Reassign to</strong> (single track) / <strong>Reassign all tracks to</strong> (whole release):
-              moves the track(s) to the artist or label they really belong to — each track gains the chosen credit and
-              loses this one. Pick an existing artist/label, or type a name and choose “Create new artist” to reassign
-              to a brand-new artist.
+              moves the track(s) to the artist(s) or label they really belong to — each track gains the chosen credit(s)
+              and loses this one. Pick an existing artist/label, or type a name and choose “Create new artist” to
+              reassign to a brand-new artist. For a single track you can add several targets before applying to credit it
+              to multiple artists (a collaboration) at once.
             </li>
             {type === 'artist' && (
               <li>
@@ -727,7 +778,10 @@ function AdminMislabeled() {
                       </td>
                       <td className="muted">{formatArtists(track.artists)}</td>
                       <td>
-                        <EntityPicker processing={processing} onPick={(target) => reassign(track, target)} />
+                        <TrackReassign
+                          processing={processing}
+                          onReassign={(targets, onApplied) => reassign(track, targets, onApplied)}
+                        />
                       </td>
                     </tr>
                   ))}
