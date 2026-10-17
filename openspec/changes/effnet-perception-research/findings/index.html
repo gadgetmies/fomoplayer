@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What EffNet hears</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* Fomo Player tokens (packages/front/src/theme.css + App.css), as in the other .lavish pages */
+  :root {
+    --fp-brand-primary: #b40089;
+    --fp-brand-primary-border: #530059;
+    --fp-brand-primary-active-ring: rgba(180, 0, 137, 0.25);
+    --fp-brand-primary-active-tint: rgba(180, 0, 137, 0.18);
+    --bg: #000;
+    --surface: #111;
+    --surface-2: #222;
+    --line: #3a3a3a;
+    --text: #eaeaea;
+    --muted: #9a9a9a;
+    --accent-a: #e05cc0;
+    --accent-b: #4fc3c9;
+    --accent-c: #e8b04a;
+    --ok: #6fcf8a;
+    --bad: #ef6b6b;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  :where(p, h1, h2, h3, li, td, th) { overflow-wrap: anywhere; }
+  img, svg { max-width: 100%; height: auto; display: block; }
+
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body { font-family: 'Lato', sans-serif; font-size: 16px; line-height: 1.55; }
+  code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.84em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; color: #f3c4e8; }
+  a { color: var(--accent-a); }
+
+  .topbar { background: #222; border-bottom: 3px solid var(--fp-brand-primary); padding: 14px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .logo { font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; font-size: 14px; color: var(--fp-brand-primary); }
+  .crumb { color: var(--muted); font-size: 14px; }
+  nav.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 20px; font-size: 14px; }
+  nav.toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line); }
+  nav.toc a:hover { color: var(--text); border-color: var(--fp-brand-primary); }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 900; line-height: 1.1; margin: 0 0 12px; }
+  h1 em { font-style: normal; color: var(--fp-brand-primary); }
+  h2 { font-size: 24px; font-weight: 900; margin: 0 0 6px; }
+  h3 { font-size: 17px; font-weight: 700; margin: 0 0 6px; }
+  .lede { color: #cfcfcf; font-size: 18px; max-width: 760px; margin: 0; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px; font-weight: 700; color: var(--fp-brand-primary); margin-bottom: 6px; }
+  section { margin-top: 64px; }
+  .sub { color: var(--muted); margin: 0 0 20px; max-width: 760px; }
+
+  .grid { display: grid; gap: 16px; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+  .stats { grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); margin-top: 24px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .stat b { display: block; font-size: 26px; font-weight: 900; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat span { color: var(--muted); font-size: 13px; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .card p { margin: 0; }
+  .card.hl { border-color: var(--fp-brand-primary); box-shadow: 0 0 0 3px var(--fp-brand-primary-active-ring); }
+  .finding { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; }
+  .finding .n { width: 30px; height: 30px; border-radius: 50%; background: var(--fp-brand-primary-active-tint); color: var(--fp-brand-primary); font-weight: 900; display: grid; place-items: center; font-size: 14px; }
+  .finding h3 { margin-bottom: 4px; }
+  .finding p { color: #cfcfcf; font-size: 15px; }
+
+  .figure { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .figure.light { background: #fff; border-color: #ddd; }
+  .figure.light img { margin: 0 auto; }
+  .figcap { color: var(--muted); font-size: 14px; margin: 10px 0 0; max-width: 760px; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  thead th { border-top: 0; background: var(--surface-2); color: var(--muted); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.hl td { background: var(--fp-brand-primary-active-tint); }
+  td.group { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .big { color: var(--bad); font-weight: 700; }
+  .zero { color: var(--ok); font-weight: 700; }
+
+  .obs { margin: 18px 0 0; padding-left: 20px; max-width: 820px; }
+  .obs li { margin: 8px 0; color: #d6d6d6; }
+  .obs b { color: var(--text); }
+
+  .callout { border-left: 4px solid var(--accent-c); background: rgba(232,176,74,.07); padding: 14px 18px; border-radius: 0 8px 8px 0; margin-top: 20px; }
+  .callout.brand { border-left-color: var(--fp-brand-primary); background: var(--fp-brand-primary-active-tint); }
+  .callout h3 { margin-bottom: 4px; }
+  .callout p { margin: 0; }
+
+  .svg-label { font-family: 'Lato', sans-serif; font-size: 13px; fill: var(--text); }
+  .svg-small { font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: var(--muted); }
+  .svg-title { font-family: 'Lato', sans-serif; font-size: 14px; font-weight: 900; fill: var(--text); }
+
+  footer { margin-top: 64px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+  footer ul { padding-left: 18px; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<div class="topbar"><span class="logo">Fomo Player</span><span class="crumb">Research · effnet-perception-research</span></div>
+<main>
+
+<header>
+  <div class="eyebrow">Findings · design B</div>
+  <h1>What <em>Discogs-EffNet</em> hears</h1>
+  <p class="lede">What does the embedding behind the similarity search treat as similar? We measured
+    <code>discogs_multi_embeddings-effnet-bs64-1</code> on full tracks from the AKIN catalog by changing the audio
+    (tempo, key, EQ, codecs, stems) and watching where the embedding moved. Short answer: <b>it mostly hears
+    the drums, the tempo class and the spectral balance below 8&nbsp;kHz</b>; key, melody, vocals and arrangement
+    barely count.</p>
+  <div class="grid stats">
+    <div class="stat"><b>7,881</b><span>catalog tracks; 7,879 stored means in Part 3</span></div>
+    <div class="stat"><b>500</b><span>tracks in Part 1 (representations)</span></div>
+    <div class="stat"><b>300 × 59</b><span>tracks × audio changes in Part 2</span></div>
+    <div class="stat"><b>200</b><span>stem-separated tracks and swap pairs</span></div>
+    <div class="stat"><b>0</b><span>failed items across all steps</span></div>
+  </div>
+  <nav class="toc">
+    <a href="#summary">Summary</a><a href="#part1">Representations</a><a href="#part2">Audio changes</a>
+    <a href="#stems">Stems</a><a href="#part3">Catalog correlations</a><a href="#fomoplayer">For fomoplayer</a>
+    <a href="#caveats">Caveats</a>
+  </nav>
+</header>
+
+<section id="summary">
+  <div class="eyebrow">In short</div>
+  <h2>What the model listens to</h2>
+  <p class="sub"><b>Normalised shift</b> is used throughout: the distance a change moves a track, divided by the
+    distance from that track to its own 10th nearest neighbour. A shift of 1 moves a track as far as its 10th
+    neighbour.</p>
+  <div class="grid g2">
+    <div class="card hl finding"><span class="n">1</span><div><h3>Drums first</h3>
+      <p>Removing the drums moves a track further than any mix change (shift 1.17; found again only 43&nbsp;% of the
+      time). Swapping in another track's drums lands the mashup halfway to that track.</p></div></div>
+    <div class="card finding"><span class="n">2</span><div><h3>Bass and music much less; vocals least</h3>
+      <p>Swapping the bass barely moves the mashup (0.08); swapping the music stem moves it to 0.22. Removing the
+      vocals moves a track about as much as a 2-semitone pitch shift.</p></div></div>
+    <div class="card finding"><span class="n">3</span><div><h3>Tempo is encoded; key barely</h3>
+      <p>An 8&nbsp;% time-stretch moves a track 0.34–0.55 and loses it for 22–40&nbsp;% of tracks. ±3 semitones
+      moves only 0.10, and key distance is unrelated to embedding distance (ρ&nbsp;0.05).</p></div></div>
+    <div class="card finding"><span class="n">4</span><div><h3>Below 8 kHz matters; above is invisible</h3>
+      <p>High-pass at 120–250&nbsp;Hz or low-pass at 4&nbsp;kHz are among the largest changes. Low-pass at 8 or
+      12&nbsp;kHz, MP3 ≥&nbsp;96&nbsp;kbps and mono are near zero: the model hears 16&nbsp;kHz mono only.</p></div></div>
+    <div class="card finding"><span class="n">5</span><div><h3>Order is mostly ignored</h3>
+      <p>Shuffling the bars barely moves a track (0.04), and stem offsets stay ≤&nbsp;0.08. Reversing it moves it
+      0.94. The mean embedding is a texture summary: which sounds occur, not in which order.</p></div></div>
+    <div class="card finding"><span class="n">6</span><div><h3>Genre and tempo explain half</h3>
+      <p>Across 300,000 catalog pairs, shared genre and BPM difference explain R²&nbsp;0.52 of the distance. Key,
+      label and artist add almost nothing once genre is known.</p></div></div>
+  </div>
+
+  <div class="figure" style="margin-top:20px">
+    <div class="grid g2">
+    <svg viewBox="0 0 380 210" role="img" aria-label="Normalised shift when a stem is removed: drums 1.17, other 0.23, bass 0.18, vocals 0.08">
+      <text class="svg-title" x="0" y="18">Remove one stem → shift</text>
+      <g transform="translate(0,36)">
+        <line x1="90" y1="0" x2="90" y2="150" stroke="#3a3a3a"/>
+        <line x1="298" y1="0" x2="298" y2="150" stroke="#9a9a9a" stroke-dasharray="4 4"/>
+        <text class="svg-small" x="298" y="166" text-anchor="middle">1 = 10th neighbour</text>
+        <text class="svg-label" x="80" y="22" text-anchor="end">drums</text>
+        <rect x="90" y="10" width="243" height="18" rx="4" fill="#b40089"/><text class="svg-small" x="338" y="24">1.17</text>
+        <text class="svg-label" x="80" y="56" text-anchor="end">other</text>
+        <rect x="90" y="44" width="48" height="18" rx="4" fill="#e05cc0"/><text class="svg-small" x="143" y="58">0.23</text>
+        <text class="svg-label" x="80" y="90" text-anchor="end">bass</text>
+        <rect x="90" y="78" width="37" height="18" rx="4" fill="#e05cc0"/><text class="svg-small" x="132" y="92">0.18</text>
+        <text class="svg-label" x="80" y="124" text-anchor="end">vocals</text>
+        <rect x="90" y="112" width="17" height="18" rx="4" fill="#e05cc0"/><text class="svg-small" x="112" y="126">0.08</text>
+      </g>
+    </svg>
+    <svg viewBox="0 0 380 210" role="img" aria-label="Where a mashup lands when one layer comes from another track: drums 0.49, music 0.22, bass 0.08">
+      <text class="svg-title" x="0" y="18">Swap one layer → where the mashup lands</text>
+      <g transform="translate(0,36)">
+        <line x1="90" y1="0" x2="90" y2="116" stroke="#3a3a3a"/>
+        <line x1="215" y1="0" x2="215" y2="116" stroke="#9a9a9a" stroke-dasharray="4 4"/>
+        <line x1="340" y1="0" x2="340" y2="116" stroke="#3a3a3a"/>
+        <text class="svg-small" x="90" y="134" text-anchor="middle">host</text>
+        <text class="svg-small" x="215" y="134" text-anchor="middle">halfway</text>
+        <text class="svg-small" x="340" y="134" text-anchor="middle">donor</text>
+        <text class="svg-label" x="80" y="22" text-anchor="end">drums</text>
+        <rect x="90" y="10" width="122" height="18" rx="4" fill="#b40089"/><text class="svg-small" x="222" y="24">0.49</text>
+        <text class="svg-label" x="80" y="56" text-anchor="end">music</text>
+        <rect x="90" y="44" width="55" height="18" rx="4" fill="#e05cc0"/><text class="svg-small" x="150" y="58">0.22</text>
+        <text class="svg-label" x="80" y="90" text-anchor="end">bass</text>
+        <rect x="90" y="78" width="20" height="18" rx="4" fill="#e05cc0"/><text class="svg-small" x="115" y="92">0.08</text>
+      </g>
+    </svg>
+    </div>
+    <p class="figcap">Medians over 200 tracks (removal) and 200 host–donor pairs (swaps). “Music” = the other and
+      vocal stems together.</p>
+  </div>
+</section>
+
+<section id="part1">
+  <div class="eyebrow">Part 1 · 500 tracks</div>
+  <h2>Track representations</h2>
+  <p class="sub">How many of the full-track mean's top-10 neighbours each representation keeps. Descriptive by
+    choice: this measures how different each representation is, not which is better.</p>
+  <div class="figure light"><img src="representations.png" alt="Bar chart: top-10 neighbours shared with the full-track mean for 23 representations, from mean+std (9.1) down to stem-vocals (1.3)" width="1080"></div>
+  <div class="tablewrap" style="margin-top:16px">
+    <table>
+      <thead><tr><th>Representation</th><th class="num">Top-10 shared</th><th class="num">ρ (all pairs)</th></tr></thead>
+      <tbody>
+        <tr><td>mean ⊕ std</td><td class="num">9.1</td><td class="num">0.99</td></tr>
+        <tr><td>median</td><td class="num">8.9</td><td class="num">0.99</td></tr>
+        <tr><td>centred (catalog mean removed)</td><td class="num">8.7</td><td class="num">0.76</td></tr>
+        <tr><td>section, 60 s, most typical</td><td class="num">8.4</td><td class="num">0.99</td></tr>
+        <tr><td>phrases, 32 bars (grid tracks)</td><td class="num">8.2</td><td class="num">0.99</td></tr>
+        <tr class="hl"><td><b>section, 30 s, most typical — Part 2 unit</b></td><td class="num"><b>8.1</b></td><td class="num"><b>0.98</b></td></tr>
+        <tr><td>phrases, 16 bars (grid tracks)</td><td class="num">7.8</td><td class="num">0.98</td></tr>
+        <tr><td>section, 30/60 s, loudest or fixed position</td><td class="num">6.4–6.9</td><td class="num">0.94–0.96</td></tr>
+        <tr><td>best-matching phrase / k-means (4) multi-vector</td><td class="num">6.1–6.9</td><td class="num">0.89–0.95</td></tr>
+        <tr><td>PCA-whitened (128)</td><td class="num">5.7</td><td class="num">0.10</td></tr>
+        <tr><td>style probabilities (400)</td><td class="num">4.2</td><td class="num">0.84</td></tr>
+        <tr><td>stems, unit only (200 tracks): drums / bass / other / vocals</td><td class="num">5.5 / 2.0 / 2.5 / 1.3</td><td class="num">0.20–0.82</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="obs">
+    <li><b>The mean is stable.</b> Median and mean ⊕ std keep 9 of 10 neighbours; a track's patches are compact
+      enough that its centre is well defined.</li>
+    <li><b>A well-chosen 30 s keeps most of the neighbourhood.</b> The most typical 30 s (closest to the track's own
+      mean) keeps 8.1 of 10; a fixed position or the loudest window keeps only 6.4–6.9.</li>
+    <li><b>Whitening reshuffles everything</b> (ρ 0.10): it throws away the dominant axes (genre, tempo), and its new
+      neighbours differ more in BPM (median 2.9 % vs 1.9 %).</li>
+    <li><b>Stems.</b> On the same 200 tracks, the 30 s section itself keeps 8.3 of 10, so the drop to 5.5 and lower
+      comes from the separation. All four stems together (5.3) are no closer to the mix than the drums alone.</li>
+    <li><b>Crates.</b> Nearly every alternative loses more same-crate neighbours than it gains (style: 16.6 % lost vs
+      8.8 % gained). Only a hint without ground truth, but the full-track mean is at least as close to how the tracks
+      were crated as anything tried.</li>
+  </ul>
+</section>
+
+<section id="part2">
+  <div class="eyebrow">Part 2 · 300 tracks × 59 changes</div>
+  <h2>What moves an embedding</h2>
+  <p class="sub">Each change applied to the track's most typical 30 s. “Finds original” = the changed audio's nearest
+    neighbour in the 500-track reference set is the original; the baseline is 96.7 % because 28 reference tracks have
+    an exact duplicate in the catalog.</p>
+  <div class="figure light"><img src="changes.png" alt="Dot-and-range chart of normalised shift for every change on a log scale, with the share of tracks that still find the original" width="1080"></div>
+  <div class="tablewrap" style="margin-top:16px">
+    <table>
+      <thead><tr><th>Group</th><th>Change</th><th class="num">Shift (median)</th><th class="num">Finds original</th></tr></thead>
+      <tbody>
+        <tr><td class="group">Controls</td><td>stretch +0.1 %, pitch +0.02 st (sox)</td><td class="num zero">0.002</td><td class="num">97 %</td></tr>
+        <tr><td class="group"></td><td>Rubber Band R3 +0.1 %</td><td class="num big">0.29</td><td class="num">91 %</td></tr>
+        <tr><td class="group">Tempo</td><td>stretch ±2 % / ±4 % / ±8 %</td><td class="num">0.03 / 0.09–0.16 / <span class="big">0.34–0.55</span></td><td class="num">97 / 94–96 / 60–78 %</td></tr>
+        <tr><td class="group"></td><td>varispeed ±4 % / ±8 %</td><td class="num">0.14–0.24 / <span class="big">0.39–0.63</span></td><td class="num">92–95 / 58–77 %</td></tr>
+        <tr><td class="group">Key</td><td>pitch ±1 / ±2 / ±3 semitones</td><td class="num">0.02 / 0.05 / 0.10</td><td class="num">96–97 %</td></tr>
+        <tr><td class="group">Codec</td><td>MP3 320 / 192 / 128 / 96 / 64 kbps</td><td class="num">0 / 0.001 / 0.004 / 0.007 / 0.058</td><td class="num">97 %</td></tr>
+        <tr><td class="group"></td><td>AAC 128 kbps</td><td class="num">0.008</td><td class="num">97 %</td></tr>
+        <tr><td class="group">Noise</td><td>white / vinyl at 30 dB SNR; at 15 dB</td><td class="num">0.003–0.004; 0.08–0.14</td><td class="num">97 %; 94–96 %</td></tr>
+        <tr><td class="group">Filters</td><td>low-pass 12k / 8k / 4k</td><td class="num">0.001 / 0.008 / <span class="big">0.65</span></td><td class="num">97 / 97 / 82 %</td></tr>
+        <tr><td class="group"></td><td>high-pass 60 / 120 / 250 Hz</td><td class="num">0.19 / <span class="big">0.45 / 0.66</span></td><td class="num">95 / 76 / 56 %</td></tr>
+        <tr><td class="group">EQ ±6 dB</td><td>sub · low-mid · presence · air</td><td class="num">0.04–0.08 · 0.05–0.07 · 0.07–0.13 · 0.001–0.005</td><td class="num">97 %</td></tr>
+        <tr><td class="group">Dynamics, space</td><td>limiter +12 dB · reverb</td><td class="num">0.17 · 0.25</td><td class="num">89 % · 93 %</td></tr>
+        <tr><td class="group">Stereo</td><td>mono</td><td class="num zero">0</td><td class="num">97 %</td></tr>
+        <tr><td class="group">Structure</td><td>bar shuffle · reverse</td><td class="num">0.04 · <span class="big">0.94</span></td><td class="num">99 % · 38 %</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="obs">
+    <li><b>Slowing down moves more than speeding up</b> (stretch −8 %: 0.55, +8 %: 0.34; varispeed likewise). The cause
+      was not examined; one candidate is that tempo classes are unevenly spaced in the catalog.</li>
+    <li><b>EQ boosts move more than cuts</b> of the same size, and presence (2–5 kHz) is the most sensitive band
+      below 8 kHz. A 60–120 Hz high-pass, which also removes the kick's body, matters more than sub-bass EQ.</li>
+    <li><b>Codecs are harmless at normal bitrates.</b> Only 64 kbps MP3 is measurable, and it never changes
+      retrieval.</li>
+    <li>Excluded where the change did not happen: resample-22k on 67 tracks with nothing above 11 kHz, and the limiter
+      on 73 masters whose crest factor dropped by less than 1.5 dB.</li>
+  </ul>
+  <div class="callout">
+    <h3>Trap: the stretch engine can move the embedding more than the tempo does</h3>
+    <p>Rubber Band's R3 engine moved embeddings by 0.29 at an inaudible 0.1 % tempo change: over 100× more than
+      sox WSOLA (0.002), and almost as much as a real 8 % stretch. All tempo and pitch numbers here use sox. Any
+      tempo matching or augmentation before embedding should measure its own artefact first.</p>
+  </div>
+</section>
+
+<section id="stems">
+  <div class="eyebrow">Part 2 · stems</div>
+  <h2>Stem removal, swaps and offsets</h2>
+  <p class="sub">htdemucs on the 30 s unit plus 6 s margins. The stem-sum control (the four stems added back
+    together) shifts by only 0.012, so separation artefacts are small next to the effects below.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Stem</th><th class="num">Without it</th><th class="num">Finds original</th><th class="num">Only it</th><th class="num">Finds original</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td><b>drums</b></td><td class="num big">1.17</td><td class="num">43 %</td><td class="num">0.84</td><td class="num">45 %</td></tr>
+        <tr><td>other</td><td class="num">0.23</td><td class="num">85 %</td><td class="num">2.55</td><td class="num">14 %</td></tr>
+        <tr><td>bass</td><td class="num">0.18</td><td class="num">91 %</td><td class="num">2.80</td><td class="num">3 %</td></tr>
+        <tr><td>vocals</td><td class="num">0.08</td><td class="num">90 %</td><td class="num">3.78</td><td class="num">1 %</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid g2" style="margin-top:20px">
+    <div>
+      <h3>Swaps · 200 host–donor pairs</h3>
+      <div class="figure light"><img src="swaps.png" alt="Strip plot: positions of 200 mashups between host and donor for drums, bass and music swaps" width="900"></div>
+      <p class="figcap">Donor stem tempo-matched with sox, cut to the host's bars, level-matched; pairs within ±15 %
+        BPM. Nearer the donor: drums 49 %, music 13 %, bass 1 %.</p>
+    </div>
+    <div>
+      <h3>Offsets · 50 tracks with a beat grid</h3>
+      <div class="figure light"><img src="offsets.png" alt="Dot plot: median distance to the unshifted recombination for drums, bass and music delayed by a 1/16 note, a beat, a bar and 37 ms" width="900"></div>
+      <p class="figcap">Distance to the unshifted recombination of the same stems. The largest (drums by a 1/16 note,
+        0.0136) is 0.074 normalised; a one-bar bass offset is indistinguishable from separation loss (0.0018).
+        The assumption holds: offsets barely matter.</p>
+    </div>
+  </div>
+</section>
+
+<section id="part3">
+  <div class="eyebrow">Part 3 · 7,879 stored means</div>
+  <h2>What explains closeness across the catalog</h2>
+  <p class="sub">AKIN's stored means match recomputed ones (40 tracks, min cosine 0.999). 300,000 sampled pairs.</p>
+  <div class="figure light"><img src="correlations.png" alt="Bar charts: median cosine distance by tempo difference bin (rising from 0.24 to 0.70) and by Camelot key distance (flat around 0.4–0.55)" width="1080"></div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Factor</th><th class="num">ρ with distance</th><th class="num">Median dist. same / diff.</th></tr></thead>
+        <tbody>
+          <tr class="hl"><td><b>shared genre</b></td><td class="num">−0.67</td><td class="num">0.24 / 0.62</td></tr>
+          <tr class="hl"><td><b>BPM difference</b> (folded)</td><td class="num">+0.62</td><td class="num">—</td></tr>
+          <tr><td>shared crate</td><td class="num">−0.36</td><td class="num">0.27 / 0.47</td></tr>
+          <tr><td>energy difference</td><td class="num">+0.18</td><td class="num">—</td></tr>
+          <tr><td>shared label (843 pairs)</td><td class="num">−0.08</td><td class="num">0.19 / 0.36</td></tr>
+          <tr><td>shared artist (631 pairs)</td><td class="num">−0.06</td><td class="num">0.16 / 0.47</td></tr>
+          <tr><td>Camelot key distance</td><td class="num">+0.05</td><td class="num">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Linear probe</th><th class="num">Score</th><th class="num">Chance</th></tr></thead>
+        <tbody>
+          <tr><td>genre (23 classes)</td><td class="num">0.48</td><td class="num">0.04</td></tr>
+          <tr><td>label (40 classes)</td><td class="num">0.34</td><td class="num">0.03</td></tr>
+          <tr><td>key (24 classes)</td><td class="num">0.16</td><td class="num">0.04</td></tr>
+          <tr><td>mode (major/minor)</td><td class="num">0.57</td><td class="num">0.50</td></tr>
+          <tr><td>BPM (R²; MAE 21 vs 35 BPM)</td><td class="num">0.46</td><td class="num">0</td></tr>
+        </tbody>
+      </table>
+      <p class="figcap" style="padding:0 12px 12px">Balanced accuracy, cross-validated. BPM within 4 % (folded) for only
+        24 % of tracks: a broad tempo class, not an exact value.</p>
+    </div>
+  </div>
+  <ul class="obs">
+    <li>Shared label and artist have small ρ only because such pairs are rare; when they occur they are the closest
+      pairs of all (0.19, 0.16), as the training predicts (artist loss weight 0.6).</li>
+    <li>Joint model: shared genre and BPM difference explain R² 0.52 (standardised coefficients −0.46 and +0.28);
+      energy adds +0.17; key, label and artist almost nothing.</li>
+  </ul>
+</section>
+
+<section id="fomoplayer">
+  <div class="eyebrow">Implications</div>
+  <h2>What this means for fomoplayer</h2>
+  <div class="grid g2">
+    <div class="card hl"><h3>Previews vs full tracks</h3>
+      <p>A 30 s excerpt reproduces 8 of 10 full-track neighbours when it is the track's most typical part, 6.4 at a
+        fixed position. Codec quality is irrelevant above 96 kbps. With full tracks, embed the most typical window;
+        it also cuts stem-separation time to one region.</p></div>
+    <div class="card"><h3>Search is drum- and tempo-led</h3>
+      <p>Neighbours share genre, tempo class and drum sound; key, melody and vocals barely count. A key- or
+        melody-aware search needs another feature: catalog key, or a separate embedding of the “other” stem.</p></div>
+    <div class="card"><h3>Pre-processing must be clean</h3>
+      <p>Keep the input band ≥ 8 kHz and don't high-pass. Never time-stretch with a phase-vocoder engine before
+        embedding.</p></div>
+    <div class="card"><h3>Representations</h3>
+      <p>Median or mean ⊕ std are drop-in equivalents of the mean. Whitening or the style head would change the
+        search substantially and need user evaluation (design D) first.</p></div>
+  </div>
+</section>
+
+<section id="caveats">
+  <div class="eyebrow">Limits</div>
+  <h2>Caveats</h2>
+  <ul class="obs">
+    <li>One genre dominates the catalog (70 % of the genre-labelled tracks the probe used), so catalog-wide
+      correlations partly reflect where other genres sit in tempo. The samples are stratified by crate and genre.</li>
+    <li>The Part 1 stem representations cover the 30 s unit, not the whole track, and were embedded before the
+      per-track stem gain correction (stem sums were 2–21 % quieter than the mix). Swaps, offsets and stem changes use
+      corrected stems.</li>
+    <li>Part 1 has no ground truth by design: “shared with the mean” measures difference, not quality.</li>
+    <li>Demucs artefacts are part of every stem result; the stem-sum control (0.012) bounds them.</li>
+    <li>The model only hears 16 kHz mono, so stereo-width and above-8 kHz results are zero by construction.</li>
+  </ul>
+</section>
+
+<footer>
+  Sources, on branch <code>effnet-perception-research</code>:
+  <ul>
+    <li>Write-up: <code>openspec/changes/effnet-perception-research/FINDINGS.md</code>; design in <code>design.md</code>; literature notes in <code>literature.md</code></li>
+    <li>Tooling: <code>analyser/research/effnet-perception/</code> (<code>./run_all.sh</code>)</li>
+    <li>Numbers: <code>$EPR_OUT/report/summary.json</code>; listening examples on the local page <code>/Volumes/DJ/research/effnet-perception/page/index.html</code> (not published)</li>
+  </ul>
+</footer>
+</main>
+</body>
+</html>
