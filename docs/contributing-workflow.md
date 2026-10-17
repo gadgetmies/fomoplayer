@@ -26,7 +26,12 @@ its own, and mergeable at any time. (The workflow is adapted from
    ```
 
    A worktree needs its own `yarn install`; tests run against symlinked or
-   missing dependencies give false failures. Then **record the change in project
+   missing dependencies give false failures. Ignored local state does not
+   come along either:
+   - the analyser venv: reuse the main checkout's through `ANALYSER_VENV`;
+   - the Railway CLI link: `railway` links projects per directory, so add the
+     worktree root to `~/.railway/config.json` (copy the main checkout's entry)
+     before running scripts that call `railway variables`. Then **record the change in project
    memory** (below).
 
 2. **Author specs in the worktree.** Run `brainstorm-to-openspec` /
