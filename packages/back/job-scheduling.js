@@ -9,6 +9,7 @@ const fetchBandcampWatches = require('./jobs/watches/fetch-bandcamp-watches')({
 })
 const { sendNextEmailBatch, scheduleEmail } = require('./services/mailer')
 const { updateNotifications } = require('./jobs/notifications')
+const { notifySampleMatches } = require('./jobs/sample-match-notifications')
 const { updateTrackDetails } = require('./jobs/track_details')
 const {
   updateDateReleasedScore,
@@ -193,6 +194,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   fetchBandcampWatches,
   sendNextEmailBatch,
   updateNotifications,
+  notifySampleMatches,
   updateTrackDetails,
   syncCarts,
   findMatchingTracks,

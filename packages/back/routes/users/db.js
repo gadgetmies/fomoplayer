@@ -677,9 +677,6 @@ module.exports.queryUserTracks = async (
       .queryRowsAsync(
         composableSql`-- queryUserTracks
 WITH
-    logged_user AS (
-        SELECT ${sql`${userId}`} :: INT AS meta_account_user_id
-    ),
    stores AS (
     SELECT store_id, 
            store_name 
@@ -692,9 +689,9 @@ WITH
     FROM
         track__cart
             NATURAL JOIN cart
-            NATURAL JOIN logged_user
     WHERE
-        cart_is_purchased
+        meta_account_user_id = ${sql`${userId}`}
+    AND cart_is_purchased
 )
   , user_track_carts AS (
     SELECT
@@ -703,62 +700,51 @@ WITH
     FROM
         track__cart
             NATURAL JOIN cart
-            NATURAL JOIN logged_user
     WHERE
-        cart_deleted IS NULL
+        meta_account_user_id = ${sql`${userId}`}
+    AND cart_deleted IS NULL
     GROUP BY track_id
+)
+  , user_store_tracks AS MATERIALIZED (
+    -- The user's tracks that are available in at least one of the selected stores, one row per track.
+    -- Every list and total below is derived from this, so store__track is only read once (through the
+    -- covering idx_store__track_track_id_store_id index).
+    -- The list conditions are computed here as booleans: a materialized CTE has no column statistics, so
+    -- filtering it with IS NULL conditions made the planner expect ~1 new track and pick nested loops for
+    -- the scoring joins.
+    SELECT
+        track_id
+      , user__track_heard
+      , track_added
+      , (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP)) AS is_unheard
+      , (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP))
+        AND user__track_ignored IS NULL
+        AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks) AS is_new
+    FROM
+        user__track
+            NATURAL JOIN track
+    WHERE
+        meta_account_user_id = ${sql`${userId}`}
+    AND EXISTS (SELECT 1 FROM store__track NATURAL JOIN stores WHERE store__track.track_id = user__track.track_id)
 )
   , user_tracks_meta AS (
     SELECT
-        COUNT(DISTINCT track_id) AS total
+        COUNT(*) AS total
+      , COUNT(*) FILTER (WHERE user__track_heard IS NOT NULL) AS heard_total
+      , COUNT(*) FILTER (WHERE is_unheard) AS recent_total
     FROM
-        user__track
-            NATURAL JOIN logged_user
-            NATURAL JOIN store__track
-            NATURAL JOIN stores
-  )
-  , heard_tracks_meta AS (
-    SELECT
-        COUNT(DISTINCT track_id) AS total
-    FROM
-        user__track
-            NATURAL JOIN logged_user
-            NATURAL JOIN store__track
-            NATURAL JOIN stores
-    WHERE
-        user__track_heard IS NOT NULL AND
-        (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
-  )
-  , recent_tracks_meta AS (
-    SELECT
-        COUNT(DISTINCT track_id) AS total
-    FROM
-        logged_user
-            NATURAL JOIN user__track
-            NATURAL JOIN track
-            NATURAL JOIN store__track
-            NATURAL JOIN stores
-    WHERE
-        (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP)) AND
-        (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
+        user_store_tracks
   )
   , new_tracks AS (
     SELECT
         track_id
       , NULL AS user__track_heard
-      , MIN(track_added) AS track_added
+      , track_added
     FROM
-        logged_user
-            NATURAL JOIN user__track
-            NATURAL JOIN track
-            NATURAL JOIN store__track
-            NATURAL JOIN stores
+        user_store_tracks
     WHERE
-          (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP))
-      AND user__track_ignored IS NULL
-      AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
-    GROUP BY track_id
-    ORDER BY MIN(track_added) DESC
+        is_new
+    ORDER BY track_added DESC
 )
   , tracks_to_score AS (
     SELECT track_id
@@ -785,8 +771,9 @@ WITH
             NATURAL LEFT JOIN track__label
             NATURAL LEFT JOIN store__label
             NATURAL LEFT JOIN store__label_watch
-            NATURAL LEFT JOIN store__label_watch__user
-            NATURAL LEFT JOIN logged_user
+            NATURAL LEFT JOIN (
+                SELECT * FROM store__label_watch__user WHERE meta_account_user_id = ${sql`${userId}`}
+            ) AS user_label_watch
     GROUP BY 1
 )
   , artist_scores AS (
@@ -805,14 +792,15 @@ WITH
             SELECT DISTINCT ON (track_id, artist_id)
                 track_id
               , COALESCE(BOOL_OR(store__artist_watch__user_starred), FALSE) AS artist_starred
-              , CASE WHEN BOOL_OR(store__artist_watch_id IS NOT NULL) THEN 1 ELSE 0 END AS score
+              , CASE WHEN BOOL_OR(meta_account_user_id IS NOT NULL) THEN 1 ELSE 0 END AS score
             FROM
                 tracks_to_score
                     NATURAL JOIN track__artist
                     NATURAL JOIN store__artist
                     NATURAL LEFT JOIN store__artist_watch
-                    NATURAL LEFT JOIN store__artist_watch__user
-                    NATURAL LEFT JOIN logged_user
+                    NATURAL LEFT JOIN (
+                        SELECT * FROM store__artist_watch__user WHERE meta_account_user_id = ${sql`${userId}`}
+                    ) AS user_artist_watch
             GROUP BY 1, artist_id
         )
     SELECT
@@ -832,9 +820,10 @@ WITH
       , MAX(CASE WHEN store__artist_watch__user_starred THEN 2 ELSE 1 END) AS follow_weight
     FROM
         store__artist_watch__user
-            NATURAL JOIN logged_user
             NATURAL JOIN store__artist_watch
             NATURAL JOIN store__artist
+    WHERE
+        meta_account_user_id = ${sql`${userId}`}
     GROUP BY artist_id
 )
   , collaboration_artist_strength AS (
@@ -897,7 +886,8 @@ WITH
       , user_track_score_weight_multiplier
     FROM
         user_track_score_weight
-            NATURAL JOIN logged_user
+    WHERE
+        meta_account_user_id = ${sql`${userId}`}
 )
   , new_tracks_with_scores AS (
     SELECT
@@ -1023,12 +1013,8 @@ WITH
       )
         , heard_tracks AS (
           SELECT track_id, user__track_heard
-          FROM user__track
-            NATURAL JOIN logged_user
-            NATURAL JOIN store__track
-            NATURAL JOIN store
+          FROM user_store_tracks
           WHERE user__track_heard IS NOT NULL
-            AND (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
       )
         , recently_heard AS (
           SELECT *
@@ -1037,14 +1023,10 @@ WITH
           LIMIT ${sql`${limits.heard}`} OFFSET ${sql`${offsets.heard}`}
       )
         , recently_added AS (
-          SELECT DISTINCT track_id
+          SELECT track_id
                , track_added
-          FROM logged_user
-            NATURAL JOIN user__track
-            NATURAL JOIN track
-            NATURAL JOIN store__track
-            NATURAL JOIN stores
-          WHERE (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP))
+          FROM user_store_tracks
+          WHERE is_unheard
           ORDER BY track_added DESC NULLS LAST
           LIMIT ${sql`${limits.recentlyAdded}`} OFFSET ${sql`${offsets.recentlyAdded}`}
       )
@@ -1114,16 +1096,14 @@ WITH
               'recentlyAdded', CASE WHEN recently_added IS NULL THEN '[]'::JSON ELSE recently_added END
           ) AS tracks
            , (SELECT COUNT(*) FROM new_tracks) :: INT AS "newTotal"
-           , COALESCE(heard_tracks_meta.total, 0) :: INT AS "heardTotal"
-           , COALESCE(recent_tracks_meta.total, 0) :: INT AS "recentlyAddedTotal"
+           , user_tracks_meta.heard_total :: INT AS "heardTotal"
+           , user_tracks_meta.recent_total :: INT AS "recentlyAddedTotal"
            , user_tracks_meta.total :: INT AS "totalTracks"
            , COALESCE(${sql`${notHeardBefore}`}::TIMESTAMP, NOW()) AS "notHeardBefore"
       FROM new_tracks_with_details
          , heard_tracks_with_details
          , recently_added_tracks_with_details
-         , user_tracks_meta
-         , heard_tracks_meta
-         , recent_tracks_meta`,
+         , user_tracks_meta`,
       )
       .then(R.head)
   })
