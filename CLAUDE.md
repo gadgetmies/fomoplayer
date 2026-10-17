@@ -90,3 +90,15 @@ Implications:
   full-track streams should not invent one.
 - `duration` and `end_ms` on previews equal the full track duration, so
   treat the preview window as the full track on Bandcamp.
+
+# Time-stretched audio as model input
+
+**A time-stretch engine can move an embedding more than the tempo change
+does.** Rubber Band R3 (`rubberband --fine`) at 0.1 % tempo moves a
+Discogs-EffNet embedding by 0.055 cosine distance — about as much as a real
+8 % stretch — while sox WSOLA (`tempo -m`) moves it 0.0004. Before
+time-stretched or pitch-shifted audio feeds embeddings, fingerprints or
+training data, run a near-zero control (ratio 1.001, never 1.0 — wrappers skip
+unity) with the same engine and flags; follow the
+`checking-stretch-engine-artefacts` skill. The measurements are in the Pitfalls
+section of `analyser/research/effnet-perception/README.md`.
