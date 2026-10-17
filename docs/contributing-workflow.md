@@ -48,7 +48,9 @@ its own, and mergeable at any time. (The workflow is adapted from
 4. **Verify in the worktree.** Run the change's tests (and, for UI changes, the
    demo tests required by `CLAUDE.md`) from the worktree. Nothing needs to be
    merged to be tried. Hand off to the user with the concrete command that
-   exercises the worktree.
+   exercises the worktree. A documentation-only change (prose only: Markdown
+   docs, `CLAUDE.md`, OpenSpec artifacts, notes; nothing code, tests, hooks or
+   the build read) needs no test run here or in step 5, and no `yarn install`.
 
 5. **Merge back once verified — the user gates it.**
    - In the worktree, bring in the latest `master` and resolve any conflicts

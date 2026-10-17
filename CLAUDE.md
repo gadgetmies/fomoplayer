@@ -12,6 +12,12 @@ in the worktree) only once it has been verified and the user has agreed. Hooks
 in `.claude/hooks/` deny edits and commits in the main checkout. Full lifecycle:
 [`docs/contributing-workflow.md`](docs/contributing-workflow.md).
 
+**Documentation-only changes don't need tests.** A change that touches only
+prose — Markdown docs, `CLAUDE.md`, READMEs, OpenSpec artifacts, design and
+research notes — needs no test run and no `yarn install` in its worktree before
+it is committed or merged. Anything that code, tests, hooks or the build read
+(config, `.claude/` settings and hooks, fixtures, scripts) is not documentation.
+
 # UI changes require demo recordings
 
 **Any change that is visible in the UI must ship with paired demo tests.**
