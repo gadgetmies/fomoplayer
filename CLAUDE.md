@@ -1,3 +1,17 @@
+# Version control: every change in a worktree
+
+**Never modify files in the main checkout.** Before the first edit of any change
+— code, docs, OpenSpec artifacts, design docs, `.claude/` config — create a
+worktree on a new branch off `master` named like the worktree
+(`git worktree add ../fomoplayer-<change> -b <change> master`, then
+`yarn install` in it), and record the change in project memory. Generate spec
+files inside the worktree and commit them as the branch's first commit. Commit
+all work in the worktree, verify it there, and merge it back into the main
+checkout (`git merge --no-ff <change>`, after merging `master` into the branch
+in the worktree) only once it has been verified and the user has agreed. Hooks
+in `.claude/hooks/` deny edits and commits in the main checkout. Full lifecycle:
+[`docs/contributing-workflow.md`](docs/contributing-workflow.md).
+
 # UI changes require demo recordings
 
 **Any change that is visible in the UI must ship with paired demo tests.**
