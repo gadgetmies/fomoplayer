@@ -23,14 +23,26 @@ Each item below is meant for a new session. Start it with the prompt given, from
 answered (2026-10-17): **Fomo Player is not commercial**, and the user does not expect it to become a business,
 since it relies on data scraped from the stores. That makes the non-commercial Discogs-EffNet licence workable for
 the service, so fine-tuning EffNet is back on the table next to permissive models and training from scratch.
-Still open: which training audio may be used (see the private legal notes on `/Volumes/DJ/research/`), the
-share-alike vs no-derivatives wording of the model licence (relevant if a fine-tuned model is shared), and the
-label source.
+Decided 2026-10-18:
+- **Training audio:** chosen by the user; the decision and its reasoning are in the private notes on
+  `/Volumes/DJ/research/`.
+- **Labels:** three sources, chosen by the user from six options.
+  1. Self-supervised: two clips of the same track are a positive pair, as in the original model's training.
+     Augmentations must pass the stretch-engine control (the `checking-stretch-engine-artefacts` skill).
+  2. Store metadata: Beatport genre and sub-genre (about 110k tracks), plus label, artist and release.
+  3. Pairs for embedding arithmetic: remix and original, same artist, a label's early vs recent releases.
+
+  Not chosen: playlist and DJ-set co-occurrence, the user's cart reviews as training labels (about 2,000 kept,
+  287 removed; still usable for evaluation), and manual pairwise judgements.
+
+Still open: the share-alike vs no-derivatives wording of the model licence (relevant if a fine-tuned model is
+shared).
 
 > Brainstorm design D (fine-tuning or retraining for EDM, plus embedding arithmetic) with brainstorm-to-openspec.
 > Start from `docs/research/designs-a-and-d-notes.md` section 2 and the findings in
 > `openspec/changes/archive/2026-10-17-effnet-perception-research/FINDINGS.md`. Fomo Player is not commercial.
 > Compute: local Mac. Include permissive models and training from scratch.
+> Training audio and labels are decided (see above and the private notes); don't reopen them.
 
 **Preview vs full-track check: a separate small OpenSpec change.** The perception research found that a 30 s excerpt
 at a fixed position keeps only about 6.4 of the full-track mean's 10 nearest neighbours, against 8.1 for the most
