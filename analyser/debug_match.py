@@ -183,8 +183,9 @@ def main():
         help="Directory holding fixture audio files (default: analyser/data)",
     )
     parser.add_argument(
-        "--bucket-seconds", type=float, default=0.05,
-        help="Bucket size for Δt histogram (default: 0.05)",
+        "--bucket-seconds", type=float, default=0.5,
+        help="Bucket size for Δt histogram (default: 0.5, matching the "
+             "backend's SAMPLE_MATCH_BUCKET_SECONDS default)",
     )
     parser.add_argument(
         "--peak-multiplier", type=float, default=3.0,

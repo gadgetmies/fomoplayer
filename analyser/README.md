@@ -364,11 +364,12 @@ on the old 0.5 default is the bug we're closing.
 For each candidate preview produced by Stage 1, the matcher CROSS
 JOINs the sample's and the preview's fingerprint rows sharing a hash,
 generates `Δt = preview_position − sample_position` for each pair,
-buckets at `SAMPLE_MATCH_BUCKET_SECONDS` (default 0.05 s), and counts
+buckets at `SAMPLE_MATCH_BUCKET_SECONDS` (default 0.5 s), and counts
 rows per bucket. The peak bucket count becomes the candidate's final
 `match_score`; rows are ordered by that score. A
 `SAMPLE_MATCH_PEAK_BUCKET_MIN` floor filters out candidates whose peak
-fails to clear the noise floor (default 1 = effectively disabled).
+fails to clear the noise floor (default 3 — drops the peak-count-1/2
+noise rows that otherwise fill the persisted match set).
 
 #### Decisions ruled out (with diagnostic citations)
 
@@ -395,6 +396,54 @@ was latent (matcher pre-fix ignored positions). A one-shot operator
 migration ships at
 `packages/back/migrations/manual/scale-fingerprint-positions.sql` —
 run exactly once after deploying the analyser update.
+
+### Production follow-up (2026-10-11): why the uploaded recordings still didn't match
+
+Investigation of the production uploads (`nitepunk.mp3` = sample 6 =
+`data/mantra_rec.mp3`, `serious sound.wav` = sample 10 =
+`data/serious_sound_rec.wav`) found three compounding causes, none of
+them in the hermetic fixtures' happy path:
+
+1. **The 2026-05-24 position-rescale migration was never run in
+   production.** Samples 6/9/10/11/12 and 21 previews (all extracted
+   2026-01-25/27) still had positions inflated 23.222×. Stage 2 Δt
+   coherence is destroyed by mixed scales: sample 10 scored 4 against
+   its correct preview; with positions rescaled the same pair peaks
+   at 29. The original blanket script is now UNSAFE (the corpus is
+   mixed-scale) — run the selective successor instead, exactly once:
+   `packages/back/migrations/manual/rescale-pre-fix-fingerprint-positions.sql`.
+2. **`SAMPLE_MATCH_BUCKET_SECONDS` 0.05 s was too tight for acoustic
+   recordings.** Clock drift splits a true peak across neighbouring
+   buckets (observed: 8+6 and 8+7 in adjacent 0.05 s buckets). The
+   in-source default is now 0.5 s, validated against the full 36k
+   fingerprinted-preview corpus: serious_sound peak 29 (noise ≤ 4),
+   nitepunk-vs-its-preview peak 5 (noise ≤ 3), both rank 1.
+3. **The expected previews were not fingerprinted.** Only ~36k of
+   254k previews have fingerprints, and the Beatport preview of
+   Noisia – Mantra (Nitepunk Remix) (store__track_preview_id
+   90707329) has none — no scorer change can surface a preview that
+   is not in the index. Drain the backlog with
+   `./analyse_all.sh --previews`.
+
+Also: `SAMPLE_MATCH_PEAK_BUCKET_MIN` now defaults to 3, so the
+score-1/2 noise rows that filled `user_notification_audio_sample_match`
+are no longer persisted.
+
+**Known limitation (not a bug):** a recording only matches a preview
+if the recorded section overlaps the preview excerpt. `mantra_rec`
+peaks at 159 against the full track but only 4–5 against the 2-minute
+Beatport preview — most of the recorded window simply is not in the
+excerpt. Bandcamp previews are full tracks, so this limitation is
+Beatport/Spotify-specific.
+
+**Operator runbook to make the known recordings match, in order:**
+
+1. Run `rescale-pre-fix-fingerprint-positions.sql` (once).
+2. Deploy the backend with the new scoring defaults (or set
+   `SAMPLE_MATCH_BUCKET_SECONDS=0.5`, `SAMPLE_MATCH_PEAK_BUCKET_MIN=3`).
+3. Fingerprint the missing previews: `./analyse_all.sh --previews`.
+4. Re-score everything: `POST /api/admin/exact-match/audio-samples/matches`
+   with an empty body (or let `--score-after` do it during the drain).
 
 ### Drain failure modes seen in production (2026-10-14/15)
 

@@ -30,7 +30,7 @@ from collections import defaultdict
 # Default grid. Documented in design.md / README.md. Centred on the
 # production SAMPLE_MATCH_DEFAULT_THRESHOLD (0.008).
 DEFAULT_THRESHOLDS = (0.005, 0.008, 0.01, 0.02, 0.05)
-DEFAULT_BUCKET_SECONDS = (0.05, 0.1)
+DEFAULT_BUCKET_SECONDS = (0.05, 0.1, 0.5)
 DEFAULT_DISTRACTORS = 20
 DEFAULT_SEED = 42
 DISTRACTOR_POOL_SIZE = 10_000

@@ -616,7 +616,7 @@ module.exports.ignoreDuplicate = async (type, id1, id2) => {
 module.exports.queryFingerprintDiagnostics = async (
   sampleId,
   previewId,
-  { bucketSeconds = 0.05, maxPerSide = 10000 } = {},
+  { bucketSeconds = 0.5, maxPerSide = 10000 } = {},
 ) => {
   // Single round-trip: UNION ALL the two fingerprint sides with a discriminator.
   // Fetch (maxPerSide + 1) rows per side so we can detect truncation cleanly.
@@ -742,8 +742,15 @@ module.exports.findExactMatchForSample = async (
       'SAMPLE_MATCH_DEFAULT_THRESHOLD must be set in env or an explicit threshold passed to findExactMatchForSample',
     )
   }
-  const effectiveBucketSeconds = bucketSeconds ?? config.sampleMatchBucketSeconds ?? 0.05
-  const effectivePeakBucketMin = peakBucketMin ?? config.sampleMatchPeakBucketMin ?? 1
+  // 0.5 s absorbs the clock drift and block quantisation of acoustic
+  // recordings; 0.05 s splits a true peak across neighbouring buckets
+  // (validated against production pairs, 2026-10-11: serious_sound_rec's
+  // correct-preview peak goes 8 → 29 at 0.5 s while the noise floor stays ≤ 4).
+  const effectiveBucketSeconds = bucketSeconds ?? config.sampleMatchBucketSeconds ?? 0.5
+  // Floor 3 drops the score-1/2 junk rows that otherwise fill the match
+  // table, while keeping the weakest known-genuine pair (mantra_rec ↔
+  // mantra_preview, peak 4 at 0.5 s buckets).
+  const effectivePeakBucketMin = peakBucketMin ?? config.sampleMatchPeakBucketMin ?? 3
 
   const rows = await pg.queryRowsAsync(
     // language=PostgreSQL
