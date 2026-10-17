@@ -182,6 +182,8 @@ module.exports.enableCartSync = async (userId, cartId, storeName) => {
     } = await queryCartDetails(cartId, [storeName.toLowerCase()], { all: true })
     const { id: spotifyPlaylistId, url, versionId } = await createCart(userId, `Fomo Player: ${name}`, tracks)
     await insertCartStoreDetails(cartId, storeName, spotifyPlaylistId, url, versionId)
+    // The same shape as an entry of a cart's storeDetails.
+    return { id: spotifyPlaylistId, url, storeName, versionId }
   } catch (e) {
     logger.error(`Enabling cart sync failed for user: ${userId}, cart: ${cartId}, error: ${e.toString()}`)
     throw e

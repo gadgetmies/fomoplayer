@@ -46,7 +46,7 @@ module.exports.queryUserCartDetails = async (userId, stores) => {
          , COALESCE(cart_is_purchased, FALSE)                                     AS "isPurchased"
          , cart_uuid                                                              AS uuid
          , CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END AS "storeDetails"
-         , track_count                                                            AS "trackCount"
+         , COALESCE(track_count, 0) :: INT                                        AS "trackCount"
     FROM
       cart
       NATURAL LEFT JOIN cart_store_details

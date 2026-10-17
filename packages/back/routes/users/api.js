@@ -533,11 +533,11 @@ router.post(
   '/carts/:id/sync/spotify',
   async ({ user: { id: userId }, params: { id: cartId }, body: { setSync } }, res) => {
     if (setSync) {
-      await enableCartSync(userId, cartId, spotifyStoreName)
+      res.send(await enableCartSync(userId, cartId, spotifyStoreName))
     } else {
       await removeCartSync(userId, cartId, spotifyStoreName)
+      res.status(204).send()
     }
-    res.status(204).send()
   },
 )
 

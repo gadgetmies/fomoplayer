@@ -154,7 +154,18 @@ test({
     expect(list.status).to.equal(200)
     const row = list.json.find(({ id }) => id === cart.id)
     expect(row).to.have.all.keys(...fields)
-    expect(Number(row.trackCount)).to.equal(TRACK_COUNT)
+    expect(row.trackCount).to.equal(TRACK_COUNT)
+  },
+
+  'the cart list gives an empty cart a trackCount of 0': async ({ req }) => {
+    const created = await req('POST', '/api/me/carts', { name: 'track list api empty fixture' })
+    try {
+      const list = await req('GET', '/api/me/carts')
+      const row = list.json.find(({ id }) => id === created.json.id)
+      expect(row.trackCount).to.equal(0)
+    } finally {
+      await pg.queryAsync(sql`DELETE FROM cart WHERE cart_id = ${created.json.id}`)
+    }
   },
 
   'page.total counts only the tracks matching the filters': async ({ req, cart }) => {
