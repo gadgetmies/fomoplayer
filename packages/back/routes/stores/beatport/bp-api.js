@@ -22,9 +22,16 @@ const apiGet = async (path, { retried = false } = {}) => {
     return apiGet(path, { retried: true })
   }
   if (!response.ok) {
-    throw new Error(
+    // Carry the HTTP status on the error so callers can distinguish a definitive
+    // 404 (mark the artist/label missing, stop retrying) from a transient failure
+    // (5xx/network: re-throw and retry next cycle) or rate limiting (back off).
+    // See routes/shared/tracks.js updateArtistTracks/updateLabelTracks.
+    const err = new Error(
       `Beatport API request failed (${response.status}) for ${path}: ${(await response.text()).slice(0, 200)}`,
     )
+    err.statusCode = response.status
+    if (response.status === 429) err.isRateLimit = true
+    throw err
   }
   return response.json()
 }
