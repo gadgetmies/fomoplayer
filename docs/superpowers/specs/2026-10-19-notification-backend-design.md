@@ -65,7 +65,7 @@ Table `user_notification_event`:
 |---|---|
 | `user_notification_event_id` | SERIAL PK |
 | `meta_account_user_id` | FK meta_account(meta_account_user_id) ON DELETE CASCADE |
-| `store__track_id` | FK store__track ON DELETE CASCADE |
+| `track_id` | FK track ON DELETE CASCADE — the id track lists, heard reports and `queryTrackDetails` use |
 | `user_search_notification_id` | nullable FK ON DELETE CASCADE |
 | `user_notification_audio_sample_id`, `store__track_preview_id` | nullable composite FK to `user_notification_audio_sample_match` ON DELETE CASCADE |
 | `user_notification_event_created_at` | TIMESTAMPTZ NOT NULL DEFAULT NOW() |
