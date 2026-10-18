@@ -4,7 +4,7 @@
 
 const DISCOVER_LABELS = { new: 'New', recent: 'Recent', heard: 'Heard' }
 
-export const samplesSource = { key: 'samples', label: 'Audio samples', path: '/settings/notifications' }
+export const samplesSource = { key: 'samples', label: 'Audio samples', path: '/notifications/samples' }
 
 // The source for the list on screen. `location` is `{ pathname, search }`, used for searches so the link keeps the
 // filters.

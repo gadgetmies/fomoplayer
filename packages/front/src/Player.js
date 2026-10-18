@@ -311,7 +311,13 @@ class Player extends Component {
     return (
       <div
         className={`page-container${this.props.docked ? ' page-container--docked' : ''}`}
-        style={{ flexDirection: 'column', overflow: 'hidden', ...this.props.style }}
+        // panelOnly: the Preview panel above a page that brings its own lists (Notifications)
+        style={{
+          flexDirection: 'column',
+          overflow: 'hidden',
+          ...(this.props.panelOnly ? { flex: '0 0 auto' } : {}),
+          ...this.props.style,
+        }}
       >
         <PlayerHelp
           active={this.state.helpActive}
@@ -356,7 +362,7 @@ class Player extends Component {
           docked={this.props.docked}
           playingFrom={this.props.mode === 'list' ? null : this.props.playingFrom?.source}
         />
-        <div style={{ display: this.props.docked ? 'none' : 'contents' }}>
+        <div style={{ display: this.props.docked || this.props.panelOnly ? 'none' : 'contents' }}>
           <Tracks
             mode={this.props.mode}
             carts={this.props.carts}

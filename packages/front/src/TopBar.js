@@ -185,6 +185,25 @@ class TopBar extends Component {
               </div>
             </Popup>
           </div>
+          <MenuNavButton
+            to={'/notifications/activity'}
+            label={
+              <>
+                Notifications
+                {this.props.unreadNotificationCount > 0 ? (
+                  <span className="notifications-badge" data-testid="notifications-unread-count">
+                    {this.props.unreadNotificationCount}
+                  </span>
+                ) : null}
+              </>
+            }
+            aria-label={`Notifications${
+              this.props.unreadNotificationCount > 0 ? `, ${this.props.unreadNotificationCount} unread` : ''
+            }`}
+            icon={<FontAwesomeIcon icon="bell" />}
+            className={'notifications_button'}
+            selected={this.props.location?.pathname?.startsWith('/notifications')}
+          />
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className={`menu_search`}>
             <GlobalSearchBar
               key={this.props.searchBarResetCount || 0}
