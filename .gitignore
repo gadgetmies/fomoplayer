@@ -113,3 +113,9 @@ analyser/data/
 # __pycache__ anywhere under analyser (the top-level rule above only covers
 # analyser/__pycache__ itself).
 analyser/**/__pycache__/
+
+# Python bytecode (e.g. from the .claude/hooks guards)
+__pycache__/
+
+# Lavish review pages (generated, may embed personal data)
+.lavish/

@@ -14,7 +14,8 @@ SET artist_id = INSERTED_ARTIST_ID
 WHERE track_id IN (SELECT DISTINCT track_id
                    FROM
                      store__track
-                   , JSONB_TO_RECORDSET(store__track.store__track_store_details -> 'artists') AS artist(name TEXT, id TEXT, url TEXT)
+                     NATURAL JOIN store__track_store_details
+                   , JSONB_TO_RECORDSET(store__track_store_details -> 'artists') AS artist(name TEXT, id TEXT, url TEXT)
                    WHERE artist.id = ARTIST_STORE_ID)
   AND artist_id = PREVIOUS_ARTIST_ID
 ;

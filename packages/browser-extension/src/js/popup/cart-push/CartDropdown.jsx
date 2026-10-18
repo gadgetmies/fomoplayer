@@ -207,7 +207,7 @@ export default class CartDropdown extends React.Component {
                     </span>
                     <span className="fp-dropdown__item-name">
                       {cart.name}
-                      {cart.is_default ? ' (default)' : ''}
+                      {cart.isDefault ? ' (default)' : ''}
                     </span>
                   </li>
                 )

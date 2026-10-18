@@ -129,9 +129,9 @@ class Settings extends Component {
       scoreWeightsDebounce: undefined,
       markingHeard: null,
       settingCartPublic: null,
-      publicCarts: new Set(props.carts.filter(R.prop('is_public')).map(R.prop('id'))),
+      publicCarts: new Set(props.carts.filter(R.prop('isPublic')).map(R.prop('id'))),
       syncedCarts: Object.fromEntries(
-        props.carts.filter(R.prop('store_details')).map(({ id, store_details }) => [id, store_details]),
+        props.carts.filter(R.prop('storeDetails')).map(({ id, storeDetails }) => [id, storeDetails]),
       ),
       page,
       scoreWeights: this.props.scoreWeights,
@@ -405,13 +405,16 @@ class Settings extends Component {
   async setCartSync(cartId, setSync) {
     this.setState({ updatingCartSync: cartId })
     try {
-      await requestWithCredentials({
+      const res = await requestWithCredentials({
         path: `/me/carts/${cartId}/sync/spotify`,
         method: 'POST',
         body: { setSync },
       })
+      // The toggle and the playlist link read the cart's storeDetails entries, so store the entry the API returns.
+      const others = (this.state.syncedCarts[cartId] || []).filter(({ storeName }) => storeName !== 'Spotify')
+      const details = setSync ? [...others, await res.json()] : others
       const updatedSyncedCarts = { ...this.state.syncedCarts }
-      setSync ? (updatedSyncedCarts[cartId] = ['spotify']) : delete updatedSyncedCarts[cartId]
+      details.length > 0 ? (updatedSyncedCarts[cartId] = details) : delete updatedSyncedCarts[cartId]
       this.setState({ syncedCarts: updatedSyncedCarts })
     } catch (e) {
       console.error('Failed to set cart sync status', e)
@@ -1267,12 +1270,12 @@ class Settings extends Component {
               </label>
               <h3>Carts</h3>
               <div>
-                {this.props.carts.map(({ id, is_default, is_public, is_purchased, name, uuid }, index) => {
+                {this.props.carts.map(({ id, isDefault, isPublic, isPurchased, name, uuid }, index) => {
                   const buttonId = `sharing-${id}`
                   const cartPath = `/carts/${uuid}`
                   const publicLink = new URL(cartPath, window.location).toString()
                   const spotifyStoreDetails = this.state.syncedCarts[id]?.find(
-                    ({ store_name }) => store_name === 'Spotify',
+                    ({ storeName }) => storeName === 'Spotify',
                   )
                   return (
                     <div key={id} id={`cart-${uuid}`}>
@@ -1311,7 +1314,7 @@ class Settings extends Component {
                         ) : (
                           <>
                             <NavLink to={cartPath}>{name}</NavLink>{' '}
-                            {!is_default && !is_purchased && (
+                            {!isDefault && !isPurchased && (
                               <>
                                 <button
                                   className={
@@ -1357,7 +1360,7 @@ class Settings extends Component {
                           </label>
                           <ToggleButton
                             id={buttonId}
-                            checked={is_public}
+                            checked={isPublic}
                             disabled={this.state.settingCartPublic !== null || this.state.updatingCarts}
                             onChange={(state) => this.setCartPublic(id, state)}
                           />

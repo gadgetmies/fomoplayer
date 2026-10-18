@@ -2,7 +2,46 @@
   "mcpServers": {
     "fomoplayer": {
       "command": "node",
-      "args": ["/Users/gadgetmies/Documents/Projects/Code/multi_store_player/.worktrees/cli-agent-skill/packages/cli/mcp/server.js"]
+      "args": [
+        "/Users/gadgetmies/Documents/Projects/Code/multi_store_player/.worktrees/cli-agent-skill/packages/cli/mcp/server.js"
+      ]
     }
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.prompt // empty' | grep -qiE '\\b(plan|planning|design|spec|feature|brainstorm|scope|implement|build|new change)\\b' && printf '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"REMINDER: This repo plans features through the brainstorm-to-openspec skill, not superpowers:brainstorming directly. If this request involves planning, designing, or scoping a new feature or change, invoke the brainstorm-to-openspec skill (it runs brainstorming then hands off to i-openspec-propose instead of ending in writing-plans).\"}}' || true",
+            "statusMessage": "Checking planning workflow"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-worktree.py\"",
+            "timeout": 15,
+            "statusMessage": "Checking worktree convention"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-main-checkout-bash.py\"",
+            "timeout": 15,
+            "statusMessage": "Checking main-checkout guard"
+          }
+        ]
+      }
+    ]
   }
 }

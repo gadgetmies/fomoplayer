@@ -183,6 +183,47 @@ Listen now: ${searchUrl}`
   }
 }
 
+// One email per user covering every sample that gained new fingerprint
+// matches. `samples` is [{ name, tracks: [string], searchUrl }].
+const renderSampleMatchNotification = ({ samples }) => {
+  const count = samples.reduce((sum, { tracks }) => sum + tracks.length, 0)
+  const tracksLabel = `${count} new track${count === 1 ? '' : 's'}`
+  const preview = `${tracksLabel} matched your audio sample${samples.length === 1 ? '' : 's'} on Fomo Player.`
+  const sampleSections = samples
+    .map(({ name, tracks, searchUrl }) => {
+      const trackRows = tracks
+        .map(
+          (line) =>
+            `<tr><td style="padding:0 0 18px 0;font-size:16px;color:#111111;font-weight:700;line-height:1.3;">${escapeHtml(
+              line,
+            )}</td></tr>`,
+        )
+        .join('\n          ')
+      return `<p style="margin:0 0 12px 0;font-size:14px;line-height:1.5;color:#666666;">Matches for &ldquo;${escapeHtml(
+        name,
+      )}&rdquo;</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${trackRows}
+        </table>
+        ${renderButton(searchUrl, 'Listen now')}`
+    })
+    .join('\n        ')
+  const contentHtml = `${preheaderSpan(preview)}
+        ${heading(`${tracksLabel} matching<br/>your audio sample${samples.length === 1 ? '' : 's'}`)}
+        ${paragraph('The audio fingerprint of your uploaded sample was recognised in these tracks.')}
+        ${sampleSections}`
+  const text = `${tracksLabel} matching your audio sample${samples.length === 1 ? '' : 's'}
+
+${samples
+  .map(({ name, tracks, searchUrl }) => `Matches for "${name}":\n${tracks.join('\n')}\nListen now: ${searchUrl}`)
+  .join('\n\n')}`
+  const subject =
+    samples.length === 1
+      ? `New matches for your audio sample '${samples[0].name}'!`
+      : `New matches for ${samples.length} of your audio samples!`
+  return { subject, contentHtml, text, category: 'notification' }
+}
+
 module.exports = {
   BRAND,
   BRAND_BORDER,
@@ -191,6 +232,7 @@ module.exports = {
   renderVerification,
   renderInvite,
   renderNotification,
+  renderSampleMatchNotification,
   footerNoteForCategory,
   escapeHtml,
 }
