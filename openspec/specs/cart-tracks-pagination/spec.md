@@ -5,27 +5,27 @@ TBD - created by archiving change carts-table-infinite-scroll. Update Purpose af
 ## Requirements
 ### Requirement: Cart selection fetches one page, not the entire cart
 
-When the user selects a cart, the frontend SHALL fetch a single page of that cart's tracks via `GET /carts/:id?offset=0&limit=<CART_TRACKS_PAGE_SIZE>` and use the response's top-level `track_count` as the cart's authoritative total. The legacy unparametered call (`GET /carts/:id` with neither `offset` nor `limit`) SHALL no longer be used by the frontend, so carts larger than the backend's default `limit: 200` no longer silently truncate.
+When the user selects a cart, the frontend SHALL fetch a single page of that cart's tracks via `GET /carts/:id?offset=0&limit=<CART_TRACKS_PAGE_SIZE>` and use the response's `cart.trackCount` as the cart's authoritative total. The legacy unparametered call (`GET /carts/:id` with neither `offset` nor `limit`) SHALL no longer be used by the frontend, so carts larger than the backend's default `limit: 200` no longer silently truncate.
 
 `CART_TRACKS_PAGE_SIZE` SHALL be a frontend-side constant whose value matches the existing panel tracklist's per-category limit (currently `20`) so the carts view paginates at the same cadence as the rest of the app. The constant MUST be reused for first-page and load-more so they cannot drift.
 
 #### Scenario: Cart with fewer tracks than the page size
 
-- **WHEN** the user selects a cart whose `track_count` is strictly less than `CART_TRACKS_PAGE_SIZE`
+- **WHEN** the user selects a cart whose `trackCount` is strictly less than `CART_TRACKS_PAGE_SIZE`
 - **THEN** one fetch resolves with all the cart's tracks
 - **AND** the cart view's `hasMore` flag is `false`
 - **AND** no loading-more indicator is shown at the bottom of the table
 
 #### Scenario: Cart with many more tracks than the page size
 
-- **WHEN** the user selects a cart whose `track_count` is, say, 5,000
+- **WHEN** the user selects a cart whose `trackCount` is, say, 5,000
 - **THEN** the first fetch returns the first `CART_TRACKS_PAGE_SIZE` tracks
 - **AND** the cart view's `hasMore` flag is `true`
 - **AND** the table can scroll all the way through the remaining 4,900 tracks via subsequent loads
 
 ### Requirement: Scrolling near the bottom loads the next page
 
-When the user scrolls the cart table such that the existing infinite-scroll trigger fires (the same trigger the main tracklist uses), the frontend SHALL request the next page via `GET /carts/:id?offset=<count>&limit=<CART_TRACKS_PAGE_SIZE>` and append the returned tracks to the cart's in-memory `tracks` array. While the request is in flight, the existing "loading more" indicator at the bottom of the tracks table SHALL be visible. When `offset + count >= track_count`, `hasMore` SHALL flip to `false` and no further fetches SHALL fire even if the user keeps scrolling.
+When the user scrolls the cart table such that the existing infinite-scroll trigger fires (the same trigger the main tracklist uses), the frontend SHALL request the next page via `GET /carts/:id?offset=<count>&limit=<CART_TRACKS_PAGE_SIZE>` and append the returned tracks to the cart's in-memory `tracks` array. While the request is in flight, the existing "loading more" indicator at the bottom of the tracks table SHALL be visible. When `offset + count >= trackCount`, `hasMore` SHALL flip to `false` and no further fetches SHALL fire even if the user keeps scrolling.
 
 #### Scenario: User scrolls into the second page
 
@@ -38,7 +38,7 @@ When the user scrolls the cart table such that the existing infinite-scroll trig
 
 #### Scenario: User scrolls past the last page
 
-- **WHEN** the cart's running `offset + count >= track_count`
+- **WHEN** the cart's running `offset + count >= trackCount`
 - **AND** the user keeps scrolling
 - **THEN** no further `GET /carts/:id` request is fired
 - **AND** the loading-more indicator is not shown
@@ -53,13 +53,13 @@ The previously-visited cart's tracks snapshot in `state.carts` MAY be retained a
 
 - **WHEN** the user has loaded 300 tracks across three pages of cart A
 - **AND** then selects cart B
-- **THEN** cart B's view starts at `offset=0` with `count = <cart B first page length>` and `total = <cart B track_count>`
+- **THEN** cart B's view starts at `offset=0` with `count = <cart B first page length>` and `total = <cart B trackCount>`
 - **AND** no "loading more" indicator from cart A's last fetch carries over
 - **AND** the next `loadMoreTracks` call requests cart B's second page, not cart A's fourth
 
 ### Requirement: Adding or removing a track preserves scroll position
 
-When the user adds or removes a track via `PATCH /carts/:id/tracks` while the affected cart is currently displayed (paged), the frontend SHALL update the cart's in-memory `tracks` array via in-place splice rather than wholesale replacement, so the user's current scroll position survives the edit. The PATCH response's `track_count` and other top-level cart metadata (`name`, `is_public`, `store_details`) SHALL be merged onto the cart record without touching the running `tracks` array. The companion membership update — patching every visible copy of the affected track's `cart_ids` — is owned by the `track-cart-membership` capability.
+When the user adds or removes a track via `PATCH /carts/:id/tracks` while the affected cart is currently displayed (paged), the frontend SHALL update the cart's in-memory `tracks` array via in-place splice rather than wholesale replacement, so the user's current scroll position survives the edit. The PATCH response's `cart.trackCount` and other top-level cart metadata (`name`, `is_public`, `storeDetails`) SHALL be merged onto the cart record without touching the running `tracks` array. The companion membership update — patching every visible copy of the affected track's `cart_ids` — is owned by the `track-cart-membership` capability.
 
 For an `add`, the new track row SHALL be inserted at the position the cart's ordering implies (currently `track__cart_added DESC`, so at the top). For a `remove`, the matching track id SHALL be spliced out wherever it sits in the in-memory array; if the removed track is not currently in memory (because it lives in a not-yet-loaded later page), the splice SHALL be a no-op for `tracks` but `total` SHALL still be updated from the PATCH response.
 
@@ -69,7 +69,7 @@ For an `add`, the new track row SHALL be inserted at the position the cart's ord
 - **AND** clicks "add to cart" for a track
 - **THEN** the cart's `tracks` array gains one entry (the newly-added track) without being replaced wholesale
 - **AND** the user's scroll position does not jump to the top
-- **AND** the cart's `total` is updated from the PATCH response's `track_count`
+- **AND** the cart's `total` is updated from the PATCH response's `cart.trackCount`
 
 #### Scenario: Remove of an in-memory track reflects in the visible rows
 
@@ -94,7 +94,7 @@ For an `add`, the new track row SHALL be inserted at the position the cart's ord
 - **WHEN** the user's default cart has uuid `<X>`
 - **AND** the client requests `GET /me/carts/default?offset=0&limit=20`
 - **AND** the same client requests `GET /me/carts/<X>?offset=0&limit=20`
-- **THEN** the two responses are byte-equivalent (same `id`, `uuid`, `track_count`, `tracks` array, `cart_ids` per track, `store_details`)
+- **THEN** the two responses are byte-equivalent (same `id`, `uuid`, `trackCount`, `tracks` array, `cart_ids` per track, `storeDetails`)
 
 #### Scenario: 'default' is not a valid cart-id at the SQL layer
 

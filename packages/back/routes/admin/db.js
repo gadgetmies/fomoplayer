@@ -860,30 +860,34 @@ ORDER BY user_notification_audio_sample_id
   )
 }
 
-// Replace the sample's persisted matches with the given rows. Mirrors the
-// upsert-fingerprints semantics: delete-then-insert in one transaction so
-// readers never see a half-written set.
+// Bring the sample's persisted matches in line with the given rows in one
+// transaction: rows no longer in the result set are deleted, existing
+// (sample, preview) pairs are updated in place and new pairs are inserted.
+// Updating in place keeps matched_at and notified_at, so notifySampleMatches
+// only emails about pairs that are genuinely new.
 module.exports.persistSampleMatches = async (sampleId, matches, threshold, bucketSeconds) => {
+  const values = (matches || []).map((m) => ({
+    sample_id: sampleId,
+    preview_id: m.store__track_preview_id,
+    score: m.match_score,
+  }))
+  const previewIds = values.map((v) => String(v.preview_id))
+
   await BPromise.using(pg.getTransaction(), async (tx) => {
     await tx.queryAsync(
       // language=PostgreSQL
-      sql`-- persistSampleMatches: clear existing
+      sql`-- persistSampleMatches: remove stale
 DELETE FROM user_notification_audio_sample_match
 WHERE user_notification_audio_sample_id = ${sampleId}
+  AND store__track_preview_id <> ALL (${previewIds}::BIGINT[])
       `,
     )
 
-    if (!matches || matches.length === 0) return
-
-    const values = matches.map((m) => ({
-      sample_id: sampleId,
-      preview_id: m.store__track_preview_id,
-      score: m.match_score,
-    }))
+    if (values.length === 0) return
 
     await tx.queryAsync(
       // language=PostgreSQL
-      sql`-- persistSampleMatches: insert
+      sql`-- persistSampleMatches: upsert
 INSERT INTO user_notification_audio_sample_match (
   user_notification_audio_sample_id,
   store__track_preview_id,
@@ -900,6 +904,10 @@ SELECT
 FROM json_to_recordset(${JSON.stringify(values)}::json) AS rec (
   sample_id TEXT, preview_id TEXT, score TEXT
 )
+ON CONFLICT (user_notification_audio_sample_id, store__track_preview_id) DO UPDATE
+SET user_notification_audio_sample_match_score          = EXCLUDED.user_notification_audio_sample_match_score,
+    user_notification_audio_sample_match_threshold      = EXCLUDED.user_notification_audio_sample_match_threshold,
+    user_notification_audio_sample_match_bucket_seconds = EXCLUDED.user_notification_audio_sample_match_bucket_seconds
       `,
     )
   })

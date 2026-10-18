@@ -129,8 +129,8 @@ export const cartRecord = ({ cart, tracks }) => ({ ...cart, tracks })
 // replacing the in-memory `tracks` array wholesale. The PATCH response carries
 // the cart's first page; we keep the user's already-loaded tracks (which may
 // extend past the first page after infinite-scroll) and splice the single
-// added/removed row in place. Top-level metadata (name, store_details,
-// track_count, etc.) is taken from the PATCH response.
+// added/removed row in place. Top-level metadata (name, storeDetails,
+// trackCount, etc.) is taken from the PATCH response.
 export const mergeCartDetailsPreservingTracks = (existing, response, { addedTrackId, removedTrackId } = {}) => {
   const existingTracks = (existing && existing.tracks) || []
   let nextTracks = existingTracks
@@ -533,8 +533,8 @@ class App extends Component {
         partialState.selectedCart = merged
         if (this.state.cartPagination) {
           const total =
-            merged.track_count != null
-              ? merged.track_count
+            merged.trackCount != null
+              ? merged.trackCount
               : this.state.cartPagination.total + (op === 'add' ? 1 : -1)
           const count = merged.tracks ? merged.tracks.length : this.state.cartPagination.count
           partialState.cartPagination = { ...this.state.cartPagination, total, count }

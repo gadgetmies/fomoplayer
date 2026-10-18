@@ -53,8 +53,8 @@ const seedAllFixtures = async () => {
     `)
     trackIds.push(trackId)
     const [{ store__track_id: storeTrackId }] = await pg.queryRowsAsync(sql`
-      INSERT INTO store__track (track_id, store_id, store__track_store_id, store__track_store_details)
-      VALUES (${trackId}, 1, ${`fp-regression-${name}`}, '{}')
+      INSERT INTO store__track (track_id, store_id, store__track_store_id)
+      VALUES (${trackId}, 1, ${`fp-regression-${name}`})
       RETURNING store__track_id
     `)
     const [{ store__track_preview_id: previewId }] = await pg.queryRowsAsync(sql`

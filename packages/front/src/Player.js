@@ -200,7 +200,7 @@ class Player extends Component {
   }
 
   getDefaultCart() {
-    return this.props.carts.find(R.prop('is_default'))
+    return this.props.carts.find(R.prop('isDefault'))
   }
 
   async handlePlayPauseToggle(playing, source) {
@@ -285,8 +285,8 @@ class Player extends Component {
       ? this.props.carts.filter((cart) => currentCarts.some((c) => c && c.uuid === cart.uuid))
       : []
     const selectedCartId = this.props.selectedCart?.id
-    const selectedCartIsPurchased = this.props.selectedCart?.is_purchased
-    const defaultCart = this.props.carts.find(R.prop('is_default'))
+    const selectedCartIsPurchased = this.props.selectedCart?.isPurchased
+    const defaultCart = this.props.carts.find(R.prop('isDefault'))
     const inDefaultCart =
       !!(defaultCart && currentTrack && currentCarts.some((c) => c && c.uuid === defaultCart.uuid))
     const inCurrentCart = inCarts.find(({ id }) => id === selectedCartId)
