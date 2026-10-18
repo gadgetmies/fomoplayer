@@ -348,3 +348,73 @@
     display: none;
   }
 }
+
+/* Aligned A/B playback of a sample match */
+.preview_ab {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.preview_ab-details {
+  font-size: 75%;
+}
+
+.preview_ab-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.preview_ab-segmented {
+  display: inline-flex;
+  background: #222;
+  border-radius: 0.35rem;
+  padding: 2px;
+}
+
+.preview_ab-option {
+  border: 0;
+  background: none;
+  color: #fff;
+  opacity: 0.7;
+  font-size: 0.7rem;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.preview_ab-option--on {
+  background: #5996e4;
+  border-radius: 0.25rem;
+  opacity: 1;
+}
+
+.preview_ab-loop {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #fff;
+  background: transparent;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.preview_ab-loop--on {
+  background: #5996e4;
+  border-color: #5996e4;
+}
+
+.preview_ab-loop:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.preview_ab-hint {
+  font-size: 0.7rem;
+  font-weight: 300;
+}
