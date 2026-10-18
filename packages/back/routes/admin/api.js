@@ -242,7 +242,7 @@ router.get('/exact-match/audio-samples/:sampleId/match', async ({ params: { samp
 
 // Score one, many, or all samples with fingerprints, then persist each
 // sample's matches into user_notification_audio_sample_match via
-// persistSampleMatches (delete-then-insert per sample). Iteration is
+// persistSampleMatches (upsert per sample, stale rows removed). Iteration is
 // sequential server-side and best-effort: a single sample's failure is
 // caught, logged, and recorded in the response so the rest of the pass
 // still completes.

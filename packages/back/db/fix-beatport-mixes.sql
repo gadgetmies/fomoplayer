@@ -1,11 +1,12 @@
 UPDATE
   track t
 SET
-  track_mix = (
+  track_version = (
     SELECT
       store__track_store_details ->> 'mix'
     FROM
       store__track s
+      NATURAL JOIN store__track_store_details
     WHERE
       s.track_id = t.track_id
     LIMIT 1)
@@ -16,18 +17,23 @@ WHERE
     FROM
       track
     NATURAL JOIN store__track
+    NATURAL JOIN store__track_store_details
   WHERE
-    track_mix IS NULL
+    track_version IS NULL
     AND store__track_store_details ->> 'mix' IS NOT NULL);
 
+-- The temp tables are dropped on commit, so each pass runs in one transaction.
+BEGIN;
+
 CREATE temp TABLE separated_tracks ON COMMIT DROP AS SELECT DISTINCT
-  track_id, track_title, track_duration_ms, store__track_store_details ->> 'mix' AS track_mix
+  track_id, track_title, track_duration_ms, store__track_store_details ->> 'mix' AS track_version
 FROM
   track
   NATURAL JOIN store__track
+  NATURAL JOIN store__track_store_details
 WHERE
   store_id = 1
-  AND lower(track_mix) != lower(store__track_store_details ->> 'mix')
+  AND lower(track_version) != lower(store__track_store_details ->> 'mix')
 ORDER BY
   track_id;
 
@@ -36,11 +42,11 @@ CREATE temp TABLE inserted_tracks (
 ) ON COMMIT DROP;
 
 WITH inserted AS (
-INSERT INTO track (track_title, track_duration_ms, track_mix)
+INSERT INTO track (track_title, track_duration_ms, track_version)
   SELECT
     track_title,
     track_duration_ms,
-    track_mix
+    track_version
   FROM
     separated_tracks
   ORDER BY
@@ -105,7 +111,9 @@ SET
       JOIN separated_tracks s ON (existing_track = s.track_id)
     WHERE
       t.track_id = existing_track
-      AND t.store__track_store_details ->> 'mix' = track_mix
+      AND (SELECT d.store__track_store_details ->> 'mix'
+           FROM store__track_store_details d
+           WHERE d.store__track_id = t.store__track_id) = track_version
     LIMIT 1)
 WHERE
   store__track_id IN (
@@ -113,9 +121,10 @@ WHERE
       store__track_id
     FROM
       store__track
+    NATURAL JOIN store__track_store_details
     NATURAL JOIN separated_tracks
   WHERE
-    store__track_store_details ->> 'mix' = track_mix);
+    store__track_store_details ->> 'mix' = track_version);
 
 SELECT
   *
@@ -132,28 +141,35 @@ WHERE
     FROM
       track_mapping);
 
+COMMIT;
+
 SELECT DISTINCT
   track_id,
   track_title,
   track_duration_ms,
-  store__track_store_details ->> 'mix' AS track_mix
+  store__track_store_details ->> 'mix' AS track_version
 FROM
   track
   NATURAL JOIN store__track
+  NATURAL JOIN store__track_store_details
 WHERE
   store_id = 1
-  AND lower(track_mix) != lower(store__track_store_details ->> 'mix')
+  AND lower(track_version) != lower(store__track_store_details ->> 'mix')
 ORDER BY
   track_id;
 
+-- The temp tables are dropped on commit, so each pass runs in one transaction.
+BEGIN;
+
 CREATE temp TABLE separated_tracks ON COMMIT DROP AS SELECT DISTINCT
-  track_id, track_title, track_duration_ms, store__track_store_details ->> 'mix' AS track_mix
+  track_id, track_title, track_duration_ms, store__track_store_details ->> 'mix' AS track_version
 FROM
   track
   NATURAL JOIN store__track
+  NATURAL JOIN store__track_store_details
 WHERE
   store_id = 1
-  AND lower(track_mix) != lower(store__track_store_details ->> 'mix')
+  AND lower(track_version) != lower(store__track_store_details ->> 'mix')
 ORDER BY
   track_id;
 
@@ -162,11 +178,11 @@ CREATE temp TABLE inserted_tracks (
 ) ON COMMIT DROP;
 
 WITH inserted AS (
-INSERT INTO track (track_title, track_duration_ms, track_mix)
+INSERT INTO track (track_title, track_duration_ms, track_version)
   SELECT
     track_title,
     track_duration_ms,
-    track_mix
+    track_version
   FROM
     separated_tracks
   ORDER BY
@@ -231,7 +247,9 @@ SET
       JOIN separated_tracks s ON (existing_track = s.track_id)
     WHERE
       t.track_id = existing_track
-      AND t.store__track_store_details ->> 'mix' = track_mix
+      AND (SELECT d.store__track_store_details ->> 'mix'
+           FROM store__track_store_details d
+           WHERE d.store__track_id = t.store__track_id) = track_version
     LIMIT 1)
 WHERE
   store__track_id IN (
@@ -239,9 +257,10 @@ WHERE
       store__track_id
     FROM
       store__track
+    NATURAL JOIN store__track_store_details
     NATURAL JOIN separated_tracks
   WHERE
-    store__track_store_details ->> 'mix' = track_mix);
+    store__track_store_details ->> 'mix' = track_version);
 
 SELECT
   *
@@ -258,17 +277,20 @@ WHERE
     FROM
       track_mapping);
 
+COMMIT;
+
 SELECT DISTINCT
   track_id,
   track_title,
   track_duration_ms,
-  store__track_store_details ->> 'mix' AS track_mix
+  store__track_store_details ->> 'mix' AS track_version
 FROM
   track
   NATURAL JOIN store__track
+  NATURAL JOIN store__track_store_details
 WHERE
   store_id = 1
-  AND lower(track_mix) != lower(store__track_store_details ->> 'mix')
+  AND lower(track_version) != lower(store__track_store_details ->> 'mix')
 ORDER BY
   track_id;
 

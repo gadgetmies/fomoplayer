@@ -501,7 +501,7 @@ class Tracks extends Component {
   }
 
   renderTracks(tracks) {
-    const defaultCart = this.props.carts.find(R.prop('is_default'))
+    const defaultCart = this.props.carts.find(R.prop('isDefault'))
     const { visibleStartIndex, visibleEndIndex } = this.state
     const visibleTracks = tracks.slice(visibleStartIndex, visibleEndIndex)
     const topSpacerHeight = this.getTotalHeightUpToIndex(visibleStartIndex, tracks.length)
@@ -554,7 +554,7 @@ class Tracks extends Component {
                 cartUuid={this.props.selectedCart?.uuid}
                 carts={this.props.carts}
                 cartFilter={this.state.cartFilter}
-                defaultCartId={this.props.carts.find(R.prop('is_default'))?.id}
+                defaultCartId={this.props.carts.find(R.prop('isDefault'))?.id}
                 selectedCartId={selectedCartId}
                 selectedCartIsPurchased={this.props.selectedCartIsPurchased}
                 id={id}
@@ -749,7 +749,7 @@ class Tracks extends Component {
                         onClearSearch={this.handleTrackListFilterClear.bind(this)}
                       />
                       <span className={'cart-details'}>
-                        Tracks in cart: {this.props.selectedCart?.track_count}
+                        Tracks in cart: {this.props.selectedCart?.trackCount}
                       </span>
                       {this.props.onFindSimilarToCart && this.props.selectedCart?.uuid && (
                         <button
