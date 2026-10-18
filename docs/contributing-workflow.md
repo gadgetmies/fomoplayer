@@ -26,7 +26,8 @@ its own, and mergeable at any time. (The workflow is adapted from
    ```
 
    A worktree needs its own `yarn install`; tests run against symlinked or
-   missing dependencies give false failures. Ignored local state does not
+   missing dependencies give false failures (a documentation-only change runs
+   no tests, so it can skip the install). Ignored local state does not
    come along either:
    - the analyser venv: reuse the main checkout's through `ANALYSER_VENV`;
    - the Railway CLI link: `railway` links projects per directory, so add the
@@ -48,9 +49,9 @@ its own, and mergeable at any time. (The workflow is adapted from
 4. **Verify in the worktree.** Run the change's tests (and, for UI changes, the
    demo tests required by `CLAUDE.md`) from the worktree. Nothing needs to be
    merged to be tried. Hand off to the user with the concrete command that
-   exercises the worktree. A documentation-only change (prose only: Markdown
-   docs, `CLAUDE.md`, OpenSpec artifacts, notes; nothing code, tests, hooks or
-   the build read) needs no test run here or in step 5, and no `yarn install`.
+   exercises the worktree. Which tests to run, and when none are needed
+   (documentation-only changes), is set by the `commit-and-test-discipline`
+   skill (see `CLAUDE.md`).
 
 5. **Merge back once verified — the user gates it.**
    - In the worktree, bring in the latest `master` and resolve any conflicts
