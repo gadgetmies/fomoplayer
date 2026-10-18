@@ -18,6 +18,8 @@ import Popup from './Popup'
 import { apiURL, serviceURL } from './config'
 import { search } from './events'
 import { colors } from 'fomoplayer_shared/theme'
+import { Link } from 'react-router-dom'
+import { isSample } from './playQueue'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(value, prop))
 
@@ -206,7 +208,7 @@ class Preview extends Component {
           [],
         ),
         L.satisfying(safePropEq('format', 'mp3')),
-        L.satisfying((preview) => preview && storeSlugs.includes(preview.store)),
+        L.satisfying((preview) => preview && (preview.store === 'sample' || storeSlugs.includes(preview.store))),
       ],
       track,
     )
@@ -225,7 +227,7 @@ class Preview extends Component {
           [],
         ),
         L.satisfying(safePropEq('format', 'mp3')),
-        L.satisfying((preview) => preview && storeSlugs.includes(preview.store)),
+        L.satisfying((preview) => preview && (preview.store === 'sample' || storeSlugs.includes(preview.store))),
       ],
       track,
     )
@@ -361,6 +363,77 @@ class Preview extends Component {
     this.setState({ cartFilter: '' })
   }
 
+  renderPlayingFrom() {
+    const source = this.props.playingFrom
+    if (!source) return null
+    return (
+      <div className="preview_playing-from">
+        <span className="preview_label">Playing from</span>{' '}
+        <Link to={source.path} className="preview_playing-from-link">
+          {source.label}
+        </Link>
+      </div>
+    )
+  }
+
+  // The player on pages without a track list (Settings): a bar docked to the bottom of the viewport. The full panel,
+  // with the one audio element, stays mounted but hidden so playback continues.
+  renderDockedBar({ totalDuration, startOffset, shouldSkip }) {
+    const currentTrack = this.props.currentTrack
+    const playedMs = this.state.position - (shouldSkip ? 0 : startOffset || 0)
+    const progressPercent = totalDuration ? Math.min(100, Math.max(0, (100 * this.state.position) / totalDuration)) : 0
+    const formatTime = (ms) => {
+      const seconds = Math.max(0, Math.floor(ms / 1000))
+      return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+    }
+    return (
+      <section className="docked-player" aria-label="Player">
+        <div className="docked-player_progress" aria-hidden="true">
+          <div className="docked-player_progress-value" style={{ width: `${progressPercent}%` }} />
+        </div>
+        <div className="docked-player_row">
+          <button
+            type="button"
+            className="button button-playback docked-player_button"
+            aria-label={this.state.playing ? 'Pause' : 'Play'}
+            onClick={() => this.togglePlaying('ui')}
+          >
+            <FontAwesomeIcon icon={this.state.playing ? 'pause' : 'play'} />
+          </button>
+          <button
+            type="button"
+            className="button button-playback docked-player_button"
+            aria-label={`Previous${this.props.playingFrom ? ` in ${this.props.playingFrom.label}` : ''}`}
+            onClick={() => this.props.onPrevious()}
+          >
+            <FontAwesomeIcon icon="step-backward" />
+          </button>
+          <button
+            type="button"
+            className="button button-playback docked-player_button"
+            aria-label={`Next${this.props.playingFrom ? ` in ${this.props.playingFrom.label}` : ''}`}
+            onClick={() => this.props.onNext()}
+          >
+            <FontAwesomeIcon icon="step-forward" />
+          </button>
+          <span className="docked-player_time">{formatTime(playedMs)}</span>
+          <span className="docked-player_title">
+            {isSample(currentTrack) ? (
+              <>Your sample - {currentTrack.title}</>
+            ) : (
+              <>
+                <b>{namesToString(R.uniq([currentTrack.artists, currentTrack.remixers].flat()))}</b> -{' '}
+                {currentTrack.title}
+                {currentTrack.version ? ` (${currentTrack.version})` : ''}
+              </>
+            )}
+          </span>
+          {this.renderPlayingFrom()}
+        </div>
+      </section>
+    )
+  }
+
   render() {
     const currentTrack = this.props.currentTrack
     const mp3Preview = this.state.mp3Preview
@@ -434,13 +507,22 @@ class Preview extends Component {
     const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
     const currentTrackStores = currentTrack?.stores.filter(({ code }) => storeSlugs.includes(code))
     return (
-      <div className="preview" style={{ borderBottom: '1px solid black' }}>
+      <div
+        className={`preview${this.props.docked ? ' preview--docked' : ''}`}
+        style={{ borderBottom: '1px solid black' }}
+      >
+        {this.props.docked && currentTrack ? this.renderDockedBar({ totalDuration, startOffset, shouldSkip }) : null}
         <div className="preview_details_wrapper">
           {currentTrack ? (
             <>
               <div style={{ marginTop: '0' }} className="preview_title">
-                {trackArtistsAndTitle(currentTrack, this.props.follows, this.props.onAddEntityToSearch)}
+                {isSample(currentTrack) ? (
+                  <>Your sample - {currentTrack.title}</>
+                ) : (
+                  trackArtistsAndTitle(currentTrack, this.props.follows, this.props.onAddEntityToSearch)
+                )}
               </div>
+              {this.renderPlayingFrom()}
               <div style={{ display: 'flex', gap: 8, flex: 1 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', gap: 16 }}>
@@ -828,7 +910,10 @@ class Preview extends Component {
               <button className="button button-playback" onClick={() => this.props.onNext()}>
                 <FontAwesomeIcon icon="step-forward" />
               </button>
-              <div className="preview_actions_wrapper" style={{ fontSize: '75%', fontWeight: 350 }}>
+              <div
+                className="preview_actions_wrapper"
+                style={{ fontSize: '75%', fontWeight: 350, display: isSample(currentTrack) ? 'none' : undefined }}
+              >
                 {this.props.mode !== 'app' ? null : this.props.togglingCurrentInCart ? (
                   <div
                     style={{

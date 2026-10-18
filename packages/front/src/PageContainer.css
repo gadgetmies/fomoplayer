@@ -26,3 +26,20 @@
     margin: 0 auto;
   }
 }
+
+/* The player docked to the bottom of the viewport on Settings (see .docked-player) */
+.page-container.page-container--docked {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  width: 100%;
+  flex: 0 0 auto;
+  z-index: 10;
+  background: transparent;
+}
+
+.page-container--docked > :not(.preview) {
+  display: none !important;
+}

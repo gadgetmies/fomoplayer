@@ -32,6 +32,7 @@ import IgnorePopup from './IgnorePopup'
 import KeyboardShortcutsPopup from './KeyboardShortcutsPopup'
 
 import { isMobile } from 'react-device-detect'
+import { isSample, sampleAsTrack, samplesSource } from './playQueue'
 import { events, subscribe, unsubscribe } from './events'
 import {
   parseSearchTerms,
@@ -172,7 +173,7 @@ const LocationWatcher = withRouter(LocationWatcherBase)
 class App extends Component {
   constructor(props) {
     super(props)
-    const { listState, currentTrack } = JSON.parse(window.localStorage.getItem('currentTrack')) || {}
+    const { listState, currentTrack, playingFromSource } = JSON.parse(window.localStorage.getItem('currentTrack')) || {}
 
     const searchParams = new URLSearchParams(window.location.search)
     const filters = {
@@ -223,6 +224,8 @@ class App extends Component {
       searchBarResetCount: 0,
       listState: initialListState,
       currentTrack,
+      // The list the current track was started from ({ source, tracks }); next / previous step through it.
+      playingFrom: playingFromSource ? { source: playingFromSource, tracks: [] } : null,
       heardTracks: defaultTracksData.tracks.heard,
       selectedCartUuid: undefined,
       selectedCart: undefined,
@@ -661,7 +664,7 @@ class App extends Component {
   }
 
   async markHeard(track) {
-    if (this.state.listState === 'heard' || this.state.mode === 'list') {
+    if (this.state.listState === 'heard' || this.state.mode === 'list' || isSample(track)) {
       return
     }
 
@@ -1148,13 +1151,26 @@ class App extends Component {
     })
   }
 
-  async setCurrentTrack(track) {
-    this.setState({ currentTrack: track })
+  // `playingFrom` ({ source, tracks }) is given when playback starts from a list; stepping within the queue keeps it.
+  async setCurrentTrack(track, playingFrom) {
+    const nextPlayingFrom = playingFrom === undefined ? this.state.playingFrom : playingFrom
+    this.setState({ currentTrack: track, playingFrom: nextPlayingFrom })
     window.localStorage.setItem(
       'currentTrack',
-      JSON.stringify({ listState: this.state.listState, currentTrack: track }),
+      JSON.stringify({
+        listState: this.state.listState,
+        currentTrack: track,
+        playingFromSource: nextPlayingFrom?.source ?? null,
+      }),
     )
     document.title = `${trackArtistsAndTitleText(track)} - Fomo Player ${this.state.stores.length === 1 ? ` - ${this.state.stores[0].storeName}` : ''}`
+  }
+
+  async playSample(sample, samples) {
+    await this.setCurrentTrack(sampleAsTrack(sample), {
+      source: samplesSource,
+      tracks: (samples || [sample]).map(sampleAsTrack),
+    })
   }
 
   async followStoreArtist(storeArtistId, storeArtistUrl, name, follow) {
@@ -1410,12 +1426,17 @@ class App extends Component {
                           scoreWeights={this.state.scoreWeights}
                           tracks={this.state.tracksData.tracks}
                           follows={this.state.follows}
+                          onPlaySample={this.playSample.bind(this)}
+                          playingTrackId={this.state.currentTrack?.id}
+                          dockedPlayerVisible={Boolean(settingsVisible && this.state.currentTrack)}
                           style={{ display: settingsVisible ? 'block' : 'none' }}
                         />
                         <Player
                           carts={this.state.carts}
                           fetchingCartDetails={this.state.fetchingCartDetails}
                           currentTrack={this.state.currentTrack}
+                          playingFrom={this.state.playingFrom}
+                          docked={Boolean(settingsVisible)}
                           follows={this.state.follows}
                           heardTracks={this.state.heardTracks}
                           initialPosition={this.state.initialPosition}
@@ -1467,7 +1488,7 @@ class App extends Component {
                           onUpdateCarts={this.updateCarts.bind(this)}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
                           onAddEntityToSearch={this.addEntityToSearch.bind(this)}
-                          style={{ display: !settingsVisible ? 'flex' : 'none' }}
+                          style={{ display: !settingsVisible || this.state.currentTrack ? 'flex' : 'none' }}
                         />
                       </>
                     )

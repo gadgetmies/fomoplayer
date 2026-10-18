@@ -272,3 +272,79 @@
     display: none;
   }
 }
+
+/* "Playing from <source>" under the track title, and in the docked player */
+.preview_playing-from {
+  font-size: 75%;
+  font-weight: 300;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview_playing-from-link {
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Docked mini player: on pages without a track list the player shrinks to a bar at the bottom of the viewport.
+   Everything else in the panel (including the audio element) stays mounted but hidden. */
+.preview--docked > :not(.docked-player) {
+  display: none !important;
+}
+
+.preview--docked {
+  border-bottom: 0 !important;
+}
+
+.docked-player {
+  background: var(--top-bar-background-color);
+  border-top: 1px solid #000;
+  padding: 6px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.docked-player_progress {
+  height: 3px;
+  background: #555;
+}
+
+.docked-player_progress-value {
+  height: 3px;
+  background: linear-gradient(to right, #5996e4, #b69afd);
+}
+
+.docked-player_row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+.docked-player_button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.docked-player_time {
+  font-variant-numeric: tabular-nums;
+  color: #aaa;
+  font-size: 75%;
+}
+
+.docked-player_title {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 590px) {
+  .docked-player_row .preview_playing-from {
+    display: none;
+  }
+}
