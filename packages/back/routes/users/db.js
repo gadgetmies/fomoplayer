@@ -1400,13 +1400,13 @@ WITH notification_data AS (
     store_name AS "storeName",
     store_purchase_available AS "purchaseAvailable",
     CASE 
-      WHEN user_search_notification_string ~ '^artist:(\d+)$' 
-      THEN (regexp_match(user_search_notification_string, '^artist:(\d+)$'))[1]::INTEGER 
+      WHEN user_search_notification_string ~ '^artist:(\\d+)$' 
+      THEN (regexp_match(user_search_notification_string, '^artist:(\\d+)$'))[1]::INTEGER 
       ELSE NULL 
     END AS artist_id,
     CASE 
-      WHEN user_search_notification_string ~ '^label:(\d+)$' 
-      THEN (regexp_match(user_search_notification_string, '^label:(\d+)$'))[1]::INTEGER 
+      WHEN user_search_notification_string ~ '^label:(\\d+)$' 
+      THEN (regexp_match(user_search_notification_string, '^label:(\\d+)$'))[1]::INTEGER 
       ELSE NULL 
     END AS label_id
   FROM user_search_notification 
