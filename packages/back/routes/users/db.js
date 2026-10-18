@@ -1232,6 +1232,16 @@ module.exports.setTrackHeard = async (trackId, userId, heard) => {
 UPDATE user__track SET user__track_heard = ${now}
 WHERE track_id = ${trackId} AND meta_account_user_id = ${userId}
 `)
+  // Playing a track reads its notifications, wherever it was played. Un-hearing
+  // does not make them unread again.
+  if (heard) {
+    await pg.queryAsync(sql`-- setTrackHeard: read notification events
+UPDATE user_notification_event SET user_notification_event_read_at = ${now}
+WHERE track_id = ${trackId}
+  AND meta_account_user_id = ${userId}
+  AND user_notification_event_read_at IS NULL
+`)
+  }
   return { heardAt: now ? now.toISOString() : null }
 }
 

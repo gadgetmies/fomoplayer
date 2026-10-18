@@ -61,11 +61,11 @@ bucket_counts AS (
 ),
 peak_per_preview AS (
   SELECT DISTINCT ON (store__track_preview_id)
-    store__track_preview_id, bucket_count AS peak_bucket_count
+    store__track_preview_id, bucket_count AS peak_bucket_count, delta_t_bucket AS peak_delta_t
   FROM bucket_counts
   ORDER BY store__track_preview_id, bucket_count DESC, delta_t_bucket ASC
 )
-SELECT ppp.store__track_preview_id, ppp.peak_bucket_count AS score
+SELECT ppp.store__track_preview_id, ppp.peak_bucket_count AS score, ppp.peak_delta_t AS offset_seconds
 FROM peak_per_preview ppp
   INNER JOIN candidates c ON c.store__track_preview_id = ppp.store__track_preview_id
 WHERE ppp.peak_bucket_count >= 3
@@ -77,19 +77,39 @@ DELETE FROM user_notification_audio_sample_match
 WHERE user_notification_audio_sample_id = :sid
   AND store__track_preview_id NOT IN (SELECT store__track_preview_id FROM _rescore_matches);
 
--- Upsert the rest; existing pairs keep matched_at/notified_at.
-INSERT INTO user_notification_audio_sample_match (
-  user_notification_audio_sample_id,
-  store__track_preview_id,
-  user_notification_audio_sample_match_score,
-  user_notification_audio_sample_match_threshold,
-  user_notification_audio_sample_match_bucket_seconds
+-- Upsert the rest; existing pairs keep matched_at/notified_at. This scorer is
+-- slope-1, so the offset is the peak delta-t bucket and the tempo factor 1.0.
+-- Newly inserted pairs get an unread notification event, as in
+-- persistSampleMatches.
+WITH upserted AS (
+  INSERT INTO user_notification_audio_sample_match (
+    user_notification_audio_sample_id,
+    store__track_preview_id,
+    user_notification_audio_sample_match_score,
+    user_notification_audio_sample_match_threshold,
+    user_notification_audio_sample_match_bucket_seconds,
+    user_notification_audio_sample_match_offset_seconds,
+    user_notification_audio_sample_match_tempo_factor
+  )
+  SELECT :sid, store__track_preview_id, score, 0.008, 0.5, offset_seconds, 1.0
+  FROM _rescore_matches
+  ON CONFLICT (user_notification_audio_sample_id, store__track_preview_id) DO UPDATE
+  SET user_notification_audio_sample_match_score          = EXCLUDED.user_notification_audio_sample_match_score,
+      user_notification_audio_sample_match_threshold      = EXCLUDED.user_notification_audio_sample_match_threshold,
+      user_notification_audio_sample_match_bucket_seconds = EXCLUDED.user_notification_audio_sample_match_bucket_seconds,
+      user_notification_audio_sample_match_offset_seconds = EXCLUDED.user_notification_audio_sample_match_offset_seconds,
+      user_notification_audio_sample_match_tempo_factor   = EXCLUDED.user_notification_audio_sample_match_tempo_factor
+  RETURNING user_notification_audio_sample_id, store__track_preview_id, (xmax = 0) AS inserted
 )
-SELECT :sid, store__track_preview_id, score, 0.008, 0.5
-FROM _rescore_matches
-ON CONFLICT (user_notification_audio_sample_id, store__track_preview_id) DO UPDATE
-SET user_notification_audio_sample_match_score          = EXCLUDED.user_notification_audio_sample_match_score,
-    user_notification_audio_sample_match_threshold      = EXCLUDED.user_notification_audio_sample_match_threshold,
-    user_notification_audio_sample_match_bucket_seconds = EXCLUDED.user_notification_audio_sample_match_bucket_seconds;
+INSERT INTO user_notification_event (
+  meta_account_user_id, track_id, user_notification_audio_sample_id, store__track_preview_id
+)
+SELECT meta_account_user_id, track_id, user_notification_audio_sample_id, store__track_preview_id
+FROM upserted
+  NATURAL JOIN user_notification_audio_sample
+  NATURAL JOIN store__track_preview
+  NATURAL JOIN store__track
+WHERE inserted
+ON CONFLICT DO NOTHING;
 
 COMMIT;
