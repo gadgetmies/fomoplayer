@@ -42,6 +42,18 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ensure-skill.py\"",
+            "timeout": 15,
+            "statusMessage": "Checking required skill is installed"
+          }
+        ]
+      }
     ]
   }
 }
