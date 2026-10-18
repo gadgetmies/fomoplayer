@@ -1,0 +1,4 @@
+/* The notify bell on a followed artist or label: magenta while notifications are on */
+.followed-item_bell--on {
+  color: #ff4fd8;
+}

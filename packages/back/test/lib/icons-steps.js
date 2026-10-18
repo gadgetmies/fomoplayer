@@ -1,5 +1,5 @@
 // Browser steps shared by the local and preview icon demo tests. They tour the icon-heavy views
-// (track list and player, Support menu, every Settings tab, carts), check that each Font Awesome
+// (track list and player, Support menu, every Settings and Notifications tab, carts), check that each Font Awesome
 // icon rendered a glyph, and that every expected icon appeared somewhere on the tour. Production
 // builds render nothing (and log nothing) for an unknown icon name, so the expected list is what
 // catches an icon that was renamed or dropped in a Font Awesome upgrade.
@@ -7,7 +7,8 @@
 const { expect } = require('chai')
 const { waitForWithTimeoutMessage } = require('./setup')
 
-const SETTINGS_TABS = ['following', 'carts', 'notifications', 'player', 'ignores', 'sorting', 'collection']
+const SETTINGS_TABS = ['following', 'carts', 'email', 'player', 'ignores', 'sorting', 'collection']
+const NOTIFICATIONS_TABS = ['activity', 'samples', 'subscriptions']
 
 // data-icon carries the canonical name, so aliases used in the source (cog, search, times-circle,
 // external-link-alt, step-forward, ...) appear here under their current names.
@@ -86,6 +87,15 @@ const tourIconViews = async ({ page }) => {
       `Render the ${tab} settings tab.`,
     )
     await assertIconsRendered(page, `settings/${tab}`, seen)
+  }
+
+  for (const tab of NOTIFICATIONS_TABS) {
+    await page.goto(`/notifications/${tab}`)
+    await waitForWithTimeoutMessage(
+      () => page.waitForSelector('.notifications-page', { timeout: 15000 }),
+      `Render the ${tab} notifications tab.`,
+    )
+    await assertIconsRendered(page, `notifications/${tab}`, seen)
   }
 
   await page.goto('/carts')
