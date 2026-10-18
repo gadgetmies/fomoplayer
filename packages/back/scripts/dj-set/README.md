@@ -82,6 +82,10 @@ node scripts/dj-set/evaluate.js --tracklist=/tmp/warmup.tracklist.json --truth=/
 window results are cached (`~/.cache/fomoplayer-dj-set`), so re-running with
 other stitching/refinement options takes seconds.
 
+Results on four real sets from SoundCloud, YouTube and Mixcloud, judged
+against their published tracklists:
+[`docs/research/dj-set-url-sets.md`](../../../../docs/research/dj-set-url-sets.md).
+
 ## Limits
 
 - Only the part of a track that overlaps its preview can be recognised
