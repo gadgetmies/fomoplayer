@@ -1,0 +1,228 @@
+/* Notifications page: Activity, Samples and Subscriptions below the player's Preview panel. Rows follow the track
+   table: #666 rows, the playing row in #5181bd, the selected sample row in #5181bd too. */
+
+.notifications-page {
+  padding: 16px 16px 48px;
+  overflow-y: auto;
+}
+
+.notifications-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.notifications-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.notifications-tabs {
+  display: inline-flex;
+  background: #222;
+  border-radius: 0.35rem;
+  padding: 2px;
+}
+
+.notifications-tab {
+  color: #fff;
+  opacity: 0.7;
+  font-size: 0.8rem;
+  padding: 12px 16px;
+  text-decoration: none;
+  border-radius: 0.25rem;
+}
+
+.notifications-tab--active {
+  background: #5996e4;
+  opacity: 1;
+}
+
+.notifications-hint {
+  font-size: 0.8rem;
+  font-weight: 300;
+  margin: 4px 0 8px;
+}
+
+.notifications-empty {
+  font-size: 0.9rem;
+  font-style: italic;
+  font-weight: 300;
+}
+
+.notifications-toolbar,
+.notifications-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.notifications-section-title {
+  margin: 20px 0 6px;
+}
+
+.notifications-table-wrapper {
+  overflow-x: auto;
+}
+
+.notifications-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 2px;
+  font-size: 0.85rem;
+}
+
+.notifications-table th {
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.notifications-table td {
+  padding: 0 8px;
+  line-height: 2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 28ch;
+}
+
+.notifications-row {
+  background: #666;
+  cursor: pointer;
+  font-weight: 350;
+}
+
+.notifications-row--playing,
+.notifications-row--selected {
+  background: #5181bd;
+}
+
+.new-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+  background: #fff;
+  vertical-align: middle;
+}
+
+.new-dot--read {
+  background: transparent;
+}
+
+.why--sample {
+  background: #b40089;
+  border-radius: 0.25rem;
+  padding: 3px 7px;
+  font-weight: 700;
+}
+
+.notifications-icon-button {
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.notifications-upload {
+  display: inline-flex;
+  align-items: center;
+  margin: 4px 0 8px;
+  cursor: pointer;
+}
+
+.notifications-similar {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.notifications-follow {
+  background: #222;
+  border-radius: 0.35rem;
+  padding: 10px 12px;
+}
+
+.notifications-follow-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.notifications-follow li,
+.notifications-subscription {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.notifications-subscription-groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.notifications-subscription a {
+  color: #fff;
+}
+
+.notifications-bell {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid #ccc;
+}
+
+.notifications-bell--on {
+  background: #b40089;
+  border: 1px solid #530059;
+  box-shadow: inset 0 -4px 0 #6e0069;
+  padding-bottom: 4px;
+}
+
+.notifications-add-search {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.notifications-visually-hidden {
+  position: absolute;
+  left: -9999px;
+}
+
+@media (max-width: 768px) {
+  .notifications-similar,
+  .notifications-subscription-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Top bar: unread badge on the Notifications link */
+.notifications-badge {
+  background: #b40089;
+  border-radius: 8px;
+  padding: 0 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 4px;
+  line-height: 1.4;
+}
