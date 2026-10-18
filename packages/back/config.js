@@ -97,6 +97,10 @@ const sampleMatchBucketSeconds = parseEnvFloat(
   process.env.SAMPLE_MATCH_BUCKET_SECONDS,
   'SAMPLE_MATCH_BUCKET_SECONDS',
 )
+const sampleMatchMaxTempoDeviation = parseEnvFloat(
+  process.env.SAMPLE_MATCH_MAX_TEMPO_DEVIATION,
+  'SAMPLE_MATCH_MAX_TEMPO_DEVIATION',
+)
 
 // Tracks whose published date is older than this many days are skipped during
 // watch-job ingestion (see routes/shared/tracks.js). Defaults to a true 2 years.
@@ -184,5 +188,6 @@ module.exports = {
   sampleMatchDefaultThreshold,
   sampleMatchPeakBucketMin,
   sampleMatchBucketSeconds,
+  sampleMatchMaxTempoDeviation,
   trackMaxAgeDays,
 }

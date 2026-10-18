@@ -168,7 +168,7 @@ accepting the following arguments:
 
 - `--thresholds` (comma-separated floats; default
   `0.005,0.008,0.01,0.02,0.05`).
-- `--bucket-seconds` (comma-separated floats; default `0.05,0.1`).
+- `--bucket-seconds` (comma-separated floats; default `0.05,0.1,0.5`).
 - `--distractors` (integer; default `20`).
 - `--seed` (integer; default `42`).
 - `--cache-extractions` (flag; default off).

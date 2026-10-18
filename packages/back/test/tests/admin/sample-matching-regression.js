@@ -151,21 +151,23 @@ test({
       )
     },
 
-    'serious_sound_rec returns serious_sound_full at rank 1 and serious_sound_preview at rank 2': async ({
+    // full and preview are both correct candidates for the same track; which
+    // of the two wins flips with SAMPLE_MATCH_BUCKET_SECONDS (26 vs 29 at
+    // 0.5 s, 11 vs 8 at 0.05 s), so only occupancy of the top 2 is binding.
+    'serious_sound_rec returns serious_sound_full and serious_sound_preview as the top 2': async ({
       sampleIds,
       previewIds,
     }) => {
       const rows = await findExactMatchForSample(sampleIds.serious_sound_rec, REGRESSION_THRESHOLD)
       assert.ok(rows.length >= 2, `expected at least 2 matches, got ${rows.length}`)
-      assert.strictEqual(
+      const ranks = [
         rankOfFixture(rows, previewIds, 'serious_sound_full', 'serious_sound_rec'),
-        1,
-        'serious_sound_full should rank 1 for serious_sound_rec sample',
-      )
-      assert.strictEqual(
         rankOfFixture(rows, previewIds, 'serious_sound_preview', 'serious_sound_rec'),
-        2,
-        'serious_sound_preview should rank 2 for serious_sound_rec sample',
+      ]
+      assert.deepStrictEqual(
+        ranks.slice().sort(),
+        [1, 2],
+        `serious_sound_full and serious_sound_preview should occupy ranks 1-2 for serious_sound_rec sample, got ranks ${ranks}`,
       )
     },
 

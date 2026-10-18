@@ -14,6 +14,8 @@ from auth import auth_header, get_api_url, request_error
 import sys
 import datetime
 
+import bandcamp
+
 # Re-export extraction helpers from analyser.extraction so existing imports
 # (`from panako_processor import extract_panako_fingerprints`, etc.) keep
 # working after the refactor that moved these into a shared module. The
@@ -54,11 +56,42 @@ def _parse_json_or_explain(action, res):
         )
 
 
+# Previews whose extraction legitimately yields zero fingerprints (e.g.
+# 3-second Beatport stubs) get no meta row from the deployed backend, so the
+# without-fingerprint queue re-serves them forever and they slowly clog the
+# newest-first queue top. Until the backend fix (meta row with count 0 in
+# upsertPreviewFingerprints) is deployed, remember them locally and filter
+# them out of each fetched batch. Harmless after the deploy: the queue stops
+# returning them and the skiplist goes inert.
+ZERO_FP_SKIPLIST_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'zero_fingerprint_previews.txt'
+)
+
+
+def load_zero_fp_skiplist():
+    try:
+        with open(ZERO_FP_SKIPLIST_PATH) as f:
+            return {line.strip() for line in f if line.strip()}
+    except FileNotFoundError:
+        return set()
+
+
+def append_zero_fp_skiplist(preview_ids):
+    if not preview_ids:
+        return
+    with open(ZERO_FP_SKIPLIST_PATH, 'a') as f:
+        for pid in preview_ids:
+            f.write(f"{pid}\n")
+
+
 def get_next_previews_to_fingerprint(batch_size=10):
     print("Getting next previews to fingerprint")
     res = requests.get(
         f"{get_api_url()}/admin/exact-match/previews/without-fingerprint?limit={batch_size}",
-        headers=auth_header()
+        headers=auth_header(),
+        # No timeout hangs the whole drain on one dropped connection
+        # (observed 2026-10-15: 4 workers pinned for 9+ hours).
+        timeout=60,
     )
     if res.status_code != 200:
         raise Exception(request_error("Next previews request", res))
@@ -69,7 +102,8 @@ def get_next_audio_samples_to_fingerprint(batch_size=10):
     print("Getting next audio samples to fingerprint")
     res = requests.get(
         f"{get_api_url()}/admin/exact-match/audio-samples/without-fingerprint?limit={batch_size}",
-        headers=auth_header()
+        headers=auth_header(),
+        timeout=60,
     )
     if res.status_code != 200:
         raise Exception(request_error("Next audio samples request", res))
@@ -95,11 +129,50 @@ def upload_sample_fingerprints(sample_id, fingerprints):
     res = requests.post(
         f"{get_api_url()}/admin/exact-match/audio-samples/fingerprints",
         headers=auth_header(),
-        json=data
+        json=data,
+        # Server cuts the response at its 25s connect-timeout anyway; the
+        # timeout guards against silently-dropped connections, not slowness.
+        timeout=120,
     )
     if res.status_code != 200:
         raise Exception(request_error("Upload fingerprints request", res))
     return res.json()
+
+
+def mark_previews_missing(preview_ids):
+    """Flag previews the store no longer streams via POST /admin/analyse —
+    the same endpoint/path the embeddings worker uses, whose `missing`
+    entries end up in markPreviewsMissing (store__track_preview_missing)."""
+    res = requests.post(
+        f"{get_api_url()}/admin/analyse",
+        headers=auth_header(),
+        json=[{"preview_id": pid, "missing": True} for pid in preview_ids],
+        timeout=60,
+    )
+    if res.status_code != 200:
+        raise Exception(request_error("Mark previews missing request", res))
+
+
+def resolve_bandcamp_url(preview):
+    """Look up the stream URL of a Bandcamp preview (full track).
+
+    Returns the URL, None when Bandcamp has no stream for the track (the
+    preview should then be marked missing), or False after a transient
+    failure, so the preview stays in the queue for a later run. Mirrors
+    `resolve_bandcamp_url` in main.py (embeddings worker)."""
+    for attempt in range(2):
+        try:
+            return bandcamp.resolve_stream_url(
+                preview.get("release_url"), preview.get("store_track_id")
+            )
+        except bandcamp.RateLimited as e:
+            print(f"{e}; pausing for {bandcamp.RATE_LIMIT_PAUSE_S} s", flush=True)
+            if attempt == 0:
+                time.sleep(bandcamp.RATE_LIMIT_PAUSE_S)
+        except requests.RequestException as e:
+            print(f"Resolving Bandcamp stream for preview {preview.get('preview_id')} failed: {e}")
+            return False
+    return False
 
 
 def run_server_side_scoring(reason):
@@ -116,7 +189,7 @@ def run_server_side_scoring(reason):
     endpoint = f"{get_api_url()}/admin/exact-match/audio-samples/matches"
     print(f"[scoring] {reason} — POSTing {endpoint} (server scores every sample with fingerprints)")
     try:
-        res = requests.post(endpoint, headers=auth_header(), json={})
+        res = requests.post(endpoint, headers=auth_header(), json={}, timeout=600)
     except Exception as e:
         print(f"[scoring] Could not reach scoring endpoint: {e}. Skipping scoring pass.")
         return (0, 0)
@@ -194,20 +267,89 @@ def _tally_and_score(completed_results, score_after, score_fn):
     return total_uploaded
 
 
-def process_previews(batch_size, workers, score_after):
+def process_previews(batch_size, workers, score_after, jobs_file=None):
     """Fetch one batch of previews and fingerprint them in parallel.
 
     Splits the fetched batch into at most `workers` sub-batches and runs each
     in its own process (isolated Panako cache) via a `ProcessPoolExecutor`.
     Tallies successful uploads as sub-batches complete and fires cumulative
     server-side scoring. Returns the process exit code (2 = empty queue, so
-    the `analyse_all.sh` loop can stop; 0 = work done)."""
-    previews_to_process = get_next_previews_to_fingerprint(batch_size=batch_size)
-    print(f"Got {len(previews_to_process)} previews")
+    the `analyse_all.sh` loop can stop; 0 = work done).
+
+    `jobs_file` names a JSON file with the batch to process instead of the
+    without-fingerprint queue: a list of {preview_id, url?, store_track_id?,
+    release_url?} objects, the same shape the queue endpoint serves. Used to
+    feed Bandcamp previews (whose URLs the deployed endpoint doesn't serve)
+    from a direct DB export."""
+    # Over-fetch by the skiplist size: skiplisted previews can occupy at most
+    # len(skiplist) slots of the response, so this still yields a full batch
+    # of fingerprintable previews whenever the queue has that many.
+    skiplist = load_zero_fp_skiplist()
+    if jobs_file:
+        with open(jobs_file) as f:
+            fetched = json.load(f)
+        previews_to_process = [
+            p for p in fetched
+            if str(p.get('preview_id') or p.get('id')) not in skiplist
+        ]
+    else:
+        fetched = get_next_previews_to_fingerprint(batch_size=batch_size + len(skiplist))
+        previews_to_process = [
+            p for p in fetched
+            if str(p.get('preview_id') or p.get('id')) not in skiplist
+        ][:batch_size]
+    skipped = len(fetched) - len(previews_to_process)
+    print(f"Got {len(previews_to_process)} previews" +
+          (f" ({skipped} skiplisted/over-fetched filtered out)" if skipped else ""))
 
     if len(previews_to_process) == 0:
+        if jobs_file and skipped:
+            # The jobs file HAD previews but every one was skiplisted — the
+            # queue is not empty, the export just served only known
+            # zero-fingerprint previews (seen 2026-10-17). rc=2 here would
+            # make the driver loop think it drained; back off instead.
+            print("All jobs skiplisted; not an empty queue")
+            return 1
         print("No previews to process")
         return 2
+
+    # Bandcamp previews come without a stored URL (their stream URLs expire);
+    # resolve them here, sequentially — bandcamp.py's rate limiter and
+    # per-release cache are per-process state, so resolution must not move
+    # into the worker pool. Previews Bandcamp no longer streams are marked
+    # missing; transient failures stay queued for a later run.
+    resolved_jobs = []
+    gone_ids = []
+    deferred = 0
+    for p in previews_to_process:
+        pid = p.get('preview_id') or p.get('id')
+        if p.get('url'):
+            resolved_jobs.append(p)
+            continue
+        if not p.get('release_url'):
+            deferred += 1
+            continue
+        stream_url = resolve_bandcamp_url(p)
+        if stream_url:
+            resolved_jobs.append({**p, 'url': stream_url, 'filename': f"{pid}.mp3"})
+        elif stream_url is None:
+            gone_ids.append(pid)
+        else:
+            deferred += 1
+    if gone_ids:
+        try:
+            mark_previews_missing(gone_ids)
+            print(f"Marked {len(gone_ids)} unstreamable preview(s) missing: {gone_ids}")
+        except Exception as e:  # noqa: BLE001
+            print(f"Could not mark previews missing ({e}); they will be refetched")
+    if deferred:
+        print(f"{deferred} preview(s) deferred to a later run (unresolved URL)")
+    previews_to_process = resolved_jobs
+
+    if len(previews_to_process) == 0:
+        # Progress was still made if something was marked missing; otherwise
+        # exit non-zero so the driver loop backs off instead of spinning.
+        return 0 if gone_ids else 1
 
     jobs = [
         {
@@ -247,6 +389,16 @@ def process_previews(batch_size, workers, score_after):
                 for r in sub_results:
                     if r['error']:
                         print(f"    preview {r['id']} failed: {r['error']}")
+                zero_fp_ids = [
+                    r['id'] for r in sub_results
+                    if r['error'] is None and r.get('fp_count') == 0
+                ]
+                if zero_fp_ids:
+                    append_zero_fp_skiplist(zero_fp_ids)
+                    print(
+                        f"    skiplisted {len(zero_fp_ids)} zero-fingerprint "
+                        f"preview(s): {zero_fp_ids}"
+                    )
                 yield sub_results
 
     def _score(cumulative_threshold):
@@ -257,6 +409,13 @@ def process_previews(batch_size, workers, score_after):
 
     total = _tally_and_score(_completed_results(), score_after, _score)
     print(f"Fingerprinted {total} previews successfully this run")
+    if total == 0:
+        # Every preview in the batch failed (e.g. a broken java runtime makes
+        # `panako store` fail instantly). Returning 0 here made the driver
+        # loop refetch and refail the same batch forever with no visible
+        # error; a non-zero exit lets the loop back off and the operator see.
+        print("All previews in this batch failed - exiting non-zero so the driver loop backs off")
+        return 1
     return 0
 
 
@@ -273,6 +432,11 @@ if __name__ == '__main__':
                          "the whole fetched batch in a single process (still the "
                          "parallel code path, not a serial per-file fallback). "
                          "Ignored for --audio-samples.")
+    ap.add_argument("--jobs-file", type=str, default=None,
+                    help="When --previews: read the batch from this JSON file (a list of "
+                         "{preview_id, url?, store_track_id?, release_url?} objects) instead "
+                         "of the without-fingerprint queue. Used to feed Bandcamp previews "
+                         "from a direct DB export; see drain_bandcamp.sh.")
     ap.add_argument("--score-after", type=int, default=1000,
                     help="When --previews: after every N successfully fingerprinted previews within "
                          "this invocation, pause and run scoring across all samples. 0 disables. "
@@ -355,9 +519,10 @@ if __name__ == '__main__':
                 batch_size=args.batch_size,
                 workers=args.workers,
                 score_after=args.score_after,
+                jobs_file=args.jobs_file,
             )
-            if rc == 2:
-                sys.exit(2)
+            if rc != 0:
+                sys.exit(rc)
 
         print("Processing completed successfully")
     finally:

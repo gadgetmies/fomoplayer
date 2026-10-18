@@ -262,7 +262,7 @@ const bulkScoreSamplesHandler =
 
     const matchThreshold =
       body?.threshold === undefined ? cfg.sampleMatchDefaultThreshold : parseFloat(body.threshold)
-    const bucketSeconds = cfg.sampleMatchBucketSeconds ?? 0.05
+    const bucketSeconds = cfg.sampleMatchBucketSeconds ?? 0.5
 
     let sampleIds
     try {

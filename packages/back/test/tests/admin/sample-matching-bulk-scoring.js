@@ -241,7 +241,7 @@ test({
         `)
         assert.strictEqual(rows.length, targetResult.match_count)
         const config = require('../../../config.js')
-        const expectedBucket = config.sampleMatchBucketSeconds ?? 0.05
+        const expectedBucket = config.sampleMatchBucketSeconds ?? 0.5
         for (const row of rows) {
           assert.strictEqual(parseFloat(row.threshold), TEST_THRESHOLD)
           assert.strictEqual(parseFloat(row.bucket_seconds), expectedBucket)

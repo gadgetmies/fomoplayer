@@ -75,7 +75,7 @@ against real production samples?"
 
 ```
 --thresholds 0.005,0.008,0.01,0.02,0.05
---bucket-seconds 0.05,0.1
+--bucket-seconds 0.05,0.1,0.5
 --distractors 20
 --seed 42
 ```
@@ -84,8 +84,9 @@ The middle threshold (`0.008`) is the current production
 `SAMPLE_MATCH_DEFAULT_THRESHOLD` (see `analyser/README.md` for the
 2026-05-24 incident write-up). The other four thresholds bracket it at
 roughly log spacing so a single run shows sensitivity in both
-directions. Bucket sizes 0.05 / 0.1 cover prod's default (0.05) and a
-looser variant that absorbs more Δt drift.
+directions. Bucket sizes 0.05 / 0.1 / 0.5 cover the historical default
+(0.05), a looser variant, and prod's current default (0.5) — see the
+2026-10-11 note in `analyser/README.md` for why 0.5 won.
 
 Defaults are overridable on the CLI; the sweep records the values used
 in every CSV row.
