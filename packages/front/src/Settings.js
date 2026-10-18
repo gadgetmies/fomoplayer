@@ -158,7 +158,6 @@ class Settings extends Component {
       audioSamples: [],
       uploadingAudioSample: false,
       deletingAudioSample: null,
-      playingAudioSample: null,
     }
 
     this.markHeardButton.bind(this)
@@ -734,7 +733,11 @@ class Settings extends Component {
   render() {
     const spotifyAuthorization = this.state.authorizations?.find(R.propEq('Spotify', 'store_name'))
     return (
-      <div className="page-container scroll-container" style={{ paddingBottom: 16, ...this.props.style }}>
+      <div
+        className="page-container scroll-container"
+        // Room for the docked player bar at the bottom of the viewport
+        style={{ paddingBottom: this.props.dockedPlayerVisible ? 96 : 16, ...this.props.style }}
+      >
         <SettingsHelp
           active={this.state.helpActive}
           onActiveChanged={(active) => this.setState({ helpActive: active })}
@@ -1577,34 +1580,22 @@ class Settings extends Component {
               {this.state.audioSamples.length > 0 ? (
                 <ul className="no-style-list follow-list">
                   {this.state.audioSamples.map((sample) => {
-                    const isPlaying = this.state.playingAudioSample === sample.id
+                    // Samples play through the app player, so a sample and a track never sound together
+                    const isPlaying = this.props.playingTrackId === `sample-${sample.id}`
                     return (
                       <li key={sample.id} style={{ marginBottom: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                           <span className={'button pill pill-button'}>
                             <span className={'pill-button-contents'}>
                               <button
+                                className="audio-sample-play"
+                                aria-current={isPlaying ? 'true' : undefined}
+                                aria-label={`Play ${sample.filename || `audio sample ${sample.id}`}`}
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  const audioId = `audio-${sample.id}`
-                                  const audio = document.getElementById(audioId)
-                                  if (audio) {
-                                    if (isPlaying) {
-                                      audio.pause()
-                                      this.setState({ playingAudioSample: null })
-                                    } else {
-                                      this.state.audioSamples.forEach((s) => {
-                                        const otherAudio = document.getElementById(`audio-${s.id}`)
-                                        if (otherAudio && s.id !== sample.id) {
-                                          otherAudio.pause()
-                                        }
-                                      })
-                                      audio.play()
-                                      this.setState({ playingAudioSample: sample.id })
-                                    }
-                                  }
+                                  this.props.onPlaySample?.(sample, this.state.audioSamples)
                                 }}
-                                title={isPlaying ? 'Pause' : 'Play'}
+                                title={isPlaying ? 'Playing in the player' : 'Play in the player'}
                                 style={{
                                   marginRight: '8px',
                                   background: 'none',
@@ -1613,7 +1604,7 @@ class Settings extends Component {
                                   color: 'inherit',
                                 }}
                               >
-                                <FontAwesomeIcon icon={isPlaying ? 'pause' : 'play'} />
+                                <FontAwesomeIcon icon={isPlaying ? 'volume-up' : 'play'} />
                               </button>
                               <span style={{ marginRight: '10px' }}>
                                 {sample.filename || `Audio Sample ${sample.id}`}{' '}
@@ -1647,13 +1638,6 @@ class Settings extends Component {
                                 disabled={this.state.deletingAudioSample === sample.id}
                                 onClick={async (e) => {
                                   e.stopPropagation()
-                                  const audio = document.getElementById(`audio-${sample.id}`)
-                                  if (audio) {
-                                    audio.pause()
-                                  }
-                                  if (this.state.playingAudioSample === sample.id) {
-                                    this.setState({ playingAudioSample: null })
-                                  }
                                   if (window.confirm('Delete this audio sample?')) {
                                     await this.deleteAudioSample(sample.id)
                                   }
@@ -1664,22 +1648,6 @@ class Settings extends Component {
                               </button>
                             </span>
                           </span>
-                          <audio
-                            id={`audio-${sample.id}`}
-                            src={sample.url}
-                            onEnded={() => {
-                              this.setState({ playingAudioSample: null })
-                            }}
-                            onPause={() => {
-                              if (this.state.playingAudioSample === sample.id) {
-                                this.setState({ playingAudioSample: null })
-                              }
-                            }}
-                            onPlay={() => {
-                              this.setState({ playingAudioSample: sample.id })
-                            }}
-                            style={{ display: 'none' }}
-                          />
                         </div>
                       </li>
                     )
