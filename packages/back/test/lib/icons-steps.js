@@ -92,8 +92,16 @@ const tourIconViews = async ({ page }) => {
   for (const tab of NOTIFICATIONS_TABS) {
     await page.goto(`/notifications/${tab}`)
     await waitForWithTimeoutMessage(
-      () => page.waitForSelector('.notifications-page', { timeout: 15000 }),
-      `Render the ${tab} notifications tab.`,
+      () =>
+        page.waitForFunction(
+          () => {
+            const notificationsPage = document.querySelector('.notifications-page')
+            return notificationsPage && !notificationsPage.textContent.includes('Loading…')
+          },
+          null,
+          { timeout: 15000 },
+        ),
+      `Render the ${tab} notifications tab once its content has loaded.`,
     )
     await assertIconsRendered(page, `notifications/${tab}`, seen)
   }
