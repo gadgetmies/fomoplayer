@@ -216,13 +216,21 @@
   }
 }
 
-/* Top bar: unread badge on the Notifications link */
+/* Top bar: unread badge on the Notifications bell. It sits on the icon so it stays visible when the top bar hides
+   the button labels. */
+.notifications_button_icon {
+  position: relative;
+  display: inline-block;
+}
+
 .notifications-badge {
+  position: absolute;
+  top: -0.6em;
+  left: 0.8em;
   background: #b40089;
   border-radius: 8px;
-  padding: 0 6px;
-  font-size: 0.7rem;
+  padding: 0 5px;
+  font-size: 0.65rem;
   font-weight: 700;
-  margin-left: 4px;
   line-height: 1.4;
 }

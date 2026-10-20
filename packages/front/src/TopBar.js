@@ -187,20 +187,20 @@ class TopBar extends Component {
           </div>
           <MenuNavButton
             to={'/notifications/activity'}
-            label={
-              <>
-                Notifications
+            label="Notifications"
+            aria-label={`Notifications${
+              this.props.unreadNotificationCount > 0 ? `, ${this.props.unreadNotificationCount} unread` : ''
+            }`}
+            icon={
+              <span className="notifications_button_icon">
+                <FontAwesomeIcon icon="bell" />
                 {this.props.unreadNotificationCount > 0 ? (
                   <span className="notifications-badge" data-testid="notifications-unread-count">
                     {this.props.unreadNotificationCount}
                   </span>
                 ) : null}
-              </>
+              </span>
             }
-            aria-label={`Notifications${
-              this.props.unreadNotificationCount > 0 ? `, ${this.props.unreadNotificationCount} unread` : ''
-            }`}
-            icon={<FontAwesomeIcon icon="bell" />}
             className={'notifications_button'}
             selected={this.props.location?.pathname?.startsWith('/notifications')}
           />
