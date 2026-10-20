@@ -77,7 +77,21 @@ const assertSubscriptionsAddAndRemove = async ({ page }) => {
     'An added search should appear under Searches.',
   )
 
-  // An artist picked from the suggestions, added with the Add button. Names match whole words, as in the top bar.
+  // An unknown artist: the popup searches straight away, then says nothing matches, and nothing can be added
+  await input.pressSequentially('artist:Nosuchartistatall', { delay: 30 })
+  const status = page.locator('[data-testid="entity-search-status"]')
+  await status.waitFor({ state: 'visible', timeout: 5000 })
+  await page.waitForFunction(
+    () => document.querySelector('[data-testid="entity-search-status"]')?.textContent.includes('No artists match'),
+    null,
+    { timeout: 10000 },
+  )
+  expect(await page.locator('.notifications-add-search_button').isDisabled()).to.equal(true)
+  await input.press('Enter')
+  expect(await page.locator('.notifications-subscription', { hasText: 'Nosuchartistatall' }).count()).to.equal(0)
+  await input.fill('')
+
+  // A known artist picked from the suggestions is subscribed to at once. Names match whole words, as in the top bar.
   await input.pressSequentially(`artist:${followedArtistName}`, { delay: 50 })
   const suggestion = page.locator('.notifications-add-search .search_genre_option', { hasText: followedArtistName })
   await waitForWithTimeoutMessage(
@@ -85,7 +99,6 @@ const assertSubscriptionsAddAndRemove = async ({ page }) => {
     `Typing artist:${followedArtistName} should suggest ${followedArtistName}.`,
   )
   await suggestion.first().click()
-  await page.locator('.notifications-add-search_button').click()
   const artist = page.locator('.notifications-subscription-group', { hasText: 'Artists' }).locator(
     '.notifications-subscription',
     { hasText: followedArtistName },

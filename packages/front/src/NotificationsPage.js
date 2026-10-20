@@ -18,7 +18,6 @@ import { groupSubscriptions } from './subscriptions'
 import { sampleAsTrack, samplesSource } from './playQueue'
 import GlobalSearchBar from './GlobalSearchBar'
 import { searchTermsToString } from './searchTerms'
-import { requestJSONwithCredentials } from './request-json-with-credentials'
 
 export const activitySource = { key: 'activity', label: 'Notifications · Activity', path: '/notifications/activity' }
 const matchesSource = (sample) => ({
@@ -87,15 +86,11 @@ class NotificationsPage extends Component {
       // Bumped to empty the search bar after a search is added (it keeps its own typed text)
       newSearchKey: 0,
       addingSearch: false,
-      genres: [],
     }
   }
 
   componentDidMount() {
     this.loadTab()
-    requestJSONwithCredentials({ path: '/genres' })
-      .then((genres) => this.setState({ genres }))
-      .catch((e) => console.error('Failed to fetch genres', e))
   }
 
   componentDidUpdate(prevProps) {
@@ -520,8 +515,13 @@ class NotificationsPage extends Component {
     return searchTermsToString([...committedTerms, ...typed])
   }
 
+  // artist: / label: typed but not yet picked from the matches; it would only be added as plain text
+  hasUnresolvedEntity(text = this.state.newSearchInput) {
+    return /(^|\s)(artist|label):(?!\d+(\s|$))/i.test(text.trim())
+  }
+
   async addSearch(text = this.newSearchText()) {
-    if (!text || !this.props.emailVerified || this.state.addingSearch) return
+    if (!text || !this.props.emailVerified || this.state.addingSearch || this.hasUnresolvedEntity(text)) return
     this.setState({ addingSearch: true })
     try {
       await this.props.onRequestNotificationUpdate(
@@ -584,17 +584,25 @@ class NotificationsPage extends Component {
             onChange={(newSearchTerms, newSearchInput) => this.setState({ newSearchTerms, newSearchInput })}
             onSearch={(committedTerms, inputValue) => this.addSearch(this.newSearchText(committedTerms, inputValue))}
             onClearSearch={() => this.setState({ newSearchTerms: [], newSearchInput: '' })}
-            placeholder="e.g. artist:Name, label:Name or genre:dnb"
+            // Picking an artist or label subscribes to it straight away, on its own
+            entityTypes={['artist', 'label']}
+            showEntitySearchStatus
+            onEntitySelect={({ type, id }) => this.addSearch(`${type}:${id}`)}
+            placeholder="Search text, or artist:Name / label:Name"
             styles="top_bar"
             className="notifications-add-search_bar"
             disabled={!this.props.emailVerified}
             loading={this.state.addingSearch}
-            genres={this.state.genres}
           />
           <button
             type="button"
             className="button button-push_button button-push_button-small button-push_button-primary notifications-add-search_button"
-            disabled={!this.props.emailVerified || this.state.addingSearch || !this.newSearchText()}
+            disabled={
+              !this.props.emailVerified ||
+              this.state.addingSearch ||
+              !this.newSearchText() ||
+              this.hasUnresolvedEntity()
+            }
             onClick={() => this.addSearch()}
           >
             Add
