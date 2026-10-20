@@ -1096,7 +1096,10 @@ class Preview extends Component {
                   <span className="button-push_button_icon">
                     <FontAwesomeIcon icon="circle-nodes" />
                   </span>{' '}
-                  <span className="button-push_button_label">Find similar</span>
+                  <span className="button-push_button_label">
+                    <span className="preview-find-similar_long">Find similar</span>
+                    <span className="preview-find-similar_short">Similar</span>
+                  </span>
                 </button>
                 {this.props.mode === 'app' && (
                   <>

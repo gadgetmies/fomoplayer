@@ -418,3 +418,19 @@
   font-size: 0.7rem;
   font-weight: 300;
 }
+
+/* "Find similar" wraps to two lines between 591 and 1139px: say "Similar" there. Below 591px the label is hidden
+   like the other action labels. */
+.preview-find-similar_short {
+  display: none;
+}
+
+@media (min-width: 591px) and (max-width: 1139px) {
+  .preview-find-similar_long {
+    display: none;
+  }
+
+  .preview-find-similar_short {
+    display: inline;
+  }
+}
