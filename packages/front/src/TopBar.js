@@ -185,25 +185,6 @@ class TopBar extends Component {
               </div>
             </Popup>
           </div>
-          <MenuNavButton
-            to={'/notifications/activity'}
-            label="Notifications"
-            aria-label={`Notifications${
-              this.props.unreadNotificationCount > 0 ? `, ${this.props.unreadNotificationCount} unread` : ''
-            }`}
-            icon={
-              <span className="notifications_button_icon">
-                <FontAwesomeIcon icon="bell" />
-                {this.props.unreadNotificationCount > 0 ? (
-                  <span className="notifications-badge" data-testid="notifications-unread-count">
-                    {this.props.unreadNotificationCount}
-                  </span>
-                ) : null}
-              </span>
-            }
-            className={'notifications_button'}
-            selected={this.props.location?.pathname?.startsWith('/notifications')}
-          />
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} className={`menu_search`}>
             <GlobalSearchBar
               key={this.props.searchBarResetCount || 0}
@@ -406,6 +387,25 @@ class TopBar extends Component {
                 selected={this.props.listState === 'admin'}
               />
             )}
+            <MenuNavButton
+              to={'/notifications/activity'}
+              label="Notifications"
+              aria-label={`Notifications${
+                this.props.unreadNotificationCount > 0 ? `, ${this.props.unreadNotificationCount} unread` : ''
+              }`}
+              icon={
+                <span className="notifications_button_icon">
+                  <FontAwesomeIcon icon="bell" />
+                  {this.props.unreadNotificationCount > 0 ? (
+                    <span className="notifications-badge" data-testid="notifications-unread-count">
+                      {this.props.unreadNotificationCount}
+                    </span>
+                  ) : null}
+                </span>
+              }
+              className={'notifications_button'}
+              selected={this.props.location?.pathname?.startsWith('/notifications')}
+            />
             <MenuNavButton
               to={'/settings/following'}
               onClick={() => {
