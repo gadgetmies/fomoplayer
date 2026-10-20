@@ -270,12 +270,9 @@
     padding: 16px;
   }
 
+  /* Even padding on both sides: the selected arrow is centred on the button, so it sits under the icon */
   .menu_right .button-top_bar_button {
-    padding-left: 16px;
-  }
-
-  .menu_right .button-top_bar_button:last-of-type {
-    padding-right: 16px;
+    padding: 16px 8px;
   }
 
   .support_menu_label {
