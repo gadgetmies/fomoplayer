@@ -62,7 +62,8 @@ The audio, fingerprints, tracklists and judging scripts are on the local DJ disk
 
 - `/Volumes/DJ/dj-set-tests/<set>/`: audio (`set.*`), `set.fps.json`, `set.tracklist.json`, `published.json`, `lookup.json` (catalogue lookup per published row), `overrides.json` (hand corrections), `judged.json`.
 - `/Volumes/DJ/dj-set-tests/scripts/`: `lookup.py`, `judge.py`, `report.py` (with `report.css`, `report-intro.html`, `report-outro.html`, `sets.json`), `loose.sh`.
-- `/Volumes/DJ/dj-set-tests/report/dj-sets-from-urls.html`: the full report, with a timeline per set, every play and every published row.
+- [`packages/back/scripts/dj-set/report/dj-sets-from-urls-2026-10-18.html`](../../packages/back/scripts/dj-set/report/dj-sets-from-urls-2026-10-18.html) (in the repo): the full report, with a timeline per set, every play and every published row, YouTube search links and links into each set at the play's position. Its working copy is `/Volumes/DJ/dj-set-tests/report/dj-sets-from-urls.html`; `scripts/make-artifact.py` turns it into the page published as a claude.ai artifact.
+- `/Volumes/DJ/dj-set-tests/meta/`: the yt-dlp metadata (with comments) and the Mixcloud tracklist response the published tracklists were taken from.
 
 To repeat a run:
 
