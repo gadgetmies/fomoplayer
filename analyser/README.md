@@ -492,7 +492,7 @@ wall clock when in doubt; it should trail by minutes, not hours.
      `-Xmx1g` — the actual cure: the very file that wedged forever
      stores in 12 s at 1 g (46k fingerprints);
    - `_preview_to_wav` caps decode length at `PREVIEW_MAX_DURATION_S`
-     (default 1200 s; env-overridable) — bounds heap use, wav disk
+     (default 900 s; env-overridable) — bounds heap use, wav disk
      footprint and upload payloads; content past the cap is
      unmatchable, which is the accepted trade-off;
    - every panako invocation goes through `_run_panako`, which runs the
