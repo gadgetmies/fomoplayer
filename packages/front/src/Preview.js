@@ -547,12 +547,21 @@ class Preview extends Component {
     }
     return (
       <section className="docked-player" aria-label="Player">
+        {/* Edge to edge, the times on its ends */}
         <div
           className="waveform_container docked-player_waveform"
           data-testid="docked-player-waveform"
           onMouseDown={(e) => this.seekFromWaveformClick(e, { totalDuration, startOffset, endPosition })}
         >
           {this.renderWaveformLayers({ waveform, toPositionPercent, shouldSkip, startOffset, endPosition, totalDuration })}
+          <span className="docked-player_time docked-player_time--position" data-testid="docked-player-time">
+            {formatTime(timelineMs)}
+          </span>
+          {totalDuration ? (
+            <span className="docked-player_time docked-player_time--duration" data-testid="docked-player-duration">
+              {formatTime(totalDuration)}
+            </span>
+          ) : null}
         </div>
         <div className="docked-player_row">
           <button
@@ -579,10 +588,6 @@ class Preview extends Component {
           >
             <FontAwesomeIcon icon="step-forward" />
           </button>
-          <span className="docked-player_time" data-testid="docked-player-time">
-            {formatTime(timelineMs)}
-            {totalDuration ? ` / ${formatTime(totalDuration)}` : ''}
-          </span>
           <div className="docked-player_info">
             <span className="docked-player_title">
               {isSample(currentTrack) ? (

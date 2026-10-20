@@ -92,8 +92,9 @@ const assertDockedWaveformSeeks = async ({ page }) => {
   const box = await waveform.boundingBox()
   expect(box.height).to.be.at.least(40)
   const timeText = () => page.locator('[data-testid="docked-player-time"]').textContent()
-  expect(await timeText()).to.match(/^\d+:\d\d \/ \d+:\d\d$/)
-  expect(await timeText()).not.to.match(/^0:00 /)
+  expect(await timeText()).to.match(/^\d+:\d\d$/)
+  expect(await timeText()).not.to.equal('0:00')
+  expect(await page.locator('[data-testid="docked-player-duration"]').textContent()).to.match(/^\d+:\d\d$/)
 
   // Click the middle of the playable part (between the dimmed edges)
   const playable = await waveform.evaluate((el) => {
