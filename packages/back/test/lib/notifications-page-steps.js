@@ -116,6 +116,12 @@ const assertSubscriptionsAddAndRemove = async ({ page }) => {
   await filterInput.press('Escape')
   await search.waitFor({ state: 'visible', timeout: 5000 })
 
+  // Left empty, the field turns back into the pill when it loses focus
+  await page.locator('.notifications-subscription-filter button', { hasText: 'Filter' }).click()
+  await filterInput.waitFor({ state: 'visible', timeout: 5000 })
+  await page.locator('.notifications-page h2').click()
+  await page.locator('.notifications-subscription-filter button', { hasText: 'Filter' }).waitFor({ timeout: 5000 })
+
   // Each pill's bell shows "subscribed" and, on hover, the bell-slash a click switches to; the click unsubscribes
   for (const item of [search, artist]) {
     const bell = item.locator('button.followed-item_bell')

@@ -668,6 +668,12 @@ class NotificationsPage extends Component {
             className="notifications-subscription-filter"
             ref={(el) => (this.subscriptionFilterContainer = el)}
             onKeyDown={(e) => e.key === 'Escape' && this.closeSubscriptionFilter()}
+            // An empty field turns back into the pill once focus leaves it (not when it moves within, e.g. to clear)
+            onBlur={(e) => {
+              if (!this.state.subscriptionFilter.trim() && !e.currentTarget.contains(e.relatedTarget)) {
+                this.closeSubscriptionFilter()
+              }
+            }}
           >
             {this.state.subscriptionFilterOpen ? (
               <SearchBar
