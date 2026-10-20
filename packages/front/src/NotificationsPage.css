@@ -230,11 +230,6 @@
   margin: 4px 0 8px;
 }
 
-.notifications-upload--disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
 .notifications-visually-hidden {
   position: absolute;
   left: -9999px;

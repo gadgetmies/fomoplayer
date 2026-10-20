@@ -290,24 +290,26 @@ class NotificationsPage extends Component {
           matches in the player above.
         </p>
         {this.props.emailVerified ? null : this.renderEmailRequired('Sample uploads')}
-        <label
-          className={`button button-push_button button-push_button-small button-push_button-primary notifications-upload${
-            this.props.emailVerified ? '' : ' notifications-upload--disabled'
-          }`}
-          aria-disabled={this.props.emailVerified ? undefined : 'true'}
+        {/* A real button, so it takes the buttons' own disabled style; it opens the hidden file input */}
+        <input
+          ref={(input) => (this.fileInput = input)}
+          type="file"
+          accept=".wav,.mp3,audio/wav,audio/mpeg"
+          style={{ display: 'none' }}
+          disabled={this.state.uploading || !this.props.emailVerified}
+          onChange={(e) => {
+            this.upload(e.target.files[0])
+            e.target.value = ''
+          }}
+        />
+        <button
+          type="button"
+          className="button button-push_button button-push_button-small button-push_button-primary notifications-upload"
+          disabled={this.state.uploading || !this.props.emailVerified}
+          onClick={() => this.fileInput?.click()}
         >
-          <input
-            type="file"
-            accept=".wav,.mp3,audio/wav,audio/mpeg"
-            style={{ display: 'none' }}
-            disabled={this.state.uploading || !this.props.emailVerified}
-            onChange={(e) => {
-              this.upload(e.target.files[0])
-              e.target.value = ''
-            }}
-          />
           <FontAwesomeIcon icon="upload" /> {this.state.uploading ? 'Uploading…' : 'Upload Audio Sample'}
-        </label>
+        </button>
         {this.state.uploadError ? (
           <p className="notifications-error" role="alert">
             {this.state.uploadError}

@@ -52,7 +52,7 @@ const assertSubscribingNeedsVerifiedEmail = async ({ page }) => {
 
   await openTab(page, 'Samples')
   await page.waitForSelector('.notifications-email-required', { state: 'visible', timeout: 5000 })
-  expect(await page.locator('.notifications-upload input[type="file"]').isDisabled()).to.equal(true)
+  expect(await page.locator('button.notifications-upload').isDisabled()).to.equal(true)
 
   await page.locator('a[href="/settings/following"]').first().click()
   const bell = page.locator('.follow-list li', { hasText: followedArtistName }).first().locator('button.followed-item_bell')
@@ -150,7 +150,7 @@ const assertFailedUploadKeepsPlaying = async ({ page }) => {
   await row.click()
   await waitForWithTimeoutMessage(() => audioIsPlaying(page), 'Clicking an Activity row should play its track.')
   await openTab(page, 'Samples')
-  await page.locator('.notifications-upload input[type="file"]').setInputFiles({
+  await page.locator('.notifications-page input[type="file"]').setInputFiles({
     name: 'failing-upload.mp3',
     mimeType: 'audio/mpeg',
     buffer: Buffer.from('not really audio'),
