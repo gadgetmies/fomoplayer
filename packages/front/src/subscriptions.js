@@ -22,3 +22,20 @@ export const entitySubscriptionText = (type, id) => `${type}:${id}`
 
 export const isSubscribed = (notifications = [], text, storeName) =>
   notifications.some((n) => n.text === text && n.storeName?.toLowerCase() === storeName?.toLowerCase())
+
+// How many subscriptions a group shows before its "Show all" button
+export const SUBSCRIPTIONS_SHOWN = 12
+
+// The part of a group to show: the subscriptions matching the filter (by name, case-insensitively), cut to `limit`
+// unless the group is expanded or a filter is set, plus the counts the heading and the "Show all" button need.
+export const visibleSubscriptions = (items = [], { filter = '', expanded = false, limit = SUBSCRIPTIONS_SHOWN } = {}) => {
+  const needle = filter.trim().toLocaleLowerCase()
+  const matching = needle ? items.filter(({ displayName }) => displayName.toLocaleLowerCase().includes(needle)) : items
+  const shown = needle || expanded ? matching : matching.slice(0, limit)
+  return {
+    shown,
+    matchingCount: matching.length,
+    totalCount: items.length,
+    canExpand: !needle && matching.length > limit,
+  }
+}

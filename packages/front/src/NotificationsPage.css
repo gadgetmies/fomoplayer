@@ -136,8 +136,7 @@
   margin-bottom: 6px;
 }
 
-.notifications-follow li,
-.notifications-subscription {
+.notifications-follow li {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -145,50 +144,50 @@
   padding: 4px 0;
 }
 
-.notifications-subscription-groups {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+/* Subscriptions as pills, like the follows in Settings › Following */
+.notifications-subscription-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  margin: 0.5em 0;
 }
 
-.notifications-subscription a {
-  color: #fff;
+.notifications-subscription .pill-button-contents {
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
-.notifications-bell {
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 4px;
-  font-size: 0.75rem;
+.notifications-subscription-name {
+  color: inherit;
+  text-decoration: none;
+}
+
+.notifications-subscription-count {
+  font-weight: 300;
+}
+
+/* "Show all" and the closed filter: outlined pills that sit with the white ones */
+.notifications-pill-toggle {
+  min-height: 36px;
+  padding: 0 14px;
+  margin: 1px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
   color: #fff;
-  cursor: pointer;
+  font-size: 0.85rem;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: transparent;
-  border: 1px solid #ccc;
+  gap: 6px;
 }
 
-.notifications-bell--on {
-  background: #b40089;
-  border: 1px solid #530059;
-  box-shadow: inset 0 -4px 0 #6e0069;
-  padding-bottom: 4px;
+.notifications-pill-toggle:hover {
+  background: #444;
 }
 
-/* "Subscribed", and on hover what a click does */
-.notifications-bell_action {
-  display: none;
-}
-
-.notifications-bell:hover .notifications-bell_state,
-.notifications-bell:focus-visible .notifications-bell_state {
-  display: none;
-}
-
-.notifications-bell:hover .notifications-bell_action,
-.notifications-bell:focus-visible .notifications-bell_action {
-  display: inline;
+.notifications-subscription-filter {
+  max-width: 20em;
+  margin: 12px 0 0;
 }
 
 .notifications-add-search {
@@ -236,8 +235,7 @@
 }
 
 @media (max-width: 768px) {
-  .notifications-similar,
-  .notifications-subscription-groups {
+  .notifications-similar {
     grid-template-columns: minmax(0, 1fr);
   }
 }

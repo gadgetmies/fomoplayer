@@ -99,22 +99,33 @@ const assertSubscriptionsAddAndRemove = async ({ page }) => {
     `Typing artist:${followedArtistName} should suggest ${followedArtistName}.`,
   )
   await suggestion.first().click()
-  const artist = page.locator('.notifications-subscription-group', { hasText: 'Artists' }).locator(
-    '.notifications-subscription',
-    { hasText: followedArtistName },
-  )
+  const artist = page.locator('[data-group="artists"] .notifications-subscription', { hasText: followedArtistName })
   await waitForWithTimeoutMessage(
     () => artist.waitFor({ state: 'visible', timeout: 10000 }),
     `${followedArtistName} should appear under Artists by name.`,
   )
 
-  // "Subscribed", which reads "Unsubscribe" on hover; clicking it removes the subscription
+  // The filter pill turns into a field; filtering hides the subscriptions that don't match
+  await page.locator('.notifications-subscription-filter button', { hasText: 'Filter' }).click()
+  const filterInput = page.locator('.notifications-subscription-filter input')
+  await filterInput.waitFor({ state: 'visible', timeout: 5000 })
+  expect(await filterInput.evaluate((el) => el === document.activeElement)).to.equal(true)
+  await filterInput.fill(followedArtistName.slice(0, 4))
+  await search.waitFor({ state: 'detached', timeout: 5000 })
+  expect(await artist.isVisible()).to.equal(true)
+  await filterInput.press('Escape')
+  await search.waitFor({ state: 'visible', timeout: 5000 })
+
+  // Each pill's bell shows "subscribed" and, on hover, the bell-slash a click switches to; the click unsubscribes
   for (const item of [search, artist]) {
-    const button = item.locator('button')
-    expect((await button.innerText()).trim()).to.equal('Subscribed')
-    await button.hover()
-    expect((await button.innerText()).trim()).to.equal('Unsubscribe')
-    await button.click()
+    const bell = item.locator('button.followed-item_bell')
+    expect(await bell.getAttribute('aria-label')).to.match(/^Unsubscribe from /)
+    const visibleIcon = () =>
+      bell.evaluate((el) => [...el.querySelectorAll('svg')].find((svg) => getComputedStyle(svg).display !== 'none')?.dataset.icon)
+    expect(await visibleIcon()).to.equal('bell')
+    await bell.hover()
+    expect(await visibleIcon()).to.equal('bell-slash')
+    await bell.click()
     await waitForWithTimeoutMessage(
       () => item.waitFor({ state: 'detached', timeout: 10000 }),
       'Unsubscribing should remove the subscription.',

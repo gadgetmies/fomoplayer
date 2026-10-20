@@ -14,7 +14,9 @@ import {
 import { requestWithCredentials } from './request-json-with-credentials'
 import { namesToString } from './trackFunctions'
 import { formatSeconds, formatTempo, matchedAtInTrack } from './abTiming'
-import { groupSubscriptions } from './subscriptions'
+import { groupSubscriptions, visibleSubscriptions } from './subscriptions'
+import SearchBar from './SearchBar'
+import './FollowedItem.css'
 import { sampleAsTrack, samplesSource } from './playQueue'
 import GlobalSearchBar from './GlobalSearchBar'
 import { searchTermsToString } from './searchTerms'
@@ -86,16 +88,28 @@ class NotificationsPage extends Component {
       // Bumped to empty the search bar after a search is added (it keeps its own typed text)
       newSearchKey: 0,
       addingSearch: false,
+      subscriptionFilterOpen: false,
+      subscriptionFilter: '',
+      expandedGroups: {},
     }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.tab !== this.props.tab || (!prevProps.visible && this.props.visible)) this.loadTab()
+    // The filter pill turned into its field: type straight away
+    if (this.state.subscriptionFilterOpen && !prevState.subscriptionFilterOpen) {
+      this.subscriptionFilterContainer?.querySelector('input')?.focus()
+    }
+  }
+
+  closeSubscriptionFilter() {
+    this.setState({ subscriptionFilterOpen: false, subscriptionFilter: '' })
   }
 
   componentDidMount() {
     this.loadTab()
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.tab !== this.props.tab || (!prevProps.visible && this.props.visible)) this.loadTab()
-  }
 
   async loadTab() {
     if (!this.props.visible) return
@@ -535,40 +549,80 @@ class NotificationsPage extends Component {
 
   renderSubscriptions() {
     const groups = groupSubscriptions(this.props.notifications)
-    const group = (title, items, emptyText) => (
-      <div className="notifications-subscription-group" key={title}>
-        <h4 className="notifications-section-title">{title}</h4>
-        {items.length === 0 ? (
-          <p className="notifications-hint">{emptyText}</p>
-        ) : (
-          <ul className="no-style-list">
-            {items.map((item) => (
-              <li key={item.text} className="notifications-subscription">
-                <NavLink to={`/search/?q=${encodeURIComponent(item.text)}`}>{item.displayName}</NavLink>
-                <button
-                  type="button"
-                  className="notifications-bell notifications-bell--on"
-                  aria-pressed="true"
-                  aria-label={`Unsubscribe from ${item.displayName}`}
-                  onClick={() =>
-                    this.props.onRequestNotificationUpdate(
-                      item.storeNames.map((storeName) => ({ op: 'remove', storeName, text: item.text })),
-                    )
-                  }
-                >
-                  <span className="notifications-bell_state">
-                    <FontAwesomeIcon icon="bell" /> Subscribed
+    const filter = this.state.subscriptionFilter
+    // A group of subscriptions as pills, like the follows in Settings › Following, with Show all past the first ones
+    const group = (key, title, items, emptyText) => {
+      const { shown, matchingCount, totalCount, canExpand } = visibleSubscriptions(items, {
+        filter,
+        expanded: this.state.expandedGroups[key],
+      })
+      if (filter && matchingCount === 0) return null
+      return (
+        <section className="notifications-subscription-group" key={key} data-group={key}>
+          <h4 className="notifications-section-title">
+            {title}{' '}
+            <span className="notifications-subscription-count">
+              {filter ? `${matchingCount} of ${totalCount}` : totalCount}
+            </span>
+          </h4>
+          {items.length === 0 ? (
+            <p className="notifications-hint">{emptyText}</p>
+          ) : (
+            <ul className="no-style-list notifications-subscription-pills">
+              {shown.map((item) => (
+                <li key={item.text} className="notifications-subscription">
+                  <span className="button pill pill-button">
+                    <span className="pill-button-contents">
+                      <NavLink to={`/search/?q=${encodeURIComponent(item.text)}`} className="notifications-subscription-name">
+                        {item.displayName}
+                      </NavLink>{' '}
+                      {/* Like the bell on a followed artist: shows the state, and on hover the one a click switches to */}
+                      <button
+                        type="button"
+                        className="followed-item_bell followed-item_bell--on"
+                        aria-pressed="true"
+                        aria-label={`Unsubscribe from ${item.displayName}`}
+                        title={`Unsubscribe from ${item.displayName}`}
+                        onClick={() =>
+                          this.props.onRequestNotificationUpdate(
+                            item.storeNames.map((storeName) => ({ op: 'remove', storeName, text: item.text })),
+                          )
+                        }
+                      >
+                        <FontAwesomeIcon className="followed-item_bell-current" icon="bell" />
+                        <FontAwesomeIcon className="followed-item_bell-next" icon="bell-slash" />
+                      </button>
+                    </span>
                   </span>
-                  <span className="notifications-bell_action">
-                    <FontAwesomeIcon icon="bell-slash" /> Unsubscribe
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    )
+                </li>
+              ))}
+              {canExpand || this.state.expandedGroups[key] ? (
+                <li>
+                  <button
+                    type="button"
+                    className="notifications-pill-toggle"
+                    aria-expanded={this.state.expandedGroups[key] ? 'true' : 'false'}
+                    onClick={() =>
+                      this.setState({
+                        expandedGroups: { ...this.state.expandedGroups, [key]: !this.state.expandedGroups[key] },
+                      })
+                    }
+                  >
+                    {this.state.expandedGroups[key] ? 'Show fewer' : `Show all ${matchingCount}`}
+                  </button>
+                </li>
+              ) : null}
+            </ul>
+          )}
+        </section>
+      )
+    }
+    const hasSubscriptions = groups.searches.length + groups.artists.length + groups.labels.length > 0
+    const visibleGroups = [
+      group('searches', 'Searches', groups.searches, 'No search subscriptions.'),
+      group('artists', 'Artists', groups.artists, 'Use the bell on a followed artist in Settings › Following.'),
+      group('labels', 'Labels', groups.labels, 'Use the bell on a followed label in Settings › Following.'),
+    ]
     return (
       <>
         <p className="notifications-hint">
@@ -608,10 +662,37 @@ class NotificationsPage extends Component {
             Add
           </button>
         </div>
+        {/* The filter starts as a pill and turns into a field like the one above when clicked */}
+        {hasSubscriptions ? (
+          <div
+            className="notifications-subscription-filter"
+            ref={(el) => (this.subscriptionFilterContainer = el)}
+            onKeyDown={(e) => e.key === 'Escape' && this.closeSubscriptionFilter()}
+          >
+            {this.state.subscriptionFilterOpen ? (
+              <SearchBar
+                styles="top_bar"
+                placeholder="Filter subscriptions"
+                value={filter}
+                onChange={({ target: { value } }) => this.setState({ subscriptionFilter: value })}
+                onClearSearch={() => this.closeSubscriptionFilter()}
+              />
+            ) : (
+              <button
+                type="button"
+                className="notifications-pill-toggle"
+                onClick={() => this.setState({ subscriptionFilterOpen: true })}
+              >
+                <FontAwesomeIcon icon="magnifying-glass" /> Filter
+              </button>
+            )}
+          </div>
+        ) : null}
         <div className="notifications-subscription-groups">
-          {group('Searches', groups.searches, 'No search subscriptions.')}
-          {group('Artists', groups.artists, 'Use the bell on a followed artist in Settings › Following.')}
-          {group('Labels', groups.labels, 'Use the bell on a followed label in Settings › Following.')}
+          {visibleGroups}
+          {filter && visibleGroups.every((g) => g === null) ? (
+            <p className="notifications-empty">No subscriptions match “{filter}”.</p>
+          ) : null}
         </div>
       </>
     )
