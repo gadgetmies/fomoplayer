@@ -10,6 +10,7 @@ const {
   assertPlayingFromRecent,
   assertDockedPlayerKeepsPlaying,
   assertDockedNextFollowsSource,
+  assertDockedWaveformSeeks,
   assertDockedPauseStopsAudio,
   assertPlayingFromSearchSwitchesSource,
 } = require('../lib/one-player-steps')
@@ -26,6 +27,7 @@ test({
   'the player says the track plays from Discover · Recent': assertPlayingFromRecent,
   'Settings shows the docked player and playback continues': assertDockedPlayerKeepsPlaying,
   'next on the docked player follows Discover · Recent': assertDockedNextFollowsSource,
+  'the docked waveform shows the position and seeks': assertDockedWaveformSeeks,
   'the docked player pauses and resumes playback': assertDockedPauseStopsAudio,
   'playing from a search switches the source': assertPlayingFromSearchSwitchesSource,
 })

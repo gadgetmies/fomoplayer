@@ -475,6 +475,53 @@ class Preview extends Component {
     )
   }
 
+  // Seeks to the clicked spot of a waveform that spans the timeline (the panel's waveform or the docked bar's).
+  seekFromWaveformClick(e, { totalDuration, startOffset, endPosition }) {
+    if (e.button !== 0) return
+    const boundingRect = e.currentTarget.getBoundingClientRect()
+    const trackPositionPercent = (e.clientX - boundingRect.left) / e.currentTarget.clientWidth
+    const clickedPosition = totalDuration * trackPositionPercent
+    if (clickedPosition > endPosition || clickedPosition < startOffset) {
+      if (this.getShouldSkip()) {
+        this.setState({ preferFullTracks: true })
+      } else {
+        return
+      }
+    }
+    const previewPositionInSeconds = (clickedPosition - (this.getShouldSkip() ? 0 : startOffset)) / 1000
+    this.getPlayer().currentTime = previewPositionInSeconds
+  }
+
+  // The waveform with the played part highlighted and the parts outside the preview dimmed, sized by its container
+  renderWaveformLayers({ waveform, toPositionPercent, shouldSkip, startOffset, endPosition, totalDuration }) {
+    const edgeOverlayClass = shouldSkip ? 'waveform_clip-edge-overlay-skip' : 'waveform_clip-edge-overlay'
+    return (
+      <>
+        {waveform ? (
+          <img
+            alt="waveform"
+            src={waveform}
+            className="waveform waveform-background"
+            onDragStart={(e) => e.preventDefault()}
+          />
+        ) : (
+          <div className="waveform waveform-background" />
+        )}
+        <div
+          className="waveform waveform-position"
+          style={{
+            WebkitClipPath: `polygon(${toPositionPercent(0)}% 0, ${toPositionPercent(
+              this.state.position,
+            )}% 0, ${toPositionPercent(this.state.position)}% 100%, ${toPositionPercent(0)}% 100%)`,
+            WebkitMaskImage: waveform ? `url(${waveform})` : 'none',
+          }}
+        />
+        <div className={edgeOverlayClass} style={{ width: `${toPositionPercent(shouldSkip ? startOffset : 0)}%`, left: 0 }} />
+        <div className={edgeOverlayClass} style={{ width: `${100 - (100 * endPosition) / totalDuration}%`, right: 0 }} />
+      </>
+    )
+  }
+
   renderPlayingFrom() {
     const source = this.props.playingFrom
     if (!source) return null
@@ -490,18 +537,22 @@ class Preview extends Component {
 
   // The player on pages without a track list (Settings): a bar docked to the bottom of the viewport. The full panel,
   // with the one audio element, stays mounted but hidden so playback continues.
-  renderDockedBar({ totalDuration, startOffset, shouldSkip }) {
+  renderDockedBar({ waveform, totalDuration, startOffset, endPosition, shouldSkip, toPositionPercent }) {
     const currentTrack = this.props.currentTrack
-    const playedMs = this.state.position - (shouldSkip ? 0 : startOffset || 0)
-    const progressPercent = totalDuration ? Math.min(100, Math.max(0, (100 * this.state.position) / totalDuration)) : 0
+    // position is the audio element's time; without skipping, the preview starts startOffset into the timeline
+    const timelineMs = this.state.position + (shouldSkip ? 0 : startOffset || 0)
     const formatTime = (ms) => {
       const seconds = Math.max(0, Math.floor(ms / 1000))
       return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
     }
     return (
       <section className="docked-player" aria-label="Player">
-        <div className="docked-player_progress" aria-hidden="true">
-          <div className="docked-player_progress-value" style={{ width: `${progressPercent}%` }} />
+        <div
+          className="waveform_container docked-player_waveform"
+          data-testid="docked-player-waveform"
+          onMouseDown={(e) => this.seekFromWaveformClick(e, { totalDuration, startOffset, endPosition })}
+        >
+          {this.renderWaveformLayers({ waveform, toPositionPercent, shouldSkip, startOffset, endPosition, totalDuration })}
         </div>
         <div className="docked-player_row">
           <button
@@ -528,19 +579,24 @@ class Preview extends Component {
           >
             <FontAwesomeIcon icon="step-forward" />
           </button>
-          <span className="docked-player_time">{formatTime(playedMs)}</span>
-          <span className="docked-player_title">
-            {isSample(currentTrack) ? (
-              <>Your sample - {currentTrack.title}</>
-            ) : (
-              <>
-                <b>{namesToString(R.uniq([currentTrack.artists, currentTrack.remixers].flat()))}</b> -{' '}
-                {currentTrack.title}
-                {currentTrack.version ? ` (${currentTrack.version})` : ''}
-              </>
-            )}
+          <span className="docked-player_time" data-testid="docked-player-time">
+            {formatTime(timelineMs)}
+            {totalDuration ? ` / ${formatTime(totalDuration)}` : ''}
           </span>
-          {this.renderPlayingFrom()}
+          <div className="docked-player_info">
+            <span className="docked-player_title">
+              {isSample(currentTrack) ? (
+                <>Your sample - {currentTrack.title}</>
+              ) : (
+                <>
+                  <b>{namesToString(R.uniq([currentTrack.artists, currentTrack.remixers].flat()))}</b> -{' '}
+                  {currentTrack.title}
+                  {currentTrack.version ? ` (${currentTrack.version})` : ''}
+                </>
+              )}
+            </span>
+            {this.renderPlayingFrom()}
+          </div>
         </div>
       </section>
     )
@@ -603,7 +659,6 @@ class Preview extends Component {
         ['bandcamp', ...[spotifyAuthorization ? ['spotify'] : []]].includes(store) && this.props.stores.includes(store),
     )
 
-    const edgeOverlayClass = shouldSkip ? 'waveform_clip-edge-overlay-skip' : 'waveform_clip-edge-overlay'
     const trackId = currentTrack?.id
     const currentCartId = this.props.listState === 'carts' ? this.props.selectedCartId : this.props.defaultCartId
     const inCurrentCart = this.props.inCurrentCart
@@ -623,7 +678,9 @@ class Preview extends Component {
         className={`preview${this.props.docked ? ' preview--docked' : ''}`}
         style={{ borderBottom: '1px solid black' }}
       >
-        {this.props.docked && currentTrack ? this.renderDockedBar({ totalDuration, startOffset, shouldSkip }) : null}
+        {this.props.docked && currentTrack
+          ? this.renderDockedBar({ waveform, totalDuration, startOffset, endPosition, shouldSkip, toPositionPercent })
+          : null}
         <div className="preview_details_wrapper">
           {currentTrack ? (
             <>
@@ -776,55 +833,16 @@ class Preview extends Component {
               <div
                 className="waveform_container"
                 style={{ flex: 5, position: 'relative' }}
-                onMouseDown={(e) => {
-                  if (e.button !== 0) return
-                  const boundingRect = e.currentTarget.getBoundingClientRect()
-                  const trackPositionPercent = (e.clientX - boundingRect.left) / e.currentTarget.clientWidth
-                  const clickedPosition = totalDuration * trackPositionPercent
-                  if (clickedPosition > endPosition || clickedPosition < startOffset) {
-                    if (this.getShouldSkip()) {
-                      this.setState({ preferFullTracks: true })
-                    } else {
-                      return
-                    }
-                  }
-                  const previewPositionInSeconds = (clickedPosition - (this.getShouldSkip() ? 0 : startOffset)) / 1000
-                  this.getPlayer().currentTime = previewPositionInSeconds
-                }}
+                onMouseDown={(e) => this.seekFromWaveformClick(e, { totalDuration, startOffset, endPosition })}
               >
-                {waveform ? (
-                  <img
-                    alt="waveform"
-                    src={waveform}
-                    className="waveform waveform-background"
-                    onDragStart={(e) => e.preventDefault()}
-                  />
-                ) : (
-                  <div className="waveform waveform-background" />
-                )}
-                <div
-                  className="waveform waveform-position"
-                  style={{
-                    WebkitClipPath: `polygon(${toPositionPercent(0)}% 0, ${toPositionPercent(
-                      this.state.position,
-                    )}% 0, ${toPositionPercent(this.state.position)}% 100%, ${toPositionPercent(0)}% 100%)`,
-                    WebkitMaskImage: waveform ? `url(${waveform})` : 'none',
-                  }}
-                />
-                <div
-                  className={edgeOverlayClass}
-                  style={{
-                    width: `${toPositionPercent(shouldSkip ? startOffset : 0)}%`,
-                    left: 0,
-                  }}
-                />
-                <div
-                  className={edgeOverlayClass}
-                  style={{
-                    width: `${100 - (100 * endPosition) / totalDuration}%`,
-                    right: 0,
-                  }}
-                />
+                {this.renderWaveformLayers({
+                  waveform,
+                  toPositionPercent,
+                  shouldSkip,
+                  startOffset,
+                  endPosition,
+                  totalDuration,
+                })}
                 {this.state.loading ? (
                   <div onMouseDown={(e) => e.stopPropagation()} className="loading-overlay">
                     <Spinner size="large" />

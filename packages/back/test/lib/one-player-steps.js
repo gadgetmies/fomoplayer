@@ -85,6 +85,35 @@ const assertDockedNextFollowsSource = async ({ page, order }) => {
   await waitForWithTimeoutMessage(() => audioIsPlaying(page), 'The next track should start playing.')
 }
 
+// The docked bar's waveform shows the position in the track and seeks where it is clicked
+const assertDockedWaveformSeeks = async ({ page }) => {
+  const waveform = page.locator('[data-testid="docked-player-waveform"]')
+  await waveform.waitFor({ state: 'visible', timeout: 5000 })
+  const box = await waveform.boundingBox()
+  expect(box.height).to.be.at.least(40)
+  const timeText = () => page.locator('[data-testid="docked-player-time"]').textContent()
+  expect(await timeText()).to.match(/^\d+:\d\d \/ \d+:\d\d$/)
+  expect(await timeText()).not.to.match(/^0:00 /)
+
+  // Click the middle of the playable part (between the dimmed edges)
+  const playable = await waveform.evaluate((el) => {
+    const [left, right] = [...el.querySelectorAll('[class^="waveform_clip-edge-overlay"]')].map(
+      (overlay) => overlay.getBoundingClientRect().width / el.clientWidth,
+    )
+    return { start: left, end: 1 - right }
+  })
+  const before = await page.$eval('audio', (audio) => audio.currentTime)
+  const fraction = playable.start + (playable.end - playable.start) * 0.8
+  await page.mouse.click(box.x + box.width * fraction, box.y + box.height / 2)
+  await waitForWithTimeoutMessage(
+    () =>
+      page.waitForFunction((previous) => document.querySelector('audio').currentTime > previous + 5, before, {
+        timeout: 5000,
+      }),
+    'Clicking the docked waveform should seek forward.',
+  )
+}
+
 const assertDockedPauseStopsAudio = async ({ page }) => {
   await page.locator('.docked-player button[aria-label="Pause"]').click()
   await page.waitForFunction(() => document.querySelector('audio')?.paused === true, null, { timeout: 5000 })
@@ -124,6 +153,7 @@ module.exports = {
   assertPlayingFromRecent,
   assertDockedPlayerKeepsPlaying,
   assertDockedNextFollowsSource,
+  assertDockedWaveformSeeks,
   assertDockedPauseStopsAudio,
   assertPlayingFromSearchSwitchesSource,
 }

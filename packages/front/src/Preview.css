@@ -295,25 +295,26 @@
 
 .preview--docked {
   border-bottom: 0 !important;
+  flex-direction: column;
 }
 
 .docked-player {
   background: var(--top-bar-background-color);
   border-top: 1px solid #000;
-  padding: 6px 12px 8px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.docked-player_progress {
-  height: 3px;
-  background: #555;
-}
-
-.docked-player_progress-value {
-  height: 3px;
-  background: linear-gradient(to right, #5996e4, #b69afd);
+/* Tall enough to make out the drops and breaks; click to seek */
+.docked-player_waveform {
+  position: relative;
+  height: 56px;
+  min-height: 56px;
+  cursor: pointer;
 }
 
 .docked-player_row {
@@ -333,10 +334,18 @@
   font-variant-numeric: tabular-nums;
   color: #aaa;
   font-size: 75%;
+  white-space: nowrap;
+}
+
+/* Artists and title, with "Playing from" below them */
+.docked-player_info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .docked-player_title {
-  flex: 1 1 auto;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -344,8 +353,9 @@
 }
 
 @media (max-width: 590px) {
-  .docked-player_row .preview_playing-from {
-    display: none;
+  .docked-player_waveform {
+    height: 40px;
+    min-height: 40px;
   }
 }
 
