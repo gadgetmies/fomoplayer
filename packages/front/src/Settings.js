@@ -313,9 +313,12 @@ class Settings extends Component {
     if (entityId === undefined || entityId === null || !this.props.onRequestNotificationUpdate) return {}
     const text = entitySubscriptionText(type, entityId)
     const notifyOn = isSubscribed(this.props.notifications, text, storeName)
+    // New subscriptions need a verified email; an existing one can still be turned off
+    const emailVerified = Boolean(this.props.userSettings?.emailVerified)
     return {
       notifyOn,
-      notifyDisabled: this.state.updatingNotificationBell === text,
+      notifyDisabled: this.state.updatingNotificationBell === text || (!notifyOn && !emailVerified),
+      notifyDisabledReason: !notifyOn && !emailVerified ? 'Verify your email in Settings › Email to subscribe' : undefined,
       onNotifyClick: async (e) => {
         e.stopPropagation()
         this.setState({ updatingNotificationBell: text })

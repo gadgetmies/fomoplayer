@@ -42,22 +42,71 @@ const openTab = async (page, label) => {
   await page.waitForSelector(`.notifications-tabs [aria-selected="true"]:has-text("${label}")`, { timeout: 5000 })
 }
 
+// Without a verified email nothing can be subscribed: the search, Add, upload and the Following bells are disabled
+const assertSubscribingNeedsVerifiedEmail = async ({ page }) => {
+  await page.goto('/notifications/subscriptions')
+  await page.waitForSelector('.notifications-add-search', { state: 'visible', timeout: 10000 })
+  await page.waitForSelector('.notifications-email-required', { state: 'visible', timeout: 5000 })
+  expect(await page.locator('.notifications-add-search input').isDisabled()).to.equal(true)
+  expect(await page.locator('.notifications-add-search_button').isDisabled()).to.equal(true)
+
+  await openTab(page, 'Samples')
+  await page.waitForSelector('.notifications-email-required', { state: 'visible', timeout: 5000 })
+  expect(await page.locator('.notifications-upload input[type="file"]').isDisabled()).to.equal(true)
+
+  await page.locator('a[href="/settings/following"]').first().click()
+  const bell = page.locator('.follow-list li', { hasText: followedArtistName }).first().locator('button.followed-item_bell')
+  await bell.waitFor({ state: 'visible', timeout: 10000 })
+  expect(await bell.isDisabled()).to.equal(true)
+  expect(await bell.getAttribute('title')).to.contain('Verify your email')
+  await page.locator('a[href="/notifications/activity"]').first().click()
+}
+
+// Adds a subscription through the search bar's suggestions, as in the top bar, then removes it
 const assertSubscriptionsAddAndRemove = async ({ page }) => {
-  await openTab(page, 'Subscriptions')
+  await page.goto('/notifications/subscriptions')
+  await page.waitForSelector('.notifications-add-search', { state: 'visible', timeout: 10000 })
   const input = page.locator('.notifications-add-search input')
+
+  // A plain text search, added with Enter
   await input.fill(DEMO_SEARCH)
-  await page.locator('.notifications-add-search button[type="submit"]').click()
-  const item = page.locator('.notifications-subscription', { hasText: DEMO_SEARCH })
+  await input.press('Enter')
+  const search = page.locator('.notifications-subscription', { hasText: DEMO_SEARCH })
   await waitForWithTimeoutMessage(
-    () => item.waitFor({ state: 'visible', timeout: 10000 }),
-    'An added search should appear under Searches with its bell on.',
+    () => search.waitFor({ state: 'visible', timeout: 10000 }),
+    'An added search should appear under Searches.',
   )
-  expect(await item.locator('button').getAttribute('aria-pressed')).to.equal('true')
-  await item.locator('button').click()
+
+  // An artist picked from the suggestions, added with the Add button. Names match whole words, as in the top bar.
+  await input.pressSequentially(`artist:${followedArtistName}`, { delay: 50 })
+  const suggestion = page.locator('.notifications-add-search .search_genre_option', { hasText: followedArtistName })
   await waitForWithTimeoutMessage(
-    () => item.waitFor({ state: 'detached', timeout: 10000 }),
-    'Turning the bell off should remove the subscription.',
+    () => suggestion.first().waitFor({ state: 'visible', timeout: 10000 }),
+    `Typing artist:${followedArtistName} should suggest ${followedArtistName}.`,
   )
+  await suggestion.first().click()
+  await page.locator('.notifications-add-search_button').click()
+  const artist = page.locator('.notifications-subscription-group', { hasText: 'Artists' }).locator(
+    '.notifications-subscription',
+    { hasText: followedArtistName },
+  )
+  await waitForWithTimeoutMessage(
+    () => artist.waitFor({ state: 'visible', timeout: 10000 }),
+    `${followedArtistName} should appear under Artists by name.`,
+  )
+
+  // "Subscribed", which reads "Unsubscribe" on hover; clicking it removes the subscription
+  for (const item of [search, artist]) {
+    const button = item.locator('button')
+    expect((await button.innerText()).trim()).to.equal('Subscribed')
+    await button.hover()
+    expect((await button.innerText()).trim()).to.equal('Unsubscribe')
+    await button.click()
+    await waitForWithTimeoutMessage(
+      () => item.waitFor({ state: 'detached', timeout: 10000 }),
+      'Unsubscribing should remove the subscription.',
+    )
+  }
 }
 
 const assertFollowingBellSubscribesArtist = async ({ page }) => {
@@ -90,6 +139,30 @@ const assertFollowingBellSubscribesArtist = async ({ page }) => {
   )
   await item.locator('button').click()
   await item.waitFor({ state: 'detached', timeout: 10000 })
+}
+
+// Local only (the preview has storage, so the upload would succeed): a failed upload shows its error inline and the
+// playing track keeps playing
+const assertFailedUploadKeepsPlaying = async ({ page }) => {
+  await page.locator('a[href="/notifications/activity"]').first().click()
+  const row = page.locator('.notifications-activity tbody tr').first()
+  await row.waitFor({ state: 'visible', timeout: 10000 })
+  await row.click()
+  await waitForWithTimeoutMessage(() => audioIsPlaying(page), 'Clicking an Activity row should play its track.')
+  await openTab(page, 'Samples')
+  await page.locator('.notifications-upload input[type="file"]').setInputFiles({
+    name: 'failing-upload.mp3',
+    mimeType: 'audio/mpeg',
+    buffer: Buffer.from('not really audio'),
+  })
+  await waitForWithTimeoutMessage(
+    () => page.waitForSelector('.notifications-error', { state: 'visible', timeout: 10000 }),
+    'A failed upload should show its error on the page.',
+  )
+  const before = await audioTime(page)
+  await page.waitForTimeout(1500)
+  expect(await page.$eval('audio', (a) => a.paused)).to.equal(false)
+  expect(await audioTime(page)).to.be.greaterThan(before)
 }
 
 const assertSettingsEmailTab = async ({ page }) => {
@@ -216,6 +289,8 @@ const assertSampleMatchPlaysAligned = async ({ page }) => {
 module.exports = {
   openNotificationsFromTopBar,
   assertActivityTabOpens,
+  assertSubscribingNeedsVerifiedEmail,
+  assertFailedUploadKeepsPlaying,
   assertSubscriptionsAddAndRemove,
   assertFollowingBellSubscribesArtist,
   assertSettingsEmailTab,

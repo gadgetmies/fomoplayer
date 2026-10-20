@@ -6,38 +6,17 @@
   overflow-y: auto;
 }
 
-.notifications-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.notifications-header h1 {
-  margin: 0;
-  font-size: 1.6rem;
+/* Heading and tab row as in Settings */
+.notifications-heading {
+  margin-top: 0;
 }
 
 .notifications-tabs {
-  display: inline-flex;
-  background: #222;
-  border-radius: 0.35rem;
-  padding: 2px;
+  margin-bottom: 12px;
 }
 
 .notifications-tab {
-  color: #fff;
-  opacity: 0.7;
-  font-size: 0.8rem;
-  padding: 12px 16px;
   text-decoration: none;
-  border-radius: 0.25rem;
-}
-
-.notifications-tab--active {
-  background: #5996e4;
-  opacity: 1;
 }
 
 .notifications-hint {
@@ -197,11 +176,63 @@
   padding-bottom: 4px;
 }
 
+/* "Subscribed", and on hover what a click does */
+.notifications-bell_action {
+  display: none;
+}
+
+.notifications-bell:hover .notifications-bell_state,
+.notifications-bell:focus-visible .notifications-bell_state {
+  display: none;
+}
+
+.notifications-bell:hover .notifications-bell_action,
+.notifications-bell:focus-visible .notifications-bell_action {
+  display: inline;
+}
+
 .notifications-add-search {
   display: flex;
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
   margin: 8px 0;
+  max-width: 640px;
+}
+
+.notifications-add-search_bar {
+  flex: 1;
+  min-width: 0;
+}
+
+/* As tall as the search bar next to it; the push button's raised bottom edge counts towards the height */
+.notifications-add-search_button {
+  margin: 0;
+  height: 34px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.notifications-add-search {
+  align-items: flex-start;
+}
+
+.notifications-email-required {
+  font-size: 0.85rem;
+  background: #222;
+  border-left: 3px solid #b40089;
+  padding: 8px 12px;
+  margin: 8px 0;
+}
+
+.notifications-error {
+  color: #ff8a8a;
+  font-size: 0.85rem;
+  margin: 4px 0 8px;
+}
+
+.notifications-upload--disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .notifications-visually-hidden {

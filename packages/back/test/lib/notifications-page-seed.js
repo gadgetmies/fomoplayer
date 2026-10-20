@@ -67,4 +67,17 @@ const seedNotificationEventsViaDb = async (userId) => {
   return { unreadCount: 3 }
 }
 
-module.exports = { seedNotificationEventsViaDb, SAMPLE_FILENAME, SAMPLE_MATCH_OFFSET_SECONDS }
+// Subscriptions and sample uploads need a verified email. Verifying needs the link from the email, so the local demo
+// sets the flag directly; teardown clears it again so later tests see the default unverified user.
+const setEmailVerifiedViaDb = async (userId, verified) => {
+  const { pg } = require('./db')
+  await pg.queryAsync(sql`
+    INSERT INTO meta_account_email
+      (meta_account_email_address, meta_account_user_id, meta_account_email_verified, meta_account_email_verification_code)
+    VALUES (${`notifications-demo-${userId}@example.com`}, ${userId}, ${verified}, uuid_generate_v4())
+    ON CONFLICT ON CONSTRAINT meta_account_email_meta_account_user_id_key
+      DO UPDATE SET meta_account_email_verified = EXCLUDED.meta_account_email_verified
+  `)
+}
+
+module.exports = { seedNotificationEventsViaDb, setEmailVerifiedViaDb, SAMPLE_FILENAME, SAMPLE_MATCH_OFFSET_SECONDS }

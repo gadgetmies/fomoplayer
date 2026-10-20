@@ -16,6 +16,9 @@ import { namesToString } from './trackFunctions'
 import { formatSeconds, formatTempo, matchedAtInTrack } from './abTiming'
 import { groupSubscriptions } from './subscriptions'
 import { sampleAsTrack, samplesSource } from './playQueue'
+import GlobalSearchBar from './GlobalSearchBar'
+import { searchTermsToString } from './searchTerms'
+import { requestJSONwithCredentials } from './request-json-with-credentials'
 
 export const activitySource = { key: 'activity', label: 'Notifications · Activity', path: '/notifications/activity' }
 const matchesSource = (sample) => ({
@@ -77,13 +80,22 @@ class NotificationsPage extends Component {
       matches: null,
       similar: null,
       uploading: false,
+      uploadError: null,
       followed: {},
-      newSearch: '',
+      newSearchTerms: [],
+      newSearchInput: '',
+      // Bumped to empty the search bar after a search is added (it keeps its own typed text)
+      newSearchKey: 0,
+      addingSearch: false,
+      genres: [],
     }
   }
 
   componentDidMount() {
     this.loadTab()
+    requestJSONwithCredentials({ path: '/genres' })
+      .then((genres) => this.setState({ genres }))
+      .catch((e) => console.error('Failed to fetch genres', e))
   }
 
   componentDidUpdate(prevProps) {
@@ -150,18 +162,28 @@ class NotificationsPage extends Component {
     this.props.onPlay(sampleAsTrack(sample), { source: samplesSource, tracks: this.state.samples.map(sampleAsTrack) })
   }
 
+  // The error is shown inline: a blocking alert() paused the playing track in Safari.
   async upload(file) {
     if (!file) return
-    this.setState({ uploading: true })
+    this.setState({ uploading: true, uploadError: null })
     try {
       await uploadAudioSample(file)
       await this.loadSamples()
     } catch (e) {
       console.error('Failed to upload audio sample', e)
-      alert(`Failed to upload audio sample: ${e.message}`)
+      this.setState({ uploadError: `Failed to upload ${file.name}: ${e.message}` })
     } finally {
       this.setState({ uploading: false })
     }
+  }
+
+  renderEmailRequired(what) {
+    return (
+      <p className="notifications-email-required" role="note">
+        <FontAwesomeIcon icon="circle-exclamation" /> {what} need a verified email address. Set it in{' '}
+        <Link to="/settings/email">Settings › Email</Link>.
+      </p>
+    )
   }
 
   async remove(sample) {
@@ -267,16 +289,30 @@ class NotificationsPage extends Component {
           You get an email when a track matching one of your samples is found or added. Pick a sample to hear it and its
           matches in the player above.
         </p>
-        <label className="button button-push_button button-push_button-small button-push_button-primary notifications-upload">
+        {this.props.emailVerified ? null : this.renderEmailRequired('Sample uploads')}
+        <label
+          className={`button button-push_button button-push_button-small button-push_button-primary notifications-upload${
+            this.props.emailVerified ? '' : ' notifications-upload--disabled'
+          }`}
+          aria-disabled={this.props.emailVerified ? undefined : 'true'}
+        >
           <input
             type="file"
             accept=".wav,.mp3,audio/wav,audio/mpeg"
             style={{ display: 'none' }}
-            disabled={this.state.uploading}
-            onChange={(e) => this.upload(e.target.files[0])}
+            disabled={this.state.uploading || !this.props.emailVerified}
+            onChange={(e) => {
+              this.upload(e.target.files[0])
+              e.target.value = ''
+            }}
           />
           <FontAwesomeIcon icon="upload" /> {this.state.uploading ? 'Uploading…' : 'Upload Audio Sample'}
         </label>
+        {this.state.uploadError ? (
+          <p className="notifications-error" role="alert">
+            {this.state.uploadError}
+          </p>
+        ) : null}
         {samples.length === 0 ? (
           <p className="notifications-empty">No audio samples uploaded yet.</p>
         ) : (
@@ -476,14 +512,23 @@ class NotificationsPage extends Component {
     )
   }
 
-  async addSearch(e) {
-    e.preventDefault()
-    const text = this.state.newSearch.trim()
-    if (!text) return
-    await this.props.onRequestNotificationUpdate(
-      this.props.stores.map(({ storeName }) => ({ op: 'add', storeName, text })),
-    )
-    this.setState({ newSearch: '' })
+  // The search as the top bar would serialise it: entity pills become artist:<id> / label:<id> and the like.
+  newSearchText(committedTerms = this.state.newSearchTerms, inputValue = this.state.newSearchInput) {
+    const typed = inputValue.trim() ? [{ type: 'text', value: inputValue.trim() }] : []
+    return searchTermsToString([...committedTerms, ...typed])
+  }
+
+  async addSearch(text = this.newSearchText()) {
+    if (!text || !this.props.emailVerified || this.state.addingSearch) return
+    this.setState({ addingSearch: true })
+    try {
+      await this.props.onRequestNotificationUpdate(
+        this.props.stores.map(({ storeName }) => ({ op: 'add', storeName, text })),
+      )
+      this.setState({ newSearchTerms: [], newSearchInput: '', newSearchKey: this.state.newSearchKey + 1 })
+    } finally {
+      this.setState({ addingSearch: false })
+    }
   }
 
   renderSubscriptions() {
@@ -502,14 +547,19 @@ class NotificationsPage extends Component {
                   type="button"
                   className="notifications-bell notifications-bell--on"
                   aria-pressed="true"
-                  aria-label={`Stop notifying about ${item.displayName}`}
+                  aria-label={`Unsubscribe from ${item.displayName}`}
                   onClick={() =>
                     this.props.onRequestNotificationUpdate(
                       item.storeNames.map((storeName) => ({ op: 'remove', storeName, text: item.text })),
                     )
                   }
                 >
-                  <FontAwesomeIcon icon="bell" /> On
+                  <span className="notifications-bell_state">
+                    <FontAwesomeIcon icon="bell" /> Subscribed
+                  </span>
+                  <span className="notifications-bell_action">
+                    <FontAwesomeIcon icon="bell-slash" /> Unsubscribe
+                  </span>
                 </button>
               </li>
             ))}
@@ -524,24 +574,30 @@ class NotificationsPage extends Component {
           <Link to="/settings/following">Settings › Following</Link> fills Discover; its bell decides whether you also
           get notified. Email address is in <Link to="/settings/email">Settings › Email</Link>.
         </p>
-        <form className="notifications-add-search" onSubmit={(e) => this.addSearch(e)}>
-          <label>
-            <span className="notifications-visually-hidden">Add a search</span>
-            <input
-              type="text"
-              className="text-input text-input-small"
-              placeholder="e.g. label:Valve or genre:dnb"
-              value={this.state.newSearch}
-              onChange={(e) => this.setState({ newSearch: e.target.value })}
-            />
-          </label>
+        {this.props.emailVerified ? null : this.renderEmailRequired('Subscriptions')}
+        <div className="notifications-add-search" aria-label="Add a search">
+          <GlobalSearchBar
+            key={this.state.newSearchKey}
+            terms={this.state.newSearchTerms}
+            onChange={(newSearchTerms, newSearchInput) => this.setState({ newSearchTerms, newSearchInput })}
+            onSearch={(committedTerms, inputValue) => this.addSearch(this.newSearchText(committedTerms, inputValue))}
+            onClearSearch={() => this.setState({ newSearchTerms: [], newSearchInput: '' })}
+            placeholder="e.g. artist:Name, label:Name or genre:dnb"
+            styles="top_bar"
+            className="notifications-add-search_bar"
+            disabled={!this.props.emailVerified}
+            loading={this.state.addingSearch}
+            genres={this.state.genres}
+          />
           <button
-            type="submit"
-            className="button button-push_button button-push_button-small button-push_button-primary"
+            type="button"
+            className="button button-push_button button-push_button-small button-push_button-primary notifications-add-search_button"
+            disabled={!this.props.emailVerified || this.state.addingSearch || !this.newSearchText()}
+            onClick={() => this.addSearch()}
           >
             Add
           </button>
-        </form>
+        </div>
         <div className="notifications-subscription-groups">
           {group('Searches', groups.searches, 'No search subscriptions.')}
           {group('Artists', groups.artists, 'Use the bell on a followed artist in Settings › Following.')}
@@ -555,22 +611,26 @@ class NotificationsPage extends Component {
     const { tab, unreadCount } = this.props
     return (
       <div className="page-container scroll-container notifications-page" style={this.props.style}>
-        <div className="notifications-header">
-          <h1>Notifications</h1>
-          <div role="tablist" aria-label="Notifications" className="notifications-tabs">
-            {TABS.map(({ key, label }) => (
-              <NavLink
-                key={key}
-                to={`/notifications/${key}`}
-                role="tab"
-                aria-selected={tab === key ? 'true' : 'false'}
-                className={`notifications-tab${tab === key ? ' notifications-tab--active' : ''}`}
-              >
-                {label}
-                {key === 'activity' && unreadCount > 0 ? ` ${unreadCount}` : ''}
-              </NavLink>
-            ))}
-          </div>
+        <h2 className="notifications-heading">Notifications</h2>
+        <div
+          role="tablist"
+          aria-label="Notifications"
+          className="select-button select-button--container state-select-button--container noselect notifications-tabs"
+        >
+          {TABS.map(({ key, label }) => (
+            <NavLink
+              key={key}
+              to={`/notifications/${key}`}
+              role="tab"
+              aria-selected={tab === key ? 'true' : 'false'}
+              className={`select_button-button select_button-button__large notifications-tab${
+                tab === key ? ' select_button-button__active notifications-tab--active' : ''
+              }`}
+            >
+              {label}
+              {key === 'activity' && unreadCount > 0 ? ` ${unreadCount}` : ''}
+            </NavLink>
+          ))}
         </div>
         {tab === 'samples'
           ? this.renderSamples()

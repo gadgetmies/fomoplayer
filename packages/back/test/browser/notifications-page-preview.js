@@ -1,6 +1,6 @@
 // Preview demo (demo-preview workflow): runs against the deployed Railway PR preview with no direct DB access.
-// The Notifications page: the top-bar link, Activity, adding and removing a search subscription, the notify bell on a
-// followed artist, and Settings › Email. Tracks and the follow are seeded through the API. Notification events can
+// The Notifications page: the top-bar link, Activity, the subscription controls locked until the email is verified
+// (verifying needs the emailed link, so the local demo records subscribing), and Settings › Email. Tracks and the follow are seeded through the API. Notification events can
 // only come from the notification jobs, so the unread badge and A/B playback are recorded by the local demo.
 const { test } = require('cascade-test')
 const { getSharedContext, teardownSharedContext } = require('../lib/setup')
@@ -9,8 +9,7 @@ const { seedFollowViaApi } = require('../lib/follow-popup-seed')
 const {
   openNotificationsFromTopBar,
   assertActivityTabOpens,
-  assertSubscriptionsAddAndRemove,
-  assertFollowingBellSubscribesArtist,
+  assertSubscribingNeedsVerifiedEmail,
   assertSettingsEmailTab,
 } = require('../lib/notifications-page-steps')
 
@@ -25,7 +24,6 @@ test({
   },
 
   'the top bar opens Notifications › Activity': assertActivityTabOpens,
-  'a search subscription can be added and removed': assertSubscriptionsAddAndRemove,
-  'the bell on a followed artist subscribes to it': assertFollowingBellSubscribesArtist,
+  'subscribing needs a verified email': assertSubscribingNeedsVerifiedEmail,
   'Settings › Notifications is now Settings › Email': assertSettingsEmailTab,
 })

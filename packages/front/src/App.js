@@ -1466,6 +1466,7 @@ class App extends Component {
                             onPlay={this.setCurrentTrack.bind(this)}
                             notifications={this.state.notifications}
                             stores={this.state.stores}
+                            emailVerified={Boolean(this.state.userSettings?.emailVerified)}
                             onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
                             onFollowsChanged={this.updateFollows.bind(this)}
                             style={{ order: 2 }}
