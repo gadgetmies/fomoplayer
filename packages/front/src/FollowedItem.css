@@ -1,4 +1,19 @@
-/* The notify bell on a followed artist or label: magenta while notifications are on */
-.followed-item_bell--on {
-  color: #ff4fd8;
+/* The notify bell on a followed artist or label. It inherits the pill's colour like the star: .pill-button-contents
+   inverts its colours, so an explicit colour shows inverted (magenta came out green). It shows the current state;
+   hovering shows the state a click switches to. */
+.followed-item_bell-next {
+  display: none;
+}
+
+.followed-item_bell:not(:disabled):hover .followed-item_bell-current {
+  display: none;
+}
+
+.followed-item_bell:not(:disabled):hover .followed-item_bell-next {
+  display: inline-block;
+}
+
+.followed-item_bell:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

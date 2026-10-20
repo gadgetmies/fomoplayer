@@ -35,6 +35,7 @@ class FollowedItem extends Component {
           )}
           {this.props.onNotifyClick && (
             <>
+              {/* Shows the current state; on hover it shows the state a click switches to */}
               <button
                 className={`followed-item_bell${this.props.notifyOn ? ' followed-item_bell--on' : ''}`}
                 disabled={this.props.disabled || this.props.notifyDisabled}
@@ -42,12 +43,20 @@ class FollowedItem extends Component {
                 aria-pressed={this.props.notifyOn ? 'true' : 'false'}
                 aria-label={`Notify about new tracks from "${this.props.title}" on ${this.props.storeName}`}
                 title={
-                  this.props.notifyOn
-                    ? `Notifying about new tracks from "${this.props.title}"`
-                    : `Notify about new tracks from "${this.props.title}"`
+                  this.props.notifyDisabledReason ||
+                  (this.props.notifyOn
+                    ? `Stop notifying about new tracks from "${this.props.title}"`
+                    : `Notify about new tracks from "${this.props.title}"`)
                 }
               >
-                <FontAwesomeIcon icon={this.props.notifyOn ? 'bell' : 'bell-slash'} />
+                <FontAwesomeIcon
+                  className="followed-item_bell-current"
+                  icon={this.props.notifyOn ? 'bell' : 'bell-slash'}
+                />
+                <FontAwesomeIcon
+                  className="followed-item_bell-next"
+                  icon={this.props.notifyOn ? 'bell-slash' : 'bell'}
+                />
               </button>{' '}
             </>
           )}
