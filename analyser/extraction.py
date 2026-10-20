@@ -83,9 +83,25 @@ def cleanup_downloads(downloads_dir):
     print(f"[cleanup] downloads/: removed {removed} files, {errors} errors")
 
 
+def _pid_alive(pid):
+    """True when a process with `pid` exists (EPERM counts as existing)."""
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+
 def cleanup_panako_worker_dirs(analyser_root):
-    """Remove every top-level `panako_db_worker_*/` directory under
-    `analyser_root`.
+    """Remove stale top-level `panako_db_worker_<pid>/` directories under
+    `analyser_root`, keeping those whose `<pid>` is a live process.
+
+    Several processor runs can share `analyser_root` (drain_previews.sh and
+    drain_bandcamp.sh run concurrently), so a finishing run must only remove
+    dirs whose worker process is gone — removing a live worker's LMDB dir
+    mid-store fails its whole batch.
 
     The shared `panako_db/` cache is NOT removed (the trailing underscore in
     the `panako_db_worker_` prefix guards against that match). Non-directory
@@ -94,6 +110,7 @@ def cleanup_panako_worker_dirs(analyser_root):
     a one-line summary before returning.
     """
     removed = 0
+    skipped = 0
     errors = 0
     if not os.path.isdir(analyser_root):
         print(f"[cleanup] worker dirs: directory not present, nothing to do")
@@ -109,12 +126,16 @@ def cleanup_panako_worker_dirs(analyser_root):
         path = os.path.join(analyser_root, name)
         if not os.path.isdir(path) or os.path.islink(path):
             continue
+        suffix = name[len('panako_db_worker_'):]
+        if suffix.isdigit() and _pid_alive(int(suffix)):
+            skipped += 1
+            continue
         try:
             shutil.rmtree(path)
             removed += 1
         except OSError:
             errors += 1
-    print(f"[cleanup] worker dirs: removed {removed}, {errors} errors")
+    print(f"[cleanup] worker dirs: removed {removed}, skipped {skipped} live, {errors} errors")
 
 
 def download_and_manage_file(url, file_id, file_type, filename=None, downloads_dir=None):
