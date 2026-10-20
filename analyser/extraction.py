@@ -293,9 +293,9 @@ PANAKO_TIMEOUT_S = int(os.environ.get('PANAKO_TIMEOUT_S', 1800))
 # Previews longer than this are fingerprinted only up to the cap. Bandcamp
 # "previews" are full tracks and occasionally hours long (a 2h track makes a
 # 365MB wav whose fingerprints blow Panako's 256MB heap — the decode then
-# aborts mid-file and the JVM wedges, see _run_panako). 20 minutes covers
+# aborts mid-file and the JVM wedges, see _run_panako). 15 minutes covers
 # practically every single track; content past the cap is unmatchable.
-PREVIEW_MAX_DURATION_S = int(os.environ.get('PREVIEW_MAX_DURATION_S', 1200))
+PREVIEW_MAX_DURATION_S = int(os.environ.get('PREVIEW_MAX_DURATION_S', 900))
 
 # The panako wrapper hardcodes -Xmx256m, and jgaborator buffers the whole
 # file's spectral coefficients on the heap, so ~15+ minute tracks OOM —
