@@ -18,6 +18,7 @@ import sys
 # `python -m pytest analyser/test_cleanup.py` from the repo root alike.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import extraction  # noqa: E402
 from extraction import cleanup_downloads, cleanup_panako_worker_dirs  # noqa: E402
 
 
@@ -70,9 +71,10 @@ def test_cleanup_downloads_tolerates_unwritable_file(tmp_path, monkeypatch, caps
     assert '[cleanup] downloads/: removed 2 files, 1 errors' in out
 
 
-def test_cleanup_panako_worker_dirs_removes_only_worker_prefix(tmp_path, capsys):
+def test_cleanup_panako_worker_dirs_removes_only_worker_prefix(tmp_path, capsys, monkeypatch):
     """Worker dirs are removed; the shared `panako_db/` cache and the
     `downloads/` dir are preserved."""
+    monkeypatch.setattr(extraction, '_pid_alive', lambda pid: False)
     (tmp_path / 'panako_db_worker_111').mkdir()
     (tmp_path / 'panako_db_worker_111' / 'foo.tdb').write_bytes(b'foo')
     (tmp_path / 'panako_db_worker_222').mkdir()
@@ -92,12 +94,34 @@ def test_cleanup_panako_worker_dirs_removes_only_worker_prefix(tmp_path, capsys)
     assert (tmp_path / 'downloads' / 'keepme.txt').exists()
 
     out = capsys.readouterr().out
-    assert '[cleanup] worker dirs: removed 2, 0 errors' in out
+    assert '[cleanup] worker dirs: removed 2, skipped 0 live, 0 errors' in out
 
 
-def test_cleanup_panako_worker_dirs_skips_non_directories(tmp_path, capsys):
+def test_cleanup_panako_worker_dirs_keeps_live_pid_dirs(tmp_path, capsys):
+    """A worker dir whose <pid> suffix is a live process is kept (another
+    processor run may still be storing into it); a dir with a non-numeric
+    suffix has no owner to check and is treated as stale."""
+    live_dir = tmp_path / f'panako_db_worker_{os.getpid()}'
+    live_dir.mkdir()
+    (live_dir / 'live.tdb').write_bytes(b'live')
+    stale_dir = tmp_path / 'panako_db_worker_stale'
+    stale_dir.mkdir()
+    (stale_dir / 'old.tdb').write_bytes(b'old')
+
+    cleanup_panako_worker_dirs(str(tmp_path))
+
+    assert live_dir.is_dir()
+    assert (live_dir / 'live.tdb').exists()
+    assert not stale_dir.exists()
+
+    out = capsys.readouterr().out
+    assert '[cleanup] worker dirs: removed 1, skipped 1 live, 0 errors' in out
+
+
+def test_cleanup_panako_worker_dirs_skips_non_directories(tmp_path, capsys, monkeypatch):
     """A regular file whose name matches the worker prefix is NOT removed —
     the helper only acts on directories."""
+    monkeypatch.setattr(extraction, '_pid_alive', lambda pid: False)
     bogus = tmp_path / 'panako_db_worker_oops.txt'
     bogus.write_bytes(b'not a worker dir')
     real_dir = tmp_path / 'panako_db_worker_500'
@@ -111,4 +135,4 @@ def test_cleanup_panako_worker_dirs_skips_non_directories(tmp_path, capsys):
     assert not real_dir.exists()
 
     out = capsys.readouterr().out
-    assert '[cleanup] worker dirs: removed 1, 0 errors' in out
+    assert '[cleanup] worker dirs: removed 1, skipped 0 live, 0 errors' in out
