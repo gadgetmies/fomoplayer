@@ -298,30 +298,35 @@
   flex-direction: column;
 }
 
+/* Layout B3 from the design canvas: controls and track on the left, a fixed-width waveform on the right with the
+   times on its ends; on phones the waveform goes full width under the track. */
 .docked-player {
   background: #131313;
   border-top: 1px solid #000;
   display: flex;
-  flex-direction: column;
+  align-items: stretch;
+  height: 80px;
   width: 100%;
   box-sizing: border-box;
 }
 
-/* Edge to edge like the panel's waveform, tall enough to make out the drops and breaks; click to seek */
-.docked-player_waveform {
-  position: relative;
-  height: 64px;
-  min-height: 64px;
-  cursor: pointer;
-}
-
+/* Keeps room for the artists and title: on narrower screens the waveform gives way first */
 .docked-player_row {
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   gap: 4px;
-  min-width: 0;
-  padding: 4px 8px;
+  min-width: 360px;
+  padding: 0 8px;
   font-size: 0.9rem;
+}
+
+/* Tall enough to make out the drops and breaks; click to seek */
+.docked-player_waveform {
+  position: relative;
+  flex: 0 1 600px;
+  min-width: 240px;
+  cursor: pointer;
 }
 
 .docked-player_button {
@@ -329,7 +334,7 @@
   min-height: 44px;
 }
 
-/* Position and duration on the waveform's ends, on a dark backing so they read over it */
+/* Position and duration on the waveform's lower ends, on a dark backing so they read over it */
 .docked-player_time {
   position: absolute;
   bottom: 6px;
@@ -343,11 +348,11 @@
 }
 
 .docked-player_time--position {
-  left: 8px;
+  left: 6px;
 }
 
 .docked-player_time--duration {
-  right: 8px;
+  right: 6px;
   color: #bbb;
 }
 
@@ -368,9 +373,20 @@
 }
 
 @media (max-width: 590px) {
+  .docked-player {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .docked-player_row {
+    padding: 2px 4px 0;
+    gap: 0;
+    min-width: 0;
+  }
+
   .docked-player_waveform {
-    height: 48px;
-    min-height: 48px;
+    flex: 0 0 56px;
+    min-width: 0;
   }
 }
 

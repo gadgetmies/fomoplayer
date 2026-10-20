@@ -547,22 +547,6 @@ class Preview extends Component {
     }
     return (
       <section className="docked-player" aria-label="Player">
-        {/* Edge to edge, the times on its ends */}
-        <div
-          className="waveform_container docked-player_waveform"
-          data-testid="docked-player-waveform"
-          onMouseDown={(e) => this.seekFromWaveformClick(e, { totalDuration, startOffset, endPosition })}
-        >
-          {this.renderWaveformLayers({ waveform, toPositionPercent, shouldSkip, startOffset, endPosition, totalDuration })}
-          <span className="docked-player_time docked-player_time--position" data-testid="docked-player-time">
-            {formatTime(timelineMs)}
-          </span>
-          {totalDuration ? (
-            <span className="docked-player_time docked-player_time--duration" data-testid="docked-player-duration">
-              {formatTime(totalDuration)}
-            </span>
-          ) : null}
-        </div>
         <div className="docked-player_row">
           <button
             type="button"
@@ -602,6 +586,22 @@ class Preview extends Component {
             </span>
             {this.renderPlayingFrom()}
           </div>
+        </div>
+        {/* Right of the track on wide screens, full width under it on phones; the times sit on its ends */}
+        <div
+          className="waveform_container docked-player_waveform"
+          data-testid="docked-player-waveform"
+          onMouseDown={(e) => this.seekFromWaveformClick(e, { totalDuration, startOffset, endPosition })}
+        >
+          {this.renderWaveformLayers({ waveform, toPositionPercent, shouldSkip, startOffset, endPosition, totalDuration })}
+          <span className="docked-player_time docked-player_time--position" data-testid="docked-player-time">
+            {formatTime(timelineMs)}
+          </span>
+          {totalDuration ? (
+            <span className="docked-player_time docked-player_time--duration" data-testid="docked-player-duration">
+              {formatTime(totalDuration)}
+            </span>
+          ) : null}
         </div>
       </section>
     )
