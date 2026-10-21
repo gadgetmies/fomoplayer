@@ -270,12 +270,9 @@
     padding: 16px;
   }
 
+  /* Even padding on both sides: the selected arrow is centred on the button, so it sits under the icon */
   .menu_right .button-top_bar_button {
-    padding-left: 16px;
-  }
-
-  .menu_right .button-top_bar_button:last-of-type {
-    padding-right: 16px;
+    padding: 16px 8px;
   }
 
   .support_menu_label {
@@ -291,8 +288,9 @@
   }
 }
 
+/* Icons only from here down, so the search keeps its room next to the menu buttons. */
 @media (max-width: 1029px) {
-  .mobile .button-top_bar_button_label {
+  .button-top_bar_button_label {
     display: none;
   }
 
@@ -310,7 +308,9 @@
   }
 }
 
-@media (max-width: 1279px) {
+/* Labels under the icons up to the full content width; beside them they left a search with a subscribe button too
+   little room. */
+@media (max-width: 1439px) {
   .menu_search:focus-within .email_not_verified_container {
     display: block;
   }
@@ -345,7 +345,33 @@
     justify-content: space-between;
   }
 
+  /* Only as wide as its buttons: an equal share with the search squeezed the input when a search was active. */
   .menu_right {
-    flex: 1;
+    flex: 0 0 auto;
+  }
+}
+
+/* Phones: tighter buttons so the search keeps room next to seven icons. After the 768px block so it wins. */
+@media (max-width: 590px) {
+  .top_bar_contents {
+    padding: 0 4px;
+  }
+
+  .button-top_bar_button {
+    min-width: 36px;
+    padding: 16px 4px;
+  }
+
+  .menu_left .button-top_bar_button,
+  .menu_right .button-top_bar_button {
+    padding: 16px 4px;
+  }
+
+  .menu_search {
+    margin-left: 4px;
+  }
+
+  .menu_right {
+    margin-left: 4px;
   }
 }

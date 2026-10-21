@@ -32,6 +32,12 @@ import IgnorePopup from './IgnorePopup'
 import KeyboardShortcutsPopup from './KeyboardShortcutsPopup'
 
 import { isMobile } from 'react-device-detect'
+import { isSample } from './playQueue'
+import NotificationsPage from './NotificationsPage'
+import { loadUnreadNotificationCount } from './audioSamplesApi'
+
+// How often the bell's unread count is refreshed while the page is visible
+const UNREAD_COUNT_POLL_MS = 60 * 1000
 import { events, subscribe, unsubscribe } from './events'
 import {
   parseSearchTerms,
@@ -172,7 +178,7 @@ const LocationWatcher = withRouter(LocationWatcherBase)
 class App extends Component {
   constructor(props) {
     super(props)
-    const { listState, currentTrack } = JSON.parse(window.localStorage.getItem('currentTrack')) || {}
+    const { listState, currentTrack, playingFromSource } = JSON.parse(window.localStorage.getItem('currentTrack')) || {}
 
     const searchParams = new URLSearchParams(window.location.search)
     const filters = {
@@ -223,6 +229,9 @@ class App extends Component {
       searchBarResetCount: 0,
       listState: initialListState,
       currentTrack,
+      unreadNotificationCount: 0,
+      // The list the current track was started from ({ source, tracks }); next / previous step through it.
+      playingFrom: playingFromSource ? { source: playingFromSource, tracks: [] } : null,
       heardTracks: defaultTracksData.tracks.heard,
       selectedCartUuid: undefined,
       selectedCart: undefined,
@@ -306,6 +315,24 @@ class App extends Component {
 
   async componentWillUnmount() {
     unsubscribe(events.SEARCH, this.searchEventHandler)
+    clearInterval(this.unreadCountTimer)
+    window.removeEventListener('focus', this.refreshUnreadNotificationCountHandler)
+  }
+
+  async refreshUnreadNotificationCount() {
+    if (!this.state.loggedIn || this.state.mode !== 'app' || document.visibilityState === 'hidden') return
+    try {
+      this.setState({ unreadNotificationCount: await loadUnreadNotificationCount() })
+    } catch (e) {
+      console.error('Failed to refresh the unread notification count', e)
+    }
+  }
+
+  startUnreadNotificationCountPolling() {
+    this.refreshUnreadNotificationCountHandler = () => this.refreshUnreadNotificationCount()
+    this.unreadCountTimer = setInterval(this.refreshUnreadNotificationCountHandler, UNREAD_COUNT_POLL_MS)
+    window.addEventListener('focus', this.refreshUnreadNotificationCountHandler)
+    this.refreshUnreadNotificationCount()
   }
 
   async componentDidMount() {
@@ -337,7 +364,10 @@ class App extends Component {
         document.title = `Fomo Player - ${stores[0].storeName}`
       }
 
-      this.setState({ loggedIn: true, mode: 'app', stores, ...sharedStates })
+      // The poll checks loggedIn, so it starts once the state is applied
+      this.setState({ loggedIn: true, mode: 'app', stores, ...sharedStates }, () =>
+        this.startUnreadNotificationCountPolling(),
+      )
 
       const searchParams = new URLSearchParams(window.location.search)
       const searchQuery = searchParams.get('q') || ''
@@ -661,7 +691,7 @@ class App extends Component {
   }
 
   async markHeard(track) {
-    if (this.state.listState === 'heard' || this.state.mode === 'list') {
+    if (this.state.listState === 'heard' || this.state.mode === 'list' || isSample(track)) {
       return
     }
 
@@ -687,6 +717,8 @@ class App extends Component {
       method: 'POST',
       body: { heard: true },
     })
+    // Hearing a track reads its notifications
+    this.refreshUnreadNotificationCount()
   }
 
   // Toggle a track's heard state (used by the mobile swipe gesture). Unlike
@@ -1148,11 +1180,17 @@ class App extends Component {
     })
   }
 
-  async setCurrentTrack(track) {
-    this.setState({ currentTrack: track })
+  // `playingFrom` ({ source, tracks }) is given when playback starts from a list; stepping within the queue keeps it.
+  async setCurrentTrack(track, playingFrom) {
+    const nextPlayingFrom = playingFrom === undefined ? this.state.playingFrom : playingFrom
+    this.setState({ currentTrack: track, playingFrom: nextPlayingFrom })
     window.localStorage.setItem(
       'currentTrack',
-      JSON.stringify({ listState: this.state.listState, currentTrack: track }),
+      JSON.stringify({
+        listState: this.state.listState,
+        currentTrack: track,
+        playingFromSource: nextPlayingFrom?.source ?? null,
+      }),
     )
     document.title = `${trackArtistsAndTitleText(track)} - Fomo Player ${this.state.stores.length === 1 ? ` - ${this.state.stores[0].storeName}` : ''}`
   }
@@ -1326,6 +1364,7 @@ class App extends Component {
                   onCloseClicked={this.closePopups.bind(this)}
                 />
                 <TopBar
+                  unreadNotificationCount={this.state.unreadNotificationCount}
                   modifyingNotification={this.state.modifyingNotification}
                   emailVerified={this.state.userSettings.emailVerified}
                   triggerSearch={this.triggerSearch.bind(this)}
@@ -1386,9 +1425,13 @@ class App extends Component {
                     }
                     const pathParts = pathname.slice(1).split('/')
                     const settingsVisible = pathname.match(/\/settings\/?/)
+                    const notificationsVisible = pathParts[0] === 'notifications'
+                    const notificationsTab = ['activity', 'samples', 'subscriptions'].includes(pathParts[1])
+                      ? pathParts[1]
+                      : 'activity'
                     let listState = this.state.listState
                     const routeListState = pathParts[0] === 'tracks' ? pathParts[1] || 'new' : pathParts[0]
-                    if (routeListState && routeListState !== 'settings') {
+                    if (routeListState && routeListState !== 'settings' && routeListState !== 'notifications') {
                       listState = routeListState
                     }
 
@@ -1410,12 +1453,32 @@ class App extends Component {
                           scoreWeights={this.state.scoreWeights}
                           tracks={this.state.tracksData.tracks}
                           follows={this.state.follows}
+                          dockedPlayerVisible={Boolean(settingsVisible && this.state.currentTrack)}
                           style={{ display: settingsVisible ? 'block' : 'none' }}
                         />
+                        {notificationsVisible ? (
+                          <NotificationsPage
+                            visible
+                            tab={notificationsTab}
+                            currentTrackId={this.state.currentTrack?.id}
+                            unreadCount={this.state.unreadNotificationCount}
+                            onUnreadChanged={this.refreshUnreadNotificationCount.bind(this)}
+                            onPlay={this.setCurrentTrack.bind(this)}
+                            notifications={this.state.notifications}
+                            stores={this.state.stores}
+                            emailVerified={Boolean(this.state.userSettings?.emailVerified)}
+                            onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
+                            onFollowsChanged={this.updateFollows.bind(this)}
+                            style={{ order: 2 }}
+                          />
+                        ) : null}
                         <Player
+                          panelOnly={Boolean(notificationsVisible)}
                           carts={this.state.carts}
                           fetchingCartDetails={this.state.fetchingCartDetails}
                           currentTrack={this.state.currentTrack}
+                          playingFrom={this.state.playingFrom}
+                          docked={Boolean(settingsVisible)}
                           follows={this.state.follows}
                           heardTracks={this.state.heardTracks}
                           initialPosition={this.state.initialPosition}
@@ -1467,7 +1530,7 @@ class App extends Component {
                           onUpdateCarts={this.updateCarts.bind(this)}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
                           onAddEntityToSearch={this.addEntityToSearch.bind(this)}
-                          style={{ display: !settingsVisible ? 'flex' : 'none' }}
+                          style={{ display: !settingsVisible || this.state.currentTrack ? 'flex' : 'none' }}
                         />
                       </>
                     )

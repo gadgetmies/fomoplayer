@@ -1,0 +1,260 @@
+/* Notifications page: Activity, Samples and Subscriptions below the player's Preview panel. Rows follow the track
+   table: #666 rows, the playing row in #5181bd, the selected sample row in #5181bd too. */
+
+.notifications-page {
+  padding: 16px 16px 48px;
+  overflow-y: auto;
+}
+
+/* Heading and tab row as in Settings */
+.notifications-heading {
+  margin-top: 0;
+}
+
+.notifications-tabs {
+  margin-bottom: 12px;
+}
+
+.notifications-tab {
+  text-decoration: none;
+}
+
+.notifications-hint {
+  font-size: 0.8rem;
+  font-weight: 300;
+  margin: 4px 0 8px;
+}
+
+.notifications-empty {
+  font-size: 0.9rem;
+  font-style: italic;
+  font-weight: 300;
+}
+
+.notifications-toolbar,
+.notifications-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.notifications-section-title {
+  margin: 20px 0 6px;
+}
+
+.notifications-table-wrapper {
+  overflow-x: auto;
+}
+
+.notifications-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 2px;
+  font-size: 0.85rem;
+}
+
+.notifications-table th {
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.notifications-table td {
+  padding: 0 8px;
+  line-height: 2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 28ch;
+}
+
+.notifications-row {
+  background: #666;
+  cursor: pointer;
+  font-weight: 350;
+}
+
+.notifications-row--playing,
+.notifications-row--selected {
+  background: #5181bd;
+}
+
+.new-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+  background: #fff;
+  vertical-align: middle;
+}
+
+.new-dot--read {
+  background: transparent;
+}
+
+.why--sample {
+  background: #b40089;
+  border-radius: 0.25rem;
+  padding: 3px 7px;
+  font-weight: 700;
+}
+
+.notifications-icon-button {
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.notifications-upload {
+  display: inline-flex;
+  align-items: center;
+  margin: 4px 0 8px;
+  cursor: pointer;
+}
+
+.notifications-similar {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.notifications-follow {
+  background: #222;
+  border-radius: 0.35rem;
+  padding: 10px 12px;
+}
+
+.notifications-follow-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.notifications-follow li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+/* Subscriptions as pills, like the follows in Settings › Following */
+.notifications-subscription-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  margin: 0.5em 0;
+}
+
+.notifications-subscription .pill-button-contents {
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.notifications-subscription-name {
+  color: inherit;
+  text-decoration: none;
+}
+
+.notifications-subscription-count {
+  font-weight: 300;
+}
+
+/* "Show all" and the closed filter: outlined pills that sit with the white ones */
+.notifications-pill-toggle {
+  min-height: 36px;
+  padding: 0 14px;
+  margin: 1px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notifications-pill-toggle:hover {
+  background: #444;
+}
+
+.notifications-subscription-filter {
+  max-width: 20em;
+  margin: 12px 0 0;
+}
+
+.notifications-add-search {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin: 8px 0;
+  max-width: 640px;
+}
+
+.notifications-add-search_bar {
+  flex: 1;
+  min-width: 0;
+}
+
+/* As tall as the search bar next to it; the push button's raised bottom edge counts towards the height */
+.notifications-add-search_button {
+  margin: 0;
+  height: 34px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.notifications-add-search {
+  align-items: flex-start;
+}
+
+.notifications-email-required {
+  font-size: 0.85rem;
+  background: #222;
+  border-left: 3px solid #b40089;
+  padding: 8px 12px;
+  margin: 8px 0;
+}
+
+.notifications-error {
+  color: #ff8a8a;
+  font-size: 0.85rem;
+  margin: 4px 0 8px;
+}
+
+.notifications-visually-hidden {
+  position: absolute;
+  left: -9999px;
+}
+
+@media (max-width: 768px) {
+  .notifications-similar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Top bar: unread badge on the Notifications bell. It sits on the icon so it stays visible when the top bar hides
+   the button labels. */
+.notifications_button_icon {
+  position: relative;
+  display: inline-block;
+}
+
+.notifications-badge {
+  position: absolute;
+  top: -0.6em;
+  left: 0.8em;
+  background: #b40089;
+  border-radius: 8px;
+  padding: 0 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.4;
+}

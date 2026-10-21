@@ -39,6 +39,22 @@ preview video. demo-preview must seed state via the UI/API only (no DB);
 demo-test reuses that and may fall back to direct DB seeding only when
 necessary.
 
+# Follow the existing UI conventions
+
+**When changing the UI, reuse what the app already does by default**: its
+components (`GlobalSearchBar`, `MenuNavButton`, the `select-button` tab rows,
+`button-push_button` buttons, pills), their states (a control that cannot be
+used is a real `<button>`/`<input>` with `disabled`, styled by the existing
+`:disabled` rules — not a lowered opacity on a look-alike), spacing,
+breakpoints and colours (`--top-bar-background-color`, `#131313` behind the
+player, the `#5996e4 → #b69afd` progress gradient). Match the nearest
+existing screen before inventing a new look.
+
+If a convention cannot be followed — it does not fit the new case, it is
+inconsistent between screens, or following it would cause a bug — **tell the
+user** which convention and why, and what you did instead, rather than
+silently deviating.
+
 # Configuration policy
 
 **No deployment domains in source code.** Hostnames or URLs that vary by

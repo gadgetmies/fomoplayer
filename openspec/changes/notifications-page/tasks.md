@@ -1,0 +1,27 @@
+## 1. Shared pieces
+
+- [x] 1.1 `abTiming.js` (A↔B mapping, loop region, matched-at / tempo formatting) + Jest tests
+- [x] 1.2 Fix `queryNotifications` display-name regexes + back-end regression test
+
+## 2. Bell and routing
+
+- [x] 2.1 App: unread-count polling, events/matches/similar loaders, `/notifications/*` route with Player `panelOnly`
+- [x] 2.2 TopBar: Notifications link with bell + badge
+
+## 3. Notifications page
+
+- [x] 3.1 Activity tab: rows, New dot, why, play with source, mark all read, empty state
+- [x] 3.2 Samples tab: samples table (upload/delete/play), matches table, Sounds like + follow suggestions
+- [x] 3.3 Subscriptions tab: grouped list with bells, add search
+- [x] 3.4 Preview: A/B control, loop-match, matched-at/tempo details for A/B pairs
+
+## 4. Settings
+
+- [x] 4.1 Notifications tab → Email; redirect `/settings/notifications`; remove moved sections
+- [x] 4.2 Bells on followed artists / labels
+
+## 5. Verify and ship
+
+- [x] 5.1 Demo tests `notifications-page-local.js` / `-preview.js` with shared steps
+- [x] 5.2 Front-end unit tests, browser tests, full back-end suite
+- [ ] 5.3 Atomic commits, push, PR with demo blocks, preview deploy
