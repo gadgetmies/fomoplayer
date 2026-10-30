@@ -30,6 +30,19 @@
   box-shadow: 0 0 8px 0 white;
 }
 
+.track-playback-failed-icon {
+  color: #f0ad4e;
+}
+
+.track-playback-failed-indicator {
+  display: none;
+  text-align: center;
+}
+
+.track-playback-failed-indicator__always {
+  display: block;
+}
+
 .following {
   font-weight: 600;
 }
@@ -221,6 +234,14 @@
   .new-cell {
     width: 4px;
     margin: 6px;
+  }
+
+  .new-cell.new-cell__playback-failed {
+    width: auto;
+  }
+
+  .track-playback-failed-indicator {
+    display: block;
   }
 
   .follow-ignore-cart-cell {

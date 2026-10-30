@@ -49,6 +49,7 @@ class Preview extends Component {
     this._playPauseSource = undefined
     // Seconds to seek to once the newly loaded source can play (where a sample match starts)
     this._pendingSeek = null
+    this.failedPreviewIds = new Set()
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
     }
@@ -198,21 +199,9 @@ class Preview extends Component {
         },
       })
 
-      let trackUpdated = false
-      for (const preview of previews) {
-        try {
-          await this.updateTrack(nextTrack, preview)
-          trackUpdated = true
-          break
-        } catch (e) {
-          console.error('[Preview] updateTrack failed', e)
-        }
-      }
-
-      this.setState({ loading: false, playing: trackUpdated })
-      if (!trackUpdated) {
-        console.warn('[Preview] no playable preview for track', nextTrack.id)
-      }
+      this.previewCandidates = previews
+      this.failedPreviewIds = new Set()
+      await this.playFirstWorkingPreview(nextTrack)
     }
 
     if (prevState.previewUrl !== this.state.previewUrl) {
@@ -222,6 +211,30 @@ class Preview extends Component {
         player.load()
       }
     }
+  }
+
+  // Try the track's previews in order, skipping ones that already failed for
+  // this track. When none of them plays, report the failure so the player can
+  // flag the track and move on to the next one.
+  async playFirstWorkingPreview(track) {
+    this.setState({ loading: true })
+    for (const preview of this.previewCandidates) {
+      if (this.failedPreviewIds.has(preview.id)) continue
+      if (this.props.currentTrack?.id !== track.id) return
+      try {
+        await this.updateTrack(track, preview)
+        this.setState({ loading: false, playing: true })
+        return
+      } catch (e) {
+        console.error('[Preview] updateTrack failed', e)
+        this.failedPreviewIds.add(preview.id)
+      }
+    }
+
+    if (this.props.currentTrack?.id !== track.id) return
+    console.warn('[Preview] no playable preview for track', track.id)
+    this.setState({ loading: false, playing: false })
+    await this.props.onPlaybackFailed?.(track)
   }
 
   getMp3Previews(track, preferFullTracks = false) {
@@ -1144,6 +1157,7 @@ class Preview extends Component {
           }
         }}
         onPlay={async () => {
+          this.props.onPlaybackStarted?.(currentTrack)
           await this.props.markHeard(currentTrack.id)
         }}
         onPlaying={() => {
@@ -1209,11 +1223,15 @@ class Preview extends Component {
               console.error('Refreshing the stream URL failed', refreshError)
             }
           }
-          await requestWithCredentials({
+          requestWithCredentials({
             url: '/log/error',
             method: 'POST',
             body: { message: 'Audio playback error', error: e.toString() },
-          })
+          }).catch(() => {})
+          // Clearing the source while switching previews can fire an error too
+          if (!this.state.previewUrl || !failedPreview || !currentTrack) return
+          this.failedPreviewIds.add(failedPreview.id)
+          await this.playFirstWorkingPreview(currentTrack)
         }}
         controlsList="nodownload"
         src={this.state.previewUrl}
