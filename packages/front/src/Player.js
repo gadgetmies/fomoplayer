@@ -4,6 +4,10 @@ import React, { Component } from 'react'
 import * as R from 'ramda'
 import { PlayerHelp } from './PlayerHelp'
 
+// Stop auto-skipping after this many tracks in a row fail to play, so a store
+// outage doesn't race through (and request previews for) the whole list.
+const MAX_CONSECUTIVE_PLAYBACK_FAILURES = 3
+
 class Player extends Component {
   constructor(props) {
     super(props)
@@ -16,7 +20,9 @@ class Player extends Component {
       helpActive: false,
       enabledStores,
       enabledStoreSearch,
+      playbackFailedTrackIds: new Set(),
     }
+    this.consecutivePlaybackFailures = 0
 
     this.preview = React.createRef()
   }
@@ -177,6 +183,29 @@ class Player extends Component {
     await this.jumpTracks(firstUnplayed - this.getCurrentTrackIndex())
   }
 
+  async handlePlaybackFailed(track) {
+    this.setState(({ playbackFailedTrackIds }) => ({
+      playbackFailedTrackIds: new Set(playbackFailedTrackIds).add(track.id),
+    }))
+    this.consecutivePlaybackFailures++
+    if (this.consecutivePlaybackFailures >= MAX_CONSECUTIVE_PLAYBACK_FAILURES) {
+      console.warn(`[Player] ${this.consecutivePlaybackFailures} tracks in a row failed to play, stopping`)
+      this.consecutivePlaybackFailures = 0
+      return
+    }
+    await this.playNextTrack()
+  }
+
+  handlePlaybackStarted(track) {
+    this.consecutivePlaybackFailures = 0
+    if (!this.state.playbackFailedTrackIds.has(track.id)) return
+    this.setState(({ playbackFailedTrackIds }) => {
+      const ids = new Set(playbackFailedTrackIds)
+      ids.delete(track.id)
+      return { playbackFailedTrackIds: ids }
+    })
+  }
+
   setPlaying(playing) {
     this.preview.current.setPlaying(playing)
   }
@@ -328,6 +357,8 @@ class Player extends Component {
           onMarkAllHeardClicked={this.props.onMarkAllHeardClicked}
           onMarkPurchasedButtonClick={this.props.onMarkPurchased}
           onNext={() => this.playNextTrack()}
+          onPlaybackFailed={this.handlePlaybackFailed.bind(this)}
+          onPlaybackStarted={this.handlePlaybackStarted.bind(this)}
           onPlayPauseToggle={this.handlePlayPauseToggle.bind(this)}
           onPrevious={() => this.playPreviousTrack()}
           onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
@@ -345,6 +376,7 @@ class Player extends Component {
           stores={this.props.stores}
           listState={this.props.listState}
           currentTrack={(currentTrack || {}).id}
+          playbackFailedTrackIds={this.state.playbackFailedTrackIds}
           processingCart={this.props.processingCart}
           processingTrack={this.props.processingTrack}
           follows={this.props.follows}
