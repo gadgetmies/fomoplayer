@@ -7,6 +7,9 @@ const { JSDOM } = jsdom
 const vm = require('vm')
 
 let suspendedUntil = null
+// Why requests are suspended, for the message requests fail with meanwhile:
+// "rate limit" after a 429/403, or the unexpected page Bandcamp served.
+let suspensionReason = null
 let requestCount = 0
 
 const scrapeJSON = R.curry((pattern, string) => {
@@ -20,6 +23,9 @@ const scrapeJSON = R.curry((pattern, string) => {
 
 const extractJSON = R.curry((selector, attribute = undefined, dom) => {
   const element = dom.window.document.querySelector(selector)
+  if (element === null) {
+    throw new Error(`No element matching ${selector} on page "${dom.window.document.title}"`)
+  }
   const text = attribute ? element.getAttribute(attribute) : element.textContent
   return JSON.parse(text)
 })
@@ -107,13 +113,62 @@ const warnOnNameSubdomainMismatch = (url, pageType, pageName) => {
   }
 }
 
+// Bandcamp answers some requests with HTTP 200 and a page that is not the
+// requested content (a bot check or block page). Real band pages — releases,
+// /music, the band root, on bandcamp.com subdomains and custom domains alike —
+// carry #pagedata, release data or the og:site_name tag; one with none of them
+// is such a page. Treat it like a 429/403: suspend requests so the
+// jobs stop hammering Bandcamp, and log what was served so it can be diagnosed.
+const suspend = (reason) => {
+  suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
+  suspensionReason = reason
+}
+
+const describeBody = (body) => {
+  const title = (body.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1]
+  return {
+    title: title ? decode(title).trim() : undefined,
+    snippet: body.slice(0, 500).replace(/\s+/g, ' '),
+  }
+}
+
+const unexpectedResponseError = (url, status, body, expected) => {
+  const { title, snippet } = describeBody(body)
+  suspend(title ? `Bandcamp served an unexpected page ("${title}")` : 'Bandcamp served an unexpected page')
+  logger.error(
+    `Bandcamp served an unexpected page for ${url} (expected ${expected}). Requests are suspended until: ${suspendedUntil.toString()}`,
+    { url, status, title, snippet },
+  )
+  const error = new Error(
+    `Bandcamp served an unexpected page for ${url} (expected ${expected}, got${title ? ` "${title}"` : ' no title'}). Requests are suspended until: ${suspendedUntil.toString()}`,
+  )
+  error.isRateLimit = true
+  error.isUnexpectedResponse = true
+  error.statusCode = status
+  error.requestCount = requestCount
+  return error
+}
+
+const isBandPage = (dom) =>
+  dom.window.document.querySelector('#pagedata, [data-tralbum], meta[property="og:site_name"]') !== null
+
+const getBandPageDom = async (url) => {
+  const body = await getPageSource(url)
+  const dom = new JSDOM(body)
+  if (!isBandPage(dom)) {
+    throw unexpectedResponseError(url, 200, body, 'a Bandcamp band page')
+  }
+  return dom
+}
+
 const getPageSource = async (url, options = {}) => {
   if (suspendedUntil) {
     if (suspendedUntil < Date.now()) {
       suspendedUntil = null
+      suspensionReason = null
       requestCount = 0
     } else {
-      const error = new Error(`Rate limit reached. Requests are suspended until: ${suspendedUntil.toString()}`)
+      const error = new Error(`${suspensionReason}. Requests are suspended until: ${suspendedUntil.toString()}`)
       error.isRateLimit = true
       throw error
     }
@@ -121,7 +176,7 @@ const getPageSource = async (url, options = {}) => {
   requestCount++
   const res = await fetch(url, { method: 'GET', ...options })
   if ([429, 403].includes(res.status)) {
-    suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
+    suspend('Rate limit reached')
     logger.error(
       `Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`,
     )
@@ -147,9 +202,8 @@ const isRateLimited = () => {
 
 const getReleaseInfo = (dom) => extractJSON('[data-tralbum]', 'data-tralbum', dom)
 const getRelease = (itemUrl, callback) => {
-  return getPageSource(itemUrl)
-    .then((res) => {
-      const dom = new JSDOM(res)
+  return getBandPageDom(itemUrl)
+    .then((dom) => {
       const pageName = getName(dom)
       const pageType = detectPageType(dom)
       warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
@@ -161,7 +215,7 @@ const getRelease = (itemUrl, callback) => {
       })
     })
     .catch((e) => {
-      logger.error(`Fetching release from ${itemUrl} failed`, { statusCode: e.statusCode })
+      logger.error(`Fetching release from ${itemUrl} failed`, { statusCode: e.statusCode, error: e.message })
       callback(e)
     })
 }
@@ -181,9 +235,8 @@ const getIdFromUrl = (url) => url.substring(0, url.indexOf('.'))
 
 const getPageInfo = (url, callback) => {
   const id = getIdFromUrl(url)
-  getPageSource(url + '/music')
-    .then((res) => {
-      const dom = new JSDOM(res)
+  getBandPageDom(url + '/music')
+    .then((dom) => {
       return callback(null, {
         id,
         name: getName(dom),
@@ -270,19 +323,24 @@ const getTagReleases = (tags, callback) => {
     headers: { 'Content-Type': 'application/json; charset=UTF-8' },
   })
     .then((res) => {
+      let discoverResults
+      try {
+        discoverResults = JSON.parse(res)
+      } catch (_) {
+        throw unexpectedResponseError(DISCOVER_API_URL, 200, res, 'JSON from the discover API')
+      }
       return callback(null, {
         id: getTagUrl(parsedTags),
         name: getTagName(parsedTags),
-        releaseUrls: getDiscoverReleaseUrls(JSON.parse(res)),
+        releaseUrls: getDiscoverReleaseUrls(discoverResults),
       })
     })
     .catch((e) => callback(e))
 }
 
 const getPageDetails = (url, callback) => {
-  return getPageSource(url)
-    .then((res) => {
-      const dom = new JSDOM(res)
+  return getBandPageDom(url)
+    .then((dom) => {
       return callback(null, {
         id: getIdFromUrl(url),
         name: getName(dom),
@@ -303,8 +361,10 @@ const mapSearchResults = ({ auto: { results } }) =>
     img,
   }))
 
+const SEARCH_API_URL = 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic'
+
 const getSearchResults = (query, callback) => {
-  return fetch('https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic', {
+  return getPageSource(SEARCH_API_URL, {
     method: 'POST',
     body: JSON.stringify({
       search_text: query,
@@ -316,12 +376,17 @@ const getSearchResults = (query, callback) => {
       'Content-Type': 'application/json; charset=UTF-8',
     },
   })
-    .then((res) => res.json())
     .then((res) => {
-      callback(null, mapSearchResults(res))
+      let searchResults
+      try {
+        searchResults = JSON.parse(res)
+      } catch (_) {
+        throw unexpectedResponseError(SEARCH_API_URL, 200, res, 'JSON from the search API')
+      }
+      callback(null, mapSearchResults(searchResults))
     })
     .catch((e) => {
-      logger.error(`Searching for ${query} failed`, { statusCode: e.statusCode })
+      logger.error(`Searching for ${query} failed`, { statusCode: e.statusCode, error: e.message })
       logger.silly(e)
       callback(e)
     })
@@ -332,6 +397,12 @@ const resetRequestCount = () => {
 }
 
 const getRequestCount = () => requestCount
+
+const resetRateLimit = () => {
+  suspendedUntil = null
+  suspensionReason = null
+  requestCount = 0
+}
 
 module.exports = {
   ...BPromise.promisifyAll({
@@ -353,6 +424,7 @@ module.exports = {
     isRateLimited,
     resetRequestCount,
     getRequestCount,
+    resetRateLimit,
     nameSubdomainSimilarity,
     getSubdomain,
     nameSubdomainSimilarityThreshold: NAME_SUBDOMAIN_SIMILARITY_THRESHOLD,
