@@ -47,7 +47,7 @@ const rateLimit = require('express-rate-limit')
 const { ensureAuthenticated } = require('./routes/shared/auth.js')
 const passportSetup = require('./passport-setup.js')
 const auth = require('./routes/auth.js')
-const { HttpError } = require('./routes/shared/httpErrors')
+const { errorResponse } = require('./routes/shared/httpErrors')
 const { logRequestError } = require('./routes/shared/error-logging')
 const { getCartDetails } = require('./routes/logic')
 const { createCorsOriginValidator } = require('./cors-origin')
@@ -268,16 +268,10 @@ const handleErrors = (err, req, res, _) => {
     method: req.method,
   })
 
-  if (err instanceof HttpError) {
-    return res.status(err.getCode()).json({
-      status: 'error',
-      message: err.message,
-    })
-  }
-
-  return res.status(500).json({
+  const { code, message } = errorResponse(err)
+  return res.status(code).json({
     status: 'error',
-    message: 'Internal server error',
+    message,
   })
 }
 
