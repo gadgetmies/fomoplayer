@@ -78,10 +78,35 @@ test({
     BLOCK_PAGE,
     async (requests) => {
       await bandcampApi.getArtistAsync('https://example.bandcamp.com').catch(() => {})
-      await assert.rejects(bandcampApi.getArtistAsync('https://example.bandcamp.com'), (e) => e.isRateLimit === true)
+      await assert.rejects(bandcampApi.getArtistAsync('https://example.bandcamp.com'), (e) => {
+        assert.strictEqual(e.isRateLimit, true)
+        assert.match(
+          e.message,
+          /^Bandcamp served an unexpected page \("Just a moment\.\.\."\)\. Requests are suspended/,
+        )
+        return true
+      })
       assert.strictEqual(requests.length, 1)
     },
   ),
+
+  'requests after a 429 are suspended as a rate limit': async () => {
+    resetRateLimit()
+    globalThis.fetch = async () => ({ status: 429, ok: false, text: async () => 'Too Many Requests' })
+    try {
+      await assert.rejects(
+        bandcampApi.getArtistAsync('https://example.bandcamp.com'),
+        /^Error: Rate limit reached after/,
+      )
+      await assert.rejects(bandcampApi.getArtistAsync('https://example.bandcamp.com'), (e) => {
+        assert.match(e.message, /^Rate limit reached\. Requests are suspended/)
+        return true
+      })
+    } finally {
+      globalThis.fetch = realFetch
+      resetRateLimit()
+    }
+  },
 
   'a real artist page is still parsed': withStubbedFetch(ARTIST_PAGE, async () => {
     const { releaseUrls } = await bandcampApi.getArtistAsync('https://noisia.bandcamp.com')

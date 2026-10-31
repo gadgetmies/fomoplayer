@@ -7,6 +7,9 @@ const { JSDOM } = jsdom
 const vm = require('vm')
 
 let suspendedUntil = null
+// Why requests are suspended, for the message requests fail with meanwhile:
+// "rate limit" after a 429/403, or the unexpected page Bandcamp served.
+let suspensionReason = null
 let requestCount = 0
 
 const scrapeJSON = R.curry((pattern, string) => {
@@ -116,8 +119,9 @@ const warnOnNameSubdomainMismatch = (url, pageType, pageName) => {
 // carry #pagedata, release data or the og:site_name tag; one with none of them
 // is such a page. Treat it like a 429/403: suspend requests so the
 // jobs stop hammering Bandcamp, and log what was served so it can be diagnosed.
-const suspend = () => {
+const suspend = (reason) => {
   suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
+  suspensionReason = reason
 }
 
 const describeBody = (body) => {
@@ -129,8 +133,8 @@ const describeBody = (body) => {
 }
 
 const unexpectedResponseError = (url, status, body, expected) => {
-  suspend()
   const { title, snippet } = describeBody(body)
+  suspend(title ? `Bandcamp served an unexpected page ("${title}")` : 'Bandcamp served an unexpected page')
   logger.error(
     `Bandcamp served an unexpected page for ${url} (expected ${expected}). Requests are suspended until: ${suspendedUntil.toString()}`,
     { url, status, title, snippet },
@@ -161,9 +165,10 @@ const getPageSource = async (url, options = {}) => {
   if (suspendedUntil) {
     if (suspendedUntil < Date.now()) {
       suspendedUntil = null
+      suspensionReason = null
       requestCount = 0
     } else {
-      const error = new Error(`Rate limit reached. Requests are suspended until: ${suspendedUntil.toString()}`)
+      const error = new Error(`${suspensionReason}. Requests are suspended until: ${suspendedUntil.toString()}`)
       error.isRateLimit = true
       throw error
     }
@@ -171,7 +176,7 @@ const getPageSource = async (url, options = {}) => {
   requestCount++
   const res = await fetch(url, { method: 'GET', ...options })
   if ([429, 403].includes(res.status)) {
-    suspend()
+    suspend('Rate limit reached')
     logger.error(
       `Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`,
     )
@@ -395,6 +400,7 @@ const getRequestCount = () => requestCount
 
 const resetRateLimit = () => {
   suspendedUntil = null
+  suspensionReason = null
   requestCount = 0
 }
 
