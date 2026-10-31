@@ -70,6 +70,10 @@ test({
     await expectUnexpectedResponse(bandcampApi.getTagReleasesAsync({ genre: 'electronic', subgenre: 'drum-bass' }))
   }),
 
+  'a search that gets HTML fails with an unexpected-response error': withStubbedFetch(BLOCK_PAGE, async () => {
+    await expectUnexpectedResponse(bandcampApi.getSearchResultsAsync('noisia'))
+  }),
+
   'requests after a block page are suspended without reaching Bandcamp': withStubbedFetch(
     BLOCK_PAGE,
     async (requests) => {

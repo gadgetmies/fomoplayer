@@ -356,8 +356,10 @@ const mapSearchResults = ({ auto: { results } }) =>
     img,
   }))
 
+const SEARCH_API_URL = 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic'
+
 const getSearchResults = (query, callback) => {
-  return fetch('https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic', {
+  return getPageSource(SEARCH_API_URL, {
     method: 'POST',
     body: JSON.stringify({
       search_text: query,
@@ -369,12 +371,17 @@ const getSearchResults = (query, callback) => {
       'Content-Type': 'application/json; charset=UTF-8',
     },
   })
-    .then((res) => res.json())
     .then((res) => {
-      callback(null, mapSearchResults(res))
+      let searchResults
+      try {
+        searchResults = JSON.parse(res)
+      } catch (_) {
+        throw unexpectedResponseError(SEARCH_API_URL, 200, res, 'JSON from the search API')
+      }
+      callback(null, mapSearchResults(searchResults))
     })
     .catch((e) => {
-      logger.error(`Searching for ${query} failed`, { statusCode: e.statusCode })
+      logger.error(`Searching for ${query} failed`, { statusCode: e.statusCode, error: e.message })
       logger.silly(e)
       callback(e)
     })
