@@ -9,6 +9,15 @@ const vm = require('vm')
 let suspendedUntil = null
 let requestCount = 0
 
+// Bandcamp sits behind Fastly, which answers requests that carry Node's default
+// User-Agent (or a spoofed browser one) from datacenter addresses with a
+// JavaScript "Client Challenge" page instead of the real page. Probing from
+// Railway on 2026-11-01: a product/version token followed by a parenthetical
+// comment gets the real page, a bare token or a browser string is challenged.
+// Override with BANDCAMP_USER_AGENT if Bandcamp's rules change again.
+const USER_AGENT = process.env.BANDCAMP_USER_AGENT || 'ReleaseTracker/1.0 (compatible; release feed)'
+const withUserAgent = (headers = {}) => ({ 'User-Agent': USER_AGENT, ...headers })
+
 const scrapeJSON = R.curry((pattern, string) => {
   const match = string.match(new RegExp(pattern), 's')
   if (match === null) {
@@ -119,7 +128,7 @@ const getPageSource = async (url, options = {}) => {
     }
   }
   requestCount++
-  const res = await fetch(url, { method: 'GET', ...options })
+  const res = await fetch(url, { method: 'GET', ...options, headers: withUserAgent(options.headers) })
   if ([429, 403].includes(res.status)) {
     suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
     logger.error(
@@ -312,9 +321,7 @@ const getSearchResults = (query, callback) => {
       fan_id: null,
       full_page: false,
     }),
-    headers: {
-      'Content-Type': 'application/json; charset=UTF-8',
-    },
+    headers: withUserAgent({ 'Content-Type': 'application/json; charset=UTF-8' }),
   })
     .then((res) => res.json())
     .then((res) => {
@@ -332,6 +339,12 @@ const resetRequestCount = () => {
 }
 
 const getRequestCount = () => requestCount
+
+// Test support: clear a suspension left behind by an earlier request.
+const resetRateLimit = () => {
+  suspendedUntil = null
+  requestCount = 0
+}
 
 module.exports = {
   ...BPromise.promisifyAll({
@@ -352,7 +365,9 @@ module.exports = {
     getDiscoverReleaseUrls,
     isRateLimited,
     resetRequestCount,
+    resetRateLimit,
     getRequestCount,
+    userAgent: USER_AGENT,
     nameSubdomainSimilarity,
     getSubdomain,
     nameSubdomainSimilarityThreshold: NAME_SUBDOMAIN_SIMILARITY_THRESHOLD,
