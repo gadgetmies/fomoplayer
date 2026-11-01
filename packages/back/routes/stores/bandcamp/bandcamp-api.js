@@ -18,6 +18,13 @@ let requestCount = 0
 const USER_AGENT = process.env.BANDCAMP_USER_AGENT || 'ReleaseTracker/1.0 (compatible; release feed)'
 const withUserAgent = (headers = {}) => ({ 'User-Agent': USER_AGENT, ...headers })
 
+const SUSPENSION_MS = 10 /* minutes */ * 60 * 1000
+
+// The challenge page comes back with HTTP 200, so it has to be recognised from
+// its body: a "Client Challenge" title and assets served under /_fs-ch-<id>/.
+const isChallengePage = (html) =>
+  typeof html === 'string' && (/<title>\s*Client Challenge\s*<\/title>/i.test(html) || html.includes('/_fs-ch-'))
+
 const scrapeJSON = R.curry((pattern, string) => {
   const match = string.match(new RegExp(pattern), 's')
   if (match === null) {
@@ -130,7 +137,7 @@ const getPageSource = async (url, options = {}) => {
   requestCount++
   const res = await fetch(url, { method: 'GET', ...options, headers: withUserAgent(options.headers) })
   if ([429, 403].includes(res.status)) {
-    suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
+    suspendedUntil = new Date(Date.now() + SUSPENSION_MS)
     logger.error(
       `Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`,
     )
@@ -147,7 +154,21 @@ const getPageSource = async (url, options = {}) => {
     error.statusCode = res.status
     throw error
   }
-  return res.text()
+  const text = await res.text()
+  if (isChallengePage(text)) {
+    // Treat it like a rate limit: parsed as a page it would look like an
+    // artist with no releases, and hammering on would only keep us flagged.
+    suspendedUntil = new Date(Date.now() + SUSPENSION_MS)
+    const message = `Bandcamp served a client challenge page for ${url} after ${requestCount} requests. Requests are suspended until: ${suspendedUntil.toString()}`
+    logger.error(message)
+    const error = new Error(message)
+    error.isRateLimit = true
+    error.isChallenge = true
+    error.statusCode = res.status
+    error.requestCount = requestCount
+    throw error
+  }
+  return text
 }
 
 const isRateLimited = () => {
@@ -363,6 +384,7 @@ module.exports = {
     getTagSlug,
     getDiscoverParams,
     getDiscoverReleaseUrls,
+    isChallengePage,
     isRateLimited,
     resetRequestCount,
     resetRateLimit,

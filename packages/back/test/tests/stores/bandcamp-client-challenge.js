@@ -2,9 +2,11 @@
  * Bandcamp sits behind Fastly, which since 2026-10-30 answers requests that
  * carry Node's default User-Agent (or a spoofed browser one) from datacenter
  * addresses with an HTTP 200 "Client Challenge" page instead of the real page.
- * These tests drive the real bandcamp-api module through a stubbed global
- * fetch and check that every request identifies the client with a descriptive
- * User-Agent.
+ * Parsed as a normal page it looks like an artist with no releases. These tests
+ * drive the real bandcamp-api module through a stubbed global fetch and check
+ * that (1) every request identifies the client with a descriptive User-Agent
+ * and (2) a challenge page is treated like a rate limit so the fetch loop backs
+ * off instead of silently storing nothing.
  */
 const assert = require('assert')
 const fs = require('fs')
@@ -12,9 +14,10 @@ const path = require('path')
 const { test } = require('cascade-test')
 
 const bandcampApi = require('../../../routes/stores/bandcamp/bandcamp-api.js')
-const { userAgent, resetRateLimit } = bandcampApi.static
+const { isChallengePage, userAgent, resetRateLimit, isRateLimited } = bandcampApi.static
 
 const fixture = (name) => fs.readFileSync(path.join(__dirname, '..', '..', 'fixtures', 'bandcamp', name), 'utf8')
+const challengeHtml = fixture('bandcamp-client-challenge.html')
 const artistHtml = fixture('bandcamp-artist-page.html')
 
 // bandcamp-api resolves the global fetch at call time, so a stub installed for
@@ -44,6 +47,12 @@ const recordingFetch = (respond) => {
 }
 
 test({
+  'isChallengePage recognises the Fastly challenge page and not a real page': () => {
+    assert.strictEqual(isChallengePage(challengeHtml), true)
+    assert.strictEqual(isChallengePage(artistHtml), false)
+    assert.strictEqual(isChallengePage(''), false)
+  },
+
   'the configured User-Agent is descriptive and does not name the product': () => {
     assert.ok(typeof userAgent === 'string' && userAgent.length > 0)
     assert.notStrictEqual(userAgent, 'node')
@@ -80,4 +89,23 @@ test({
     }
   },
 
+  'a challenge page is reported as a rate limit and suspends further requests': async () => {
+    resetRateLimit()
+    const { impl, requests } = recordingFetch(() => htmlResponse(challengeHtml))
+    try {
+      await withFetch(impl, async () => {
+        await assert.rejects(bandcampApi.getArtistAsync('https://noisia.bandcamp.com'), (e) => {
+          assert.strictEqual(e.isRateLimit, true, 'challenge must be surfaced as a rate limit')
+          assert.strictEqual(e.isChallenge, true)
+          assert.match(e.message, /challenge/i)
+          return true
+        })
+        assert.strictEqual(isRateLimited(), true)
+        await assert.rejects(bandcampApi.getReleaseAsync('https://noisia.bandcamp.com/album/x'), (e) => e.isRateLimit === true)
+      })
+      assert.strictEqual(requests.length, 1, 'suspended requests must not reach fetch')
+    } finally {
+      resetRateLimit()
+    }
+  },
 })
