@@ -146,7 +146,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
     for (const scheduledName of Object.keys(scheduled)) {
       if (!jobSchedules.find(({ name }) => name === scheduledName)) {
         logger.info(`Removing schedule of job '${scheduledName}'`)
-        scheduled[scheduledName].task.stop()
+        scheduled[scheduledName].task.cancel()
         delete scheduled[scheduledName]
       }
     }
@@ -157,7 +157,10 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
           continue
         } else {
           logger.info(`Updating schedule of job '${name}' to ${schedule}`)
-          scheduled[name].task.stop()
+          // node-schedule jobs are cancelled, not stopped. Drop the entry too, or a
+          // disabled job would be "updated" (and cancelled again) on every reload.
+          scheduled[name].task.cancel()
+          delete scheduled[name]
         }
       } else {
         logger.info(`Scheduling new job '${name}' with schedule '${schedule}'`)
@@ -210,7 +213,18 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   ...radiator,
 }
 
+// Cancel every scheduled job so a process (such as a test run) can exit.
+const cancelAll = () => {
+  for (const name of Object.keys(scheduled)) {
+    scheduled[name].task.cancel()
+    delete scheduled[name]
+  }
+}
+
 module.exports = {
   init,
   runJob,
+  updateJobs: jobs.updateJobs,
+  getScheduled: () => scheduled,
+  cancelAll,
 }
