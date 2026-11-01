@@ -55,4 +55,13 @@ test({
     assert.strictEqual(before.nextInvocation(), null, 'the replaced node-schedule job is cancelled')
     assert.notStrictEqual(after.task.nextInvocation(), null)
   },
+
+  'a schedule that can never fire is skipped instead of breaking the reload': async () => {
+    await setSchedule('0 0 31 2 *') // 31 February: node-schedule returns null for it
+    await updateJobs()
+    assert.strictEqual(getScheduled()[JOB], undefined)
+    await setSchedule('0 1 1 1 *')
+    await updateJobs()
+    assert.ok(getScheduled()[JOB], 'a later valid schedule is picked up again')
+  },
 })

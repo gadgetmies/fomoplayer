@@ -171,17 +171,23 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
         continue
       }
 
-      scheduled[name] = {
-        task: scheduleJob(schedule, () => {
-          if (process.env.DISABLE_JOBS) {
-            logger.info(`Skipping job ${name} because jobs are disabled`)
-            return
-          }
-          return runJob(name)
-        }),
-        enabled,
-        schedule,
+      const task = scheduleJob(schedule, () => {
+        if (process.env.DISABLE_JOBS) {
+          logger.info(`Skipping job ${name} because jobs are disabled`)
+          return
+        }
+        return runJob(name)
+      })
+
+      // node-schedule returns null for a schedule it cannot parse or that never
+      // fires again. Leave such a job unscheduled rather than storing a null task
+      // that would break the next reload.
+      if (!task) {
+        logger.error(`Not scheduling job '${name}': schedule '${schedule}' is invalid or never fires`)
+        continue
       }
+
+      scheduled[name] = { task, enabled, schedule }
     }
 
     return { success: true }
