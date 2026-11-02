@@ -14,11 +14,12 @@ const path = require('path')
 const { test } = require('cascade-test')
 
 const bandcampApi = require('../../../routes/stores/bandcamp/bandcamp-api.js')
-const { isChallengePage, userAgent, resetRateLimit, isRateLimited } = bandcampApi.static
+const { isChallengePage, userAgent, resetRateLimit, resetReleaseIndex, isRateLimited, suspensionMs } = bandcampApi.static
 
 const fixture = (name) => fs.readFileSync(path.join(__dirname, '..', '..', 'fixtures', 'bandcamp', name), 'utf8')
 const challengeHtml = fixture('bandcamp-client-challenge.html')
 const artistHtml = fixture('bandcamp-artist-page.html')
+const releaseJson = require('fomoplayer_shared/interceptors/fixtures/bandcamp-tralbum-the-resonance-vi.json')
 
 // bandcamp-api resolves the global fetch at call time, so a stub installed for
 // the duration of one test observes exactly the request the module makes.
@@ -60,15 +61,24 @@ test({
     assert.doesNotMatch(userAgent, /fomo/i, 'must not name the product')
   },
 
-  'artist page and release requests carry the User-Agent': async () => {
+  'artist page and release detail requests carry the User-Agent': async () => {
     resetRateLimit()
-    const { impl, requests } = recordingFetch(() => htmlResponse(artistHtml))
+    resetReleaseIndex()
+    // The artist page lists the release ids, so the release itself is fetched
+    // from the JSON endpoint rather than scraped.
+    const { impl, requests } = recordingFetch((url) =>
+      url.includes('tralbum_details') ? jsonResponse(releaseJson) : htmlResponse(artistHtml),
+    )
     await withFetch(impl, async () => {
       const { releaseUrls } = await bandcampApi.getArtistAsync('https://noisia.bandcamp.com')
       assert.ok(releaseUrls.length > 0, 'the stubbed artist page should still parse normally')
-      await bandcampApi.getReleaseAsync(releaseUrls[0])
+      const release = await bandcampApi.getReleaseAsync(releaseUrls[0])
+      assert.strictEqual(release.trackinfo.length, releaseJson.tracks.length)
     })
-    assert.strictEqual(requests.length, 2)
+    assert.deepStrictEqual(
+      requests.map(({ url }) => url),
+      ['https://noisia.bandcamp.com/music', 'https://bandcamp.com/api/mobile/24/tralbum_details'],
+    )
     for (const { url, userAgent: sent } of requests) {
       assert.strictEqual(sent, userAgent, `request to ${url} must send the configured User-Agent`)
     }
@@ -98,12 +108,39 @@ test({
           assert.strictEqual(e.isRateLimit, true, 'challenge must be surfaced as a rate limit')
           assert.strictEqual(e.isChallenge, true)
           assert.match(e.message, /challenge/i)
+          assert.ok(e.retryAfter instanceof Date && e.retryAfter > Date.now())
           return true
         })
         assert.strictEqual(isRateLimited(), true)
-        await assert.rejects(bandcampApi.getReleaseAsync('https://noisia.bandcamp.com/album/x'), (e) => e.isRateLimit === true)
+        // While paused, requests fail fast with a quiet error that callers
+        // pass on without logging the rate limit again.
+        await assert.rejects(
+          bandcampApi.getReleaseAsync('https://noisia.bandcamp.com/album/x'),
+          (e) => e.isRateLimit === true && e.isSuspended === true && e.retryAfter instanceof Date,
+        )
       })
       assert.strictEqual(requests.length, 1, 'suspended requests must not reach fetch')
+    } finally {
+      resetRateLimit()
+    }
+  },
+
+  'the pause doubles for each rate limit in a row, up to two hours': () => {
+    const minutes = (n) => suspensionMs(n) / 60000
+    assert.deepStrictEqual([1, 2, 3, 4, 5, 6].map(minutes), [10, 20, 40, 80, 120, 120])
+  },
+
+  'a rate limit on a followed page propagates instead of ending the fetch quietly': async () => {
+    // Swallowing it made the job mark the page updated without fetching it.
+    resetRateLimit()
+    resetReleaseIndex()
+    const bandcampLogic = require('../../../routes/stores/bandcamp/logic')
+    const { impl } = recordingFetch(() => htmlResponse(challengeHtml))
+    try {
+      await withFetch(impl, async () => {
+        const generator = bandcampLogic.getArtistTracks({ url: 'https://noisia.bandcamp.com' })
+        await assert.rejects(generator.next(), (e) => e.isRateLimit === true)
+      })
     } finally {
       resetRateLimit()
     }
