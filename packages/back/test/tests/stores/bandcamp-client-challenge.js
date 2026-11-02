@@ -14,7 +14,7 @@ const path = require('path')
 const { test } = require('cascade-test')
 
 const bandcampApi = require('../../../routes/stores/bandcamp/bandcamp-api.js')
-const { isChallengePage, userAgent, resetRateLimit, resetReleaseIndex, isRateLimited } = bandcampApi.static
+const { isChallengePage, userAgent, resetRateLimit, resetReleaseIndex, isRateLimited, suspensionMs } = bandcampApi.static
 
 const fixture = (name) => fs.readFileSync(path.join(__dirname, '..', '..', 'fixtures', 'bandcamp', name), 'utf8')
 const challengeHtml = fixture('bandcamp-client-challenge.html')
@@ -108,12 +108,39 @@ test({
           assert.strictEqual(e.isRateLimit, true, 'challenge must be surfaced as a rate limit')
           assert.strictEqual(e.isChallenge, true)
           assert.match(e.message, /challenge/i)
+          assert.ok(e.retryAfter instanceof Date && e.retryAfter > Date.now())
           return true
         })
         assert.strictEqual(isRateLimited(), true)
-        await assert.rejects(bandcampApi.getReleaseAsync('https://noisia.bandcamp.com/album/x'), (e) => e.isRateLimit === true)
+        // While paused, requests fail fast with a quiet error that callers
+        // pass on without logging the rate limit again.
+        await assert.rejects(
+          bandcampApi.getReleaseAsync('https://noisia.bandcamp.com/album/x'),
+          (e) => e.isRateLimit === true && e.isSuspended === true && e.retryAfter instanceof Date,
+        )
       })
       assert.strictEqual(requests.length, 1, 'suspended requests must not reach fetch')
+    } finally {
+      resetRateLimit()
+    }
+  },
+
+  'the pause doubles for each rate limit in a row, up to two hours': () => {
+    const minutes = (n) => suspensionMs(n) / 60000
+    assert.deepStrictEqual([1, 2, 3, 4, 5, 6].map(minutes), [10, 20, 40, 80, 120, 120])
+  },
+
+  'a rate limit on a followed page propagates instead of ending the fetch quietly': async () => {
+    // Swallowing it made the job mark the page updated without fetching it.
+    resetRateLimit()
+    resetReleaseIndex()
+    const bandcampLogic = require('../../../routes/stores/bandcamp/logic')
+    const { impl } = recordingFetch(() => htmlResponse(challengeHtml))
+    try {
+      await withFetch(impl, async () => {
+        const generator = bandcampLogic.getArtistTracks({ url: 'https://noisia.bandcamp.com' })
+        await assert.rejects(generator.next(), (e) => e.isRateLimit === true)
+      })
     } finally {
       resetRateLimit()
     }

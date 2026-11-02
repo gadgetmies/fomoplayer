@@ -8,6 +8,9 @@ const vm = require('vm')
 
 let suspendedUntil = null
 let requestCount = 0
+// Rate limits hit in a row without a successful request in between; each
+// one doubles the pause so a lasting block is probed less and less often.
+let consecutiveRateLimits = 0
 
 // Bandcamp sits behind Fastly, which answers requests that carry Node's default
 // User-Agent (or a spoofed browser one) from datacenter addresses with a
@@ -19,6 +22,8 @@ const USER_AGENT = process.env.BANDCAMP_USER_AGENT || 'ReleaseTracker/1.0 (compa
 const withUserAgent = (headers = {}) => ({ 'User-Agent': USER_AGENT, ...headers })
 
 const SUSPENSION_MS = 10 /* minutes */ * 60 * 1000
+const MAX_SUSPENSION_MS = 2 /* hours */ * 60 * 60 * 1000
+const suspensionMs = (consecutive) => Math.min(SUSPENSION_MS * 2 ** Math.max(consecutive - 1, 0), MAX_SUSPENSION_MS)
 
 // Space requests out instead of firing a job's whole batch at once: bursts
 // from one datacenter address are what Bandcamp's edge flags. Requests are
@@ -139,14 +144,37 @@ const warnOnNameSubdomainMismatch = (url, pageType, pageName) => {
   }
 }
 
+// Every rejection Bandcamp's edge gives this client (429, 403, or an HTTP 200
+// client challenge page) is one condition: the client is being throttled. It
+// pauses all Bandcamp requests and is logged once, here, when the pause
+// starts. Requests made while paused fail fast with a quiet error so callers
+// can stop without logging the same condition again.
+const startSuspension = (url, reason) => {
+  consecutiveRateLimits++
+  const pauseMs = suspensionMs(consecutiveRateLimits)
+  suspendedUntil = new Date(Date.now() + pauseMs)
+  logger.warn(
+    `Bandcamp rate limited (${reason}) after ${requestCount} requests, at ${url}. ` +
+      `Pausing Bandcamp requests for ${Math.round(pauseMs / 60000)} min until ${suspendedUntil.toISOString()}` +
+      (consecutiveRateLimits > 1 ? ` (${consecutiveRateLimits} rate limits in a row)` : ''),
+  )
+  const error = new Error(`Bandcamp rate limited (${reason}); requests paused until ${suspendedUntil.toISOString()}`)
+  error.isRateLimit = true
+  error.requestCount = requestCount
+  error.retryAfter = suspendedUntil
+  return error
+}
+
 const getPageSource = async (url, options = {}) => {
   if (suspendedUntil) {
     if (suspendedUntil < Date.now()) {
       suspendedUntil = null
       requestCount = 0
     } else {
-      const error = new Error(`Rate limit reached. Requests are suspended until: ${suspendedUntil.toString()}`)
+      const error = new Error(`Bandcamp requests are paused until ${suspendedUntil.toISOString()}`)
       error.isRateLimit = true
+      error.isSuspended = true
+      error.retryAfter = suspendedUntil
       throw error
     }
   }
@@ -154,37 +182,25 @@ const getPageSource = async (url, options = {}) => {
   requestCount++
   const res = await fetch(url, { method: 'GET', ...options, headers: withUserAgent(options.headers) })
   if ([429, 403].includes(res.status)) {
-    suspendedUntil = new Date(Date.now() + SUSPENSION_MS)
-    logger.error(
-      `Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`,
-    )
-    const error = new Error(
-      `Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`,
-    )
-    error.isRateLimit = true
+    const error = startSuspension(url, `HTTP ${res.status}`)
     error.statusCode = res.status
-    error.requestCount = requestCount
     throw error
   }
   if (!res.ok) {
-    const error = new Error(`Request failed with status ${res.status}`)
+    const error = new Error(`Request to ${url} failed with status ${res.status}`)
     error.statusCode = res.status
     throw error
   }
   const text = await res.text()
   if (isChallengePage(text)) {
-    // Treat it like a rate limit: parsed as a page it would look like an
-    // artist with no releases, and hammering on would only keep us flagged.
-    suspendedUntil = new Date(Date.now() + SUSPENSION_MS)
-    const message = `Bandcamp served a client challenge page for ${url} after ${requestCount} requests. Requests are suspended until: ${suspendedUntil.toString()}`
-    logger.error(message)
-    const error = new Error(message)
-    error.isRateLimit = true
+    // Parsed as a page it would look like an artist with no releases, and
+    // hammering on would only keep us flagged.
+    const error = startSuspension(url, 'client challenge page')
     error.isChallenge = true
     error.statusCode = res.status
-    error.requestCount = requestCount
     throw error
   }
+  consecutiveRateLimits = 0
   return text
 }
 
@@ -214,7 +230,7 @@ const getRelease = (itemUrl, callback) => {
     })
     .then((releaseInfo) => callback(null, releaseInfo))
     .catch((e) => {
-      logger.error(`Fetching release from ${itemUrl} failed`, { statusCode: e.statusCode })
+      if (!e.isRateLimit) logger.error(`Fetching release from ${itemUrl} failed: ${e.message}`, { statusCode: e.statusCode })
       callback(e)
     })
 }
@@ -522,6 +538,7 @@ const getRequestCount = () => requestCount
 const resetRateLimit = () => {
   suspendedUntil = null
   requestCount = 0
+  consecutiveRateLimits = 0
 }
 
 module.exports = {
@@ -546,6 +563,7 @@ module.exports = {
     tralbumToReleaseInfo,
     resetReleaseIndex,
     isRateLimited,
+    suspensionMs,
     resetRequestCount,
     resetRateLimit,
     getRequestCount,
