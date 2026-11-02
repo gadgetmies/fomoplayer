@@ -9,6 +9,22 @@ const vm = require('vm')
 let suspendedUntil = null
 let requestCount = 0
 
+// Bandcamp sits behind Fastly, which answers requests that carry Node's default
+// User-Agent (or a spoofed browser one) from datacenter addresses with a
+// JavaScript "Client Challenge" page instead of the real page. Probing from
+// Railway on 2026-11-01: a product/version token followed by a parenthetical
+// comment gets the real page, a bare token or a browser string is challenged.
+// Override with BANDCAMP_USER_AGENT if Bandcamp's rules change again.
+const USER_AGENT = process.env.BANDCAMP_USER_AGENT || 'ReleaseTracker/1.0 (compatible; release feed)'
+const withUserAgent = (headers = {}) => ({ 'User-Agent': USER_AGENT, ...headers })
+
+const SUSPENSION_MS = 10 /* minutes */ * 60 * 1000
+
+// The challenge page comes back with HTTP 200, so it has to be recognised from
+// its body: a "Client Challenge" title and assets served under /_fs-ch-<id>/.
+const isChallengePage = (html) =>
+  typeof html === 'string' && (/<title>\s*Client Challenge\s*<\/title>/i.test(html) || html.includes('/_fs-ch-'))
+
 const scrapeJSON = R.curry((pattern, string) => {
   const match = string.match(new RegExp(pattern), 's')
   if (match === null) {
@@ -119,9 +135,9 @@ const getPageSource = async (url, options = {}) => {
     }
   }
   requestCount++
-  const res = await fetch(url, { method: 'GET', ...options })
+  const res = await fetch(url, { method: 'GET', ...options, headers: withUserAgent(options.headers) })
   if ([429, 403].includes(res.status)) {
-    suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
+    suspendedUntil = new Date(Date.now() + SUSPENSION_MS)
     logger.error(
       `Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`,
     )
@@ -138,7 +154,21 @@ const getPageSource = async (url, options = {}) => {
     error.statusCode = res.status
     throw error
   }
-  return res.text()
+  const text = await res.text()
+  if (isChallengePage(text)) {
+    // Treat it like a rate limit: parsed as a page it would look like an
+    // artist with no releases, and hammering on would only keep us flagged.
+    suspendedUntil = new Date(Date.now() + SUSPENSION_MS)
+    const message = `Bandcamp served a client challenge page for ${url} after ${requestCount} requests. Requests are suspended until: ${suspendedUntil.toString()}`
+    logger.error(message)
+    const error = new Error(message)
+    error.isRateLimit = true
+    error.isChallenge = true
+    error.statusCode = res.status
+    error.requestCount = requestCount
+    throw error
+  }
+  return text
 }
 
 const isRateLimited = () => {
@@ -312,9 +342,7 @@ const getSearchResults = (query, callback) => {
       fan_id: null,
       full_page: false,
     }),
-    headers: {
-      'Content-Type': 'application/json; charset=UTF-8',
-    },
+    headers: withUserAgent({ 'Content-Type': 'application/json; charset=UTF-8' }),
   })
     .then((res) => res.json())
     .then((res) => {
@@ -333,6 +361,12 @@ const resetRequestCount = () => {
 
 const getRequestCount = () => requestCount
 
+// Test support: clear a suspension left behind by an earlier request.
+const resetRateLimit = () => {
+  suspendedUntil = null
+  requestCount = 0
+}
+
 module.exports = {
   ...BPromise.promisifyAll({
     getRelease,
@@ -350,9 +384,12 @@ module.exports = {
     getTagSlug,
     getDiscoverParams,
     getDiscoverReleaseUrls,
+    isChallengePage,
     isRateLimited,
     resetRequestCount,
+    resetRateLimit,
     getRequestCount,
+    userAgent: USER_AGENT,
     nameSubdomainSimilarity,
     getSubdomain,
     nameSubdomainSimilarityThreshold: NAME_SUBDOMAIN_SIMILARITY_THRESHOLD,
