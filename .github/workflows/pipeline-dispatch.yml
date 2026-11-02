@@ -1,0 +1,64 @@
+# Caller workflow written by scripts/bootstrap-repo.sh of gadgetmies/agent-kanban.
+#
+# Forwards this repository's issue, comment, review and pull request events to
+# the agent pipeline's router in gadgetmies/agent-kanban as a repository_dispatch
+# event named "pipeline-<event name>". The router (agent-kanban change 06)
+# reads the client payload and fetches anything else it needs through the API.
+#
+# Needs one repository secret, PIPELINE_DISPATCH_TOKEN: a token allowed to
+# trigger repository_dispatch on gadgetmies/agent-kanban. Set it with
+#   gh secret set PIPELINE_DISPATCH_TOKEN -R <owner/repo>
+# Until it is set, every run ends with a notice and forwards nothing.
+name: Agent pipeline dispatch
+
+on:
+  issues:
+    types: [opened, edited, labeled, unlabeled, closed, reopened]
+  issue_comment:
+    types: [created, edited]
+  pull_request:
+    types: [opened, synchronize, reopened, closed, ready_for_review, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted]
+
+permissions: {}
+
+jobs:
+  forward:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Forward the event to the pipeline router
+        env:
+          PIPELINE_DISPATCH_TOKEN: ${{ secrets.PIPELINE_DISPATCH_TOKEN }}
+          PIPELINE_REPO: "gadgetmies/agent-kanban"
+          PIPELINE_REF: "main"
+          SOURCE_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          SENDER: ${{ github.event.sender.login }}
+          LABEL: ${{ github.event.label.name }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ -z "$PIPELINE_DISPATCH_TOKEN" ]; then
+            echo "::notice::PIPELINE_DISPATCH_TOKEN is not set; nothing forwarded. Set it with: gh secret set PIPELINE_DISPATCH_TOKEN -R $SOURCE_REPO"
+            exit 0
+          fi
+          jq -n \
+            --arg event_type "pipeline-$EVENT_NAME" \
+            --arg repository "$SOURCE_REPO" \
+            --arg event "$EVENT_NAME" \
+            --arg action "$EVENT_ACTION" \
+            --arg number "$NUMBER" \
+            --arg sender "$SENDER" \
+            --arg label "$LABEL" \
+            --arg comment_id "$COMMENT_ID" \
+            --arg review_state "$REVIEW_STATE" \
+            --arg run_id "$RUN_ID" \
+            --arg pipeline_ref "$PIPELINE_REF" \
+            '{event_type: $event_type, client_payload: {repository: $repository, event: $event, action: $action, number: $number, sender: $sender, label: $label, comment_id: $comment_id, review_state: $review_state, run_id: $run_id, pipeline_ref: $pipeline_ref}}' \
+            > payload.json
+          GH_TOKEN="$PIPELINE_DISPATCH_TOKEN" gh api "repos/$PIPELINE_REPO/dispatches" --input payload.json
+          echo "forwarded $EVENT_NAME/$EVENT_ACTION for #$NUMBER to $PIPELINE_REPO"
