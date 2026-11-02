@@ -335,7 +335,7 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
   try {
     const generator = await storeModule.logic.getPlaylistTracks(details)
     for await (const { tracks, errors } of generator) {
-      err.concat(errors)
+      err.push(...errors)
       try {
         await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
       } catch (e) {
