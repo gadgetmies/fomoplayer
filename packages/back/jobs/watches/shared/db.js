@@ -24,6 +24,7 @@ FROM
 WHERE
     store_url = ${storeUrl}
 AND (playlist_last_update IS NULL OR playlist_last_update + (${refreshInterval})::INTERVAL < NOW())
+AND (playlist_fetch_retry_after IS NULL OR playlist_fetch_retry_after < NOW())
 ORDER BY
   playlist_last_update NULLS FIRST
 LIMIT ${batchSize}
@@ -53,6 +54,7 @@ WHERE
 AND store__artist_missing IS FALSE
 AND store__artist_url IS NOT NULL
 AND (store__artist_last_update IS NULL OR store__artist_last_update + (${refreshInterval})::INTERVAL < NOW())
+AND (store__artist_fetch_retry_after IS NULL OR store__artist_fetch_retry_after < NOW())
 ORDER BY
   store__artist_last_update NULLS FIRST
 LIMIT ${batchSize}
@@ -81,6 +83,7 @@ WHERE
     store__label_ignored IS FALSE
 AND store__label_missing IS FALSE
 AND (store__label_last_update IS NULL OR store__label_last_update + (${refreshInterval})::INTERVAL < NOW())
+AND (store__label_fetch_retry_after IS NULL OR store__label_fetch_retry_after < NOW())
 ORDER BY
   store__label_last_update NULLS FIRST
 LIMIT ${batchSize}
