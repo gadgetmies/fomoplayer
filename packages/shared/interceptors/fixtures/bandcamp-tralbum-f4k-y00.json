@@ -1,0 +1,182 @@
+{
+  "id": 3959806045,
+  "type": "a",
+  "title": "F4K Y00",
+  "bandcamp_url": "https://billainaethek.bandcamp.com/album/f4k-y00",
+  "art_id": 3442225632,
+  "band": {
+    "band_id": 3470339956,
+    "name": "Billain Aethek",
+    "image_id": 10303385,
+    "bio": "AAA Films and Games music/sound composer currently working on Scorn game and first film \"Fugitive\" Graphic design and perform. Science and technology.",
+    "location": "Bosnia and Herzegovina"
+  },
+  "tralbum_artist": "Billain",
+  "package_art": [],
+  "featured_track_id": 1618408696,
+  "tracks": [
+    {
+      "track_id": 1618408696,
+      "track_license_id": null,
+      "title": "F4K Y00",
+      "track_num": 1,
+      "streaming_url": {
+        "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1618408696&ts=1793632523&t=8098c503fcefb39303fafda25f71b206c2c81c36"
+      },
+      "duration": 266.667,
+      "encodings_id": 3195679650,
+      "album_title": null,
+      "band_name": "Billain",
+      "art_id": null,
+      "album_id": 3959806045,
+      "is_streamable": true,
+      "has_lyrics": false,
+      "is_set_price": false,
+      "price": 2.0,
+      "has_digital_download": true,
+      "merch_ids": null,
+      "merch_sold_out": null,
+      "currency": "EUR",
+      "require_email": false,
+      "is_purchasable": true,
+      "band_id": 3470339956,
+      "label": "VISION",
+      "label_id": 4289352950,
+      "track_url": "https://billainaethek.bandcamp.com/track/f4k-y00-2"
+    },
+    {
+      "track_id": 3961297937,
+      "track_license_id": null,
+      "title": "Viadukt",
+      "track_num": 2,
+      "streaming_url": {
+        "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3961297937&ts=1793632523&t=1933a99b1208bb142e2560928c239f5a4ad1d378"
+      },
+      "duration": 421.818,
+      "encodings_id": 3291046019,
+      "album_title": null,
+      "band_name": "Billain",
+      "art_id": null,
+      "album_id": 3959806045,
+      "is_streamable": true,
+      "has_lyrics": false,
+      "is_set_price": false,
+      "price": 2.0,
+      "has_digital_download": true,
+      "merch_ids": null,
+      "merch_sold_out": null,
+      "currency": "EUR",
+      "require_email": false,
+      "is_purchasable": true,
+      "band_id": 3470339956,
+      "label": "VISION",
+      "label_id": 4289352950,
+      "track_url": "https://billainaethek.bandcamp.com/track/viadukt"
+    }
+  ],
+  "credits": "2023 VISION \r\nArtwork by Adis Kutkut",
+  "about": null,
+  "album_id": 3959806045,
+  "album_title": "F4K Y00",
+  "release_date": 1703980800,
+  "is_purchasable": true,
+  "free_download": false,
+  "is_preorder": false,
+  "tags": [
+    {
+      "name": "Cyberneuro",
+      "norm_name": "cyberneuro",
+      "url": "/discover/cyberneuro",
+      "isloc": false,
+      "loc_id": null,
+      "geoname": null
+    },
+    {
+      "name": "Experimental",
+      "norm_name": "experimental",
+      "url": "/discover/experimental",
+      "isloc": false,
+      "loc_id": null,
+      "geoname": null
+    },
+    {
+      "name": "Neurofunk",
+      "norm_name": "neurofunk",
+      "url": "/discover/neurofunk",
+      "isloc": false,
+      "loc_id": null,
+      "geoname": null
+    },
+    {
+      "name": "ambient",
+      "norm_name": "ambient",
+      "url": "/discover/ambient",
+      "isloc": false,
+      "loc_id": null,
+      "geoname": null
+    },
+    {
+      "name": "ambient electronic",
+      "norm_name": "ambient-electronic",
+      "url": "/discover/ambient-electronic",
+      "isloc": false,
+      "loc_id": null,
+      "geoname": null
+    },
+    {
+      "name": "cyberpunk",
+      "norm_name": "cyberpunk",
+      "url": "/discover/cyberpunk",
+      "isloc": false,
+      "loc_id": null,
+      "geoname": null
+    },
+    {
+      "name": "drum'n'bass",
+      "norm_name": "drum'n'bass",
+      "url": "/discover/drum%27n%27bass",
+      "isloc": false,
+      "loc_id": null,
+      "geoname": null
+    },
+    {
+      "name": "neurofunk dnb",
+      "norm_name": "neurofunk-dnb",
+      "url": "/discover/neurofunk-dnb",
+      "isloc": false,
+      "loc_id": null,
+      "geoname": null
+    },
+    {
+      "name": "sounddesign",
+      "norm_name": "sounddesign",
+      "url": "/discover/sounddesign",
+      "isloc": false,
+      "loc_id": null,
+      "geoname": null
+    },
+    {
+      "name": "Bosnia and Herzegovina",
+      "norm_name": "bosnia-and-herzegovina",
+      "url": "/discover/bosnia-and-herzegovina",
+      "isloc": true,
+      "loc_id": 959714788,
+      "geoname": {
+        "id": 3277605,
+        "name": "Bosnia and Herzegovina",
+        "fullname": "Bosnia and Herzegovina"
+      }
+    }
+  ],
+  "currency": "EUR",
+  "is_set_price": false,
+  "price": 3.0,
+  "require_email": false,
+  "label": "VISION",
+  "label_id": 4289352950,
+  "package_details_lite": {},
+  "has_digital_download": true,
+  "num_downloadable_tracks": 2,
+  "merch_sold_out": true,
+  "streaming_limit": 3
+}

@@ -8,6 +8,7 @@ const f4kY00Tracks = require('../../../fixtures/bandcamp-f4k-y00-tracks.json')
 const resonanceVTracks = require('../../../fixtures/bandcamp-resonance-v-tracks.json')
 const resonanceVITracks = require('../../../fixtures/bandcamp-resonance-vi-tracks.json')
 const assert = require('assert')
+const tralbumDetailsUrl = 'https://bandcamp.com/api/mobile/24/tralbum_details'
 
 test({
   setup: () => {
@@ -34,10 +35,9 @@ test({
   'artist tracks': {
     'are fetched': async () => {
       const noisiaUrl = 'https://noisia.bandcamp.com'
-      const interceptedUrls = [
-        'https://noisia.bandcamp.com/album/the-resonance-vi',
-        'https://noisia.bandcamp.com/album/the-resonance-v',
-      ]
+      // Release details come from the JSON endpoint, one POST per release,
+      // carrying the item id read off the /music page tile.
+      const interceptedIds = [3222376539 /* the-resonance-vi */, 1144765497 /* the-resonance-v */]
 
       const expectedResults = [resonanceVTracks, resonanceVITracks]
 
@@ -51,7 +51,9 @@ test({
         assert.equal(errors.length, 0)
         assert.equal(bandcampInterceptor.getMockedRequests().length, 2 + yields)
         assert.notEqual(
-          bandcampInterceptor.getMockedRequests().find(({ url }) => url === interceptedUrls[yields]),
+          bandcampInterceptor
+            .getMockedRequests()
+            .find(({ url, body }) => url === tralbumDetailsUrl && JSON.parse(body).tralbum_id === interceptedIds[yields]),
           undefined,
         )
         assert.deepEqual(tracks, expectedResults[yields])
@@ -67,10 +69,7 @@ test({
   'label details': {
     'are fetched': async () => {
       const visionUrl = 'https://visionrecordings.bandcamp.com'
-      const interceptedUrls = [
-        'https://billainaethek.bandcamp.com/album/different-eyes-ep?label=4289352950&tab=music',
-        'https://billainaethek.bandcamp.com/album/f4k-y00?label=4289352950&tab=music',
-      ]
+      const interceptedIds = [1051734106 /* different-eyes-ep */, 3959806045 /* f4k-y00 */]
 
       const expectedResults = [differentEyesTracks, f4kY00Tracks]
 
@@ -81,7 +80,9 @@ test({
         assert.equal(errors.length, 0)
         assert.equal(bandcampInterceptor.getMockedRequests().length, 2 + yields)
         assert.notEqual(
-          bandcampInterceptor.getMockedRequests().find(({ url }) => url === interceptedUrls[yields]),
+          bandcampInterceptor
+            .getMockedRequests()
+            .find(({ url, body }) => url === tralbumDetailsUrl && JSON.parse(body).tralbum_id === interceptedIds[yields]),
           undefined,
         )
         assert.deepEqual(tracks, expectedResults[yields])

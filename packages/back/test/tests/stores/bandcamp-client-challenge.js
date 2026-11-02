@@ -14,11 +14,12 @@ const path = require('path')
 const { test } = require('cascade-test')
 
 const bandcampApi = require('../../../routes/stores/bandcamp/bandcamp-api.js')
-const { isChallengePage, userAgent, resetRateLimit, isRateLimited } = bandcampApi.static
+const { isChallengePage, userAgent, resetRateLimit, resetReleaseIndex, isRateLimited } = bandcampApi.static
 
 const fixture = (name) => fs.readFileSync(path.join(__dirname, '..', '..', 'fixtures', 'bandcamp', name), 'utf8')
 const challengeHtml = fixture('bandcamp-client-challenge.html')
 const artistHtml = fixture('bandcamp-artist-page.html')
+const releaseJson = require('fomoplayer_shared/interceptors/fixtures/bandcamp-tralbum-the-resonance-vi.json')
 
 // bandcamp-api resolves the global fetch at call time, so a stub installed for
 // the duration of one test observes exactly the request the module makes.
@@ -60,15 +61,24 @@ test({
     assert.doesNotMatch(userAgent, /fomo/i, 'must not name the product')
   },
 
-  'artist page and release requests carry the User-Agent': async () => {
+  'artist page and release detail requests carry the User-Agent': async () => {
     resetRateLimit()
-    const { impl, requests } = recordingFetch(() => htmlResponse(artistHtml))
+    resetReleaseIndex()
+    // The artist page lists the release ids, so the release itself is fetched
+    // from the JSON endpoint rather than scraped.
+    const { impl, requests } = recordingFetch((url) =>
+      url.includes('tralbum_details') ? jsonResponse(releaseJson) : htmlResponse(artistHtml),
+    )
     await withFetch(impl, async () => {
       const { releaseUrls } = await bandcampApi.getArtistAsync('https://noisia.bandcamp.com')
       assert.ok(releaseUrls.length > 0, 'the stubbed artist page should still parse normally')
-      await bandcampApi.getReleaseAsync(releaseUrls[0])
+      const release = await bandcampApi.getReleaseAsync(releaseUrls[0])
+      assert.strictEqual(release.trackinfo.length, releaseJson.tracks.length)
     })
-    assert.strictEqual(requests.length, 2)
+    assert.deepStrictEqual(
+      requests.map(({ url }) => url),
+      ['https://noisia.bandcamp.com/music', 'https://bandcamp.com/api/mobile/24/tralbum_details'],
+    )
     for (const { url, userAgent: sent } of requests) {
       assert.strictEqual(sent, userAgent, `request to ${url} must send the configured User-Agent`)
     }

@@ -6,6 +6,9 @@ const R = require('ramda')
 
 const { initDb } = require('../../../lib/db')
 const assert = require('assert')
+const {
+  static: { resetReleaseIndex },
+} = require('../../../../routes/stores/bandcamp/bandcamp-api')
 const dnbPlaylistUrl = 'https://bandcamp.com/discover/electronic?tags=drum-bass'
 const dnbDigitalPlaylistUrl = 'https://bandcamp.com/discover/electronic/digital?tags=drum-bass'
 const electronicPlaylistUrl = 'https://bandcamp.com/discover/electronic'
@@ -70,7 +73,13 @@ const assertPlaylistIsAddedCorrectly =
 
     await waitUntilPlaylistUpdated()
     const requests = bandcampInterceptor.getMockedRequests()
-    assert.deepEqual(requests.map(R.prop('url')), [discoverApiUrl, discoveredReleaseUrl])
+    // A discovered release is resolved to its item id through its subdomain's
+    // /music page, then fetched from the JSON endpoint.
+    assert.deepEqual(requests.map(R.prop('url')), [
+      discoverApiUrl,
+      `${new URL(discoveredReleaseUrl).origin}/music`,
+      'https://bandcamp.com/api/mobile/24/tralbum_details',
+    ])
     const { tag_norm_names, category_id } = JSON.parse(requests[0].body)
     assert.deepEqual({ tag_norm_names, category_id }, { tag_norm_names: tags, category_id: categoryId })
   }
@@ -78,6 +87,9 @@ const assertPlaylistIsAddedCorrectly =
 const playlistFollowTest = (url, discoverParams) => ({
   setup: async () => {
     bandcampInterceptor.clearMockedRequests()
+    // The release-id index is cached in-process; clear it so every case makes
+    // the same requests regardless of order.
+    resetReleaseIndex()
     return await addPlaylistFollows([{ url }], 1)
   },
   'are added correctly': assertPlaylistIsAddedCorrectly(url, discoverParams),

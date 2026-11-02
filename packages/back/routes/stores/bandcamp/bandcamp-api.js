@@ -20,6 +20,7 @@ const withUserAgent = (headers = {}) => ({ 'User-Agent': USER_AGENT, ...headers 
 
 const SUSPENSION_MS = 10 /* minutes */ * 60 * 1000
 
+
 // The challenge page comes back with HTTP 200, so it has to be recognised from
 // its body: a "Client Challenge" title and assets served under /_fs-ch-<id>/.
 const isChallengePage = (html) =>
@@ -176,20 +177,26 @@ const isRateLimited = () => {
 }
 
 const getReleaseInfo = (dom) => extractJSON('[data-tralbum]', 'data-tralbum', dom)
+const scrapeRelease = async (itemUrl) => {
+  const dom = new JSDOM(await getPageSource(itemUrl))
+  const pageName = getName(dom)
+  const pageType = detectPageType(dom)
+  warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
+  return { ...getReleaseInfo(dom), url: itemUrl, pageType, pageName }
+}
+
 const getRelease = (itemUrl, callback) => {
-  return getPageSource(itemUrl)
-    .then((res) => {
-      const dom = new JSDOM(res)
-      const pageName = getName(dom)
-      const pageType = detectPageType(dom)
+  return resolveRelease(itemUrl)
+    .then(async (resolved) => {
+      if (!resolved) {
+        logger.warn(`Release ${itemUrl} is not listed on its /music page, scraping the release page instead`)
+        return scrapeRelease(itemUrl)
+      }
+      const { ids, pageType, pageName } = resolved
       warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
-      callback(null, {
-        ...getReleaseInfo(dom),
-        url: itemUrl,
-        pageType,
-        pageName,
-      })
+      return { ...tralbumToReleaseInfo(await getTralbumDetails(ids), itemUrl), pageType, pageName }
     })
+    .then((releaseInfo) => callback(null, releaseInfo))
     .catch((e) => {
       logger.error(`Fetching release from ${itemUrl} failed`, { statusCode: e.statusCode })
       callback(e)
@@ -207,6 +214,138 @@ const getReleaseUrls = (host, dom) => {
   return Array.from(items).map((i) => new URL(i.getAttribute('href'), host).toString())
 }
 
+// Release pages are served as a Fastly client challenge to this backend (see
+// isChallengePage), so release details come from Bandcamp's JSON endpoint
+// instead. It needs the ids a /music page already lists for every release:
+// each grid tile carries data-item-id="album-<id>" / "track-<id>" and
+// data-band-id, and the tiles beyond the first page sit in the grid's
+// data-client-items JSON. The index is keyed by the release URL without query
+// or hash so label-page hrefs with ?label=…&tab=music resolve as well.
+const TRALBUM_DETAILS_URL = 'https://bandcamp.com/api/mobile/24/tralbum_details'
+const RELEASE_INDEX_TTL_MS = 10 /* minutes */ * 60 * 1000
+const knownReleaseIds = new Map() // normalized release url -> { type, id, bandId }
+const indexedPages = new Map() // origin -> { pageType, pageName, fetchedAt }
+
+const normalizeReleaseUrl = (url, base) => {
+  const u = new URL(url, base)
+  return `${u.origin}${u.pathname.replace(/\/$/, '')}`
+}
+
+const parseReleaseIndex = (host, dom) => {
+  const index = new Map()
+  const doc = dom.window.document
+  for (const tile of doc.querySelectorAll('#music-grid li[data-item-id][data-band-id], .featured-grid li[data-item-id][data-band-id]')) {
+    const link = tile.querySelector('a[href]')
+    const [, type, id] = (tile.getAttribute('data-item-id') || '').match(/^(album|track)-(\d+)$/) || []
+    if (!link || !type) continue
+    index.set(normalizeReleaseUrl(link.getAttribute('href'), host), { type, id, bandId: tile.getAttribute('data-band-id') })
+  }
+  const clientItems = doc.querySelector('#music-grid[data-client-items]')?.getAttribute('data-client-items')
+  if (clientItems) {
+    try {
+      for (const { id, type, band_id, page_url } of JSON.parse(clientItems)) {
+        if (id && ['album', 'track'].includes(type) && band_id && page_url) {
+          index.set(normalizeReleaseUrl(page_url, host), { type, id: String(id), bandId: String(band_id) })
+        }
+      }
+    } catch (e) {
+      logger.warn('Could not parse Bandcamp data-client-items', { host, error: e.message })
+    }
+  }
+  return index
+}
+
+const rememberPage = (url, dom) => {
+  const origin = new URL(url).origin
+  for (const [releaseUrl, ids] of parseReleaseIndex(origin, dom)) knownReleaseIds.set(releaseUrl, ids)
+  const page = { pageType: detectPageType(dom), pageName: getName(dom), fetchedAt: Date.now() }
+  indexedPages.set(origin, page)
+  return page
+}
+
+const resetReleaseIndex = () => {
+  knownReleaseIds.clear()
+  indexedPages.clear()
+}
+
+// Find the ids of a release, fetching its subdomain's /music page when the
+// release has not been seen on an indexed page recently.
+const resolveRelease = async (itemUrl) => {
+  const origin = new URL(itemUrl).origin
+  const key = normalizeReleaseUrl(itemUrl, origin)
+  const page = indexedPages.get(origin)
+  if (!knownReleaseIds.has(key) && !(page && Date.now() - page.fetchedAt < RELEASE_INDEX_TTL_MS)) {
+    rememberPage(origin, new JSDOM(await getPageSource(origin + '/music')))
+  }
+  const ids = knownReleaseIds.get(key)
+  if (!ids) return null
+  const { pageType, pageName } = indexedPages.get(origin) || { pageType: 'artist', pageName: null }
+  return { ids, pageType, pageName }
+}
+
+// Bandcamp's pages format dates as "12 Sep 2025 00:00:00 GMT"; the JSON
+// endpoint sends epoch seconds. Keep the page format so downstream stays equal.
+const bandcampDate = (epochSeconds) =>
+  epochSeconds ? new Date(epochSeconds * 1000).toUTCString().replace(/^\w+, /, '') : null
+
+// Shape the JSON endpoint's response like the data-tralbum blob scraped from a
+// release page, which is what bandcampReleasesTransform consumes.
+const tralbumToReleaseInfo = (tralbum, itemUrl, now = Date.now()) => {
+  const bandName = tralbum.band?.name || null
+  const releaseDate = bandcampDate(tralbum.release_date)
+  // The endpoint carries no publish date. A release already out was published
+  // no later than its release date; a preorder is "published" from the moment
+  // it is seen, which is what the page's publish_date meant.
+  const publishDate = bandcampDate(Math.min(tralbum.release_date || Infinity, Math.floor(now / 1000)))
+  return {
+    id: tralbum.id,
+    item_type: tralbum.type === 't' ? 'track' : 'album',
+    url: itemUrl,
+    artist: tralbum.tralbum_artist || bandName,
+    art_id: tralbum.art_id,
+    album_release_date: releaseDate,
+    current: {
+      id: tralbum.id,
+      type: tralbum.type,
+      title: tralbum.title,
+      band_id: tralbum.band?.band_id,
+      release_date: releaseDate,
+      publish_date: publishDate,
+    },
+    trackinfo: (tralbum.tracks || []).map((track) => {
+      // The page blob only names an artist on tracks that override the band's
+      // name, and prefixes the title with it ("Artist - Title"), which the
+      // releases transform parses for authors. The endpoint repeats the band
+      // name on the other tracks and keeps the title bare, so rebuild the
+      // page's convention here.
+      const artist = track.band_name && track.band_name !== bandName ? track.band_name : null
+      return {
+        id: track.track_id,
+        track_id: track.track_id,
+        title: artist ? `${artist} - ${track.title}` : track.title,
+        track_num: track.track_num,
+        duration: track.duration,
+        artist,
+        file: track.streaming_url?.['mp3-128'] ? { 'mp3-128': track.streaming_url['mp3-128'] } : null,
+        title_link: track.track_url || null,
+      }
+    }),
+  }
+}
+
+const getTralbumDetails = async ({ bandId, type, id }) => {
+  const text = await getPageSource(TRALBUM_DETAILS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ band_id: Number(bandId), tralbum_type: type === 'track' ? 't' : 'a', tralbum_id: Number(id) }),
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+  })
+  const tralbum = JSON.parse(text)
+  if (!tralbum || !Array.isArray(tralbum.tracks)) {
+    throw new Error(`Unexpected tralbum_details response for ${type} ${id}: ${text.slice(0, 200)}`)
+  }
+  return tralbum
+}
+
 const getIdFromUrl = (url) => url.substring(0, url.indexOf('.'))
 
 const getPageInfo = (url, callback) => {
@@ -214,6 +353,7 @@ const getPageInfo = (url, callback) => {
   getPageSource(url + '/music')
     .then((res) => {
       const dom = new JSDOM(res)
+      rememberPage(url, dom)
       return callback(null, {
         id,
         name: getName(dom),
@@ -313,6 +453,7 @@ const getPageDetails = (url, callback) => {
   return getPageSource(url)
     .then((res) => {
       const dom = new JSDOM(res)
+      if (/\/music\/?$/.test(new URL(url).pathname)) rememberPage(url, dom)
       return callback(null, {
         id: getIdFromUrl(url),
         name: getName(dom),
@@ -385,6 +526,9 @@ module.exports = {
     getDiscoverParams,
     getDiscoverReleaseUrls,
     isChallengePage,
+    parseReleaseIndex,
+    tralbumToReleaseInfo,
+    resetReleaseIndex,
     isRateLimited,
     resetRequestCount,
     resetRateLimit,
