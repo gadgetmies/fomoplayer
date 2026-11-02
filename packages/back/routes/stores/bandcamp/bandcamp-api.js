@@ -20,6 +20,21 @@ const withUserAgent = (headers = {}) => ({ 'User-Agent': USER_AGENT, ...headers 
 
 const SUSPENSION_MS = 10 /* minutes */ * 60 * 1000
 
+// Space requests out instead of firing a job's whole batch at once: bursts
+// from one datacenter address are what Bandcamp's edge flags. Requests are
+// serialised through a promise chain so concurrent callers also wait their turn.
+const MIN_REQUEST_INTERVAL_MS = Number(process.env.BANDCAMP_MIN_REQUEST_INTERVAL_MS ?? 2000)
+let lastRequestAt = 0
+let requestQueue = Promise.resolve()
+const waitForRequestSlot = () => {
+  const slot = requestQueue.then(async () => {
+    const wait = lastRequestAt + MIN_REQUEST_INTERVAL_MS - Date.now()
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait))
+    lastRequestAt = Date.now()
+  })
+  requestQueue = slot.catch(() => {})
+  return slot
+}
 
 // The challenge page comes back with HTTP 200, so it has to be recognised from
 // its body: a "Client Challenge" title and assets served under /_fs-ch-<id>/.
@@ -135,6 +150,7 @@ const getPageSource = async (url, options = {}) => {
       throw error
     }
   }
+  await waitForRequestSlot()
   requestCount++
   const res = await fetch(url, { method: 'GET', ...options, headers: withUserAgent(options.headers) })
   if ([429, 403].includes(res.status)) {
