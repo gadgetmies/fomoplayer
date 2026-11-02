@@ -18,33 +18,39 @@ const extractRequestCount = (error) => {
   return error.requestCount || 0
 }
 
-module.exports.playlistFetchJob = (storeUrl, options = {}) => async (jobDetails) => {
+// Runs one store's batch of followed entities (artists, labels or playlists):
+// a source row per entity, the store-specific update, and the rate-limit stop.
+const runEntityFetches = async ({ kind, storeUrl, jobDetails, entities, describe, update, recordMetrics }) => {
   const errors = []
-  const playlistFollowDetails = await getPlaylistFollowDetails(storeUrl, options)
 
   let count = 1
-  for (const details of playlistFollowDetails) {
+  for (const details of entities) {
     let sourceId
     try {
       sourceId = await insertSource({
-        operation: `${storeUrl}, fetchPlaylists`,
+        operation: `${storeUrl}, fetch${kind.plural[0].toUpperCase()}${kind.plural.slice(1)}`,
         jobDetails,
-        followDetails: playlistFollowDetails,
+        followDetails: entities,
       })
-      logger.info(`Fetching tracks for playlist ${count}/${playlistFollowDetails.length}: ${details.playlistStoreId}`)
+      logger.info(`Fetching tracks for ${kind.plural} ${count}/${entities.length}: ${describe(details)}`)
       count++
-      const trackErrors = await updatePlaylistTracks(storeUrl, details, sourceId)
+
+      const metrics = {}
+      const trackErrors = await update(storeUrl, details, sourceId, metrics)
       errors.push(...trackErrors)
 
       const rateLimitError = trackErrors.find(isRateLimitError)
       const rateLimited = Boolean(rateLimitError)
       const rateLimitRequestCount = extractRequestCount(rateLimitError)
       await updateSourceDetails(sourceId, {
+        ...(recordMetrics ? { skipped: metrics.skipped || 0, totalReleases: metrics.totalReleases || 0 } : {}),
         rateLimited,
         ...(rateLimitRequestCount ? { requestCount: rateLimitRequestCount } : {}),
       })
       if (rateLimited) {
-        logger.error(`Rate limit reached after ${rateLimitRequestCount || 'unknown'} requests during playlist fetch job, stopping at playlist ${count - 1}/${playlistFollowDetails.length}`)
+        logger.error(
+          `Rate limit reached after ${rateLimitRequestCount || 'unknown'} requests during ${kind.singular} fetch job, stopping at ${kind.singular} ${count - 1}/${entities.length}`,
+        )
         break
       }
     } catch (e) {
@@ -53,136 +59,57 @@ module.exports.playlistFetchJob = (storeUrl, options = {}) => async (jobDetails)
       }
       if (e.isRateLimit) {
         const requestCount = e.requestCount || 'unknown'
-        logger.error(`Rate limit reached after ${requestCount} requests during playlist fetch job, stopping at playlist ${count - 1}/${playlistFollowDetails.length}`)
+        logger.error(
+          `Rate limit reached after ${requestCount} requests during ${kind.singular} fetch job, stopping at ${kind.singular} ${count - 1}/${entities.length}`,
+        )
         errors.push([`Rate limit reached after ${requestCount} requests`, e])
         break
       }
-      const error = [`Failed to fetch playlist details for playlistId: ${details.playlistId}`, e, jobDetails]
+      const error = [`Failed to fetch ${kind.singular} details for ${describe(details)}`, e, jobDetails]
       logger.error(...error)
       errors.push(error)
     }
   }
 
   if (errors.length > 0) {
-    logger.error(`Playlist fetch job completed with ${errors.length} error(s)`)
+    logger.error(`${kind.singular[0].toUpperCase()}${kind.singular.slice(1)} fetch job completed with ${errors.length} error(s)`)
   }
 
   return errors
 }
 
-module.exports.artistFetchJob = (storeUrl, options = {}) => async (jobDetails) => {
-  const errors = []
-  const artistFollowDetails = await getArtistFollowDetails(storeUrl, options)
+module.exports.playlistFetchJob = (storeUrl, options = {}) => async (jobDetails) =>
+  runEntityFetches({
+    kind: { singular: 'playlist', plural: 'playlists' },
+    storeUrl,
+    jobDetails,
+    entities: await getPlaylistFollowDetails(storeUrl, options),
+    describe: (details) => details.playlistStoreId,
+    update: (storeUrl, details, sourceId) => updatePlaylistTracks(storeUrl, details, sourceId),
+    recordMetrics: false,
+  })
 
-  let count = 1
-  for (const details of artistFollowDetails) {
-    let sourceId
-    try {
-      sourceId = await insertSource({
-        operation: `${storeUrl}, fetchArtists`,
-        jobDetails,
-        followDetails: artistFollowDetails,
-      })
-      logger.info(
-        `Updating tracks for artists ${count}/${artistFollowDetails.length}: ${details.storeArtistId} @ ${storeUrl}`,
-      )
-      count++
+module.exports.artistFetchJob = (storeUrl, options = {}) => async (jobDetails) =>
+  runEntityFetches({
+    kind: { singular: 'artist', plural: 'artists' },
+    storeUrl,
+    jobDetails,
+    entities: await getArtistFollowDetails(storeUrl, options),
+    describe: (details) => details.url,
+    update: updateArtistTracks,
+    recordMetrics: true,
+  })
 
-      const metrics = {}
-      const trackErrors = await updateArtistTracks(storeUrl, details, sourceId, metrics)
-      errors.push(...trackErrors)
-
-      const rateLimitError = trackErrors.find(isRateLimitError)
-      const rateLimited = Boolean(rateLimitError)
-      const rateLimitRequestCount = extractRequestCount(rateLimitError)
-      await updateSourceDetails(sourceId, {
-        skipped: metrics.skipped || 0,
-        totalReleases: metrics.totalReleases || 0,
-        rateLimited,
-        ...(rateLimitRequestCount ? { requestCount: rateLimitRequestCount } : {}),
-      })
-      if (rateLimited) {
-        logger.error(`Rate limit reached after ${rateLimitRequestCount || 'unknown'} requests during artist fetch job, stopping at artist ${count - 1}/${artistFollowDetails.length}`)
-        break
-      }
-    } catch (e) {
-      if (sourceId) {
-        await updateSourceDetails(sourceId, { rateLimited: Boolean(e.isRateLimit) }).catch(() => {})
-      }
-      if (e.isRateLimit) {
-        const requestCount = e.requestCount || 'unknown'
-        logger.error(`Rate limit reached after ${requestCount} requests during artist fetch job, stopping at artist ${count - 1}/${artistFollowDetails.length}`)
-        errors.push([`Rate limit reached after ${requestCount} requests`, e])
-        break
-      }
-      const errorMessage = `Failed to fetch artist details for ${details.url}, ${JSON.stringify(e)}`
-      logger.error(errorMessage, e)
-      errors.push([errorMessage, e])
-    }
-  }
-
-  if (errors.length > 0) {
-    logger.error(`Artist fetch job completed with ${errors.length} error(s)`)
-  }
-
-  return errors
-}
-
-module.exports.labelFetchJob = (storeUrl, options = {}) => async (jobDetails) => {
-  const errors = []
-  const labelFollowDetails = await getLabelFollowDetails(storeUrl, options)
-
-  let count = 1
-  for (const details of labelFollowDetails) {
-    let sourceId
-    try {
-      sourceId = await insertSource({
-        operation: `${storeUrl}, fetchLabels`,
-        jobDetails,
-        followDetails: labelFollowDetails,
-      })
-      logger.info(`Fetching tracks for labels ${count}/${labelFollowDetails.length}: ${details.labelStoreId}`)
-      count++
-
-      const metrics = {}
-      const trackErrors = await updateLabelTracks(storeUrl, details, sourceId, metrics)
-      errors.push(...trackErrors)
-
-      const rateLimitError = trackErrors.find(isRateLimitError)
-      const rateLimited = Boolean(rateLimitError)
-      const rateLimitRequestCount = extractRequestCount(rateLimitError)
-      await updateSourceDetails(sourceId, {
-        skipped: metrics.skipped || 0,
-        totalReleases: metrics.totalReleases || 0,
-        rateLimited,
-        ...(rateLimitRequestCount ? { requestCount: rateLimitRequestCount } : {}),
-      })
-      if (rateLimited) {
-        logger.error(`Rate limit reached after ${rateLimitRequestCount || 'unknown'} requests during label fetch job, stopping at label ${count - 1}/${labelFollowDetails.length}`)
-        break
-      }
-    } catch (e) {
-      if (sourceId) {
-        await updateSourceDetails(sourceId, { rateLimited: Boolean(e.isRateLimit) }).catch(() => {})
-      }
-      if (e.isRateLimit) {
-        const requestCount = e.requestCount || 'unknown'
-        logger.error(`Rate limit reached after ${requestCount} requests during label fetch job, stopping at label ${count - 1}/${labelFollowDetails.length}`)
-        errors.push([`Rate limit reached after ${requestCount} requests`, e])
-        break
-      }
-      const error = [`Failed to fetch label details for ${details.url}`, e]
-      logger.error(...error)
-      errors.push(error)
-    }
-  }
-
-  if (errors.length > 0) {
-    logger.error(`Label fetch job completed with ${errors.length} error(s)`)
-  }
-
-  return errors
-}
+module.exports.labelFetchJob = (storeUrl, options = {}) => async (jobDetails) =>
+  runEntityFetches({
+    kind: { singular: 'label', plural: 'labels' },
+    storeUrl,
+    jobDetails,
+    entities: await getLabelFollowDetails(storeUrl, options),
+    describe: (details) => details.url,
+    update: updateLabelTracks,
+    recordMetrics: true,
+  })
 
 module.exports.fetchJobs = (jobs) => async (jobId) => {
   let errors = []
