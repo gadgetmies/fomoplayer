@@ -1,4 +1,4 @@
-# Fomo Player - A Music Discovery App.
+# Fomo Player - A Music Discovery App
 
 A web app for listening to and keeping track of heard previews on Bandcamp, Beatport and Spotify
 
