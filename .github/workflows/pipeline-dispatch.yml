@@ -37,6 +37,7 @@ jobs:
           || github.event.label.name == 'state:ready-to-propose')
       && (github.event_name != 'pull_request' || github.event.pull_request.merged)
       && !startsWith(github.event.comment.body, '<!-- pipeline phase=waiting')
+      && !startsWith(github.event.comment.body, '<!-- pipeline note=')
     runs-on: ubuntu-latest
     steps:
       - name: Forward the event to the pipeline router
