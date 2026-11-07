@@ -6,4 +6,4 @@
 
 ## 2. Verification
 
-- [ ] 2.1 Run the repository verification `yarn test` and confirm it passes (the change is documentation-only, so no test outcome should differ from `master`)
+- [x] 2.1 Run the repository verification `yarn test` and confirm it passes (the change is documentation-only, so no test outcome should differ from `master`)
