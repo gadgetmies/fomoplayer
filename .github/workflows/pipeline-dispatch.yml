@@ -2,8 +2,14 @@
 #
 # Forwards this repository's issue, comment, review and pull request events to
 # the agent pipeline's router in gadgetmies/agent-kanban as a repository_dispatch
-# event named "pipeline-<event name>". The router (agent-kanban change 06)
-# reads the client payload and fetches anything else it needs through the API.
+# event named "pipeline-<event name>". The router reads the client payload and
+# fetches anything else it needs through the API.
+#
+# Only events the router can act on are forwarded: sent by the pipeline owner
+# gadgetmies, of a type the router reacts to, and not the router's own
+# label changes or waiting comments. Everything else (bots, other accounts,
+# edits) stays here, because GitHub keeps only one waiting router run per issue
+# or pull request number and a newer event pushes an older waiting one out.
 #
 # Needs one repository secret, PIPELINE_DISPATCH_TOKEN: a token allowed to
 # trigger repository_dispatch on gadgetmies/agent-kanban. Set it with
@@ -13,11 +19,11 @@ name: Agent pipeline dispatch
 
 on:
   issues:
-    types: [opened, edited, labeled, unlabeled, closed, reopened]
+    types: [opened, labeled]
   issue_comment:
-    types: [created, edited]
+    types: [created]
   pull_request:
-    types: [opened, synchronize, reopened, closed, ready_for_review, labeled, unlabeled]
+    types: [closed]
   pull_request_review:
     types: [submitted]
 
@@ -25,6 +31,12 @@ permissions: {}
 
 jobs:
   forward:
+    if: >-
+      github.event.sender.login == 'gadgetmies'
+      && (github.event_name != 'issues' || github.event.action == 'opened'
+          || github.event.label.name == 'state:ready-to-propose')
+      && (github.event_name != 'pull_request' || github.event.pull_request.merged)
+      && !startsWith(github.event.comment.body, '<!-- pipeline phase=waiting')
     runs-on: ubuntu-latest
     steps:
       - name: Forward the event to the pipeline router
