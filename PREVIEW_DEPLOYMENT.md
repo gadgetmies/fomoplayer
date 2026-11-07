@@ -14,7 +14,6 @@ Use these variables to make dynamic PR preview domains work without per-PR code 
   compares against `config.apiOrigin` — see
   [PR-preview consumer configuration (handoff target)](#pr-preview-consumer-configuration-handoff-target)
   below.
-- Frontend will use relative `/api` automatically when no explicit API URL is configured.
 
 ## Backend CORS variables
 
