@@ -6,4 +6,4 @@
 
 ## 2. Verification
 
-- [ ] 2.1 Run the repository verification command `yarn test` and confirm it passes (the change is documentation-only, so no failures are expected from it)
+- [x] 2.1 Run the repository verification command `yarn test` and confirm it passes (the change is documentation-only, so no failures are expected from it)
