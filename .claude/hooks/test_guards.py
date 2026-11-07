@@ -39,8 +39,11 @@ class GuardTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.tmp.cleanup()
 
-    def run_hook(self, script, payload):
+    def run_hook(self, script, payload, remote=False):
         env = dict(os.environ, CLAUDE_PROJECT_DIR=self.main)
+        env.pop("CLAUDE_CODE_REMOTE", None)
+        if remote:
+            env["CLAUDE_CODE_REMOTE"] = "true"
         r = subprocess.run([sys.executable, os.path.join(HOOKS, script)],
                            input=json.dumps(payload), capture_output=True,
                            text=True, env=env, check=True)
@@ -59,6 +62,19 @@ class GuardTest(unittest.TestCase):
             "tool_input": {"command": command}})
 
     # --- Edit / Write / NotebookEdit ---
+
+    def test_cloud_session_is_not_guarded(self):
+        self.assertEqual("allow", self.run_hook(
+            "enforce-worktree.py",
+            {"tool_name": "Edit",
+             "tool_input": {"file_path": os.path.join(self.main, "README.md")}},
+            remote=True))
+        for command in ("git commit -m x", "git checkout -b x",
+                        "echo x > README.md"):
+            self.assertEqual("allow", self.run_hook(
+                "enforce-main-checkout-bash.py",
+                {"tool_name": "Bash", "cwd": self.main,
+                 "tool_input": {"command": command}}, remote=True), command)
 
     def test_edit_in_main_checkout_is_denied_for_any_path(self):
         for rel in ("packages/back/x.js", "openspec/changes/c/proposal.md",
