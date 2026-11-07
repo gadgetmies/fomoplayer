@@ -5,7 +5,7 @@
 version: 1
 spec: 'openspec'
 spec_review: summary
-wip_limit: 1
+wip_limit: 3
 merge_grant: allowed
 verify:
   command: 'yarn test'
