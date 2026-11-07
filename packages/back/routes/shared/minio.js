@@ -8,6 +8,23 @@ const bucketName = process.env.AUDIO_SAMPLE_STORAGE_BUCKET_NAME
 
 let minioClient = null
 
+// Sample URLs are played straight from the bucket, so its objects are public, as in production.
+const publicReadPolicy = (bucket) =>
+  JSON.stringify({
+    Version: '2012-10-17',
+    Statement: [
+      { Effect: 'Allow', Principal: { AWS: ['*'] }, Action: ['s3:GetObject'], Resource: [`arn:aws:s3:::${bucket}/*`] },
+    ],
+  })
+
+// A fresh environment (a PR preview's own MinIO) starts without the bucket: create it rather than fail every upload.
+const ensureBucket = async (client, bucket) => {
+  if (await client.bucketExists(bucket)) return
+  logger.info(`Creating MinIO bucket ${bucket}`)
+  await client.makeBucket(bucket)
+  await client.setBucketPolicy(bucket, publicReadPolicy(bucket))
+}
+
 if (storageUrl && accessKey && secretKey) {
   try {
     const urlWithoutProtocol = storageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
@@ -44,13 +61,9 @@ if (storageUrl && accessKey && secretKey) {
     minioClient = null
   }
 
-  if (bucketName) {
-    minioClient.bucketExists(bucketName).then((exists) => {
-      if (!exists) {
-        logger.warn(`MinIO bucket ${bucketName} does not exist`)
-      }
-    }).catch((err) => {
-      logger.error('Error checking MinIO bucket existence', err)
+  if (bucketName && minioClient) {
+    ensureBucket(minioClient, bucketName).catch((err) => {
+      logger.error('Error ensuring the MinIO bucket exists', { error: err.message, code: err.code })
     })
   }
 } else {
@@ -71,3 +84,4 @@ module.exports.getStorageScheme = () => {
   return storageUrl.startsWith('http://') ? 'http' : 'https'
 }
 
+module.exports.ensureBucket = ensureBucket

@@ -1,1 +1,149 @@
+# Version control: every change in a worktree
+
+**Never modify files in the main checkout.** Before the first edit of any change
+— code, docs, OpenSpec artifacts, design docs, `.claude/` config — create a
+worktree on a new branch off `master` named like the worktree
+(`git worktree add ../fomoplayer-<change> -b <change> master`, then
+`yarn install` in it), and record the change in project memory. Generate spec
+files inside the worktree and commit them as the branch's first commit. Commit
+all work in the worktree, verify it there, and merge it back into the main
+checkout (`git merge --no-ff <change>`, after merging `master` into the branch
+in the worktree) only once it has been verified and the user has agreed. Hooks
+in `.claude/hooks/` deny edits and commits in the main checkout. Full lifecycle:
+[`docs/contributing-workflow.md`](docs/contributing-workflow.md).
+
+# Commits & tests — required skill
+
+Any change you make here MUST follow the **`commit-and-test-discipline`**
+skill. It is not vendored in this repo; it lives once in the personal skill
+collection and is installed on demand:
+`npx skills add gadgetmies/agent-skills -s commit-and-test-discipline -g`. The
+`SessionStart` hook (`.claude/hooks/ensure-skill.py`) checks it is installed
+and, if missing, tells you to install it before doing any work. Invoke it
+before committing or running tests. In short: `wip:` checkpoints and
+relevant-subset test runs during the work, then at the merge boundary atomic
+commits (no `wip:` reaches `master`, explicit staging) and the full suite green
+— except for documentation-only changes, which the skill defines. The skill
+lists this repo's test commands.
+
+# UI changes require demo recordings
+
+**Any change that is visible in the UI must ship with paired demo tests.**
+When a feature touches the front-end, an admin view, or the extension popup,
+follow the `demo-tests` skill (`.claude/skills/demo-tests/SKILL.md`): add a
+`demo-test` (local) and a `demo-preview` browser test under
+`packages/back/test/browser/`, written to share as much code as possible
+(only the state-seeding differs), and add both fenced ` ```demo-test ` /
+` ```demo-preview ` blocks to the PR body so the demo workflows record a
+preview video. demo-preview must seed state via the UI/API only (no DB);
+demo-test reuses that and may fall back to direct DB seeding only when
+necessary.
+
+# Follow the existing UI conventions
+
+**When changing the UI, reuse what the app already does by default**: its
+components (`GlobalSearchBar`, `MenuNavButton`, the `select-button` tab rows,
+`button-push_button` buttons, pills), their states (a control that cannot be
+used is a real `<button>`/`<input>` with `disabled`, styled by the existing
+`:disabled` rules — not a lowered opacity on a look-alike), spacing,
+breakpoints and colours (`--top-bar-background-color`, `#131313` behind the
+player, the `#5996e4 → #b69afd` progress gradient). Match the nearest
+existing screen before inventing a new look.
+
+If a convention cannot be followed — it does not fit the new case, it is
+inconsistent between screens, or following it would cause a bug — **tell the
+user** which convention and why, and what you did instead, rather than
+silently deviating.
+
+# Configuration policy
+
+**No deployment domains in source code.** Hostnames or URLs that vary by
+environment (production, preview, staging, self-hosted) must come from
+configuration — environment variables, the `fomoplayer_shared/config` loader,
+or app-time settings stored in the user's profile / extension storage.
+
+This rule applies to:
+- Backend: read `frontendURL` / `apiURL` from `fomoplayer_shared/config`,
+  not literal strings.
+- Front-end: read URLs through `fomoplayer_shared/config` or the runtime
+  config the build injects via `EnvironmentPlugin` / `DefinePlugin`.
+- Extension: read `DEFAULT_APP_URL` (baked in from `FRONTEND_URL` at build
+  time) or the user-configured `appUrl` from `browser.storage.local`. The
+  build must fail when `FRONTEND_URL` is unset rather than fall back to a
+  literal — silent fallbacks have caused production builds to ship pointing
+  at `localhost`.
+- CLI: read `FOMOPLAYER_API_URL` from the environment.
+
+Exceptions:
+- **Tests** may use `fomoplayer.com` (or any stable hostname) as a fixture
+  string — they are not deployed.
+- **Identifiers that look like domains but aren't deployment URLs** —
+  e.g. the Firefox gecko extension ID `fomoplayer-extension@fomoplayer.com`,
+  email-style identifiers, OIDC issuer URLs that name a fixed authority —
+  may stay as-is; they need to be stable across environments.
+
+When introducing a new URL, ask: "would this break if someone deployed Fomo
+Player at a different host?" If yes, route it through configuration.
+
+# Database naming conventions
+
+Two rules apply to every table in this schema. They are load-bearing because
+the codebase uses `NATURAL JOIN` heavily — same column name = same meaning =
+correct join.
+
+1. **Non-FK columns are prefixed with the table name.** For example
+   `user_notification_audio_sample` has
+   `user_notification_audio_sample_file_size`,
+   `user_notification_audio_sample_object_key`, etc. — never bare
+   `file_size` / `object_key`. The prefix makes columns globally unique
+   across the schema, so a `NATURAL JOIN` only unifies the FK column you
+   intended.
+2. **Foreign-key columns use the exact name of the referenced parent PK
+   column** (not a renamed or prefixed variant). For example a row in
+   `user_notification_audio_sample_match` that references
+   `user_notification_audio_sample(user_notification_audio_sample_id)`
+   stores it in a column called `user_notification_audio_sample_id` —
+   not `parent_sample_id` or `sample_id`. This is what lets
+   `match NATURAL JOIN user_notification_audio_sample` succeed: the
+   shared column name IS the FK relationship.
+
+Together these mean `match NATURAL JOIN store__track_preview NATURAL JOIN
+store__track NATURAL JOIN user_notification_audio_sample` composes from
+left to right with no aliases and no `ON` clauses — each step adds the
+parent it FKs to via the rule-2-named column.
+
+Canonical examples in the schema: the `user_notification_audio_sample*`
+family (`*_embedding`, `*_fingerprint`, `*_match`) and the
+`store__track*` family. New tables MUST follow these rules so existing
+NATURAL JOIN chains keep composing.
+
+# Bandcamp specifics
+
+**Bandcamp "previews" are full tracks.** Anything labelled `preview` for a
+Bandcamp track in this codebase (transforms, payloads, the `tracks.previews`
+array) actually points at the full streaming MP3 — Bandcamp does not gate
+audio behind a snippet.
+
+Implications:
+- Don't apply preview-window logic (start_ms / end_ms skip windows) on
+  Bandcamp playback as if it were a 30-second clip — you'd be skipping
+  songs mid-listen.
+- For "heard" reporting, match the frontend `Preview.js` behaviour: mark a
+  track heard the moment audio starts playing (`onPlay`), not after some
+  duration threshold. The frontend uses no time threshold and Bandcamp
+  full-track streams should not invent one.
+- `duration` and `end_ms` on previews equal the full track duration, so
+  treat the preview window as the full track on Bandcamp.
+
+# Time-stretched audio as model input
+
+**A time-stretch engine can move an embedding more than the tempo change
+does.** Rubber Band R3 (`rubberband --fine`) at 0.1 % tempo moves a
+Discogs-EffNet embedding by 0.055 cosine distance — about as much as a real
+8 % stretch — while sox WSOLA (`tempo -m`) moves it 0.0004. Before
+time-stretched or pitch-shifted audio feeds embeddings, fingerprints or
+training data, run a near-zero control (ratio 1.001, never 1.0 — wrappers skip
+unity) with the same engine and flags; follow the
+`checking-stretch-engine-artefacts` skill. The measurements are in the Pitfalls
+section of `analyser/research/effnet-perception/README.md`.
 @AGENTS.md

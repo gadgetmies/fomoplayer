@@ -1232,6 +1232,16 @@ module.exports.setTrackHeard = async (trackId, userId, heard) => {
 UPDATE user__track SET user__track_heard = ${now}
 WHERE track_id = ${trackId} AND meta_account_user_id = ${userId}
 `)
+  // Playing a track reads its notifications, wherever it was played. Un-hearing
+  // does not make them unread again.
+  if (heard) {
+    await pg.queryAsync(sql`-- setTrackHeard: read notification events
+UPDATE user_notification_event SET user_notification_event_read_at = ${now}
+WHERE track_id = ${trackId}
+  AND meta_account_user_id = ${userId}
+  AND user_notification_event_read_at IS NULL
+`)
+  }
   return { heardAt: now ? now.toISOString() : null }
 }
 
@@ -1390,13 +1400,13 @@ WITH notification_data AS (
     store_name AS "storeName",
     store_purchase_available AS "purchaseAvailable",
     CASE 
-      WHEN user_search_notification_string ~ '^artist:(\d+)$' 
-      THEN (regexp_match(user_search_notification_string, '^artist:(\d+)$'))[1]::INTEGER 
+      WHEN user_search_notification_string ~ '^artist:(\\d+)$' 
+      THEN (regexp_match(user_search_notification_string, '^artist:(\\d+)$'))[1]::INTEGER 
       ELSE NULL 
     END AS artist_id,
     CASE 
-      WHEN user_search_notification_string ~ '^label:(\d+)$' 
-      THEN (regexp_match(user_search_notification_string, '^label:(\d+)$'))[1]::INTEGER 
+      WHEN user_search_notification_string ~ '^label:(\\d+)$' 
+      THEN (regexp_match(user_search_notification_string, '^label:(\\d+)$'))[1]::INTEGER 
       ELSE NULL 
     END AS label_id
   FROM user_search_notification 

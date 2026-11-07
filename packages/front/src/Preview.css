@@ -272,3 +272,206 @@
     display: none;
   }
 }
+
+/* "Playing from <source>" under the track title, and in the docked player */
+.preview_playing-from {
+  font-size: 75%;
+  font-weight: 300;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview_playing-from-link {
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Docked mini player: on pages without a track list the player shrinks to a bar at the bottom of the viewport.
+   Everything else in the panel (including the audio element) stays mounted but hidden. */
+.preview--docked > :not(.docked-player) {
+  display: none !important;
+}
+
+.preview--docked {
+  border-bottom: 0 !important;
+  flex-direction: column;
+}
+
+/* Layout B3 from the design canvas: controls and track on the left, a fixed-width waveform on the right with the
+   times on its ends; on phones the waveform goes full width under the track. */
+.docked-player {
+  background: #131313;
+  border-top: 1px solid #000;
+  display: flex;
+  align-items: stretch;
+  height: 80px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Keeps room for the artists and title: on narrower screens the waveform gives way first */
+.docked-player_row {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 360px;
+  padding: 0 8px;
+  font-size: 0.9rem;
+}
+
+/* Tall enough to make out the drops and breaks; click to seek */
+.docked-player_waveform {
+  position: relative;
+  flex: 0 1 600px;
+  min-width: 240px;
+  cursor: pointer;
+}
+
+.docked-player_button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Position and duration on the waveform's lower ends, on a dark backing so they read over it */
+.docked-player_time {
+  position: absolute;
+  bottom: 6px;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: rgba(19, 19, 19, 0.8);
+  padding: 1px 5px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.docked-player_time--position {
+  left: 6px;
+}
+
+.docked-player_time--duration {
+  right: 6px;
+  color: #bbb;
+}
+
+/* Artists and title, with "Playing from" below them */
+.docked-player_info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  margin-left: 8px;
+}
+
+.docked-player_title {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 590px) {
+  .docked-player {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .docked-player_row {
+    padding: 2px 4px 0;
+    gap: 0;
+    min-width: 0;
+  }
+
+  .docked-player_waveform {
+    flex: 0 0 56px;
+    min-width: 0;
+  }
+}
+
+/* Aligned A/B playback of a sample match */
+.preview_ab {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.preview_ab-details {
+  font-size: 75%;
+}
+
+.preview_ab-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.preview_ab-segmented {
+  display: inline-flex;
+  background: #222;
+  border-radius: 0.35rem;
+  padding: 2px;
+}
+
+.preview_ab-option {
+  border: 0;
+  background: none;
+  color: #fff;
+  opacity: 0.7;
+  font-size: 0.7rem;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.preview_ab-option--on {
+  background: #5996e4;
+  border-radius: 0.25rem;
+  opacity: 1;
+}
+
+.preview_ab-loop {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #fff;
+  background: transparent;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.preview_ab-loop--on {
+  background: #5996e4;
+  border-color: #5996e4;
+}
+
+.preview_ab-loop:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.preview_ab-hint {
+  font-size: 0.7rem;
+  font-weight: 300;
+}
+
+/* "Find similar" wraps to two lines between 591 and 1139px: say "Similar" there. Below 591px the label is hidden
+   like the other action labels. */
+.preview-find-similar_short {
+  display: none;
+}
+
+@media (min-width: 591px) and (max-width: 1139px) {
+  .preview-find-similar_long {
+    display: none;
+  }
+
+  .preview-find-similar_short {
+    display: inline;
+  }
+}
