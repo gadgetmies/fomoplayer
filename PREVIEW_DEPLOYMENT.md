@@ -19,8 +19,7 @@ Use these variables to make dynamic PR preview domains work without per-PR code 
 
 - `FRONTEND_URL`: Primary exact origin allowed by CORS (for non-preview/static domains).
 - `ADDITIONAL_ORIGINS`: Comma-separated list of extra exact origins.
-- `ALLOWED_ORIGIN_REGEX`: Comma-separated regex list for dynamic preview origins.
-  - Example: `^https://pr-[0-9]+\\.preview\\.example\\.com$`
+- `ALLOWED_ORIGIN_REGEX`: Comma-separated regex list for dynamic preview origins, for example `^https://pr-[0-9]+\\.preview\\.example\\.com$`.
 
 ## Frontend/API URL variables
 
