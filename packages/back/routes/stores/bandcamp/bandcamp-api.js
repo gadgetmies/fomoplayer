@@ -8,6 +8,43 @@ const vm = require('vm')
 
 let suspendedUntil = null
 let requestCount = 0
+// Rate limits hit in a row without a successful request in between; each
+// one doubles the pause so a lasting block is probed less and less often.
+let consecutiveRateLimits = 0
+
+// Bandcamp sits behind Fastly, which answers requests that carry Node's default
+// User-Agent (or a spoofed browser one) from datacenter addresses with a
+// JavaScript "Client Challenge" page instead of the real page. Probing from
+// Railway on 2026-11-01: a product/version token followed by a parenthetical
+// comment gets the real page, a bare token or a browser string is challenged.
+// Override with BANDCAMP_USER_AGENT if Bandcamp's rules change again.
+const USER_AGENT = process.env.BANDCAMP_USER_AGENT || 'ReleaseTracker/1.0 (compatible; release feed)'
+const withUserAgent = (headers = {}) => ({ 'User-Agent': USER_AGENT, ...headers })
+
+const SUSPENSION_MS = 10 /* minutes */ * 60 * 1000
+const MAX_SUSPENSION_MS = 2 /* hours */ * 60 * 60 * 1000
+const suspensionMs = (consecutive) => Math.min(SUSPENSION_MS * 2 ** Math.max(consecutive - 1, 0), MAX_SUSPENSION_MS)
+
+// Space requests out instead of firing a job's whole batch at once: bursts
+// from one datacenter address are what Bandcamp's edge flags. Requests are
+// serialised through a promise chain so concurrent callers also wait their turn.
+const MIN_REQUEST_INTERVAL_MS = Number(process.env.BANDCAMP_MIN_REQUEST_INTERVAL_MS ?? 2000)
+let lastRequestAt = 0
+let requestQueue = Promise.resolve()
+const waitForRequestSlot = () => {
+  const slot = requestQueue.then(async () => {
+    const wait = lastRequestAt + MIN_REQUEST_INTERVAL_MS - Date.now()
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait))
+    lastRequestAt = Date.now()
+  })
+  requestQueue = slot.catch(() => {})
+  return slot
+}
+
+// The challenge page comes back with HTTP 200, so it has to be recognised from
+// its body: a "Client Challenge" title and assets served under /_fs-ch-<id>/.
+const isChallengePage = (html) =>
+  typeof html === 'string' && (/<title>\s*Client Challenge\s*<\/title>/i.test(html) || html.includes('/_fs-ch-'))
 
 const scrapeJSON = R.curry((pattern, string) => {
   const match = string.match(new RegExp(pattern), 's')
@@ -107,38 +144,64 @@ const warnOnNameSubdomainMismatch = (url, pageType, pageName) => {
   }
 }
 
+// Every rejection Bandcamp's edge gives this client (429, 403, or an HTTP 200
+// client challenge page) is one condition: the client is being throttled. It
+// pauses all Bandcamp requests and is logged once, here, when the pause
+// starts. Requests made while paused fail fast with a quiet error so callers
+// can stop without logging the same condition again.
+const startSuspension = (url, reason) => {
+  consecutiveRateLimits++
+  const pauseMs = suspensionMs(consecutiveRateLimits)
+  suspendedUntil = new Date(Date.now() + pauseMs)
+  logger.warn(
+    `Bandcamp rate limited (${reason}) after ${requestCount} requests, at ${url}. ` +
+      `Pausing Bandcamp requests for ${Math.round(pauseMs / 60000)} min until ${suspendedUntil.toISOString()}` +
+      (consecutiveRateLimits > 1 ? ` (${consecutiveRateLimits} rate limits in a row)` : ''),
+  )
+  const error = new Error(`Bandcamp rate limited (${reason}); requests paused until ${suspendedUntil.toISOString()}`)
+  error.isRateLimit = true
+  error.requestCount = requestCount
+  error.retryAfter = suspendedUntil
+  return error
+}
+
 const getPageSource = async (url, options = {}) => {
   if (suspendedUntil) {
     if (suspendedUntil < Date.now()) {
       suspendedUntil = null
       requestCount = 0
     } else {
-      const error = new Error(`Rate limit reached. Requests are suspended until: ${suspendedUntil.toString()}`)
+      const error = new Error(`Bandcamp requests are paused until ${suspendedUntil.toISOString()}`)
       error.isRateLimit = true
+      error.isSuspended = true
+      error.retryAfter = suspendedUntil
       throw error
     }
   }
+  await waitForRequestSlot()
   requestCount++
-  const res = await fetch(url, { method: 'GET', ...options })
+  const res = await fetch(url, { method: 'GET', ...options, headers: withUserAgent(options.headers) })
   if ([429, 403].includes(res.status)) {
-    suspendedUntil = new Date(Date.now() + 10 /* minutes */ * 60 * 1000)
-    logger.error(
-      `Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`,
-    )
-    const error = new Error(
-      `Rate limit reached after ${requestCount} requests. Status code: ${res.status}. Requests are suspended until: ${suspendedUntil.toString()}`,
-    )
-    error.isRateLimit = true
+    const error = startSuspension(url, `HTTP ${res.status}`)
     error.statusCode = res.status
-    error.requestCount = requestCount
     throw error
   }
   if (!res.ok) {
-    const error = new Error(`Request failed with status ${res.status}`)
+    const error = new Error(`Request to ${url} failed with status ${res.status}`)
     error.statusCode = res.status
     throw error
   }
-  return res.text()
+  const text = await res.text()
+  if (isChallengePage(text)) {
+    // Parsed as a page it would look like an artist with no releases, and
+    // hammering on would only keep us flagged.
+    const error = startSuspension(url, 'client challenge page')
+    error.isChallenge = true
+    error.statusCode = res.status
+    throw error
+  }
+  consecutiveRateLimits = 0
+  return text
 }
 
 const isRateLimited = () => {
@@ -146,22 +209,28 @@ const isRateLimited = () => {
 }
 
 const getReleaseInfo = (dom) => extractJSON('[data-tralbum]', 'data-tralbum', dom)
+const scrapeRelease = async (itemUrl) => {
+  const dom = new JSDOM(await getPageSource(itemUrl))
+  const pageName = getName(dom)
+  const pageType = detectPageType(dom)
+  warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
+  return { ...getReleaseInfo(dom), url: itemUrl, pageType, pageName }
+}
+
 const getRelease = (itemUrl, callback) => {
-  return getPageSource(itemUrl)
-    .then((res) => {
-      const dom = new JSDOM(res)
-      const pageName = getName(dom)
-      const pageType = detectPageType(dom)
+  return resolveRelease(itemUrl)
+    .then(async (resolved) => {
+      if (!resolved) {
+        logger.warn(`Release ${itemUrl} is not listed on its /music page, scraping the release page instead`)
+        return scrapeRelease(itemUrl)
+      }
+      const { ids, pageType, pageName } = resolved
       warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
-      callback(null, {
-        ...getReleaseInfo(dom),
-        url: itemUrl,
-        pageType,
-        pageName,
-      })
+      return { ...tralbumToReleaseInfo(await getTralbumDetails(ids), itemUrl), pageType, pageName }
     })
+    .then((releaseInfo) => callback(null, releaseInfo))
     .catch((e) => {
-      logger.error(`Fetching release from ${itemUrl} failed`, { statusCode: e.statusCode })
+      if (!e.isRateLimit) logger.error(`Fetching release from ${itemUrl} failed: ${e.message}`, { statusCode: e.statusCode })
       callback(e)
     })
 }
@@ -177,6 +246,138 @@ const getReleaseUrls = (host, dom) => {
   return Array.from(items).map((i) => new URL(i.getAttribute('href'), host).toString())
 }
 
+// Release pages are served as a Fastly client challenge to this backend (see
+// isChallengePage), so release details come from Bandcamp's JSON endpoint
+// instead. It needs the ids a /music page already lists for every release:
+// each grid tile carries data-item-id="album-<id>" / "track-<id>" and
+// data-band-id, and the tiles beyond the first page sit in the grid's
+// data-client-items JSON. The index is keyed by the release URL without query
+// or hash so label-page hrefs with ?label=…&tab=music resolve as well.
+const TRALBUM_DETAILS_URL = 'https://bandcamp.com/api/mobile/24/tralbum_details'
+const RELEASE_INDEX_TTL_MS = 10 /* minutes */ * 60 * 1000
+const knownReleaseIds = new Map() // normalized release url -> { type, id, bandId }
+const indexedPages = new Map() // origin -> { pageType, pageName, fetchedAt }
+
+const normalizeReleaseUrl = (url, base) => {
+  const u = new URL(url, base)
+  return `${u.origin}${u.pathname.replace(/\/$/, '')}`
+}
+
+const parseReleaseIndex = (host, dom) => {
+  const index = new Map()
+  const doc = dom.window.document
+  for (const tile of doc.querySelectorAll('#music-grid li[data-item-id][data-band-id], .featured-grid li[data-item-id][data-band-id]')) {
+    const link = tile.querySelector('a[href]')
+    const [, type, id] = (tile.getAttribute('data-item-id') || '').match(/^(album|track)-(\d+)$/) || []
+    if (!link || !type) continue
+    index.set(normalizeReleaseUrl(link.getAttribute('href'), host), { type, id, bandId: tile.getAttribute('data-band-id') })
+  }
+  const clientItems = doc.querySelector('#music-grid[data-client-items]')?.getAttribute('data-client-items')
+  if (clientItems) {
+    try {
+      for (const { id, type, band_id, page_url } of JSON.parse(clientItems)) {
+        if (id && ['album', 'track'].includes(type) && band_id && page_url) {
+          index.set(normalizeReleaseUrl(page_url, host), { type, id: String(id), bandId: String(band_id) })
+        }
+      }
+    } catch (e) {
+      logger.warn('Could not parse Bandcamp data-client-items', { host, error: e.message })
+    }
+  }
+  return index
+}
+
+const rememberPage = (url, dom) => {
+  const origin = new URL(url).origin
+  for (const [releaseUrl, ids] of parseReleaseIndex(origin, dom)) knownReleaseIds.set(releaseUrl, ids)
+  const page = { pageType: detectPageType(dom), pageName: getName(dom), fetchedAt: Date.now() }
+  indexedPages.set(origin, page)
+  return page
+}
+
+const resetReleaseIndex = () => {
+  knownReleaseIds.clear()
+  indexedPages.clear()
+}
+
+// Find the ids of a release, fetching its subdomain's /music page when the
+// release has not been seen on an indexed page recently.
+const resolveRelease = async (itemUrl) => {
+  const origin = new URL(itemUrl).origin
+  const key = normalizeReleaseUrl(itemUrl, origin)
+  const page = indexedPages.get(origin)
+  if (!knownReleaseIds.has(key) && !(page && Date.now() - page.fetchedAt < RELEASE_INDEX_TTL_MS)) {
+    rememberPage(origin, new JSDOM(await getPageSource(origin + '/music')))
+  }
+  const ids = knownReleaseIds.get(key)
+  if (!ids) return null
+  const { pageType, pageName } = indexedPages.get(origin) || { pageType: 'artist', pageName: null }
+  return { ids, pageType, pageName }
+}
+
+// Bandcamp's pages format dates as "12 Sep 2025 00:00:00 GMT"; the JSON
+// endpoint sends epoch seconds. Keep the page format so downstream stays equal.
+const bandcampDate = (epochSeconds) =>
+  epochSeconds ? new Date(epochSeconds * 1000).toUTCString().replace(/^\w+, /, '') : null
+
+// Shape the JSON endpoint's response like the data-tralbum blob scraped from a
+// release page, which is what bandcampReleasesTransform consumes.
+const tralbumToReleaseInfo = (tralbum, itemUrl, now = Date.now()) => {
+  const bandName = tralbum.band?.name || null
+  const releaseDate = bandcampDate(tralbum.release_date)
+  // The endpoint carries no publish date. A release already out was published
+  // no later than its release date; a preorder is "published" from the moment
+  // it is seen, which is what the page's publish_date meant.
+  const publishDate = bandcampDate(Math.min(tralbum.release_date || Infinity, Math.floor(now / 1000)))
+  return {
+    id: tralbum.id,
+    item_type: tralbum.type === 't' ? 'track' : 'album',
+    url: itemUrl,
+    artist: tralbum.tralbum_artist || bandName,
+    art_id: tralbum.art_id,
+    album_release_date: releaseDate,
+    current: {
+      id: tralbum.id,
+      type: tralbum.type,
+      title: tralbum.title,
+      band_id: tralbum.band?.band_id,
+      release_date: releaseDate,
+      publish_date: publishDate,
+    },
+    trackinfo: (tralbum.tracks || []).map((track) => {
+      // The page blob only names an artist on tracks that override the band's
+      // name, and prefixes the title with it ("Artist - Title"), which the
+      // releases transform parses for authors. The endpoint repeats the band
+      // name on the other tracks and keeps the title bare, so rebuild the
+      // page's convention here.
+      const artist = track.band_name && track.band_name !== bandName ? track.band_name : null
+      return {
+        id: track.track_id,
+        track_id: track.track_id,
+        title: artist ? `${artist} - ${track.title}` : track.title,
+        track_num: track.track_num,
+        duration: track.duration,
+        artist,
+        file: track.streaming_url?.['mp3-128'] ? { 'mp3-128': track.streaming_url['mp3-128'] } : null,
+        title_link: track.track_url || null,
+      }
+    }),
+  }
+}
+
+const getTralbumDetails = async ({ bandId, type, id }) => {
+  const text = await getPageSource(TRALBUM_DETAILS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ band_id: Number(bandId), tralbum_type: type === 'track' ? 't' : 'a', tralbum_id: Number(id) }),
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+  })
+  const tralbum = JSON.parse(text)
+  if (!tralbum || !Array.isArray(tralbum.tracks)) {
+    throw new Error(`Unexpected tralbum_details response for ${type} ${id}: ${text.slice(0, 200)}`)
+  }
+  return tralbum
+}
+
 const getIdFromUrl = (url) => url.substring(0, url.indexOf('.'))
 
 const getPageInfo = (url, callback) => {
@@ -184,6 +385,7 @@ const getPageInfo = (url, callback) => {
   getPageSource(url + '/music')
     .then((res) => {
       const dom = new JSDOM(res)
+      rememberPage(url, dom)
       return callback(null, {
         id,
         name: getName(dom),
@@ -283,6 +485,7 @@ const getPageDetails = (url, callback) => {
   return getPageSource(url)
     .then((res) => {
       const dom = new JSDOM(res)
+      if (/\/music\/?$/.test(new URL(url).pathname)) rememberPage(url, dom)
       return callback(null, {
         id: getIdFromUrl(url),
         name: getName(dom),
@@ -312,9 +515,7 @@ const getSearchResults = (query, callback) => {
       fan_id: null,
       full_page: false,
     }),
-    headers: {
-      'Content-Type': 'application/json; charset=UTF-8',
-    },
+    headers: withUserAgent({ 'Content-Type': 'application/json; charset=UTF-8' }),
   })
     .then((res) => res.json())
     .then((res) => {
@@ -333,6 +534,13 @@ const resetRequestCount = () => {
 
 const getRequestCount = () => requestCount
 
+// Test support: clear a suspension left behind by an earlier request.
+const resetRateLimit = () => {
+  suspendedUntil = null
+  requestCount = 0
+  consecutiveRateLimits = 0
+}
+
 module.exports = {
   ...BPromise.promisifyAll({
     getRelease,
@@ -350,9 +558,16 @@ module.exports = {
     getTagSlug,
     getDiscoverParams,
     getDiscoverReleaseUrls,
+    isChallengePage,
+    parseReleaseIndex,
+    tralbumToReleaseInfo,
+    resetReleaseIndex,
     isRateLimited,
+    suspensionMs,
     resetRequestCount,
+    resetRateLimit,
     getRequestCount,
+    userAgent: USER_AGENT,
     nameSubdomainSimilarity,
     getSubdomain,
     nameSubdomainSimilarityThreshold: NAME_SUBDOMAIN_SIMILARITY_THRESHOLD,

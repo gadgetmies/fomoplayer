@@ -146,3 +146,4 @@ training data, run a near-zero control (ratio 1.001, never 1.0 — wrappers skip
 unity) with the same engine and flags; follow the
 `checking-stretch-engine-artefacts` skill. The measurements are in the Pitfalls
 section of `analyser/research/effnet-perception/README.md`.
+@AGENTS.md

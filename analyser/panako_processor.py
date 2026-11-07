@@ -527,4 +527,5 @@ if __name__ == '__main__':
         print("Processing completed successfully")
     finally:
         cleanup_downloads(downloads_dir)
+        cleanup_panako_worker_dirs(os.path.dirname(os.path.abspath(__file__)))
 

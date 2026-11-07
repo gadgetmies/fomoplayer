@@ -19,6 +19,28 @@ const bandcampResonanceVIMock = readFileSync(path.resolve(`${__dirname}/fixtures
 
 const bandcampDiscoverMock = require('./fixtures/bandcamp-discover.json')
 
+// Release details come from Bandcamp's JSON endpoint, keyed by the item id the
+// backend reads off the /music page tiles; these fixtures pair with the album
+// tiles in the HTML fixtures above.
+const bandcampTralbumMocks = {
+  3222376539: require('./fixtures/bandcamp-tralbum-the-resonance-vi.json'),
+  1144765497: require('./fixtures/bandcamp-tralbum-the-resonance-v.json'),
+  3959806045: require('./fixtures/bandcamp-tralbum-f4k-y00.json'),
+  1051734106: require('./fixtures/bandcamp-tralbum-different-eyes.json'),
+}
+
+const tralbumDetailsMock = {
+  test: ({ pathname }) => pathname === '/api/mobile/24/tralbum_details',
+  getResponse: ({ body }) => {
+    const { tralbum_id } = body ? JSON.parse(body) : {}
+    const tralbum = bandcampTralbumMocks[tralbum_id]
+    return {
+      body: JSON.stringify(tralbum || { error: true, error_message: `no tralbum fixture for ${tralbum_id}` }),
+      options: { status: tralbum ? 200 : 404, headers: { 'content-type': 'application/json' } },
+    }
+  },
+}
+
 const respondWith =
   (body, contentType = 'application/json') =>
   () => ({
@@ -63,7 +85,9 @@ module.exports.init = () => {
         },
       },
     ],
-    mocks: getMocks([
+    mocks: [
+      tralbumDetailsMock,
+      ...getMocks([
       [({ pathname }) => pathname === '/api/bcsearch_public_api/1/autocomplete_elastic', bandcampNoisiaSearchMock],
       ['https://noisia.bandcamp.com/music', bandcampNoisiaMock],
       ['https://noisia.bandcamp.com/album/the-resonance-vi', bandcampResonanceVIMock],
@@ -75,7 +99,8 @@ module.exports.init = () => {
         bandcampDifferentEyesMock,
       ],
       [({ pathname }) => pathname === '/api/discover/1/discover_web', bandcampDiscoverMock],
-    ]),
+      ]),
+    ],
     name: 'Bandcamp',
     regex: BandcampUrlRegex,
     bandcampNoisiaSearchMock: bandcampNoisiaSearchMock,

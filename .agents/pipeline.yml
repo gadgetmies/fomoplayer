@@ -1,0 +1,19 @@
+# Agent pipeline configuration for gadgetmies/fomoplayer.
+# Written by scripts/bootstrap-repo.sh of gadgetmies/agent-kanban from
+# schema/examples/openspec.yml on 2026-11-01; edit by hand from here on.
+# Schema: https://github.com/gadgetmies/agent-kanban/blob/main/schema/pipeline.schema.json
+version: 1
+spec: 'openspec'
+spec_review: summary
+wip_limit: 1
+merge_grant: allowed
+verify:
+  command: 'yarn test'
+  select: 'yarn cascade-test'
+preview:
+  provider: 'railway'
+  required: true
+  visibility: login
+  docs: 'PREVIEW_DEPLOYMENT.md'
+capabilities:
+  default_needs: []
