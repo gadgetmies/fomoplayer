@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import * as R from 'ramda'
 import { BrowserRouter as Router, Redirect, Route, withRouter } from 'react-router-dom'
 import { ErrorBoundary } from 'react-error-boundary'
+import { CrashTest, ErrorFallback, reportRenderError } from './ErrorFallback.js'
 import Login from './UserLogin.js'
 import Player from './Player.js'
 import './App.css'
@@ -31,6 +32,12 @@ import IgnorePopup from './IgnorePopup'
 import KeyboardShortcutsPopup from './KeyboardShortcutsPopup'
 
 import { isMobile } from 'react-device-detect'
+import { isSample } from './playQueue'
+import NotificationsPage from './NotificationsPage'
+import { loadUnreadNotificationCount } from './audioSamplesApi'
+
+// How often the bell's unread count is refreshed while the page is visible
+const UNREAD_COUNT_POLL_MS = 60 * 1000
 import { events, subscribe, unsubscribe } from './events'
 import {
   parseSearchTerms,
@@ -39,6 +46,7 @@ import {
   addEntityTerm,
   entityNamesToUrlParam,
   applyEntityNamesFromUrlParam,
+  findCartSearchTerm,
 } from './searchTerms'
 
 library.add(fas, far, fab)
@@ -50,6 +58,18 @@ const logoutPath = '/auth/logout'
 const defaultTracksData = { tracks: { new: [], heard: [], recentlyAdded: [] }, meta: { totalTracks: 0, newTracks: 0 } }
 
 const CART_TRACKS_PAGE_SIZE = 20
+// The API names of the user's track lists, by list state.
+const USER_TRACK_LISTS = { new: 'new', heard: 'heard', recent: 'recentlyAdded' }
+// Cart search details when the cart is not found (meta.cartSearch is then null).
+const emptyCartSearchResult = {
+  k: 0,
+  autoK: 0,
+  maxK: 0,
+  groups: [],
+  map: { members: [] },
+  excluded: { heard: 0, ignored: 0, purchased: 0, knownArtists: 0 },
+  cartTracks: null,
+}
 
 const buildLoginReturnPath = () => {
   const params = new URLSearchParams(window.location.search)
@@ -108,12 +128,15 @@ export const patchTrackCartMembership = (slices, trackId, cartUuid, op) => {
   }
 }
 
+// A cart response ({ cart, tracks, page }) as the cart record kept in the state: the cart's fields with its tracks.
+export const cartRecord = ({ cart, tracks }) => ({ ...cart, tracks })
+
 // Merges PATCH /carts/:id/tracks response onto an existing cart record without
 // replacing the in-memory `tracks` array wholesale. The PATCH response carries
 // the cart's first page; we keep the user's already-loaded tracks (which may
 // extend past the first page after infinite-scroll) and splice the single
-// added/removed row in place. Top-level metadata (name, store_details,
-// track_count, etc.) is taken from the PATCH response.
+// added/removed row in place. Top-level metadata (name, storeDetails,
+// trackCount, etc.) is taken from the PATCH response.
 export const mergeCartDetailsPreservingTracks = (existing, response, { addedTrackId, removedTrackId } = {}) => {
   const existingTracks = (existing && existing.tracks) || []
   let nextTracks = existingTracks
@@ -155,7 +178,7 @@ const LocationWatcher = withRouter(LocationWatcherBase)
 class App extends Component {
   constructor(props) {
     super(props)
-    const { listState, currentTrack } = JSON.parse(window.localStorage.getItem('currentTrack')) || {}
+    const { listState, currentTrack, playingFromSource } = JSON.parse(window.localStorage.getItem('currentTrack')) || {}
 
     const searchParams = new URLSearchParams(window.location.search)
     const filters = {
@@ -202,15 +225,21 @@ class App extends Component {
       searchInProgress: false,
       searchError: undefined,
       searchResults: [],
+      cartSearch: null,
+      searchBarResetCount: 0,
       listState: initialListState,
       currentTrack,
+      unreadNotificationCount: 0,
+      // The list the current track was started from ({ source, tracks }); next / previous step through it.
+      playingFrom: playingFromSource ? { source: playingFromSource, tracks: [] } : null,
       heardTracks: defaultTracksData.tracks.heard,
       selectedCartUuid: undefined,
       selectedCart: undefined,
       mode: undefined,
       loadingMore: false,
       trackOffsets: { new: 0, heard: 0, recent: 0, search: 0 },
-      pagination: null,
+      // The latest page ({ offset, limit, total }) of each list, by list state.
+      pages: {},
       cartPagination: null,
       notHeardBefore: null,
     }
@@ -224,15 +253,10 @@ class App extends Component {
   }
 
   hasMoreTracks() {
-    const { listState, pagination, trackOffsets, searchResults, cartPagination } = this.state
-    if (listState === 'search') {
-      return searchResults.length % (this.state.searchFilters.limit || 100) === 0 && searchResults.length > 0
-    } else if (['new', 'heard', 'recent'].includes(listState) && pagination) {
-      const category = listState === 'recent' ? 'recent' : listState
-      const categoryPagination = pagination[category]
-      if (categoryPagination) {
-        return categoryPagination.offset + categoryPagination.count < categoryPagination.total
-      }
+    const { listState, pages, trackOffsets, cartPagination } = this.state
+    if (['new', 'heard', 'recent', 'search'].includes(listState)) {
+      const page = pages[listState]
+      return page ? trackOffsets[listState] < page.total : false
     } else if (listState === 'carts') {
       return cartPagination ? cartPagination.offset + cartPagination.count < cartPagination.total : false
     }
@@ -254,19 +278,14 @@ class App extends Component {
       if (!cartPagination || cartPagination.loadingMore || !selectedCartUuid || !selectedCart) return
       this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
       const nextOffset = cartPagination.offset + cartPagination.count
-      const response = await requestJSONwithCredentials({
+      const { cart, tracks: appendedTracks, page } = await requestJSONwithCredentials({
         path: `/carts/${selectedCartUuid}?offset=${nextOffset}&limit=${CART_TRACKS_PAGE_SIZE}`,
       })
-      const appendedTracks = response.tracks || []
       const carts = this.state.carts.slice()
       const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
       if (cartIndex !== -1) {
         const existingTracks = carts[cartIndex].tracks || []
-        carts[cartIndex] = {
-          ...carts[cartIndex],
-          tracks: existingTracks.concat(appendedTracks),
-          track_count: response.track_count != null ? response.track_count : carts[cartIndex].track_count,
-        }
+        carts[cartIndex] = { ...carts[cartIndex], ...cart, tracks: existingTracks.concat(appendedTracks) }
       }
       const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
       this.setState({
@@ -275,7 +294,7 @@ class App extends Component {
         cartPagination: {
           offset: 0,
           count: cartPagination.count + appendedTracks.length,
-          total: response.track_count != null ? response.track_count : cartPagination.total,
+          total: page.total,
           loadingMore: false,
         },
       })
@@ -296,6 +315,24 @@ class App extends Component {
 
   async componentWillUnmount() {
     unsubscribe(events.SEARCH, this.searchEventHandler)
+    clearInterval(this.unreadCountTimer)
+    window.removeEventListener('focus', this.refreshUnreadNotificationCountHandler)
+  }
+
+  async refreshUnreadNotificationCount() {
+    if (!this.state.loggedIn || this.state.mode !== 'app' || document.visibilityState === 'hidden') return
+    try {
+      this.setState({ unreadNotificationCount: await loadUnreadNotificationCount() })
+    } catch (e) {
+      console.error('Failed to refresh the unread notification count', e)
+    }
+  }
+
+  startUnreadNotificationCountPolling() {
+    this.refreshUnreadNotificationCountHandler = () => this.refreshUnreadNotificationCount()
+    this.unreadCountTimer = setInterval(this.refreshUnreadNotificationCountHandler, UNREAD_COUNT_POLL_MS)
+    window.addEventListener('focus', this.refreshUnreadNotificationCountHandler)
+    this.refreshUnreadNotificationCount()
   }
 
   async componentDidMount() {
@@ -327,7 +364,10 @@ class App extends Component {
         document.title = `Fomo Player - ${stores[0].storeName}`
       }
 
-      this.setState({ loggedIn: true, mode: 'app', stores, ...sharedStates })
+      // The poll checks loggedIn, so it starts once the state is applied
+      this.setState({ loggedIn: true, mode: 'app', stores, ...sharedStates }, () =>
+        this.startUnreadNotificationCountPolling(),
+      )
 
       const searchParams = new URLSearchParams(window.location.search)
       const searchQuery = searchParams.get('q') || ''
@@ -458,21 +498,25 @@ class App extends Component {
   }
 
   async addToCart(cartId, trackId) {
-    const cartDetails = await requestJSONwithCredentials({
-      path: `/me/carts/${cartId}/tracks`,
-      method: 'PATCH',
-      body: [{ op: 'add', trackId }],
-    })
+    const cartDetails = cartRecord(
+      await requestJSONwithCredentials({
+        path: `/me/carts/${cartId}/tracks`,
+        method: 'PATCH',
+        body: [{ op: 'add', trackId }],
+      }),
+    )
 
     this.applyCartMutation(cartDetails, { trackId, cartId, op: 'add' })
   }
 
   async removeFromCart(cartId, trackId) {
-    const cartDetails = await requestJSONwithCredentials({
-      path: `/me/carts/${cartId}/tracks`,
-      method: 'PATCH',
-      body: [{ op: 'remove', trackId }],
-    })
+    const cartDetails = cartRecord(
+      await requestJSONwithCredentials({
+        path: `/me/carts/${cartId}/tracks`,
+        method: 'PATCH',
+        body: [{ op: 'remove', trackId }],
+      }),
+    )
 
     this.applyCartMutation(cartDetails, { trackId, cartId, op: 'remove' })
   }
@@ -519,8 +563,8 @@ class App extends Component {
         partialState.selectedCart = merged
         if (this.state.cartPagination) {
           const total =
-            merged.track_count != null
-              ? merged.track_count
+            merged.trackCount != null
+              ? merged.trackCount
               : this.state.cartPagination.total + (op === 'add' ? 1 : -1)
           const count = merged.tracks ? merged.tracks.length : this.state.cartPagination.count
           partialState.cartPagination = { ...this.state.cartPagination, total, count }
@@ -600,118 +644,54 @@ class App extends Component {
 
   async updateTracks(append = false) {
     const { trackOffsets, listState, notHeardBefore } = this.state
-    let queryParams = []
-    
-    if (append) {
-      const category = listState === 'recent' ? 'recent' : listState
-      if (['new', 'heard', 'recent'].includes(category)) {
-        const offset = trackOffsets[category]
-        queryParams.push(`offset_${category}=${offset}`)
-        queryParams.push(`limit_${category}=20`)
-        
-        if (category !== 'new') queryParams.push('limit_new=0')
-        if (category !== 'heard') queryParams.push('limit_heard=0')
-        if (category !== 'recent') queryParams.push('limit_recent=0')
-      }
-    }
-    
-    if (notHeardBefore) {
-      queryParams.push(`not_heard_before=${encodeURIComponent(notHeardBefore)}`)
-    }
-    
-    const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : ''
-    const {
-      meta: { new: newTracks, total: totalTracks },
-      tracks,
-      pagination,
-      notHeardBefore: responseNotHeardBefore,
-    } = await requestJSONwithCredentials({
-      path: `/me/tracks${queryString}`,
-    })
-    
-    if (responseNotHeardBefore && !this.state.notHeardBefore) {
-      this.setState({ notHeardBefore: responseNotHeardBefore })
-    }
+    const notHeardBeforeParam = notHeardBefore ? `notHeardBefore=${encodeURIComponent(notHeardBefore)}` : ''
 
     if (append) {
-      const category = listState === 'recent' ? 'recent' : listState
-      const existingNew = this.state.tracksData.tracks.new
-      const existingHeard = this.state.tracksData.tracks.heard
-      const existingRecent = this.state.tracksData.tracks.recentlyAdded
-      const existingHeardTracks = this.state.heardTracks
-
-      let uniqueNew = existingNew
-      let uniqueHeard = existingHeard
-      let uniqueRecent = existingRecent
-      let uniqueHeardTracks = existingHeardTracks
-
-      if (category === 'new') {
-        uniqueNew = deduplicateTracks(existingNew, tracks.new)
-      } else if (category === 'heard') {
-        uniqueHeard = deduplicateTracks(existingHeard, tracks.heard)
-        uniqueHeardTracks = deduplicateTracks(existingHeardTracks, tracks.heard)
-      } else if (category === 'recent') {
-        uniqueRecent = deduplicateTracks(existingRecent, tracks.recentlyAdded)
+      const list = USER_TRACK_LISTS[listState]
+      if (!list) {
+        this.setState({ loadingMore: false })
+        return
       }
-
-      const updatedOffsets = { ...trackOffsets }
-      if (pagination) {
-        if (pagination.new) {
-          updatedOffsets.new = pagination.new.offset + pagination.new.count
-        }
-        if (pagination.heard) {
-          updatedOffsets.heard = pagination.heard.offset + pagination.heard.count
-        }
-        if (pagination.recent) {
-          updatedOffsets.recent = pagination.recent.offset + pagination.recent.count
-        }
-      } else {
-        if (category === 'new') {
-          updatedOffsets.new = trackOffsets.new + (uniqueNew.length - existingNew.length)
-        } else if (category === 'heard') {
-          updatedOffsets.heard = trackOffsets.heard + (uniqueHeard.length - existingHeard.length)
-        } else if (category === 'recent') {
-          updatedOffsets.recent = trackOffsets.recent + (uniqueRecent.length - existingRecent.length)
-        }
-      }
-
+      const params = [`offset=${trackOffsets[listState]}`, 'limit=20', notHeardBeforeParam].filter(Boolean).join('&')
+      const { tracks, page } = await requestJSONwithCredentials({ path: `/me/tracks/${list}?${params}` })
+      const existing = this.state.tracksData.tracks[list]
+      const updatedTracks = deduplicateTracks(existing, tracks)
       this.setState({
         tracksData: {
-          tracks: {
-            new: uniqueNew,
-            heard: uniqueHeard,
-            recentlyAdded: uniqueRecent,
-          },
-          meta: { newTracks, totalTracks },
+          ...this.state.tracksData,
+          tracks: { ...this.state.tracksData.tracks, [list]: updatedTracks },
         },
-        heardTracks: uniqueHeardTracks,
-        trackOffsets: updatedOffsets,
-        pagination: pagination || this.state.pagination,
+        ...(list === 'heard' ? { heardTracks: deduplicateTracks(this.state.heardTracks, tracks) } : {}),
+        trackOffsets: { ...this.state.trackOffsets, [listState]: page.offset + tracks.length },
+        pages: { ...this.state.pages, [listState]: page },
         loadingMore: false,
       })
-    } else {
-      this.setState({
-        tracksData: { tracks, meta: { newTracks, totalTracks } },
-        heardTracks: tracks.heard,
-        onboarding: tracks.new.length === 0 && tracks.heard.length === 0,
-        trackOffsets: pagination ? {
-          new: pagination.new.offset + pagination.new.count,
-          heard: pagination.heard.offset + pagination.heard.count,
-          recent: pagination.recent.offset + pagination.recent.count,
-          search: this.state.trackOffsets.search,
-        } : {
-          new: tracks.new.length,
-          heard: tracks.heard.length,
-          recent: tracks.recentlyAdded.length,
-          search: this.state.trackOffsets.search,
-        },
-        pagination: pagination || null,
-      })
+      return
     }
+
+    const { lists, meta } = await requestJSONwithCredentials({
+      path: `/me/tracks${notHeardBeforeParam ? `?${notHeardBeforeParam}` : ''}`,
+    })
+    if (meta.notHeardBefore && !this.state.notHeardBefore) {
+      this.setState({ notHeardBefore: meta.notHeardBefore })
+    }
+    const tracks = R.map(R.prop('tracks'), lists)
+    this.setState({
+      tracksData: { tracks, meta: { newTracks: lists.new.page.total, totalTracks: meta.totalTracks } },
+      heardTracks: tracks.heard,
+      onboarding: tracks.new.length === 0 && tracks.heard.length === 0,
+      trackOffsets: {
+        new: lists.new.page.offset + tracks.new.length,
+        heard: lists.heard.page.offset + tracks.heard.length,
+        recent: lists.recentlyAdded.page.offset + tracks.recentlyAdded.length,
+        search: this.state.trackOffsets.search,
+      },
+      pages: { ...this.state.pages, new: lists.new.page, heard: lists.heard.page, recent: lists.recentlyAdded.page },
+    })
   }
 
   async markHeard(track) {
-    if (this.state.listState === 'heard' || this.state.mode === 'list') {
+    if (this.state.listState === 'heard' || this.state.mode === 'list' || isSample(track)) {
       return
     }
 
@@ -737,6 +717,8 @@ class App extends Component {
       method: 'POST',
       body: { heard: true },
     })
+    // Hearing a track reads its notifications
+    this.refreshUnreadNotificationCount()
   }
 
   // Toggle a track's heard state (used by the mobile swipe gesture). Unlike
@@ -936,6 +918,14 @@ class App extends Component {
 
     const query = searchTermsToQueryString(searchTerms)
     if (query === '') return
+    const cartTerm = findCartSearchTerm(searchTerms)
+    if (cartTerm) {
+      if (!append) await this.startCartSearch(searchTerms, cartTerm, filters)
+      return
+    }
+    if (this.state.cartSearch) this.setState({ cartSearch: null })
+    // Only the newest search (this or a cart search) may update the list.
+    const requestId = (this.searchRequestId = (this.searchRequestId || 0) + 1)
     const { trackOffsets } = this.state
     const offset = append ? trackOffsets.search : 0
     if (!append) {
@@ -949,35 +939,170 @@ class App extends Component {
       window.history.pushState(undefined, undefined, `/search?${parameters}`)
     }
     try {
-      const searchResults = await (
+      const { tracks: searchResults, page } = await (
         await requestWithCredentials({
           path: `/tracks?${parameters}`,
         })
       ).json()
+      if (requestId !== this.searchRequestId) {
+        if (append) this.setState({ loadingMore: false })
+        return undefined
+      }
       if (append) {
         const existingSearchResults = this.state.searchResults
         const uniqueSearchResults = deduplicateTracks(existingSearchResults, searchResults)
         this.setState({
           searchResults: uniqueSearchResults,
-          trackOffsets: { ...this.state.trackOffsets, search: this.state.trackOffsets.search + (uniqueSearchResults.length - existingSearchResults.length) },
+          trackOffsets: { ...this.state.trackOffsets, search: page.offset + searchResults.length },
+          pages: { ...this.state.pages, search: page },
           loadingMore: false,
         })
       } else {
-        this.setState({ 
-          searchResults, 
+        this.setState({
+          searchResults,
           searchError: undefined,
-          trackOffsets: { ...this.state.trackOffsets, search: searchResults.length },
+          trackOffsets: { ...this.state.trackOffsets, search: page.offset + searchResults.length },
+          pages: { ...this.state.pages, search: page },
         })
       }
       return undefined
     } catch (e) {
+      if (requestId !== this.searchRequestId) {
+        if (append) this.setState({ loadingMore: false })
+        return undefined
+      }
       console.error('Search failed', e)
       this.setState({ searchError: 'Search failed, please try again.', loadingMore: false })
     } finally {
-      if (!append) {
+      if (!append && requestId === this.searchRequestId) {
         this.setState({ searchInProgress: false })
       }
     }
+  }
+
+  // Cart similarity search: the cart is split into groups of similar tracks and each group is searched separately.
+  // It runs through the track search like any other query, so the other search terms (text, artist, label, …) filter
+  // the results. The settings below live only in this browser session; "Not this" tracks are sent with every request
+  // and never stored on the server.
+  async startCartSearch(searchTerms, cartTerm, filters = {}) {
+    const cart = this.state.carts.find(({ uuid }) => uuid === cartTerm.id)
+    const name = cartTerm.name || cart?.name
+    const terms = searchTerms.map((term) => (term === cartTerm && name ? { ...term, name } : term))
+    const query = searchTermsToQueryString(terms)
+    const names = entityNamesToUrlParam(terms)
+    window.history.pushState(
+      undefined,
+      undefined,
+      `/search?q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}`,
+    )
+    const cartSearch = {
+      uuid: cartTerm.id,
+      name,
+      query,
+      addedSince: filters.addedSince || null,
+      k: null,
+      newArtistsOnly: false,
+      misses: [],
+      chip: 'all',
+      mapOpen: false,
+      saved: [],
+      result: null,
+      toast: '',
+    }
+    this.setState({ listState: 'search', searchTerms: terms, searchError: undefined, searchResults: [], cartSearch })
+    await this.fetchCartSearch(cartSearch)
+  }
+
+  visibleCartSearchResults(cartSearch) {
+    const tracks = cartSearch?.result?.tracks || []
+    const missed = new Set(cartSearch.misses.map(({ id }) => id))
+    return tracks.filter(
+      (track) => !missed.has(track.id) && (cartSearch.chip === 'all' || track.cartSearch?.group === cartSearch.chip),
+    )
+  }
+
+  async fetchCartSearch(cartSearch) {
+    const requestId = (this.searchRequestId = (this.searchRequestId || 0) + 1)
+    const params = new URLSearchParams({ q: cartSearch.query })
+    if (cartSearch.k !== null && cartSearch.k !== undefined) params.set('k', cartSearch.k)
+    if (cartSearch.newArtistsOnly) params.set('newArtistsOnly', 'true')
+    if (cartSearch.misses.length > 0) params.set('misses', cartSearch.misses.map(({ id }) => id).join(','))
+    if (cartSearch.addedSince) params.set('addedSince', cartSearch.addedSince)
+    this.setState({ searchInProgress: true, searchError: undefined })
+    try {
+      const { tracks, page, meta } = await requestJSONwithCredentials({ path: `/tracks?${params.toString()}` })
+      if (requestId !== this.searchRequestId) return
+      const result = meta.cartSearch
+        ? { ...meta.cartSearch, tracks }
+        : { ...emptyCartSearchResult, tracks, reason: 'Cart not found.' }
+      const next = { ...this.state.cartSearch, ...cartSearch, result, k: result.k }
+      if (next.chip !== 'all' && next.chip >= result.groups.length) next.chip = 'all'
+      this.setState({
+        cartSearch: next,
+        searchResults: this.visibleCartSearchResults(next),
+        searchError: result.reason,
+        trackOffsets: { ...this.state.trackOffsets, search: page.offset + tracks.length },
+        pages: { ...this.state.pages, search: page },
+      })
+    } catch (e) {
+      if (requestId !== this.searchRequestId) return
+      console.error('Cart search failed', e)
+      this.setState({ searchError: 'Search failed, please try again.' })
+    } finally {
+      if (requestId === this.searchRequestId) this.setState({ searchInProgress: false })
+    }
+  }
+
+  // Changes that only affect what is shown (chip, map) are applied locally; the rest re-run the search.
+  async updateCartSearch(changes) {
+    const current = this.state.cartSearch
+    if (!current) return
+    const next = { ...current, ...changes }
+    if ('k' in changes && changes.k !== current.k) next.chip = 'all'
+    const refetch = ['k', 'newArtistsOnly', 'misses'].some((key) => key in changes && changes[key] !== current[key])
+    this.setState({ cartSearch: next, searchResults: this.visibleCartSearchResults(next) })
+    if (refetch) await this.fetchCartSearch(next)
+  }
+
+  async markCartSearchMiss(track) {
+    const current = this.state.cartSearch
+    if (!current || current.misses.some(({ id }) => id === track.id)) return
+    const label = `${(track.artists || []).map(({ name }) => name)[0] || ''} – ${track.title}`
+    await this.updateCartSearch({
+      misses: [...current.misses, { id: track.id, label }],
+      toast: `Hidden ${label} and pushed the search away from it.`,
+    })
+  }
+
+  async saveCartSearchGroup(groupIndex, cartName) {
+    const current = this.state.cartSearch
+    const group = current?.result?.groups?.[groupIndex]
+    if (!group || !cartName) return
+    const trackIds = current.result.map.members.filter((m) => m.group === groupIndex).map(({ trackId }) => trackId)
+    await requestJSONwithCredentials({
+      path: `/me/carts`,
+      method: 'POST',
+      body: { name: cartName, tracks: trackIds.map((trackId) => ({ trackId })) },
+    })
+    await this.updateCarts()
+    const latest = this.state.cartSearch
+    if (latest) {
+      this.setState({
+        cartSearch: {
+          ...latest,
+          saved: [...latest.saved, { k: latest.k, group: groupIndex, name: cartName }],
+          toast: `Created cart “${cartName}” with ${trackIds.length} tracks.`,
+        },
+      })
+    }
+  }
+
+  // Starts a fresh cart search: whatever was in the search bar is cleared.
+  findSimilarToCart(cart) {
+    if (!cart?.uuid) return
+    const term = { type: 'cart', value: `cart:~${cart.uuid}`, id: cart.uuid, similar: true, name: cart.name }
+    this.setState({ searchBarResetCount: this.state.searchBarResetCount + 1 })
+    this.search([term], this.state.searchFilters)
   }
 
   logout = async () => {
@@ -1031,7 +1156,8 @@ class App extends Component {
   async selectCart(selectedCartUuid) {
     this.setState({ selectedCartUuid, fetchingCartDetails: true, cartPagination: null })
     const path = `/carts/${selectedCartUuid}?offset=0&limit=${CART_TRACKS_PAGE_SIZE}`
-    const cartDetails = await requestJSONwithCredentials({ path })
+    const response = await requestJSONwithCredentials({ path })
+    const cartDetails = cartRecord(response)
     let updatedCarts = this.state.carts.slice()
     let cartIndex = updatedCarts.findIndex(({ uuid }) => uuid === selectedCartUuid)
     if (cartIndex === -1) {
@@ -1047,18 +1173,24 @@ class App extends Component {
       fetchingCartDetails: false,
       cartPagination: {
         offset: 0,
-        count: (cartDetails.tracks || []).length,
-        total: cartDetails.track_count || 0,
+        count: response.tracks.length,
+        total: response.page.total,
         loadingMore: false,
       },
     })
   }
 
-  async setCurrentTrack(track) {
-    this.setState({ currentTrack: track })
+  // `playingFrom` ({ source, tracks }) is given when playback starts from a list; stepping within the queue keeps it.
+  async setCurrentTrack(track, playingFrom) {
+    const nextPlayingFrom = playingFrom === undefined ? this.state.playingFrom : playingFrom
+    this.setState({ currentTrack: track, playingFrom: nextPlayingFrom })
     window.localStorage.setItem(
       'currentTrack',
-      JSON.stringify({ listState: this.state.listState, currentTrack: track }),
+      JSON.stringify({
+        listState: this.state.listState,
+        currentTrack: track,
+        playingFromSource: nextPlayingFrom?.source ?? null,
+      }),
     )
     document.title = `${trackArtistsAndTitleText(track)} - Fomo Player ${this.state.stores.length === 1 ? ` - ${this.state.stores[0].storeName}` : ''}`
   }
@@ -1092,11 +1224,8 @@ class App extends Component {
     const googleLoginPath = `${config.apiURL}/auth/login/google?returnPath=${encodeURIComponent(buildLoginReturnPath())}`
 
     return (
-      <ErrorBoundary
-        onError={(error, errorInfo) =>
-          requestWithCredentials({ url: `/log/error`, method: 'POST', body: { error, errorInfo } })
-        }
-      >
+      <ErrorBoundary FallbackComponent={ErrorFallback} onError={reportRenderError}>
+        <CrashTest />
         <Root
           className={`${this.state.listState === 'search' ? 'search-expanded' : ''} ${
             this.state.isMobile ? 'mobile' : 'desktop'
@@ -1235,6 +1364,7 @@ class App extends Component {
                   onCloseClicked={this.closePopups.bind(this)}
                 />
                 <TopBar
+                  unreadNotificationCount={this.state.unreadNotificationCount}
                   modifyingNotification={this.state.modifyingNotification}
                   emailVerified={this.state.userSettings.emailVerified}
                   triggerSearch={this.triggerSearch.bind(this)}
@@ -1246,6 +1376,7 @@ class App extends Component {
                   listState={this.state.listState}
                   notifications={this.state.notifications}
                   searchTerms={this.state.searchTerms}
+                  searchBarResetCount={this.state.searchBarResetCount}
                   searchFilters={this.state.searchFilters}
                   userSettings={this.state.userSettings}
                   isAdmin={this.state.isAdmin}
@@ -1294,9 +1425,13 @@ class App extends Component {
                     }
                     const pathParts = pathname.slice(1).split('/')
                     const settingsVisible = pathname.match(/\/settings\/?/)
+                    const notificationsVisible = pathParts[0] === 'notifications'
+                    const notificationsTab = ['activity', 'samples', 'subscriptions'].includes(pathParts[1])
+                      ? pathParts[1]
+                      : 'activity'
                     let listState = this.state.listState
                     const routeListState = pathParts[0] === 'tracks' ? pathParts[1] || 'new' : pathParts[0]
-                    if (routeListState && routeListState !== 'settings') {
+                    if (routeListState && routeListState !== 'settings' && routeListState !== 'notifications') {
                       listState = routeListState
                     }
 
@@ -1318,12 +1453,32 @@ class App extends Component {
                           scoreWeights={this.state.scoreWeights}
                           tracks={this.state.tracksData.tracks}
                           follows={this.state.follows}
+                          dockedPlayerVisible={Boolean(settingsVisible && this.state.currentTrack)}
                           style={{ display: settingsVisible ? 'block' : 'none' }}
                         />
+                        {notificationsVisible ? (
+                          <NotificationsPage
+                            visible
+                            tab={notificationsTab}
+                            currentTrackId={this.state.currentTrack?.id}
+                            unreadCount={this.state.unreadNotificationCount}
+                            onUnreadChanged={this.refreshUnreadNotificationCount.bind(this)}
+                            onPlay={this.setCurrentTrack.bind(this)}
+                            notifications={this.state.notifications}
+                            stores={this.state.stores}
+                            emailVerified={Boolean(this.state.userSettings?.emailVerified)}
+                            onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
+                            onFollowsChanged={this.updateFollows.bind(this)}
+                            style={{ order: 2 }}
+                          />
+                        ) : null}
                         <Player
+                          panelOnly={Boolean(notificationsVisible)}
                           carts={this.state.carts}
                           fetchingCartDetails={this.state.fetchingCartDetails}
                           currentTrack={this.state.currentTrack}
+                          playingFrom={this.state.playingFrom}
+                          docked={Boolean(settingsVisible)}
                           follows={this.state.follows}
                           heardTracks={this.state.heardTracks}
                           initialPosition={this.state.initialPosition}
@@ -1337,6 +1492,11 @@ class App extends Component {
                           searchError={this.state.searchError}
                           searchInProgress={this.state.searchInProgress}
                           searchResults={this.state.searchResults}
+                          cartSearch={this.state.listState === 'search' ? this.state.cartSearch : null}
+                          onCartSearchChange={this.updateCartSearch.bind(this)}
+                          onCartSearchMiss={this.markCartSearchMiss.bind(this)}
+                          onSaveCartSearchGroup={this.saveCartSearchGroup.bind(this)}
+                          onFindSimilarToCart={this.findSimilarToCart.bind(this)}
                           selectedCart={this.state.listState === 'carts' ? this.state.selectedCart : undefined}
                           stores={this.state.stores}
                           totalTracks={this.state.tracksData.meta.totalTracks}
@@ -1370,7 +1530,7 @@ class App extends Component {
                           onUpdateCarts={this.updateCarts.bind(this)}
                           onUpdateTracksClicked={this.updateTracks.bind(this)}
                           onAddEntityToSearch={this.addEntityToSearch.bind(this)}
-                          style={{ display: !settingsVisible ? 'flex' : 'none' }}
+                          style={{ display: !settingsVisible || this.state.currentTrack ? 'flex' : 'none' }}
                         />
                       </>
                     )

@@ -7,6 +7,7 @@ from essentia.standard import MonoLoader, TensorflowPredictEffnetDiscogs
 import json
 import requests
 from auth import auth_header, get_api_url, request_error
+import bandcamp
 
 from pydub import AudioSegment
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -17,6 +18,7 @@ import spotipy
 import sys
 import taglib
 import tempfile
+import time
 import traceback
 import urllib.request
 import urllib.parse
@@ -157,6 +159,21 @@ class EmbeddingSanityChecker:
             for old in collisions:
                 self._append_collision(signature, new_entry, old)
 
+            # One earlier match is usually the same recording released twice
+            # (e.g. a Bandcamp single and its album), so don't stop for it. A
+            # broken model gives the same vector for many tracks in a row.
+            other_sources = {e.get("group_key") or e.get("id") for e in collisions}
+            if len(other_sources) == 1:
+                print(
+                    f"[sanity] {self._describe(item_id_str, label)} matches "
+                    f"{self._describe(collisions[0]['id'], collisions[0].get('label'))} "
+                    "bit-for-bit; treating it as a duplicate release.",
+                    flush=True,
+                )
+                self.entries.append(new_entry)
+                self._persist()
+                return True
+
             first = collisions[0]
             new_desc = self._describe(item_id_str, label)
             old_desc = self._describe(first["id"], first.get("label"))
@@ -287,6 +304,26 @@ def get_spotify_details(isrc):
     else:
         return {}
 '''
+
+def resolve_bandcamp_url(preview):
+    """Look up the stream URL of a Bandcamp preview.
+
+    Returns the URL, None when Bandcamp has no stream for the track (the
+    preview is then reported missing), or False after a transient failure, so
+    the preview stays in the queue for a later run.
+    """
+    for attempt in range(2):
+        try:
+            return bandcamp.resolve_stream_url(preview.get("release_url"), preview.get("store_track_id"))
+        except bandcamp.RateLimited as e:
+            print(f"{e}; pausing for {bandcamp.RATE_LIMIT_PAUSE_S} s", flush=True)
+            if attempt == 0:
+                time.sleep(bandcamp.RATE_LIMIT_PAUSE_S)
+        except requests.RequestException as e:
+            print(f"Resolving Bandcamp stream for preview {preview.get('preview_id')} failed: {e}")
+            return False
+    return False
+
 
 def build_model(model_name):
     graph_filename = f"./models/{model_name}.pb"
@@ -441,6 +478,15 @@ if __name__ == '__main__':
                 for preview in previews:
                     previewUrl = preview.get("url")
                     previewId = preview.get("preview_id")
+                    if not previewUrl and preview.get("store") == "Bandcamp":
+                        previewUrl = resolve_bandcamp_url(preview)
+                        if previewUrl is None:
+                            print(f"Bandcamp has no stream for preview {previewId}")
+                            tracks.append({"id": track.get('track_id'), "isrc": track.get('track_isrc'),
+                                           "preview_id": previewId, "missing": True})
+                            continue
+                        if previewUrl is False:
+                            continue
                     print(f"Downloading preview with id {previewId} from : {previewUrl}")
                     try:
                         local_filename, _ = urllib.request.urlretrieve(previewUrl)
@@ -492,26 +538,36 @@ if __name__ == '__main__':
                         print("Preparing audio")
                         print("Processing audio")
                         embeddings = compute_temporal_embedding(output_wav_path, model)
-                        vector = embeddings.T.mean(1).tolist()
+                        if len(embeddings) == 0:
+                            # Too short for a single model patch (e.g. one-shots in a
+                            # Bandcamp sample pack). Report it missing so it leaves the
+                            # queue instead of being retried in every batch.
+                            print(f"Audio too short to embed ({sound.duration_seconds:.1f} s), "
+                                  f"reporting preview {track['preview_id']} missing")
+                            requests.post(f"{get_api_url()}/admin/analyse",
+                                          headers=auth_header(),
+                                          json=[{"preview_id": track["preview_id"], "missing": True}])
+                        else:
+                            vector = embeddings.T.mean(1).tolist()
 
-                        preview_id = track.get("preview_id")
-                        track_id = track.get("id")
-                        label = f"track_id={track_id}" if track_id is not None else None
-                        if not sanity.record_and_check(preview_id, vector, label=label, group_key=track_id):
-                            sys.exit(1)
+                            preview_id = track.get("preview_id")
+                            track_id = track.get("id")
+                            label = f"track_id={track_id}" if track_id is not None else None
+                            if not sanity.record_and_check(preview_id, vector, label=label, group_key=track_id):
+                                sys.exit(1)
 
-                        print(f"Processing done, sending details for preview with id: {preview_id}")
-                        data = [{"id": preview_id,
-                                 "embeddings": json.dumps(vector),
-                                 "model": model_name,
-                                 "spotify": spotify_details}]
-                        res = requests.post(f"{get_api_url()}/admin/analyse",
-                                            headers=auth_header(),
-                                            json=data)
-                        if res.status_code != 200:
-                            print(f"Error reporting results for {track['id']}")
-                            print(f"Status code: {res.status_code}")
-                            print(res.text)
+                            print(f"Processing done, sending details for preview with id: {preview_id}")
+                            data = [{"id": preview_id,
+                                     "embeddings": json.dumps(vector),
+                                     "model": model_name,
+                                     "spotify": spotify_details}]
+                            res = requests.post(f"{get_api_url()}/admin/analyse",
+                                                headers=auth_header(),
+                                                json=data)
+                            if res.status_code != 200:
+                                print(f"Error reporting results for {track['id']}")
+                                print(f"Status code: {res.status_code}")
+                                print(res.text)
                     except Exception as e:
                         print(f"Error processing {absolute_file_path}")
                         print(e)

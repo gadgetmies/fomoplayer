@@ -221,10 +221,14 @@ module.exports.updateArtistTracks = async (storeUrl, details, sourceId, metrics 
   } catch (e) {
     const statusCode = e.statusCode || e.response?.statusCode || e.response?.status
     if (e.isRateLimit) {
+      // The store logs the rate limit once when it starts; here it is only
+      // handed to the job runner, which stops the run.
       const requestCount = e.requestCount || 'unknown'
-      const error = [`Rate limit reached after ${requestCount} requests while fetching artist tracks`, { error: e.toString(), sourceId, details, requestCount, isRateLimit: true }]
-      combinedErrors.push(error)
-      logger.error(`Rate limit reached after ${requestCount} requests while fetching artist tracks: ${details.url}`)
+      combinedErrors.push([
+        `Rate limited while fetching artist tracks`,
+        { error: e.toString(), sourceId, details, requestCount, isRateLimit: true, retryAfter: e.retryAfter },
+      ])
+      logger.debug(`Rate limited while fetching artist tracks: ${details.url || details.playlistStoreId}`)
       return combinedErrors
     }
     if (statusCode === 404) {
@@ -292,10 +296,14 @@ module.exports.updateLabelTracks = async (storeUrl, details, sourceId, metrics =
   } catch (e) {
     const statusCode = e.statusCode || e.response?.statusCode || e.response?.status
     if (e.isRateLimit) {
+      // The store logs the rate limit once when it starts; here it is only
+      // handed to the job runner, which stops the run.
       const requestCount = e.requestCount || 'unknown'
-      const error = [`Rate limit reached after ${requestCount} requests while fetching label tracks`, { error: e.toString(), sourceId, details, requestCount, isRateLimit: true }]
-      combinedErrors.push(error)
-      logger.error(`Rate limit reached after ${requestCount} requests while fetching label tracks: ${details.url}`)
+      combinedErrors.push([
+        `Rate limited while fetching label tracks`,
+        { error: e.toString(), sourceId, details, requestCount, isRateLimit: true, retryAfter: e.retryAfter },
+      ])
+      logger.debug(`Rate limited while fetching label tracks: ${details.url || details.playlistStoreId}`)
       return combinedErrors
     }
     if (statusCode === 404) {
@@ -335,7 +343,7 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
   try {
     const generator = await storeModule.logic.getPlaylistTracks(details)
     for await (const { tracks, errors } of generator) {
-      err.concat(errors)
+      err.push(...errors)
       try {
         await addStoreTracksToUsers(storeUrl, tracks, users, sourceId)
       } catch (e) {
@@ -346,10 +354,14 @@ module.exports.updatePlaylistTracks = async (storeUrl, details, sourceId) => {
     }
   } catch (e) {
     if (e.isRateLimit) {
+      // The store logs the rate limit once when it starts; here it is only
+      // handed to the job runner, which stops the run.
       const requestCount = e.requestCount || 'unknown'
-      const error = [`Rate limit reached after ${requestCount} requests while fetching playlist tracks`, { error: e.toString(), sourceId, details, requestCount, isRateLimit: true }]
-      err.push(error)
-      logger.error(`Rate limit reached after ${requestCount} requests while fetching playlist tracks: ${details.url || details.playlistStoreId}`)
+      err.push([
+        `Rate limited while fetching playlist tracks`,
+        { error: e.toString(), sourceId, details, requestCount, isRateLimit: true, retryAfter: e.retryAfter },
+      ])
+      logger.debug(`Rate limited while fetching playlist tracks: ${details.url || details.playlistStoreId}`)
       return err
     }
     throw e

@@ -1,6 +1,6 @@
 const logger = require('fomoplayer_shared').logger(__filename)
 
-const router = require('express-promise-router')()
+const router = require('express').Router()
 
 const ALLOWED_LEVELS = ['error', 'warn', 'info', 'debug', 'verbose', 'silly']
 

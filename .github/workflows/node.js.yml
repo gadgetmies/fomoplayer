@@ -116,7 +116,10 @@ jobs:
         env:
           PGPASSWORD: postgres
 
-      - name: Run browser tests
+      # Ordinary browser tests only. The demo pairs (`*-local.js` /
+      # `*-preview.js`) are excluded by the script's own --regex and run from
+      # pr-demo-local.yml / pr-demo-preview.yml, or via ci:test:browser:demo.
+      - name: Run browser tests (demo pairs excluded)
         run: yarn run ci:test:browser
         env:
           DATABASE_URL: postgres://postgres:postgres@postgres/multi-store-player-test

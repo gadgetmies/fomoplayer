@@ -1,3 +1,60 @@
+# Version control: every change in a worktree
+
+**Never modify files in the main checkout.** Before the first edit of any change
+— code, docs, OpenSpec artifacts, design docs, `.claude/` config — create a
+worktree on a new branch off `master` named like the worktree
+(`git worktree add ../fomoplayer-<change> -b <change> master`, then
+`yarn install` in it), and record the change in project memory. Generate spec
+files inside the worktree and commit them as the branch's first commit. Commit
+all work in the worktree, verify it there, and merge it back into the main
+checkout (`git merge --no-ff <change>`, after merging `master` into the branch
+in the worktree) only once it has been verified and the user has agreed. Hooks
+in `.claude/hooks/` deny edits and commits in the main checkout. Full lifecycle:
+[`docs/contributing-workflow.md`](docs/contributing-workflow.md).
+
+# Commits & tests — required skill
+
+Any change you make here MUST follow the **`commit-and-test-discipline`**
+skill. It is not vendored in this repo; it lives once in the personal skill
+collection and is installed on demand:
+`npx skills add gadgetmies/agent-skills -s commit-and-test-discipline -g`. The
+`SessionStart` hook (`.claude/hooks/ensure-skill.py`) checks it is installed
+and, if missing, tells you to install it before doing any work. Invoke it
+before committing or running tests. In short: `wip:` checkpoints and
+relevant-subset test runs during the work, then at the merge boundary atomic
+commits (no `wip:` reaches `master`, explicit staging) and the full suite green
+— except for documentation-only changes, which the skill defines. The skill
+lists this repo's test commands.
+
+# UI changes require demo recordings
+
+**Any change that is visible in the UI must ship with paired demo tests.**
+When a feature touches the front-end, an admin view, or the extension popup,
+follow the `demo-tests` skill (`.claude/skills/demo-tests/SKILL.md`): add a
+`demo-test` (local) and a `demo-preview` browser test under
+`packages/back/test/browser/`, written to share as much code as possible
+(only the state-seeding differs), and add both fenced ` ```demo-test ` /
+` ```demo-preview ` blocks to the PR body so the demo workflows record a
+preview video. demo-preview must seed state via the UI/API only (no DB);
+demo-test reuses that and may fall back to direct DB seeding only when
+necessary.
+
+# Follow the existing UI conventions
+
+**When changing the UI, reuse what the app already does by default**: its
+components (`GlobalSearchBar`, `MenuNavButton`, the `select-button` tab rows,
+`button-push_button` buttons, pills), their states (a control that cannot be
+used is a real `<button>`/`<input>` with `disabled`, styled by the existing
+`:disabled` rules — not a lowered opacity on a look-alike), spacing,
+breakpoints and colours (`--top-bar-background-color`, `#131313` behind the
+player, the `#5996e4 → #b69afd` progress gradient). Match the nearest
+existing screen before inventing a new look.
+
+If a convention cannot be followed — it does not fit the new case, it is
+inconsistent between screens, or following it would cause a bug — **tell the
+user** which convention and why, and what you did instead, rather than
+silently deviating.
+
 # Configuration policy
 
 **No deployment domains in source code.** Hostnames or URLs that vary by
@@ -77,3 +134,16 @@ Implications:
   full-track streams should not invent one.
 - `duration` and `end_ms` on previews equal the full track duration, so
   treat the preview window as the full track on Bandcamp.
+
+# Time-stretched audio as model input
+
+**A time-stretch engine can move an embedding more than the tempo change
+does.** Rubber Band R3 (`rubberband --fine`) at 0.1 % tempo moves a
+Discogs-EffNet embedding by 0.055 cosine distance — about as much as a real
+8 % stretch — while sox WSOLA (`tempo -m`) moves it 0.0004. Before
+time-stretched or pitch-shifted audio feeds embeddings, fingerprints or
+training data, run a near-zero control (ratio 1.001, never 1.0 — wrappers skip
+unity) with the same engine and flags; follow the
+`checking-stretch-engine-artefacts` skill. The measurements are in the Pitfalls
+section of `analyser/research/effnet-perception/README.md`.
+@AGENTS.md

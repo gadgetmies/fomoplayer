@@ -127,6 +127,65 @@ The login flow is:
 Override it (comma-separated regexes) only if you ship from a different
 origin shape.
 
+## Cart push: Fomo Player cart → store cart
+
+Once a user has curated a Fomo Player cart for a DJ set, the extension can
+push that cart's tracks toward the store's own cart so the buy step doesn't
+require re-locating every track. The popup grows a **Push Fomo Player cart**
+section on both the Beatport and Bandcamp panels. The start UI (cart picker
++ push button) only appears when the active tab is on the matching store;
+in-flight run state and end-of-run summaries render on the matching panel
+regardless of which tab is active.
+
+| Store    | What happens                                                                                                                                                                                                                                                                                                                                                                                                  |
+|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Beatport | One-way incremental sync into a Beatport cart named `FOMO: <fomoplayer cart name>`. The worker sources a bearer from `https://www.beatport.com/api/auth/session` (`credentials: 'include'`), lists carts via `GET https://api.beatport.com/v4/my/carts/`, creates the named cart if missing, pre-fetches existing items for de-dup, then POSTs only the missing tracks one at a time. Resumes across worker idle. |
+| Bandcamp | The extension opens one background tab per resolvable Bandcamp track URL — there is no Bandcamp add-to-cart API, so the user finishes the add interactively in each tab. Tabs open in user-paced batches; the popup's `Open next batch` button advances to the next batch.                                                                                                                                       |
+
+End-of-run summary buckets: `Added`, `Already in cart` (Beatport only),
+`Not on <store>`, `Failed`. Skipped + failed lines can be copied or
+downloaded as a text file (`fomo-push-<store>-<cart-slug>-<YYYYMMDD-HHMM>.txt`).
+
+Run state lives in `browser.storage.local.cartPushRun`; only the service
+worker writes it. One concurrent run across the whole extension — the
+non-active store's panel shows a disabled push button with a hint when a
+run on the other store is in flight.
+
+### Options-page setting: Bandcamp cart-push batch size
+
+Field `Bandcamp cart-push batch size` on the Options page controls how many
+Bandcamp tabs open at once before the user clicks `Open next batch`.
+
+- Default: `10`. (Set on first install by the service worker if the key is
+  absent.)
+- Blank: no batching — every track opens in a single batch. Beware: a
+  60-track cart spawns 60 simultaneous tabs and can stall the browser.
+- Positive integer: batches of that size. The user advances with
+  `Open next batch`.
+
+Mid-run changes do not affect the in-flight run; they take effect on the
+next run started after dismissal.
+
+### v1 limitations
+
+- **No bidirectional sync.** Removing a track from a Beatport `FOMO:` cart
+  is not propagated back to Fomo Player; removing a track from a Fomo
+  Player cart is not propagated to the Beatport cart.
+- **Rename creates a new Beatport cart.** Renaming the Fomo Player cart
+  causes the next sync to create a new `FOMO: <new name>` cart on Beatport
+  and leaves the old one alone (linkage is by exact name match, not by id).
+- **No abort-in-progress button.** Dismiss is only available once the run
+  reaches `completed` or `failed`. Per-track Beatport failures (including
+  401/403) do not abort the run — they go to the `Failed` bucket and the
+  loop continues.
+- **No Bandcamp purchase-tracking signal.** Bandcamp's manual add means
+  the extension cannot observe whether a tab actually resulted in a
+  purchase, so re-runs against the same cart re-open every tab.
+- **Beatport release-vs-track gap.** A release already in the Beatport
+  cart does not suppress per-track POSTs from this push; tracks may end up
+  duplicated or rejected as duplicates depending on Beatport's response.
+- **Spotify and other stores are not supported.**
+
 ## Backend env required for the extension to talk to the backend
 
 The backend must allow the extension's *origin* through CORS, allow the
@@ -207,11 +266,21 @@ Store `fomo-player-extension.private.pem` somewhere durable (password manager, h
 ## Tests
 
 ```sh
-yarn test                       # mocha + transforms tests in this package
+yarn test                       # cascade-test against ./test/tests
 yarn lint:firefox               # web-ext lint against the Firefox build
 yarn workspace fomoplayer_back test --regex 'extension-token|cli-auth-code'
 ```
 
+This package uses [`cascade-test`](https://www.npmjs.com/package/cascade-test)
+(same framework as `packages/back`). Tests live in `test/tests/` (one file
+per area: `transforms.js`, `feed-parse.js`, `heard-reporting.js`,
+`cart-push-resolve.js`, `cart-push-beatport.js`, `cart-push-bandcamp.js`).
+Shared test helpers — including the in-memory `browser.storage.local` stub
+used by the cart-push specs — live in `test/lib/` so cascade-test does not
+discover them as test files.
+
 The backend tests cover the full extension token flow (PKCE, redirect-URI
 binding, refresh rotation, reuse detection, logout). This package's tests
-cover the pure-data transforms.
+cover the pure-data transforms, the Bandcamp feed-parse layer, the heard-
+reporting hook, and the cart-push modules (Beatport API scenarios a–f,
+Bandcamp batch partitioning + advance).

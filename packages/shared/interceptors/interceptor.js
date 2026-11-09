@@ -89,14 +89,16 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
     const url = request.url
     logger.info(`Got request: ${url}`)
 
-    const requestDetails = { url, pathname: new URL(url).pathname, request }
+    // The body is read up front so mocks can answer by request body (e.g. an
+    // endpoint that takes the item id in a JSON POST).
+    const requestBody = request.body ? await request.clone().text() : undefined
+    const requestDetails = { url, pathname: new URL(url).pathname, request, body: requestBody }
 
     if (url.match(regex) && (proxies || mocks)) {
       const proxy = proxies && proxies.find(({ test }) => test(requestDetails))
       const mock = mocks && mocks.find(({ test }) => test(requestDetails))
 
       if (proxy !== undefined) {
-        const requestBody = request.body && (await request.clone().text())
         const rewrittenUrl = proxy.url(requestDetails)
         logger.info(`Proxying request from ${url} to ${rewrittenUrl}`)
 
@@ -120,7 +122,7 @@ module.exports.init = function init({ proxies, mocks, name, regex }) {
         }
       } else if (mock !== undefined) {
         logger.info(`Mocking request: ${url}`)
-        mockedRequests.push({ url, request })
+        mockedRequests.push({ url, request, body: requestBody })
         const { body, options } = mock.getResponse(requestDetails)
 
         try {

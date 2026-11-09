@@ -6,7 +6,8 @@ require('./sentry').init()
 
 const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
-const open = require('open')
+// open is ESM-only; require(esm) exposes the function as `default`.
+const open = require('open').default
 const { login } = require('./auth')
 const { setApiKey, getApiUrl } = require('./config')
 

@@ -1,0 +1,19 @@
+// Local demo (demo-test workflow). Tracks are seeded so the tutorial doesn't auto-start for an
+// empty collection; seedTracks picks the DB locally and the API on the preview, so this matches
+// guided-tours-preview.js line for line.
+const { test } = require('cascade-test')
+const { getSharedContext, teardownSharedContext } = require('../lib/setup')
+const { seedTracks } = require('../lib/seed')
+const { resolveTestUserId } = require('../lib/test-user')
+const { walkOnboarding, walkSettingsHelp } = require('../lib/guided-tours-steps')
+
+test({
+  teardown: teardownSharedContext,
+  setup: async () => {
+    const { page } = await getSharedContext()
+    await seedTracks({ userIds: [await resolveTestUserId()] })
+    return { page, timeout: 60000 }
+  },
+  'the onboarding tutorial opens, advances and closes': walkOnboarding,
+  'the Settings help tour steps forward and back': walkSettingsHelp,
+})

@@ -14,6 +14,7 @@ let mobilePromise = null
 // trace is only saved when `tracing.stop({ path })` is called explicitly, so we
 // track every traced context here and stop them all during teardown.
 let pendingTraces = []
+let sharedMobileContext = null
 
 const BACKEND_ROOT = path.resolve(__dirname, '../..')
 const FRONTEND_ROOT = path.resolve(BACKEND_ROOT, '../front')
@@ -25,6 +26,13 @@ const isRemotePreview = Boolean(process.env.PREVIEW_URL)
 // give remote-preview runs: slow-mo pacing and the cursor/click/keyboard
 // overlay, so a locally recorded video reads as a demo rather than a raw test.
 const isRecording = Boolean(process.env.VIDEO_DIR)
+// Optional trailing idle (ms) held on the final frame before the recording is
+// flushed, so the closing state is easy to review. Set by the demo workflows
+// via PW_END_IDLE_MS; ignored outside recording so normal CI isn't slowed.
+const endIdleMs = (() => {
+  const value = Number(process.env.PW_END_IDLE_MS)
+  return Number.isFinite(value) && value > 0 ? value : 0
+})()
 
 const getLatestMtimeMs = async (targetPath) => {
   let stats
@@ -85,7 +93,7 @@ const dismissOnboarding = async (page) => {
     return
   }
 
-  const skipButton = page.locator('[data-test-id="button-skip"]').first()
+  const skipButton = page.locator('.react-joyride__tooltip [data-action="skip"]').first()
   try {
     await waitForWithTimeoutMessage(
       () => skipButton.waitFor({ state: 'visible', timeout: 500 }),
@@ -272,19 +280,28 @@ const flushPendingTraces = async () => {
   }
 }
 
-// Close the recording context and browser so Playwright flushes the video to
-// disk. Playwright only writes a recorded video when its context (or the owning
-// browser) closes — closing the browser also finalises the videos of every
-// context on it. Idempotent: each handle is captured and nulled before the
+// Close the recording contexts and browser so Playwright flushes the videos to
+// disk. Playwright only writes a recorded video when its context closes. Every
+// context is closed explicitly: closing the browser does not wait for the other
+// contexts' videos to finish writing, which left the mobile demo recordings cut
+// off mid-stream. Idempotent: each handle is captured and nulled before the
 // (async) close so a second call (or a concurrent beforeExit) can't double-close.
 const teardownSharedContext = async () => {
-  // Save traces before closing anything — stopping a trace on a closed context
-  // would throw and lose it.
-  await flushPendingTraces()
-  if (sharedBrowserContext) {
-    const context = sharedBrowserContext
-    sharedBrowserContext = null
-    await context.close().catch(() => {})
+  const contexts = [sharedMobileContext, sharedBrowserContext].filter(Boolean)
+  sharedMobileContext = null
+  sharedBrowserContext = null
+  if (contexts.length > 0) {
+    // Linger on the final frame so the closing state is reviewable before
+    // Playwright stops recording on context close (recording runs only).
+    if (isRecording && endIdleMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, endIdleMs))
+    }
+    // Save traces before closing anything — stopping a trace on a closed
+    // context would throw and lose it.
+    await flushPendingTraces()
+    for (const context of contexts) {
+      await context.close().catch(() => {})
+    }
   }
   if (sharedBrowser) {
     const browser = sharedBrowser
@@ -292,6 +309,7 @@ const teardownSharedContext = async () => {
     await browser.close().catch(() => {})
   }
   initPromise = null
+  mobilePromise = null
 }
 
 // cascade-test ends every forked test process with `process.exit()` (see
@@ -310,7 +328,9 @@ if (isRecording) {
     }
     flushing = true
     const finish = () => realExit(code)
-    const guard = setTimeout(finish, 10000)
+    // Allow for the trailing idle on top of the close budget so the recording
+    // has time to flush before the hard exit.
+    const guard = setTimeout(finish, 10000 + endIdleMs)
     teardownSharedContext().finally(() => {
       clearTimeout(guard)
       finish()
@@ -479,13 +499,7 @@ const initializeMobile = async () => {
   }
 
   const page = await mobileContext.newPage()
-
-  process.on('beforeExit', async () => {
-    // Save any pending traces before closing — a trace can't be stopped on a
-    // closed context.
-    await flushPendingTraces()
-    await mobileContext.close().catch(() => {})
-  })
+  sharedMobileContext = mobileContext
 
   return { context: mobileContext, page }
 }

@@ -1,5 +1,6 @@
 import React from 'react'
 import browser from '../browser'
+import CartPushSection from './cart-push/CartPushSection.jsx'
 
 const getActiveTabId = async () => {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
@@ -59,7 +60,7 @@ export default class BeatportPanel extends React.Component {
   }
 
   render() {
-    const { running, isCurrent } = this.props
+    const { running, isCurrent, cartPushBusy } = this.props
     const { loggedIn, hasPlayables } = this.state
 
     return (
@@ -78,9 +79,7 @@ export default class BeatportPanel extends React.Component {
               <button
                 id="beatport-current"
                 disabled={running || !hasPlayables}
-                onClick={() =>
-                  this.withRunning(() => sendToActiveContent({ type: 'beatport:scrape-current-page' }))
-                }
+                onClick={() => this.withRunning(() => sendToActiveContent({ type: 'beatport:scrape-current-page' }))}
               >
                 Send tracks from current page
               </button>
@@ -125,6 +124,7 @@ export default class BeatportPanel extends React.Component {
             </p>
           </>
         )}
+        <CartPushSection store="beatport" isCurrent={isCurrent} busy={running || cartPushBusy} />
       </div>
     )
   }

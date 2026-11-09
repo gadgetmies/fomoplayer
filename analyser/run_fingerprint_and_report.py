@@ -32,7 +32,6 @@ import argparse
 import datetime as dt
 import json
 import os
-import subprocess
 import sys
 import time
 import traceback
@@ -54,12 +53,14 @@ if os.path.isdir(_BREW_JAVA) and _BREW_JAVA not in os.environ.get('PATH', ''):
 # Local imports — the analyser venv resolves these from this directory
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from extraction import (  # noqa: E402
+    cleanup_downloads,
+    cleanup_panako_worker_dirs,
     download_and_manage_file,
     ensure_downloads_directory,
     extract_panako_fingerprints,
     read_tdb_file,
-    PANAKO_CONFIG_ARGS,
-    PANAKO_STORE_EXTRA_ARGS,
+    _batched_panako_store,
+    _worker_cache_dir,
 )
 
 DB_DSN = os.environ.get('DATABASE_URL', 'postgresql://localhost/multi-store-player')
@@ -195,7 +196,7 @@ def insert_preview_fingerprints(conn, preview_id, fingerprints):
 def fingerprint_one(downloads_dir, kind, file_id, url, filename=None):
     """Returns (fingerprints, error_or_None)."""
     try:
-        downloaded_path, _ = download_and_manage_file(url, file_id, kind, filename, downloads_dir)
+        downloaded_path = download_and_manage_file(url, file_id, kind, filename, downloads_dir)
         audio_path = to_wav_if_needed(downloaded_path, kind, file_id, downloads_dir)
         if not os.path.exists(audio_path) or os.path.getsize(audio_path) == 0:
             return None, f"Audio file missing/empty: {audio_path}"
@@ -316,45 +317,6 @@ def upsert_match(conn, sample_id, preview_id, score, threshold, bucket_seconds):
 # ---------------------------- main phases ---------------------------------
 
 
-def _worker_cache_dir():
-    """Per-worker Panako cache folder, isolated by PID so LMDB writes never
-    contend across workers. Reused across batches within one worker."""
-    cache_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        f'panako_db_worker_{os.getpid()}',
-    )
-    os.makedirs(cache_dir, exist_ok=True)
-    return os.path.abspath(cache_dir)
-
-
-def _batched_panako_store(audio_paths, cache_dir):
-    """Run `panako store` then `panako resolve` on a batch of files in a
-    single JVM invocation each. Returns parallel list of file IDs."""
-    panako_args = list(PANAKO_CONFIG_ARGS) + [f'PANAKO_CACHE_FOLDER={cache_dir}']
-    store_cmd = ['panako', 'store', *audio_paths, *PANAKO_STORE_EXTRA_ARGS, *panako_args]
-    store_result = subprocess.run(store_cmd, capture_output=True, text=True, check=False)
-    if store_result.returncode != 0:
-        raise RuntimeError(
-            f'panako batch store failed (rc={store_result.returncode}): '
-            f'{store_result.stderr[:500]}'
-        )
-
-    resolve_cmd = ['panako', 'resolve', *audio_paths, *panako_args]
-    resolve_result = subprocess.run(resolve_cmd, capture_output=True, text=True, check=False)
-    if resolve_result.returncode != 0:
-        raise RuntimeError(
-            f'panako batch resolve failed (rc={resolve_result.returncode}): '
-            f'{resolve_result.stderr[:500]}'
-        )
-
-    ids = [line.strip() for line in resolve_result.stdout.strip().split('\n') if line.strip()]
-    if len(ids) != len(audio_paths):
-        raise RuntimeError(
-            f'panako resolve returned {len(ids)} ids for {len(audio_paths)} files'
-        )
-    return ids
-
-
 def _worker_process_preview_batch(batch_jobs):
     """Pool-callable: download + wav-convert each preview, then batch-Panako
     them, then INSERT into Postgres. Returns one result dict per input job."""
@@ -366,7 +328,7 @@ def _worker_process_preview_batch(batch_jobs):
     # Phase A: per-file download + wav-convert. Failures don't sink the batch.
     for job in batch_jobs:
         try:
-            downloaded_path, _ = download_and_manage_file(
+            downloaded_path = download_and_manage_file(
                 job['url'], job['id'], 'preview', None, downloads_dir,
             )
             audio_path = to_wav_if_needed(downloaded_path, 'preview', job['id'], downloads_dir)
@@ -708,52 +670,57 @@ def main():
 
     conn = db_connect()
     downloads_dir = ensure_downloads_directory()
+    analyser_root = os.path.dirname(os.path.abspath(__file__))
 
-    sample_results = preview_results = None
-    if not args.skip_fingerprint and not args.report_only:
-        sample_results, preview_results = phase_fingerprint(
-            conn, downloads_dir, workers=args.workers, batch_size=args.batch_size,
-        )
-        # Persist a small ledger so a later --report-only run can still cite stats
-        ledger = {'samples': sample_results, 'previews': preview_results}
-        Path(__file__).parent.joinpath('last_fingerprint_run.json').write_text(json.dumps(ledger, indent=2))
-    else:
-        ledger_path = Path(__file__).parent / 'last_fingerprint_run.json'
-        if ledger_path.exists():
-            ledger = json.loads(ledger_path.read_text())
-            sample_results = ledger['samples']
-            preview_results = ledger['previews']
-
-    if not args.report_only:
-        score_results, samples = phase_score(conn)
-        Path(__file__).parent.joinpath('last_score_run.json').write_text(json.dumps(
-            {sid: matches for sid, matches in score_results.items()}, indent=2, default=str
-        ))
-    else:
-        # --report-only: do NOT re-score (phase_score TRUNCATEs the match
-        # table). Load the last score-run from disk and re-derive the
-        # samples list from the DB.
-        score_path = Path(__file__).parent / 'last_score_run.json'
-        if not score_path.exists():
-            raise SystemExit(
-                f'--report-only needs {score_path} from a previous full run; not found.'
+    try:
+        sample_results = preview_results = None
+        if not args.skip_fingerprint and not args.report_only:
+            sample_results, preview_results = phase_fingerprint(
+                conn, downloads_dir, workers=args.workers, batch_size=args.batch_size,
             )
-        raw = json.loads(score_path.read_text())
-        score_results = {int(sid): matches for sid, matches in raw.items()}
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                SELECT s.user_notification_audio_sample_id AS id,
-                       s.user_notification_audio_sample_filename AS filename
-                FROM user_notification_audio_sample s
-                WHERE EXISTS (
-                  SELECT 1 FROM user_notification_audio_sample_fingerprint f
-                  WHERE f.user_notification_audio_sample_id = s.user_notification_audio_sample_id
-                )
-                ORDER BY s.user_notification_audio_sample_id
-            """)
-            samples = list(cur.fetchall())
+            # Persist a small ledger so a later --report-only run can still cite stats
+            ledger = {'samples': sample_results, 'previews': preview_results}
+            Path(__file__).parent.joinpath('last_fingerprint_run.json').write_text(json.dumps(ledger, indent=2))
+        else:
+            ledger_path = Path(__file__).parent / 'last_fingerprint_run.json'
+            if ledger_path.exists():
+                ledger = json.loads(ledger_path.read_text())
+                sample_results = ledger['samples']
+                preview_results = ledger['previews']
 
-    phase_report(conn, score_results, samples, sample_results, preview_results)
+        if not args.report_only:
+            score_results, samples = phase_score(conn)
+            Path(__file__).parent.joinpath('last_score_run.json').write_text(json.dumps(
+                {sid: matches for sid, matches in score_results.items()}, indent=2, default=str
+            ))
+        else:
+            # --report-only: do NOT re-score (phase_score TRUNCATEs the match
+            # table). Load the last score-run from disk and re-derive the
+            # samples list from the DB.
+            score_path = Path(__file__).parent / 'last_score_run.json'
+            if not score_path.exists():
+                raise SystemExit(
+                    f'--report-only needs {score_path} from a previous full run; not found.'
+                )
+            raw = json.loads(score_path.read_text())
+            score_results = {int(sid): matches for sid, matches in raw.items()}
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT s.user_notification_audio_sample_id AS id,
+                           s.user_notification_audio_sample_filename AS filename
+                    FROM user_notification_audio_sample s
+                    WHERE EXISTS (
+                      SELECT 1 FROM user_notification_audio_sample_fingerprint f
+                      WHERE f.user_notification_audio_sample_id = s.user_notification_audio_sample_id
+                    )
+                    ORDER BY s.user_notification_audio_sample_id
+                """)
+                samples = list(cur.fetchall())
+
+        phase_report(conn, score_results, samples, sample_results, preview_results)
+    finally:
+        cleanup_downloads(downloads_dir)
+        cleanup_panako_worker_dirs(analyser_root)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-const router = require('express-promise-router')()
+const router = require('express').Router()
 
 const { getPreviewDetails, search } = require('./logic.js')
 

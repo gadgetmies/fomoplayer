@@ -1,6 +1,6 @@
 const { search } = require('./logic')
 const logger = require('fomoplayer_shared').logger(__filename)
-const router = require('express-promise-router')()
+const router = require('express').Router()
 
 router.get('/search', ({ query: { q, type } }, res) => {
   logger.info(`Beatport search requested`, { query: q, type })

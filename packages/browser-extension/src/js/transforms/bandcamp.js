@@ -76,7 +76,22 @@ module.exports.bandcampReleasesTransform = L.collect([
       const versionOrRemix = isVersionOrRemix(match[10] || match[6])
       const version = versionOrRemix ? match[11] || match[7] : null
       const featuringArtists = extractFeat(match[6]) || []
-      const title = version || featuringArtists.length ? match[5].trim() : match[4] || match[3]?.trim()
+      let title = version || featuringArtists.length ? match[5].trim() : match[4] || match[3]?.trim()
+      let authorNames = match[2]
+
+      const sameName = (a) => (b) => a.trim().toLocaleLowerCase() === b.trim().toLocaleLowerCase()
+      const remixerNames = versionOrRemix ? version.replace(/version|remix/i, '').split(/[,&]/) : []
+      // "Remixer - Artists - Title (Remixer Remix)": the prefix only repeats the
+      // remixer and the actual artists follow it in the title.
+      const artistsInTitle = title?.match(/^(.+?) - (.+)$/)
+      if (
+        authorNames &&
+        artistsInTitle &&
+        authorNames.split(/[,&]/).every((name) => remixerNames.some(sameName(name)))
+      ) {
+        authorNames = artistsInTitle[1]
+        title = artistsInTitle[2]
+      }
 
       const createArtistWithRole = (role) => (artist) => {
         const trimmedArtist = artist.trim()
@@ -94,30 +109,27 @@ module.exports.bandcampReleasesTransform = L.collect([
         }
       }
 
-      const remixers = versionOrRemix
-        ? (match[11] || match[7])
-            .replace(/version|remix/i, '')
-            .split(/[,&]/)
-            .map(createArtistWithRole('remixer'))
-        : []
+      const remixers = remixerNames.map(createArtistWithRole('remixer'))
 
-      const authorArtists = match[2]
-        ? match[2]
-            .split(/[,&]/)
-            .map(createArtistWithRole('author'))
-            .filter((artist) => !remixers.find(({ name }) => name === artist.name))
-        : [artistTemplate]
+      // A track always keeps an author: the track lists only show tracks with
+      // one, so each filter below falls back to the authors it was given when
+      // it would remove them all.
+      const keepAnAuthor = (filtered, authors) => (filtered.length > 0 ? filtered : authors)
 
-      const allArtists = authorArtists
-        .concat(featuringArtists.map(createArtistWithRole('author')))
-        .concat(remixers)
+      const parsedAuthors = authorNames ? authorNames.split(/[,&]/).map(createArtistWithRole('author')) : [artistTemplate]
+      // "Artists, Remixer - Title (Remixer Remix)" lists the remixer among the
+      // authors; a self-remix ("Remixer - Title (Remixer Remix)") does not.
+      const authors = keepAnAuthor(
+        parsedAuthors.filter((artist) => !remixers.some(({ name }) => sameName(name)(artist.name))),
+        parsedAuthors,
+      ).concat(featuringArtists.map(createArtistWithRole('author')))
 
       // Drop the label / "Various Artists" entries so the label isn't stored
-      // as an artist. Never empty the list though: a track with zero artists
-      // breaks release/track de-duplication (ARRAY_AGG matching), so fall
-      // back to the unfiltered list when filtering removes everything.
-      const filteredArtists = allArtists.filter((artist) => !isLabelOrVariousName(artist.name))
-      const finalArtists = filteredArtists.length > 0 ? filteredArtists : allArtists
+      // as an artist. Remix credits name artists, so only authors are filtered.
+      const finalArtists = keepAnAuthor(
+        authors.filter((artist) => !isLabelOrVariousName(artist.name)),
+        authors,
+      ).concat(remixers)
 
       return [
         L.pick({

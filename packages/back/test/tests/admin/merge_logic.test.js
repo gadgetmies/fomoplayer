@@ -14,8 +14,8 @@ test({
       const [{ track_id: id2 }] = await pg.queryRowsAsync(sql`INSERT INTO track (track_title) VALUES ('Track 2') RETURNING track_id`)
 
       // Add store__track to both
-      await pg.queryAsync(sql`INSERT INTO store__track (track_id, store_id, store__track_store_id, store__track_store_details) VALUES (${id1}, 1, 's1', '{}')`)
-      await pg.queryAsync(sql`INSERT INTO store__track (track_id, store_id, store__track_store_id, store__track_store_details) VALUES (${id2}, 1, 's2', '{}')`)
+      await pg.queryAsync(sql`INSERT INTO store__track (track_id, store_id, store__track_store_id) VALUES (${id1}, 1, 's1')`)
+      await pg.queryAsync(sql`INSERT INTO store__track (track_id, store_id, store__track_store_id) VALUES (${id2}, 1, 's2')`)
 
       return { id1, id2 }
     },

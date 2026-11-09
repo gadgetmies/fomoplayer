@@ -4,11 +4,11 @@ const cart = (id, tracks = [], extra = {}) => ({
   id,
   uuid: `uuid-${id}`,
   name: 'cart',
-  is_default: false,
-  is_public: false,
-  is_purchased: false,
-  store_details: [],
-  track_count: tracks.length,
+  isDefault: false,
+  isPublic: false,
+  isPurchased: false,
+  storeDetails: [],
+  trackCount: tracks.length,
   tracks,
   ...extra,
 })
@@ -17,57 +17,57 @@ describe('mergeCartDetailsPreservingTracks', () => {
   it('preserves the in-memory tracks when adding a track and prepends the new row', () => {
     const existing = cart(1, [{ id: 10, title: 'a' }, { id: 11, title: 'b' }, { id: 12, title: 'c' }])
     const response = cart(1, [{ id: 99, title: 'new' }, { id: 10, title: 'a' }, { id: 11, title: 'b' }], {
-      track_count: 4,
+      trackCount: 4,
     })
     const merged = mergeCartDetailsPreservingTracks(existing, response, { addedTrackId: 99 })
     expect(merged.tracks.map((t) => t.id)).toEqual([99, 10, 11, 12])
-    expect(merged.track_count).toBe(4)
+    expect(merged.trackCount).toBe(4)
   })
 
   it('does not duplicate when adding a track that is already in memory', () => {
     const existing = cart(1, [{ id: 99, title: 'new' }, { id: 10, title: 'a' }])
-    const response = cart(1, [{ id: 99, title: 'new' }, { id: 10, title: 'a' }], { track_count: 2 })
+    const response = cart(1, [{ id: 99, title: 'new' }, { id: 10, title: 'a' }], { trackCount: 2 })
     const merged = mergeCartDetailsPreservingTracks(existing, response, { addedTrackId: 99 })
     expect(merged.tracks.map((t) => t.id)).toEqual([99, 10])
   })
 
   it('splices out an in-memory track on remove and preserves order', () => {
     const existing = cart(1, [{ id: 10 }, { id: 11 }, { id: 12 }])
-    const response = cart(1, [{ id: 10 }, { id: 12 }], { track_count: 2 })
+    const response = cart(1, [{ id: 10 }, { id: 12 }], { trackCount: 2 })
     const merged = mergeCartDetailsPreservingTracks(existing, response, { removedTrackId: 11 })
     expect(merged.tracks.map((t) => t.id)).toEqual([10, 12])
-    expect(merged.track_count).toBe(2)
+    expect(merged.trackCount).toBe(2)
   })
 
   it('leaves tracks unchanged but updates total when removing a not-loaded track', () => {
     const existing = cart(1, [{ id: 10 }, { id: 11 }])
-    const response = cart(1, [{ id: 10 }, { id: 11 }], { track_count: 99 })
+    const response = cart(1, [{ id: 10 }, { id: 11 }], { trackCount: 99 })
     const merged = mergeCartDetailsPreservingTracks(existing, response, { removedTrackId: 999 })
     expect(merged.tracks.map((t) => t.id)).toEqual([10, 11])
-    expect(merged.track_count).toBe(99)
+    expect(merged.trackCount).toBe(99)
   })
 
   it('merges top-level metadata from the response', () => {
-    const existing = cart(1, [{ id: 10 }], { name: 'old', is_public: false, store_details: [] })
+    const existing = cart(1, [{ id: 10 }], { name: 'old', isPublic: false, storeDetails: [] })
     const response = cart(1, [{ id: 10 }], {
       name: 'new name',
-      is_public: true,
-      store_details: [{ store_name: 'spotify' }],
-      track_count: 1,
+      isPublic: true,
+      storeDetails: [{ storeName: 'spotify' }],
+      trackCount: 1,
     })
     const merged = mergeCartDetailsPreservingTracks(existing, response)
     expect(merged.name).toBe('new name')
-    expect(merged.is_public).toBe(true)
-    expect(merged.store_details).toEqual([{ store_name: 'spotify' }])
+    expect(merged.isPublic).toBe(true)
+    expect(merged.storeDetails).toEqual([{ storeName: 'spotify' }])
     expect(merged.tracks.map((t) => t.id)).toEqual([10])
   })
 
   it('handles an existing cart with no tracks array', () => {
     const existing = { id: 1, uuid: 'uuid-1', name: 'empty' }
-    const response = cart(1, [{ id: 10 }], { track_count: 1 })
+    const response = cart(1, [{ id: 10 }], { trackCount: 1 })
     const merged = mergeCartDetailsPreservingTracks(existing, response, { addedTrackId: 10 })
     expect(merged.tracks.map((t) => t.id)).toEqual([10])
-    expect(merged.track_count).toBe(1)
+    expect(merged.trackCount).toBe(1)
   })
 })
 

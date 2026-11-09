@@ -1,6 +1,6 @@
 const nodeEnv = process.env.NODE_ENV || 'development'
 process.env.NODE_ENV = nodeEnv
-require('dotenv').config({ path: `.env.${nodeEnv}` })
+require('dotenv').config({ path: `.env.${nodeEnv}`, quiet: true })
 
 const resolveServiceURL = require('fomoplayer_shared').resolveServiceURL
 const sharedConfig = require('fomoplayer_shared/config')(nodeEnv).config
@@ -97,6 +97,10 @@ const sampleMatchBucketSeconds = parseEnvFloat(
   process.env.SAMPLE_MATCH_BUCKET_SECONDS,
   'SAMPLE_MATCH_BUCKET_SECONDS',
 )
+const sampleMatchMaxTempoDeviation = parseEnvFloat(
+  process.env.SAMPLE_MATCH_MAX_TEMPO_DEVIATION,
+  'SAMPLE_MATCH_MAX_TEMPO_DEVIATION',
+)
 
 // Tracks whose published date is older than this many days are skipped during
 // watch-job ingestion (see routes/shared/tracks.js). Defaults to a true 2 years.
@@ -166,6 +170,15 @@ module.exports = {
   internalAuthHandoffIssuer,
   internalAuthHandoffJwksUrl,
   internalAuthApiAudience,
+  // Outbound email. resendApiKey is the Resend provider key used for the
+  // production transport; non-production sends go to `${apiURL}/mock/email`.
+  // emailUnsubscribeSecret signs the stateless HMAC unsubscribe tokens;
+  // emailUnsubscribeMailto, when set, adds a mailto: variant to the
+  // List-Unsubscribe header. Unsubscribe/manage URLs are always built from
+  // apiURL/frontendURL — never hardcoded hosts.
+  resendApiKey: process.env.RESEND_API_KEY,
+  emailUnsubscribeSecret: process.env.EMAIL_UNSUBSCRIBE_SECRET,
+  emailUnsubscribeMailto: process.env.EMAIL_UNSUBSCRIBE_MAILTO || undefined,
   extensionAccessTokenTtlSeconds: 15 * 60,
   extensionRefreshTokenTtlSeconds: 90 * 24 * 60 * 60,
   // findExactMatchForSample reads these at call time so live Railway
@@ -175,5 +188,6 @@ module.exports = {
   sampleMatchDefaultThreshold,
   sampleMatchPeakBucketMin,
   sampleMatchBucketSeconds,
+  sampleMatchMaxTempoDeviation,
   trackMaxAgeDays,
 }

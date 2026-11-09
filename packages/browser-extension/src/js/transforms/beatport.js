@@ -14,6 +14,14 @@ const sharedArtistPropsLens = {
   url: [L.props('slug', 'id'), L.reread(beatportUrl('artist'))],
 }
 
+// Genres are keyed by Beatport's numeric id rather than the slug, which is
+// neither unique nor stable. Genre and sub-genre ids are separate sequences, so
+// the key is namespaced like the v4 API path: `genres/1`, `sub-genres/228`.
+const genreLens = (kind) => [
+  L.when((genre) => genre?.id != null),
+  L.pick({ name: 'name', id: ['id', L.reread((id) => `${kind}/${id}`)], url: 'url' }),
+]
+
 const removeOriginalMix = L.cond([R.equals('Original Mix'), L.zero], [[]])
 
 const trackTransform = L.pick({
@@ -39,11 +47,11 @@ const trackTransform = L.pick({
       ],
     }),
   ),
-  genres: L.partsOf([
-    L.choices('genre', 'subgenre'),
-    L.when(R.complement(R.isNil)),
-    L.pick({ name: 'name', id: 'slug', url: 'url' }),
-  ]),
+  // The v4 API (and newer page props) name the sub-genre `sub_genre`; older page
+  // props used `subgenre`. Collect the genre and whichever sub-genre is present.
+  genres: L.partsOf(
+    L.branch({ genre: genreLens('genres'), sub_genre: genreLens('sub-genres'), subgenre: genreLens('sub-genres') }),
+  ),
   duration_ms: 'length_ms',
   release: [
     L.partsOf(

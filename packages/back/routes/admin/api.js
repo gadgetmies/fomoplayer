@@ -1,5 +1,5 @@
 const logger = require('fomoplayer_shared').logger(__filename)
-const router = require('express-promise-router')()
+const router = require('express').Router()
 const { runJob } = require('../../job-scheduling')
 const {
   mergeTracks,
@@ -12,7 +12,6 @@ const {
   queryNextTracksToAnalyse,
   insertWaveforms,
   queryTracksWithoutWaveform,
-  setPreviewMissing,
   updateTrackDetailsForPreviewTracks,
   markPreviewsMissing,
   queryNotificationAudioSamplesWithoutEmbedding,
@@ -36,7 +35,7 @@ const {
   removeArtistUrl,
   ignoreMislabeledEntity,
   flagMislabeledEntity,
-  convertArtistToLabel,
+  convertArtistToLabelAndQueueRefetch,
   refetchBandcampLabelArtists,
   refetchBandcampArtistTracks,
   getArtistNameMismatches,
@@ -51,7 +50,6 @@ const {
   addArtistCredit,
   removeArtistCredit,
 } = require('./db')
-const { getPreviewDetails } = require('../stores/bandcamp/logic')
 const { ensureIsAdmin } = require('../shared/auth.js')
 const config = require('../../config')
 const { isDatabaseResetAllowed } = require('./database-reset-policy')
@@ -134,24 +132,12 @@ router.post('/radiator/config', async ({ body: { name, lens, config } }, res) =>
   res.status(201).send(storedConfig)
 })
 
+// Bandcamp stream URLs expire and are not stored. The analyser resolves them
+// itself from the release page (store_track_id and release_url), throttled and
+// pausing on rate limits: resolving them here would fetch Bandcamp from the
+// production server, and a rate limit there suspends playback for all users.
 router.get('/analyse', async ({ query }, res) => {
-  const tracks = await queryNextTracksToAnalyse(query)
-  const previews = []
-  for (const track of tracks) {
-    const firstPreview = track.previews[0]
-    if (track.previews.length === 1 && !firstPreview.url && firstPreview.store_name === 'Bandcamp') {
-      try {
-        const { url } = await getPreviewDetails(firstPreview.preview_id)
-        previews.push({ ...track, previews: [{ ...firstPreview, preview_url: url }] })
-      } catch (e) {
-        logger.warn(`Unable to find preview url for track with preview id: ${track.preview_id}`, { track })
-        await setPreviewMissing(track.preview_id)
-      }
-    } else {
-      previews.push(track)
-    }
-  }
-  res.send(previews)
+  res.send(await queryNextTracksToAnalyse(query))
 })
 
 router.post('/analyse', async ({ body }, res) => {
@@ -164,22 +150,7 @@ router.post('/analyse', async ({ body }, res) => {
 })
 
 router.get('/preview', async ({ query: { limit, stores } }, res) => {
-  const tracks = await queryTracksWithoutWaveform(limit, stores.split(','))
-  const previews = []
-  for (const track of tracks) {
-    if (track.preview_url) {
-      previews.push(track)
-    } else if (track.store_name === 'Bandcamp') {
-      try {
-        const { url } = await getPreviewDetails(track.preview_id)
-        previews.push({ ...track, preview_url: url })
-      } catch (e) {
-        logger.warn(`Unable to find preview url for track with preview id: ${track.preview_id}`, { track })
-        await setPreviewMissing(track.preview_id)
-      }
-    }
-  }
-  res.send(previews)
+  res.send(await queryTracksWithoutWaveform(limit, stores.split(',')))
 })
 
 router.post('/waveform', async ({ body }, res) => {
@@ -271,7 +242,7 @@ router.get('/exact-match/audio-samples/:sampleId/match', async ({ params: { samp
 
 // Score one, many, or all samples with fingerprints, then persist each
 // sample's matches into user_notification_audio_sample_match via
-// persistSampleMatches (delete-then-insert per sample). Iteration is
+// persistSampleMatches (upsert per sample, stale rows removed). Iteration is
 // sequential server-side and best-effort: a single sample's failure is
 // caught, logged, and recorded in the response so the rest of the pass
 // still completes.
@@ -291,7 +262,7 @@ const bulkScoreSamplesHandler =
 
     const matchThreshold =
       body?.threshold === undefined ? cfg.sampleMatchDefaultThreshold : parseFloat(body.threshold)
-    const bucketSeconds = cfg.sampleMatchBucketSeconds ?? 0.05
+    const bucketSeconds = cfg.sampleMatchBucketSeconds ?? 0.5
 
     let sampleIds
     try {
@@ -387,7 +358,7 @@ router.post('/mislabeled/:type/:id/flag', async ({ params: { type, id } }, res) 
 })
 
 router.post('/mislabeled/artist/:id/convert-to-label', async ({ params: { id } }, res) => {
-  res.send(await convertArtistToLabel(id))
+  res.send(await convertArtistToLabelAndQueueRefetch(id))
 })
 
 router.post('/mislabeled/artist/:id/remove-url', async ({ params: { id } }, res) => {

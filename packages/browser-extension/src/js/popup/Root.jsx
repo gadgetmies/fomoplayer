@@ -8,6 +8,7 @@ import BandcampPanel from './BandcampPanel.jsx'
 import MultiStorePlayerPanel from './MultiStorePlayerPanel.jsx'
 import Error from './Error.jsx'
 import Status from './Status.jsx'
+import { RunStatus } from '../cart-push/state'
 
 const getCurrentHostname = (tabArray) => (tabArray[0] && tabArray[0].url) || ''
 
@@ -39,7 +40,27 @@ export default class Root extends React.Component {
     this.refresh = this.refresh.bind(this)
     this.setRunning = this.setRunning.bind(this)
     this.handleReset = this.handleReset.bind(this)
+    this.handleStorageChanged = this.handleStorageChanged.bind(this)
     this.refresh()
+  }
+
+  componentDidMount() {
+    if (browser.storage.onChanged && browser.storage.onChanged.addListener) {
+      browser.storage.onChanged.addListener(this.handleStorageChanged)
+    }
+  }
+
+  componentWillUnmount() {
+    if (browser.storage.onChanged && browser.storage.onChanged.removeListener) {
+      browser.storage.onChanged.removeListener(this.handleStorageChanged)
+    }
+  }
+
+  handleStorageChanged(changes, areaName) {
+    if (areaName !== 'local') return
+    // Watch keys that affect what the top-level Status panel and panels render.
+    const watched = ['running', 'operationStatus', 'operationProgress', 'cartPushRun', 'error']
+    if (watched.some((k) => k in changes)) this.refresh()
   }
 
   async refresh() {
@@ -52,6 +73,7 @@ export default class Root extends React.Component {
       'error',
       'operationStatus',
       'operationProgress',
+      'cartPushRun',
     ])
     const currentHostname = getCurrentHostname(tabs)
     const resolvedAppUrl = stored.appUrl || DEFAULT_APP_URL
@@ -72,6 +94,7 @@ export default class Root extends React.Component {
       error: stored.error,
       operationStatus: stored.operationStatus,
       operationProgress: stored.operationProgress,
+      cartPushRun: stored.cartPushRun,
     })
   }
 
@@ -91,9 +114,19 @@ export default class Root extends React.Component {
   }
 
   render() {
+    // A cart push runs entirely in the service worker; its state lives in
+    // `cartPushRun`. It drives the global Status panel and disables the
+    // cart-push section, but it is deliberately NOT folded into `running`:
+    // that prop gates the unrelated sync / "Send tracks" buttons, which a
+    // cart push has no reason to block.
+    const cartPushStatus = this.state.cartPushRun && this.state.cartPushRun.status
+    const cartPushBusy = cartPushStatus === RunStatus.RUNNING || cartPushStatus === RunStatus.AWAITING_NEXT_BATCH
+    const showStatusPanel = !!(this.state.running || cartPushBusy)
+
     const panelProps = {
       setRunning: this.setRunning,
       running: this.state.running,
+      cartPushBusy,
       appUrl: this.state.appUrl,
       operationStatus: this.state.operationStatus,
       operationProgress: this.state.operationProgress,
@@ -117,7 +150,7 @@ export default class Root extends React.Component {
           <Login />
         ) : (
           <>
-            {this.state.running ? (
+            {showStatusPanel ? (
               <Status message={this.state.operationStatus} progress={this.state.operationProgress} />
             ) : null}
             {components.map((component) =>

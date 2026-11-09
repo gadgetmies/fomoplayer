@@ -29,12 +29,18 @@ test({
     expect(thrown).to.be.instanceOf(Error)
     expect(thrown.message).to.include('SELECT')
   },
-  'get_tracks returns expected shape': async ({ tools }) => {
-    const d = await tools.find((t) => t.name === 'get_tracks').handler({})
-    expect(d).to.be.an('object')
+  'get_tracks returns the track lists': async ({ tools }) => {
+    const d = await tools.find((t) => t.name === 'get_tracks').handler({ limit: 5 })
+    expect(d.lists).to.have.all.keys('new', 'heard', 'recentlyAdded')
+    expect(d.lists.new.page).to.include({ offset: 0, limit: 5 })
+    expect(d.meta).to.have.all.keys('totalTracks', 'notHeardBefore')
   },
   'list_carts returns array': async ({ tools }) => {
     const d = await tools.find((t) => t.name === 'list_carts').handler({})
+    expect(d).to.be.an('array')
+  },
+  'search for tracks returns the matching tracks': async ({ tools }) => {
+    const d = await tools.find((t) => t.name === 'search').handler({ type: 'tracks', query: 'noisia' })
     expect(d).to.be.an('array')
   },
 })

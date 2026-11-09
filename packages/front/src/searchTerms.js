@@ -84,6 +84,12 @@ const parseFilterTerm = (type, value, raw) => {
       if (exactMatch) return { type: 'bpm', value: raw, bpm: parseFloat(value) }
       break
     }
+    case 'cart': {
+      // cart:~<uuid> searches for tracks similar to the user's cart (grouped cart search).
+      const uuid = value.startsWith('~') ? value.slice(1) : ''
+      if (/^[0-9a-f-]{36}$/i.test(uuid)) return { type: 'cart', value: raw, id: uuid.toLowerCase(), similar: true }
+      break
+    }
     case 'key': {
       const compatible = value.startsWith('~')
       const keyValue = compatible ? value.slice(1) : value
@@ -130,6 +136,7 @@ const ENTITY_TYPES_FOR_SERIALIZATION = ['artist', 'label', 'release', 'track', '
 
 const termToString = (term) => {
   if (term.type === 'text') return /\s/.test(term.value) ? `"${term.value}"` : term.value
+  if (term.type === 'cart') return `cart:~${term.id}`
   if (ENTITY_TYPES_FOR_SERIALIZATION.includes(term.type)) {
     if (term.id !== undefined && term.id !== null) {
       return term.type === 'track' && term.similar ? `${term.type}:~${term.id}` : `${term.type}:${term.id}`
@@ -277,6 +284,8 @@ export const trackMatchesTerm = (track, term) => {
         )
       return bpms.some((b) => b === term.bpm)
     }
+    case 'cart':
+      return true
     case 'key': {
       const keys = (track.keys || []).map((k) => (k?.key || '').toLowerCase())
       return keys.includes(term.key.toLowerCase())
@@ -290,3 +299,5 @@ export const trackMatchesAllTerms = (track, terms) => {
   if (!terms || terms.length === 0) return true
   return terms.every((t) => trackMatchesTerm(track, t))
 }
+
+export const findCartSearchTerm = (searchTerms) => (searchTerms || []).find((term) => term.type === 'cart')

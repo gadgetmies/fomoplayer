@@ -7,7 +7,7 @@ const logger = require('fomoplayer_shared').logger(__filename)
 // Recompute the cached track_details JSON (used by track search results) for a
 // set of tracks after their artist/label credits change, so search reflects the
 // new attribution instead of stale credits. Accepts a transaction or the pool.
-module.exports.refreshTrackDetails = async (queryable, trackIds) => {
+const refreshTrackDetails = (module.exports.refreshTrackDetails = async (queryable, trackIds) => {
   const ids = [...new Set((trackIds || []).filter((id) => Number.isInteger(id)))]
   if (ids.length === 0) return
   await queryable.queryAsync(
@@ -23,7 +23,7 @@ ON CONFLICT ON CONSTRAINT track_details_track_id_key DO UPDATE
     , track_details_updated = NOW()
 `,
   )
-}
+})
 
 module.exports.queryStoreId = (storeName) =>
   pg
@@ -74,6 +74,18 @@ module.exports.queryStoreRegexes = async () =>
   )
 
 const getFieldFromResult = (field) => R.path([0, field])
+
+const upsertStoreTrackStoreDetails = (tx, storeTrackId, track) =>
+  tx.queryAsync(
+    // language=PostgreSQL
+    sql`-- upsertStoreTrackStoreDetails
+    INSERT
+    INTO store__track_store_details (store__track_id, store__track_store_details)
+    VALUES (${storeTrackId}, ${track})
+    ON CONFLICT (store__track_id)
+      DO UPDATE SET store__track_store_details = excluded.store__track_store_details
+    `,
+  )
 
 async function queryStoreLabelIdForUrl(tx, url) {
   return await tx.queryRowsAsync(
@@ -392,12 +404,12 @@ ON CONFLICT DO NOTHING
     FROM
       store__artist
       NATURAL JOIN store
-    WHERE store__artist_store_id = ${artist.id} OR 
-          store__artist_url = ${artist.url} OR
-          (
-            store_url = 'https://bandcamp.com' -- TODO: remove hardcoded value
-            AND artist_id = ${artistId}
-          ) 
+    WHERE store_url = ${storeUrl}
+      AND (store__artist_store_id = ${artist.id} OR store__artist_url = ${artist.url} OR artist_id = ${artistId})
+    -- Without the store scope this used to return the artist's row in another
+    -- store (e.g. a URL-less Bandcamp row) and the follow was stored there.
+    ORDER BY artist_id = ${artistId} DESC, store__artist_id
+    LIMIT 1
     `,
   )
 
@@ -459,6 +471,40 @@ RETURNING store__genre_id AS "storeGenreId", store__genre_parent_id AS "storeGen
 
   return { genreId, storeGenreId, storeGenreParentId }
 }
+
+// Beatport genres are keyed `genres/{id}` / `sub-genres/{id}`. Extension builds
+// from before that change still send the slug as the id, so derive the key from
+// the v4 catalog URL whenever there is one (the same rule as the migration).
+const storeGenreStoreId = ({ id, url }) => url?.match(/\/v4\/catalog\/((?:sub-)?genres\/\d+)\/?$/)?.[1] ?? id
+
+// Links a track (and its artists) to the given store genres, creating the
+// genre rows on first sight. Idempotent: existing links are left untouched.
+const addGenresToTrack = (module.exports.addGenresToTrack = async (tx, storeId, trackId, artistIds, genres) => {
+  const genreIds = []
+  for (const genre of genres) {
+    const { genreId } = await ensureGenreExists(tx, storeId, {
+      storeGenreStoreId: storeGenreStoreId(genre),
+      storeGenreName: genre.name,
+      storeGenreUrl: genre.url,
+    })
+    genreIds.push(genreId)
+  }
+
+  for (const genreId of genreIds) {
+    await tx.queryAsync(sql`-- addGenresToTrack INSERT INTO track__genre
+INSERT INTO track__genre (track_id, genre_id)
+VALUES (${trackId}, ${genreId})
+ON CONFLICT DO NOTHING
+`)
+    for (const artistId of artistIds) {
+      await tx.queryAsync(sql`-- addGenresToTrack INSERT INTO artist__genre
+INSERT INTO artist__genre (artist_id, genre_id)
+VALUES (${artistId}, ${genreId})
+ON CONFLICT DO NOTHING
+`)
+    }
+  }
+})
 
 const queryStoreId = async (tx, storeUrl) =>
   await tx
@@ -621,7 +667,6 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
         , store__track_released      = ${track.released}
         , store__track_published     = ${track.published}
         , store__track_bpm           = ${track.bpm}
-        , store__track_store_details = ${track}
       WHERE store__track_store_id = ${track.id}
         AND store_id = ${storeId}
         AND NOT EXISTS (SELECT 1
@@ -633,7 +678,9 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
         `,
     )
 
-    if (res.length === 0) {
+    if (res.length > 0) {
+      await upsertStoreTrackStoreDetails(tx, res[0].store__track_id, track)
+    } else {
       const [{ track_id, release_id, store__track_id }] = await tx.queryRowsAsync(sql`
         SELECT track_id, release_id, store__track_id
         FROM
@@ -651,15 +698,15 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
     }
   } else {
     try {
-      await tx.queryRowsAsync(
+      const [{ store__track_id }] = await tx.queryRowsAsync(
         // language=PostgreSQL
         sql`-- addStoreTrack INSERT INTO store__track
         INSERT
         INTO store__track
         ( track_id, store_id, store__track_store_id, store__track_url, store__track_released, store__track_published
-        , store__track_bpm, store__track_store_details, store__track_source)
+        , store__track_bpm, store__track_source)
         VALUES ( ${trackId}, ${storeId}, ${track.id}, ${track.url}, ${track.released}, ${track.published}, ${track.bpm}
-               , ${track}, ${sourceId})
+               , ${sourceId})
         ON CONFLICT ON CONSTRAINT store__track_store__track_store_id_store_id_key
           DO UPDATE
           SET track_id                   = excluded.track_id
@@ -667,9 +714,10 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
             , store__track_released      = excluded.store__track_released
             , store__track_published     = excluded.store__track_published
             , store__track_bpm           = excluded.store__track_bpm
-            , store__track_store_details = excluded.store__track_store_details
+        RETURNING store__track_id
         `,
       )
+      await upsertStoreTrackStoreDetails(tx, store__track_id, track)
     } catch (e) {
       logger.error(`addStoreTrack INSERT INTO store__track failed for track: ${e.toString()}, ${JSON.stringify(track)}`)
       logger.error(e)
@@ -826,42 +874,16 @@ WHERE release_id = ${releaseId}
   }
 
   if (track.genres) {
-    let genres = []
-    for (const genre of track.genres) {
-      const { genreId } = await ensureGenreExists(tx, storeId, {
-        storeGenreStoreId: genre.id,
-        storeGenreName: genre.name,
-        storeGenreUrl: genre.url,
-      })
-      genres.push(genreId)
-    }
-
-    for (const genreId of genres) {
-      await tx.queryAsync(sql`-- addStoreTrack INSERT INTO track__genre
-INSERT INTO track__genre (track_id, genre_id)
-VALUES (${trackId}, ${genreId})
-ON CONFLICT DO NOTHING
-`)
-      for (const { id: artistId } of artists) {
-        await tx.queryAsync(sql`-- addStoreTrack INSERT INTO artist__genre
-INSERT INTO artist__genre (artist_id, genre_id)
-VALUES (${artistId}, ${genreId})
-ON CONFLICT DO NOTHING
-`)
-      }
-    }
+    await addGenresToTrack(
+      tx,
+      storeId,
+      trackId,
+      artists.map(({ id }) => id),
+      track.genres,
+    )
   }
 
-  await tx.queryAsync(
-    // language=PostgreSQL
-    sql`-- addStoreTrack INSERT INTO track_details
-    INSERT INTO track_details (track_id, track_details)
-    SELECT ${trackId}, ROW_TO_JSON(track_details(ARRAY_AGG(${trackId}::INT)))
-    ON CONFLICT ON CONSTRAINT track_details_track_id_key DO UPDATE
-      SET track_details         = EXCLUDED.track_details
-        , track_details_updated = NOW()
-    `,
-  )
+  await refreshTrackDetails(tx, [trackId])
 
   return trackId
 }

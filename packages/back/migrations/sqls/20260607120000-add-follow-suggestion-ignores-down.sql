@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS user__label_follow_suggestion_ignore;
+DROP TABLE IF EXISTS user__artist_follow_suggestion_ignore;

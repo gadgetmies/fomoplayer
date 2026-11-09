@@ -39,6 +39,23 @@ module.exports.init = () => {
         }),
       },
       {
+        // Creating a playlist, for enabling a cart's Spotify sync.
+        test: ({ pathname, request }) => spotifyMock && request.method === 'POST' && pathname === '/v1/me/playlists',
+        getResponse: () => ({
+          body: {
+            id: 'fomoplayerMockPlaylist',
+            external_urls: { spotify: 'https://open.spotify.com/playlist/fomoplayerMockPlaylist' },
+            snapshot_id: 'fomoplayerMockSnapshot',
+          },
+          options: {
+            status: 201,
+            headers: {
+              'content-type': 'application/json',
+            },
+          },
+        }),
+      },
+      {
         test: ({ pathname }) => spotifyMock && pathname === '/api/token',
         getResponse: () => ({
           body: spotifyTokenMock,

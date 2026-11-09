@@ -2,6 +2,7 @@ const BPromise = require('bluebird')
 const R = require('ramda')
 const pg = require('fomoplayer_shared').db.pg
 const { scheduleEmail } = require('../../services/mailer')
+const { renderVerification } = require('../../services/email-templates')
 const { insertUserPlaylistFollow } = require('../shared/db/user')
 const {
   updateArtistTracks,
@@ -30,6 +31,12 @@ const {
   queryUserArtistOnLabelIgnores,
   queryUserLabelIgnores,
   queryUserArtistIgnores,
+  queryArtistFollowSuggestions,
+  queryLabelFollowSuggestions,
+  addArtistFollowSuggestionIgnore,
+  addLabelFollowSuggestionIgnore,
+  deleteArtistFollowSuggestionIgnore,
+  deleteLabelFollowSuggestionIgnore,
   queryUserTracks,
   deleteArtistWatchesFromUser,
   deleteArtistWatchFromUser,
@@ -69,6 +76,46 @@ module.exports.getUserArtistOnLabelIgnores = queryUserArtistOnLabelIgnores
 module.exports.getUserLabelIgnores = queryUserLabelIgnores
 module.exports.getUserArtistIgnores = queryUserArtistIgnores
 
+module.exports.getArtistFollowSuggestions = queryArtistFollowSuggestions
+module.exports.getLabelFollowSuggestions = queryLabelFollowSuggestions
+module.exports.addArtistFollowSuggestionIgnore = addArtistFollowSuggestionIgnore
+module.exports.addLabelFollowSuggestionIgnore = addLabelFollowSuggestionIgnore
+module.exports.removeArtistFollowSuggestionIgnore = deleteArtistFollowSuggestionIgnore
+module.exports.removeLabelFollowSuggestionIgnore = deleteLabelFollowSuggestionIgnore
+
+// Resolve cover images for follow suggestions on demand. We don't persist entity
+// artwork, so images are fetched live from the originating store (the same source
+// the follow-search results use). This is best-effort: any failure (store
+// unreachable, rate limited, parse error) yields a null image rather than failing
+// the request, and each lookup is time-boxed so a slow store can't hang the page.
+const SUGGESTION_IMAGE_TIMEOUT_MS = 8000
+const withTimeout = (promise, ms) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Suggestion image lookup timed out')), ms)),
+  ])
+
+module.exports.getFollowSuggestionImages = async (urls) => {
+  const uniqueUrls = [...new Set((urls ?? []).filter((url) => typeof url === 'string' && url.length > 0))]
+  return BPromise.map(
+    uniqueUrls,
+    async (url) => {
+      try {
+        const details = await getStoreDetailsFromUrl(url)
+        const storeModule =
+          storeModules[details.storeName] || storeModules[details.storeName?.toLowerCase()]
+        if (!storeModule) return { url, img: null }
+        const [resolved] = await withTimeout(storeModule.logic.getFollowDetails(details), SUGGESTION_IMAGE_TIMEOUT_MS)
+        return { url, img: resolved?.img ?? null }
+      } catch (e) {
+        logger.warn(`Failed to resolve suggestion image for ${url}`, e)
+        return { url, img: null }
+      }
+    },
+    { concurrency: 6 },
+  )
+}
+
 module.exports.removeArtistOnLabelIgnoreFromUser = deleteArtistOnLabelIgnoreFromUser
 module.exports.removeLabelIgnoreFromUser = deleteLabelIgnoreFromUser
 module.exports.removeArtistIgnoreFromUser = deleteArtistIgnoreFromUser
@@ -79,7 +126,8 @@ const { insertSource } = require('../../jobs/watches/shared/db')
 const { getStoreDetailsFromUrl } = require('../stores/logic')
 
 module.exports.getTracksM3u = (userId) =>
-  queryUserTracks(userId).then((userTracks) => {
+  queryUserTracks(userId).then(({ lists }) => {
+    const userTracks = lists.new.tracks
     return (
       '[playlist]\n\n' +
       userTracks
@@ -111,16 +159,11 @@ module.exports.removeArtistsOnLabelsIgnores = async (artistOnLabelIgnoreIds) => 
   await deleteArtistsOnLabelsIgnores(artistOnLabelIgnoreIds)
 }
 
-module.exports.addArtistsToIgnore = async (userId, artistIds) => {
-  try {
-    BPromise.using(pg.getTransaction(), async (tx) => {
-      await addArtistsToIgnore(tx, artistIds, userId)
-      await updateIgnoresInUserTracks(tx, [userId])
-    })
-  } catch (e) {
-    logger.error('Adding artists to ignore failed', e)
-  }
-}
+module.exports.addArtistsToIgnore = async (userId, artistIds) =>
+  BPromise.using(pg.getTransaction(), async (tx) => {
+    await addArtistsToIgnore(tx, artistIds, userId)
+    await updateIgnoresInUserTracks(tx, [userId])
+  })
 
 module.exports.addLabelsToIgnore = async (userId, labelIds) =>
   BPromise.using(pg.getTransaction(), async (tx) => {
@@ -128,12 +171,11 @@ module.exports.addLabelsToIgnore = async (userId, labelIds) =>
     await updateIgnoresInUserTracks(tx, [userId])
   })
 
-module.exports.addReleasesToIgnore = async (userId, releaseIds) => {
+module.exports.addReleasesToIgnore = async (userId, releaseIds) =>
   BPromise.using(pg.getTransaction(), async (tx) => {
     await addReleasesToIgnore(tx, releaseIds, userId)
     await updateIgnoresInUserTracks(tx, [userId])
   })
-}
 
 module.exports.removeArtistWatchesFromUser = deleteArtistWatchesFromUser
 module.exports.removeArtistWatchFromUser = deleteArtistWatchFromUser
@@ -347,19 +389,8 @@ module.exports.setEmail = async (userId, email) => {
   await upsertEmail(userId, email)
   const verificationCode = await getEmailVerificationCode(userId)
   const verificationURL = `${apiURL}/verify-email/${verificationCode}`
-  await scheduleEmail(
-    process.env.VERIFICATION_EMAIL_SENDER,
-    email,
-    'Email address verification',
-    `Please verify that you would like to use this email address for receiving 
-messages from the Fomo Player by opening the following address in your browser:
-${verificationURL}`,
-    `<p>Please verify that you would like to use this email address for receiving 
-messages from the Fomo Player by clicking 
-<a href="${verificationURL}">here</a> or opening the
-following address in your browser: ${verificationURL}.
-</p>`,
-  )
+  const { subject, contentHtml, text, category } = renderVerification({ verificationUrl: verificationURL })
+  await scheduleEmail(process.env.VERIFICATION_EMAIL_SENDER, email, subject, text, contentHtml, category)
 }
 
 module.exports.getAuthorizations = queryAuthorizations

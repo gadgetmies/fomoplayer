@@ -6,6 +6,9 @@ const R = require('ramda')
 
 const { initDb } = require('../../../lib/db')
 const assert = require('assert')
+const {
+  static: { resetReleaseIndex },
+} = require('../../../../routes/stores/bandcamp/bandcamp-api')
 const dnbPlaylistUrl = 'https://bandcamp.com/discover/electronic?tags=drum-bass'
 const dnbDigitalPlaylistUrl = 'https://bandcamp.com/discover/electronic/digital?tags=drum-bass'
 const electronicPlaylistUrl = 'https://bandcamp.com/discover/electronic'
@@ -32,47 +35,64 @@ const addFollowTeardown = async (...args) => {
   bandcampInterceptor.clearMockedRequests()
 }
 
-const waitUntilEquals = async (fn, expected, { timeout = 5000 } = {}) => {
+const discoverApiUrl = 'https://bandcamp.com/api/discover/1/discover_web'
+// The only release in the mocked discover results (fixtures/bandcamp-discover.json)
+const discoveredReleaseUrl = 'https://noisia.bandcamp.com/album/the-resonance-vi'
+
+// The follow fetches the playlist's tracks in the background and marks the
+// playlist updated once they are all stored.
+const waitUntilPlaylistUpdated = async ({ timeout = 8000 } = {}) => {
+  const isUpdated = async () =>
+    (await pg.queryRowsAsync(sql`SELECT 1 FROM playlist WHERE playlist_last_update IS NOT NULL`)).length === 1
   try {
-    await waitUntil(() => R.equals(fn(), expected), { timeout })
+    await waitUntil(isUpdated, { timeout, intervalBetweenAttempts: 100 })
   } catch (e) {
     if (e instanceof TimeoutError) {
       throw new Error(
-        `Timeout (${timeout}ms) waiting for value to equal: ${JSON.stringify(
-          { expected, latest: await fn() },
-          null,
-          2,
+        `Timeout (${timeout}ms) waiting for the playlist tracks to be stored, requests: ${JSON.stringify(
+          bandcampInterceptor.getMockedRequests().map(R.prop('url')),
         )}`,
       )
-    } else {
-      throw e
     }
+    throw e
   }
 }
 
-const waitUntilMockedRequestUrlsEqual = async (expected, { timeout = 4000 } = {}) =>
-  waitUntilEquals(() => bandcampInterceptor.getMockedRequests().map(R.prop('url')), expected, { timeout })
+const assertPlaylistIsAddedCorrectly =
+  (url, { tags, categoryId }) =>
+  async () => {
+    const details = await pg.queryRowsAsync(
+      'SELECT playlist_store_id, store_playlist_type_label FROM playlist NATURAL JOIN store_playlist_type',
+    )
+    assert.deepEqual(details, [
+      {
+        playlist_store_id: url,
+        store_playlist_type_label: 'Tag',
+      },
+    ])
 
-// TODO: ensure updatePlaylistTracks is called when adding follows
-const assertPlaylistIsAddedCorrectly = (url) => async () => {
-  const details = await pg.queryRowsAsync(
-    'SELECT playlist_store_id, store_playlist_type_label FROM playlist NATURAL JOIN store_playlist_type',
-  )
-  assert.deepEqual(details, [
-    {
-      playlist_store_id: url,
-      store_playlist_type_label: 'Tag',
-    },
-  ])
+    await waitUntilPlaylistUpdated()
+    const requests = bandcampInterceptor.getMockedRequests()
+    // A discovered release is resolved to its item id through its subdomain's
+    // /music page, then fetched from the JSON endpoint.
+    assert.deepEqual(requests.map(R.prop('url')), [
+      discoverApiUrl,
+      `${new URL(discoveredReleaseUrl).origin}/music`,
+      'https://bandcamp.com/api/mobile/24/tralbum_details',
+    ])
+    const { tag_norm_names, category_id } = JSON.parse(requests[0].body)
+    assert.deepEqual({ tag_norm_names, category_id }, { tag_norm_names: tags, category_id: categoryId })
+  }
 
-  await waitUntilMockedRequestUrlsEqual([url])
-}
-const playlistFollowTest = (url) => ({
+const playlistFollowTest = (url, discoverParams) => ({
   setup: async () => {
+    bandcampInterceptor.clearMockedRequests()
+    // The release-id index is cached in-process; clear it so every case makes
+    // the same requests regardless of order.
+    resetReleaseIndex()
     return await addPlaylistFollows([{ url }], 1)
   },
-  skip: () => 'Request mocking times out',
-  'are added correctly': assertPlaylistIsAddedCorrectly(url),
+  'are added correctly': assertPlaylistIsAddedCorrectly(url, discoverParams),
   teardown: addFollowTeardown,
 })
 
@@ -114,14 +134,17 @@ test({
     },
   },
   'when a user follows a Bandcamp playlist': {
-    'genre follows': playlistFollowTest(electronicPlaylistUrl),
-    'subgenre follows': playlistFollowTest(dnbPlaylistUrl),
-    'subgenre format follows': playlistFollowTest(dnbDigitalPlaylistUrl),
-    'genre format follows': playlistFollowTest(electronicDigitalPlaylistUrl),
-    'format follows': playlistFollowTest(allDigitalPlaylistUrl),
+    'genre follows': playlistFollowTest(electronicPlaylistUrl, { tags: ['electronic'], categoryId: 0 }),
+    'subgenre follows': playlistFollowTest(dnbPlaylistUrl, { tags: ['electronic', 'drum-bass'], categoryId: 0 }),
+    'subgenre format follows': playlistFollowTest(dnbDigitalPlaylistUrl, {
+      tags: ['electronic', 'drum-bass'],
+      categoryId: 1,
+    }),
+    'genre format follows': playlistFollowTest(electronicDigitalPlaylistUrl, { tags: ['electronic'], categoryId: 1 }),
+    'format follows': playlistFollowTest(allDigitalPlaylistUrl, { tags: [], categoryId: 1 }),
   },
   teardown: async () => {
     spotifyInterceptor.dispose()
     bandcampInterceptor.dispose()
-  }
+  },
 })

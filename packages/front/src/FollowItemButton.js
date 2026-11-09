@@ -23,7 +23,22 @@ class FollowItemButton extends Component {
           title={'Check details from store'}
           style={{ position: 'relative', height: 100, width: 100, display: 'block', margin: 'auto' }}
         >
-          <img src={img} style={{ height: '100%', width: '100%', objectFit: 'cover' }} />
+          {img ? (
+            <img src={img} style={{ height: '100%', width: '100%', objectFit: 'cover' }} />
+          ) : (
+            <span
+              className="follow-item-placeholder"
+              style={{
+                height: '100%',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <span aria-hidden="true" className={`store-icon store-icon-${storeName}`} />
+            </span>
+          )}
           <FontAwesomeIcon icon="external-link-alt" style={{ position: 'absolute', right: 5, bottom: 5 }} />
         </a>
         <div

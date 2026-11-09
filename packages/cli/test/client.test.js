@@ -67,4 +67,54 @@ test({
       expect(thrownError.message).to.include('401')
     },
   },
+
+  'search tracks uses the track search': {
+    setup: async () => {
+      const mockFetch = makeFetchMock(200, JSON.stringify({ tracks: [{ id: 1 }], page: {}, meta: {} }))
+      const originalFetch = globalThis.fetch
+      globalThis.fetch = mockFetch
+      const client = new FomoPlayerClient({ apiUrl: 'http://localhost:3000/api', apiKey: 'fp_test-key' })
+      const rows = await client.search('tracks', 'noisia')
+      return { rows, calls: mockFetch.calls, originalFetch }
+    },
+    teardown: async ({ originalFetch }) => {
+      globalThis.fetch = originalFetch
+    },
+    'calls /tracks with the query': async ({ calls }) => {
+      expect(calls[0].url).to.equal('http://localhost:3000/api/tracks?q=noisia')
+    },
+    'returns the matching tracks': async ({ rows }) => {
+      expect(rows).to.deep.equal([{ id: 1 }])
+    },
+  },
+
+  'getCartTracks reads every page without a limit': {
+    setup: async () => {
+      const all = Array.from({ length: 503 }, (_, i) => ({ id: i }))
+      const calls = []
+      const originalFetch = globalThis.fetch
+      globalThis.fetch = async (url) => {
+        calls.push(url)
+        const { searchParams } = new URL(url)
+        const offset = Number(searchParams.get('offset'))
+        const limit = Number(searchParams.get('limit'))
+        const body = { cart: {}, tracks: all.slice(offset, offset + limit), page: { offset, limit, total: all.length } }
+        return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) }
+      }
+      const client = new FomoPlayerClient({ apiUrl: 'http://localhost:3000/api', apiKey: 'fp_test-key' })
+      const tracks = await client.getCartTracks(7)
+      const page = await client.getCartTracks(7, { offset: 10, limit: 5 })
+      return { tracks, page, calls, originalFetch }
+    },
+    teardown: async ({ originalFetch }) => {
+      globalThis.fetch = originalFetch
+    },
+    'returns all tracks': async ({ tracks }) => {
+      expect(tracks).to.have.length(503)
+    },
+    'returns one page when a limit is given': async ({ page, calls }) => {
+      expect(page.map(({ id }) => id)).to.deep.equal([10, 11, 12, 13, 14])
+      expect(calls[2]).to.equal('http://localhost:3000/api/me/carts/7?offset=10&limit=5')
+    },
+  },
 })

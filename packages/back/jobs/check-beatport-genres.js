@@ -44,6 +44,8 @@ module.exports = async () => {
       ADMIN_EMAIL_RECIPIENT,
       'Beatport genres changed — update the cached genre list',
       `Update packages/back/routes/stores/beatport/genres.js:\n\n${JSON.stringify(report, null, 2)}`,
+      undefined,
+      'admin',
     )
   }
 

@@ -28,12 +28,19 @@ ON CONFLICT DO NOTHING
     await pg.queryAsync(
       // language=PostgreSQL
       sql`-- addPurchasedTracksToUsers (with date)
+-- DISTINCT ON (cart_id, track_id) is required: the same track_id can appear
+-- multiple times in the payload (a track resolves to multiple store__track URLs,
+-- so queryStoredTracksForUrls returns it once per URL). Without deduplication the
+-- cross join with cart produces duplicate (cart_id, track_id) tuples and
+-- ON CONFLICT DO UPDATE fails with "command cannot affect row a second time".
+-- Ordering by purchased keeps the earliest purchase timestamp per track.
 INSERT INTO track__cart (cart_id, track_id, track__cart_added)
-SELECT cart_id, t.track_id, t.purchased
+SELECT DISTINCT ON (cart_id, t.track_id) cart_id, t.track_id, t.purchased
 FROM cart,
      jsonb_to_recordset(${JSON.stringify(payload)} :: JSONB)
        AS t(track_id BIGINT, purchased TIMESTAMPTZ)
 WHERE meta_account_user_id = ANY(${userIds}) AND cart_is_purchased
+ORDER BY cart_id, t.track_id, t.purchased
 ON CONFLICT ON CONSTRAINT track__cart_cart_id_track_id_key
 DO UPDATE SET track__cart_added = EXCLUDED.track__cart_added
 `,
@@ -364,6 +371,164 @@ ORDER BY 1, store_name
   )
 }
 
+// Suggest artists to follow based on the tracks the user has purchased (the
+// tracks in their purchased cart). An artist is suggested when it authored at
+// least one purchased track, the user does not already follow it on any store,
+// and the user has not dismissed the suggestion. The count is the number of
+// distinct purchased tracks by the artist; a representative store URL is picked
+// so the suggestion can be followed with the existing follow-by-url flow.
+module.exports.queryArtistFollowSuggestions = async (userId, stores = undefined) => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryArtistFollowSuggestions
+WITH purchased_artist_counts AS (
+    SELECT artist_id
+         , COUNT(DISTINCT track_id) AS count
+    FROM cart
+             NATURAL JOIN track__cart
+             NATURAL JOIN track__artist
+    WHERE meta_account_user_id = ${userId}
+      AND cart_is_purchased
+      AND track__artist_role = 'author'
+    GROUP BY artist_id
+)
+SELECT id
+     , name
+     , url
+     , "storeName"
+     , count
+FROM (
+    SELECT DISTINCT ON (purchased_artist_counts.artist_id)
+           purchased_artist_counts.artist_id AS id
+         , artist_name                       AS name
+         , store__artist_url                 AS url
+         , store_name                        AS "storeName"
+         , purchased_artist_counts.count :: INT AS count
+    FROM purchased_artist_counts
+             NATURAL JOIN artist
+             NATURAL JOIN store__artist
+             NATURAL JOIN store
+    WHERE store__artist_url IS NOT NULL
+      AND (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY (${stores}))
+      AND NOT EXISTS (
+            SELECT 1
+            FROM store__artist_watch
+                     NATURAL JOIN store__artist_watch__user
+                     NATURAL JOIN store__artist AS followed_store__artist
+            WHERE followed_store__artist.artist_id = purchased_artist_counts.artist_id
+              AND meta_account_user_id = ${userId}
+        )
+      AND NOT EXISTS (
+            SELECT 1
+            FROM user__artist_follow_suggestion_ignore
+            WHERE artist_id = purchased_artist_counts.artist_id
+              AND meta_account_user_id = ${userId}
+        )
+    ORDER BY purchased_artist_counts.artist_id, store_name
+) suggestions
+ORDER BY count DESC, name
+LIMIT 24
+`,
+  )
+}
+
+// Label equivalent of queryArtistFollowSuggestions.
+module.exports.queryLabelFollowSuggestions = async (userId, stores = undefined) => {
+  return pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryLabelFollowSuggestions
+WITH purchased_label_counts AS (
+    SELECT label_id
+         , COUNT(DISTINCT track_id) AS count
+    FROM cart
+             NATURAL JOIN track__cart
+             NATURAL JOIN track__label
+    WHERE meta_account_user_id = ${userId}
+      AND cart_is_purchased
+    GROUP BY label_id
+)
+SELECT id
+     , name
+     , url
+     , "storeName"
+     , count
+FROM (
+    SELECT DISTINCT ON (purchased_label_counts.label_id)
+           purchased_label_counts.label_id AS id
+         , label_name                      AS name
+         , store__label_url                AS url
+         , store_name                      AS "storeName"
+         , purchased_label_counts.count :: INT AS count
+    FROM purchased_label_counts
+             NATURAL JOIN label
+             NATURAL JOIN store__label
+             NATURAL JOIN store
+    WHERE store__label_url IS NOT NULL
+      AND (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY (${stores}))
+      AND NOT EXISTS (
+            SELECT 1
+            FROM store__label_watch
+                     NATURAL JOIN store__label_watch__user
+                     NATURAL JOIN store__label AS followed_store__label
+            WHERE followed_store__label.label_id = purchased_label_counts.label_id
+              AND meta_account_user_id = ${userId}
+        )
+      AND NOT EXISTS (
+            SELECT 1
+            FROM user__label_follow_suggestion_ignore
+            WHERE label_id = purchased_label_counts.label_id
+              AND meta_account_user_id = ${userId}
+        )
+    ORDER BY purchased_label_counts.label_id, store_name
+) suggestions
+ORDER BY count DESC, name
+LIMIT 24
+`,
+  )
+}
+
+module.exports.addArtistFollowSuggestionIgnore = async (userId, artistId) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- addArtistFollowSuggestionIgnore
+INSERT INTO user__artist_follow_suggestion_ignore (meta_account_user_id, artist_id)
+VALUES (${userId}, ${artistId})
+ON CONFLICT (artist_id, meta_account_user_id) DO NOTHING
+`,
+  )
+}
+
+module.exports.addLabelFollowSuggestionIgnore = async (userId, labelId) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- addLabelFollowSuggestionIgnore
+INSERT INTO user__label_follow_suggestion_ignore (meta_account_user_id, label_id)
+VALUES (${userId}, ${labelId})
+ON CONFLICT (label_id, meta_account_user_id) DO NOTHING
+`,
+  )
+}
+
+module.exports.deleteArtistFollowSuggestionIgnore = async (userId, artistId) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- deleteArtistFollowSuggestionIgnore
+DELETE FROM user__artist_follow_suggestion_ignore
+WHERE meta_account_user_id = ${userId} AND artist_id = ${artistId}
+`,
+  )
+}
+
+module.exports.deleteLabelFollowSuggestionIgnore = async (userId, labelId) => {
+  return pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- deleteLabelFollowSuggestionIgnore
+DELETE FROM user__label_follow_suggestion_ignore
+WHERE meta_account_user_id = ${userId} AND label_id = ${labelId}
+`,
+  )
+}
+
 module.exports.queryUserPlaylistFollows = async (userId, stores = undefined) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
@@ -486,7 +651,23 @@ AND artist_id = ${artistId}
   )
 }
 
-module.exports.queryUserTracks = async (userId, stores = undefined, limits = { new: 80, recent: 50, heard: 20 }, offsets = { new: 0, recent: 0, heard: 0 }, notHeardBefore = undefined) => {
+const USER_TRACK_LISTS = (module.exports.USER_TRACK_LISTS = ['new', 'heard', 'recentlyAdded'])
+
+/**
+ * The user's track lists: new (by score), heard (most recently heard first) and recentlyAdded, each as one page:
+ * `{ lists: { <list>: { tracks, page: { offset, limit, total } } }, meta: { totalTracks, notHeardBefore } }`.
+ * A list with a limit of 0 is not read (its tracks are empty; the total is still counted). `totalTracks` is the number
+ * of the user's tracks in the selected stores, each track counted once.
+ */
+module.exports.queryUserTracks = async (
+  userId,
+  {
+    stores = undefined,
+    limits = { new: 20, heard: 20, recentlyAdded: 20 },
+    offsets = { new: 0, heard: 0, recentlyAdded: 0 },
+    notHeardBefore = undefined,
+  } = {},
+) => {
   // language=PostgreSQL
   const sort = sql`ORDER BY artists_starred + label_starred :: int DESC NULLS LAST, score DESC NULLS LAST`
 
@@ -496,9 +677,6 @@ module.exports.queryUserTracks = async (userId, stores = undefined, limits = { n
       .queryRowsAsync(
         composableSql`-- queryUserTracks
 WITH
-    logged_user AS (
-        SELECT ${sql`${userId}`} :: INT AS meta_account_user_id
-    ),
    stores AS (
     SELECT store_id, 
            store_name 
@@ -511,9 +689,9 @@ WITH
     FROM
         track__cart
             NATURAL JOIN cart
-            NATURAL JOIN logged_user
     WHERE
-        cart_is_purchased
+        meta_account_user_id = ${sql`${userId}`}
+    AND cart_is_purchased
 )
   , user_track_carts AS (
     SELECT
@@ -522,66 +700,51 @@ WITH
     FROM
         track__cart
             NATURAL JOIN cart
-            NATURAL JOIN logged_user
     WHERE
-        cart_deleted IS NULL
+        meta_account_user_id = ${sql`${userId}`}
+    AND cart_deleted IS NULL
     GROUP BY track_id
+)
+  , user_store_tracks AS MATERIALIZED (
+    -- The user's tracks that are available in at least one of the selected stores, one row per track.
+    -- Every list and total below is derived from this, so store__track is only read once (through the
+    -- covering idx_store__track_track_id_store_id index).
+    -- The list conditions are computed here as booleans: a materialized CTE has no column statistics, so
+    -- filtering it with IS NULL conditions made the planner expect ~1 new track and pick nested loops for
+    -- the scoring joins.
+    SELECT
+        track_id
+      , user__track_heard
+      , track_added
+      , (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP)) AS is_unheard
+      , (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP))
+        AND user__track_ignored IS NULL
+        AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks) AS is_new
+    FROM
+        user__track
+            NATURAL JOIN track
+    WHERE
+        meta_account_user_id = ${sql`${userId}`}
+    AND EXISTS (SELECT 1 FROM store__track NATURAL JOIN stores WHERE store__track.track_id = user__track.track_id)
 )
   , user_tracks_meta AS (
     SELECT
-        COUNT(*)                                          AS total
-      , COUNT(*) FILTER (WHERE user__track_heard IS NULL) AS new
-    FROM
-        user__track
-            NATURAL JOIN logged_user
-            NATURAL JOIN store__track
-            NATURAL JOIN stores
-    WHERE
-        track_id NOT IN (SELECT track_id FROM user_purchased_tracks) AND
-        (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
-  )
-  , heard_tracks_meta AS (
-    SELECT
         COUNT(*) AS total
+      , COUNT(*) FILTER (WHERE user__track_heard IS NOT NULL) AS heard_total
+      , COUNT(*) FILTER (WHERE is_unheard) AS recent_total
     FROM
-        user__track
-            NATURAL JOIN logged_user
-            NATURAL JOIN store__track
-            NATURAL JOIN stores
-    WHERE
-        user__track_heard IS NOT NULL AND
-        (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
-  )
-  , recent_tracks_meta AS (
-    SELECT
-        COUNT(DISTINCT track_id) AS total
-    FROM
-        logged_user
-            NATURAL JOIN user__track
-            NATURAL JOIN track
-            NATURAL JOIN store__track
-            NATURAL JOIN stores
-    WHERE
-        user__track_heard IS NULL AND
-        (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
+        user_store_tracks
   )
   , new_tracks AS (
     SELECT
         track_id
       , NULL AS user__track_heard
-      , MIN(track_added) AS track_added
+      , track_added
     FROM
-        logged_user
-            NATURAL JOIN user__track
-            NATURAL JOIN track
-            NATURAL JOIN store__track
-            NATURAL JOIN stores
+        user_store_tracks
     WHERE
-          (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP))
-      AND user__track_ignored IS NULL
-      AND track_id NOT IN (SELECT track_id FROM user_purchased_tracks)
-    GROUP BY track_id
-    ORDER BY MIN(track_added) DESC
+        is_new
+    ORDER BY track_added DESC
 )
   , tracks_to_score AS (
     SELECT track_id
@@ -608,8 +771,9 @@ WITH
             NATURAL LEFT JOIN track__label
             NATURAL LEFT JOIN store__label
             NATURAL LEFT JOIN store__label_watch
-            NATURAL LEFT JOIN store__label_watch__user
-            NATURAL LEFT JOIN logged_user
+            NATURAL LEFT JOIN (
+                SELECT * FROM store__label_watch__user WHERE meta_account_user_id = ${sql`${userId}`}
+            ) AS user_label_watch
     GROUP BY 1
 )
   , artist_scores AS (
@@ -628,14 +792,15 @@ WITH
             SELECT DISTINCT ON (track_id, artist_id)
                 track_id
               , COALESCE(BOOL_OR(store__artist_watch__user_starred), FALSE) AS artist_starred
-              , CASE WHEN BOOL_OR(store__artist_watch_id IS NOT NULL) THEN 1 ELSE 0 END AS score
+              , CASE WHEN BOOL_OR(meta_account_user_id IS NOT NULL) THEN 1 ELSE 0 END AS score
             FROM
                 tracks_to_score
                     NATURAL JOIN track__artist
                     NATURAL JOIN store__artist
                     NATURAL LEFT JOIN store__artist_watch
-                    NATURAL LEFT JOIN store__artist_watch__user
-                    NATURAL LEFT JOIN logged_user
+                    NATURAL LEFT JOIN (
+                        SELECT * FROM store__artist_watch__user WHERE meta_account_user_id = ${sql`${userId}`}
+                    ) AS user_artist_watch
             GROUP BY 1, artist_id
         )
     SELECT
@@ -655,9 +820,10 @@ WITH
       , MAX(CASE WHEN store__artist_watch__user_starred THEN 2 ELSE 1 END) AS follow_weight
     FROM
         store__artist_watch__user
-            NATURAL JOIN logged_user
             NATURAL JOIN store__artist_watch
             NATURAL JOIN store__artist
+    WHERE
+        meta_account_user_id = ${sql`${userId}`}
     GROUP BY artist_id
 )
   , collaboration_artist_strength AS (
@@ -720,7 +886,8 @@ WITH
       , user_track_score_weight_multiplier
     FROM
         user_track_score_weight
-            NATURAL JOIN logged_user
+    WHERE
+        meta_account_user_id = ${sql`${userId}`}
 )
   , new_tracks_with_scores AS (
     SELECT
@@ -846,12 +1013,8 @@ WITH
       )
         , heard_tracks AS (
           SELECT track_id, user__track_heard
-          FROM user__track
-            NATURAL JOIN logged_user
-            NATURAL JOIN store__track
-            NATURAL JOIN store
+          FROM user_store_tracks
           WHERE user__track_heard IS NOT NULL
-            AND (${sql`${stores}`} :: TEXT IS NULL OR LOWER(store_name) = ANY(${sql`${stores}`}))
       )
         , recently_heard AS (
           SELECT *
@@ -860,16 +1023,12 @@ WITH
           LIMIT ${sql`${limits.heard}`} OFFSET ${sql`${offsets.heard}`}
       )
         , recently_added AS (
-          SELECT DISTINCT track_id
+          SELECT track_id
                , track_added
-          FROM logged_user
-            NATURAL JOIN user__track
-            NATURAL JOIN track
-            NATURAL JOIN store__track
-            NATURAL JOIN stores
-          WHERE (user__track_heard IS NULL OR (${sql`${notHeardBefore}`}::TIMESTAMP IS NOT NULL AND user__track_heard > ${sql`${notHeardBefore}`}::TIMESTAMP))
+          FROM user_store_tracks
+          WHERE is_unheard
           ORDER BY track_added DESC NULLS LAST
-          LIMIT ${sql`${limits.recent}`} OFFSET ${sql`${offsets.recent}`}
+          LIMIT ${sql`${limits.recentlyAdded}`} OFFSET ${sql`${offsets.recentlyAdded}`}
       )
          , limited_tracks AS (
           SELECT DISTINCT track_id
@@ -936,64 +1095,32 @@ WITH
               'heard', CASE WHEN heard_tracks IS NULL THEN '[]'::JSON ELSE heard_tracks END,
               'recentlyAdded', CASE WHEN recently_added IS NULL THEN '[]'::JSON ELSE recently_added END
           ) AS tracks
-           , JSON_BUILD_OBJECT(
-              'total', user_tracks_meta.total,
-              'new', user_tracks_meta.new
-          ) AS meta
-           , JSON_BUILD_OBJECT(
-              'new', JSON_BUILD_OBJECT(
-                'offset', ${sql`${offsets.new}`}::INT,
-                'total', new,
-                'count', CASE WHEN new_tracks IS NULL THEN 0 ELSE jsonb_array_length(new_tracks::jsonb) END
-              ),
-              'heard', JSON_BUILD_OBJECT(
-                'offset', ${sql`${offsets.heard}`}::INT,
-                'total', COALESCE(heard_tracks_meta.total, 0),
-                'count', CASE WHEN heard_tracks IS NULL THEN 0 ELSE jsonb_array_length(heard_tracks::jsonb) END
-              ),
-              'recent', JSON_BUILD_OBJECT(
-                'offset', ${sql`${offsets.recent}`}::INT,
-                'total', COALESCE(recent_tracks_meta.total, 0),
-                'count', CASE WHEN recently_added IS NULL THEN 0 ELSE jsonb_array_length(recently_added::jsonb) END
-              )
-          ) AS pagination
+           , (SELECT COUNT(*) FROM new_tracks) :: INT AS "newTotal"
+           , user_tracks_meta.heard_total :: INT AS "heardTotal"
+           , user_tracks_meta.recent_total :: INT AS "recentlyAddedTotal"
+           , user_tracks_meta.total :: INT AS "totalTracks"
            , COALESCE(${sql`${notHeardBefore}`}::TIMESTAMP, NOW()) AS "notHeardBefore"
       FROM new_tracks_with_details
          , heard_tracks_with_details
          , recently_added_tracks_with_details
-         , user_tracks_meta
-         , heard_tracks_meta
-         , recent_tracks_meta`,
+         , user_tracks_meta`,
       )
       .then(R.head)
   })
 
-  const uniqueNewTracks = R.uniqBy(R.prop('track_id'), res.tracks.new)
-  const uniqueHeardTracks = R.uniqBy(R.prop('track_id'), res.tracks.heard)
-  const uniqueAddedTracks = R.uniqBy(R.prop('track_id'), res.tracks.recentlyAdded)
-
-  const duplicateNewTracks = R.difference(res.tracks.new, uniqueNewTracks)
-  const duplicateHeardTracks = R.difference(res.tracks.heard, uniqueHeardTracks)
-  const duplicateAddedTracks = R.difference(res.tracks.recentlyAdded, uniqueAddedTracks)
-
-  if (duplicateNewTracks.length > 0 || duplicateHeardTracks.length > 0 || duplicateAddedTracks.length > 0) {
-    logger.error('Duplicate tracks found in user tracks', {
-      duplicateNewTracks,
-      duplicateHeardTracks,
-      duplicateAddedTracks,
-    })
+  const lists = {}
+  for (const list of USER_TRACK_LISTS) {
+    const tracks = R.uniqBy(R.prop('track_id'), res.tracks[list])
+    if (tracks.length < res.tracks[list].length) {
+      logger.error('Duplicate tracks found in user tracks', { list, duplicates: R.difference(res.tracks[list], tracks) })
+    }
+    lists[list] = {
+      tracks,
+      page: { offset: Number(offsets[list]), limit: Number(limits[list]), total: res[`${list}Total`] },
+    }
   }
 
-  return {
-    ...res,
-    tracks: {
-      new: uniqueNewTracks,
-      heard: uniqueHeardTracks,
-      recentlyAdded: uniqueAddedTracks,
-    },
-    pagination: res.pagination,
-    notHeardBefore: res.notHeardBefore,
-  }
+  return { lists, meta: { totalTracks: res.totalTracks, notHeardBefore: res.notHeardBefore } }
 }
 
 module.exports.addArtistOnLabelToIgnore = (tx, artistId, labelId, userId) =>
@@ -1024,7 +1151,7 @@ WHERE
 
 module.exports.addArtistsToIgnore = async (tx, artistIds, userId) => {
   for (const artistId of artistIds) {
-    tx.queryAsync(
+    await tx.queryAsync(
       // language=PostgreSQL
       sql`--addToIgnore
 INSERT INTO user__artist_ignore
@@ -1105,6 +1232,16 @@ module.exports.setTrackHeard = async (trackId, userId, heard) => {
 UPDATE user__track SET user__track_heard = ${now}
 WHERE track_id = ${trackId} AND meta_account_user_id = ${userId}
 `)
+  // Playing a track reads its notifications, wherever it was played. Un-hearing
+  // does not make them unread again.
+  if (heard) {
+    await pg.queryAsync(sql`-- setTrackHeard: read notification events
+UPDATE user_notification_event SET user_notification_event_read_at = ${now}
+WHERE track_id = ${trackId}
+  AND meta_account_user_id = ${userId}
+  AND user_notification_event_read_at IS NULL
+`)
+  }
   return { heardAt: now ? now.toISOString() : null }
 }
 
@@ -1263,13 +1400,13 @@ WITH notification_data AS (
     store_name AS "storeName",
     store_purchase_available AS "purchaseAvailable",
     CASE 
-      WHEN user_search_notification_string ~ '^artist:(\d+)$' 
-      THEN (regexp_match(user_search_notification_string, '^artist:(\d+)$'))[1]::INTEGER 
+      WHEN user_search_notification_string ~ '^artist:(\\d+)$' 
+      THEN (regexp_match(user_search_notification_string, '^artist:(\\d+)$'))[1]::INTEGER 
       ELSE NULL 
     END AS artist_id,
     CASE 
-      WHEN user_search_notification_string ~ '^label:(\d+)$' 
-      THEN (regexp_match(user_search_notification_string, '^label:(\d+)$'))[1]::INTEGER 
+      WHEN user_search_notification_string ~ '^label:(\\d+)$' 
+      THEN (regexp_match(user_search_notification_string, '^label:(\\d+)$'))[1]::INTEGER 
       ELSE NULL 
     END AS label_id
   FROM user_search_notification 

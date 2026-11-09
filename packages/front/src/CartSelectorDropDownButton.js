@@ -70,7 +70,7 @@ export const CartSelectorDropDownButton = ({
           </button>
         )}
         {carts
-          .filter(({ is_default }) => !is_default)
+          .filter(({ isDefault }) => !isDefault)
           .filter(({ name }) => matchesFilter(name, cartFilter))
           .map(({ id: cartId, name }) => {
             const isSelected = String(cartId) === String(selectedCartId)

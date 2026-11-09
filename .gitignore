@@ -75,3 +75,47 @@ packages/infrastructure/cdk.out/
 packages/back/public/static/
 packages/front/build/
 packages/integration-tests/tests_output/
+
+# macOS
+.DS_Store
+
+# Claude Code local state (skills/commands/settings under .claude stay tracked)
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+
+# Local dev launcher: exports real credentials, must never be committed
+start-multi-store-player.sh
+
+# Front-end build output copied into the back-end by the packages/front build
+# (`react-scripts build && cp -r build/* ../back/public/`).
+# packages/back/public/auth/ is hand-written and stays tracked.
+packages/back/public/index.html
+packages/back/public/asset-manifest.json
+packages/back/public/manifest.json
+packages/back/public/favicon.png
+packages/back/public/favicon.svg
+
+# Analyser working data: large and machine-generated.
+analyser/downloads/
+analyser/panako_db/
+analyser/panako_db_worker_*
+analyser/last_fingerprint_run.json
+analyser/last_score_run.json
+
+# Source audio for the local Panako diagnostics (debug_match.py and the
+# panako-gated tests in test_parallel_preview_fingerprinting.py). These are
+# full commercial tracks, ~25 MB, and CI does not need them: the backend
+# regression test reads pre-extracted fingerprints from
+# packages/back/test/fixtures/sample-matching/ instead. Obtain them
+# out-of-band; the tests that use them skip when they are absent.
+analyser/data/
+
+# __pycache__ anywhere under analyser (the top-level rule above only covers
+# analyser/__pycache__ itself).
+analyser/**/__pycache__/
+
+# Python bytecode (e.g. from the .claude/hooks guards)
+__pycache__/
+
+# Lavish review pages (generated, may embed personal data)
+.lavish/

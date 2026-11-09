@@ -24,6 +24,11 @@ import {
   partitionBandcampHosted,
   usernameFromBandcampUrl,
 } from './content/bandcamp/feed-parse'
+import { startBeatportRun, resumeBeatportRun } from './cart-push/beatport'
+import { startBandcampRun, openNextBandcampBatch } from './cart-push/bandcamp'
+import { readRun, clearRun, RunStatus, BANDCAMP_BATCH_SIZE_KEY } from './cart-push/state'
+import { normalizeAppUrl } from './app-url'
+import { fetchCartWithAllTracks } from './cart-tracks'
 // Importing audio-player has no effect in a service-worker (no DOM) but
 // installs the audio host inside the Firefox background page.
 import './audio-player'
@@ -37,7 +42,10 @@ const BANDCAMP_STORE_URL = 'https://bandcamp.com'
 
 const getAppUrl = async () => {
   const { appUrl } = await browser.storage.local.get(['appUrl'])
-  return appUrl || DEFAULT_APP_URL
+  // Normalize on read too: strips a trailing slash from a value stored before
+  // Options started normalizing, or from a DEFAULT_APP_URL baked from a
+  // FRONTEND_URL that ends in a slash — otherwise `${appUrl}${path}` double-slashes.
+  return normalizeAppUrl(appUrl || DEFAULT_APP_URL)
 }
 
 const broadcast = (message) => browser.runtime.sendMessage(message).catch(() => {})
@@ -491,22 +499,11 @@ const findOrCreateWishlistCart = async () => {
 
 const reconcileWishlistCart = async (wishlistReleases) => {
   const { mapping } = await ingestBandcampReleases(wishlistReleases)
-  const wishlistTrackIds = Object.values(mapping).filter(Boolean)
+  const wishlistTrackIds = [...new Set(Object.values(mapping).filter(Boolean))]
   const cart = await findOrCreateWishlistCart()
-  // Use ?fetch=tracks to learn which tracks the cart already has.
-  const detail = await apiFetch(`/api/me/carts/${cart.id}`)
-  const existingTrackIds = new Set((detail?.tracks || []).map((t) => t.id))
-  const operations = []
-  for (const trackId of wishlistTrackIds) {
-    if (!existingTrackIds.has(trackId)) operations.push({ op: 'add', trackId, addedAt: new Date().toISOString() })
-  }
-  for (const trackId of existingTrackIds) {
-    if (!wishlistTrackIds.includes(trackId)) operations.push({ op: 'remove', trackId })
-  }
-  if (operations.length > 0) {
-    await updateCartContents(cart.id, operations)
-  }
-  return { cartId: cart.id, addedCount: operations.filter((o) => o.op === 'add').length, removedCount: operations.filter((o) => o.op === 'remove').length }
+  // The server makes the cart match the wishlist; tracks already in the cart keep their added date.
+  const { added, removed } = await apiFetch(`/api/me/carts/${cart.id}/tracks`, { method: 'PUT', body: wishlistTrackIds })
+  return { cartId: cart.id, addedCount: added, removedCount: removed }
 }
 
 const handleMessage = async (message) => {
@@ -594,7 +591,7 @@ const handleMessage = async (message) => {
     const annotated = await Promise.all(
       (carts || []).map(async (cart) => {
         try {
-          const detail = await apiFetch(`/api/me/carts/${cart.id}`)
+          const detail = await fetchCartWithAllTracks(apiFetch, cart.id)
           const containsTrackIds = (detail?.tracks || [])
             .map((t) => t.id)
             .filter((id) => requestedIds.has(id))
@@ -637,6 +634,50 @@ const handleMessage = async (message) => {
       await handleError({ message: e?.message || 'Bandcamp feed sync failed', stack: e?.stack || String(e) })
       return { ok: false, error: e?.message }
     }
+  }
+  if (message.type === 'cart-push:list-fomo-carts') {
+    try {
+      const carts = (await getUserCarts()) || []
+      // Filter to non-deleted, non-purchased carts — the picker only shows
+      // carts the user might want to actively push.
+      const filtered = carts.filter((c) => !c.deleted && !c.isPurchased)
+      return { ok: true, carts: filtered }
+    } catch (e) {
+      return { ok: false, error: e?.message || 'Failed to list carts' }
+    }
+  }
+  if (message.type === 'cart-push:start') {
+    const existing = await readRun()
+    if (existing && existing.status !== RunStatus.COMPLETED && existing.status !== RunStatus.FAILED) {
+      return {
+        ok: false,
+        error: `A ${existing.store} push is in progress — wait or dismiss it before starting another`,
+      }
+    }
+    const deps = { apiFetch, getAppUrl, setStatus, clearStatus }
+    const { store, fomoplayerCartId } = message
+    try {
+      if (store === 'beatport') {
+        return await startBeatportRun({ fomoplayerCartId }, deps)
+      }
+      if (store === 'bandcamp') {
+        return await startBandcampRun({ fomoplayerCartId }, deps)
+      }
+      return { ok: false, error: `Unknown store: ${store}` }
+    } catch (e) {
+      return { ok: false, error: e?.message || 'Cart-push start failed' }
+    }
+  }
+  if (message.type === 'cart-push:open-next-batch') {
+    return await openNextBandcampBatch()
+  }
+  if (message.type === 'cart-push:dismiss') {
+    const existing = await readRun()
+    if (existing && existing.status === RunStatus.RUNNING) {
+      return { ok: false, error: 'Cannot dismiss a running cart push' }
+    }
+    await clearRun()
+    return { ok: true }
   }
   if (message.type === 'operationStatus') {
     await setStatus(message.text, message.progress)
@@ -753,11 +794,39 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true
 })
 
-;(async () => {
-  const { appUrl, enabledStores } = await browser.storage.local.get(['enabledStores', 'appUrl'])
-  await browser.storage.local.set({
-    enabledStores: enabledStores || { beatport: true, bandcamp: true },
-    appUrl: appUrl || DEFAULT_APP_URL,
-  })
+const onServiceWorkerStart = async () => {
+  const stored = await browser.storage.local.get([
+    'enabledStores',
+    'appUrl',
+    BANDCAMP_BATCH_SIZE_KEY,
+  ])
+  const updates = {
+    enabledStores: stored.enabledStores || { beatport: true, bandcamp: true },
+    appUrl: stored.appUrl || DEFAULT_APP_URL,
+  }
+  // Default `bandcampCartPushBatchSize` to 10 on first install — but only
+  // when the key is *missing*. A deliberate user-set `null` (blank in
+  // Options, meaning "no batching") must not get clobbered back to 10.
+  if (!(BANDCAMP_BATCH_SIZE_KEY in stored)) {
+    updates[BANDCAMP_BATCH_SIZE_KEY] = 10
+  }
+  await browser.storage.local.set(updates)
   await purgeLegacyTokens()
+  // Resume a Beatport run that was mid-loop when the worker idled. The
+  // resume is a no-op for any other run state (Bandcamp awaiting-next-batch
+  // does nothing here; Bandcamp resumes on the user's `Open next batch`
+  // click). `runBeatportLoop` is re-entrant, so this is safe.
+  await resumeBeatportRun({ apiFetch, getAppUrl, setStatus, clearStatus }).catch((e) =>
+    console.warn('resumeBeatportRun failed', e),
+  )
+}
+
+;(async () => {
+  await onServiceWorkerStart()
 })().catch((e) => console.error('Service worker initialisation failed', e))
+
+if (browser.runtime && browser.runtime.onStartup) {
+  browser.runtime.onStartup.addListener(() => {
+    onServiceWorkerStart().catch((e) => console.error('Service worker onStartup failed', e))
+  })
+}

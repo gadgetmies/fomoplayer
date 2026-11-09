@@ -1,5 +1,7 @@
 const logger = require('fomoplayer_shared').logger(__filename)
+const { warmCollectionMean } = require('../shared/db/cart-similarity')
 const { insertSource } = require('../../jobs/watches/shared/db')
+const { unsubscribeUrl } = require('../../services/email-unsubscribe')
 const {
   addArtistsOnLabelsToIgnore,
   addArtistsToIgnore,
@@ -14,6 +16,13 @@ const {
   getUserArtistIgnores,
   getUserArtistOnLabelIgnores,
   getUserLabelIgnores,
+  getArtistFollowSuggestions,
+  getLabelFollowSuggestions,
+  getFollowSuggestionImages,
+  addArtistFollowSuggestionIgnore,
+  addLabelFollowSuggestionIgnore,
+  removeArtistFollowSuggestionIgnore,
+  removeLabelFollowSuggestionIgnore,
   removeArtistOnLabelIgnoreFromUser,
   removeLabelIgnoreFromUser,
   removeArtistIgnoreFromUser,
@@ -48,13 +57,24 @@ const {
   getCartDetails,
   updateCartContents,
   updateAllCartContents,
+  setCartTracks,
+  CART_TRACKS_PAGE,
 } = require('../shared/cart.js')
+const { parsePage, parseStores, parseDate } = require('../shared/request-params')
+const { BadRequest, NotFound } = require('../shared/httpErrors')
+const {
+  queryNotificationEvents,
+  queryUnreadNotificationCount,
+  markNotificationEventsRead,
+  queryUserAudioSample,
+  querySampleMatches,
+} = require('../shared/db/notification-events')
+const { querySampleSimilarTracks } = require('../shared/db/sample-similarity')
 
 const { queryDefaultCartId } = require('../shared/db/cart.js')
 
 const { getTrackIdMappingForStoreUrl } = require('../shared/tracks.js')
 
-const typeIs = require('type-is')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
@@ -71,9 +91,10 @@ const {
   queryNotificationAudioSamples: getNotificationAudioSamples,
   deleteNotificationAudioSample,
   deleteHeardSince,
+  USER_TRACK_LISTS,
 } = require('./db')
 
-const router = require('express-promise-router')()
+const router = require('express').Router()
 
 // Current user's capabilities. `isAdmin` lets the client decide whether to
 // surface the admin UI; the admin API is independently guarded by
@@ -115,44 +136,38 @@ const upload = multer({
   },
 })
 
-router.get(
-  '/tracks',
-  async (
-    {
-      user: { id: authUserId },
-      query: { 
-        limit_new: limitNew = 20, 
-        limit_recent: limitRecent = 20, 
-        limit_heard: limitHeard = 20,
-        offset_new: offsetNew = 0,
-        offset_recent: offsetRecent = 0,
-        offset_heard: offsetHeard = 0,
-        store: stores,
-        not_heard_before: notHeardBefore
-      },
-    },
-    res,
-  ) => {
-    const normalizedStores = (Array.isArray(stores) ? stores : stores ? [stores] : [])
-      .map((store) => (typeof store === 'string' ? store.toLowerCase().trim() : ''))
-      .filter(Boolean)
-    const storeFilter = normalizedStores.length > 0 ? normalizedStores : null
+const USER_TRACKS_PAGE = { defaultLimit: 20, maxLimit: 200 }
 
-    logger.info(`Got stores: ${JSON.stringify(storeFilter)}`)
-    const userTracks = await getUserTracks(
-      authUserId, 
-      storeFilter, 
-      { new: limitNew, recent: limitRecent, heard: limitHeard },
-      { new: offsetNew, recent: offsetRecent, heard: offsetHeard },
-      notHeardBefore ? new Date(notHeardBefore) : undefined
-    )
-    res.json(userTracks)
-  },
-)
+const parseUserTrackFilters = ({ store: stores, notHeardBefore }) => {
+  const notHeardBeforeDate = parseDate('notHeardBefore', notHeardBefore)
+  return {
+    stores: parseStores(stores),
+    notHeardBefore: notHeardBeforeDate ? new Date(notHeardBeforeDate) : undefined,
+  }
+}
 
-router.get('/tracks/playlist.pls', ({ user: { id: authUserId } }, res) =>
-  getTracksM3u(userId).tap((m3u) => res.send(m3u)),
-)
+// The first page of each of the user's track lists: { lists: { new, heard, recentlyAdded }, meta }. `limit` is the
+// page size of every list.
+router.get('/tracks', async ({ user: { id: userId }, query }, res) => {
+  const { limit } = parsePage({ limit: query.limit }, USER_TRACKS_PAGE)
+  const limits = Object.fromEntries(USER_TRACK_LISTS.map((list) => [list, limit]))
+  res.json(await getUserTracks(userId, { ...parseUserTrackFilters(query), limits }))
+})
+
+// One page of one of the user's track lists: { tracks, page, meta }. Pass the notHeardBefore of the first response
+// to keep the lists stable while tracks are being marked heard.
+router.get(USER_TRACK_LISTS.map((list) => `/tracks/${list}`), async ({ user: { id: userId }, path, query }, res) => {
+  const list = path.split('/').pop()
+  const { offset, limit } = parsePage(query, USER_TRACKS_PAGE)
+  const limits = Object.fromEntries(USER_TRACK_LISTS.map((l) => [l, l === list ? limit : 0]))
+  const offsets = Object.fromEntries(USER_TRACK_LISTS.map((l) => [l, l === list ? offset : 0]))
+  const { lists, meta } = await getUserTracks(userId, { ...parseUserTrackFilters(query), limits, offsets })
+  res.json({ ...lists[list], meta })
+})
+
+router.get('/tracks/playlist.pls', async ({ user: { id: userId } }, res) => {
+  res.send(await getTracksM3u(userId))
+})
 
 router.post('/tracks/heard-lookup', async ({ user: { id: userId }, body }, res) => {
   const store = body?.store
@@ -203,12 +218,18 @@ router.patch('/ignores/artists-on-labels', async ({ user: { id: authUserId }, bo
   res.status(204).send()
 })
 
+const isIdArray = (body) =>
+  Array.isArray(body) &&
+  body.length > 0 &&
+  body.every((id) => Number.isInteger(id) || (typeof id === 'string' && /^\d+$/.test(id)))
+
 router.get('/ignores/labels', async ({ user: { id: authUserId }, query: { store: stores } }, res) => {
   const labelIgnores = await getUserLabelIgnores(authUserId, stores)
   res.send(labelIgnores)
 })
 
 router.post('/ignores/labels', async ({ user: { id: authUserId }, body }, res) => {
+  if (!isIdArray(body)) return res.status(400).json({ error: 'Body must be a non-empty array of ids' })
   await addLabelsToIgnore(authUserId, body)
   res.status(204).send()
 })
@@ -224,6 +245,7 @@ router.get('/ignores/artists', async ({ user: { id: authUserId }, query: { store
 })
 
 router.post('/ignores/artists', async ({ user: { id: authUserId }, body }, res) => {
+  if (!isIdArray(body)) return res.status(400).json({ error: 'Body must be a non-empty array of ids' })
   await addArtistsToIgnore(authUserId, body)
   res.status(204).send()
 })
@@ -234,6 +256,7 @@ router.delete('/ignores/artists/:id', async ({ user: { id: authUserId }, params:
 })
 
 router.post('/ignores/releases', async ({ user: { id: authUserId }, body }, res) => {
+  if (!isIdArray(body)) return res.status(400).json({ error: 'Body must be a non-empty array of ids' })
   await addReleasesToIgnore(authUserId, body)
   res.status(204).send()
 })
@@ -271,7 +294,7 @@ router.post('/follows/artists', async (req, res) => {
   } = req
   let addedArtists
 
-  if (typeIs(req, 'application/vnd.multi-store-player.artist-ids+json')) {
+  if (req.is('application/vnd.multi-store-player.artist-ids+json')) {
     addedArtists = await addArtistFollowsWithIds(body, userId)
   } else {
     const sourceId = await insertSource({ operation: '/follows/artists', artists: body, userId, storeUrl })
@@ -288,7 +311,7 @@ router.post('/follows/labels', async (req, res) => {
   } = req
   let addedLabels = []
 
-  if (typeIs(req, 'application/vnd.multi-store-player.label-ids+json')) {
+  if (req.is('application/vnd.multi-store-player.label-ids+json')) {
     addedLabels = await addLabelFollowsWithIds(body, userId)
   } else {
     const sourceId = await insertSource({ operation: '/follows/labels', labels: body, userId, storeUrl })
@@ -334,17 +357,54 @@ router.post('/follows/playlists', async ({ user: { id: userId }, body }, res) =>
   res.send(addedPlaylists)
 })
 
+// Follow suggestions derived from the tracks in the user's purchased cart.
+router.get('/follows/suggestions', async ({ user: { id: authUserId }, query: { store: stores } }, res) => {
+  const [artists, labels] = await Promise.all([
+    getArtistFollowSuggestions(authUserId, stores),
+    getLabelFollowSuggestions(authUserId, stores),
+  ])
+  res.send({ artists, labels })
+})
+
+// Resolve cover images for suggestions lazily so the list renders immediately
+// and images backfill (entity artwork isn't stored, it comes live from stores).
+router.post('/follows/suggestions/images', async ({ body: { urls } }, res) => {
+  res.send(await getFollowSuggestionImages(urls))
+})
+
+// Dismiss a suggestion so it no longer appears, reducing noise in the list.
+router.post('/follows/suggestions/ignores', async ({ user: { id: authUserId }, body: { type, id } }, res) => {
+  if (type === 'artist') {
+    await addArtistFollowSuggestionIgnore(authUserId, id)
+  } else if (type === 'label') {
+    await addLabelFollowSuggestionIgnore(authUserId, id)
+  } else {
+    return res.status(400).send({ error: `Unknown suggestion type: ${type}` })
+  }
+  res.status(204).send()
+})
+
+// Undo a dismissal (also used to keep demo seeding re-run safe).
+router.delete('/follows/suggestions/ignores/:type/:id', async ({ user: { id: authUserId }, params: { type, id } }, res) => {
+  if (type === 'artist') {
+    await removeArtistFollowSuggestionIgnore(authUserId, id)
+  } else if (type === 'label') {
+    await removeLabelFollowSuggestionIgnore(authUserId, id)
+  } else {
+    return res.status(400).send({ error: `Unknown suggestion type: ${type}` })
+  }
+  res.status(204).send()
+})
+
 router.put('/follows/:type/:id', async ({ user: { id: userId }, params: { id, type }, body: { starred } }, res) => {
   await setFollowStarred(userId, type, id, starred)
   res.status(204).send()
 })
 
 router.get('/carts', async ({ user: { id: userId }, query: { store: stores } }, res) => {
+  // Ready for a "Find similar" on one of the carts.
+  warmCollectionMean(userId)
   res.send(await getUserCarts(userId, stores))
-})
-
-router.get('/carts?fetch=tracks', async ({ user: { id: userId }, query: { store: stores } }, res) => {
-  res.send(await getUserCartsWithTracks(userId, stores))
 })
 
 router.post('/carts', async ({ user: { id: userId }, body }, res) => {
@@ -372,16 +432,16 @@ router.get(
   async ({
     user: { id: userId },
     params: { id: cartId },
-    query: { offset: tracksOffset, limit: tracksLimit, store: stores },
+    query,
   }, res) => {
+    const page = parsePage(query, CART_TRACKS_PAGE)
     let resolvedId = cartId
     if (cartId === 'default') {
       resolvedId = await queryDefaultCartId(userId)
       if (!resolvedId) return res.status(404).send()
     }
-    res.send(
-      await getCartDetails(userId, resolvedId, stores, { offset: parseInt(tracksOffset), limit: parseInt(tracksLimit) }),
-    )
+    const filter = { since: parseDate('since', query.since), ...page }
+    res.send(await getCartDetails(userId, resolvedId, parseStores(query.store), filter))
   },
 )
 
@@ -404,6 +464,15 @@ router.patch('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: c
     logger.error(message, e)
     return res.status(500).send(message)
   }
+})
+
+// Replaces the cart's tracks with the given track ids (the body is an array of ids). Tracks already in the cart keep
+// their added date; the response tells how many tracks were added and removed.
+router.put('/carts/:id/tracks', async ({ user: { id: userId }, params: { id: cartId }, body: trackIds }, res) => {
+  if (!Array.isArray(trackIds) || !trackIds.every((id) => Number.isInteger(Number(id)))) {
+    throw new BadRequest('The body must be an array of track ids')
+  }
+  res.send(await setCartTracks(userId, cartId, trackIds))
 })
 
 router.patch('/carts', async ({ user: { id: userId }, body: operations }, res) => {
@@ -439,6 +508,18 @@ router.get('/settings', async ({ user: { id: userId } }, res) => {
   res.send(settings)
 })
 
+// The one-click unsubscribe URL for the logged-in user's own address. Read-only
+// (mints a stateless HMAC token; no suppression happens here). Lets the app —
+// and the no-login unsubscribe demo — reach the branded unsubscribe page for
+// the current account without needing the signing secret.
+router.get('/email/unsubscribe-url', async ({ user: { id: userId } }, res) => {
+  const { email } = await getUserSettings(userId)
+  if (!email) {
+    return res.status(404).send({ error: 'No email address on file' })
+  }
+  res.send({ url: unsubscribeUrl(email) })
+})
+
 router.post('/settings', async ({ user: { id: userId }, body: { email } }, res) => {
   if (email !== undefined) {
     await setEmail(userId, email)
@@ -460,11 +541,59 @@ router.post(
   '/carts/:id/sync/spotify',
   async ({ user: { id: userId }, params: { id: cartId }, body: { setSync } }, res) => {
     if (setSync) {
-      await enableCartSync(userId, cartId, spotifyStoreName)
+      res.send(await enableCartSync(userId, cartId, spotifyStoreName))
     } else {
       await removeCartSync(userId, cartId, spotifyStoreName)
+      res.status(204).send()
     }
-    res.status(204).send()
+  },
+)
+
+// A positive integer query or path parameter, or `fallback` when absent. Anything else is a 400.
+const parsePositiveInt = (value, name, fallback) => {
+  if (value === undefined || value === '') return fallback
+  if (!/^\d+$/.test(String(value)) || Number(value) < 1) throw new BadRequest(`${name} must be a positive integer`)
+  return Number(value)
+}
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+
+router.get('/notifications/events', async ({ user: { id: userId }, query: { limit, before } }, res) => {
+  res.send(
+    await queryNotificationEvents(userId, {
+      limit: clamp(parsePositiveInt(limit, 'limit', 50), 1, 200),
+      before: parsePositiveInt(before, 'before', null),
+    }),
+  )
+})
+
+router.get('/notifications/events/unread-count', async ({ user: { id: userId } }, res) => {
+  res.send({ count: await queryUnreadNotificationCount(userId) })
+})
+
+router.post('/notifications/events/read', async ({ user: { id: userId }, body: { all, trackIds } = {} }, res) => {
+  if (all !== true && !(Array.isArray(trackIds) && trackIds.every((id) => Number.isInteger(id)))) {
+    throw new BadRequest('Body must be { all: true } or { trackIds: [<int>...] }')
+  }
+  res.send({ count: await markNotificationEventsRead(userId, { all: all === true, trackIds }) })
+})
+
+const requireUserAudioSample = async (userId, id) => {
+  const sampleId = parsePositiveInt(id, 'id')
+  const sample = await queryUserAudioSample(userId, sampleId)
+  if (!sample) throw new NotFound('Audio sample not found')
+  return sample
+}
+
+router.get('/notifications/audio-samples/:id/matches', async ({ user: { id: userId }, params: { id } }, res) => {
+  const sample = await requireUserAudioSample(userId, id)
+  res.send(await querySampleMatches(userId, sample.id))
+})
+
+router.get(
+  '/notifications/audio-samples/:id/similar',
+  async ({ user: { id: userId }, params: { id }, query: { limit } }, res) => {
+    const sample = await requireUserAudioSample(userId, id)
+    res.send(await querySampleSimilarTracks(userId, sample.id, clamp(parsePositiveInt(limit, 'limit', 20), 1, 100)))
   },
 )
 

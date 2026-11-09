@@ -1,4 +1,4 @@
-import Joyride, { ACTIONS } from 'react-joyride'
+import { ACTIONS, Joyride } from 'react-joyride'
 import React, { Component } from 'react'
 
 class Onboarding extends Component {
@@ -23,8 +23,8 @@ class Onboarding extends Component {
       },
       placement: 'center',
       target: 'body',
-      disableCloseOnEsc: false,
-      showSkipButton: true,
+      dismissKeyAction: 'close',
+      buttons: ['close', 'skip', 'primary'],
     },
     Settings: {
       target: '[data-onboarding-id=settings-button]',
@@ -32,7 +32,7 @@ class Onboarding extends Component {
       content: (
         <p>Let's first click the Settings button to open the Settings and find an artist and label to follow.</p>
       ),
-      disableNext: true,
+      data: { disableNext: true },
       locale: { next: 'Step' },
     },
     Search: {
@@ -45,7 +45,7 @@ class Onboarding extends Component {
           view.
         </p>
       ),
-      disableNext: true,
+      data: { disableNext: true },
       locale: { next: 'Step' },
     },
     FollowItem: {
@@ -70,14 +70,14 @@ class Onboarding extends Component {
           artists in later steps.)
         </p>
       ),
-      disableNext: true,
+      data: { disableNext: true },
       locale: { next: 'Step' },
     },
     FollowedItem: {
       target: '[data-onboarding-id=followed-items]',
       placement: 'right-end',
       content: <p>The followed artists are shown here (and the labels below).</p>,
-      disableNext: true,
+      data: { disableNext: true },
       locale: { next: 'Step' },
     },
     Star: {
@@ -89,21 +89,21 @@ class Onboarding extends Component {
           the star button.
         </p>
       ),
-      disableNext: true,
+      data: { disableNext: true },
       locale: { next: 'Step' },
     },
     Unfollow: {
       target: '[data-onboarding-id=unfollow-button]',
       placement: 'right-end',
       content: <p>To remove a follow, click the X.</p>,
-      disableNext: true,
+      data: { disableNext: true },
       locale: { next: 'Step' },
     },
     Support: {
       target: '[data-onboarding-id=support-button]',
       placement: 'top',
       content: <p>Let's head to the Support popup to look at a few more things.</p>,
-      disableNext: true,
+      data: { disableNext: true },
       locale: { next: 'Step' },
     },
     Instructions: {
@@ -135,7 +135,7 @@ class Onboarding extends Component {
           (also requires a GitHub account.).
         </p>
       ),
-      disableCloseOnEsc: false,
+      dismissKeyAction: 'close',
     },
     Help: {
       target: '[data-onboarding-id=help-button]',
@@ -178,25 +178,24 @@ class Onboarding extends Component {
         run={this.props.active}
         continuous
         scrollToFirstStep
-        spotlightClicks={true}
-        styles={{
-          options: {
-            zIndex: 10000,
-          },
+        options={{
+          zIndex: 10000,
+          // react-joyride 2's default accent; v3 defaults to black.
+          primaryColor: '#f04',
+          blockTargetInteraction: false,
+          overlayClickAction: false,
+          dismissKeyAction: false,
+          showProgress: true,
+          buttons: ['close', 'primary'],
         }}
-        disableOverlayClose
-        showProgress
-        showSkipButton={false}
-        disableCloseOnEsc={true}
-        hideBackButton={true}
-        getHelpers={(helpers) => {
-          Onboarding.helpers = helpers
-        }}
-        callback={(state) => {
+        locale={{ nextWithProgress: 'Next (Step {current} of {total})' }}
+        onEvent={(state, controls) => {
+          // Other components advance the tour (e.g. when the highlighted button is clicked).
+          Onboarding.helpers = controls
           Onboarding.state = state
           Onboarding.active = state.status === 'running'
-          const nextButton = document.querySelector('.react-joyride__tooltip button')
-          if (state.step.disableNext === true) {
+          const nextButton = document.querySelector('.react-joyride__tooltip [data-action=primary]')
+          if (state.step?.data?.disableNext === true) {
             nextButton?.setAttribute('disabled', '')
           } else {
             nextButton?.removeAttribute('disabled')

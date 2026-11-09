@@ -17,16 +17,16 @@ module.exports = {
     y
       .command({
         command: 'list',
-        describe: 'List new and recent tracks',
+        describe: 'List new and recently added tracks',
         builder: (y) =>
           fieldsOption(
             y
               .option('store', { type: 'string', describe: 'Filter by store' })
-              .option('limit', { type: 'number', describe: 'Limit number of new tracks' }),
+              .option('limit', { type: 'number', describe: 'Number of tracks from each list' }),
           ),
         handler: async (a) => {
-          const d = await new FomoPlayerClient().getTracks({ store: a.store, limit_new: a.limit })
-          printTable([...(d.tracks?.new ?? []), ...(d.tracks?.recent ?? [])], a.fields)
+          const { lists } = await new FomoPlayerClient().getTracks({ store: a.store, limit: a.limit })
+          printTable([...lists.new.tracks, ...lists.recentlyAdded.tracks], a.fields)
         },
       })
       .command({

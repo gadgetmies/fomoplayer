@@ -42,9 +42,9 @@ export class SettingsHelp extends Component {
       placement: 'bottom',
       content: (
         <p>
-          If you bump into an unreleased track e.g. in a podcast, you can create a search notification in the
-          notifications tab or in the search, to receive an email notification when there are new tracks matching the
-          search. In order to enable this functionality, you need to first confirm your email address.
+          Notifications arrive in the app under Notifications and, once you have confirmed your email address here, by
+          email. If you bump into an unreleased track e.g. in a podcast, create a search subscription from the search or
+          on the Notifications page.
         </p>
       ),
     },

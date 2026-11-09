@@ -1,8 +1,9 @@
 const bodyParser = require('body-parser')
 
-const router = require('express-promise-router')()
-const { getPreview, searchForTracks, getFollowDetails } = require('./logic.js')
+const router = require('express').Router()
+const { getPreview, searchForTracksResponse, getFollowDetails } = require('./logic.js')
 const { Unauthorized } = require('./shared/httpErrors')
+const { parsePage } = require('./shared/request-params')
 const adminRouter = require('./admin/index.js')
 const { ensureAuthenticated } = require('./shared/auth.js')
 const logRouter = require('./log/index.js')
@@ -40,16 +41,19 @@ router.get('/tracks/:id', ({ user: { id: userId }, params: { id } }, res) => {
   res.send(JSON.stringify({}))
 })
 
+// Track search, in the same envelope as the user's track lists: { tracks, page, meta }. Cart search (cart:~<uuid>)
+// options: k (number of groups), newArtistsOnly and misses (comma-separated "Not this" track ids of the session).
 router.get('/tracks/', async ({ query: { q, store: stores }, user: { id: userId }, query: options }, res) => {
-  res.send(await searchForTracks(q, { stores, userId, ...options }))
+  const page = parsePage(options, { defaultLimit: 100, maxLimit: 500 })
+  res.send(await searchForTracksResponse(q, { ...options, ...page, stores, userId }))
 })
 
-router.get('/artists/:id', async ({ params: { id } }, res) => {
-  res.send(await getEntityDetails('artist', id))
+router.get('/artists/:id', async ({ params: { id }, query: { store: stores } }, res) => {
+  res.send(await getEntityDetails('artist', id, stores))
 })
 
-router.get('/labels/:id', async ({ params: { id } }, res) => {
-  res.send(await getEntityDetails('label', id))
+router.get('/labels/:id', async ({ params: { id }, query: { store: stores } }, res) => {
+  res.send(await getEntityDetails('label', id, stores))
 })
 
 router.get('/releases/:id', async ({ params: { id } }, res) => {

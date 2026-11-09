@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DJ Set Recognition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1b1b1b; --surface: #222; --surface-2: #2a2a2a; --line: #3a3a3a;
+    --ink: #f2f2f2; --ink-2: #c4c4c4; --ink-3: #8f8f8f;
+    --brand: #b40089; --brand-hi: #e04fb8; --brand-tint: rgba(180, 0, 137, 0.18);
+    --ok: #6cc28a; --warn: #f0ad4e; --bad: #e5534b; --muted: #5a5a5a; --preview: rgba(108, 194, 138, 0.16);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Lato', sans-serif; font-size: 15px; line-height: 1.5; }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 19px; font-weight: 900; margin: 0 0 6px; }
+  p { margin: 6px 0; color: var(--ink-2); overflow-wrap: anywhere; }
+  b { color: var(--ink); }
+  section { margin-top: 40px; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; color: var(--brand-hi); font-weight: 700; }
+  .sub { color: var(--ink-3); margin: 0; }
+  .verdict { margin-top: 20px; padding: 16px 18px; background: var(--surface); border-left: 4px solid var(--brand); border-radius: 4px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 20px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+  .stat .n { font-size: 30px; font-weight: 900; line-height: 1.1; }
+  .stat .l { color: var(--ink-2); font-size: 13px; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-top: 12px; }
+  @media (max-width: 760px) { .two { grid-template-columns: minmax(0, 1fr); } }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+  .card h3 { margin: 0 0 4px; font-size: 15px; }
+  .card.was { border-left: 3px solid var(--bad); }
+  .card.now { border-left: 3px solid var(--ok); }
+  ul { margin: 6px 0; padding-left: 20px; color: var(--ink-2); }
+  li { margin: 3px 0; overflow-wrap: anywhere; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: var(--surface-2); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+  pre { background: #141414; border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font-size: 12.5px; color: var(--ink-2); }
+  .figwrap { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px; margin-top: 12px; overflow-x: auto; }
+  svg.fig { width: 100%; height: auto; display: block; min-width: 640px; font-family: 'Lato', sans-serif; }
+  svg .grid { stroke: var(--line); stroke-width: 1; }
+  svg .tick { fill: var(--ink-3); font-size: 10px; }
+  svg .rowid { fill: var(--ink-3); font-size: 9px; }
+  svg .lbl { fill: var(--ink-2); font-size: 9px; }
+  svg .lanehead, svg .axishead { fill: var(--brand-hi); font-size: 11px; font-weight: 700; }
+  svg .row.found .bar { fill: var(--ok); fill-opacity: .55; }
+  svg .row.missed .bar { fill: var(--warn); fill-opacity: .75; }
+  svg .row.na .bar { fill: var(--muted); }
+  svg .row.fp .bar { fill: none; stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 3 2; }
+  svg .det { fill: var(--ink); }
+  svg .axis { stroke: var(--ink-3); stroke-width: 1; }
+  svg .preview { fill: var(--preview); stroke: var(--ok); stroke-dasharray: 4 3; }
+  svg .aud { fill: var(--brand-hi); }
+  svg .map { fill: var(--brand); fill-opacity: .22; }
+  svg .pin { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 2 3; }
+  svg .pinlbl { fill: var(--ink); font-size: 10.5px; }
+  svg .note { fill: var(--ink-2); font-size: 11px; }
+  svg .detmap { fill: none; stroke: var(--ok); stroke-width: 1; stroke-dasharray: 5 3; }
+  svg .detline { fill: var(--ok); }
+  svg .detlbl { fill: var(--ok); font-size: 11px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+  .sw { display: inline-block; width: 18px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  .tablewrap { overflow-x: auto; margin-top: 12px; border: 1px solid var(--line); border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; font-weight: 700; color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; padding: 9px 10px; background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-2); }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .dim { color: var(--ink-3); font-size: 12.5px; }
+  .chip { display: inline-block; font-size: 12px; padding: 1px 7px; border-radius: 10px; margin: 1px 0; }
+  .chip.miss { background: rgba(240,173,78,.15); color: var(--warn); }
+  .chip.fp { background: rgba(229,83,75,.15); color: var(--bad); }
+  .st { font-weight: 700; white-space: nowrap; font-size: 12.5px; }
+  .st.found { color: var(--ok); } .st.missed { color: var(--warn); } .st.na { color: var(--ink-3); }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .filters button { background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line); border-radius: 14px; padding: 4px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .filters button.on { background: var(--brand-tint); border-color: var(--brand); color: var(--ink); }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">fomoplayer · DJ set tracklist builder · offline evaluation</div>
+  <h1>DJ set recognition: what was found and why the rest wasn't</h1>
+  <p class="sub">Panako fingerprints of rendered sets matched against production preview fingerprints (read-only mirror), with tempo search ±8 %. Ground truth rebuilt from the AKIN catalog on 2026-10-17.</p>
+
+  <div class="verdict" id="verdict">
+    <b>The catalog has everything a render did, and the exact rebuild settles the layer question: none of the eight S30 layers plays any part of its track that is inside the Beatport preview.</b>
+    <p>So they were never recognisable from previews. Tarantula is found anyway, because its vocal phrase recurs later in the track inside the preview. Every play now has a known played range, so "unknown coverage" is gone. Layers and beat-jump tracks are scored like every other play.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat" id="stat-recall"><div class="n">22/28</div><div class="l">S30 recall (preview overlap ≥ 10 s)</div></div>
+    <div class="stat" id="stat-precision"><div class="n">23/25</div><div class="l">S30 precision</div></div>
+    <div class="stat" id="stat-tempo"><div class="n">0.0005</div><div class="l">median tempo-factor error</div></div>
+    <div class="stat" id="stat-layers"><div class="n">0/8</div><div class="l">S30 layers playing inside their preview</div></div>
+  </div>
+
+  <section id="layer-placement">
+    <h2>How a layer is placed, using Tarantula as the example</h2>
+    <p>The renderer pins the layer's <b>source cue</b> (<code>set_layer.src_cue_index</code>, 0:49.9 into Tarantula) to the <b>backbone cue plus offset</b> (Super Sharp Shooter 2:21.0). It then plays the source beat-locked at the backbone's tempo, and the layer is heard only where its drawn volume lanes (<code>volA</code> × <code>stemVoxA</code>) are above zero. The pink bands are the three vocal phrases that play. The green box is the preview.</p>
+    <div class="figwrap"><svg viewBox="0 0 1000 320" role="img" aria-label="How the Tarantula vocal layer is placed" class="fig"><text x="60" y="38" class="axishead">Set time — DJ Zinc – Super Sharp Shooter is the backbone here</text><line x1="60" y1="96" x2="940" y2="96" class="axis" /><line x1="60" y1="92" x2="60" y2="100" class="axis" /><text x="60" y="114" class="tick" text-anchor="middle">25:40</text><line x1="206.66666666666666" y1="92" x2="206.66666666666666" y2="100" class="axis" /><text x="206.66666666666666" y="114" class="tick" text-anchor="middle">26:00</text><line x1="353.3333333333333" y1="92" x2="353.3333333333333" y2="100" class="axis" /><text x="353.3333333333333" y="114" class="tick" text-anchor="middle">26:20</text><line x1="500" y1="92" x2="500" y2="100" class="axis" /><text x="500" y="114" class="tick" text-anchor="middle">26:40</text><line x1="646.6666666666666" y1="92" x2="646.6666666666666" y2="100" class="axis" /><text x="646.6666666666666" y="114" class="tick" text-anchor="middle">27:00</text><line x1="793.3333333333334" y1="92" x2="793.3333333333334" y2="100" class="axis" /><text x="793.3333333333334" y="114" class="tick" text-anchor="middle">27:20</text><line x1="940" y1="92" x2="940" y2="100" class="axis" /><text x="940" y="114" class="tick" text-anchor="middle">27:40</text><text x="60" y="206" class="axishead">Pendulum – Tarantula, position in the track</text><line x1="60" y1="246" x2="940" y2="246" class="axis" /><line x1="60" y1="242" x2="60" y2="250" class="axis" /><text x="60" y="264" class="tick" text-anchor="middle">0:00</text><line x1="148" y1="242" x2="148" y2="250" class="axis" /><text x="148" y="264" class="tick" text-anchor="middle">0:30</text><line x1="236" y1="242" x2="236" y2="250" class="axis" /><text x="236" y="264" class="tick" text-anchor="middle">1:00</text><line x1="324" y1="242" x2="324" y2="250" class="axis" /><text x="324" y="264" class="tick" text-anchor="middle">1:30</text><line x1="412" y1="242" x2="412" y2="250" class="axis" /><text x="412" y="264" class="tick" text-anchor="middle">2:00</text><line x1="500" y1="242" x2="500" y2="250" class="axis" /><text x="500" y="264" class="tick" text-anchor="middle">2:30</text><line x1="588" y1="242" x2="588" y2="250" class="axis" /><text x="588" y="264" class="tick" text-anchor="middle">3:00</text><line x1="676" y1="242" x2="676" y2="250" class="axis" /><text x="676" y="264" class="tick" text-anchor="middle">3:30</text><line x1="764" y1="242" x2="764" y2="250" class="axis" /><text x="764" y="264" class="tick" text-anchor="middle">4:00</text><line x1="852" y1="242" x2="852" y2="250" class="axis" /><text x="852" y="264" class="tick" text-anchor="middle">4:30</text><line x1="940" y1="242" x2="940" y2="250" class="axis" /><text x="940" y="264" class="tick" text-anchor="middle">5:00</text><g id="layer-preview"><title>Beatport preview window 2:12–4:12</title><rect x="448.65493333333336" y="220" width="352" height="34" class="preview" /><text x="624.6549333333334" y="282" class="note" text-anchor="middle">Beatport preview 2:12–4:12</text></g><g id="layer-phrase-1"><title>Vocal phrase 1: set 1571.9–1580.4 s = track 49.5–58.1 s</title><polygon points="293.59631480820883,102 356.0986140197506,102 230.4472,240 205.15893333333332,240" class="map" /><rect x="293.59631480820883" y="89" width="62.502299211541754" height="14" class="aud" /><rect x="205.15893333333332" y="239" width="25.288266666666686" height="14" class="aud" /></g><g id="layer-phrase-2"><title>Vocal phrase 2: set 1582.4–1591.3 s = track 60.2–69.1 s</title><polygon points="371.0988758302925,102 436.0951770055003,102 262.8136,240 236.51626666666667,240" class="map" /><rect x="371.0988758302925" y="89" width="64.9963011752078" height="14" class="aud" /><rect x="236.51626666666667" y="239" width="26.29733333333334" height="14" class="aud" /></g><g id="layer-phrase-3"><title>Vocal phrase 3: set 1593.7–1626.4 s = track 71.6–104.7 s</title><polygon points="453.5966907854178,102 693.6008797540843,102 366.9997333333334,240 269.8946666666667,240" class="map" /><rect x="453.5966907854178" y="89" width="240.00418896866648" height="14" class="aud" /><rect x="269.8946666666667" y="239" width="97.10506666666669" height="14" class="aud" /></g><text x="205.15893333333332" y="282" class="note" text-anchor="start">vocal plays 0:49–1:44</text><g id="layer-pin"><title>Source cue 0:49.9 pinned to backbone cue 2:21.0 + 0 bars</title><line x1="296.4745670744166" y1="72" x2="206.3234666666667" y2="252" class="pin" /><text x="292.4745670744166" y="70" class="pinlbl" text-anchor="end">pin: src cue ↔ backbone cue + offset</text></g><g id="layer-detection"><title>Recogniser: set 26:16–26:54 matched track 208–247 s inside the preview</title><polygon points="325.11466666666695,122 608.8853333333329,122 785.918382933333,228 671.0480170666665,228" class="detmap" /><rect x="325.11466666666695" y="121" width="283.770666666666" height="3" class="detline" /><rect x="671.0480170666665" y="227" width="114.87036586666648" height="3" class="detline" /><text x="791.918382933333" y="224" class="detlbl">matched here: the same vocal recurs</text></g></svg></div>
+    <p class="dim">Checked against the extractor's own <code>TrackStore.set_render_chain_spec</code>, run on a copy of the catalog: all 8 layer windows match its compiled volume envelopes to 0.1 s, and every source and backbone cue matches the catalog.</p>
+  </section>
+
+  <section id="s30-timeline">
+    <h2>S30 set: every play and what the recogniser reported</h2>
+    <p>Bars span where each track is audible in the set. For timeline tracks, that's from the start of the transition region into the track to the end of the region out of it. For layers, it's the stretch where the volume envelope is above zero. A white line inside a bar is the tracklist play that matched it. Hover a bar for details.</p>
+    <div class="legend"><span><i class="sw" style="background:rgba(108,194,138,.55)"></i>found</span><span><i class="sw" style="background:rgba(240,173,78,.75)"></i>missed (played part overlaps a fingerprinted preview ≥ 10 s)</span><span><i class="sw" style="background:#5a5a5a"></i>not recognisable from previews</span><span><i class="sw" style="border:1.5px dashed #e5534b"></i>false positive</span><span><i class="sw" style="background:#f2f2f2;height:2px"></i>detected span</span></div>
+    <div class="figwrap"><svg viewBox="0 0 1000 668" role="img" aria-label="S30 set timeline" class="fig timeline"><line x1="44" y1="16" x2="44" y2="662" class="grid" /><text x="44" y="11" class="tick" text-anchor="middle">0:00</text><line x1="196.54268178088253" y1="16" x2="196.54268178088253" y2="662" class="grid" /><text x="196.54268178088253" y="11" class="tick" text-anchor="middle">5:00</text><line x1="349.08536356176506" y1="16" x2="349.08536356176506" y2="662" class="grid" /><text x="349.08536356176506" y="11" class="tick" text-anchor="middle">10:00</text><line x1="501.6280453426476" y1="16" x2="501.6280453426476" y2="662" class="grid" /><text x="501.6280453426476" y="11" class="tick" text-anchor="middle">15:00</text><line x1="654.1707271235301" y1="16" x2="654.1707271235301" y2="662" class="grid" /><text x="654.1707271235301" y="11" class="tick" text-anchor="middle">20:00</text><line x1="806.7134089044127" y1="16" x2="806.7134089044127" y2="662" class="grid" /><text x="806.7134089044127" y="11" class="tick" text-anchor="middle">25:00</text><line x1="959.2560906852952" y1="16" x2="959.2560906852952" y2="662" class="grid" /><text x="959.2560906852952" y="11" class="tick" text-anchor="middle">30:00</text><g id="s30-row-0" class="row found"><title>Pendulum – Blood Sugar · found · set 0:00–4:47 · preview overlap 120 s</title><text x="38" y="36" class="rowid" text-anchor="end">0</text><rect x="44" y="28" width="146.39191885083613" height="11" rx="2" class="bar" /><rect x="78.8326129090586" y="32.5" width="39.819741652081575" height="2" class="det" /><text x="194.39191885083613" y="36.5" class="lbl" text-anchor="start">Pendulum – Blood Sugar</text></g><g id="s30-row-1" class="row na"><title>Chris SU – Victory (Muffler Remix) · na · set 2:01–3:50 · preview overlap 0 s</title><text x="38" y="51" class="rowid" text-anchor="end">1</text><rect x="105.80006804507397" y="43" width="55.47013543972176" height="11" rx="2" class="bar" /><text x="165.27020348479573" y="51.5" class="lbl" text-anchor="start">Chris SU – Victory (Muffler Remix)</text></g><g id="s30-row-2" class="row found"><title>DJ Trace – Mutationz (Concord Dawn Remix) · found · set 3:06–7:23 · preview overlap 109 s</title><text x="38" y="66" class="rowid" text-anchor="end">2</text><rect x="139.08217704394008" y="58" width="130.3547593464009" height="11" rx="2" class="bar" /><rect x="152.05310016388222" y="62.5" width="54.52892398060615" height="2" class="det" /><text x="273.436936390341" y="66.5" class="lbl" text-anchor="start">DJ Trace – Mutationz (Concord Dawn Remix)</text></g><g id="s30-row-3" class="row found"><title>LTJ Bukem – Atlantis (Marky &amp; S.P.Y. 12&quot; Rework) · found · set 5:28–7:56 · preview overlap 106 s</title><text x="38" y="81" class="rowid" text-anchor="end">3</text><rect x="211.19336698309488" y="73" width="74.88458923788775" height="11" rx="2" class="bar" /><rect x="213.2125460458974" y="77.5" width="17.772239378684674" height="2" class="det" /><text x="290.0779562209826" y="81.5" class="lbl" text-anchor="start">LTJ Bukem – Atlantis (Marky &amp; S.P.Y. 12&quot; Rework)</text></g><g id="s30-row-4" class="row found"><title>Metrik, Camo &amp; Krooked – Aurora (Justin Hawkes Remix) · found · set 6:01–7:28 · preview overlap 51 s</title><text x="38" y="96" class="rowid" text-anchor="end">4</text><rect x="227.8343868137366" y="88" width="44.37576397511705" height="11" rx="2" class="bar" /><rect x="233.27902735856657" y="92.5" width="31.802098297678413" height="2" class="det" /><text x="276.21015078885364" y="96.5" class="lbl" text-anchor="start">Metrik, Camo &amp; Krooked – Aurora (Justin Hawkes Remix</text></g><g id="s30-row-5" class="row found"><title>Sub Focus – Timewarp · found · set 6:45–8:01 · preview overlap 21 s</title><text x="38" y="111" class="rowid" text-anchor="end">5</text><rect x="250.02212434799796" y="103" width="38.8290982746843" height="11" rx="2" class="bar" /><rect x="258.04382327008693" y="107.5" width="24.370218841313772" height="2" class="det" /><text x="292.85122262268226" y="111.5" class="lbl" text-anchor="start">Sub Focus – Timewarp</text></g><g id="s30-row-6" class="row found"><title>Dimension – UK · found · set 7:28–9:28 · preview overlap 41 s</title><text x="38" y="126" class="rowid" text-anchor="end">6</text><rect x="272.21020279204055" y="118" width="61.01715938433131" height="11" rx="2" class="bar" /><rect x="284.2730289267037" y="122.5" width="29.768195873933337" height="2" class="det" /><text x="337.22736217637186" y="126.5" class="lbl" text-anchor="start">Dimension – UK</text></g><g id="s30-row-7" class="row found"><title>Dillinja – Hard Noize · found · set 8:34–10:56 · preview overlap 41 s</title><text x="38" y="141" class="rowid" text-anchor="end">7</text><rect x="305.4923291253023" y="133" width="72.0894757195286" height="11" rx="2" class="bar" /><rect x="313.18698578266407" y="137.5" width="20.08275253205909" height="2" class="det" /><text x="381.5818048448309" y="141.5" class="lbl" text-anchor="start">Dillinja – Hard Noize</text></g><g id="s30-row-8" class="row missed"><title>Marcus Intalex, St. Files – Universe (2020 Remaster) · missed · set 9:17–11:06 · preview overlap 32 s</title><text x="38" y="156" class="rowid" text-anchor="end">8</text><rect x="327.65874535290567" y="148" width="55.470066102139015" height="11" rx="2" class="bar" /><text x="387.1288114550447" y="156.5" class="lbl" text-anchor="start">Marcus Intalex, St. Files – Universe (2020 Remaster)</text></g><g id="s30-row-9" class="row found"><title>Fred V – Program And Control · found · set 10:23–13:01 · preview overlap 116 s</title><text x="38" y="171" class="rowid" text-anchor="end">9</text><rect x="360.94078501418903" y="163" width="80.43265324623684" height="11" rx="2" class="bar" /><rect x="378.2718633425073" y="167.5" width="9.567477001296993" height="2" class="det" /><text x="445.37343826042587" y="171.5" class="lbl" text-anchor="start">Fred V – Program And Control</text></g><g id="s30-row-10" class="row missed"><title>Askel &amp; Elere – Engram · missed · set 11:06–12:23 · preview overlap 34 s</title><text x="38" y="186" class="rowid" text-anchor="end">10</text><rect x="383.12986885317986" y="178" width="38.82909827468427" height="11" rx="2" class="bar" /><text x="425.9589671278641" y="186.5" class="lbl" text-anchor="start">Askel &amp; Elere – Engram</text></g><g id="s30-row-11" class="row missed"><title>Audio – Tiptop · missed · set 11:39–12:34 · preview overlap 25 s</title><text x="38" y="201" class="rowid" text-anchor="end">11</text><rect x="399.7709406870085" y="193" width="27.73495215722329" height="11" rx="2" class="bar" /><text x="431.50589284423177" y="201.5" class="lbl" text-anchor="start">Audio – Tiptop</text></g><g id="s30-row-12" class="row found"><title>Origin Unknown – Valley of the Shadows (Chase &amp; Status Remix) · found · set 11:50–13:17 · preview overlap 43 s</title><text x="38" y="216" class="rowid" text-anchor="end">12</text><rect x="405.31786640337606" y="208" width="44.37560218742425" height="11" rx="2" class="bar" /><rect x="416.9648230518341" y="212.5" width="28.32412515307425" height="2" class="det" /><text x="453.6934685908003" y="216.5" class="lbl" text-anchor="start">Origin Unknown – Valley of the Shadows (Chase &amp; Stat</text></g><g id="s30-row-13" class="row found"><title>The Prodigy – Voodoo People (Pendulum Mix) · found · set 12:34–14:45 · preview overlap 106 s</title><text x="38" y="231" class="rowid" text-anchor="end">13</text><rect x="427.50544214994466" y="223" width="66.56465135762363" height="11" rx="2" class="bar" /><rect x="432.73570244555356" y="227.5" width="40.254996770763114" height="2" class="det" /><text x="498.0700935075683" y="231.5" class="lbl" text-anchor="start">The Prodigy – Voodoo People (Pendulum Mix)</text></g><g id="s30-row-14" class="row found"><title>Delano – Big Bad &amp; Heavy (Logistics Original Dubplate Mix) · found · set 14:01–16:01 · preview overlap 59 s</title><text x="38" y="246" class="rowid" text-anchor="end">14</text><rect x="471.8820670667126" y="238" width="61.01715938433131" height="11" rx="2" class="bar" /><rect x="478.18121820171416" y="242.5" width="28.987177343215137" height="2" class="det" /><text x="536.8992264510439" y="246.5" class="lbl" text-anchor="start">Delano – Big Bad &amp; Heavy (Logistics Original Dubplat</text></g><g id="s30-row-15" class="row missed"><title>Moving Fusion – Turbulence · missed · set 14:45–16:45 · preview overlap 87 s</title><text x="38" y="261" class="rowid" text-anchor="end">15</text><rect x="494.0701801795466" y="253" width="61.01767941620108" height="11" rx="2" class="bar" /><text x="559.0878595957477" y="261.5" class="lbl" text-anchor="start">Moving Fusion – Turbulence</text></g><g id="s30-row-16" class="row found"><title>Logistics – Jungle Music · found · set 15:06–17:39 · preview overlap 90 s</title><text x="38" y="276" class="rowid" text-anchor="end">16</text><rect x="505.1648001038224" y="268" width="77.65813876804981" height="11" rx="2" class="bar" /><rect x="514.1609520777649" y="272.5" width="49.01298060740942" height="2" class="det" /><text x="586.8229388718722" y="276.5" class="lbl" text-anchor="start">Logistics – Jungle Music</text></g><g id="s30-row-17" class="row na"><title>Roni Size, Reprazent – Brown Paper Bag · na · set 16:56–18:23 · preview overlap 9 s</title><text x="38" y="291" class="rowid" text-anchor="end">17</text><rect x="560.6349124310167" y="283" width="44.37605288171119" height="11" rx="2" class="bar" /><text x="609.0109653127279" y="291.5" class="lbl" text-anchor="start">Roni Size, Reprazent – Brown Paper Bag</text></g><g id="s30-row-18" class="row found"><title>Thys, Samurai Breaks – Galactic Gary · found · set 17:39–19:06 · preview overlap 27 s</title><text x="38" y="306" class="rowid" text-anchor="end">18</text><rect x="582.8229388718722" y="298" width="44.375683081270495" height="11" rx="2" class="bar" /><rect x="592.0878895411348" y="302.5" width="16.177659878468376" height="2" class="det" /><text x="631.1986219531427" y="306.5" class="lbl" text-anchor="start">Thys, Samurai Breaks – Galactic Gary</text></g><g id="s30-row-19" class="row found"><title>Halogenix – Tekina · found · set 18:23–20:01 · preview overlap 33 s</title><text x="38" y="321" class="rowid" text-anchor="end">19</text><rect x="605.0105955122872" y="313" width="49.92289770423224" height="11" rx="2" class="bar" /><rect x="613.1225084075066" y="317.5" width="27.40480125754152" height="2" class="det" /><text x="658.9334932165194" y="321.5" class="lbl" text-anchor="start">Halogenix – Tekina</text></g><g id="s30-row-20" class="row found"><title>DJ Rashad, DJ Spinn, Alix Pere – Make It Worth · found · set 19:06–21:29 · preview overlap 52 s</title><text x="38" y="336" class="rowid" text-anchor="end">20</text><rect x="627.19846016545" y="328" width="72.51480978576251" height="11" rx="2" class="bar" /><rect x="634.3971277598804" y="332.5" width="16.320033048130654" height="2" class="det" /><text x="703.7132699512125" y="336.5" class="lbl" text-anchor="start">DJ Rashad, DJ Spinn, Alix Pere – Make It Worth</text></g><g id="s30-row-21" class="row found"><title>Fresh – The Gatekeeper · found · set 19:51–21:28 · preview overlap 29 s</title><text x="38" y="351" class="rowid" text-anchor="end">21</text><rect x="649.7902104592873" y="343" width="49.413058459171" height="11" rx="2" class="bar" /><rect x="654.9151354106209" y="347.5" width="14.737656962456981" height="2" class="det" /><text x="703.2032689184583" y="351.5" class="lbl" text-anchor="start">Fresh – The Gatekeeper</text></g><g id="s30-row-22" class="row missed"><title>Universal Project, Mortlock – Snorkel (2024 Mastered) · missed · set 20:34–22:34 · preview overlap 53 s</title><text x="38" y="366" class="rowid" text-anchor="end">22</text><rect x="671.4682358673889" y="358" width="61.01715938433131" height="11" rx="2" class="bar" /><text x="736.4853952517202" y="366.5" class="lbl" text-anchor="start">Universal Project, Mortlock – Snorkel (2024 Mastered</text></g><g id="s30-row-23" class="row found"><title>The Upbeats – DISORDER · found · set 21:17–23:06 · preview overlap 50 s</title><text x="38" y="381" class="rowid" text-anchor="end">23</text><rect x="693.6563489802229" y="373" width="55.46963274224754" height="11" rx="2" class="bar" /><rect x="722.2779836850586" y="377.5" width="9.43730724617717" height="2" class="det" /><text x="753.1259817224704" y="381.5" class="lbl" text-anchor="start">The Upbeats – DISORDER</text></g><g id="s30-row-24" class="row missed"><title>Wilkinson – Afterglow (Cyantific Remix) · missed · set 22:23–23:50 · preview overlap 54 s</title><text x="38" y="396" class="rowid" text-anchor="end">24</text><rect x="726.9379552816149" y="388" width="44.37610488489804" height="11" rx="2" class="bar" /><text x="775.314060166513" y="396.5" class="lbl" text-anchor="start">Wilkinson – Afterglow (Cyantific Remix)</text></g><g id="s30-row-25" class="row found"><title>Klax – Lucid · found · set 23:06–25:17 · preview overlap 34 s</title><text x="38" y="411" class="rowid" text-anchor="end">25</text><rect x="749.1260337256574" y="403" width="66.56407932256684" height="11" rx="2" class="bar" /><rect x="754.9831346588799" y="407.5" width="39.225842144347894" height="2" class="det" /><text x="819.6901130482242" y="411.5" class="lbl" text-anchor="start">Klax – Lucid</text></g><g id="s30-row-26" class="row found"><title>London Elektricity – Billion Dollar Gravy · found · set 23:17–26:01 · preview overlap 120 s</title><text x="38" y="426" class="rowid" text-anchor="end">26</text><rect x="754.6730403358713" y="418" width="83.20500381403258" height="11" rx="2" class="bar" /><rect x="797.8496621417315" y="422.5" width="25.387170053186424" height="2" class="det" /><text x="750.6730403358713" y="426.5" class="lbl" text-anchor="end">London Elektricity – Billion Dollar Gravy</text></g><g id="s30-row-27" class="row found"><title>DJ Zinc – Super Sharp Shooter (Original Mix) · found · set 24:01–28:39 · preview overlap 120 s</title><text x="38" y="441" class="rowid" text-anchor="end">27</text><rect x="776.8609714375509" y="433" width="141.44898069994645" height="11" rx="2" class="bar" /><rect x="843.9053486250157" y="437.5" width="39.66109726302943" height="2" class="det" /><text x="772.8609714375509" y="441.5" class="lbl" text-anchor="end">DJ Zinc – Super Sharp Shooter (Original Mix)</text></g><g id="s30-row-28" class="row found"><title>Renegade – Terrorist (P.A. Mix) · found · set 26:54–30:01 · preview overlap 51 s</title><text x="38" y="456" class="rowid" text-anchor="end">28</text><rect x="865.096174310052" y="448" width="94.91014982054287" height="11" rx="2" class="bar" /><rect x="891.1040882704445" y="452.5" width="22.096315931566664" height="2" class="det" /><text x="861.096174310052" y="456.5" class="lbl" text-anchor="end">Renegade – Terrorist (P.A. Mix)</text></g><g id="s30-row-29" class="row found"><title>VIER – LOOK AT THE TREES · found · set 28:45–30:56 · preview overlap 65 s</title><text x="38" y="471" class="rowid" text-anchor="end">29</text><rect x="921.1772778590974" y="463" width="66.82272214090256" height="11" rx="2" class="bar" /><rect x="956.6404921683591" y="467.5" width="5.841367760996036" height="2" class="det" /><text x="917.1772778590974" y="471.5" class="lbl" text-anchor="end">VIER – LOOK AT THE TREES</text></g><text x="44" y="487" class="lanehead">Layers (borrowed track or its stems over a backbone)</text><g id="s30-row-L7" class="row na"><title>J Majik – Love Is Not A Game feat Kathy Brown - Original Mix · na · set 10:32–11:08 · preview overlap 0 s</title><text x="38" y="500" class="rowid" text-anchor="end">L7</text><rect x="365.7177428924544" y="492" width="18.104866999781336" height="11" rx="2" class="bar" /><text x="387.82260989223573" y="500.5" class="lbl" text-anchor="start">J Majik – Love Is Not A Game feat Kathy Brown - Orig</text></g><g id="s30-row-L8" class="row na"><title>Konflict – Messiah · na · set 7:17–8:22 · preview overlap 0 s</title><text x="38" y="515" class="rowid" text-anchor="end">L8</text><rect x="266.6360148930562" y="507" width="33.108692850516604" height="11" rx="2" class="bar" /><text x="303.7447077435728" y="515.5" class="lbl" text-anchor="start">Konflict – Messiah</text></g><g id="s30-row-L9" class="row na"><title>Concord Dawn – Morning Light · na · set 2:32–3:18 · preview overlap 0 s</title><text x="38" y="530" class="rowid" text-anchor="end">L9</text><rect x="121.70361494340594" y="522" width="23.0689651409414" height="11" rx="2" class="bar" /><text x="148.77258008434734" y="530.5" class="lbl" text-anchor="start">Concord Dawn – Morning Light</text></g><g id="s30-row-L14" class="row found"><title>Pendulum – Tarantula · found · set 26:11–27:06 · preview overlap 0 s</title><text x="38" y="545" class="rowid" text-anchor="end">L14</text><rect x="843.249436921398" y="537" width="27.735033051069536" height="11" rx="2" class="bar" /><rect x="845.434843247672" y="541.5" width="19.675972047309983" height="2" class="det" /><text x="874.9844699724675" y="545.5" class="lbl" text-anchor="start">Pendulum – Tarantula</text></g><g id="s30-row-L15" class="row na"><title>Goldie – Inner City Life feat. Diane Charlemagne (2017 Rebuild) · na · set 22:28–23:06 · preview overlap 0 s</title><text x="38" y="560" class="rowid" text-anchor="end">L15</text><rect x="729.6831003530492" y="552" width="19.414424389969327" height="11" rx="2" class="bar" /><text x="725.6831003530492" y="560.5" class="lbl" text-anchor="end">Goldie – Inner City Life feat. Diane Charlemagne (20</text></g><g id="s30-row-L16" class="row na"><title>Adam F – Circles (7'' Edit) · na · set 17:00–17:14 · preview overlap 0 s</title><text x="38" y="575" class="rowid" text-anchor="end">L16</text><rect x="563.0326990074158" y="567" width="6.767335259968377" height="11" rx="2" class="bar" /><text x="573.8000342673841" y="575.5" class="lbl" text-anchor="start">Adam F – Circles (7'' Edit)</text></g><g id="s30-row-L17" class="row na"><title>Bush – Swallowed (Goldie Tosted from Both Sides Mix) · na · set 11:14–12:23 · preview overlap 0 s</title><text x="38" y="590" class="rowid" text-anchor="end">L17</text><rect x="387.2142315793013" y="582" width="34.668864237999685" height="11" rx="2" class="bar" /><text x="425.883095817301" y="590.5" class="lbl" text-anchor="start">Bush – Swallowed (Goldie Tosted from Both Sides Mix)</text></g><g id="s30-row-L21" class="row na"><title>Apollo 440 – Ain't Talkin' Bout' Dub · na · set 15:36–17:07 · preview overlap 0 s</title><text x="38" y="605" class="rowid" text-anchor="end">L21</text><rect x="520.2775593916081" y="597" width="46.05732770682653" height="11" rx="2" class="bar" /><text x="570.3348870984346" y="605.5" class="lbl" text-anchor="start">Apollo 440 – Ain't Talkin' Bout' Dub</text></g><text x="44" y="621" class="lanehead">False positives (not in the set)</text><g id="s30-fp-0" class="row fp"><title>Jolliffe, Sydney Bryce – Everything I Know · score 11</title><rect x="353.26299914013754" y="626" width="20.75800813674249" height="11" rx="2" class="bar" /><text x="349.26299914013754" y="634.5" class="lbl" text-anchor="end">Jolliffe, Sydney Bryce – Everything I Know</text></g><g id="s30-fp-1" class="row fp"><title>Mampi Swift – The Sound · score 25</title><rect x="899.3007150381372" y="641" width="25.533611027695997" height="11" rx="2" class="bar" /><text x="895.3007150381372" y="649.5" class="lbl" text-anchor="end">Mampi Swift – The Sound</text></g></svg></div>
+  </section>
+
+  <section id="all-sets">
+    <h2>All five sets</h2>
+    <p>Sets A–D are renders of S30 rows 9–20 at other tempos and stretch modes, made with dj-automation. They have no layers or beat jumps, and their scores are unchanged by the rebuild.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Set</th><th>Tempo shift</th><th>Recall</th><th>Precision</th><th>Tempo err.</th><th>Missed</th><th>False positives</th></tr></thead>
+      <tbody><tr id="set-s30-564"><td><b>S30 Warm Up — render 564</b><div class="dim">30 tracks + 8 layers, keylock, 176 BPM</div></td><td class="num">0 … +7.4 %</td>
+  <td class="num"><b>22/28</b> <span class="dim">79 %</span></td>
+  <td class="num"><b>23/25</b> <span class="dim">92 %</span></td>
+  <td class="num">0.0005</td>
+  <td><span class="chip miss">Universe (2020 Remaster)</span> <span class="chip miss">Engram</span> <span class="chip miss">Tiptop</span> <span class="chip miss">Turbulence</span> <span class="chip miss">Snorkel (2024 Mastered)</span> <span class="chip miss">Afterglow (Cyantific Remix)</span></td>
+  <td><span class="chip fp">Everything I Know</span> <span class="chip fp">The Sound</span></td></tr>
+<tr id="set-A_varispeed"><td><b>A — vinyl-style</b><div class="dim">rows 9–20 @ 168 BPM</div></td><td class="num">−3.4 … +1.8 %</td>
+  <td class="num"><b>9/11</b> <span class="dim">82 %</span></td>
+  <td class="num"><b>10/10</b> <span class="dim">100 %</span></td>
+  <td class="num">0.0005</td>
+  <td><span class="chip miss">Engram</span> <span class="chip miss">Brown Paper Bag</span></td>
+  <td></td></tr>
+<tr id="set-B_keylock_fast"><td><b>B — keylock fast</b><div class="dim">rows 9–19 @ 183.5 BPM</div></td><td class="num">+5.5 … +8.1 %</td>
+  <td class="num"><b>9/11</b> <span class="dim">82 %</span></td>
+  <td class="num"><b>10/10</b> <span class="dim">100 %</span></td>
+  <td class="num">0.0004</td>
+  <td><span class="chip miss">Engram</span> <span class="chip miss">Turbulence</span></td>
+  <td></td></tr>
+<tr id="set-C_keylock_pitchshift"><td><b>C — keylock + ±1 semitone</b><div class="dim">rows 9–20 @ 176 BPM</div></td><td class="num">+1.1 … +6.7 %</td>
+  <td class="num"><b>8/11</b> <span class="dim">73 %</span></td>
+  <td class="num"><b>9/13</b> <span class="dim">69 %</span></td>
+  <td class="num">0.0005</td>
+  <td><span class="chip miss">Engram</span> <span class="chip miss">Turbulence</span> <span class="chip miss">Brown Paper Bag</span></td>
+  <td><span class="chip fp">Sidereal</span> <span class="chip fp">Jungle Music - Drs &amp; Dynamite Mc Remix</span> <span class="chip fp">Raaen</span> <span class="chip fp">The Shroud</span></td></tr>
+<tr id="set-D_varispeed_fast"><td><b>D — vinyl-style fast</b><div class="dim">rows 9–19 @ 183.5 BPM</div></td><td class="num">+5.5 … +8.1 %</td>
+  <td class="num"><b>8/11</b> <span class="dim">73 %</span></td>
+  <td class="num"><b>8/10</b> <span class="dim">80 %</span></td>
+  <td class="num">0.0003</td>
+  <td><span class="chip miss">Engram</span> <span class="chip miss">Turbulence</span> <span class="chip miss">Brown Paper Bag</span></td>
+  <td><span class="chip fp">Valley of the Shadows (Chase &amp; Status Remix (Mixed))</span> <span class="chip fp">Jungle Music - Drs &amp; Dynamite Mc Remix</span></td></tr></tbody>
+    </table></div>
+    <p class="dim">Engram is missed in every render: it is buried under another track for its whole preview overlap and leaves only chance-level evidence. A ±1 semitone pitch shift (C) costs one track of recall against A, but it adds four chance hits.</p>
+  </section>
+
+  <section id="s30-plays">
+    <h2>S30 plays in detail</h2>
+    <p>"Track position" is the original part of the track that plays, with beat jumps undone (a forward jump cuts bars, a backward one replays them). Overlap is measured against the preview window.</p>
+    <div class="filters" id="filters">
+      <button class="on" data-f="all">All 38</button>
+      <button data-f="found">Found 23</button>
+      <button data-f="missed">Missed 6</button>
+      <button data-f="na">Not in preview 9</button>
+    </div>
+    <div class="tablewrap"><table id="s30-table">
+      <thead><tr><th>Row</th><th>Status</th><th>Track</th><th>Set time</th><th>Track position</th><th>Preview</th><th>Overlap</th><th>Tempo</th><th>Notes</th></tr></thead>
+      <tbody><tr id="s30-play-0" class="found"><td class="num">0</td><td><span class="st found">● found</span></td>
+    <td><b>Pendulum</b> – Blood Sugar</td>
+    <td class="num">0:00–4:47</td>
+    <td class="num">0:00–4:47</td>
+    <td class="num">2:06–4:06</td>
+    <td class="num">120 s</td>
+    <td class="num">×1.000</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-1" class="na"><td class="num">1</td><td><span class="st na">○ not in preview</span></td>
+    <td><b>Chris SU</b> – Victory (Muffler Remix)</td>
+    <td class="num">2:01–3:50</td>
+    <td class="num">1:39–3:29</td>
+    <td class="num">—</td>
+    <td class="num">0 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim">preview not fingerprinted</td></tr>
+<tr id="s30-play-2" class="found"><td class="num">2</td><td><span class="st found">● found</span></td>
+    <td><b>DJ Trace</b> – Mutationz (Concord Dawn Remix)</td>
+    <td class="num">3:06–7:23</td>
+    <td class="num">2:01–3:20<br>3:31–6:00<br>6:11–6:43</td>
+    <td class="num">3:07–5:07</td>
+    <td class="num">109 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim">2 beat jumps</td></tr>
+<tr id="s30-play-3" class="found"><td class="num">3</td><td><span class="st found">● found</span></td>
+    <td><b>LTJ Bukem</b> – Atlantis (Marky &amp; S.P.Y. 12&quot; Rework)</td>
+    <td class="num">5:28–7:56</td>
+    <td class="num">1:18–1:34<br>1:45–4:00</td>
+    <td class="num">2:14–4:14</td>
+    <td class="num">106 s</td>
+    <td class="num">×1.023</td>
+    <td class="dim">1 beat jump</td></tr>
+<tr id="s30-play-4" class="found"><td class="num">4</td><td><span class="st found">● found</span></td>
+    <td><b>Metrik, Camo &amp; Krooked</b> – Aurora (Justin Hawkes Remix)</td>
+    <td class="num">6:01–7:28</td>
+    <td class="num">0:55–2:23</td>
+    <td class="num">1:32–3:32</td>
+    <td class="num">51 s</td>
+    <td class="num">×1.006</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-5" class="found"><td class="num">5</td><td><span class="st found">● found</span></td>
+    <td><b>Sub Focus</b> – Timewarp</td>
+    <td class="num">6:45–8:01</td>
+    <td class="num">0:55–2:12</td>
+    <td class="num">2:08–4:08</td>
+    <td class="num">21 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-6" class="found"><td class="num">6</td><td><span class="st found">● found</span></td>
+    <td><b>Dimension</b> – UK</td>
+    <td class="num">7:28–9:28</td>
+    <td class="num">0:33–2:34</td>
+    <td class="num">1:53–3:53</td>
+    <td class="num">41 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-7" class="found"><td class="num">7</td><td><span class="st found">● found</span></td>
+    <td><b>Dillinja</b> – Hard Noize</td>
+    <td class="num">8:34–10:56</td>
+    <td class="num">0:33–2:58</td>
+    <td class="num">2:17–4:17</td>
+    <td class="num">41 s</td>
+    <td class="num">×1.023</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-8" class="missed"><td class="num">8</td><td><span class="st missed">▲ missed</span></td>
+    <td><b>Marcus Intalex, St. Files</b> – Universe (2020 Remaster)</td>
+    <td class="num">9:17–11:06</td>
+    <td class="num">1:17–1:29<br>1:51–3:29</td>
+    <td class="num">2:57–4:57</td>
+    <td class="num">32 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim">1 beat jump</td></tr>
+<tr id="s30-play-9" class="found"><td class="num">9</td><td><span class="st found">● found</span></td>
+    <td><b>Fred V</b> – Program And Control</td>
+    <td class="num">10:23–13:01</td>
+    <td class="num">0:55–3:35</td>
+    <td class="num">1:39–3:39</td>
+    <td class="num">116 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-10" class="missed"><td class="num">10</td><td><span class="st missed">▲ missed</span></td>
+    <td><b>Askel &amp; Elere</b> – Engram</td>
+    <td class="num">11:06–12:23</td>
+    <td class="num">0:55–2:12</td>
+    <td class="num">1:38–3:08</td>
+    <td class="num">34 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-11" class="missed"><td class="num">11</td><td><span class="st missed">▲ missed</span></td>
+    <td><b>Audio</b> – Tiptop</td>
+    <td class="num">11:39–12:34</td>
+    <td class="num">0:44–1:40</td>
+    <td class="num">1:15–3:09</td>
+    <td class="num">25 s</td>
+    <td class="num">×1.023</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-12" class="found"><td class="num">12</td><td><span class="st found">● found</span></td>
+    <td><b>Origin Unknown</b> – Valley of the Shadows (Chase &amp; Status Remix)</td>
+    <td class="num">11:50–13:17</td>
+    <td class="num">0:55–2:23</td>
+    <td class="num">1:40–3:40</td>
+    <td class="num">43 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-13" class="found"><td class="num">13</td><td><span class="st found">● found</span></td>
+    <td><b>The Prodigy</b> – Voodoo People (Pendulum Mix)</td>
+    <td class="num">12:34–14:45</td>
+    <td class="num">0:43–2:56</td>
+    <td class="num">0:30–2:30</td>
+    <td class="num">106 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-14" class="found"><td class="num">14</td><td><span class="st found">● found</span></td>
+    <td><b>Delano</b> – Big Bad &amp; Heavy (Logistics Original Dubplate Mix)</td>
+    <td class="num">14:01–16:01</td>
+    <td class="num">1:28–3:29</td>
+    <td class="num">2:30–4:30</td>
+    <td class="num">59 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-15" class="missed"><td class="num">15</td><td><span class="st missed">▲ missed</span></td>
+    <td><b>Moving Fusion</b> – Turbulence</td>
+    <td class="num">14:45–16:45</td>
+    <td class="num">1:32–1:45<br>1:56–3:47</td>
+    <td class="num">2:20–4:20</td>
+    <td class="num">87 s</td>
+    <td class="num">×1.029</td>
+    <td class="dim">1 beat jump</td></tr>
+<tr id="s30-play-16" class="found"><td class="num">16</td><td><span class="st found">● found</span></td>
+    <td><b>Logistics</b> – Jungle Music</td>
+    <td class="num">15:06–17:39</td>
+    <td class="num">0:33–3:09</td>
+    <td class="num">1:40–3:40</td>
+    <td class="num">90 s</td>
+    <td class="num">×1.023</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-17" class="na"><td class="num">17</td><td><span class="st na">○ not in preview</span></td>
+    <td><b>Roni Size, Reprazent</b> – Brown Paper Bag</td>
+    <td class="num">16:56–18:23</td>
+    <td class="num">5:27–6:58</td>
+    <td class="num">3:37–5:07</td>
+    <td class="num">9 s</td>
+    <td class="num">×1.035</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-18" class="found"><td class="num">18</td><td><span class="st found">● found</span></td>
+    <td><b>Thys, Samurai Breaks</b> – Galactic Gary</td>
+    <td class="num">17:39–19:06</td>
+    <td class="num">0:33–2:02</td>
+    <td class="num">1:36–3:36</td>
+    <td class="num">27 s</td>
+    <td class="num">×1.023</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-19" class="found"><td class="num">19</td><td><span class="st found">● found</span></td>
+    <td><b>Halogenix</b> – Tekina</td>
+    <td class="num">18:23–20:01</td>
+    <td class="num">0:33–2:14</td>
+    <td class="num">1:41–3:41</td>
+    <td class="num">33 s</td>
+    <td class="num">×1.023</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-20" class="found"><td class="num">20</td><td><span class="st found">● found</span></td>
+    <td><b>DJ Rashad, DJ Spinn, Alix Pere</b> – Make It Worth</td>
+    <td class="num">19:06–21:29</td>
+    <td class="num">0:35–3:06</td>
+    <td class="num">2:13–4:13</td>
+    <td class="num">52 s</td>
+    <td class="num">×1.060</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-21" class="found"><td class="num">21</td><td><span class="st found">● found</span></td>
+    <td><b>Fresh</b> – The Gatekeeper</td>
+    <td class="num">19:51–21:28</td>
+    <td class="num">0:58–2:37</td>
+    <td class="num">2:09–4:09</td>
+    <td class="num">29 s</td>
+    <td class="num">×1.023</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-22" class="missed"><td class="num">22</td><td><span class="st missed">▲ missed</span></td>
+    <td><b>Universal Project, Mortlock</b> – Snorkel (2024 Mastered)</td>
+    <td class="num">20:34–22:34</td>
+    <td class="num">1:17–3:18</td>
+    <td class="num">2:25–3:55</td>
+    <td class="num">53 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-23" class="found"><td class="num">23</td><td><span class="st found">● found</span></td>
+    <td><b>The Upbeats</b> – DISORDER</td>
+    <td class="num">21:17–23:06</td>
+    <td class="num">0:55–2:46</td>
+    <td class="num">1:56–3:56</td>
+    <td class="num">50 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-24" class="missed"><td class="num">24</td><td><span class="st missed">▲ missed</span></td>
+    <td><b>Wilkinson</b> – Afterglow (Cyantific Remix)</td>
+    <td class="num">22:23–23:50</td>
+    <td class="num">0:55–2:23</td>
+    <td class="num">1:29–3:29</td>
+    <td class="num">54 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-25" class="found"><td class="num">25</td><td><span class="st found">● found</span></td>
+    <td><b>Klax</b> – Lucid</td>
+    <td class="num">23:06–25:17</td>
+    <td class="num">0:33–2:47</td>
+    <td class="num">2:13–4:13</td>
+    <td class="num">34 s</td>
+    <td class="num">×1.023</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-26" class="found"><td class="num">26</td><td><span class="st found">● found</span></td>
+    <td><b>London Elektricity</b> – Billion Dollar Gravy</td>
+    <td class="num">23:17–26:01</td>
+    <td class="num">2:02–4:48</td>
+    <td class="num">2:33–4:33</td>
+    <td class="num">120 s</td>
+    <td class="num">×1.017</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-27" class="found"><td class="num">27</td><td><span class="st found">● found</span></td>
+    <td><b>DJ Zinc</b> – Super Sharp Shooter (Original Mix)</td>
+    <td class="num">24:01–28:39</td>
+    <td class="num">0:00–4:59</td>
+    <td class="num">2:35–4:35</td>
+    <td class="num">120 s</td>
+    <td class="num">×1.074</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-28" class="found"><td class="num">28</td><td><span class="st found">● found</span></td>
+    <td><b>Renegade</b> – Terrorist (P.A. Mix)</td>
+    <td class="num">26:54–30:01</td>
+    <td class="num">0:00–3:19</td>
+    <td class="num">2:28–4:28</td>
+    <td class="num">51 s</td>
+    <td class="num">×1.067</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-29" class="found"><td class="num">29</td><td><span class="st found">● found</span></td>
+    <td><b>VIER</b> – LOOK AT THE TREES</td>
+    <td class="num">28:45–30:56</td>
+    <td class="num">0:00–2:18</td>
+    <td class="num">1:13–2:43</td>
+    <td class="num">65 s</td>
+    <td class="num">×1.056</td>
+    <td class="dim"></td></tr>
+<tr id="s30-play-L7" class="na"><td class="num">L7</td><td><span class="st na">○ not in preview</span></td>
+    <td><b>J Majik</b> – Love Is Not A Game feat Kathy Brown - Original Mix</td>
+    <td class="num">10:32–11:08</td>
+    <td class="num">1:51–2:27</td>
+    <td class="num">—</td>
+    <td class="num">0 s</td>
+    <td class="num">×1.023</td>
+    <td class="dim">layer (vocals) over row 9 · not in fomoplayer</td></tr>
+<tr id="s30-play-L8" class="na"><td class="num">L8</td><td><span class="st na">○ not in preview</span></td>
+    <td><b>Konflict</b> – Messiah</td>
+    <td class="num">7:17–8:22</td>
+    <td class="num">1:27–2:33</td>
+    <td class="num">3:06–5:06</td>
+    <td class="num">0 s</td>
+    <td class="num">×1.006</td>
+    <td class="dim">layer over row 6</td></tr>
+<tr id="s30-play-L9" class="na"><td class="num">L9</td><td><span class="st na">○ not in preview</span></td>
+    <td><b>Concord Dawn</b> – Morning Light</td>
+    <td class="num">2:32–3:18</td>
+    <td class="num">0:00–0:45</td>
+    <td class="num">2:38–4:38</td>
+    <td class="num">0 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim">layer (vocals) over row 1</td></tr>
+<tr id="s30-play-L14" class="found"><td class="num">L14</td><td><span class="st found">● found</span></td>
+    <td><b>Pendulum</b> – Tarantula</td>
+    <td class="num">26:11–27:06</td>
+    <td class="num">0:49–0:58<br>1:00–1:09<br>1:11–1:44</td>
+    <td class="num">2:12–4:12</td>
+    <td class="num">0 s</td>
+    <td class="num">×1.011</td>
+    <td class="dim">layer (vocals) over row 27 · found via the same vocal recurring in the preview</td></tr>
+<tr id="s30-play-L15" class="na"><td class="num">L15</td><td><span class="st na">○ not in preview</span></td>
+    <td><b>Goldie</b> – Inner City Life feat. Diane Charlemagne (2017 Rebuild)</td>
+    <td class="num">22:28–23:06</td>
+    <td class="num">0:18–1:02</td>
+    <td class="num">2:49–4:49</td>
+    <td class="num">0 s</td>
+    <td class="num">×1.135</td>
+    <td class="dim">layer (vocals) over row 24 · ×1.135 outside ±8 %</td></tr>
+<tr id="s30-play-L16" class="na"><td class="num">L16</td><td><span class="st na">○ not in preview</span></td>
+    <td><b>Adam F</b> – Circles (7'' Edit)</td>
+    <td class="num">17:00–17:14</td>
+    <td class="num">0:17–0:31</td>
+    <td class="num">1:16–3:16</td>
+    <td class="num">0 s</td>
+    <td class="num">×1.066</td>
+    <td class="dim">layer (vocals) over row 17 · preview not fingerprinted</td></tr>
+<tr id="s30-play-L17" class="na"><td class="num">L17</td><td><span class="st na">○ not in preview</span></td>
+    <td><b>Bush</b> – Swallowed (Goldie Tosted from Both Sides Mix)</td>
+    <td class="num">11:14–12:23</td>
+    <td class="num">3:47–4:59</td>
+    <td class="num">—</td>
+    <td class="num">0 s</td>
+    <td class="num">×1.052</td>
+    <td class="dim">layer (vocals) over row 10 · not in fomoplayer</td></tr>
+<tr id="s30-play-L21" class="na"><td class="num">L21</td><td><span class="st na">○ not in preview</span></td>
+    <td><b>Apollo 440</b> – Ain't Talkin' Bout' Dub</td>
+    <td class="num">15:36–17:07</td>
+    <td class="num">0:58–2:31</td>
+    <td class="num">—</td>
+    <td class="num">0 s</td>
+    <td class="num">×1.024</td>
+    <td class="dim">layer over row 16 · not in fomoplayer</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section id="corrections">
+    <h2>What my earlier answer got wrong</h2>
+    <div class="two">
+      <div class="card was" id="was"><h3>Before</h3><ul>
+        <li>Used only the backbone cue for layers and ignored <code>src_cue_index</code>, then called the layer's native position "unreliable".</li>
+        <li>Treated the four one-second timeline rows as unknown and ended Klax at the start of its outgoing transition region (1474 s).</li>
+        <li>Ignored <code>set_beat_jump</code>.</li>
+        <li>Result: 12 plays scored as "unknown coverage", outside recall.</li>
+      </ul></div>
+      <div class="card now" id="now"><h3>Now</h3><ul>
+        <li>Layers: the source cue is pinned to the backbone cue, the track is beat-locked, and it is audible where its volume lanes are non-zero.</li>
+        <li>Tracks: audible across the transition regions on both sides. Klax plays 0:34–2:48 of the track, 34 s of it inside the preview, and it is found.</li>
+        <li>Beat jumps on Mutationz, Atlantis, Universe and Turbulence are mapped back to the original track positions.</li>
+        <li>Detections at a "wrong" position turned out to be repeats of the same audio, not bad data.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section id="anchor-note">
+    <h2>Why S30's anchor error looks large</h2>
+    <p>The median anchor error is 54.6 s, but each error is an exact multiple of 8 bars at 176 BPM (10.9 s): 10.8, 43.5, 65.7, 87.2, 109.3, 142 s. Some tracks overlap their preview only in a looped intro or outro. There, the strongest alignment is another repeat of the same loop, while the tempo is still exact. Where the matcher locks onto the instance that actually played, the error is under 1.5 s: Fred V, Aurora, Voodoo People, Jungle Music, Super Sharp Shooter and VIER. This is inference from the numbers. I haven't checked it loop by loop.</p>
+  </section>
+
+  <section id="left-out">
+    <h2>Left out, and where to look next</h2>
+    <ul>
+      <li>The render fingerprint I recomputed doesn't match render 564's. The layers and beat jumps are identical in the backup from the day after the render, so the difference is probably a Traktor cue or a setting. I didn't track it down.</li>
+      <li>Running the extractor's code regenerated 5 missing transition bundles in <code>~/Library/Application Support/track-feature-extractor/transition_bundles/</code>. The catalog itself was only read from a copy.</li>
+      <li>Nothing is committed, and the production matcher change is still not deployed.</li>
+      <li>Code: <code>packages/back/scripts/dj-set/lib/akin-geometry.js</code> (new), <code>truth-from-akin.js</code> and <code>evaluate.js</code> (updated), and tests in <code>test/tests/dj-set/akin-geometry.js</code>. All 18 dj-set tests pass.</li>
+    </ul>
+    <pre>cd packages/back
+DATABASE_URL="$(railway variables -s pgvector -e production --kv | sed -n 's/^DATABASE_URL=//p')" \
+  node scripts/dj-set/truth-from-akin.js --catalog=/Volumes/DJ/AKIN/tracks.akincatalog --render-id=564 --output=/tmp/s30.truth.json
+node scripts/dj-set/evaluate.js \
+  --tracklist=/private/tmp/claude-401/-Users-agent-Documents-Projects-Code-fomoplayer/f61e7444-719e-4da4-91f1-187164266264/scratchpad/sets/s30-564.tracklist.json \
+  --truth=/tmp/s30.truth.json
+NODE_ENV=test npx dotenv -e .env.test -- npx cascade-test ./test/tests/dj-set</pre>
+  </section>
+</main>
+<script>
+  document.getElementById('filters').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return
+    document.querySelectorAll('#filters button').forEach((x) => x.classList.toggle('on', x === b))
+    document.querySelectorAll('#s30-table tbody tr').forEach((tr) => {
+      tr.style.display = b.dataset.f === 'all' || tr.classList.contains(b.dataset.f) ? '' : 'none'
+    })
+  })
+</script>
+</body>
+</html>

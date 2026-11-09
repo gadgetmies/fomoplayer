@@ -1,7 +1,7 @@
 'use strict'
 
-// conf@10 is the last CJS-compatible version of the conf package
-const Conf = require('conf')
+// conf is ESM-only; loaded via require(esm), which exposes the class as `default`.
+const Conf = require('conf').default
 
 const conf = new Conf({ projectName: 'fomoplayer' })
 

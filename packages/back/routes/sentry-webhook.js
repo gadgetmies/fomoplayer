@@ -13,7 +13,6 @@
 
 const crypto = require('crypto')
 const express = require('express')
-const expressPromiseRouter = require('express-promise-router')
 const defaultLogger = require('fomoplayer_shared').logger(__filename)
 
 const {
@@ -60,7 +59,7 @@ const createSentryWebhookRouter = ({
   logger = defaultLogger,
   now = () => new Date(),
 } = {}) => {
-  const router = expressPromiseRouter()
+  const router = express.Router()
 
   // Raw-body parser so HMAC verification matches the exact bytes Sentry
   // signed; bodyParser.json() would otherwise re-stringify and break the

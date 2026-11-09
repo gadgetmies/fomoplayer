@@ -4,6 +4,7 @@ const logger = require('fomoplayer_shared').logger(__filename)
 const R = require('ramda')
 const BPromise = require('bluebird')
 const config = require('../../config')
+const { matchFingerprints } = require('../shared/db/fingerprint-matching')
 const {
   getCachedMislabeled,
   ignoreCachedMislabeled,
@@ -170,18 +171,30 @@ SELECT track_id
     JSON_BUILD_OBJECT('preview_id', store__track_preview_id,
                       'url', store__track_preview_url,
                       'start_ms', store__track_preview_start_ms,
-                      'end_ms', store__track_preview_end_ms)
+                      'end_ms', store__track_preview_end_ms,
+                      'store', store_name,
+                      'store_track_id', store__track_store_id,
+                      -- Bandcamp stream URLs expire and aren't stored; the analyser
+                      -- resolves them from the release page.
+                      'release_url', CASE WHEN store__track_preview_url IS NULL THEN
+                        (SELECT store__release_url
+                         FROM release__track rt
+                           JOIN store__release sr ON sr.release_id = rt.release_id
+                         WHERE rt.track_id = track.track_id
+                           AND sr.store_id = store.store_id
+                         LIMIT 1) END)
        ) AS previews
 FROM
   track
   NATURAL JOIN store__track
+  NATURAL JOIN store
   NATURAL JOIN store__track_preview p
   NATURAL LEFT JOIN track__cart
   NATURAL LEFT JOIN cart
 WHERE NOT EXISTS (SELECT 1 FROM store__track_preview_embedding e
                        WHERE p.store__track_preview_id = e.store__track_preview_id
                          AND store__track_preview_embedding_type = ${model})
-  AND store__track_preview_url IS NOT NULL
+  AND (store__track_preview_url IS NOT NULL OR store_name = 'Bandcamp')
   AND NOT store__track_preview_missing
 GROUP BY track_id, track_isrc`
       // language=
@@ -251,10 +264,20 @@ SELECT store__track_id               AS id
      , store__track_preview_start_ms AS preview_start_ms
      , store__track_preview_end_ms   AS preview_end_ms
      , store__track_url              AS url
+     , store__track_store_id         AS store_track_id
+     -- Bandcamp stream URLs expire and aren't stored; the analyser resolves
+     -- them from the release page.
+     , CASE WHEN store__track_preview_url IS NULL THEN
+         (SELECT store__release_url
+          FROM release__track rt
+            JOIN store__release sr ON sr.release_id = rt.release_id
+          WHERE rt.track_id = store__track.track_id
+            AND sr.store_id = store.store_id
+          LIMIT 1) END               AS release_url
 FROM
   store__track
   NATURAL JOIN store
-  NATURAL LEFT JOIN store__track_preview
+  NATURAL JOIN store__track_preview
   NATURAL LEFT JOIN store__track_preview_waveform
 WHERE store__track_preview_waveform_url IS NULL
   AND (${stores}::TEXT[] IS NULL OR store_name = ANY(${stores}))
@@ -361,11 +384,25 @@ module.exports.queryPreviewsWithoutFingerprint = async (limit) => {
 SELECT
   store__track_preview_id AS "preview_id",
   store__track_preview_url AS url,
-  store__track_id AS "store_track_id"
+  -- The store's own track id (not store__track_id): what
+  -- bandcamp.resolve_stream_url matches against the release page, same as
+  -- queryNextTracksToAnalyse serves the embeddings worker.
+  store__track_store_id AS "store_track_id",
+  -- Bandcamp stream URLs expire and aren't stored; the analyser resolves
+  -- them from the release page.
+  CASE WHEN store__track_preview_url IS NULL THEN
+    (SELECT store__release_url
+     FROM release__track rt
+       JOIN store__release sr ON sr.release_id = rt.release_id
+     WHERE rt.track_id = store__track.track_id
+       AND sr.store_id = store.store_id
+     LIMIT 1) END AS "release_url"
 FROM store__track_preview
+  NATURAL JOIN store__track
+  NATURAL JOIN store
   NATURAL LEFT JOIN store__track_preview_fingerprint_meta
 WHERE store__track_preview_fingerprint_meta.store__track_preview_id IS NULL
-  AND store__track_preview_url IS NOT NULL
+  AND (store__track_preview_url IS NOT NULL OR store_name = 'Bandcamp')
   AND NOT store__track_preview_missing
 ORDER BY store__track_preview_id DESC
 LIMIT ${limit || 100}
@@ -408,22 +445,27 @@ module.exports.upsertPreviewFingerprints = async (previewId, fingerprints) => {
         FROM json_to_recordset(${JSON.stringify(fingerprintValues)}::json) AS rec (preview_id TEXT, hash TEXT, position TEXT, f1 TEXT)
         `,
       )
-
-      await tx.queryAsync(
-        // language=PostgreSQL
-        sql`-- Upsert fingerprint metadata
-        INSERT INTO store__track_preview_fingerprint_meta (
-          store__track_preview_id,
-          store__track_preview_fingerprint_count,
-          store__track_preview_fingerprint_extracted_at
-        )
-        VALUES (${previewId}, ${fingerprints.length}, NOW())
-        ON CONFLICT (store__track_preview_id) DO UPDATE
-          SET store__track_preview_fingerprint_count = ${fingerprints.length}
-            , store__track_preview_fingerprint_extracted_at = NOW()
-        `,
-      )
     }
+
+    // The meta row must be written even when extraction produced zero
+    // fingerprints (e.g. a 3-second preview): queryPreviewsWithoutFingerprint
+    // treats previews without a meta row as pending, so skipping it re-queues
+    // the preview on every fetch, forever.
+    const fingerprintCount = fingerprints ? fingerprints.length : 0
+    await tx.queryAsync(
+      // language=PostgreSQL
+      sql`-- Upsert fingerprint metadata
+      INSERT INTO store__track_preview_fingerprint_meta (
+        store__track_preview_id,
+        store__track_preview_fingerprint_count,
+        store__track_preview_fingerprint_extracted_at
+      )
+      VALUES (${previewId}, ${fingerprintCount}, NOW())
+      ON CONFLICT (store__track_preview_id) DO UPDATE
+        SET store__track_preview_fingerprint_count = ${fingerprintCount}
+          , store__track_preview_fingerprint_extracted_at = NOW()
+      `,
+    )
   })
 }
 
@@ -575,7 +617,7 @@ module.exports.ignoreDuplicate = async (type, id1, id2) => {
 module.exports.queryFingerprintDiagnostics = async (
   sampleId,
   previewId,
-  { bucketSeconds = 0.05, maxPerSide = 10000 } = {},
+  { bucketSeconds = 0.5, maxPerSide = 10000 } = {},
 ) => {
   // Single round-trip: UNION ALL the two fingerprint sides with a discriminator.
   // Fetch (maxPerSide + 1) rows per side so we can detect truncation cleanly.
@@ -690,7 +732,7 @@ UNION ALL
 module.exports.findExactMatchForSample = async (
   sampleId,
   threshold,
-  { log = logger, bucketSeconds, peakBucketMin } = {},
+  { log = logger, bucketSeconds, peakBucketMin, maxTempoDeviation } = {},
 ) => {
   // Stage 1 threshold: explicit arg > SAMPLE_MATCH_DEFAULT_THRESHOLD env >
   // throw. The throw is intentional — silent reliance on the old in-source
@@ -701,113 +743,41 @@ module.exports.findExactMatchForSample = async (
       'SAMPLE_MATCH_DEFAULT_THRESHOLD must be set in env or an explicit threshold passed to findExactMatchForSample',
     )
   }
-  const effectiveBucketSeconds = bucketSeconds ?? config.sampleMatchBucketSeconds ?? 0.05
-  const effectivePeakBucketMin = peakBucketMin ?? config.sampleMatchPeakBucketMin ?? 1
+  // 0.5 s absorbs the clock drift and block quantisation of acoustic
+  // recordings; 0.05 s splits a true peak across neighbouring buckets
+  // (validated against production pairs, 2026-10-11: serious_sound_rec's
+  // correct-preview peak goes 8 → 29 at 0.5 s while the noise floor stays ≤ 4).
+  const effectiveBucketSeconds = bucketSeconds ?? config.sampleMatchBucketSeconds ?? 0.5
+  // Floor 3 drops the score-1/2 junk rows that otherwise fill the match
+  // table, while keeping the weakest known-genuine pair (mantra_rec ↔
+  // mantra_preview, peak 4 at 0.5 s buckets).
+  const effectivePeakBucketMin = peakBucketMin ?? config.sampleMatchPeakBucketMin ?? 3
+  // ±8 % covers the pitch range DJs use; 0 restores the slope-1 scorer.
+  const effectiveMaxTempoDeviation = maxTempoDeviation ?? config.sampleMatchMaxTempoDeviation ?? 0.08
 
-  const rows = await pg.queryRowsAsync(
-    // language=PostgreSQL
-    sql`-- findExactMatchForSample (two-stage)
-WITH sample_hashes AS (
-  SELECT DISTINCT user_notification_audio_sample_fingerprint_hash AS hash
-  FROM user_notification_audio_sample_fingerprint
-  WHERE user_notification_audio_sample_id = ${sampleId}
-),
-sample_hash_count AS (
-  SELECT COUNT(*)::INTEGER AS count FROM sample_hashes
-),
-candidates AS (
-  -- Stage 1: distinct-hash overlap above the configured threshold.
-  -- Bounded LIMIT keeps the Stage 2 CROSS JOIN tractable when the
-  -- preview corpus is large.
-  SELECT
-    stpf.store__track_preview_id,
-    COUNT(DISTINCT stpf.store__track_preview_fingerprint_hash)::INTEGER AS matching_hashes
-  FROM store__track_preview_fingerprint stpf
-    INNER JOIN sample_hashes sh
-      ON stpf.store__track_preview_fingerprint_hash = sh.hash
-  GROUP BY stpf.store__track_preview_id
-  HAVING COUNT(DISTINCT stpf.store__track_preview_fingerprint_hash)::FLOAT /
-         NULLIF((SELECT count FROM sample_hash_count), 0) >= ${effectiveThreshold}
-  ORDER BY matching_hashes DESC
-  LIMIT 100
-),
-matched_positions AS (
-  -- Stage 2 prep: every (sample_pos, preview_pos) pair sharing a hash,
-  -- per candidate preview. Bucketed by Δt = preview_pos − sample_pos.
-  SELECT
-    c.store__track_preview_id,
-    ROUND(
-      (pf.store__track_preview_fingerprint_position
-        - sf.user_notification_audio_sample_fingerprint_position)
-      / ${effectiveBucketSeconds}::FLOAT
-    ) * ${effectiveBucketSeconds}::FLOAT AS delta_t_bucket
-  FROM candidates c
-    INNER JOIN store__track_preview_fingerprint pf
-      ON pf.store__track_preview_id = c.store__track_preview_id
-    INNER JOIN user_notification_audio_sample_fingerprint sf
-      ON sf.user_notification_audio_sample_id = ${sampleId}
-     AND sf.user_notification_audio_sample_fingerprint_hash
-         = pf.store__track_preview_fingerprint_hash
-),
-bucket_counts AS (
-  SELECT
-    store__track_preview_id,
-    delta_t_bucket,
-    COUNT(*)::INTEGER AS bucket_count
-  FROM matched_positions
-  GROUP BY store__track_preview_id, delta_t_bucket
-),
-peak_per_preview AS (
-  SELECT DISTINCT ON (store__track_preview_id)
-    store__track_preview_id,
-    delta_t_bucket AS peak_delta_t_bucket,
-    bucket_count AS peak_bucket_count
-  FROM bucket_counts
-  ORDER BY store__track_preview_id, bucket_count DESC, delta_t_bucket ASC
-)
-SELECT
-  ppp.store__track_preview_id,
-  stp.store__track_id,
-  st.track_id,
-  c.matching_hashes,
-  (SELECT count FROM sample_hash_count) AS sample_hash_count,
-  ppp.peak_delta_t_bucket::FLOAT AS peak_delta_t_seconds,
-  ppp.peak_bucket_count AS match_score,
-  (c.matching_hashes::FLOAT /
-    NULLIF((SELECT count FROM sample_hash_count), 0)) AS stage1_ratio
-FROM peak_per_preview ppp
-  INNER JOIN candidates c ON c.store__track_preview_id = ppp.store__track_preview_id
-  INNER JOIN store__track_preview stp ON stp.store__track_preview_id = ppp.store__track_preview_id
-  INNER JOIN store__track st ON st.store__track_id = stp.store__track_id
-WHERE ppp.peak_bucket_count >= ${effectivePeakBucketMin}
-ORDER BY match_score DESC, c.matching_hashes DESC
-LIMIT 10
-    `,
+  const startedAt = Date.now()
+  const { rows, sampleHashCount, tempoFactorCount } = await matchFingerprints(
+    { sampleId },
+    {
+      threshold: effectiveThreshold,
+      bucketSeconds: effectiveBucketSeconds,
+      peakBucketMin: effectivePeakBucketMin,
+      maxTempoDeviation: effectiveMaxTempoDeviation,
+    },
   )
 
   // Single summary log per call — the diagnostics-test contract requires
   // exactly one info log, including for the zero-row case, with the
   // sample hash count visible. The extra Stage-1 / Stage-2 fields surface
-  // the new scoring path to operators.
-  let sampleHashCount
-  if (rows.length > 0) {
-    sampleHashCount = Number(rows[0].sample_hash_count)
-  } else {
-    const [{ count }] = await pg.queryRowsAsync(
-      // language=PostgreSQL
-      sql`-- findExactMatchForSample sample hash count
-SELECT COUNT(DISTINCT user_notification_audio_sample_fingerprint_hash)::INTEGER AS count
-FROM user_notification_audio_sample_fingerprint
-WHERE user_notification_audio_sample_id = ${sampleId}
-      `,
-    )
-    sampleHashCount = count
-  }
+  // the scoring path to operators.
   log.info('findExactMatchForSample', {
     sampleId,
     threshold: effectiveThreshold,
     bucketSeconds: effectiveBucketSeconds,
     peakBucketMin: effectivePeakBucketMin,
+    maxTempoDeviation: effectiveMaxTempoDeviation,
+    tempoFactorCount,
+    durationMs: Date.now() - startedAt,
     sampleHashCount,
     candidateRowCount: rows.length,
     topScore: rows[0]?.match_score ?? null,
@@ -815,6 +785,7 @@ WHERE user_notification_audio_sample_id = ${sampleId}
     topMatchingHashes: rows[0]?.matching_hashes ?? null,
     topStage1Ratio: rows[0]?.stage1_ratio ?? null,
     topPeakDeltaTSeconds: rows[0]?.peak_delta_t_seconds ?? null,
+    topPeakTempoFactor: rows[0]?.peak_tempo_factor ?? null,
   })
 
   return rows
@@ -838,46 +809,78 @@ ORDER BY user_notification_audio_sample_id
   )
 }
 
-// Replace the sample's persisted matches with the given rows. Mirrors the
-// upsert-fingerprints semantics: delete-then-insert in one transaction so
-// readers never see a half-written set.
+// Bring the sample's persisted matches in line with the given rows in one
+// transaction: rows no longer in the result set are deleted, existing
+// (sample, preview) pairs are updated in place and new pairs are inserted.
+// Updating in place keeps matched_at and notified_at, so notifySampleMatches
+// only emails about pairs that are genuinely new. Each newly inserted pair also
+// gets an unread notification event for the sample's owner; deleted pairs take
+// their events with them through the foreign key.
 module.exports.persistSampleMatches = async (sampleId, matches, threshold, bucketSeconds) => {
+  const values = (matches || []).map((m) => ({
+    sample_id: sampleId,
+    preview_id: m.store__track_preview_id,
+    score: m.match_score,
+    offset_seconds: m.peak_offset_seconds ?? null,
+    tempo_factor: m.peak_tempo_factor ?? null,
+  }))
+  const previewIds = values.map((v) => String(v.preview_id))
+
   await BPromise.using(pg.getTransaction(), async (tx) => {
     await tx.queryAsync(
       // language=PostgreSQL
-      sql`-- persistSampleMatches: clear existing
+      sql`-- persistSampleMatches: remove stale
 DELETE FROM user_notification_audio_sample_match
 WHERE user_notification_audio_sample_id = ${sampleId}
+  AND store__track_preview_id <> ALL (${previewIds}::BIGINT[])
       `,
     )
 
-    if (!matches || matches.length === 0) return
-
-    const values = matches.map((m) => ({
-      sample_id: sampleId,
-      preview_id: m.store__track_preview_id,
-      score: m.match_score,
-    }))
+    if (values.length === 0) return
 
     await tx.queryAsync(
       // language=PostgreSQL
-      sql`-- persistSampleMatches: insert
-INSERT INTO user_notification_audio_sample_match (
-  user_notification_audio_sample_id,
-  store__track_preview_id,
-  user_notification_audio_sample_match_score,
-  user_notification_audio_sample_match_threshold,
-  user_notification_audio_sample_match_bucket_seconds
+      sql`-- persistSampleMatches: upsert
+WITH upserted AS (
+  INSERT INTO user_notification_audio_sample_match (
+    user_notification_audio_sample_id,
+    store__track_preview_id,
+    user_notification_audio_sample_match_score,
+    user_notification_audio_sample_match_threshold,
+    user_notification_audio_sample_match_bucket_seconds,
+    user_notification_audio_sample_match_offset_seconds,
+    user_notification_audio_sample_match_tempo_factor
+  )
+  SELECT
+    rec.sample_id::BIGINT,
+    rec.preview_id::BIGINT,
+    rec.score::INTEGER,
+    ${threshold}::FLOAT,
+    ${bucketSeconds}::FLOAT,
+    rec.offset_seconds::DOUBLE PRECISION,
+    rec.tempo_factor::DOUBLE PRECISION
+  FROM json_to_recordset(${JSON.stringify(values)}::json) AS rec (
+    sample_id TEXT, preview_id TEXT, score TEXT, offset_seconds TEXT, tempo_factor TEXT
+  )
+  ON CONFLICT (user_notification_audio_sample_id, store__track_preview_id) DO UPDATE
+  SET user_notification_audio_sample_match_score          = EXCLUDED.user_notification_audio_sample_match_score,
+      user_notification_audio_sample_match_threshold      = EXCLUDED.user_notification_audio_sample_match_threshold,
+      user_notification_audio_sample_match_bucket_seconds = EXCLUDED.user_notification_audio_sample_match_bucket_seconds,
+      user_notification_audio_sample_match_offset_seconds = EXCLUDED.user_notification_audio_sample_match_offset_seconds,
+      user_notification_audio_sample_match_tempo_factor   = EXCLUDED.user_notification_audio_sample_match_tempo_factor
+  -- xmax is 0 only on rows this statement inserted, not on rows it updated.
+  RETURNING user_notification_audio_sample_id, store__track_preview_id, (xmax = 0) AS inserted
 )
-SELECT
-  rec.sample_id::BIGINT,
-  rec.preview_id::BIGINT,
-  rec.score::INTEGER,
-  ${threshold}::FLOAT,
-  ${bucketSeconds}::FLOAT
-FROM json_to_recordset(${JSON.stringify(values)}::json) AS rec (
-  sample_id TEXT, preview_id TEXT, score TEXT
+INSERT INTO user_notification_event (
+  meta_account_user_id, track_id, user_notification_audio_sample_id, store__track_preview_id
 )
+SELECT meta_account_user_id, track_id, user_notification_audio_sample_id, store__track_preview_id
+FROM upserted
+  NATURAL JOIN user_notification_audio_sample
+  NATURAL JOIN store__track_preview
+  NATURAL JOIN store__track
+WHERE inserted
+ON CONFLICT DO NOTHING
       `,
     )
   })
@@ -1232,6 +1235,16 @@ const convertArtistToLabel = async (id) => {
 }
 
 module.exports.convertArtistToLabel = convertArtistToLabel
+
+// The conversion removes the artist's track credits, so the label re-fetch that
+// re-credits the tracks to their real artists is always queued with it.
+// Otherwise tracks whose only artist was converted stay without artists, and
+// the track lists hide them.
+module.exports.convertArtistToLabelAndQueueRefetch = async (id) => {
+  const result = await convertArtistToLabel(id)
+  await enqueueLabelArtistRefetch(result.labelId)
+  return { ...result, labelRefetchQueued: true }
+}
 
 const mergeCounts = (flagged, counts) => {
   const byId = new Map(counts.map((c) => [c.id, c]))

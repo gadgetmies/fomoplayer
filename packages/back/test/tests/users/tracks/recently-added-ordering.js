@@ -60,13 +60,11 @@ test({
     byAgeDesc,
   }) => {
     const K = 3
-    const result = await queryUserTracks(
-      userId,
-      undefined,
-      { new: 0, recent: K, heard: 0 },
-      { new: 0, recent: 0, heard: 0 },
-    )
-    const returnedIds = result.tracks.recentlyAdded.map((t) => t.track_id)
+    const result = await queryUserTracks(userId, {
+      limits: { new: 0, recentlyAdded: K, heard: 0 },
+      offsets: { new: 0, recentlyAdded: 0, heard: 0 },
+    })
+    const returnedIds = result.lists.recentlyAdded.tracks.map((t) => t.track_id)
     assert.strictEqual(returnedIds.length, K, `expected exactly ${K} entries, got ${returnedIds.length}`)
     assert.deepStrictEqual(
       returnedIds,
@@ -79,13 +77,11 @@ test({
     userId,
     byAgeDesc,
   }) => {
-    const result = await queryUserTracks(
-      userId,
-      undefined,
-      { new: 0, recent: 2, heard: 0 },
-      { new: 0, recent: 0, heard: 0 },
-    )
-    const returnedIds = result.tracks.recentlyAdded.map((t) => t.track_id)
+    const result = await queryUserTracks(userId, {
+      limits: { new: 0, recentlyAdded: 2, heard: 0 },
+      offsets: { new: 0, recentlyAdded: 0, heard: 0 },
+    })
+    const returnedIds = result.lists.recentlyAdded.tracks.map((t) => t.track_id)
     // The two newest share a calendar day; the strictly-newer one must come first.
     assert.deepStrictEqual(
       returnedIds,
@@ -95,13 +91,11 @@ test({
   },
 
   'recentlyAdded slice respects offset': async ({ userId, byAgeDesc }) => {
-    const result = await queryUserTracks(
-      userId,
-      undefined,
-      { new: 0, recent: 2, heard: 0 },
-      { new: 0, recent: 1, heard: 0 },
-    )
-    const returnedIds = result.tracks.recentlyAdded.map((t) => t.track_id)
+    const result = await queryUserTracks(userId, {
+      limits: { new: 0, recentlyAdded: 2, heard: 0 },
+      offsets: { new: 0, recentlyAdded: 1, heard: 0 },
+    })
+    const returnedIds = result.lists.recentlyAdded.tracks.map((t) => t.track_id)
     // With offset=1 and limit=2, expect items at positions 1 and 2 of the
     // DESC-sorted catalogue.
     assert.deepStrictEqual(

@@ -12,6 +12,7 @@ import Tracks from './Tracks'
 import FollowItemButton from './FollowItemButton'
 import { NavLink, withRouter } from 'react-router-dom'
 import { apiURL } from './config'
+import { entitySubscriptionText, isSubscribed } from './subscriptions'
 import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
 import { SettingsHelp } from './SettingsHelp'
@@ -94,13 +95,15 @@ class Settings extends Component {
   constructor(props) {
     super(props)
     let page = window.location.pathname.split('/').pop()
-    page = !page || page === 'settings' ? 'following' : page
+    page = !page || page === 'settings' ? 'following' : page === 'notifications' ? 'email' : page
 
     this.state = {
       followQuery: '',
       artistFollows: [],
       labelFollows: [],
       playlistFollows: [],
+      followSuggestions: { artists: [], labels: [] },
+      updatingSuggestion: null,
       artistOnLabelIgnores: [],
       artistIgnores: [],
       labelIgnores: [],
@@ -127,9 +130,9 @@ class Settings extends Component {
       scoreWeightsDebounce: undefined,
       markingHeard: null,
       settingCartPublic: null,
-      publicCarts: new Set(props.carts.filter(R.prop('is_public')).map(R.prop('id'))),
+      publicCarts: new Set(props.carts.filter(R.prop('isPublic')).map(R.prop('id'))),
       syncedCarts: Object.fromEntries(
-        props.carts.filter(R.prop('store_details')).map(({ id, store_details }) => [id, store_details]),
+        props.carts.filter(R.prop('storeDetails')).map(({ id, storeDetails }) => [id, storeDetails]),
       ),
       page,
       scoreWeights: this.props.scoreWeights,
@@ -153,22 +156,21 @@ class Settings extends Component {
       playPauseAddToCart: (localStorage.getItem('playPauseDoubleClickAddToCart') || 'true') === 'true',
       playPauseAddToCartDelay: parseInt(localStorage.getItem('playPauseDoubleClickDelay'), 10) || 1000,
       playPauseAddToCartCartId: localStorage.getItem('playPauseDoubleClickCartId') || '',
-      audioSamples: [],
-      uploadingAudioSample: false,
-      deletingAudioSample: null,
-      playingAudioSample: null,
     }
 
     this.markHeardButton.bind(this)
   }
 
   async componentDidMount() {
+    if (this.props.location.pathname.match(/^\/settings\/notifications\/?$/)) {
+      this.props.history.replace('/settings/email')
+    }
     try {
       await Promise.all([
         this.updateFollows(),
+        this.updateFollowSuggestions(),
         this.updateIgnores(),
         this.updateAuthorizations(),
-        this.updateAudioSamples(),
       ])
     } catch (e) {
       console.error(e)
@@ -205,6 +207,81 @@ class Settings extends Component {
     this.setState({ playlistFollows })
   }
 
+  async updateFollowSuggestions() {
+    const followSuggestions = await requestJSONwithCredentials({
+      path: `/me/follows/suggestions`,
+    })
+    this.setState({ followSuggestions })
+    // Backfill cover images without blocking the list render.
+    this.enrichSuggestionImages(followSuggestions)
+  }
+
+  async enrichSuggestionImages({ artists = [], labels = [] }) {
+    const urls = [...artists, ...labels].map(({ url }) => url).filter(Boolean)
+    if (urls.length === 0) {
+      return
+    }
+    try {
+      const images = await requestJSONwithCredentials({
+        path: `/me/follows/suggestions/images`,
+        method: 'POST',
+        body: { urls },
+      })
+      const imgByUrl = new Map(images.filter(({ img }) => img).map(({ url, img }) => [url, img]))
+      const merge = (items) => (items ?? []).map((s) => (imgByUrl.has(s.url) ? { ...s, img: imgByUrl.get(s.url) } : s))
+      this.setState((prev) => ({
+        followSuggestions: {
+          ...prev.followSuggestions,
+          artists: merge(prev.followSuggestions.artists),
+          labels: merge(prev.followSuggestions.labels),
+        },
+      }))
+    } catch (e) {
+      console.error('Enriching suggestion images failed', e)
+    }
+  }
+
+  async onFollowSuggestionClick(type, { id, name, url }) {
+    this.setState({ updatingSuggestion: `${type}-${id}` })
+    try {
+      await this.onFollowItemClick(url, name, type)
+      // Drop the now-followed suggestion and refresh from the server so the
+      // counts and remaining suggestions stay in sync.
+      this.removeSuggestionFromState(type, id)
+      await this.updateFollowSuggestions()
+    } catch (e) {
+      console.error('Following suggestion failed', e)
+    } finally {
+      this.setState({ updatingSuggestion: null })
+    }
+  }
+
+  async onIgnoreSuggestionClick(type, id) {
+    this.setState({ updatingSuggestion: `${type}-${id}` })
+    try {
+      await requestWithCredentials({
+        path: `/me/follows/suggestions/ignores`,
+        method: 'POST',
+        body: { type, id },
+      })
+      this.removeSuggestionFromState(type, id)
+    } catch (e) {
+      console.error('Ignoring suggestion failed', e)
+    } finally {
+      this.setState({ updatingSuggestion: null })
+    }
+  }
+
+  removeSuggestionFromState(type, id) {
+    const key = type === 'artist' ? 'artists' : 'labels'
+    this.setState((prev) => ({
+      followSuggestions: {
+        ...prev.followSuggestions,
+        [key]: (prev.followSuggestions[key] ?? []).filter((s) => s.id !== id),
+      },
+    }))
+  }
+
   async updateIgnores() {
     await Promise.all([this.updateArtistIgnores(), this.updateLabelIgnores(), this.updateArtistOnLabelIgnores()])
   }
@@ -230,84 +307,35 @@ class Settings extends Component {
     this.setState({ artistOnLabelIgnores })
   }
 
+  // The bell on a followed artist or label: notify about its new tracks through the artist:<id> / label:<id> search
+  // subscription for that store.
+  notifyBellProps(type, entityId, storeName) {
+    if (entityId === undefined || entityId === null || !this.props.onRequestNotificationUpdate) return {}
+    const text = entitySubscriptionText(type, entityId)
+    const notifyOn = isSubscribed(this.props.notifications, text, storeName)
+    // New subscriptions need a verified email; an existing one can still be turned off
+    const emailVerified = Boolean(this.props.userSettings?.emailVerified)
+    return {
+      notifyOn,
+      notifyDisabled: this.state.updatingNotificationBell === text || (!notifyOn && !emailVerified),
+      notifyDisabledReason: !notifyOn && !emailVerified ? 'Verify your email in Settings › Email to subscribe' : undefined,
+      onNotifyClick: async (e) => {
+        e.stopPropagation()
+        this.setState({ updatingNotificationBell: text })
+        try {
+          await this.props.onRequestNotificationUpdate([{ op: notifyOn ? 'remove' : 'add', storeName, text }])
+        } finally {
+          this.setState({ updatingNotificationBell: null })
+        }
+      },
+    }
+  }
+
   async updateAuthorizations() {
     const authorizations = await requestJSONwithCredentials({
       path: `/me/authorizations`,
     })
     this.setState({ authorizations })
-  }
-
-  async updateAudioSamples() {
-    try {
-      const audioSamples = await requestJSONwithCredentials({
-        path: `/me/notifications/audio-samples`,
-      })
-      this.setState({ audioSamples })
-    } catch (e) {
-      console.error('Failed to load audio samples', e)
-    }
-  }
-
-  async uploadAudioSample(file) {
-    if (!file) return
-
-    const allowedTypes = ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/mpeg', 'audio/mp3']
-    const allowedExts = ['.wav', '.mp3']
-    const fileExt = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
-
-    if (!allowedTypes.includes(file.type) && !allowedExts.includes(fileExt)) {
-      alert('Invalid file type. Only WAV and MP3 files are allowed.')
-      return
-    }
-
-    const maxSize = 10 * 1024 * 1024
-    if (file.size > maxSize) {
-      alert(`File size exceeds 10MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
-      return
-    }
-
-    this.setState({ uploadingAudioSample: true })
-
-    try {
-      const formData = new FormData()
-      formData.append('audioFile', file)
-
-      const response = await fetch(`${apiURL}/me/notifications/audio-samples`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Upload failed' }))
-        throw new Error(error.error || 'Upload failed')
-      }
-
-      await this.updateAudioSamples()
-    } catch (e) {
-      console.error('Failed to upload audio sample', e)
-      alert(`Failed to upload audio sample: ${e.message}`)
-    } finally {
-      this.setState({ uploadingAudioSample: false })
-    }
-  }
-
-  async deleteAudioSample(sampleId) {
-    this.setState({ deletingAudioSample: sampleId })
-
-    try {
-      await requestWithCredentials({
-        path: `/me/notifications/audio-samples/${sampleId}`,
-        method: 'DELETE',
-      })
-
-      await this.updateAudioSamples()
-    } catch (e) {
-      console.error('Failed to delete audio sample', e)
-      alert('Failed to delete audio sample')
-    } finally {
-      this.setState({ deletingAudioSample: null })
-    }
   }
 
   async setCartPublic(cartId, setPublic) {
@@ -316,7 +344,7 @@ class Settings extends Component {
       path: `/me/carts/${cartId}`,
       method: 'POST',
       body: {
-        is_public: setPublic,
+        isPublic: setPublic,
       },
     })
     const updatedPublicCarts = new Set(this.state.publicCarts)
@@ -327,13 +355,16 @@ class Settings extends Component {
   async setCartSync(cartId, setSync) {
     this.setState({ updatingCartSync: cartId })
     try {
-      await requestWithCredentials({
+      const res = await requestWithCredentials({
         path: `/me/carts/${cartId}/sync/spotify`,
         method: 'POST',
         body: { setSync },
       })
+      // The toggle and the playlist link read the cart's storeDetails entries, so store the entry the API returns.
+      const others = (this.state.syncedCarts[cartId] || []).filter(({ storeName }) => storeName !== 'Spotify')
+      const details = setSync ? [...others, await res.json()] : others
       const updatedSyncedCarts = { ...this.state.syncedCarts }
-      setSync ? (updatedSyncedCarts[cartId] = ['spotify']) : delete updatedSyncedCarts[cartId]
+      details.length > 0 ? (updatedSyncedCarts[cartId] = details) : delete updatedSyncedCarts[cartId]
       this.setState({ syncedCarts: updatedSyncedCarts })
     } catch (e) {
       console.error('Failed to set cart sync status', e)
@@ -440,6 +471,78 @@ class Settings extends Component {
     )
   }
 
+  renderSuggestionList(type, suggestions) {
+    const label = type === 'artist' ? 'Artists' : 'Labels'
+    return (
+      <>
+        <h5>
+          {label} ({suggestions.length})
+        </h5>
+        <ul className="no-style-list follow-list">
+          {suggestions.map(({ id, name, url, storeName, count, img }) => {
+            const busy = this.state.updatingSuggestion === `${type}-${id}`
+            return (
+              <li
+                key={`${type}-${id}`}
+                className="follow-suggestion-item"
+                data-test="follow-suggestion"
+                data-test-suggestion-type={type}
+                data-test-suggestion-id={id}
+                data-test-suggestion-name={name}
+              >
+                <FollowItemButton
+                  id={id}
+                  name={name}
+                  storeName={storeName.toLowerCase()}
+                  type={type}
+                  url={url}
+                  img={img}
+                  loading={busy}
+                  disabled={this.state.updatingSuggestion !== null}
+                  onClick={() => this.onFollowSuggestionClick(type, { id, name, url })}
+                  data-test="follow-suggestion-follow"
+                />
+                <span className="follow-suggestion-count" title={`${count} purchased track(s)`}>
+                  {count}
+                </span>
+                <button
+                  className="follow-suggestion-ignore-button"
+                  disabled={this.state.updatingSuggestion !== null}
+                  title={`Ignore suggestion for ${name}`}
+                  data-test="follow-suggestion-ignore"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    this.onIgnoreSuggestionClick(type, id)
+                  }}
+                >
+                  <FontAwesomeIcon icon="times-circle" />
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      </>
+    )
+  }
+
+  renderFollowSuggestions() {
+    const { artists = [], labels = [] } = this.state.followSuggestions ?? {}
+    if (artists.length === 0 && labels.length === 0) {
+      return null
+    }
+    return (
+      <div className="follow-suggestions" data-test="follow-suggestions">
+        <h4>Suggestions from your purchases</h4>
+        <p style={{ fontSize: '90%', marginTop: 0 }}>
+          Artists and labels behind the tracks in your purchased cart that you are not following yet. Follow the ones
+          you like, or ignore a suggestion to remove it from this list.
+        </p>
+        {artists.length > 0 && this.renderSuggestionList('artist', artists)}
+        {labels.length > 0 && this.renderSuggestionList('label', labels)}
+      </div>
+    )
+  }
+
   async setScoreWeight(property, value) {
     const newWeights = structuredClone(this.state.scoreWeights)
     newWeights.find(({ property: p }) => p === property).weight = value
@@ -462,11 +565,9 @@ class Settings extends Component {
       try {
         this.setState({ updatingTracks: true })
 
-        const { tracks } = await requestJSONwithCredentials({
-          path: `/me/tracks?limit_new=10&limit_recent=0&limit_heard=0`,
-        })
+        const { tracks } = await requestJSONwithCredentials({ path: `/me/tracks/new?limit=10` })
 
-        this.setState({ tracks, updatingTracks: false })
+        this.setState({ tracks: { ...this.state.tracks, new: tracks }, updatingTracks: false })
       } catch (e) {
         console.error(e)
         this.setState({ updatingTracks: false })
@@ -534,7 +635,10 @@ class Settings extends Component {
   componentDidUpdate({ location: { pathname: prevPath } }) {
     const newPath = this.props.location.pathname
     if (prevPath !== newPath && this.props.location.pathname.startsWith('/settings')) {
-      this.setState({ page: newPath.split('/').pop() || 'following' })
+      const page = newPath.split('/').pop() || 'following'
+      // Settings › Notifications became Settings › Email; its other contents moved to the Notifications page
+      if (page === 'notifications') return this.props.history.replace('/settings/email')
+      this.setState({ page })
     }
   }
 
@@ -549,12 +653,19 @@ class Settings extends Component {
     this.setState({ cloningCartId: id })
 
     try {
-      const cart = await requestJSONwithCredentials({ path: `/me/carts/${id}` })
-      delete cart.id
+      // The cart is returned a page at a time; the copy gets every track.
+      const trackIds = []
+      let cart
+      for (;;) {
+        const response = await requestJSONwithCredentials({ path: `/me/carts/${id}?offset=${trackIds.length}&limit=500` })
+        cart = response.cart
+        trackIds.push(...response.tracks.map((track) => track.id))
+        if (response.tracks.length === 0 || trackIds.length >= response.page.total) break
+      }
       const createdCart = await requestJSONwithCredentials({
         path: `/me/carts`,
         method: 'POST',
-        body: { ...cart, name: `${cart.name} - Copy` },
+        body: { name: `${cart.name} - Copy`, tracks: trackIds.map((trackId) => ({ trackId })) },
       })
       await this.props.onUpdateCarts()
       if (createdCart) {
@@ -576,7 +687,11 @@ class Settings extends Component {
   render() {
     const spotifyAuthorization = this.state.authorizations?.find(R.propEq('Spotify', 'store_name'))
     return (
-      <div className="page-container scroll-container" style={{ paddingBottom: 16, ...this.props.style }}>
+      <div
+        className="page-container scroll-container"
+        // Room for the docked player bar at the bottom of the viewport
+        style={{ paddingBottom: this.props.dockedPlayerVisible ? 120 : 16, ...this.props.style }}
+      >
         <SettingsHelp
           active={this.state.helpActive}
           onActiveChanged={(active) => this.setState({ helpActive: active })}
@@ -625,17 +740,17 @@ class Settings extends Component {
               </label>
               <input
                 type="radio"
-                id="settings-state-notifications"
+                id="settings-state-email"
                 name="settings-state"
-                checked={this.state.page === 'notifications'}
-                onChange={() => this.onShowPage('notifications')}
+                checked={this.state.page === 'email'}
+                onChange={() => this.onShowPage('email')}
               />
               <label
                 className="select_button-button select_button-button__large"
-                htmlFor="settings-state-notifications"
+                htmlFor="settings-state-email"
                 data-help-id="notifications-tab"
               >
-                Notifications
+                Email
               </label>
               <input
                 type="radio"
@@ -850,6 +965,7 @@ class Settings extends Component {
                   </div>
                 )}
               </label>
+              {this.renderFollowSuggestions()}
               <h4>Followed</h4>
               <div
                 className="select-button select-button--container state-select-button--container noselect"
@@ -914,7 +1030,7 @@ class Settings extends Component {
                           this.state.followedArtistsFilter === '' ||
                           name.toLocaleLowerCase().includes(this.state.followedArtistsFilter),
                       )
-                      .map(({ name, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
+                      .map(({ name, id: artistId, storeArtistId, store: { name: storeName, starred, watchId }, url }) => {
                         return (
                           <li key={storeArtistId} data-onboarding-id="follow-item">
                             <FollowedItem
@@ -945,6 +1061,7 @@ class Settings extends Component {
                                 }
                               }}
                               {...{ storeName, title: name, starred, url }}
+                              {...this.notifyBellProps('artist', artistId, storeName)}
                             />
                           </li>
                         )
@@ -971,7 +1088,7 @@ class Settings extends Component {
                           this.state.followedLabelsFilter === '' ||
                           name.toLocaleLowerCase().includes(this.state.followedLabelsFilter),
                       )
-                      .map(({ name, url, storeLabelId, store: { name: storeName, watchId, starred } }, index) => (
+                      .map(({ name, id: labelId, url, storeLabelId, store: { name: storeName, watchId, starred } }, index) => (
                         <li key={`${storeLabelId ?? url ?? watchId ?? name}-${index}`}>
                           <FollowedItem
                             disabled={this.state.updatingLabelFollows}
@@ -992,6 +1109,7 @@ class Settings extends Component {
                               this.setState({ updatingLabelFollows: false })
                             }}
                             {...{ storeName, title: name, starred, url }}
+                            {...this.notifyBellProps('label', labelId, storeName)}
                           />
                         </li>
                       ))}
@@ -1111,12 +1229,12 @@ class Settings extends Component {
               </label>
               <h3>Carts</h3>
               <div>
-                {this.props.carts.map(({ id, is_default, is_public, is_purchased, name, uuid }, index) => {
+                {this.props.carts.map(({ id, isDefault, isPublic, isPurchased, name, uuid }, index) => {
                   const buttonId = `sharing-${id}`
                   const cartPath = `/carts/${uuid}`
                   const publicLink = new URL(cartPath, window.location).toString()
                   const spotifyStoreDetails = this.state.syncedCarts[id]?.find(
-                    ({ store_name }) => store_name === 'Spotify',
+                    ({ storeName }) => storeName === 'Spotify',
                   )
                   return (
                     <div key={id} id={`cart-${uuid}`}>
@@ -1155,7 +1273,7 @@ class Settings extends Component {
                         ) : (
                           <>
                             <NavLink to={cartPath}>{name}</NavLink>{' '}
-                            {!is_default && !is_purchased && (
+                            {!isDefault && !isPurchased && (
                               <>
                                 <button
                                   className={
@@ -1201,7 +1319,7 @@ class Settings extends Component {
                           </label>
                           <ToggleButton
                             id={buttonId}
-                            checked={is_public}
+                            checked={isPublic}
                             disabled={this.state.settingCartPublic !== null || this.state.updatingCarts}
                             onChange={(state) => this.setCartPublic(id, state)}
                           />
@@ -1250,7 +1368,7 @@ class Settings extends Component {
               </div>
             </>
           ) : null}
-          {this.state.page === 'notifications' ? (
+          {this.state.page === 'email' ? (
             <>
               <label>
                 <h4>Email address:</h4>
@@ -1304,231 +1422,11 @@ class Settings extends Component {
                     address to receive notifications.
                   </p>
                 ) : null}
-                <h4>Get notifications for search:</h4>
-                <div className="input-layout">
-                  <input
-                    className="text-input text-input-large text-input-dark"
-                    disabled={
-                      this.state.updatingNotifications ||
-                      this.state.updatingEmail ||
-                      !this.props.userSettings.emailVerified
-                    }
-                    value={this.state.notificationSearch}
-                    onChange={(e) => {
-                      this.setState({ notificationSearch: e.target.value })
-                    }}
-                  />
-                  <SpinnerButton
-                    size={'large'}
-                    disabled={
-                      this.state.updatingNotifications ||
-                      this.state.updatingEmail ||
-                      !this.props.userSettings.emailVerified
-                    }
-                    loading={this.state.updatingNotifications}
-                    icon={'bell'}
-                    onClick={async () => {
-                      await this.props.onRequestNotificationUpdate(
-                        this.props.stores.map(({ storeName }) => ({
-                          op: 'add',
-                          storeName,
-                          text: this.state.notificationSearch,
-                        })),
-                      )
-                      this.setState({ notificationSearch: '' })
-                    }}
-                  >
-                    Subscribe
-                  </SpinnerButton>
-                </div>
               </label>
-              <h4>Search notification subscriptions</h4>
-              <ul className="no-style-list follow-list">
-                {this.props.notifications.map(({ id, text, storeName, displayName }) => {
-                  const displayText = displayName || text
-                  return (
-                    <li key={`${id}-${storeName}`}>
-                      <span className={'button pill pill-button'}>
-                        <span className={'pill-button-contents'}>
-                          <NavLink to={`/search/?q=${text}`} title={`Search for "${text}"`}>
-                            {displayText}
-                          </NavLink>{' '}
-                          <button
-                            disabled={this.state.updatingNotifications}
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              this.setState({ updatingNotifications: true })
-                              await this.props.onRequestNotificationUpdate([
-                                {
-                                  op: 'remove',
-                                  storeName,
-                                  text,
-                                },
-                              ])
-
-                              this.setState({ updatingNotifications: false })
-                            }}
-                            title={`Unsubscribe from "${displayText}"`}
-                          >
-                            <span aria-hidden="true" className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
-                            <FontAwesomeIcon icon="times-circle" />
-                          </button>
-                        </span>
-                      </span>
-                    </li>
-                  )
-                })}
-              </ul>
-              <h4>Audio sample uploads</h4>
-              <p style={{ fontSize: '90%', marginBottom: '10px' }}>
-                Upload audio samples (WAV or MP3, max 10MB) to use for notification search by audio similarity. Uploaded
-                samples will be processed at a later point to extract audio fingerprints. You will receive a
-                notification email if a track matching the audio fingerprint is found in or added to the database.
+              <p className="settings-email-pointer">
+                Search subscriptions, artist and label notifications and audio samples are on the{' '}
+                <NavLink to="/notifications/subscriptions">Notifications</NavLink> page.
               </p>
-              <div style={{ marginBottom: '20px' }}>
-                <input
-                  type="file"
-                  accept="audio/wav,audio/wave,audio/x-wav,audio/mpeg,audio/mp3,.wav,.mp3"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      this.uploadAudioSample(file)
-                      e.target.value = ''
-                    }
-                  }}
-                  disabled={this.state.uploadingAudioSample || !this.props.userSettings.emailVerified}
-                  style={{ display: 'none' }}
-                  id="audio-sample-upload"
-                />
-                <label htmlFor="audio-sample-upload">
-                  <SpinnerButton
-                    size={'large'}
-                    disabled={this.state.uploadingAudioSample || !this.props.userSettings.emailVerified}
-                    loading={this.state.uploadingAudioSample}
-                    icon={'upload'}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      document.getElementById('audio-sample-upload')?.click()
-                    }}
-                  >
-                    Upload Audio Sample
-                  </SpinnerButton>
-                </label>
-              </div>
-              {this.state.audioSamples.length > 0 ? (
-                <ul className="no-style-list follow-list">
-                  {this.state.audioSamples.map((sample) => {
-                    const isPlaying = this.state.playingAudioSample === sample.id
-                    return (
-                      <li key={sample.id} style={{ marginBottom: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                          <span className={'button pill pill-button'}>
-                            <span className={'pill-button-contents'}>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const audioId = `audio-${sample.id}`
-                                  const audio = document.getElementById(audioId)
-                                  if (audio) {
-                                    if (isPlaying) {
-                                      audio.pause()
-                                      this.setState({ playingAudioSample: null })
-                                    } else {
-                                      this.state.audioSamples.forEach((s) => {
-                                        const otherAudio = document.getElementById(`audio-${s.id}`)
-                                        if (otherAudio && s.id !== sample.id) {
-                                          otherAudio.pause()
-                                        }
-                                      })
-                                      audio.play()
-                                      this.setState({ playingAudioSample: sample.id })
-                                    }
-                                  }
-                                }}
-                                title={isPlaying ? 'Pause' : 'Play'}
-                                style={{
-                                  marginRight: '8px',
-                                  background: 'none',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  color: 'inherit',
-                                }}
-                              >
-                                <FontAwesomeIcon icon={isPlaying ? 'pause' : 'play'} />
-                              </button>
-                              <span style={{ marginRight: '10px' }}>
-                                {sample.filename || `Audio Sample ${sample.id}`}{' '}
-                                <span style={{ fontSize: '85%', opacity: 0.8 }}>
-                                  ({sample.fileType.split('/')[1]?.toUpperCase() || 'AUDIO'},{' '}
-                                  {(sample.fileSize / 1024 / 1024).toFixed(2)}MB)
-                                </span>
-                              </span>
-                              {typeof sample.matchCount === 'number' && sample.matchCount > 0 ? (
-                                <>
-                                  <span aria-hidden="true" style={{ opacity: 0.4, marginRight: '6px' }}>
-                                    ·
-                                  </span>
-                                  <NavLink
-                                    to={`/search/?q=sample:~${sample.id}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="suspected-matches-link"
-                                    style={{
-                                      fontSize: '85%',
-                                      color: 'inherit',
-                                      marginRight: '8px',
-                                    }}
-                                  >
-                                    {sample.matchCount === 1
-                                      ? '1 suspected match'
-                                      : `${sample.matchCount} suspected matches`}
-                                  </NavLink>
-                                </>
-                              ) : null}
-                              <button
-                                disabled={this.state.deletingAudioSample === sample.id}
-                                onClick={async (e) => {
-                                  e.stopPropagation()
-                                  const audio = document.getElementById(`audio-${sample.id}`)
-                                  if (audio) {
-                                    audio.pause()
-                                  }
-                                  if (this.state.playingAudioSample === sample.id) {
-                                    this.setState({ playingAudioSample: null })
-                                  }
-                                  if (window.confirm('Delete this audio sample?')) {
-                                    await this.deleteAudioSample(sample.id)
-                                  }
-                                }}
-                                title="Delete audio sample"
-                              >
-                                <FontAwesomeIcon icon="times-circle" />
-                              </button>
-                            </span>
-                          </span>
-                          <audio
-                            id={`audio-${sample.id}`}
-                            src={sample.url}
-                            onEnded={() => {
-                              this.setState({ playingAudioSample: null })
-                            }}
-                            onPause={() => {
-                              if (this.state.playingAudioSample === sample.id) {
-                                this.setState({ playingAudioSample: null })
-                              }
-                            }}
-                            onPlay={() => {
-                              this.setState({ playingAudioSample: sample.id })
-                            }}
-                            style={{ display: 'none' }}
-                          />
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              ) : (
-                <p style={{ fontSize: '90%', fontStyle: 'italic' }}>No audio samples uploaded yet.</p>
-              )}
             </>
           ) : null}
           {this.state.page === 'ignores' ? (

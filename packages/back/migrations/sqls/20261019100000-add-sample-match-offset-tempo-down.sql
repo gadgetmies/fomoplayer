@@ -1,0 +1,3 @@
+ALTER TABLE user_notification_audio_sample_match
+  DROP COLUMN IF EXISTS user_notification_audio_sample_match_offset_seconds,
+  DROP COLUMN IF EXISTS user_notification_audio_sample_match_tempo_factor;

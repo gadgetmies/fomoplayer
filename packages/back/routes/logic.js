@@ -1,6 +1,6 @@
 const { apiURL } = require('../config.js')
 const { queryLongestPreviewForTrack, searchForArtistsAndLabels } = require('./db.js')
-const { searchForTracks } = require('./shared/db/search.js')
+const { searchForTracks, searchForTracksResponse } = require('./shared/db/search.js')
 const { queryPreviewDetails } = require('./shared/db/preview')
 const { queryCartDetails, queryCartOwner } = require('./shared/db/cart')
 const { queryCartDetailsByUuid, verifyEmail, queryEmbedding } = require('./db')
@@ -17,6 +17,7 @@ module.exports.getStorePreviewRedirectForTrack = async (id, format, skip) => {
 }
 
 module.exports.searchForTracks = searchForTracks
+module.exports.searchForTracksResponse = searchForTracksResponse
 
 module.exports.getFollowDetails = async (query, stores) => {
   let details
@@ -52,7 +53,10 @@ module.exports.getPreview = async (id, stores, format, offset) => {
 
 module.exports.getCartDetails = async (uuid, userId, stores = undefined, tracksFilter) => {
   logger.info(`Getting cart details for user: ${userId}, uuid: ${uuid}`)
-  const { isPublic, id } = await queryCartDetailsByUuid(uuid)
+  if (!/^[0-9a-f-]{36}$/i.test(String(uuid))) return null
+  const details = await queryCartDetailsByUuid(uuid)
+  if (!details) return null
+  const { isPublic, id } = details
   logger.info(`Cart is public: ${isPublic}, id: ${id}`)
   const [{ ownerUserId }] = await queryCartOwner(id)
   logger.info(`Cart owner: ${ownerUserId}`)

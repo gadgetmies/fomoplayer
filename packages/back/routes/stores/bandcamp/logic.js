@@ -152,10 +152,8 @@ const getTracksFromReleases = async (releaseUrls, pageContext = null) => {
       }
       releaseDetails.push(releaseInfo)
     } catch (e) {
-      if (e.isRateLimit) {
-        logger.error('Rate limit reached while fetching release details', { releaseUrl, error: e.message })
-        throw e
-      }
+      // A rate limit stops the whole fetch; it is logged where it starts.
+      if (e.isRateLimit) throw e
       const error = [`Failed to fetch release details from ${releaseUrl}`, e]
       logger.error(...error)
       errors.push(error)
@@ -196,112 +194,81 @@ const filterToUnknownUrls = async (urls) => {
   return { unknownUrls, skipped: known.size }
 }
 
+// Fetch the first listed release of an artist/label page with the same page
+// context the watch generators use, ignoring whether it is already stored. Used
+// by the integration test, which must see tracks even when every release is known.
+module.exports.getPageReleaseTracks = async (url, entityType) => {
+  const { type, name, releaseUrls } = await (entityType === 'label' ? getLabelAsync : getArtistAsync)(url)
+  if (releaseUrls.length === 0) {
+    return { tracks: [], errors: [`No releases listed on ${url}`] }
+  }
+  return getTracksFromReleases(releaseUrls.slice(0, 1), { pageType: type, pageName: name })
+}
+
 module.exports.getArtistTracks = async function* ({ url }) {
-  try {
-    const { type, name, releaseUrls } = await getArtistAsync(url)
-    await updateMislabeledFlag('artist', url, type)
-    const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
-    logger.debug(
-      `Artist ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
-    )
-    // Detect the page's true type once, here on its /music listing, and apply it
-    // to every release: a page that is really a label must not credit all its
-    // releases to the subdomain.
-    const pageContext = { pageType: type, pageName: name }
-    yield { tracks: [], errors: [], skipped, totalReleases: releaseUrls.length }
-    for (const releaseUrl of unknownUrls) {
-      if (isRateLimited()) {
-        logger.error('Rate limit reached, stopping iteration for artist tracks')
-        return
-      }
-      try {
-        yield await getTracksFromReleases([releaseUrl], pageContext)
-      } catch (e) {
-        if (e.isRateLimit) {
-          logger.error('Rate limit reached while getting artist tracks from release', e)
-          return
-        }
-        logger.error('Error getting artist tracks from release', e)
-        yield { tracks: [], errors: [e] }
-      }
+  const { type, name, releaseUrls } = await getArtistAsync(url)
+  await updateMislabeledFlag('artist', url, type)
+  const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
+  logger.debug(
+    `Artist ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
+  )
+  // Detect the page's true type once, here on its /music listing, and apply it
+  // to every release: a page that is really a label must not credit all its
+  // releases to the subdomain.
+  const pageContext = { pageType: type, pageName: name }
+  yield { tracks: [], errors: [], skipped, totalReleases: releaseUrls.length }
+  for (const releaseUrl of unknownUrls) {
+    try {
+      yield await getTracksFromReleases([releaseUrl], pageContext)
+    } catch (e) {
+      // Rate limits propagate so the caller does not mark the page updated.
+      if (e.isRateLimit) throw e
+      logger.error('Error getting artist tracks from release', e)
+      yield { tracks: [], errors: [e] }
     }
-  } catch (e) {
-    if (e.isRateLimit) {
-      logger.error('Rate limit reached while getting artist details', e)
-      return
-    }
-    throw e
   }
 }
 
 module.exports.getLabelTracks = async function* ({ url }) {
-  try {
-    const { type, name, releaseUrls } = await getLabelAsync(url)
-    await updateMislabeledFlag('label', url, type)
-    const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
-    logger.debug(
-      `Label ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
-    )
-    // Detect the page's true type once, here on its /music listing, and apply it
-    // to every release so a label's releases are attributed to their real
-    // artists by name instead of all collapsing onto the label subdomain.
-    const pageContext = { pageType: type, pageName: name }
-    yield { tracks: [], errors: [], skipped, totalReleases: releaseUrls.length }
-    for (const releaseUrl of unknownUrls) {
-      if (isRateLimited()) {
-        logger.error('Rate limit reached, stopping iteration for label tracks')
-        return
-      }
-      try {
-        yield await getTracksFromReleases([releaseUrl], pageContext)
-      } catch (e) {
-        if (e.isRateLimit) {
-          logger.error('Rate limit reached while getting label tracks from release', e)
-          return
-        }
-        logger.error('Error getting label tracks from release', e)
-        yield { tracks: [], errors: [e] }
-      }
+  const { type, name, releaseUrls } = await getLabelAsync(url)
+  await updateMislabeledFlag('label', url, type)
+  const { unknownUrls, skipped } = await filterToUnknownUrls(releaseUrls)
+  logger.debug(
+    `Label ${url}: ${releaseUrls.length} releases listed, ${skipped} already known (skipped), ${unknownUrls.length} to fetch`,
+  )
+  // Detect the page's true type once, here on its /music listing, and apply it
+  // to every release so a label's releases are attributed to their real
+  // artists by name instead of all collapsing onto the label subdomain.
+  const pageContext = { pageType: type, pageName: name }
+  yield { tracks: [], errors: [], skipped, totalReleases: releaseUrls.length }
+  for (const releaseUrl of unknownUrls) {
+    try {
+      yield await getTracksFromReleases([releaseUrl], pageContext)
+    } catch (e) {
+      // Rate limits propagate so the caller does not mark the page updated.
+      if (e.isRateLimit) throw e
+      logger.error('Error getting label tracks from release', e)
+      yield { tracks: [], errors: [e] }
     }
-  } catch (e) {
-    if (e.isRateLimit) {
-      logger.error('Rate limit reached while getting label details', e)
-      return
-    }
-    throw e
   }
 }
 
 module.exports.getPlaylistTracks = async function* ({ playlistStoreId, type }) {
-  if (type === 'tag') {
+  if (type !== 'tag') {
+    throw new Error(`Unsupported playlist type: '${type}' (supported: 'tag')`)
+  }
+  const { releaseUrls } = await getTagReleasesAsync(getTagsFromUrl(playlistStoreId))
+  const uniqueReleaseUrls = R.uniq(releaseUrls)
+  logger.debug(`Found ${uniqueReleaseUrls.length} releases for tag ${playlistStoreId}`)
+  for (const releaseUrl of uniqueReleaseUrls) {
     try {
-      const { releaseUrls } = await getTagReleasesAsync(getTagsFromUrl(playlistStoreId))
-      const uniqueReleaseUrls = R.uniq(releaseUrls)
-      logger.debug(`Found ${uniqueReleaseUrls.length} releases for tag ${playlistStoreId}`)
-      for (const releaseUrl of uniqueReleaseUrls) {
-        if (isRateLimited()) {
-          logger.error('Rate limit reached, stopping iteration for playlist tracks')
-          return
-        }
-        try {
-          yield await getTracksFromReleases([releaseUrl])
-        } catch (e) {
-          if (e.isRateLimit) {
-            logger.error('Rate limit reached while getting playlist tracks from release', e)
-            return
-          }
-          yield { tracks: [], errors: [e] }
-        }
-      }
+      yield await getTracksFromReleases([releaseUrl])
     } catch (e) {
-      if (e.isRateLimit) {
-        logger.error('Rate limit reached while getting tag releases', e)
-        return
-      }
-      throw e
+      // Rate limits propagate so the caller stops and does not mark the
+      // playlist updated; they are logged where they start.
+      if (e.isRateLimit) throw e
+      yield { tracks: [], errors: [e] }
     }
-  } else {
-    throw new Error(`Unsupported playlist type: '${type}' (supported: 'tag') ${type === 'tag'}`)
   }
 }
 

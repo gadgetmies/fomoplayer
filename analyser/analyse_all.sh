@@ -12,6 +12,7 @@ NO_ATTACH=0
 NO_WAVEFORM=0
 SKIP_SANITY=0
 SCORE_AFTER=""
+FINGERPRINT_WORKERS=""
 LAYOUT="windows"
 
 usage() {
@@ -25,6 +26,7 @@ Usage: $(basename "$0") [--previews] [--audio-samples]
                        [--no-waveform]
                        [--skip-sanity-confirmation]
                        [--score-after N]
+                       [--fingerprint-workers N]
                        [--no-attach]
 
 At least one of --previews or --audio-samples is required.
@@ -48,6 +50,11 @@ At least one of --previews or --audio-samples is required.
                     runs sample scoring (against ALL fingerprinted samples)
                     every N previews fingerprinted within one invocation. 0
                     disables. Effective only when batch-size >= N.
+  --fingerprint-workers N
+                    Pass --workers N to the fingerprint-previews worker only,
+                    setting how many parallel processes fingerprint each fetched
+                    batch. Omitted → the worker default (4) applies. Recommended
+                    ceiling: cores − 1..2; use 1 to restore serial behaviour.
   --no-attach       Don't 'tmux attach' after launching.
 EOF
 }
@@ -64,6 +71,7 @@ while [[ $# -gt 0 ]]; do
     --no-waveform)    NO_WAVEFORM=1; shift ;;
     --skip-sanity-confirmation) SKIP_SANITY=1; shift ;;
     --score-after)    SCORE_AFTER="$2"; shift 2 ;;
+    --fingerprint-workers) FINGERPRINT_WORKERS="$2"; shift 2 ;;
     --no-attach)      NO_ATTACH=1; shift ;;
     -h|--help)        usage; exit 0 ;;
     *)
@@ -149,6 +157,12 @@ if [[ -n "$SCORE_AFTER" ]]; then
   score_after_arg=" --score-after $SCORE_AFTER"
 fi
 
+# Applies to the fingerprint-previews worker only; omitted → worker default (4).
+fingerprint_workers_arg=""
+if [[ -n "$FINGERPRINT_WORKERS" ]]; then
+  fingerprint_workers_arg=" --workers $FINGERPRINT_WORKERS"
+fi
+
 # Spawn the first worker with new-session; subsequent workers either get their
 # own window (--layout windows) or split the shared workers window (--layout panes).
 session_created=0
@@ -206,7 +220,7 @@ spawn() {
 }
 
 if [[ $PREVIEWS -eq 1 ]]; then
-  spawn "fingerprint-previews" "python panako_processor.py --previews${batch_arg}${score_after_arg}"
+  spawn "fingerprint-previews" "python panako_processor.py --previews${batch_arg}${score_after_arg}${fingerprint_workers_arg}"
   spawn "embedding-previews"   "python main.py -m \"$MODEL\"${batch_arg}${purchased_arg}${sanity_arg}"
   if [[ $NO_WAVEFORM -eq 0 ]]; then
     spawn "waveform-previews"  "python waveform.py"
@@ -220,6 +234,12 @@ fi
 if [[ "$LAYOUT" == "panes" ]]; then
   tmux select-layout -t "$SESSION:$WORKER_WINDOW" tiled >/dev/null
 fi
+
+# Enable mouse support for this session: click to select panes/windows, drag
+# borders to resize, scroll wheel to enter copy-mode and scroll history, and
+# drag to select text (copies to the tmux buffer on release). Scoped to this
+# session so it doesn't depend on the user's ~/.tmux.conf.
+tmux set-option -t "$SESSION" mouse on
 
 if [[ $NO_ATTACH -eq 1 ]]; then
   echo "Session \"$SESSION\" started. Attach with: tmux attach -t $SESSION"

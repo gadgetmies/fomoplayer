@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { useEffect, useRef, useState } from 'react'
 import SearchBarBase from './SearchBarBase'
+import Spinner from './Spinner'
 import { parseSingleTerm } from './searchTerms'
 import { requestJSONwithCredentials } from './request-json-with-credentials'
 
@@ -18,6 +19,8 @@ const getTermLabel = (term) => {
       return term.name ?? `${term.id}`
     case 'track':
       return term.similar ? `~${term.name ?? term.id ?? ''}` : term.name ?? `${term.id ?? ''}`
+    case 'cart':
+      return `~${term.name ?? 'cart'}`
     case 'artist':
     case 'label':
     case 'release':
@@ -38,6 +41,11 @@ const GlobalSearchBar = ({
   styles,
   className,
   genres = [],
+  // Opt-in for pickers (Notifications › Subscriptions): which entity prefixes are searched, a callback that takes a
+  // picked entity instead of adding it as a pill, and a popup that shows while searching and when nothing matches.
+  entityTypes = ENTITY_TYPES,
+  onEntitySelect,
+  showEntitySearchStatus = false,
 }) => {
   const [inputValue, setInputValue] = useState('')
   const [inQuote, setInQuote] = useState(false)
@@ -52,6 +60,10 @@ const GlobalSearchBar = ({
   const [entityResults, setEntityResults] = useState([])
   const [entitySearchType, setEntitySearchType] = useState(null)
   const [selectedEntityIndex, setSelectedEntityIndex] = useState(-1)
+  // The "<prefix>:<text>" the current entityResults answer, so a stale answer reads as still searching
+  const [entityResultsFor, setEntityResultsFor] = useState(null)
+  // The "<prefix>:<text>" whose popup Escape closed; it reopens once the text changes
+  const [entityPopupDismissedFor, setEntityPopupDismissedFor] = useState(null)
 
   inputValueRef.current = inputValue
 
@@ -85,7 +97,8 @@ const GlobalSearchBar = ({
     : []
 
   const entityPrefixMatch = inputValue.match(/^(artist|label|release|track):(~?)(.+)$/i)
-  const entitySearchPrefix = entityPrefixMatch?.[1].toLowerCase() ?? null
+  const matchedPrefix = entityPrefixMatch?.[1].toLowerCase() ?? null
+  const entitySearchPrefix = entityTypes.includes(matchedPrefix) ? matchedPrefix : null
   const entitySearchSimilar = entityPrefixMatch?.[2] === '~'
   const entitySearchText = entityPrefixMatch?.[3] ?? null
   const entitySearchIsId = entitySearchText !== null && /^\d+$/.test(entitySearchText)
@@ -94,7 +107,21 @@ const GlobalSearchBar = ({
     entitySearchText !== null &&
     !entitySearchIsId &&
     entitySearchType === entitySearchPrefix &&
-    entityResults.length > 0
+    entityResults.length > 0 &&
+    (!showEntitySearchStatus || entityResultsFor === `${entitySearchPrefix}:${entitySearchText}`)
+  // With showEntitySearchStatus: 'searching' until the answer for the current text arrives, then 'none' if it is empty
+  const entitySearchStatus =
+    !showEntitySearchStatus ||
+    entitySearchPrefix === null ||
+    entitySearchText === null ||
+    entitySearchIsId ||
+    entityPopupDismissedFor === `${entitySearchPrefix}:${entitySearchText}`
+      ? null
+      : entityResultsFor !== `${entitySearchPrefix}:${entitySearchText}`
+        ? 'searching'
+        : entityResults.length === 0
+          ? 'none'
+          : null
 
   useEffect(() => {
     if (entitySearchPrefix === null || entitySearchText === null || entitySearchIsId) {
@@ -112,11 +139,13 @@ const GlobalSearchBar = ({
         if (seq !== entitySearchSeqRef.current) return
         setEntityResults(Array.isArray(results) ? results : [])
         setEntitySearchType(entitySearchPrefix)
-        setSelectedEntityIndex(-1)
+        setEntityResultsFor(`${entitySearchPrefix}:${entitySearchText}`)
+        setSelectedEntityIndex(showEntitySearchStatus && results?.length ? 0 : -1)
       } catch {
         if (seq !== entitySearchSeqRef.current) return
         setEntityResults([])
         setEntitySearchType(null)
+        setEntityResultsFor(`${entitySearchPrefix}:${entitySearchText}`)
       }
     }, 200)
     return () => clearTimeout(handle)
@@ -141,7 +170,7 @@ const GlobalSearchBar = ({
         (async () => {
           try {
             if (t.type === 'track') {
-              const tracks = await requestJSONwithCredentials({
+              const { tracks } = await requestJSONwithCredentials({
                 path: `/tracks/?q=${encodeURIComponent(`track:${t.id}`)}&limit=1&offset=0`,
               })
               const track = tracks?.[0]
@@ -234,6 +263,16 @@ const GlobalSearchBar = ({
   }
 
   const commitEntity = (entity) => {
+    if (onEntitySelect) {
+      setInputValue('')
+      setSelectedEntityIndex(-1)
+      setEntityResults([])
+      setEntitySearchType(null)
+      setEntityResultsFor(null)
+      onChange(terms, '')
+      onEntitySelect({ type: entitySearchPrefix, id: entity.id, name: entity.name })
+      return
+    }
     const similarPrefix = entitySearchPrefix === 'track' && entitySearchSimilar ? '~' : ''
     const newTerm = {
       type: entitySearchPrefix,
@@ -396,6 +435,7 @@ const GlobalSearchBar = ({
         setEntityResults([])
         setEntitySearchType(null)
         setSelectedEntityIndex(-1)
+        setEntityPopupDismissedFor(`${entitySearchPrefix}:${entitySearchText}`)
         return
       }
       if (e.key === 'Enter' && selectedEntityIndex >= 0) {
@@ -403,6 +443,17 @@ const GlobalSearchBar = ({
         commitEntity(entityResults[selectedEntityIndex])
         return
       }
+    }
+
+    // An unresolved artist:/label: search cannot be added as text: pick a match or keep typing
+    if (e.key === 'Enter' && entitySearchStatus !== null) {
+      e.preventDefault()
+      return
+    }
+    if (e.key === 'Escape' && entitySearchStatus !== null) {
+      e.preventDefault()
+      setEntityPopupDismissedFor(`${entitySearchPrefix}:${entitySearchText}`)
+      return
     }
 
     if (e.key === 'Enter') {
@@ -522,6 +573,18 @@ const GlobalSearchBar = ({
                 {genre.name}
               </div>
             ))}
+          </div>
+        ) : entitySearchStatus ? (
+          <div className="search_genre_popup" role="status" data-testid="entity-search-status">
+            {entitySearchStatus === 'searching' ? (
+              <div className="search_genre_option search_entity_status">
+                <Spinner /> Searching {entitySearchPrefix}s…
+              </div>
+            ) : (
+              <div className="search_genre_option search_entity_status">
+                No {entitySearchPrefix}s match “{entitySearchText}”
+              </div>
+            )}
           </div>
         ) : showEntityPopup ? (
           <div className="search_genre_popup">

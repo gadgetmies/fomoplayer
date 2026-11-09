@@ -1,10 +1,12 @@
 const fs = require('fs')
 const path = require('path')
+const express = require('express')
 const bodyParser = require('body-parser')
-const expressPromiseRouter = require('express-promise-router')
 const defaultConfig = require('../config')
 const logger = require('fomoplayer_shared').logger(__filename)
 const { verifyEmail, getCartDetails } = require('./logic.js')
+const { parsePage, parseStores, parseDate } = require('./shared/request-params')
+const { CART_TRACKS_PAGE } = require('./shared/cart')
 const { queryAccountCount: defaultQueryAccountCount, addEmailToWaitingList: defaultAddEmailToWaitingList } = require('./db')
 
 const createPublicRouter = ({
@@ -12,14 +14,13 @@ const createPublicRouter = ({
   queryAccountCount = defaultQueryAccountCount,
   addEmailToWaitingList = defaultAddEmailToWaitingList,
 } = {}) => {
-  const router = expressPromiseRouter()
+  const router = express.Router()
   router.use(bodyParser.json())
 
   router.get('/carts/:uuid', async ({ params: { uuid }, user, query: { since, offset, limit, store: stores } }, res) => {
-    if (since !== undefined && Number.isNaN(new Date(since).getTime())) {
-      return res.status(400).json({ error: 'Invalid since date' })
-    }
-    const cart = await getCartDetails(uuid, user?.id, stores, { since, offset, limit })
+    const page = parsePage({ offset, limit }, CART_TRACKS_PAGE)
+    const filter = { since: parseDate('since', since), ...page }
+    const cart = await getCartDetails(uuid, user?.id, parseStores(stores), filter)
     if (cart === null) {
       return res.status(404).send()
     }
