@@ -2473,10 +2473,6 @@
   resolved "https://registry.yarnpkg.com/@mdn/browser-compat-data/-/browser-compat-data-8.1.0.tgz#e1d9a43e3b9d0c7c4ea22d572b6abcf07ce083ef"
   integrity sha512-BNlUjp+9O6gtIHPVZEGFb5rgtuWW8weR+mSKfLOevxbfoZv5DRe3N4ZTEpXiIm5wfR7+kqHu8malCCgP6USrlg==
 
-"@mebtte/react-media-session@https://github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951":
-  version "1.1.2"
-  resolved "https://github.com/mebtte/react-media-session.git#e8db6e9f0f0a39a22333e84d7bc513d6dccd4951"
-
 "@modelcontextprotocol/sdk@^1.0.0":
   version "1.32.0"
   resolved "https://registry.yarnpkg.com/@modelcontextprotocol/sdk/-/sdk-1.32.0.tgz#534d2c2793fd38a621edbca3238580fdb56898bc"
