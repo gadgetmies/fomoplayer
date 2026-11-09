@@ -12,7 +12,7 @@
       }
     ],
     "released": "31 Dec 2023 00:00:00 GMT",
-    "published": "01 Dec 2023 10:54:51 GMT",
+    "published": "31 Dec 2023 00:00:00 GMT",
     "duration_ms": 266667,
     "release": {
       "release_date": "2023-12-31T00:00:00.000Z",
@@ -35,41 +35,14 @@
     "store_details": {
       "id": 1618408696,
       "track_id": 1618408696,
-      "file": {
-        "mp3-128": "https://t4.bcbits.com/stream/3ebd3f9f5b698594a05dcb30e9cb21ea/mp3-128/1618408696?p=0&ts=1702915340&t=d0c1f2bc2582e9f15834a1e0c709cf1d1773daa7&token=1702915340_124002a22eafa12d354a542d8d5f2aea3ece2e75"
-      },
-      "artist": null,
-      "title": "F4K Y00",
-      "encodings_id": 3195679650,
-      "license_type": 2,
-      "private": null,
+      "title": "Billain - F4K Y00",
       "track_num": 1,
-      "album_preorder": false,
-      "unreleased_track": false,
-      "title_link": "/track/f4k-y00-2",
-      "has_lyrics": false,
-      "has_info": false,
-      "streaming": 1,
-      "is_downloadable": true,
-      "has_free_download": null,
-      "free_album_download": false,
       "duration": 266.667,
-      "lyrics": null,
-      "sizeof_lyrics": 0,
-      "is_draft": false,
-      "video_source_type": null,
-      "video_source_id": null,
-      "video_mobile_url": null,
-      "video_poster_url": null,
-      "video_id": null,
-      "video_caption": null,
-      "video_featured": null,
-      "alt_link": null,
-      "encoding_error": null,
-      "encoding_pending": null,
-      "play_count": 0,
-      "is_capped": false,
-      "track_license_id": null
+      "artist": "Billain",
+      "file": {
+        "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1618408696&ts=1793632523&t=8098c503fcefb39303fafda25f71b206c2c81c36"
+      },
+      "title_link": "https://billainaethek.bandcamp.com/track/f4k-y00-2"
     }
   },
   {
@@ -85,7 +58,7 @@
       }
     ],
     "released": "31 Dec 2023 00:00:00 GMT",
-    "published": "01 Dec 2023 10:54:51 GMT",
+    "published": "31 Dec 2023 00:00:00 GMT",
     "duration_ms": 421818,
     "release": {
       "release_date": "2023-12-31T00:00:00.000Z",
@@ -108,41 +81,14 @@
     "store_details": {
       "id": 3961297937,
       "track_id": 3961297937,
-      "file": {
-        "mp3-128": "https://t4.bcbits.com/stream/f182f472430892855420914b9757ea80/mp3-128/3961297937?p=0&ts=1702915340&t=44940d183e2ff62b530965c9a28dc23a491d889f&token=1702915340_3f5a083e5371fdc09fdeb6f5cea0fdf4e5ab0792"
-      },
-      "artist": null,
-      "title": "Viadukt",
-      "encodings_id": 3291046019,
-      "license_type": 2,
-      "private": null,
+      "title": "Billain - Viadukt",
       "track_num": 2,
-      "album_preorder": false,
-      "unreleased_track": false,
-      "title_link": "/track/viadukt",
-      "has_lyrics": false,
-      "has_info": false,
-      "streaming": 1,
-      "is_downloadable": true,
-      "has_free_download": null,
-      "free_album_download": false,
       "duration": 421.818,
-      "lyrics": null,
-      "sizeof_lyrics": 0,
-      "is_draft": false,
-      "video_source_type": null,
-      "video_source_id": null,
-      "video_mobile_url": null,
-      "video_poster_url": null,
-      "video_id": null,
-      "video_caption": null,
-      "video_featured": null,
-      "alt_link": null,
-      "encoding_error": null,
-      "encoding_pending": null,
-      "play_count": 0,
-      "is_capped": false,
-      "track_license_id": null
+      "artist": "Billain",
+      "file": {
+        "mp3-128": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3961297937&ts=1793632523&t=1933a99b1208bb142e2560928c239f5a4ad1d378"
+      },
+      "title_link": "https://billainaethek.bandcamp.com/track/viadukt"
     }
   }
 ]

@@ -90,7 +90,34 @@ const queuedEmails = async () =>
     ORDER BY email_queue_id
   `)
 
-const match = (previewId, score) => ({ store__track_preview_id: previewId, match_score: score })
+const match = (previewId, score, offset = null, tempo = null) => ({
+  store__track_preview_id: previewId,
+  match_score: score,
+  peak_offset_seconds: offset,
+  peak_tempo_factor: tempo,
+})
+
+const offsetTempoRows = async (sampleId) =>
+  pg.queryRowsAsync(sql`
+    SELECT store__track_preview_id                             AS "previewId",
+           user_notification_audio_sample_match_offset_seconds AS "offsetSeconds",
+           user_notification_audio_sample_match_tempo_factor   AS "tempoFactor"
+    FROM user_notification_audio_sample_match
+    WHERE user_notification_audio_sample_id = ${sampleId}
+    ORDER BY store__track_preview_id
+  `)
+
+const eventRows = async (sampleId) =>
+  pg.queryRowsAsync(sql`
+    SELECT user_notification_event_id       AS id,
+           meta_account_user_id             AS "userId",
+           track_id                         AS "trackId",
+           store__track_preview_id          AS "previewId",
+           user_notification_event_read_at  AS "readAt"
+    FROM user_notification_event
+    WHERE user_notification_audio_sample_id = ${sampleId}
+    ORDER BY store__track_preview_id
+  `)
 
 test({
   setup: async () => {
@@ -118,6 +145,42 @@ test({
       assert.deepStrictEqual(updated.notifiedAt, before.notifiedAt)
       assert.strictEqual(inserted.previewId, previewIds[1])
       assert.strictEqual(inserted.notifiedAt, null)
+    },
+
+    'stores the matcher offset and tempo and updates them on rescore': async ({ sampleId, previewIds }) => {
+      await persistSampleMatches(sampleId, [match(previewIds[0], 5, 12.5, 1.02)], 0.01, 0.5)
+      assert.deepStrictEqual(await offsetTempoRows(sampleId), [
+        { previewId: previewIds[0], offsetSeconds: 12.5, tempoFactor: 1.02 },
+      ])
+
+      await persistSampleMatches(sampleId, [match(previewIds[0], 6, 13, 0.97), match(previewIds[1], 4)], 0.01, 0.5)
+      assert.deepStrictEqual(await offsetTempoRows(sampleId), [
+        { previewId: previewIds[0], offsetSeconds: 13, tempoFactor: 0.97 },
+        { previewId: previewIds[1], offsetSeconds: null, tempoFactor: null },
+      ])
+    },
+
+    'records one unread event per new match for the sample owner': async ({ userId, sampleId, previewIds, trackIds }) => {
+      await persistSampleMatches(sampleId, [match(previewIds[0], 5)], 0.01, 0.5)
+      const [first] = await eventRows(sampleId)
+      assert.deepStrictEqual(
+        { userId: first.userId, trackId: first.trackId, previewId: first.previewId, readAt: first.readAt },
+        { userId, trackId: trackIds[0], previewId: previewIds[0], readAt: null },
+      )
+
+      await pg.queryAsync(sql`UPDATE user_notification_event SET user_notification_event_read_at = NOW() WHERE user_notification_event_id = ${first.id}`)
+      // Rescoring the existing match keeps its event (and read state); the new match gets its own.
+      await persistSampleMatches(sampleId, [match(previewIds[0], 7), match(previewIds[1], 4)], 0.01, 0.5)
+      const events = await eventRows(sampleId)
+      assert.strictEqual(events.length, 2)
+      assert.strictEqual(events[0].id, first.id)
+      assert.ok(events[0].readAt)
+      assert.strictEqual(events[1].trackId, trackIds[1])
+      assert.strictEqual(events[1].readAt, null)
+
+      // A match the rescore drops takes its event with it.
+      await persistSampleMatches(sampleId, [match(previewIds[1], 4)], 0.01, 0.5)
+      assert.deepStrictEqual((await eventRows(sampleId)).map(({ previewId }) => previewId), [previewIds[1]])
     },
 
     'removes pairs missing from the new result set': async ({ sampleId, previewIds }) => {

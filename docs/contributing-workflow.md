@@ -108,6 +108,11 @@ The Bash check is best effort: files written by other programs (builds,
 formatters, scripts, `yarn install`) are not detected. Don't run such commands
 in the main checkout. Run them in the worktree.
 
+Neither hook guards a cloud session (Claude Code sets `CLAUDE_CODE_REMOTE=true`
+there): its checkout is the session's own throwaway clone, with no main
+checkout to keep clean. Agent pipeline runs work in the cloud on their change
+branch directly.
+
 ## Don't destroy uncommitted work
 
 Never `git checkout` / `git restore` / `git stash drop` a file you didn't change

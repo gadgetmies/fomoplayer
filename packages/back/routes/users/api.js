@@ -61,7 +61,15 @@ const {
   CART_TRACKS_PAGE,
 } = require('../shared/cart.js')
 const { parsePage, parseStores, parseDate } = require('../shared/request-params')
-const { BadRequest } = require('../shared/httpErrors')
+const { BadRequest, NotFound } = require('../shared/httpErrors')
+const {
+  queryNotificationEvents,
+  queryUnreadNotificationCount,
+  markNotificationEventsRead,
+  queryUserAudioSample,
+  querySampleMatches,
+} = require('../shared/db/notification-events')
+const { querySampleSimilarTracks } = require('../shared/db/sample-similarity')
 
 const { queryDefaultCartId } = require('../shared/db/cart.js')
 
@@ -538,6 +546,54 @@ router.post(
       await removeCartSync(userId, cartId, spotifyStoreName)
       res.status(204).send()
     }
+  },
+)
+
+// A positive integer query or path parameter, or `fallback` when absent. Anything else is a 400.
+const parsePositiveInt = (value, name, fallback) => {
+  if (value === undefined || value === '') return fallback
+  if (!/^\d+$/.test(String(value)) || Number(value) < 1) throw new BadRequest(`${name} must be a positive integer`)
+  return Number(value)
+}
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+
+router.get('/notifications/events', async ({ user: { id: userId }, query: { limit, before } }, res) => {
+  res.send(
+    await queryNotificationEvents(userId, {
+      limit: clamp(parsePositiveInt(limit, 'limit', 50), 1, 200),
+      before: parsePositiveInt(before, 'before', null),
+    }),
+  )
+})
+
+router.get('/notifications/events/unread-count', async ({ user: { id: userId } }, res) => {
+  res.send({ count: await queryUnreadNotificationCount(userId) })
+})
+
+router.post('/notifications/events/read', async ({ user: { id: userId }, body: { all, trackIds } = {} }, res) => {
+  if (all !== true && !(Array.isArray(trackIds) && trackIds.every((id) => Number.isInteger(id)))) {
+    throw new BadRequest('Body must be { all: true } or { trackIds: [<int>...] }')
+  }
+  res.send({ count: await markNotificationEventsRead(userId, { all: all === true, trackIds }) })
+})
+
+const requireUserAudioSample = async (userId, id) => {
+  const sampleId = parsePositiveInt(id, 'id')
+  const sample = await queryUserAudioSample(userId, sampleId)
+  if (!sample) throw new NotFound('Audio sample not found')
+  return sample
+}
+
+router.get('/notifications/audio-samples/:id/matches', async ({ user: { id: userId }, params: { id } }, res) => {
+  const sample = await requireUserAudioSample(userId, id)
+  res.send(await querySampleMatches(userId, sample.id))
+})
+
+router.get(
+  '/notifications/audio-samples/:id/similar',
+  async ({ user: { id: userId }, params: { id }, query: { limit } }, res) => {
+    const sample = await requireUserAudioSample(userId, id)
+    res.send(await querySampleSimilarTracks(userId, sample.id, clamp(parsePositiveInt(limit, 'limit', 20), 1, 100)))
   },
 )
 

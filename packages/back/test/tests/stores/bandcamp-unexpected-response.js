@@ -5,7 +5,7 @@ const { test } = require('cascade-test')
 
 const bandcampApi = require('../../../routes/stores/bandcamp/bandcamp-api.js')
 const {
-  static: { isRateLimited, resetRateLimit },
+  static: { isRateLimited, resetRateLimit, resetReleaseIndex },
 } = bandcampApi
 
 // Bandcamp has started answering the server with HTTP 200 and a page that is
@@ -25,6 +25,7 @@ const realFetch = globalThis.fetch
 const withStubbedFetch = (body, fn) => async () => {
   const requests = []
   resetRateLimit()
+  resetReleaseIndex()
   globalThis.fetch = async (url, options) => {
     requests.push({ url, options })
     return { status: 200, ok: true, text: async () => body }
@@ -82,7 +83,7 @@ test({
         assert.strictEqual(e.isRateLimit, true)
         assert.match(
           e.message,
-          /^Bandcamp served an unexpected page \("Just a moment\.\.\."\)\. Requests are suspended/,
+          /^Bandcamp requests are paused \(unexpected page "Just a moment\.\.\." instead of a Bandcamp band page\) until /,
         )
         return true
       })
@@ -96,10 +97,10 @@ test({
     try {
       await assert.rejects(
         bandcampApi.getArtistAsync('https://example.bandcamp.com'),
-        /^Error: Rate limit reached after/,
+        /^Error: Bandcamp rate limited \(HTTP 429\)/,
       )
       await assert.rejects(bandcampApi.getArtistAsync('https://example.bandcamp.com'), (e) => {
-        assert.match(e.message, /^Rate limit reached\. Requests are suspended/)
+        assert.match(e.message, /^Bandcamp requests are paused \(HTTP 429\) until /)
         return true
       })
     } finally {

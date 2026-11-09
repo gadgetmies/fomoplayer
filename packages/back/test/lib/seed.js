@@ -31,9 +31,12 @@ module.exports.seedTracks = async ({ userIds }) => {
   if (isRemotePreview) {
     // In remote preview mode the bot user is the only test user; we seed via
     // the existing POST /api/me/tracks endpoint (same path as the Chrome ext).
+    // skipOld=false matches the local path below: the fixtures are all older
+    // than TRACK_MAX_AGE_DAYS, so without it the endpoint answers 201 but
+    // stores none of them and the preview's track list stays empty.
     const ctx = getBrowserContext()
     const tracks = seedFixtures.flatMap((fixture) => beatportTracksTransform(fixture))
-    const res = await ctx.request.post(`${process.env.PREVIEW_URL}/api/me/tracks`, {
+    const res = await ctx.request.post(`${process.env.PREVIEW_URL}/api/me/tracks?skipOld=false`, {
       data: tracks,
       headers: { 'x-multi-store-player-store': beatportUrl },
     })

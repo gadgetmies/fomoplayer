@@ -186,6 +186,17 @@
   background-color: #252525;
 }
 
+/* "Searching…" and "No matches" in an entity picker: information, not an option */
+.search_entity_status,
+.search_entity_status:hover {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  background-color: transparent;
+  color: #aaa;
+}
+
 /* ── Quote mode indicator ──────────────────────────────────────────────────── */
 
 .search_quote_start {

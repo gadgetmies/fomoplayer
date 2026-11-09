@@ -26,3 +26,31 @@
     margin: 0 auto;
   }
 }
+
+/* The player docked to the bottom of the viewport on Settings (see .docked-player) */
+/* Fixed to the viewport, but as wide as the page container above it: its 1rem side margins from 769px, centred at
+   its max width from 1480px. */
+.page-container.page-container--docked {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  width: 100%;
+  flex: 0 0 auto;
+  z-index: 10;
+  background: transparent;
+}
+
+.page-container--docked > :not(.preview) {
+  display: none !important;
+}
+
+@media (min-width: 769px) and (max-width: 1479px) {
+  .page-container.page-container--docked {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    margin: 0;
+  }
+}

@@ -813,12 +813,16 @@ ORDER BY user_notification_audio_sample_id
 // transaction: rows no longer in the result set are deleted, existing
 // (sample, preview) pairs are updated in place and new pairs are inserted.
 // Updating in place keeps matched_at and notified_at, so notifySampleMatches
-// only emails about pairs that are genuinely new.
+// only emails about pairs that are genuinely new. Each newly inserted pair also
+// gets an unread notification event for the sample's owner; deleted pairs take
+// their events with them through the foreign key.
 module.exports.persistSampleMatches = async (sampleId, matches, threshold, bucketSeconds) => {
   const values = (matches || []).map((m) => ({
     sample_id: sampleId,
     preview_id: m.store__track_preview_id,
     score: m.match_score,
+    offset_seconds: m.peak_offset_seconds ?? null,
+    tempo_factor: m.peak_tempo_factor ?? null,
   }))
   const previewIds = values.map((v) => String(v.preview_id))
 
@@ -837,26 +841,46 @@ WHERE user_notification_audio_sample_id = ${sampleId}
     await tx.queryAsync(
       // language=PostgreSQL
       sql`-- persistSampleMatches: upsert
-INSERT INTO user_notification_audio_sample_match (
-  user_notification_audio_sample_id,
-  store__track_preview_id,
-  user_notification_audio_sample_match_score,
-  user_notification_audio_sample_match_threshold,
-  user_notification_audio_sample_match_bucket_seconds
+WITH upserted AS (
+  INSERT INTO user_notification_audio_sample_match (
+    user_notification_audio_sample_id,
+    store__track_preview_id,
+    user_notification_audio_sample_match_score,
+    user_notification_audio_sample_match_threshold,
+    user_notification_audio_sample_match_bucket_seconds,
+    user_notification_audio_sample_match_offset_seconds,
+    user_notification_audio_sample_match_tempo_factor
+  )
+  SELECT
+    rec.sample_id::BIGINT,
+    rec.preview_id::BIGINT,
+    rec.score::INTEGER,
+    ${threshold}::FLOAT,
+    ${bucketSeconds}::FLOAT,
+    rec.offset_seconds::DOUBLE PRECISION,
+    rec.tempo_factor::DOUBLE PRECISION
+  FROM json_to_recordset(${JSON.stringify(values)}::json) AS rec (
+    sample_id TEXT, preview_id TEXT, score TEXT, offset_seconds TEXT, tempo_factor TEXT
+  )
+  ON CONFLICT (user_notification_audio_sample_id, store__track_preview_id) DO UPDATE
+  SET user_notification_audio_sample_match_score          = EXCLUDED.user_notification_audio_sample_match_score,
+      user_notification_audio_sample_match_threshold      = EXCLUDED.user_notification_audio_sample_match_threshold,
+      user_notification_audio_sample_match_bucket_seconds = EXCLUDED.user_notification_audio_sample_match_bucket_seconds,
+      user_notification_audio_sample_match_offset_seconds = EXCLUDED.user_notification_audio_sample_match_offset_seconds,
+      user_notification_audio_sample_match_tempo_factor   = EXCLUDED.user_notification_audio_sample_match_tempo_factor
+  -- xmax is 0 only on rows this statement inserted, not on rows it updated.
+  RETURNING user_notification_audio_sample_id, store__track_preview_id, (xmax = 0) AS inserted
 )
-SELECT
-  rec.sample_id::BIGINT,
-  rec.preview_id::BIGINT,
-  rec.score::INTEGER,
-  ${threshold}::FLOAT,
-  ${bucketSeconds}::FLOAT
-FROM json_to_recordset(${JSON.stringify(values)}::json) AS rec (
-  sample_id TEXT, preview_id TEXT, score TEXT
+INSERT INTO user_notification_event (
+  meta_account_user_id, track_id, user_notification_audio_sample_id, store__track_preview_id
 )
-ON CONFLICT (user_notification_audio_sample_id, store__track_preview_id) DO UPDATE
-SET user_notification_audio_sample_match_score          = EXCLUDED.user_notification_audio_sample_match_score,
-    user_notification_audio_sample_match_threshold      = EXCLUDED.user_notification_audio_sample_match_threshold,
-    user_notification_audio_sample_match_bucket_seconds = EXCLUDED.user_notification_audio_sample_match_bucket_seconds
+SELECT meta_account_user_id, track_id, user_notification_audio_sample_id, store__track_preview_id
+FROM upserted
+  NATURAL JOIN user_notification_audio_sample
+  NATURAL JOIN store__track_preview
+  NATURAL JOIN store__track
+WHERE inserted
+ON CONFLICT DO NOTHING
       `,
     )
   })

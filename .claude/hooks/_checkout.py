@@ -9,6 +9,10 @@ Only paths belonging to THIS repository are guarded — the repo whose hooks are
 running, identified by ``$CLAUDE_PROJECT_DIR`` (or the hook's own location).
 Other repositories, the scratchpad and the agent's memory directory are not
 affected. Every helper fails open (returns None) on any uncertainty.
+
+Cloud sessions are not guarded: Claude Code sets ``CLAUDE_CODE_REMOTE=true``
+there, and the checkout is the session's own throwaway clone, so there is no
+main checkout to keep clean and nothing to merge back into it.
 """
 import os
 import subprocess
@@ -51,7 +55,7 @@ def _this_repo_common_dir():
 def main_checkout_of(path):
     """Return the main checkout's top-level dir if ``path`` lies in this repo's
     MAIN checkout (not in a linked worktree, not inside ``.git``); else None."""
-    if not path:
+    if not path or os.environ.get("CLAUDE_CODE_REMOTE") == "true":
         return None
     d = _existing_dir(os.path.abspath(os.path.expanduser(path)))
     if not d:

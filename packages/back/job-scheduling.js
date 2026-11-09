@@ -146,7 +146,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
     for (const scheduledName of Object.keys(scheduled)) {
       if (!jobSchedules.find(({ name }) => name === scheduledName)) {
         logger.info(`Removing schedule of job '${scheduledName}'`)
-        scheduled[scheduledName].task.stop()
+        scheduled[scheduledName].task.cancel()
         delete scheduled[scheduledName]
       }
     }
@@ -157,7 +157,10 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
           continue
         } else {
           logger.info(`Updating schedule of job '${name}' to ${schedule}`)
-          scheduled[name].task.stop()
+          // node-schedule jobs are cancelled, not stopped. Drop the entry too, or a
+          // disabled job would be "updated" (and cancelled again) on every reload.
+          scheduled[name].task.cancel()
+          delete scheduled[name]
         }
       } else {
         logger.info(`Scheduling new job '${name}' with schedule '${schedule}'`)
@@ -168,17 +171,23 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
         continue
       }
 
-      scheduled[name] = {
-        task: scheduleJob(schedule, () => {
-          if (process.env.DISABLE_JOBS) {
-            logger.info(`Skipping job ${name} because jobs are disabled`)
-            return
-          }
-          return runJob(name)
-        }),
-        enabled,
-        schedule,
+      const task = scheduleJob(schedule, () => {
+        if (process.env.DISABLE_JOBS) {
+          logger.info(`Skipping job ${name} because jobs are disabled`)
+          return
+        }
+        return runJob(name)
+      })
+
+      // node-schedule returns null for a schedule it cannot parse or that never
+      // fires again. Leave such a job unscheduled rather than storing a null task
+      // that would break the next reload.
+      if (!task) {
+        logger.error(`Not scheduling job '${name}': schedule '${schedule}' is invalid or never fires`)
+        continue
       }
+
+      scheduled[name] = { task, enabled, schedule }
     }
 
     return { success: true }
@@ -210,7 +219,18 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   ...radiator,
 }
 
+// Cancel every scheduled job so a process (such as a test run) can exit.
+const cancelAll = () => {
+  for (const name of Object.keys(scheduled)) {
+    scheduled[name].task.cancel()
+    delete scheduled[name]
+  }
+}
+
 module.exports = {
   init,
   runJob,
+  updateJobs: jobs.updateJobs,
+  getScheduled: () => scheduled,
+  cancelAll,
 }
