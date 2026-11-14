@@ -53,6 +53,13 @@ const reasonText = (reason) => {
   return `Search · ${reason.displayName || reason.text}`
 }
 
+const reasonIcon = (reason) => {
+  if (reason.type === 'sample') return 'wave-square'
+  const match = reason.text?.match(/^(artist|label):\d+$/)
+  if (match) return match[1] === 'artist' ? 'user' : 'record-vinyl'
+  return 'magnifying-glass'
+}
+
 const arrivedText = (createdAt) => {
   const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / (24 * 3600 * 1000))
   return days <= 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`
@@ -260,10 +267,6 @@ class NotificationsPage extends Component {
     const rows = events.filter(({ track }) => track)
     return (
       <>
-        <p className="notifications-hint">
-          Everything you asked to hear about, newest first. Click a row to play it; next / previous then step through
-          this list.
-        </p>
         {events.length === 0 ? (
           <p className="notifications-empty">
             Nothing yet. New tracks for your <Link to="/notifications/subscriptions">subscriptions</Link> and matches
@@ -334,8 +337,9 @@ class NotificationsPage extends Component {
                     heard={event.read ? track.heard || event.createdAt : null}
                     arrived={arrivedText(event.createdAt)}
                     why={
-                      <span className={`why why--${event.reason.type}`} title={reasonText(event.reason)}>
-                        {reasonText(event.reason)}
+                      <span className="why" title={reasonText(event.reason)}>
+                        <FontAwesomeIcon className="why_icon" icon={reasonIcon(event.reason)} />
+                        <span className="why_text">{reasonText(event.reason)}</span>
                       </span>
                     }
                     playing={this.props.currentTrackId === track.id}

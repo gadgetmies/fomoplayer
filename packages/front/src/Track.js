@@ -332,7 +332,6 @@ class Track extends Component {
           </td>
         ) : null}
         <td className={'track-details tracks-cell'}>
-          {this.props.why && <div className={'why-cell why-cell--inline track-table-cell'}>{this.props.why}</div>}
           <div className={'track-details-left track-details-content'}>
             <div className={'artist-cell track-table-cell'} title={namesToString(artistsAndRemixers)}>
               {followableNameLinks(artistsAndRemixers, this.props.follows, 'artist', ', ', ' & ', this.props.onAddEntityToSearch)}
@@ -554,6 +553,8 @@ class Track extends Component {
         ) : null}
         <td className={'open-share-cell tracks-cell'}>
           <div className={'open-cell track-table-cell'} style={{ overflow: 'visible' }}>
+            {/* On mobile the Why column (Notifications) moves here, above the store links */}
+            {this.props.why && <div className={'why-cell why-cell--inline'}>{this.props.why}</div>}
             {this.props.cartSearch ? (
               <span className={'table-cell-button-row'}>
                 <button

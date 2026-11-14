@@ -52,7 +52,8 @@
 .notifications-activity {
   display: flex;
   flex-direction: column;
-  margin: 0 -16px;
+  /* Flush with the tab bar and the page edges, as the track list sits under the cart controls */
+  margin: -8px -16px 0;
   width: calc(100% + 32px);
 }
 
@@ -79,8 +80,29 @@
   width: 100%;
 }
 
+/* Why a track is listed: information, not an action or a view state, so neither the magenta of actions nor the
+   blue of selected tabs and the playing row. A dark translucent chip that reads on the grey and the playing rows. */
 .why {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0 6px;
+  border-radius: 3px;
+  background-color: rgba(0, 0, 0, 0.25);
+  line-height: 1.6rem;
   white-space: nowrap;
+}
+
+.why_icon {
+  flex: none;
+  opacity: 0.7;
+}
+
+.why_text {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .notifications-hint {
@@ -160,12 +182,6 @@
   background: transparent;
 }
 
-.why--sample {
-  background: #b40089;
-  border-radius: 0.25rem;
-  padding: 3px 7px;
-  font-weight: 700;
-}
 
 .notifications-icon-button {
   background: none;
@@ -307,19 +323,29 @@
     display: none;
   }
 
+  /* Above the store links in the right-hand column */
   .notifications-activity .why-cell--inline {
     display: block;
-    font-size: 80%;
-    line-height: 1.8em;
+    margin-bottom: 4px;
+    text-align: left;
   }
 
   .notifications-activity .why-cell--inline .why {
-    display: inline-block;
-    max-width: 100%;
-    box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    padding: 4px 6px;
+    font-size: 80%;
+    line-height: 1.3em;
     white-space: normal;
+  }
+
+  .notifications-activity .why-cell--inline .why_icon {
+    margin-top: 0.15em;
+  }
+
+  .notifications-activity .why-cell--inline .why_text {
     overflow-wrap: anywhere;
-    line-height: 1.4em;
   }
 
   .arrived-cell:before {
