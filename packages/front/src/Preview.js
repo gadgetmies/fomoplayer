@@ -940,24 +940,27 @@ class Preview extends Component {
               />
               {currentTrack ? (
                 <>
-                  <img
-                    style={{
-                      width: '100%',
-                      height: 2,
-                      position: 'absolute',
-                      bottom: -5,
-                      border: '1px solid #000',
-                      display: this.state.embeddingMissing ? 'none' : 'block',
-                    }}
-                    alt={'embedding'}
-                    src={`${apiURL}/tracks/${currentTrack.id}/embedding.png`}
-                    onError={(e) => {
-                      this.setState({ embeddingMissing: true })
-                    }}
-                    onLoad={(e) => {
-                      this.setState({ embeddingMissing: false })
-                    }}
-                  />
+                  {/* Uploaded samples are not tracks and have no embedding */}
+                  {isSample(currentTrack) ? null : (
+                    <img
+                      style={{
+                        width: '100%',
+                        height: 2,
+                        position: 'absolute',
+                        bottom: -5,
+                        border: '1px solid #000',
+                        display: this.state.embeddingMissing ? 'none' : 'block',
+                      }}
+                      alt={'embedding'}
+                      src={`${apiURL}/tracks/${currentTrack.id}/embedding.png`}
+                      onError={(e) => {
+                        this.setState({ embeddingMissing: true })
+                      }}
+                      onLoad={(e) => {
+                        this.setState({ embeddingMissing: false })
+                      }}
+                    />
+                  )}
                   <div
                     className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
                     style={{ left: 2 }}
