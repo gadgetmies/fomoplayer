@@ -583,6 +583,8 @@ class Preview extends Component {
         <button
           disabled={this.state.embeddingMissing}
           onClick={() => search({ q: `track:~${currentTrack?.id}`, onlyNew: true })}
+          aria-label="Find similar"
+          title="Find similar"
           className={
             'button button-push_button button-push_button-small button-push_button-primary preview-action_button no-style-link'
           }
@@ -601,6 +603,8 @@ class Preview extends Component {
             <button
               disabled={!currentTrack}
               onClick={this.props.onFollowClicked}
+              aria-label="Follow"
+              title="Follow"
               className={
                 'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
               }
@@ -618,6 +622,8 @@ class Preview extends Component {
               onClick={() => {
                 this.props.onIgnoreClicked(currentTrack)
               }}
+              aria-label="Ignore"
+              title="Ignore"
             >
               <span className="button-push_button_icon">
                 <FontAwesomeIcon icon={'ban'} />
@@ -630,6 +636,7 @@ class Preview extends Component {
           anchor={
             <button
               className={'pill pill-button button-push_button-small popup-anchor'}
+              aria-label="Share"
               style={{ height: '100%', margin: 0, border: '1px solid #000' }}
             >
               <span className="pill-button-contents">
