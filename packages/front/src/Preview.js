@@ -517,8 +517,14 @@ class Preview extends Component {
             WebkitMaskImage: waveform ? `url(${waveform})` : 'none',
           }}
         />
-        <div className={edgeOverlayClass} style={{ width: `${toPositionPercent(shouldSkip ? startOffset : 0)}%`, left: 0 }} />
-        <div className={edgeOverlayClass} style={{ width: `${100 - (100 * endPosition) / totalDuration}%`, right: 0 }} />
+        <div
+          className={edgeOverlayClass}
+          style={{ width: `${toPositionPercent(shouldSkip ? startOffset : 0)}%`, left: 0 }}
+        />
+        <div
+          className={edgeOverlayClass}
+          style={{ width: `${100 - (100 * endPosition) / totalDuration}%`, right: 0 }}
+        />
       </>
     )
   }
@@ -594,7 +600,14 @@ class Preview extends Component {
           data-testid="docked-player-waveform"
           onMouseDown={(e) => this.seekFromWaveformClick(e, { totalDuration, startOffset, endPosition })}
         >
-          {this.renderWaveformLayers({ waveform, toPositionPercent, shouldSkip, startOffset, endPosition, totalDuration })}
+          {this.renderWaveformLayers({
+            waveform,
+            toPositionPercent,
+            shouldSkip,
+            startOffset,
+            endPosition,
+            totalDuration,
+          })}
           <span className="docked-player_time docked-player_time--position" data-testid="docked-player-time">
             {formatTime(timelineMs)}
           </span>
@@ -762,9 +775,7 @@ class Preview extends Component {
                       </span>
                       <br />
                       <span className="preview_label">Duration:</span>{' '}
-                      <span className="preview_detail">
-                        {formatDuration(currentTrack.duration)}
-                      </span>
+                      <span className="preview_detail">{formatDuration(currentTrack.duration)}</span>
                     </div>
                   </div>
                 </div>
