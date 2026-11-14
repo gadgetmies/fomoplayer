@@ -253,6 +253,32 @@ const assertPlayingActivityRowReadsIt = async ({ page }) => {
   )
 }
 
+// Local only: needs a DB-seeded sample. An uploaded sample has no duration; the player shows '-' for it instead of
+// crashing, and the page still renders after a reload, which restores the sample as the current track.
+const previewDuration = (page) =>
+  page.evaluate(() => {
+    const label = [...document.querySelectorAll('.preview_label')].find((el) => el.textContent.startsWith('Duration'))
+    return label?.nextElementSibling?.textContent ?? null
+  })
+
+const assertPlayingSampleShowsNoDuration = async ({ page }) => {
+  await openTab(page, 'Samples')
+  await page.locator(`button[aria-label="Play ${SAMPLE_FILENAME}"]`).click()
+  await waitForWithTimeoutMessage(
+    () => page.waitForSelector(`.preview_title:has-text("${SAMPLE_FILENAME}")`, { timeout: 10000 }),
+    'Clicking Play on a sample should show it in the player.',
+  )
+  expect(await previewDuration(page)).to.equal('-')
+
+  await page.reload()
+  await waitForWithTimeoutMessage(
+    () => page.waitForSelector(`.preview_title:has-text("${SAMPLE_FILENAME}")`, { timeout: 15000 }),
+    'The player should still render after a reload with the sample as the current track.',
+  )
+  await page.waitForSelector('.notifications-samples', { state: 'visible', timeout: 10000 })
+  expect(await previewDuration(page)).to.equal('-')
+}
+
 const assertSampleMatchPlaysAligned = async ({ page }) => {
   await openTab(page, 'Samples')
   await page.locator('.notifications-samples tr', { hasText: SAMPLE_FILENAME }).click()
@@ -327,4 +353,5 @@ module.exports = {
   assertUnreadBadge,
   assertPlayingActivityRowReadsIt,
   assertSampleMatchPlaysAligned,
+  assertPlayingSampleShowsNoDuration,
 }
