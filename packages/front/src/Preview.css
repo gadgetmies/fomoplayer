@@ -298,34 +298,40 @@
   flex-direction: column;
 }
 
-/* Layout B3 from the design canvas: controls and track on the left, a fixed-width waveform on the right with the
-   times on its ends; on phones the waveform goes full width under the track. */
 .docked-player {
+  position: relative;
   background: #131313;
   border-top: 1px solid #000;
-  display: flex;
-  align-items: stretch;
-  height: 80px;
   width: 100%;
   box-sizing: border-box;
 }
 
-/* Keeps room for the artists and title: on narrower screens the waveform gives way first */
+/* Controls and track on the left, the waveform in the middle with Preview and Listen on its ends, the actions and the
+   expand button on the right. On narrower screens the waveform moves above the row, as it always sits on phones. */
+.docked-player_main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
 .docked-player_row {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 4px;
-  min-width: 360px;
+  min-height: 80px;
   padding: 0 8px;
+  box-sizing: border-box;
   font-size: 0.9rem;
 }
 
-/* Tall enough to make out the drops and breaks; click to seek */
+/* Tall enough to make out the drops and breaks; click to seek. As tall as the bar: the panel's waveform_container
+   height of 100% would stop it stretching, the bar having no fixed height. */
 .docked-player_waveform {
   position: relative;
-  flex: 0 1 600px;
-  min-width: 240px;
+  flex: 1 1 240px;
+  height: auto;
+  min-height: 56px;
   cursor: pointer;
 }
 
@@ -334,35 +340,18 @@
   min-height: 44px;
 }
 
-/* Position and duration on the waveform's lower ends, on a dark backing so they read over it */
-.docked-player_time {
-  position: absolute;
-  bottom: 6px;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  background: rgba(19, 19, 19, 0.8);
-  padding: 1px 5px;
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-.docked-player_time--position {
-  left: 6px;
-}
-
-.docked-player_time--duration {
-  right: 6px;
-  color: #bbb;
+/* Preview and Listen on the waveform's lower ends, as on the panel's waveform, a little tighter for the bar */
+.docked-player_waveform .preview-samples_container {
+  padding: 4px;
 }
 
 /* Artists and title, with "Playing from" below them */
 .docked-player_info {
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 0 1 280px;
+  min-width: 120px;
   display: flex;
   flex-direction: column;
-  margin-left: 8px;
+  margin: 0 8px;
 }
 
 .docked-player_title {
@@ -372,21 +361,192 @@
   text-overflow: ellipsis;
 }
 
-@media (max-width: 590px) {
-  .docked-player {
-    flex-direction: column;
-    height: auto;
+/* Cart, find similar, follow and ignore from the panel's button row as icons, then the expand button */
+.docked-player_end {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 0 8px;
+}
+
+.docked-player_actions {
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.docked-player_actions .button-push_button_label {
+  display: none;
+}
+
+.docked-player_expand[aria-expanded='true'] {
+  opacity: 1;
+}
+
+/* Behind the expand button: share, then the store links, stacked in a popup above the bar's right end, styled like
+   the app's other popups */
+.docked-player_more {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  width: max-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px;
+  background: black;
+  border-radius: 0.25em 0.25em 0 0;
+  box-shadow: 0px 0px 5px black;
+  z-index: 100;
+  font-size: 0.9rem;
+}
+
+.docked-player_share {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+}
+
+/* "Available on" above "Search", each a column of links */
+.docked-player_store-links .preview_links_container,
+.docked-player_store-links .preview_links_wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.docked-player_store-links .preview_links_container {
+  gap: 8px;
+}
+
+.docked-player_store-links .available_on_list,
+.docked-player_store-links .search_from_list {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* Share's own popup opens to the left of the bar's popup, which sits at the viewport's right edge, level with its
+   top. The popup is placed against the bar's popup rather than the share button. */
+@media (min-width: 591px) {
+  .docked-player_more .docked-player_share .popup_container {
+    position: static;
+  }
+
+  .docked-player_more .docked-player_share-popup {
+    top: 0;
+    bottom: auto;
+    left: auto;
+    right: 100%;
+    transform: none;
+    max-height: none;
+  }
+
+  /* Bridges the gap to the share button, so the popup stays open on hover while the pointer moves over to it */
+  .docked-player_more .docked-player_share-popup::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 100%;
+    width: 16px;
+  }
+}
+
+/* Phones only: back from the full panel to the bar */
+.docked-player_collapse {
+  display: none;
+}
+
+/* Too narrow for the waveform between the track and the actions: it goes above them, full width */
+@media (max-width: 1100px) {
+  .docked-player_waveform {
+    order: -1;
+    flex: 1 1 100%;
   }
 
   .docked-player_row {
-    padding: 2px 4px 0;
-    gap: 0;
+    flex: 1 1 auto;
+  }
+}
+
+/* Phones: the bar is the waveform with play, previous, next and the track under it. Expanding it shows the full panel
+   the track lists show (details, waveform with Preview / Listen, then the controls), with a bar on top to go back.
+   The bar's waveform, buttons and spacing match that panel's, so expanding keeps them in size. */
+@media (max-width: 590px) {
+  .docked-player_main {
+    row-gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  /* Shares its line with the expand button; spaced like the panel's button row */
+  .docked-player_row {
+    flex: 1 1 0;
     min-width: 0;
+    min-height: 45px;
+    padding: 0 0 0 8px;
+    gap: 8px;
+    font-size: 1rem;
+  }
+
+  /* Sized like the panel's playback buttons: 3ch, but not narrower than the icon */
+  .docked-player_row .docked-player_button {
+    min-width: auto;
+    min-height: 45px;
   }
 
   .docked-player_waveform {
-    flex: 0 0 56px;
+    flex: 1 1 100%;
+    min-height: 80px;
+  }
+
+  .docked-player_info {
+    flex: 1 1 auto;
     min-width: 0;
+  }
+
+  .docked-player_end {
+    padding: 0 4px;
+  }
+
+  /* The full panel has these on phones */
+  .docked-player .docked-player_actions,
+  .docked-player .docked-player_more {
+    display: none;
+  }
+
+  .preview--docked-expanded {
+    background: var(--page-container-background-color);
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+  }
+
+  .preview--docked-expanded .docked-player {
+    border-top: 0;
+    background: transparent;
+  }
+
+  .preview--docked-expanded .docked-player_main {
+    display: none;
+  }
+
+  .preview--docked-expanded .docked-player_collapse {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 8px;
+    color: white;
+    background: #131313;
+    border-top: 1px solid #000;
+  }
+
+  .preview--docked.preview--docked-expanded > .preview_details_wrapper {
+    display: flex !important;
+  }
+
+  .preview--docked.preview--docked-expanded > .player-collection-wrapper {
+    display: block !important;
   }
 }
 

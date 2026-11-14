@@ -85,16 +85,17 @@ const assertDockedNextFollowsSource = async ({ page, order }) => {
   await waitForWithTimeoutMessage(() => audioIsPlaying(page), 'The next track should start playing.')
 }
 
-// The docked bar's waveform shows the position in the track and seeks where it is clicked
+// The docked bar's waveform shows the position in the track, with Preview and Listen on its ends, and seeks where it is
+// clicked
 const assertDockedWaveformSeeks = async ({ page }) => {
   const waveform = page.locator('[data-testid="docked-player-waveform"]')
   await waveform.waitFor({ state: 'visible', timeout: 5000 })
   const box = await waveform.boundingBox()
   expect(box.height).to.be.at.least(40)
-  const timeText = () => page.locator('[data-testid="docked-player-time"]').textContent()
-  expect(await timeText()).to.match(/^\d+:\d\d$/)
-  expect(await timeText()).not.to.equal('0:00')
-  expect(await page.locator('[data-testid="docked-player-duration"]').textContent()).to.match(/^\d+:\d\d$/)
+  // Preview and Listen sit on its ends, as on the full player's waveform
+  for (const text of ['Preview', 'Listen']) {
+    expect(await waveform.locator('label', { hasText: text }).first().isVisible()).to.equal(true)
+  }
 
   // Click the middle of the playable part (between the dimmed edges)
   const playable = await waveform.evaluate((el) => {
