@@ -314,7 +314,8 @@ class Player extends Component {
         // panelOnly: the Preview panel above a page that brings its own lists (Notifications)
         style={{
           flexDirection: 'column',
-          overflow: 'hidden',
+          // Docked, the bar's popups open above it, outside this container
+          overflow: this.props.docked ? 'visible' : 'hidden',
           ...(this.props.panelOnly ? { flex: '0 0 auto' } : {}),
           ...this.props.style,
         }}
