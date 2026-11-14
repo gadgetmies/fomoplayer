@@ -1469,6 +1469,15 @@ class App extends Component {
                             emailVerified={Boolean(this.state.userSettings?.emailVerified)}
                             onRequestNotificationUpdate={this.requestNotificationUpdate.bind(this)}
                             onFollowsChanged={this.updateFollows.bind(this)}
+                            carts={this.state.carts}
+                            follows={this.state.follows}
+                            processingCart={this.state.processingCart}
+                            processingTrack={this.state.processingTrack}
+                            onMarkHeard={this.markHeard.bind(this)}
+                            onCartButtonClick={this.handleCartButtonClick.bind(this)}
+                            onCreateCartClick={this.handleCreateCartClick.bind(this)}
+                            onMarkPurchased={this.onMarkPurchased.bind(this)}
+                            onAddEntityToSearch={this.addEntityToSearch.bind(this)}
                             style={{ order: 2 }}
                           />
                         ) : null}

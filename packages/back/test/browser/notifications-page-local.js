@@ -20,6 +20,8 @@ const {
   assertSettingsEmailTab,
   assertUnreadBadge,
   assertPlayingActivityRowReadsIt,
+  assertActivityListsWhy,
+  assertMarkAllHeard,
   assertSampleMatchPlaysAligned,
   assertPlayingSampleShowsNoDuration,
 } = require('../lib/notifications-page-steps')
@@ -54,7 +56,9 @@ test({
   'the bell on a followed artist subscribes to it': assertFollowingBellSubscribesArtist,
   'Settings › Notifications is now Settings › Email': assertSettingsEmailTab,
   'the bell shows the unread count': (ctx) => assertUnreadBadge(ctx.unreadCount)(ctx),
+  'Activity lists tracks like the track list, with why each is there': assertActivityListsWhy,
   'playing an Activity row reads it': assertPlayingActivityRowReadsIt,
+  'Mark all heard reads the rest': assertMarkAllHeard,
   'a sample match plays as an aligned A/B pair': assertSampleMatchPlaysAligned,
   'playing a sample shows no duration and survives a reload': assertPlayingSampleShowsNoDuration,
   'a failed sample upload keeps the track playing': assertFailedUploadKeepsPlaying,

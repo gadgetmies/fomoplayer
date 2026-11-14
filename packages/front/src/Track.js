@@ -352,7 +352,12 @@ class Track extends Component {
                 {this.props.added}
               </div>
             )}
-            {this.props.listState === 'heard' ? (
+            {this.props.listState === 'notifications' && (
+              <div className={`arrived-cell track-table-cell ${this.props.arrived ? '' : 'empty-cell'}`}>
+                {this.props.arrived}
+              </div>
+            )}
+            {this.props.listState === 'notifications' ? null : this.props.listState === 'heard' ? (
               <div className={`heard-cell track-table-cell ${this.props.heard ? '' : 'empty-cell'}`}>
                 {heardDate} {heardTime}
               </div>
@@ -400,6 +405,12 @@ class Track extends Component {
             </div>
           </div>
         </td>
+        {/* Why the track is listed (Notifications): its own column on wide screens, a line in the details on mobile */}
+        {this.props.why && (
+          <td className={'why-cell why-cell--column tracks-cell'}>
+            <div className={'track-table-cell'}>{this.props.why}</div>
+          </td>
+        )}
         {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'}>
             <div
@@ -542,6 +553,8 @@ class Track extends Component {
         ) : null}
         <td className={'open-share-cell tracks-cell'}>
           <div className={'open-cell track-table-cell'} style={{ overflow: 'visible' }}>
+            {/* On mobile the Why column (Notifications) moves here, above the store links */}
+            {this.props.why && <div className={'why-cell why-cell--inline'}>{this.props.why}</div>}
             {this.props.cartSearch ? (
               <span className={'table-cell-button-row'}>
                 <button
