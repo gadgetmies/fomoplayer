@@ -7,6 +7,9 @@ const { JSDOM } = jsdom
 const vm = require('vm')
 
 let suspendedUntil = null
+// Why requests are suspended, for the message requests fail with meanwhile:
+// "rate limit" after a 429/403, or the unexpected page Bandcamp served.
+let suspensionReason = null
 let requestCount = 0
 // Rate limits hit in a row without a successful request in between; each
 // one doubles the pause so a lasting block is probed less and less often.
@@ -57,6 +60,9 @@ const scrapeJSON = R.curry((pattern, string) => {
 
 const extractJSON = R.curry((selector, attribute = undefined, dom) => {
   const element = dom.window.document.querySelector(selector)
+  if (element === null) {
+    throw new Error(`No element matching ${selector} on page "${dom.window.document.title}"`)
+  }
   const text = attribute ? element.getAttribute(attribute) : element.textContent
   return JSON.parse(text)
 })
@@ -144,19 +150,23 @@ const warnOnNameSubdomainMismatch = (url, pageType, pageName) => {
   }
 }
 
-// Every rejection Bandcamp's edge gives this client (429, 403, or an HTTP 200
-// client challenge page) is one condition: the client is being throttled. It
-// pauses all Bandcamp requests and is logged once, here, when the pause
-// starts. Requests made while paused fail fast with a quiet error so callers
-// can stop without logging the same condition again.
-const startSuspension = (url, reason) => {
+// Every rejection Bandcamp's edge gives this client (429, 403, an HTTP 200
+// client challenge page, or any other page that is not the requested content)
+// is one condition: the client is being throttled. It pauses all Bandcamp
+// requests and is logged once, here, when the pause starts, with what was
+// served so it can be diagnosed. Requests made while paused fail fast with a
+// quiet error that names the cause, so callers can stop without logging the
+// same condition again.
+const startSuspension = (url, reason, details) => {
   consecutiveRateLimits++
   const pauseMs = suspensionMs(consecutiveRateLimits)
   suspendedUntil = new Date(Date.now() + pauseMs)
+  suspensionReason = reason
   logger.warn(
     `Bandcamp rate limited (${reason}) after ${requestCount} requests, at ${url}. ` +
       `Pausing Bandcamp requests for ${Math.round(pauseMs / 60000)} min until ${suspendedUntil.toISOString()}` +
       (consecutiveRateLimits > 1 ? ` (${consecutiveRateLimits} rate limits in a row)` : ''),
+    ...(details ? [details] : []),
   )
   const error = new Error(`Bandcamp rate limited (${reason}); requests paused until ${suspendedUntil.toISOString()}`)
   error.isRateLimit = true
@@ -165,13 +175,52 @@ const startSuspension = (url, reason) => {
   return error
 }
 
+const describeBody = (body) => {
+  const title = (body.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1]
+  return {
+    title: title ? decode(title).trim() : undefined,
+    snippet: body.slice(0, 500).replace(/\s+/g, ' '),
+  }
+}
+
+// Bandcamp answers some requests with HTTP 200 and a page that is not the
+// requested content and not the recognised client challenge either (another
+// bot check or block page). Treat it like the challenge: suspend requests.
+const unexpectedResponseError = (url, status, body, expected) => {
+  const { title, snippet } = describeBody(body)
+  const error = startSuspension(url, `unexpected page${title ? ` "${title}"` : ''} instead of ${expected}`, {
+    status,
+    title,
+    snippet,
+  })
+  error.isUnexpectedResponse = true
+  error.statusCode = status
+  return error
+}
+
+// Real band pages — releases, /music, the band root, on bandcamp.com
+// subdomains and custom domains alike — carry #pagedata, release data or the
+// og:site_name tag; one with none of them is a block page.
+const isBandPage = (dom) =>
+  dom.window.document.querySelector('#pagedata, [data-tralbum], meta[property="og:site_name"]') !== null
+
+const getBandPageDom = async (url) => {
+  const body = await getPageSource(url)
+  const dom = new JSDOM(body)
+  if (!isBandPage(dom)) {
+    throw unexpectedResponseError(url, 200, body, 'a Bandcamp band page')
+  }
+  return dom
+}
+
 const getPageSource = async (url, options = {}) => {
   if (suspendedUntil) {
     if (suspendedUntil < Date.now()) {
       suspendedUntil = null
+      suspensionReason = null
       requestCount = 0
     } else {
-      const error = new Error(`Bandcamp requests are paused until ${suspendedUntil.toISOString()}`)
+      const error = new Error(`Bandcamp requests are paused (${suspensionReason}) until ${suspendedUntil.toISOString()}`)
       error.isRateLimit = true
       error.isSuspended = true
       error.retryAfter = suspendedUntil
@@ -195,7 +244,7 @@ const getPageSource = async (url, options = {}) => {
   if (isChallengePage(text)) {
     // Parsed as a page it would look like an artist with no releases, and
     // hammering on would only keep us flagged.
-    const error = startSuspension(url, 'client challenge page')
+    const error = startSuspension(url, 'client challenge page', { status: res.status, ...describeBody(text) })
     error.isChallenge = true
     error.statusCode = res.status
     throw error
@@ -210,7 +259,7 @@ const isRateLimited = () => {
 
 const getReleaseInfo = (dom) => extractJSON('[data-tralbum]', 'data-tralbum', dom)
 const scrapeRelease = async (itemUrl) => {
-  const dom = new JSDOM(await getPageSource(itemUrl))
+  const dom = await getBandPageDom(itemUrl)
   const pageName = getName(dom)
   const pageType = detectPageType(dom)
   warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
@@ -307,7 +356,7 @@ const resolveRelease = async (itemUrl) => {
   const key = normalizeReleaseUrl(itemUrl, origin)
   const page = indexedPages.get(origin)
   if (!knownReleaseIds.has(key) && !(page && Date.now() - page.fetchedAt < RELEASE_INDEX_TTL_MS)) {
-    rememberPage(origin, new JSDOM(await getPageSource(origin + '/music')))
+    rememberPage(origin, await getBandPageDom(origin + '/music'))
   }
   const ids = knownReleaseIds.get(key)
   if (!ids) return null
@@ -382,9 +431,8 @@ const getIdFromUrl = (url) => url.substring(0, url.indexOf('.'))
 
 const getPageInfo = (url, callback) => {
   const id = getIdFromUrl(url)
-  getPageSource(url + '/music')
-    .then((res) => {
-      const dom = new JSDOM(res)
+  getBandPageDom(url + '/music')
+    .then((dom) => {
       rememberPage(url, dom)
       return callback(null, {
         id,
@@ -472,19 +520,24 @@ const getTagReleases = (tags, callback) => {
     headers: { 'Content-Type': 'application/json; charset=UTF-8' },
   })
     .then((res) => {
+      let discoverResults
+      try {
+        discoverResults = JSON.parse(res)
+      } catch (_) {
+        throw unexpectedResponseError(DISCOVER_API_URL, 200, res, 'JSON from the discover API')
+      }
       return callback(null, {
         id: getTagUrl(parsedTags),
         name: getTagName(parsedTags),
-        releaseUrls: getDiscoverReleaseUrls(JSON.parse(res)),
+        releaseUrls: getDiscoverReleaseUrls(discoverResults),
       })
     })
     .catch((e) => callback(e))
 }
 
 const getPageDetails = (url, callback) => {
-  return getPageSource(url)
-    .then((res) => {
-      const dom = new JSDOM(res)
+  return getBandPageDom(url)
+    .then((dom) => {
       if (/\/music\/?$/.test(new URL(url).pathname)) rememberPage(url, dom)
       return callback(null, {
         id: getIdFromUrl(url),
@@ -506,8 +559,10 @@ const mapSearchResults = ({ auto: { results } }) =>
     img,
   }))
 
+const SEARCH_API_URL = 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic'
+
 const getSearchResults = (query, callback) => {
-  return fetch('https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic', {
+  return getPageSource(SEARCH_API_URL, {
     method: 'POST',
     body: JSON.stringify({
       search_text: query,
@@ -517,12 +572,17 @@ const getSearchResults = (query, callback) => {
     }),
     headers: withUserAgent({ 'Content-Type': 'application/json; charset=UTF-8' }),
   })
-    .then((res) => res.json())
     .then((res) => {
-      callback(null, mapSearchResults(res))
+      let searchResults
+      try {
+        searchResults = JSON.parse(res)
+      } catch (_) {
+        throw unexpectedResponseError(SEARCH_API_URL, 200, res, 'JSON from the search API')
+      }
+      callback(null, mapSearchResults(searchResults))
     })
     .catch((e) => {
-      logger.error(`Searching for ${query} failed`, { statusCode: e.statusCode })
+      logger.error(`Searching for ${query} failed`, { statusCode: e.statusCode, error: e.message })
       logger.silly(e)
       callback(e)
     })
@@ -537,6 +597,7 @@ const getRequestCount = () => requestCount
 // Test support: clear a suspension left behind by an earlier request.
 const resetRateLimit = () => {
   suspendedUntil = null
+  suspensionReason = null
   requestCount = 0
   consecutiveRateLimits = 0
 }

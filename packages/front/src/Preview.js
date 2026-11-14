@@ -57,6 +57,7 @@ class Preview extends Component {
       abSampleDuration: undefined,
     }
     this._playPauseSource = undefined
+    this.failedPreviewIds = new Set()
     // Seconds to seek to once the newly loaded source can play (A/B switching)
     this._pendingSeek = null
     if (window.AudioContext !== undefined) {
@@ -184,11 +185,7 @@ class Preview extends Component {
         // reload the audio and the seek to the matched spot would never run
         await new Promise((resolve) => this.setState({ previewUrl: undefined }, resolve))
       }
-      const candidates = this.getMp3Previews(nextTrack, this.state.preferFullTracks)
-      // The match's offset is relative to the preview the sample matched, so B must be that preview
-      const previews = abPair
-        ? R.sortBy((preview) => (String(preview.id) === String(abPair.previewId) ? 0 : 1), candidates)
-        : candidates
+      const previews = this.getPlaybackPreviews(nextTrack)
       console.log('[Preview] selecting preview', {
         trackId: nextTrack.id,
         previewCandidates: previews.length,
@@ -201,21 +198,8 @@ class Preview extends Component {
         },
       })
 
-      let trackUpdated = false
-      for (const preview of previews) {
-        try {
-          await this.updateTrack(nextTrack, preview)
-          trackUpdated = true
-          break
-        } catch (e) {
-          console.error('[Preview] updateTrack failed', e)
-        }
-      }
-
-      this.setState({ loading: false, playing: trackUpdated })
-      if (!trackUpdated) {
-        console.warn('[Preview] no playable preview for track', nextTrack.id)
-      }
+      this.failedPreviewIds = new Set()
+      await this.playFirstWorkingPreview(nextTrack)
     }
 
     if (prevState.previewUrl !== this.state.previewUrl) {
@@ -225,6 +209,58 @@ class Preview extends Component {
         player.load()
       }
     }
+  }
+
+  // Try the track's previews in order, skipping ones that already failed for
+  // this track. When none of them plays, report the failure so the player can
+  // flag the track and move on to the next one.
+  async playFirstWorkingPreview(track) {
+    this.setState({ loading: true })
+    for (const preview of this.getPlaybackPreviews(track)) {
+      if (this.failedPreviewIds.has(preview.id)) continue
+      if (this.props.currentTrack?.id !== track.id) return
+      try {
+        await this.updateTrack(track, preview)
+        this.setState({ loading: false, playing: true })
+        return
+      } catch (e) {
+        console.error('[Preview] updateTrack failed', e)
+        this.failedPreviewIds.add(preview.id)
+      }
+    }
+
+    if (this.props.currentTrack?.id !== track.id) return
+    console.warn('[Preview] no playable preview for track', track.id)
+    this.setState({ loading: false, playing: false })
+    await this.props.onPlaybackFailed(track)
+  }
+
+  // The track's previews in the order to try them. For a sample match (A/B
+  // pair) the match's offset is relative to the preview the sample matched, so
+  // B must be that preview.
+  getPlaybackPreviews(track) {
+    const candidates = this.getMp3Previews(track, this.state.preferFullTracks)
+    const abPair = track.abPair
+    return abPair
+      ? R.sortBy((preview) => (String(preview.id) === String(abPair.previewId) ? 0 : 1), candidates)
+      : candidates
+  }
+
+  async handleAudioError(e) {
+    const { mp3Preview, previewUrl } = this.state
+    const track = this.props.currentTrack
+    // Clearing the source while switching previews can fire an error too.
+    if (!previewUrl || !mp3Preview || !track) return
+    console.error('Audio error', e)
+    requestWithCredentials({
+      url: '/log/error',
+      method: 'POST',
+      body: { message: 'Audio playback error', error: e.toString() },
+    }).catch(() => {})
+    // While A plays the source is the user's sample, not the track's preview.
+    if (this.state.abSource === 'A') return
+    this.failedPreviewIds.add(mp3Preview.id)
+    await this.playFirstWorkingPreview(track)
   }
 
   getMp3Previews(track, preferFullTracks = false) {
@@ -869,6 +905,7 @@ class Preview extends Component {
                   }
                 }}
                 onPlay={async () => {
+                  this.props.onPlaybackStarted(currentTrack)
                   await this.props.markHeard(currentTrack.id)
                 }}
                 onPlaying={() => {
@@ -927,14 +964,7 @@ class Preview extends Component {
                     console.error(e, currentTime, mp3Preview.length_ms)
                   }
                 }}
-                onError={async (e) => {
-                  console.error('Audio error', e)
-                  await requestWithCredentials({
-                    url: '/log/error',
-                    method: 'POST',
-                    body: { message: 'Audio playback error', error: e.toString() },
-                  })
-                }}
+                onError={(e) => this.handleAudioError(e)}
                 controlsList="nodownload"
                 src={this.state.previewUrl}
               />

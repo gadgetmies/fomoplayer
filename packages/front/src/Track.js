@@ -215,6 +215,14 @@ class Track extends Component {
 
     const cartFilter = this.props.cartFilter
 
+    const playbackFailedIcon = (
+      <FontAwesomeIcon
+        icon="triangle-exclamation"
+        className="track-playback-failed-icon"
+        title="None of this track's previews could be played"
+        data-testid="track-playback-failed"
+      />
+    )
     const noPreviewsTexts = (
       <>
         <p>There are no previews available for this track.</p>
@@ -262,7 +270,7 @@ class Track extends Component {
         onTouchMove={swipeEnabled ? this.handleSwipeTouchMove : undefined}
         onTouchEnd={swipeEnabled ? this.handleSwipeTouchEnd : undefined}
         onTouchCancel={swipeEnabled ? this.handleSwipeTouchEnd : undefined}
-        className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''} ${noPreviews ? 'track__no-previews' : ''} ${this.props.cartSearch ? 'cart-search-track' : ''}`}
+        className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''} ${noPreviews ? 'track__no-previews' : ''} ${this.props.playbackFailed ? 'track__playback-failed' : ''} ${this.props.cartSearch ? 'cart-search-track' : ''}`}
       >
         {swipeEnabled && (
           <td
@@ -283,7 +291,7 @@ class Track extends Component {
           </td>
         )}
         {this.props.mode === 'app' ? (
-          <td className={'new-cell tracks-cell'}>
+          <td className={`new-cell tracks-cell ${this.props.playbackFailed ? 'new-cell__playback-failed' : ''}`}>
             <button
               className="button track-mark-heard-button"
               onClick={(e) => {
@@ -293,7 +301,9 @@ class Track extends Component {
               onMouseEnter={() => this.setHeardHover(true)}
               onMouseLeave={() => this.setHeardHover(false)}
             >
-              {this.props.noPreviews ? (
+              {this.props.playbackFailed && !this.state.heardHover ? (
+                playbackFailedIcon
+              ) : this.props.noPreviews ? (
                 <Popup
                   anchor={
                     this.state.heardHover && !this.props.heard ? (
@@ -328,7 +338,17 @@ class Track extends Component {
                 <FontAwesomeIcon icon="circle" />
               )}
             </button>
-            {!!this.props.heard || swipeOffset > 0 ? null : <div className={'track-new-indicator'} />}
+            {this.props.playbackFailed ? (
+              <div className={'track-playback-failed-indicator'}>{playbackFailedIcon}</div>
+            ) : !!this.props.heard || swipeOffset > 0 ? null : (
+              <div className={'track-new-indicator'} />
+            )}
+          </td>
+        ) : this.props.playbackFailed ? (
+          <td className={'new-cell tracks-cell new-cell__playback-failed'}>
+            <div className={'track-playback-failed-indicator track-playback-failed-indicator__always'}>
+              {playbackFailedIcon}
+            </div>
           </td>
         ) : null}
         <td className={'track-details tracks-cell'}>

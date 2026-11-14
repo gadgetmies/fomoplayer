@@ -581,6 +581,7 @@ class Tracks extends Component {
                 stores={this.props.stores}
                 selected={this.state.selectedTrack === id}
                 playing={this.props.currentTrack === id}
+                playbackFailed={this.props.playbackFailedTrackIds?.has(id) ?? false}
                 version={version}
                 heard={heard}
                 enabledStores={this.props.enabledStores}
