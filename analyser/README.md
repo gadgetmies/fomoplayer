@@ -64,7 +64,7 @@ the existing Python entry points until the backend queue is empty.
 | `--model NAME`          | Pass `-m NAME` to `main.py`. Default `discogs_multi_embeddings-effnet-bs64-1`.        |
 | `--session NAME`        | tmux session name. Default `analyser`.                                                |
 | `--layout L`            | `windows` (default) — one tmux window per worker. `panes` — all workers as tiled panes in a single `workers` window with per-pane title bars. |
-| `--no-waveform`         | Skip the `waveform-previews` worker (useful when the `WAVEFORM_STORAGE_*` MinIO env vars are not configured). |
+| `--no-waveform`         | Skip the `waveform-previews` worker (useful when the `WAVEFORM_STORAGE_*` object storage env vars are not configured; the bucket must be the backend's `AUDIO_SAMPLE_STORAGE_BUCKET_NAME`, set `WAVEFORM_STORAGE_REGION=auto` for a Railway bucket). |
 | `--skip-sanity-confirmation` | Pass `--skip-sanity-confirmation` through to `main.py` — embedding-collision warnings are logged but no longer block on a y/N prompt. Recommended for unattended drains. |
 | `--score-after N`       | Pass `--score-after N` through to `panako_processor.py --previews`. After every N successfully fingerprinted previews in one invocation, the worker pauses and re-scores all samples that have fingerprints, persisting results into `user_notification_audio_sample_match`. Only effective when `--batch-size >= N` (counter is per-invocation). |
 | `--no-attach`           | Don't `tmux attach` at the end; print the attach command instead.                     |

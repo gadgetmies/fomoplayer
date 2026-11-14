@@ -85,7 +85,7 @@ const { storeName: spotifyStoreName } = require('../shared/spotify')
 const { storeUrl: bandcampStoreUrl } = require('../stores/bandcamp/logic')
 const { enableCartSync, removeCartSync, importPlaylistAsCart } = require('../shared/cart')
 const { isAdmin } = require('../shared/auth.js')
-const { getMinioClient, getBucketName, getStorageUrl, getStorageScheme } = require('../shared/minio')
+const { getMinioClient, getBucketName, storageObjectPath } = require('../shared/minio')
 const {
   insertNotificationAudioSample,
   queryNotificationAudioSamples: getNotificationAudioSamples,
@@ -612,7 +612,6 @@ router.post(
 
     const minioClient = getMinioClient()
     const bucketName = getBucketName()
-    const storageUrl = getStorageUrl()
 
     if (!minioClient || !bucketName) {
       fs.unlinkSync(file.path)
@@ -622,15 +621,14 @@ router.post(
     try {
       const objectKey = `notification-samples/${userId}/${uuid()}${path.extname(file.originalname)}`
       
-      logger.info(`Uploading audio sample to MinIO: bucket=${bucketName}, objectKey=${objectKey}`)
-      
+      logger.info(`Uploading audio sample to object storage: bucket=${bucketName}, objectKey=${objectKey}`)
+
       await minioClient.fPutObject(bucketName, objectKey, file.path, {
         'Content-Type': file.mimetype,
       })
 
-      const cleanStorageUrl = storageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
-      const url = `${getStorageScheme()}://${cleanStorageUrl}/${bucketName}/${objectKey}`
-      
+      const url = storageObjectPath(objectKey)
+
       const sample = await insertNotificationAudioSample(
         userId,
         bucketName,

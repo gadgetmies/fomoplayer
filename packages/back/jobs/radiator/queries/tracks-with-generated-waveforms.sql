@@ -1,6 +1,6 @@
 SELECT COUNT(
     CASE
-      WHEN store__track_preview_waveform_url LIKE 'https://bucket-production-4c34.up.railway.app%'
+      WHEN store__track_preview_waveform_url LIKE '/api/storage/%'
         THEN 1
     END)          AS generated
      , COUNT(CASE
@@ -18,5 +18,5 @@ FROM
   NATURAL JOIN store__track_preview
   NATURAL LEFT JOIN store__track_preview_waveform
 WHERE store__track_preview_url IS NULL
-   OR store__track_preview_url LIKE 'https://bucket-production-4c34.up.railway.app%'
+   OR store__track_preview_url LIKE '/api/storage/%'
 ;

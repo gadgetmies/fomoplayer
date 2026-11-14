@@ -138,6 +138,9 @@ const authenticateJwt = jwtStrategies.length > 0 ? passport.authenticate(jwtStra
 
 app.use('/api', require('./routes/public.js'))
 
+// Unauthenticated redirects to presigned object storage URLs (waveforms, audio samples), replacing the public bucket.
+app.use('/api/storage', require('./routes/storage.js').createStorageRouter())
+
 // Unauthenticated, CSRF-exempt email unsubscribe endpoints (RFC 8058
 // one-click POST + no-login confirm page). Mounted before the authenticated
 // `/api` router below.

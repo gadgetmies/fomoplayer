@@ -25,9 +25,13 @@ waveform_storage_url = os.getenv("WAVEFORM_STORAGE_HOST")
 access_key = os.getenv("WAVEFORM_STORAGE_BUCKET_ACCESS_KEY")
 secret_key = os.getenv("WAVEFORM_STORAGE_BUCKET_SECRET_KEY")
 
+# Railway buckets want region "auto"; a MinIO server needs none.
+waveform_storage_region = os.getenv("WAVEFORM_STORAGE_REGION") or None
+
 waveform_storage_client = Minio(waveform_storage_url,
                                 access_key=access_key,
                                 secret_key=secret_key,
+                                region=waveform_storage_region,
                                 )
 
 waveform_storage_bucket = os.getenv("WAVEFORM_STORAGE_BUCKET_NAME")
@@ -127,7 +131,10 @@ def upload_waveform(file_path):
     waveform_storage_client.fput_object(
         waveform_storage_bucket, destination_file, file_path
     )
-    return f"https://{waveform_storage_url}/{waveform_storage_bucket}/{destination_file}"
+    # The bucket is private: the backend serves the object through a presigned
+    # redirect at this path. The bucket must be the backend's
+    # AUDIO_SAMPLE_STORAGE_BUCKET_NAME.
+    return f"/api/storage/{destination_file}"
 
 
 class Backoff:

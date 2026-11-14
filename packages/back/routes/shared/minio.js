@@ -1,87 +1,82 @@
 const Minio = require('minio')
 const logger = require('fomoplayer_shared').logger(__filename)
 
+// Any S3-compatible object store: a Railway bucket in production, a local MinIO in development.
 const storageUrl = process.env.AUDIO_SAMPLE_STORAGE_HOST
 const accessKey = process.env.AUDIO_SAMPLE_STORAGE_BUCKET_ACCESS_KEY
 const secretKey = process.env.AUDIO_SAMPLE_STORAGE_BUCKET_SECRET_KEY
 const bucketName = process.env.AUDIO_SAMPLE_STORAGE_BUCKET_NAME
+// Railway buckets want region "auto" and virtual-hosted URLs; a MinIO server takes the defaults.
+const region = process.env.AUDIO_SAMPLE_STORAGE_REGION || undefined
+const urlStyle = process.env.AUDIO_SAMPLE_STORAGE_URL_STYLE || 'path'
+
+// Objects are private: the browser reaches them through the API, which redirects to a presigned URL.
+const STORAGE_ROUTE_PREFIX = '/api/storage/'
+const PRESIGNED_URL_EXPIRY_SECONDS = 60 * 60
 
 let minioClient = null
 
-// Sample URLs are played straight from the bucket, so its objects are public, as in production.
-const publicReadPolicy = (bucket) =>
-  JSON.stringify({
-    Version: '2012-10-17',
-    Statement: [
-      { Effect: 'Allow', Principal: { AWS: ['*'] }, Action: ['s3:GetObject'], Resource: [`arn:aws:s3:::${bucket}/*`] },
-    ],
-  })
+const parseClientConfig = (url, { region, urlStyle = 'path' } = {}) => {
+  const urlWithoutProtocol = url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  const useSSL = !url.startsWith('http://')
+  const hostPortMatch = urlWithoutProtocol.match(/^([^:/]+)(?::(\d+))?(?:\/.*)?$/)
+  const endPoint = hostPortMatch ? hostPortMatch[1] : urlWithoutProtocol.split('/')[0]
+  const port = hostPortMatch?.[2] ? parseInt(hostPortMatch[2], 10) : undefined
+
+  return {
+    endPoint,
+    useSSL,
+    ...(port ? { port } : {}),
+    ...(region ? { region } : {}),
+    pathStyle: urlStyle !== 'virtual',
+  }
+}
 
 // A fresh environment (a PR preview's own MinIO) starts without the bucket: create it rather than fail every upload.
+// Reads go through presigned URLs, so the bucket stays private.
 const ensureBucket = async (client, bucket) => {
   if (await client.bucketExists(bucket)) return
-  logger.info(`Creating MinIO bucket ${bucket}`)
-  await client.makeBucket(bucket)
-  await client.setBucketPolicy(bucket, publicReadPolicy(bucket))
+  logger.info(`Creating storage bucket ${bucket}`)
+  await client.makeBucket(bucket, region)
 }
 
 if (storageUrl && accessKey && secretKey) {
   try {
-    const urlWithoutProtocol = storageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
-    const useSSL = storageUrl.includes('https://')
-    
-    let endPoint
-    let port
-    
-    const hostPortMatch = urlWithoutProtocol.match(/^([^:]+)(?::(\d+))?(?:\/.*)?$/)
-    if (hostPortMatch) {
-      endPoint = hostPortMatch[1]
-      port = hostPortMatch[2] ? parseInt(hostPortMatch[2], 10) : (useSSL ? 443 : 80)
-    } else {
-      const parts = urlWithoutProtocol.split('/')
-      endPoint = parts[0]
-      port = useSSL ? 443 : 80
-    }
-    
-    const clientConfig = {
-      endPoint: endPoint,
-      accessKey: accessKey,
-      secretKey: secretKey,
-      useSSL: useSSL
-    }
-    
-    if (port && !isNaN(port) && port !== (useSSL ? 443 : 80)) {
-      clientConfig.port = port
-    }
-    
-    logger.info(`Initializing MinIO client with endpoint: ${endPoint}, port: ${port}, useSSL: ${useSSL}`)
-    minioClient = new Minio.Client(clientConfig)
+    const clientConfig = parseClientConfig(storageUrl, { region, urlStyle })
+    logger.info('Initializing object storage client', {
+      endPoint: clientConfig.endPoint,
+      port: clientConfig.port,
+      useSSL: clientConfig.useSSL,
+      pathStyle: clientConfig.pathStyle,
+    })
+    minioClient = new Minio.Client({ ...clientConfig, accessKey, secretKey })
   } catch (error) {
-    logger.error('Error initializing MinIO client', error)
+    logger.error('Error initializing object storage client', error)
     minioClient = null
   }
 
   if (bucketName && minioClient) {
     ensureBucket(minioClient, bucketName).catch((err) => {
-      logger.error('Error ensuring the MinIO bucket exists', { error: err.message, code: err.code })
+      logger.error('Error ensuring the storage bucket exists', { error: err.message, code: err.code })
     })
   }
 } else {
-  logger.warn('MinIO configuration missing. Audio sample uploads will not work.')
+  logger.warn('Object storage configuration missing. Audio sample uploads will not work.')
 }
 
-module.exports.getMinioClient = () => minioClient
-module.exports.getBucketName = () => bucketName
-module.exports.getStorageUrl = () => {
-  if (!storageUrl) return null
-  return storageUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
-}
-// Scheme of the configured storage host. Production hosts are https; a local
-// MinIO dev server is reached over http. Defaults to https when unset so
-// existing deployments are unaffected.
-module.exports.getStorageScheme = () => {
-  if (!storageUrl) return 'https'
-  return storageUrl.startsWith('http://') ? 'http' : 'https'
-}
+// The URL stored for an object: a path on the API, independent of the storage host and the deployment's domain.
+const storageObjectPath = (objectKey) =>
+  `${STORAGE_ROUTE_PREFIX}${objectKey.split('/').map(encodeURIComponent).join('/')}`
 
-module.exports.ensureBucket = ensureBucket
+const presignedObjectUrl = (client, bucket, objectKey) =>
+  client.presignedGetObject(bucket, objectKey, PRESIGNED_URL_EXPIRY_SECONDS)
+
+module.exports = {
+  getMinioClient: () => minioClient,
+  getBucketName: () => bucketName,
+  ensureBucket,
+  parseClientConfig,
+  storageObjectPath,
+  presignedObjectUrl,
+  PRESIGNED_URL_EXPIRY_SECONDS,
+}
