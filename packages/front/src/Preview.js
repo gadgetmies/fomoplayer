@@ -529,6 +529,345 @@ class Preview extends Component {
     )
   }
 
+  // The track's actions (cart, find similar, follow, ignore, share) of the panel's button row
+  renderTrackActions(ctx) {
+    const {
+      currentTrack,
+      processingCart,
+      inCart,
+      removeLabel,
+      trackId,
+      currentCartId,
+      cartFilter,
+      onCartFilterChange,
+      onClearCartFilter,
+      shareLabel,
+      shareContent,
+      shareLink,
+    } = ctx
+    return (
+      <>
+        {this.props.mode !== 'app' ? null : this.props.togglingCurrentInCart ? (
+          <div
+            style={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0 9px 0 4px',
+            }}
+          >
+            <Spinner size="large" color="#5A5A5A" />
+          </div>
+        ) : (
+          <CartDropDownButton
+            {...{
+              processingCart,
+              inCart,
+              removeLabel,
+              trackId,
+              currentCartId,
+              cartFilter,
+              onCartFilterChange,
+              onClearCartFilter,
+            }}
+            carts={this.props.carts}
+            inCarts={this.props.inCarts}
+            selectedCartIsPurchased={this.props.selectedCartIsPurchased}
+            onCartButtonClick={this.props.onCartButtonClick}
+            onCreateCartClick={this.props.onCreateCartClick}
+            onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
+            disabled={!this.props.currentTrack || !this.props.hasSelectedTrack}
+          />
+        )}
+        <button
+          disabled={this.state.embeddingMissing}
+          onClick={() => search({ q: `track:~${currentTrack?.id}`, onlyNew: true })}
+          className={
+            'button button-push_button button-push_button-small button-push_button-primary preview-action_button no-style-link'
+          }
+          style={{ lineHeight: 'normal' }}
+        >
+          <span className="button-push_button_icon">
+            <FontAwesomeIcon icon="circle-nodes" />
+          </span>{' '}
+          <span className="button-push_button_label">
+            <span className="preview-find-similar_long">Find similar</span>
+            <span className="preview-find-similar_short">Similar</span>
+          </span>
+        </button>
+        {this.props.mode === 'app' && (
+          <>
+            <button
+              disabled={!currentTrack}
+              onClick={this.props.onFollowClicked}
+              className={
+                'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
+              }
+            >
+              <span className="button-push_button_icon">
+                <FontAwesomeIcon icon={'heart'} />
+              </span>{' '}
+              <span className="button-push_button_label">Follow</span>
+            </button>
+            <button
+              disabled={!currentTrack}
+              className={
+                'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
+              }
+              onClick={() => {
+                this.props.onIgnoreClicked(currentTrack)
+              }}
+            >
+              <span className="button-push_button_icon">
+                <FontAwesomeIcon icon={'ban'} />
+              </span>{' '}
+              <span className="button-push_button_label">Ignore</span>
+            </button>
+          </>
+        )}
+        <Popup
+          anchor={
+            <button
+              className={'pill pill-button button-push_button-small popup-anchor'}
+              style={{ height: '100%', margin: 0, border: '1px solid #000' }}
+            >
+              <span className="pill-button-contents">
+                <span className="button-push_button_icon">
+                  <FontAwesomeIcon icon={'share'} />
+                </span>{' '}
+                <span className={'button-push_button_label'}>Share</span>
+                {this.props.currentTrack && (
+                  <span className="preview-share_caret">
+                    <FontAwesomeIcon icon={'caret-down'} />
+                  </span>
+                )}
+              </span>
+            </button>
+          }
+          popupClassName={'popup_content-left'}
+        >
+          {currentTrack && (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span
+                className="pill pill-button-large pill-button"
+                style={{ width: '100%', margin: 0, marginBottom: 4, boxSizing: 'border-box', border: 0 }}
+              >
+                <span className="pill-button-contents">
+                  <CopyToClipboardButton
+                    title={shareLabel}
+                    label={shareLabel}
+                    content={shareContent}
+                    style={{
+                      width: '100%',
+                      padding: '0 4px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </span>
+              </span>
+              <ShareLink
+                size={'large'}
+                href={`https://telegram.me/share/url?url=${encodeURIComponent(
+                  shareLink,
+                )}&text=${encodeURIComponent(shareContent)}`}
+                icon={<FontAwesomeIcon icon={['fab', 'telegram']} />}
+                label={'Share on Telegram'}
+              />
+              <ShareLink
+                size={'large'}
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                  shareLink,
+                )}&t=${encodeURIComponent(shareContent)}`}
+                icon={<FontAwesomeIcon icon={['fab', 'facebook']} />}
+                label={'Share on Facebook'}
+              />
+              <ShareLink
+                size={'large'}
+                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
+                  shareLink,
+                )}&text=${encodeURIComponent(shareContent)}`}
+                icon={<FontAwesomeIcon icon={['fab', 'twitter']} />}
+                label={'Share on Twitter'}
+              />
+            </div>
+          )}
+        </Popup>
+      </>
+    )
+  }
+
+  // Preview / Listen and the store whose audio plays, on the ends of the panel's waveform. placement keeps the radio ids
+  // and groups of copies placed elsewhere apart.
+  renderSourceSelect(ctx, placement) {
+    const { previews, fullTracks } = ctx
+    return (
+      <>
+        <div
+          className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
+          style={{ left: 2 }}
+        >
+          <input
+            type="radio"
+            id={`sample_select_state-preview-${placement}`}
+            name={`sample-select-state-${placement}`}
+            checked={!this.state.preferFullTracks}
+            onChange={() => {
+              localStorage.setItem('preferFullTracks', 'false')
+              this.setState({ preferFullTracks: false })
+            }}
+          />
+          <label
+            htmlFor={`sample_select_state-preview-${placement}`}
+            className={`select_button-button state-select_button-button select_button-button__small ${
+              !this.state.preferFullTracks ? 'select_button-button__active' : ''
+            }`}
+            onClick={() => {
+              localStorage.setItem('preferFullTracks', 'false')
+              this.setState({ preferFullTracks: false })
+            }}
+          >
+            Preview
+          </label>{' '}
+          {previews.length > 0 && (
+            <div className="preview-icons-container select-icon--container" style={{ left: 2 }}>
+              {previews
+                ?.reduce((acc, cur) => (acc.some(({ store }) => store === cur.store) ? acc : [...acc, cur]), [])
+                .map(({ id, store }) => (
+                  <span key={id} onMouseDown={(e) => e.stopPropagation()}>
+                    <input
+                      type="radio"
+                      id={`preview-${placement}-${id}`}
+                      name={`preview-${placement}`}
+                      defaultChecked={this.state.mp3Preview?.id === id}
+                      onChange={this.onPreviewStoreClicked.bind(this, id)}
+                    />
+                    <label className="select-icon--icon" htmlFor={`preview-${placement}-${id}`}>
+                      <StoreIcon code={store} />
+                    </label>
+                  </span>
+                ))}
+            </div>
+          )}
+        </div>
+
+        <div
+          className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
+          style={{ right: 2 }}
+        >
+          <input
+            type="radio"
+            id={`sample_select_state-full_track-${placement}`}
+            name={`sample-select-state-${placement}`}
+            checked={this.state.preferFullTracks}
+            onChange={() => {
+              localStorage.setItem('preferFullTracks', 'true')
+              this.setState({ preferFullTracks: true })
+            }}
+          />
+          <label
+            htmlFor={`sample_select_state-full_track-${placement}`}
+            className={`select_button-button state-select_button-button select_button-button__small ${
+              this.state.preferFullTracks ? 'select_button-button__active' : ''
+            }`}
+            onClick={() => {
+              localStorage.setItem('preferFullTracks', 'true')
+              this.setState({ preferFullTracks: true })
+            }}
+          >
+            Listen
+          </label>{' '}
+          {fullTracks?.length > 0 && (
+            <div className="preview-icons-container select-icon--container">
+              {fullTracks
+                ?.reduce((acc, cur) => (acc.some(({ store }) => store === cur.store) ? acc : [...acc, cur]), [])
+                .map(({ id, store }) => (
+                  <span key={id} onMouseDown={(e) => e.stopPropagation()}>
+                    <input
+                      type="radio"
+                      id={`preview-${placement}-${id}`}
+                      name={`preview-${placement}`}
+                      defaultChecked={this.state.mp3Preview?.id === id}
+                      onChange={this.onPreviewStoreClicked.bind(this, id)}
+                    />
+                    <label className="select-icon--icon" htmlFor={`preview-${placement}-${id}`}>
+                      <StoreIcon code={store} />
+                    </label>
+                  </span>
+                ))}
+            </div>
+          )}
+        </div>
+      </>
+    )
+  }
+
+  // Open the track in a store or search for it
+  renderStoreLinks(ctx) {
+    const { currentTrackStores, searchString } = ctx
+    return (
+      <div className="preview_links_container">
+        <div className="preview_links_wrapper">
+          <span className="preview_actions_title" style={{ whiteSpace: 'nowrap' }}>
+            {this.props.stores.length === 1 ? 'Open in store' : 'Available on'}
+          </span>
+          <div className="available_on_list">
+            {currentTrackStores?.map(({ name, url, release: { url: releaseUrl } }) => (
+              <a
+                key={url || releaseUrl}
+                href={url || releaseUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
+                style={{ display: 'flex', padding: '16px 8px' }}
+              >
+                <span className={`store-icon store-icon-${name.toLowerCase()}`} />{' '}
+                <span className="pill-link-text">{name}</span>
+                <FontAwesomeIcon icon={'square-arrow-up-right'} />
+              </a>
+            ))}
+          </div>
+        </div>
+        {this.props.stores.length !== 1 && (
+          <div className="preview_links_wrapper" style={{ paddingBottom: 8 }}>
+            <span className="preview_actions_title">Search</span>
+            <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
+              {this.props.stores
+                ?.filter(({ storeName }) => currentTrackStores.every(({ name }) => storeName !== name))
+                .map(({ storeName, searchUrl }) => {
+                  if (!searchUrl) return null
+                  return (
+                    <a
+                      key={`${searchUrl}${searchString}`}
+                      href={`${searchUrl}${searchString}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
+                      style={{ display: 'flex', padding: '16px 8px' }}
+                    >
+                      <span className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
+                      <span className="pill-link-text">{storeName}</span>
+                      <FontAwesomeIcon icon={'square-arrow-up-right'} />
+                    </a>
+                  )
+                })}
+              <a
+                href={`https://www.youtube.com/results?search_query=${searchString}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
+                style={{ display: 'flex', padding: '16px 8px' }}
+              >
+                <FontAwesomeIcon icon={['fab', 'youtube']} /> <span className="pill-link-text">Youtube</span>
+                <FontAwesomeIcon icon={'square-arrow-up-right'} />
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   renderPlayingFrom() {
     const source = this.props.playingFrom
     if (!source) return null
@@ -692,6 +1031,24 @@ class Preview extends Component {
 
     const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
     const currentTrackStores = currentTrack?.stores.filter(({ code }) => storeSlugs.includes(code))
+    const ctx = {
+      currentTrack,
+      previews,
+      fullTracks,
+      processingCart,
+      inCart,
+      removeLabel,
+      trackId,
+      currentCartId,
+      cartFilter,
+      onCartFilterChange,
+      onClearCartFilter,
+      shareLabel,
+      shareContent,
+      shareLink,
+      currentTrackStores,
+      searchString,
+    }
     return (
       <div
         className={`preview${this.props.docked ? ' preview--docked' : ''}`}
@@ -780,65 +1137,7 @@ class Preview extends Component {
                   </div>
                 </div>
               </div>
-              <div className="preview_links_container">
-                <div className="preview_links_wrapper">
-                  <span className="preview_actions_title" style={{ whiteSpace: 'nowrap' }}>
-                    {this.props.stores.length === 1 ? 'Open in store' : 'Available on'}
-                  </span>
-                  <div className="available_on_list">
-                    {currentTrackStores?.map(({ name, url, release: { url: releaseUrl } }) => (
-                      <a
-                        key={url || releaseUrl}
-                        href={url || releaseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
-                        style={{ display: 'flex', padding: '16px 8px' }}
-                      >
-                        <span className={`store-icon store-icon-${name.toLowerCase()}`} />{' '}
-                        <span className="pill-link-text">{name}</span>
-                        <FontAwesomeIcon icon={'square-arrow-up-right'} />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-                {this.props.stores.length !== 1 && (
-                  <div className="preview_links_wrapper" style={{ paddingBottom: 8 }}>
-                    <span className="preview_actions_title">Search</span>
-                    <div style={{ display: 'flex', gap: 4 }} className="search_from_list">
-                      {this.props.stores
-                        ?.filter(({ storeName }) => currentTrackStores.every(({ name }) => storeName !== name))
-                        .map(({ storeName, searchUrl }) => {
-                          if (!searchUrl) return null
-                          return (
-                            <a
-                              key={`${searchUrl}${searchString}`}
-                              href={`${searchUrl}${searchString}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
-                              style={{ display: 'flex', padding: '16px 8px' }}
-                            >
-                              <span className={`store-icon store-icon-${storeName.toLowerCase()}`} />{' '}
-                              <span className="pill-link-text">{storeName}</span>
-                              <FontAwesomeIcon icon={'square-arrow-up-right'} />
-                            </a>
-                          )
-                        })}
-                      <a
-                        href={`https://www.youtube.com/results?search_query=${searchString}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={'pill pill-small pill-link pill-link-large preview-pill_link pill-link-expand'}
-                        style={{ display: 'flex', padding: '16px 8px' }}
-                      >
-                        <FontAwesomeIcon icon={['fab', 'youtube']} /> <span className="pill-link-text">Youtube</span>
-                        <FontAwesomeIcon icon={'square-arrow-up-right'} />
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {this.renderStoreLinks(ctx)}
             </>
           ) : (
             <div>&nbsp;</div>
@@ -972,107 +1271,7 @@ class Preview extends Component {
                       }}
                     />
                   )}
-                  <div
-                    className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
-                    style={{ left: 2 }}
-                  >
-                    <input
-                      type="radio"
-                      id="sample_select_state-preview"
-                      name="sample-select-state"
-                      checked={!this.state.preferFullTracks}
-                      onChange={() => {
-                        localStorage.setItem('preferFullTracks', 'false')
-                        this.setState({ preferFullTracks: false })
-                      }}
-                    />
-                    <label
-                      htmlFor="sample_select_state-preview"
-                      className={`select_button-button state-select_button-button select_button-button__small ${
-                        !this.state.preferFullTracks ? 'select_button-button__active' : ''
-                      }`}
-                      onClick={() => {
-                        localStorage.setItem('preferFullTracks', 'false')
-                        this.setState({ preferFullTracks: false })
-                      }}
-                    >
-                      Preview
-                    </label>{' '}
-                    {previews.length > 0 && (
-                      <div className="preview-icons-container select-icon--container" style={{ left: 2 }}>
-                        {previews
-                          ?.reduce(
-                            (acc, cur) => (acc.some(({ store }) => store === cur.store) ? acc : [...acc, cur]),
-                            [],
-                          )
-                          .map(({ id, store }) => (
-                            <span key={id} onMouseDown={(e) => e.stopPropagation()}>
-                              <input
-                                type="radio"
-                                id={`preview-${id}`}
-                                name="preview"
-                                defaultChecked={this.state.mp3Preview?.id === id}
-                                onChange={this.onPreviewStoreClicked.bind(this, id)}
-                              />
-                              <label className="select-icon--icon" htmlFor={`preview-${id}`}>
-                                <StoreIcon code={store} />
-                              </label>
-                            </span>
-                          ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div
-                    className={`preview-samples_container select-button select-button--container state-select-button--container noselect`}
-                    style={{ right: 2 }}
-                  >
-                    <input
-                      type="radio"
-                      id="sample_select_state-full_track"
-                      name="sample-select-state"
-                      checked={this.state.preferFullTracks}
-                      onChange={() => {
-                        localStorage.setItem('preferFullTracks', 'true')
-                        this.setState({ preferFullTracks: true })
-                      }}
-                    />
-                    <label
-                      htmlFor="sample_select_state-full_track"
-                      className={`select_button-button state-select_button-button select_button-button__small ${
-                        this.state.preferFullTracks ? 'select_button-button__active' : ''
-                      }`}
-                      onClick={() => {
-                        localStorage.setItem('preferFullTracks', 'true')
-                        this.setState({ preferFullTracks: true })
-                      }}
-                    >
-                      Listen
-                    </label>{' '}
-                    {fullTracks?.length > 0 && (
-                      <div className="preview-icons-container select-icon--container">
-                        {fullTracks
-                          ?.reduce(
-                            (acc, cur) => (acc.some(({ store }) => store === cur.store) ? acc : [...acc, cur]),
-                            [],
-                          )
-                          .map(({ id, store }) => (
-                            <span key={id} onMouseDown={(e) => e.stopPropagation()}>
-                              <input
-                                type="radio"
-                                id={`preview-${id}`}
-                                name="preview"
-                                defaultChecked={this.state.mp3Preview?.id === id}
-                                onChange={this.onPreviewStoreClicked.bind(this, id)}
-                              />
-                              <label className="select-icon--icon" htmlFor={`preview-${id}`}>
-                                <StoreIcon code={store} />
-                              </label>
-                            </span>
-                          ))}
-                      </div>
-                    )}
-                  </div>
+                  {this.renderSourceSelect(ctx, 'panel')}
                 </>
               ) : null}
             </div>
@@ -1090,152 +1289,7 @@ class Preview extends Component {
                 className="preview_actions_wrapper"
                 style={{ fontSize: '75%', fontWeight: 350, display: isSample(currentTrack) ? 'none' : undefined }}
               >
-                {this.props.mode !== 'app' ? null : this.props.togglingCurrentInCart ? (
-                  <div
-                    style={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      padding: '0 9px 0 4px',
-                    }}
-                  >
-                    <Spinner size="large" color="#5A5A5A" />
-                  </div>
-                ) : (
-                  <CartDropDownButton
-                    {...{
-                      processingCart,
-                      inCart,
-                      removeLabel,
-                      trackId,
-                      currentCartId,
-                      cartFilter,
-                      onCartFilterChange,
-                      onClearCartFilter,
-                    }}
-                    carts={this.props.carts}
-                    inCarts={this.props.inCarts}
-                    selectedCartIsPurchased={this.props.selectedCartIsPurchased}
-                    onCartButtonClick={this.props.onCartButtonClick}
-                    onCreateCartClick={this.props.onCreateCartClick}
-                    onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
-                    disabled={!this.props.currentTrack || !this.props.hasSelectedTrack}
-                  />
-                )}
-                <button
-                  disabled={this.state.embeddingMissing}
-                  onClick={() => search({ q: `track:~${currentTrack?.id}`, onlyNew: true })}
-                  className={
-                    'button button-push_button button-push_button-small button-push_button-primary preview-action_button no-style-link'
-                  }
-                  style={{ lineHeight: 'normal' }}
-                >
-                  <span className="button-push_button_icon">
-                    <FontAwesomeIcon icon="circle-nodes" />
-                  </span>{' '}
-                  <span className="button-push_button_label">
-                    <span className="preview-find-similar_long">Find similar</span>
-                    <span className="preview-find-similar_short">Similar</span>
-                  </span>
-                </button>
-                {this.props.mode === 'app' && (
-                  <>
-                    <button
-                      disabled={!currentTrack}
-                      onClick={this.props.onFollowClicked}
-                      className={
-                        'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
-                      }
-                    >
-                      <span className="button-push_button_icon">
-                        <FontAwesomeIcon icon={'heart'} />
-                      </span>{' '}
-                      <span className="button-push_button_label">Follow</span>
-                    </button>
-                    <button
-                      disabled={!currentTrack}
-                      className={
-                        'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
-                      }
-                      onClick={() => {
-                        this.props.onIgnoreClicked(currentTrack)
-                      }}
-                    >
-                      <span className="button-push_button_icon">
-                        <FontAwesomeIcon icon={'ban'} />
-                      </span>{' '}
-                      <span className="button-push_button_label">Ignore</span>
-                    </button>
-                  </>
-                )}
-                <Popup
-                  anchor={
-                    <button
-                      className={'pill pill-button button-push_button-small popup-anchor'}
-                      style={{ height: '100%', margin: 0, border: '1px solid #000' }}
-                    >
-                      <span className="pill-button-contents">
-                        <span className="button-push_button_icon">
-                          <FontAwesomeIcon icon={'share'} />
-                        </span>{' '}
-                        <span className={'button-push_button_label'}>Share</span>
-                        {this.props.currentTrack && (
-                          <span className="preview-share_caret">
-                            <FontAwesomeIcon icon={'caret-down'} />
-                          </span>
-                        )}
-                      </span>
-                    </button>
-                  }
-                  popupClassName={'popup_content-left'}
-                >
-                  {currentTrack && (
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span
-                        className="pill pill-button-large pill-button"
-                        style={{ width: '100%', margin: 0, marginBottom: 4, boxSizing: 'border-box', border: 0 }}
-                      >
-                        <span className="pill-button-contents">
-                          <CopyToClipboardButton
-                            title={shareLabel}
-                            label={shareLabel}
-                            content={shareContent}
-                            style={{
-                              width: '100%',
-                              padding: '0 4px',
-                              boxSizing: 'border-box',
-                            }}
-                          />
-                        </span>
-                      </span>
-                      <ShareLink
-                        size={'large'}
-                        href={`https://telegram.me/share/url?url=${encodeURIComponent(
-                          shareLink,
-                        )}&text=${encodeURIComponent(shareContent)}`}
-                        icon={<FontAwesomeIcon icon={['fab', 'telegram']} />}
-                        label={'Share on Telegram'}
-                      />
-                      <ShareLink
-                        size={'large'}
-                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                          shareLink,
-                        )}&t=${encodeURIComponent(shareContent)}`}
-                        icon={<FontAwesomeIcon icon={['fab', 'facebook']} />}
-                        label={'Share on Facebook'}
-                      />
-                      <ShareLink
-                        size={'large'}
-                        href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
-                          shareLink,
-                        )}&text=${encodeURIComponent(shareContent)}`}
-                        icon={<FontAwesomeIcon icon={['fab', 'twitter']} />}
-                        label={'Share on Twitter'}
-                      />
-                    </div>
-                  )}
-                </Popup>
+                {this.renderTrackActions(ctx)}
               </div>
             </div>
             {this.props.newTracks !== null && this.props.totalTracks !== null ? (
