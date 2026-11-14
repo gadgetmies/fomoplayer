@@ -2,21 +2,85 @@
    table: #666 rows, the playing row in #5181bd, the selected sample row in #5181bd too. */
 
 .notifications-page {
-  padding: 16px 16px 48px;
+  padding: 0 0 48px;
   overflow-y: auto;
 }
 
-/* Heading and tab row as in Settings */
-.notifications-heading {
-  margin-top: 0;
+.notifications-content {
+  padding: 8px 16px 0;
+}
+
+/* The tab bar: the same bar as the cart controls above the cart track list (.top-bar: #222, 4px padding, 40px
+   controls, the track table's 75% font size) */
+.notifications-top_bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  min-height: 40px;
+  font-size: 75%;
+  background-color: var(--top-bar-background-color);
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .notifications-tabs {
-  margin-bottom: 12px;
+  height: 40px;
+  box-sizing: border-box;
+  align-items: stretch;
+  flex-wrap: nowrap;
 }
 
 .notifications-tab {
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
+  color: inherit;
+  font-size: 100%;
+  padding: 0 0.9rem;
+}
+
+.notifications-mark-all-heard {
+  margin: 0;
+}
+
+/* Activity: the main track list's table, with the reason in its own Why column (a line in the details on mobile) */
+/* A flex column like the main list's table, so long names truncate instead of widening the table */
+.notifications-activity {
+  display: flex;
+  flex-direction: column;
+  margin: 0 -16px;
+  width: calc(100% + 32px);
+}
+
+.notifications-activity .tracks-table-header,
+.notifications-activity > tbody {
+  display: block;
+}
+
+.notifications-activity > tbody > tr {
+  margin-bottom: 2px;
+}
+
+.notifications-activity .why-cell--inline {
+  display: none;
+}
+
+.notifications-activity .why-cell--column {
+  display: inline-flex;
+  align-items: center;
+  width: 180px;
+}
+
+.notifications-activity .why-cell--column > .track-table-cell {
+  width: 100%;
+}
+
+.why {
+  white-space: nowrap;
 }
 
 .notifications-hint {
@@ -237,6 +301,47 @@
 @media (max-width: 768px) {
   .notifications-similar {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .notifications-activity .why-cell--column {
+    display: none;
+  }
+
+  .notifications-activity .why-cell--inline {
+    display: block;
+    font-size: 80%;
+    line-height: 1.8em;
+  }
+
+  .notifications-activity .why-cell--inline .why {
+    display: inline-block;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.4em;
+  }
+
+  .arrived-cell:before {
+    content: 'Arrived: ';
+  }
+
+  .arrived-cell {
+    font-size: 80%;
+    opacity: 0.8;
+    display: block;
+    padding: 0 4px;
+  }
+}
+
+@media (min-width: 769px) {
+  /* Make room for the Why column (180px) next to the details */
+  .notifications-activity .track-details {
+    width: calc(100% - 208px - 60px - 64px - 3rem - 8px - 180px);
+  }
+
+  .arrived-cell {
+    width: 100%;
   }
 }
 

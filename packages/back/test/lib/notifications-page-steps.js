@@ -31,6 +31,9 @@ const openNotificationsFromTopBar = async (page) => {
 
 const assertActivityTabOpens = async ({ page }) => {
   expect(page.url()).to.match(/\/notifications\/activity$/)
+  // No page heading: the tabs sit in a bar like the cart controls above the cart track list
+  expect(await page.locator('.notifications-page h2').count()).to.equal(0)
+  await page.waitForSelector('.notifications-top_bar.top-bar .notifications-tabs', { state: 'visible', timeout: 5000 })
   const selected = await page.locator('.notifications-tabs [aria-selected="true"]').textContent()
   expect(selected).to.match(/^Activity/)
   // Either the feed or the explanation of where notifications come from
@@ -119,7 +122,7 @@ const assertSubscriptionsAddAndRemove = async ({ page }) => {
   // Left empty, the field turns back into the pill when it loses focus
   await page.locator('.notifications-subscription-filter button', { hasText: 'Filter' }).click()
   await filterInput.waitFor({ state: 'visible', timeout: 5000 })
-  await page.locator('.notifications-page h2').click()
+  await page.locator('.notifications-page .notifications-hint').first().click()
   await page.locator('.notifications-subscription-filter button', { hasText: 'Filter' }).waitFor({ timeout: 5000 })
 
   // Each pill's bell shows "subscribed" and, on hover, the bell-slash a click switches to; the click unsubscribes
@@ -228,12 +231,48 @@ const assertUnreadBadge =
     }
   }
 
+// Activity rows are the main track list's rows; an unread one shows the New indicator
+const unreadActivityRows = '.notifications-activity tbody tr.track:has(.track-new-indicator)'
+
+// Local only: the Activity list has the main track list's columns plus Why, which on mobile is a line in the details
+const assertActivityListsWhy = async ({ page }) => {
+  await page.locator('a[href="/notifications/activity"]').first().click()
+  const row = page.locator('.notifications-activity tbody tr.track').first()
+  await row.waitFor({ state: 'visible', timeout: 10000 })
+  for (const cell of ['.artist-cell', '.title-cell', '.label-cell', '.cart-cell', '.open-cell']) {
+    expect(await row.locator(cell).count(), `Activity rows should have the track list's ${cell}`).to.be.greaterThan(0)
+  }
+  const header = page.locator('.notifications-activity .tracks-table-header-columns')
+  const mobile = (page.viewportSize()?.width ?? 1280) <= 768
+  const why = row.locator(mobile ? '.why-cell--inline' : '.why-cell--column')
+  expect(await why.isVisible()).to.equal(true)
+  expect(await why.textContent()).to.match(/^(Artist|Label|Search|Sample match) · /)
+  if (!mobile) expect(await header.locator('.why-cell--column').textContent()).to.equal('Why')
+}
+
+// Local only: Mark all heard reads every notification
+const assertMarkAllHeard = async ({ page }) => {
+  await page.locator('a[href="/notifications/activity"]').first().click()
+  const button = page.locator('.notifications-top_bar button', { hasText: 'Mark all heard' })
+  await button.waitFor({ state: 'visible', timeout: 10000 })
+  if ((await page.locator(unreadActivityRows).count()) === 0) return
+  await button.click()
+  await waitForWithTimeoutMessage(
+    () => page.locator(unreadActivityRows).first().waitFor({ state: 'detached', timeout: 10000 }),
+    'Mark all heard should clear the New indicators.',
+  )
+  expect(await button.isDisabled()).to.equal(true)
+  await page.waitForFunction(() => !document.querySelector('[data-testid="notifications-unread-count"]'), null, {
+    timeout: 15000,
+  })
+}
+
 const unreadCount = (page) =>
   page.$eval('[data-testid="notifications-unread-count"]', (el) => Number(el.textContent)).catch(() => 0)
 
 const assertPlayingActivityRowReadsIt = async ({ page }) => {
   await page.locator('a[href="/notifications/activity"]').first().click()
-  const row = page.locator('.notifications-activity tbody tr[data-unread="true"]').first()
+  const row = page.locator(unreadActivityRows).first()
   await row.waitFor({ state: 'visible', timeout: 10000 })
   const before = await unreadCount(page)
   await row.click()
@@ -352,6 +391,8 @@ module.exports = {
   assertSettingsEmailTab,
   assertUnreadBadge,
   assertPlayingActivityRowReadsIt,
+  assertActivityListsWhy,
+  assertMarkAllHeard,
   assertSampleMatchPlaysAligned,
   assertPlayingSampleShowsNoDuration,
 }

@@ -20,6 +20,9 @@ import './FollowedItem.css'
 import { sampleAsTrack, samplesSource } from './playQueue'
 import GlobalSearchBar from './GlobalSearchBar'
 import { searchTermsToString } from './searchTerms'
+import Track from './Track'
+import './Tracks.css'
+import './Track.css'
 
 export const activitySource = { key: 'activity', label: 'Notifications · Activity', path: '/notifications/activity' }
 const matchesSource = (sample) => ({
@@ -91,6 +94,7 @@ class NotificationsPage extends Component {
       subscriptionFilterOpen: false,
       subscriptionFilter: '',
       expandedGroups: {},
+      cartFilter: '',
     }
   }
 
@@ -216,72 +220,153 @@ class NotificationsPage extends Component {
     return `notifications-row${trackId === this.props.currentTrackId ? ' notifications-row--playing' : ''}`
   }
 
+  // The Activity toolbar control, shown in the tab bar like the cart controls above the cart track list
+  renderMarkAllHeard() {
+    const { events } = this.state
+    const unread = (events || []).filter(({ read }) => !read).length
+    return (
+      <button
+        type="button"
+        className="button button-push_button button-push_button-small button-push_button-primary notifications-mark-all-heard"
+        disabled={unread === 0}
+        onClick={() => this.markAllRead()}
+      >
+        Mark all heard
+      </button>
+    )
+  }
+
+  // Marking a row heard (the New cell or Mark as heard) reads its notifications too
+  markEventHeard(trackId) {
+    const event = (this.state.events || []).find(({ track }) => track?.id === trackId)
+    if (!event) return
+    this.props.onMarkHeard?.(event.track)
+    const heard = new Date().toISOString()
+    this.setState({
+      events: this.state.events.map((e) =>
+        e.track?.id === trackId ? { ...e, read: true, track: { ...e.track, heard: e.track.heard || heard } } : e,
+      ),
+    })
+    setTimeout(() => this.props.onUnreadChanged(), 1500)
+  }
+
   renderActivity() {
     const { events } = this.state
     if (events === null) return <p className="notifications-hint">Loading…</p>
-    const unread = events.filter(({ read }) => !read).length
+    const carts = this.props.carts || []
+    const defaultCart = carts.find(({ isDefault }) => isDefault)
+    const stores = this.props.stores || []
+    const storeSlugs = stores.map(({ storeName }) => storeName.toLowerCase())
+    const rows = events.filter(({ track }) => track)
     return (
       <>
-        <div className="notifications-toolbar">
-          <p className="notifications-hint">
-            Everything you asked to hear about, newest first. Click a row to play it; next / previous then step through
-            this list.
-          </p>
-          <button
-            type="button"
-            className="button button-push_button button-push_button-small button-push_button-primary"
-            disabled={unread === 0}
-            onClick={() => this.markAllRead()}
-          >
-            Mark all read
-          </button>
-        </div>
+        <p className="notifications-hint">
+          Everything you asked to hear about, newest first. Click a row to play it; next / previous then step through
+          this list.
+        </p>
         {events.length === 0 ? (
           <p className="notifications-empty">
             Nothing yet. New tracks for your <Link to="/notifications/subscriptions">subscriptions</Link> and matches
             for your <Link to="/notifications/samples">audio samples</Link> appear here.
           </p>
         ) : (
-          <div className="notifications-table-wrapper">
-            <table className="notifications-table notifications-activity">
-              <thead>
-                <tr>
-                  <th>New</th>
-                  <th>Why</th>
-                  <th>Artist</th>
-                  <th>Title</th>
-                  <th>Label</th>
-                  <th>Arrived</th>
-                </tr>
-              </thead>
-              <tbody>
-                {events
-                  .filter(({ track }) => track)
-                  .map((event) => (
-                    <tr
-                      key={event.id}
-                      className={this.rowClass(event.track.id)}
-                      data-unread={event.read ? undefined : 'true'}
-                      onClick={() => this.playEvent(event)}
-                    >
-                      <td>
-                        <span
-                          className={event.read ? 'new-dot new-dot--read' : 'new-dot'}
-                          aria-label={event.read ? 'Read' : 'New'}
-                        />
-                      </td>
-                      <td>
-                        <span className={`why why--${event.reason.type}`}>{reasonText(event.reason)}</span>
-                      </td>
-                      <td>{artistsText(event.track)}</td>
-                      <td>{titleText(event.track)}</td>
-                      <td>{labelsText(event.track)}</td>
-                      <td>{arrivedText(event.createdAt)}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+          // The same table, rows and cells as the main track list, with the reason in its own Why column
+          <table className="tracks-table notifications-activity">
+            <thead className="noselect tracks-table-header">
+              <tr className="noselect tracks-table-header-columns">
+                <th className="new-cell tracks-cell">
+                  <div className="new-cell-content track-table-cell">New</div>
+                </th>
+                <th className="track-details tracks-cell">
+                  <div className="track-details-left track-details-content">
+                    <div className="artist-cell track-table-cell text-header-cell">Artist</div>
+                    <div className="title-cell track-table-cell text-header-cell">Title</div>
+                    <div className="label-cell track-table-cell text-header-cell">Label</div>
+                  </div>
+                  <div className="track-details-center track-details-content">
+                    <div className="arrived-cell track-table-cell text-header-cell">Arrived</div>
+                  </div>
+                  <div className="track-details-right track-details-content">
+                    <div className="genre-cell track-table-cell">Genre</div>
+                    <div className="bpm-cell track-table-cell">BPM</div>
+                    <div className="key-cell track-table-cell">Key</div>
+                  </div>
+                </th>
+                <th className="why-cell why-cell--column tracks-cell">
+                  <div className="track-table-cell text-header-cell">Why</div>
+                </th>
+                <th className="follow-ignore-cart-cell tracks-cell">
+                  <div className="score-cell track-table-cell" />
+                  <div className="cart-cell track-table-cell">Cart</div>
+                </th>
+                <th className="open-share-cell tracks-cell">
+                  <div className="open-cell track-table-cell">Open</div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((event, index) => {
+                const { track } = event
+                const trackCarts = (track.carts || []).filter(Boolean)
+                const inCarts = carts.filter((cart) => trackCarts.some(({ uuid }) => uuid === cart.uuid))
+                const previews = (track.previews || []).filter(({ store }) => storeSlugs.includes(store))
+                const play = () => this.playEvent(event)
+                return (
+                  <Track
+                    key={event.id}
+                    mode="app"
+                    listState="notifications"
+                    id={track.id}
+                    index={index}
+                    title={track.title}
+                    version={track.version}
+                    artists={track.artists || []}
+                    remixers={track.remixers || []}
+                    labels={track.labels || []}
+                    released={track.released}
+                    keys={track.keys || []}
+                    bpms={Array.from(new Set((track.stores || []).map(({ bpm }) => bpm)))}
+                    genres={track.genres || []}
+                    score={track.score}
+                    trackStores={track.stores || []}
+                    stores={stores}
+                    // Read notifications show as heard: the New cell follows the notification, not the play history
+                    heard={event.read ? track.heard || event.createdAt : null}
+                    arrived={arrivedText(event.createdAt)}
+                    why={
+                      <span className={`why why--${event.reason.type}`} title={reasonText(event.reason)}>
+                        {reasonText(event.reason)}
+                      </span>
+                    }
+                    playing={this.props.currentTrackId === track.id}
+                    carts={carts}
+                    cartFilter={this.state.cartFilter}
+                    defaultCartId={defaultCart?.id}
+                    inDefaultCart={defaultCart ? trackCarts.some(({ uuid }) => uuid === defaultCart.uuid) : false}
+                    inCarts={inCarts}
+                    processingCart={this.props.processingCart}
+                    processingTrack={this.props.processingTrack}
+                    follows={this.props.follows}
+                    noPreviews={previews.every(({ url, store }) => !url && store !== 'bandcamp')}
+                    popupAbove={rows.length > 10 && rows.length - index < 10}
+                    onClick={play}
+                    onDoubleClick={play}
+                    onTouchTap={play}
+                    onMarkHeardButtonClick={(trackId) => this.markEventHeard(trackId)}
+                    onCartButtonClick={async (...args) => {
+                      await this.props.onCartButtonClick(...args)
+                      // The rows carry their carts: reload them so the cart button shows the change
+                      this.setState({ events: await loadNotificationEvents() })
+                    }}
+                    onCreateCartClick={this.props.onCreateCartClick}
+                    onMarkPurchasedButtonClick={this.props.onMarkPurchased}
+                    onCartFilterChange={(cartFilter) => this.setState({ cartFilter })}
+                    onAddEntityToSearch={this.props.onAddEntityToSearch}
+                  />
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </>
     )
@@ -708,32 +793,37 @@ class NotificationsPage extends Component {
     const { tab, unreadCount } = this.props
     return (
       <div className="page-container scroll-container notifications-page" style={this.props.style}>
-        <h2 className="notifications-heading">Notifications</h2>
-        <div
-          role="tablist"
-          aria-label="Notifications"
-          className="select-button select-button--container state-select-button--container noselect notifications-tabs"
-        >
-          {TABS.map(({ key, label }) => (
-            <NavLink
-              key={key}
-              to={`/notifications/${key}`}
-              role="tab"
-              aria-selected={tab === key ? 'true' : 'false'}
-              className={`select_button-button select_button-button__large notifications-tab${
-                tab === key ? ' select_button-button__active notifications-tab--active' : ''
-              }`}
-            >
-              {label}
-              {key === 'activity' && unreadCount > 0 ? ` ${unreadCount}` : ''}
-            </NavLink>
-          ))}
+        {/* The tabs sit in a bar like the cart controls above the cart track list */}
+        <div className="top-bar input-layout notifications-top_bar">
+          <div
+            role="tablist"
+            aria-label="Notifications"
+            className="select-button select-button--container state-select-button--container noselect notifications-tabs"
+          >
+            {TABS.map(({ key, label }) => (
+              <NavLink
+                key={key}
+                to={`/notifications/${key}`}
+                role="tab"
+                aria-selected={tab === key ? 'true' : 'false'}
+                className={`select_button-button notifications-tab${
+                  tab === key ? ' select_button-button__active notifications-tab--active' : ''
+                }`}
+              >
+                {label}
+                {key === 'activity' && unreadCount > 0 ? ` ${unreadCount}` : ''}
+              </NavLink>
+            ))}
+          </div>
+          {tab === 'activity' && this.state.events?.length ? this.renderMarkAllHeard() : null}
         </div>
-        {tab === 'samples'
-          ? this.renderSamples()
-          : tab === 'subscriptions'
-            ? this.renderSubscriptions()
-            : this.renderActivity()}
+        <div className="notifications-content">
+          {tab === 'samples'
+            ? this.renderSamples()
+            : tab === 'subscriptions'
+              ? this.renderSubscriptions()
+              : this.renderActivity()}
+        </div>
       </div>
     )
   }

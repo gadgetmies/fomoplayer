@@ -332,6 +332,7 @@ class Track extends Component {
           </td>
         ) : null}
         <td className={'track-details tracks-cell'}>
+          {this.props.why && <div className={'why-cell why-cell--inline track-table-cell'}>{this.props.why}</div>}
           <div className={'track-details-left track-details-content'}>
             <div className={'artist-cell track-table-cell'} title={namesToString(artistsAndRemixers)}>
               {followableNameLinks(artistsAndRemixers, this.props.follows, 'artist', ', ', ' & ', this.props.onAddEntityToSearch)}
@@ -352,7 +353,12 @@ class Track extends Component {
                 {this.props.added}
               </div>
             )}
-            {this.props.listState === 'heard' ? (
+            {this.props.listState === 'notifications' && (
+              <div className={`arrived-cell track-table-cell ${this.props.arrived ? '' : 'empty-cell'}`}>
+                {this.props.arrived}
+              </div>
+            )}
+            {this.props.listState === 'notifications' ? null : this.props.listState === 'heard' ? (
               <div className={`heard-cell track-table-cell ${this.props.heard ? '' : 'empty-cell'}`}>
                 {heardDate} {heardTime}
               </div>
@@ -400,6 +406,12 @@ class Track extends Component {
             </div>
           </div>
         </td>
+        {/* Why the track is listed (Notifications): its own column on wide screens, a line in the details on mobile */}
+        {this.props.why && (
+          <td className={'why-cell why-cell--column tracks-cell'}>
+            <div className={'track-table-cell'}>{this.props.why}</div>
+          </td>
+        )}
         {this.props.mode === 'app' ? (
           <td className={'follow-ignore-cart-cell tracks-cell'}>
             <div
