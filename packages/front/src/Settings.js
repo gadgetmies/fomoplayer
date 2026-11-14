@@ -689,8 +689,8 @@ class Settings extends Component {
     return (
       <div
         className="page-container scroll-container"
-        // Room for the docked player bar at the bottom of the viewport
-        style={{ paddingBottom: this.props.dockedPlayerVisible ? 120 : 16, ...this.props.style }}
+        // Room for the docked player bar at the bottom of the viewport, also when its waveform wraps above its row
+        style={{ paddingBottom: this.props.dockedPlayerVisible ? 176 : 16, ...this.props.style }}
       >
         <SettingsHelp
           active={this.state.helpActive}
