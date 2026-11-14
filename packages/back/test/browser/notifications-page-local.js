@@ -1,7 +1,8 @@
 // Local demo (demo-test workflow): runs against a backend in the same runner.
 // The same steps as notifications-page-preview.js, plus the ones that need notification events: those are written by
 // the notification jobs only, so they (and the follow, whose API calls Beatport) are seeded through the DB here.
-// Shows the unread badge, playing an Activity row reading it, and a sample match playing as an aligned A/B pair. The
+// Shows the unread badge, playing an Activity row reading it, a sample match playing as an aligned A/B pair, and a
+// sample playing on its own. The
 // email is verified through the DB after the locked state is shown, since the real flow needs the emailed link.
 const { test } = require('cascade-test')
 const { getSharedContext, teardownSharedContext } = require('../lib/setup')
@@ -20,6 +21,7 @@ const {
   assertUnreadBadge,
   assertPlayingActivityRowReadsIt,
   assertSampleMatchPlaysAligned,
+  assertPlayingSampleShowsNoDuration,
 } = require('../lib/notifications-page-steps')
 
 test({
@@ -54,5 +56,6 @@ test({
   'the bell shows the unread count': (ctx) => assertUnreadBadge(ctx.unreadCount)(ctx),
   'playing an Activity row reads it': assertPlayingActivityRowReadsIt,
   'a sample match plays as an aligned A/B pair': assertSampleMatchPlaysAligned,
+  'playing a sample shows no duration and survives a reload': assertPlayingSampleShowsNoDuration,
   'a failed sample upload keeps the track playing': assertFailedUploadKeepsPlaying,
 })
