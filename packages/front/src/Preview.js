@@ -20,6 +20,7 @@ import { search } from './events'
 import { colors } from 'fomoplayer_shared/theme'
 import { Link } from 'react-router-dom'
 import { isSample } from './playQueue'
+import { formatDuration } from './duration'
 import {
   formatSeconds,
   formatTempo,
@@ -762,7 +763,7 @@ class Preview extends Component {
                       <br />
                       <span className="preview_label">Duration:</span>{' '}
                       <span className="preview_detail">
-                        {new Date(Number(currentTrack.duration)).toISOString().substring(11, 19).replace(/^00:/, '')}
+                        {formatDuration(currentTrack.duration)}
                       </span>
                     </div>
                   </div>
