@@ -22,6 +22,8 @@ import traceback
 import urllib.parse
 import urllib.request
 
+from auth import resolve_url
+
 import requests
 
 
@@ -162,6 +164,7 @@ def download_and_manage_file(url, file_id, file_type, filename=None, downloads_d
 
     temp_download_path = os.path.join(downloads_dir, f"{target_filename}.tmp")
 
+    url = resolve_url(url)
     print(f"Downloading {file_type} with id {file_id} from: {url}")
     # urlretrieve has no timeout, so one stalled CDN connection can hang a
     # worker (and with it the whole batch) indefinitely — observed 2026-10-14

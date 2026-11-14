@@ -6,7 +6,7 @@ from essentia.standard import MonoLoader, TensorflowPredictEffnetDiscogs
 
 import json
 import requests
-from auth import auth_header, get_api_url, request_error
+from auth import auth_header, get_api_url, request_error, resolve_url
 import bandcamp
 
 from pydub import AudioSegment
@@ -375,7 +375,7 @@ if __name__ == '__main__':
                 
                 print(f"Downloading audio sample with id {sampleId} from : {sampleUrl}")
                 try:
-                    urllib.request.urlretrieve(sampleUrl, temp_filename)
+                    urllib.request.urlretrieve(resolve_url(sampleUrl), temp_filename)
                     print(f"Downloaded to: {temp_filename}")
                     samples.append({
                         "id": sampleId,
@@ -489,7 +489,7 @@ if __name__ == '__main__':
                             continue
                     print(f"Downloading preview with id {previewId} from : {previewUrl}")
                     try:
-                        local_filename, _ = urllib.request.urlretrieve(previewUrl)
+                        local_filename, _ = urllib.request.urlretrieve(resolve_url(previewUrl))
                         print(f"Downloaded to: {local_filename}")
                         tracks.append({"id": track.get('track_id'), "isrc": track.get('track_isrc'),
                                        "preview_id": preview.get("preview_id"), "url": previewUrl,

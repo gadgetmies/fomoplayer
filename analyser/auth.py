@@ -22,6 +22,7 @@ Key resolution order:
 import json
 import os
 import sys
+from urllib.parse import urljoin
 
 
 def _cli_config_candidates():
@@ -103,6 +104,18 @@ def get_api_url():
             "the analyser."
         )
     return url
+
+
+def resolve_url(url):
+    """Make a backend-relative URL (`/api/storage/...`) absolute.
+
+    Objects in the backend's storage bucket are stored as API paths; resolve
+    them against the origin of `FOMOPLAYER_API_URL`. Absolute URLs (store
+    previews) are returned unchanged.
+    """
+    if not url or not url.startswith("/"):
+        return url
+    return urljoin(get_api_url(), url)
 
 
 def request_error(action, res):
