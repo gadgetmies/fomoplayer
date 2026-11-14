@@ -21,6 +21,11 @@ router.get('/tracks/:id/preview.:format', async ({ params: { id, format, offset 
 })
 
 router.get('/tracks/:id/embedding.png', async ({ params: { id } }, res) => {
+  // Track ids are integers. The player also plays uploaded samples (ids like
+  // "sample-17"), which have no embedding; querying with them fails in Postgres.
+  if (!/^\d+$/.test(id)) {
+    return res.status(404).send('Not found')
+  }
   try {
     res.status(200)
     res.set('Content-Type', 'image/png')
