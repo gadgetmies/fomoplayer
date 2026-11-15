@@ -102,6 +102,13 @@ const sampleMatchMaxTempoDeviation = parseEnvFloat(
   'SAMPLE_MATCH_MAX_TEMPO_DEVIATION',
 )
 
+// Embedding service that the embedNotificationAudioSamples job sends sample audio to
+// (analyser/embedding_service.py). Without the URL and token the job reports itself skipped.
+const embeddingServiceURL = process.env.EMBEDDING_SERVICE_URL || undefined
+const embeddingServiceToken = process.env.EMBEDDING_SERVICE_TOKEN || undefined
+const embeddingJobBatchSize =
+  parseEnvInt(process.env.EMBEDDING_JOB_BATCH_SIZE, 'EMBEDDING_JOB_BATCH_SIZE') ?? 20
+
 // Tracks whose published date is older than this many days are skipped during
 // watch-job ingestion (see routes/shared/tracks.js). Defaults to a true 2 years.
 const trackMaxAgeDays = (() => {
@@ -190,4 +197,7 @@ module.exports = {
   sampleMatchBucketSeconds,
   sampleMatchMaxTempoDeviation,
   trackMaxAgeDays,
+  embeddingServiceURL,
+  embeddingServiceToken,
+  embeddingJobBatchSize,
 }
