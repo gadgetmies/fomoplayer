@@ -2,11 +2,17 @@
 
 ## 1. Reach the service over IPv6
 
-- [ ] 1.1 Listen dual-stack on `::` by default in `embedding_service.py`, falling back to `0.0.0.0` when IPv6 is unavailable; test in `test_embedding_service.py` that the default listener answers on IPv4, answers on `[::1]` where IPv6 exists (skipped otherwise), and falls back when the IPv6 bind fails; verify with `pytest test_embedding_service.py`.
+- [x] 1.1 Listen dual-stack on `::` by default in `embedding_service.py`, falling back to `0.0.0.0` when IPv6 is unavailable; test in `test_embedding_service.py` that the default listener answers on IPv4, answers on `[::1]` where IPv6 exists (skipped otherwise), and falls back when the IPv6 bind fails; verify with `pytest test_embedding_service.py`.
 
 ## 2. Show why a request failed
 
-- [ ] 2.1 Append `error.cause`'s code or message to the job's per-sample error in `jobs/sample-embeddings.js`, with a test in `test/tests/jobs/sample-embeddings.js` for a `fetch failed` error carrying `ECONNREFUSED`; verify with `cascade-test ./test/tests/jobs --regex 'sample-embeddings'`.
+- [x] 2.1 Append `error.cause`'s code or message to the job's per-sample error in `jobs/sample-embeddings.js`, with a test in `test/tests/jobs/sample-embeddings.js` for a `fetch failed` error carrying `ECONNREFUSED`; verify with `cascade-test ./test/tests/jobs --regex 'sample-embeddings'`.
+
+## Verification notes
+
+- 1.1: `pytest test_embedding_service.py` 11 passed, 1 skipped: the IPv6 listener test skips here because this sandbox has no IPv6 (`AF_INET6` → EAFNOSUPPORT); the fallback test forces the IPv6 bind to fail and the service still answers on IPv4.
+- 2.1: `sample-embeddings.js` job tests 10 passed, incl. `fetch failed (ECONNREFUSED)`.
+- Merge boundary: full backend suite (`yarn test`) 677 passed, 0 failed.
 
 ## Workflow follow-up
 
