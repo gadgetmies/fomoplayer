@@ -22,11 +22,11 @@ release up through the Bandcamp client, once per release.
 - **THEN** the release is looked up once and both tracks' streams are stored
 
 #### Scenario: A newly added Bandcamp track needs no lookup
-- **WHEN** the watch job fetched a release minutes ago and one of its tracks needs audio
-- **THEN** the track is downloaded with the kept stream URL and the release is not looked up again
+- **WHEN** the watch job added a track minutes ago and the track needs audio
+- **THEN** the track is downloaded with its stored stream URL and the release is not looked up
 
-#### Scenario: A refused kept URL is replaced
-- **WHEN** a kept Bandcamp stream URL answers 403 or 410
+#### Scenario: A refused stored URL is replaced
+- **WHEN** a stored Bandcamp stream URL answers 403 or 410
 - **THEN** the release is looked up once and the fresh URL is downloaded
 
 #### Scenario: Without storage configured the run fails and says why
@@ -134,21 +134,28 @@ MUST forget the URL.
 
 #### Scenario: Another track of a looked-up release needs no lookup
 - **WHEN** a worker resolves a track whose release another run looked up an hour ago
-- **THEN** the kept URL is returned and no release page is requested
+- **THEN** the cached URL is returned and no release page is requested
 
 #### Scenario: A failed download forgets the URL
-- **WHEN** downloading a kept URL fails
+- **WHEN** downloading a cached URL fails
 - **THEN** the URL is forgotten and the next resolve looks the release up again
 
-### Requirement: Bandcamp stream URLs MUST be stored per preview
+### Requirement: Bandcamp stream URLs MUST be stored on the preview
 
+The Bandcamp transform MUST emit a track's `bandcamp.com/stream_redirect` URL
+as its preview's `url_ephemeral`, and never as `url`; CDN URLs
+(`*.bcbits.com`) MUST NOT be emitted. `addStoreTrack` MUST store
+`url_ephemeral` in `store__track_preview_url_ephemeral` of the store track's
+URL-less preview, with the time in
+`store__track_preview_url_ephemeral_fetched_at`, without adding a preview row.
 Whenever the backend looks a Bandcamp release up for playback or the prefetch
-job, it MUST store the `bandcamp.com/stream_redirect` URL of every preview of
-the release's tracks in `store__track_preview_stream`, replacing older ones.
-CDN URLs (`*.bcbits.com`) MUST NOT be stored. A stored URL MUST be used until
-it is `BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` old (default 13). A URL the
-Bandcamp client kept from a release fetched before the preview was stored MUST
-be stored when it is first used.
+job, it MUST replace the ephemeral URL of every preview of the release's
+tracks. A stored URL MUST be used until it is
+`BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` old (default 13).
+
+#### Scenario: The watch job stores the URL with the track
+- **WHEN** the watch job adds a Bandcamp track, and later adds it again with a newer URL
+- **THEN** the track has one preview, with no permanent URL and the newer ephemeral URL
 
 #### Scenario: A lookup updates the whole release
 - **WHEN** a release with two stored tracks is looked up again

@@ -22,10 +22,10 @@ stops even though there is CPU to spare.
     downloads, because the mobile API's stream URLs are
     `bandcamp.com/stream_redirect` links.
   - Bandcamp stream URLs (`bandcamp.com/stream_redirect`, which stay usable
-    for days) are stored per preview and used until they are
-    `BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` old (13 by default) or fail. A
-    lookup replaces the URLs of every track of the release. Tracks the watch
-    job has just added use the URLs the client kept from that fetch.
+    for days) are stored on the preview as `store__track_preview_url_ephemeral`,
+    by the watch job when it adds the track and by every lookup, which replaces
+    the URLs of every track of the release. They are used until they are
+    `BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` old (13 by default) or fail.
   - Beatport downloads go one at a time, at least
     `PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` apart (default 1000 ms), side by side
     with Bandcamp's.
@@ -77,6 +77,8 @@ _None._ The queue endpoints only gain an optional field and query parameter.
   `packages/back/routes/admin/db.js`, `packages/back/routes/admin/api.js`,
   `packages/back/routes/stores/bandcamp/bandcamp-api.js`,
   `packages/back/routes/stores/bandcamp/stream-urls.js` (new),
+  `packages/back/routes/shared/db/store.js`,
+  `packages/browser-extension/src/js/transforms/bandcamp.js`,
   `packages/back/routes/stores/bandcamp/logic.js`, `packages/front/src/Preview.js`,
   `packages/back/job-scheduling.js`, `packages/back/migrations/`,
   `analyser/main.py`, `analyser/panako_processor.py`, `analyser/waveform.py`,

@@ -49,21 +49,26 @@ own `ts` is the request time plus 24 h, so only that hop expires quickly, and
 it is fetched straight after the redirect. The redirect works without our
 User-Agent too.
 
-### Store the stream URLs per preview
+### Store the stream URLs on the preview, as an ephemeral URL
 `tralbum_details` returns the `stream_redirect` URL of every track on a
-release. Those URLs are stored in `store__track_preview_stream` (one row per
-preview, with the time it was fetched) whenever the backend fetches a release
-for playback or the prefetch job. A stored URL is used until it is
-`BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` old (13 by default, the age measured to
-still work) or until it fails. The lookup then replaces the URLs of every
-track of the release, which were issued together. Only `stream_redirect` URLs
-are stored; a scraped release page's CDN URLs expire within a day.
+release. It is stored on the preview row, in
+`store__track_preview_url_ephemeral` with
+`store__track_preview_url_ephemeral_fetched_at`. The name says it works for a
+while but not for good; `store__track_preview_url` stays for permanent URLs.
+It cannot go in `store__track_preview_url`: that column is treated as
+permanent (the analyser queues and the player skip the lookup when it is set)
+and `addStoreTrack` matches previews by it, so a URL that changes on every
+fetch would add a preview row each time.
 
-A newly added release is fetched by the watch job before its preview rows
-exist, so the Bandcamp client also keeps the URLs of every release it fetched
-in process (at most 50 000) for the same age. The first time playback or the
-prefetch job needs one of those tracks, the kept URL is stored. A restart
-only costs one lookup per release.
+- The watch job stores it with the tracks it adds: the shared Bandcamp
+  transform emits it as the preview's `url_ephemeral`, only for
+  `stream_redirect` URLs, so the extension's CDN URLs are left out, and
+  `addStoreTrack` writes it to the store track's URL-less preview (Bandcamp
+  previews are unique per store track).
+- Every lookup for playback or the prefetch job replaces the URLs of every
+  track of the release, which were issued together.
+- A stored URL is used until it is `BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` old
+  (13 by default, the age measured to still work) or until it fails.
 
 ### Playback uses the stored URL
 `GET /api/stores/bandcamp/previews/:id` answers with the stored URL without
