@@ -28,9 +28,41 @@ const onePlayerTracks = ONE_PLAYER_TITLES.map((title, index) => {
   }
 })
 
+// A track whose artists, label and title are far too long for the docked bar, to show they are cut short. Its own
+// store ids and catalog number keep it apart from the one-player tracks.
+const LONG_TEXT_TITLE = 'Long Text Demo: A Track Title That Keeps Going Well Past The Width Of Any Player Bar'
+const longTextTrack = (() => {
+  const id = '990000201'
+  return {
+    ...concussionWithoutIsrc,
+    id,
+    title: LONG_TEXT_TITLE,
+    url: `https://www.beatport.com/track/long-text-demo/${id}`,
+    artists: Array.from({ length: 8 }, (_, index) => ({
+      name: `Long Text Demo Artist With A Rather Long Name ${index + 1}`,
+      id: String(990000301 + index),
+      url: `https://www.beatport.com/artist/long-text-demo-artist/${990000301 + index}`,
+      role: 'author',
+    })),
+    label: {
+      id: '990000401',
+      name: 'Long Text Demo Label: An Exceptionally Long Record Label Name For A Collective Of Labels',
+      url: 'https://www.beatport.com/label/long-text-demo-label/990000401',
+    },
+    release: {
+      ...concussion.release,
+      isrc: null,
+      id,
+      title: `${LONG_TEXT_TITLE} (release)`,
+      catalog_number: 'FOMO-LONG-TEXT-DEMO',
+      url: `https://www.beatport.com/release/long-text-demo/${id}`,
+    },
+  }
+})()
+
 // Same endpoint the browser extension uses; adding the same store tracks again is an upsert, so re-runs against the
 // persistent preview are safe. skipOld=false because the fixture was published in 2005.
-const seedOnePlayerTracksViaApi = async (page) => {
+const seedBeatportTracksViaApi = async (page, tracks, what) => {
   const { status, text } = await page.evaluate(
     async ({ tracks, store }) => {
       const r = await fetch('/api/me/tracks?skipOld=false', {
@@ -41,9 +73,18 @@ const seedOnePlayerTracksViaApi = async (page) => {
       })
       return { status: r.status, text: await r.text() }
     },
-    { tracks: onePlayerTracks, store: beatportUrl },
+    { tracks, store: beatportUrl },
   )
-  if (status < 200 || status >= 300) throw new Error(`Seeding one-player tracks failed: HTTP ${status} — ${text}`)
+  if (status < 200 || status >= 300) throw new Error(`Seeding ${what} failed: HTTP ${status} — ${text}`)
 }
 
-module.exports = { seedOnePlayerTracksViaApi, onePlayerTracks, ONE_PLAYER_TITLES }
+const seedOnePlayerTracksViaApi = (page) => seedBeatportTracksViaApi(page, onePlayerTracks, 'one-player tracks')
+const seedLongTextTrackViaApi = (page) => seedBeatportTracksViaApi(page, [longTextTrack], 'the long text track')
+
+module.exports = {
+  seedOnePlayerTracksViaApi,
+  seedLongTextTrackViaApi,
+  onePlayerTracks,
+  ONE_PLAYER_TITLES,
+  LONG_TEXT_TITLE,
+}
