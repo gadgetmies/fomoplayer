@@ -2,30 +2,50 @@ const { expect } = require('chai')
 const { waitForWithTimeoutMessage } = require('./setup')
 
 // Shared browser interactions/assertions for the docked player controls demo on a phone (the touch-enabled Pixel 5
-// context). On Settings the docked bar is the waveform, with Preview / Listen on its ends, above play, previous, next and
-// the track; expanding it shows the full player the track lists show (details, waveform with Preview / Listen, then the
-// controls) with the waveform, buttons and spacing at the same size, and a bar on top or a tap outside goes back. Both entry files import these verbatim; the tracks are seeded through the API.
+// context). On Settings the docked bar is the waveform, with Preview / Listen on its ends, above play, previous, next
+// and the track; expanding it shows the full player the track lists show (details, waveform with Preview / Listen,
+// then the controls) with the waveform, buttons, switches and spacing in the same places. The button in the details'
+// top right corner or a tap outside goes back. Below 430px previous is hidden so the button row, share included, fits.
+// Both entry files import these verbatim; the tracks are seeded through the API.
+
+// Below this viewport width previous gives way so the panel's button row fits
+const PREVIOUS_HIDDEN_BELOW = 430
 
 const toggle = (page) => page.locator('.docked-player .docked-player_expand')
 const openPanel = (page) => page.locator('.preview--docked-expanded')
 
-// The bar's and the expanded player's waveform, play button and button row, to compare their sizes
+// The bar's and the expanded player's waveform, Preview / Listen, playback buttons and button row, to compare them
 const measure = async (page, scope) => {
-  const box = (selector) => page.locator(selector).first().boundingBox()
-  const [waveform, play, buttonRow] = await Promise.all(
+  const [waveformSelector, switchesSelector, rowSelector] =
     scope === 'bar'
-      ? [
-          box('[data-testid="docked-player-waveform"]'),
-          box('.docked-player_row .button-playback'),
-          box('.docked-player_row'),
-        ]
+      ? ['[data-testid="docked-player-waveform"]', '[data-testid="docked-player-waveform"]', '.docked-player_row']
       : [
-          box('.preview--docked-expanded .preview-wrapper .waveform_container'),
-          box('.preview--docked-expanded .button-wrapper .button-playback'),
-          box('.preview--docked-expanded .button-wrapper'),
-        ],
-  )
-  return { waveform, play, buttonRow, gap: buttonRow.y - (waveform.y + waveform.height) }
+          '.preview--docked-expanded .preview-wrapper .waveform_container',
+          '.preview--docked-expanded .preview-wrapper',
+          '.preview--docked-expanded .button-wrapper',
+        ]
+  const box = (locator) => locator.first().boundingBox()
+  const previousVisible = await page.locator(`${rowSelector} .button-playback--previous`).isVisible()
+  // Play, (previous,) next: the playback buttons left in the row
+  const playback = page.locator(`${rowSelector} .button-playback:visible`)
+  const [waveform, preview, listen, play, next, buttonRow] = await Promise.all([
+    box(page.locator(waveformSelector)),
+    box(page.locator(`${switchesSelector} label`, { hasText: 'Preview' })),
+    box(page.locator(`${switchesSelector} label`, { hasText: 'Listen' })),
+    box(playback.nth(0)),
+    box(playback.nth(previousVisible ? 2 : 1)),
+    box(page.locator(rowSelector)),
+  ])
+  return {
+    waveform,
+    preview,
+    listen,
+    play,
+    next,
+    buttonRow,
+    previousVisible,
+    gap: buttonRow.y - (waveform.y + waveform.height),
+  }
 }
 let barSizes
 
@@ -74,6 +94,7 @@ const assertBarWaveformAboveControls = async ({ page }) => {
     expect(await label.isVisible()).to.equal(true)
   }
   barSizes = await measure(page, 'bar')
+  expect(barSizes.previousVisible, 'previous in the bar').to.equal(page.viewportSize().width >= PREVIOUS_HIDDEN_BELOW)
   // The expand button shares the controls' line
   const expand = await toggle(page).boundingBox()
   expect(expand.y).to.be.at.least(controls.y - 1)
@@ -113,16 +134,27 @@ const assertExpandShowsFullPlayer = async ({ page }) => {
   for (const name of [/similar/i, /Follow/, /Ignore/, /Share/]) {
     expect(await buttons.getByRole('button', { name }).first().isVisible()).to.equal(true)
   }
-  // The waveform, the play button, the button row and the space between them keep their sizes
+  // The waveform, Preview / Listen, the playback buttons, the button row and the space between them stay put
   const panelSizes = await measure(page, 'panel')
-  const close = (a, b, what) => expect(Math.abs(a - b), what).to.be.at.most(2)
+  const close = (a, b, what, within = 2) => expect(Math.abs(a - b), what).to.be.at.most(within)
   close(panelSizes.waveform.height, barSizes.waveform.height, 'waveform height')
   close(panelSizes.waveform.width, barSizes.waveform.width, 'waveform width')
+  for (const name of ['preview', 'listen']) {
+    close(panelSizes[name].x, barSizes[name].x, `${name} switch x`, 0.5)
+    close(panelSizes[name].y - panelSizes.waveform.y, barSizes[name].y - barSizes.waveform.y, `${name} switch y`, 0.5)
+  }
   close(panelSizes.play.width, barSizes.play.width, 'play button width')
   close(panelSizes.play.height, barSizes.play.height, 'play button height')
+  close(panelSizes.play.x, barSizes.play.x, 'play button position')
+  close(panelSizes.next.x, barSizes.next.x, 'next button position')
   close(panelSizes.buttonRow.height, barSizes.buttonRow.height, 'button row height')
   close(panelSizes.gap, barSizes.gap, 'space between the waveform and the buttons')
-  close(panelSizes.play.x, barSizes.play.x, 'play button position')
+  expect(panelSizes.previousVisible, 'previous in the panel').to.equal(barSizes.previousVisible)
+  // The whole button row fits, share included
+  const row = await buttons.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }))
+  expect(row.scroll, 'the button row does not overflow').to.be.at.most(row.client)
+  const share = await buttons.getByRole('button', { name: /Share/ }).boundingBox()
+  expect(share.x + share.width).to.be.at.most(page.viewportSize().width)
   // It sits at the bottom of the screen, in place of the bar
   const panelBox = await openPanel(page).boundingBox()
   expect(Math.abs(panelBox.y + panelBox.height - page.viewportSize().height)).to.be.below(2)
@@ -165,6 +197,32 @@ const assertCartButtonToggles = async ({ page }) => {
   await waitForTitle(false)
 }
 
+// The way back sits in the top right corner of the track details, clear of their text
+const assertCollapseButtonInCorner = async ({ page }) => {
+  const collapse = page.getByRole('button', { name: 'Back to the player bar' })
+  const button = await collapse.boundingBox()
+  const details = await openPanel(page).locator('> .preview_details_wrapper').boundingBox()
+  expect(Math.abs(button.x + button.width - (details.x + details.width))).to.be.at.most(1)
+  expect(Math.abs(button.y - details.y)).to.be.at.most(1)
+  const overlapping = await collapse.evaluate((el) => {
+    const b = el.getBoundingClientRect()
+    const texts = [...document.querySelectorAll('.preview--docked-expanded > .preview_details_wrapper *')].filter(
+      (node) =>
+        node.offsetParent && [...node.childNodes].some((child) => child.nodeType === 3 && child.textContent.trim()),
+    )
+    return texts
+      .filter((node) => {
+        const range = document.createRange()
+        range.selectNodeContents(node)
+        return [...range.getClientRects()].some(
+          (r) => r.right > b.left && r.left < b.right && r.bottom > b.top && r.top < b.bottom,
+        )
+      })
+      .map((node) => node.textContent.trim())
+  })
+  expect(overlapping, 'text under the collapse button').to.deep.equal([])
+}
+
 const assertCollapseReturnsToBar = async ({ page }) => {
   await page.getByRole('button', { name: 'Back to the player bar' }).tap()
   await page.locator('.docked-player_main').waitFor({ state: 'visible', timeout: 5000 })
@@ -196,6 +254,7 @@ module.exports = {
   assertExpandShowsFullPlayer: lingering(assertExpandShowsFullPlayer),
   assertSourceSelectSwitches: lingering(assertSourceSelectSwitches),
   assertCartButtonToggles: lingering(assertCartButtonToggles),
+  assertCollapseButtonInCorner: lingering(assertCollapseButtonInCorner),
   assertCollapseReturnsToBar: lingering(assertCollapseReturnsToBar),
   assertTapOutsideReturnsToBar: lingering(assertTapOutsideReturnsToBar),
 }
