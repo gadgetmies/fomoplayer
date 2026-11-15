@@ -70,6 +70,7 @@ const {
   querySampleMatches,
 } = require('../shared/db/notification-events')
 const { querySampleSimilarTracks } = require('../shared/db/sample-similarity')
+const { startEmbeddingAfterUpload } = require('../../jobs/sample-embeddings')
 
 const { queryDefaultCartId } = require('../shared/db/cart.js')
 
@@ -661,6 +662,7 @@ router.post(
       fs.unlinkSync(file.path)
 
       res.status(201).send({ ...sample, url, waveformUrl: waveform.waveformUrl, durationMs: waveform.durationMs })
+      startEmbeddingAfterUpload()
     } catch (error) {
       logger.error('Error uploading audio sample', {
         error: error.message,
