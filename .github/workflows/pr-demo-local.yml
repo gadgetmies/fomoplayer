@@ -13,18 +13,77 @@ name: PR Demo (local)
 # which is how tests like the admin Radiator demo populate their view. For a
 # recording against the real Railway preview, use a ```demo-preview``` block
 # instead (see pr-demo-preview.yml).
+#
+# Optionally, a ```demo-test-before``` block records a second video of the app
+# as it was before the PR, in parallel:
+#
+#   ```demo-test-before
+#   test/browser/admin-tab-bar-local.js
+#   ```
+#
+#   after  — the ```demo-test``` file on the merge commit GitHub checks out for
+#            the PR (master + the PR).
+#   before — the ```demo-test-before``` file from that merge commit, with the
+#            rest of the app switched to the merge commit's first parent: the
+#            master commit the PR merges onto. The two videos then differ only
+#            by the PR's changes. The run sets DEMO_PHASE=before, so a test
+#            written with demoTest (test/lib/demo-test.js) runs its
+#            `casesBeforeChange`; it can also be a separate test file.
+#
+# Both videos are re-recorded on every push, including a force-push after a
+# rebase, against the new merge commit and its new first parent.
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
 
 jobs:
-  demo-local:
+  # Reads the demo blocks from the PR body into one matrix entry per recording,
+  # so a PR without a demo-test-before block starts no before job at all.
+  plan:
     if: >-
       (github.event.pull_request.author_association == 'OWNER' ||
        github.event.pull_request.author_association == 'COLLABORATOR') &&
       contains(github.event.pull_request.body, '```demo-test')
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.blocks.outputs.matrix }}
+    steps:
+      - name: Extract test files from PR body
+        id: blocks
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body ?? ''
+            const phases = [
+              { phase: 'after', block: 'demo-test' },
+              { phase: 'before', block: 'demo-test-before' },
+            ]
+            const include = []
+            for (const { phase, block } of phases) {
+              const match = body.match(new RegExp('```' + block + '\\r?\\n([\\s\\S]*?)```'))
+              if (!match) continue
+              const testFile = match[1].trim()
+              if (!testFile.endsWith('.js') || testFile.includes('..')) {
+                core.setFailed(`Invalid test file path in the ${block} block: "${testFile}"`)
+                return
+              }
+              console.log(`${phase}: recording ${testFile}`)
+              include.push({ phase, test_file: testFile })
+            }
+            if (include.length === 0) {
+              core.setFailed('No ```demo-test``` or ```demo-test-before``` block found in PR body. Add one with a test file path.')
+              return
+            }
+            core.setOutput('matrix', JSON.stringify({ include }))
+
+  demo-local:
+    needs: plan
+    runs-on: ubuntu-latest
     container: node:22
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
 
     permissions:
       # write (not read) so the trace can be published to the gh-pages branch.
@@ -44,8 +103,16 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      DEMO_PHASE: ${{ matrix.phase }}
+      # Suffix for the artifact, trace path and comment: "" for after, "-before" for before.
+      PHASE_SUFFIX: ${{ matrix.phase == 'before' && '-before' || '' }}
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The merge commit and its first parent, for the before phase.
+          fetch-depth: 2
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -57,25 +124,18 @@ jobs:
         # zip/unzip are needed by redact-trace.js to rewrite the trace archive.
         run: apt-get update && apt-get install -y git postgresql-client unzip zip
 
-      # The PR body provides the test path inside a fenced demo-test block.
-      - name: Extract test file from PR body
-        id: demo
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const body = context.payload.pull_request.body ?? ''
-            const match = body.match(/```demo-test\r?\n([\s\S]*?)```/)
-            if (!match) {
-              core.setFailed('No ```demo-test``` block found in PR body. Add one with a test file path.')
-              return
-            }
-            const testFile = match[1].trim()
-            if (!testFile.endsWith('.js') || testFile.includes('..')) {
-              core.setFailed(`Invalid test file path: "${testFile}"`)
-              return
-            }
-            console.log(`Recording demo test: ${testFile}`)
-            core.setOutput('test_file', testFile)
+      # Switch everything but the tests to the merge commit's first parent (the
+      # master commit the PR merges onto), so the PR's before test runs against the code without the PR's changes. read-tree -u also
+      # deletes files the PR added (e.g. its migrations); the tests are then
+      # restored from the merge commit so both phases share the same helpers.
+      - name: Switch app code to the state before the PR
+        if: matrix.phase == 'before'
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git read-tree -u --reset HEAD^1
+          rm -rf packages/back/test
+          git checkout HEAD -- packages/back/test
+          echo "App code from $(git rev-parse --short HEAD^1), tests from $(git rev-parse --short HEAD)"
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -116,7 +176,7 @@ jobs:
           PW_END_IDLE_MS: '4000'
         run: |
           export VIDEO_DIR="$GITHUB_WORKSPACE/demo-output"
-          TEST_FILE="${{ steps.demo.outputs.test_file }}"
+          TEST_FILE="${{ matrix.test_file }}"
           TEST_DIR=$(dirname "$TEST_FILE")
           TEST_REGEX="$(basename "$TEST_FILE" | sed 's/\./\\./g')$"
           yarn workspace fomoplayer_back ci:demo "$TEST_DIR" --regex "$TEST_REGEX"
@@ -157,7 +217,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: bash .github/scripts/publish-trace.sh local "$GITHUB_WORKSPACE/demo-output"
+        run: bash .github/scripts/publish-trace.sh "local${PHASE_SUFFIX}" "$GITHUB_WORKSPACE/demo-output"
 
       # Surface what landed in demo-output in the PR comment — handy when a
       # recording is empty/missing and the raw run logs aren't readily accessible.
@@ -184,7 +244,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: demo-local-pr-${{ github.event.pull_request.number }}
+          name: demo-local${{ env.PHASE_SUFFIX }}-pr-${{ github.event.pull_request.number }}
           path: ${{ github.workspace }}/demo-output/
           retention-days: 30
 
@@ -196,6 +256,9 @@ jobs:
             const fs = require('fs')
             const succeeded = '${{ job.status }}' === 'success'
             const icon = succeeded ? '✅' : '❌'
+            const phase = process.env.DEMO_PHASE
+            const suffix = process.env.PHASE_SUFFIX
+            const title = phase === 'before' ? 'Demo (local, before the change)' : 'Demo (local)'
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             const diag = process.env.DEMO_DIAG || '(no diagnostics captured)'
             const prNumber = context.payload.pull_request.number
@@ -209,7 +272,7 @@ jobs:
             const traceLines = []
             try {
               for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.zip')).sort()) {
-                const rel = `traces/pr-${prNumber}/local/${file}`
+                const rel = `traces/pr-${prNumber}/local${suffix}/${file}`
                 const pagesUrl = `https://${owner}.github.io/${repo}/${rel}`
                 const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/gh-pages/${rel}`
                 traceLines.push(`- \`${file}\`: [open in trace viewer](${viewer(pagesUrl)}) · [fallback](${viewer(rawUrl)})`)
@@ -224,12 +287,12 @@ jobs:
               repo: context.repo.repo,
               issue_number: prNumber,
               body: [
-                `${icon} **Demo (local) ${succeeded ? 'succeeded' : 'failed'}**`,
+                `${icon} **${title} ${succeeded ? 'succeeded' : 'failed'}**`,
                 '',
                 `[View recording and run logs](${runUrl})`,
                 ...traceSection,
                 '',
-                'Or download the `demo-local-pr-${{ github.event.pull_request.number }}` artifact to watch the video (`.webm`) and open the trace(s) with `npx playwright show-trace trace.zip` (or `trace-mobile.zip`).',
+                `Or download the \`demo-local${suffix}-pr-${prNumber}\` artifact to watch the video (\`.webm\`) and open the trace(s) with \`npx playwright show-trace trace.zip\` (or \`trace-mobile.zip\`).`,
                 '',
                 '<details><summary>Recording diagnostics</summary>',
                 '',

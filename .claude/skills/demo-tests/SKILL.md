@@ -49,6 +49,11 @@ test/browser/<feature>-preview.js
 ```
 ````
 
+A third, optional block, ` ```demo-test-before `, also records the flow on the
+UI as it was before the PR (see "Optional: a before video of the old UI"). Open
+the PR early so the videos are recorded while you work (see "Open the PR early
+so the videos are recorded early").
+
 ## Golden rule: maximize shared code, isolate only the seeding
 
 The local and preview tests must be **as identical as possible**. The *only*
@@ -181,6 +186,86 @@ test({
 The `-local.js` file is the same, except it may swap `seedViaUi` for a
 `seedViaDb` fallback if (and only if) UI/API seeding isn't feasible there.
 
+## Optional: a before video of the old UI
+
+A before video is optional — add it when the old UI had a way to do the same
+thing and seeing both helps the reviewer. A demo test never has to define one.
+Ask for it with a third block in the PR body, naming the test to record before
+the change:
+
+````
+```demo-test-before
+test/browser/<feature>-local.js
+```
+````
+
+The local demo workflow then records, in parallel:
+
+- **after** — the ` ```demo-test ` file on the merge commit GitHub checks out
+  for the PR (master + the PR);
+- **before** — the ` ```demo-test-before ` file from that merge commit, with
+  every other file switched to the merge commit's first parent (the `master`
+  commit the PR merges onto), and `DEMO_PHASE=before`. The two videos differ
+  only by the PR's changes.
+
+Without the block no before job runs.
+
+### Writing the before cases
+
+The simplest before test is the `-local.js` file itself, written with
+`demoTest` from `test/lib/demo-test.js` instead of `test`:
+
+```js
+const { demoTest } = require('../lib/demo-test')
+const { gotoFeature, cases, casesBeforeChange } = require('../lib/<feature>-steps')
+
+demoTest({
+  teardown: teardownSharedContext,
+  setup: async () => { /* shared seeding + navigation */ },
+  cases,              // the ordinary test cases: the flow on the new UI
+  casesBeforeChange,  // optional: the same flow on the old UI
+})
+```
+
+Both are plain cascade-test case objects (`{ 'case name': async ({ page }) =>
+{ ... } }`), not setup hooks. `casesBeforeChange` replaces `cases` in exactly
+one run, the before recording; every other run — `ci:test:browser:demo`, local
+runs, the demo-test and demo-preview recordings — runs `cases`. Keep both sets
+next to each other in the shared steps file. The `-preview.js` file passes only
+`cases`: the preview workflow has no before recording, because there is no
+deployed before app.
+
+The before run uses the PR's `test/` directory with the **old** app,
+dependencies and migrations, so `setup` and `casesBeforeChange` may only use
+what existed before the PR: no new table, endpoint, package or selector. If the
+PR changes something `setup` relies on, branch on `isBeforeChange` (exported
+from `demo-test.js`). If the block names a `demoTest` file without
+`casesBeforeChange`, the before job fails with a message saying so. The block
+may also name a separate plain test file.
+
+The admin tab bar pair (`admin-tab-bar-local.js` / `-preview.js`, steps in
+`test/lib/admin-tab-bar-steps.js`) is the example.
+
+## Open the PR early so the videos are recorded early
+
+Open a draft PR as soon as the spec is committed, with the demo blocks in its
+body, rather than at the end. Each push re-runs the demo workflows, so the
+videos follow the work:
+
+- The **before** video can be recorded first: it only needs
+  `casesBeforeChange`, which run against code that already exists. Recording it
+  while the spec is fresh shows exactly what the change starts from.
+- The **after** video fails until the feature exists, then tracks each push
+  and shows how the implementation is going.
+
+**Rebasing re-records both videos.** The workflows run on `synchronize`, which
+a force-push after a rebase triggers, so a rebased branch gets fresh videos
+recorded against the new merge commit and its new parent. Pull requests are not
+re-run when `master` moves without a push to the branch, so the before video
+can show an older `master`. When it matters, rebase (or merge `master`) and
+push to refresh both. Each run posts a new comment; the newest pair is the
+current one.
+
 ## Demo tests are opt-in — they do NOT run in the default browser CI
 
 `<feature>-local.js` and `<feature>-preview.js` live in `test/browser/`, but the
@@ -224,6 +309,10 @@ yarn ci:test:browser:demo
 cd packages/back
 VIDEO_DIR="$PWD/demo-output" PW_SLOWMO=600 \
   yarn ci:demo test/browser --regex '<feature>-local\.js$'
+
+# Record the before video: in a checkout of master with this branch's
+# packages/back/test copied in (and the front-end rebuilt there), add
+# DEMO_PHASE=before to the command above.
 ```
 
 Confirm a non-empty `.webm` lands in `demo-output/` — a zero-byte file means the
@@ -236,6 +325,9 @@ context never closed (use `teardownSharedContext` as the suite `teardown`).
 - [ ] demo-preview seeds via UI/API only (no DB); demo-test reuses that, with
       `seedViaDb` only as a justified local fallback.
 - [ ] Both pass under `ci:test:browser:demo` and record a non-empty `.webm`.
+- [ ] Optional: for a before video, `casesBeforeChange` (via `demoTest`) that
+      pass against `master`, and a ` ```demo-test-before ` block naming the file.
+- [ ] The PR is open (as a draft if need be) so the videos are being recorded.
 - [ ] Both files are named `<feature>-local.js` / `<feature>-preview.js` — the
       suffix is what keeps them out of the default PR job.
 - [ ] PR body contains both ` ```demo-test ` and ` ```demo-preview ` blocks

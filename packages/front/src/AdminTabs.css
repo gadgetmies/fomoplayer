@@ -1,0 +1,33 @@
+/* The admin tab bar: the same bar as the Notifications page's tabs (NotificationsPage.css). The admin pages pad
+   their content by 1rem, so the bar pulls itself out to the page edges. */
+.admin-tabs-top_bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  margin: -1rem -1rem 1rem;
+  min-height: 40px;
+  font-size: 75%;
+  background-color: var(--top-bar-background-color);
+  position: sticky;
+  top: -1rem;
+  z-index: 2;
+}
+
+.admin-tabs {
+  height: 40px;
+  box-sizing: border-box;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.admin-tab {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  font-size: 100%;
+  padding: 0 0.9rem;
+  white-space: nowrap;
+}
