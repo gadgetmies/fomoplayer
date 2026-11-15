@@ -117,7 +117,9 @@ audio {
 .full-screen-popup-container {
   position: absolute;
   background-color: rgba(0, 0, 0, 0.55);
-  z-index: 2;
+  /* Above the sticky bars (z-index 2, e.g. the Notifications tab bar), the docked player (10) and in-page dropdowns
+     (100); with an equal z-index the bars, later in the DOM, were drawn over the Follow / Ignore popups */
+  z-index: 200;
 }
 
 .full-screen-popup {
