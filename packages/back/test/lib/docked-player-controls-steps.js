@@ -1,6 +1,7 @@
 const { expect } = require('chai')
 const { waitForWithTimeoutMessage } = require('./setup')
 const player = require('./player-steps')
+const { LONG_TEXT_TITLE } = require('./one-player-seed')
 
 // Shared browser interactions/assertions for the docked player controls demo on wider screens. Preview and Listen sit
 // on the ends of the docked bar's waveform, as on the full player's; after the waveform come cart, find similar, follow
@@ -138,6 +139,12 @@ const assertExpandButtonAndEscapeCloseMore = async ({ page }) => {
   await player.assertStillPlaying(page)
 }
 
+// A track with many long artist names, a long label and a long title: each line of the bar is cut short
+const assertLongTextsEllipsed = async ({ page }) => {
+  await player.playFromSearchAndOpenSettings(page, LONG_TEXT_TITLE)
+  await player.assertDockedBarTextsEllipsed(page)
+}
+
 module.exports = {
   assertRowHasMainActions,
   assertCartButtonToggles,
@@ -145,4 +152,5 @@ module.exports = {
   openMore,
   assertSharePopupOpens,
   assertExpandButtonAndEscapeCloseMore,
+  assertLongTextsEllipsed,
 }

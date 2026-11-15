@@ -1,6 +1,7 @@
 const { expect } = require('chai')
 const { waitForWithTimeoutMessage } = require('./setup')
 const player = require('./player-steps')
+const { LONG_TEXT_TITLE } = require('./one-player-seed')
 
 // Shared browser interactions/assertions for the docked player controls demo on a phone (the touch-enabled Pixel 5
 // context). On Settings the docked bar is the waveform, with Preview / Listen on its ends, above play, previous, next
@@ -229,6 +230,12 @@ const assertTapOutsideReturnsToBar = async ({ page }) => {
   await player.assertStillPlaying(page)
 }
 
+// A track with many long artist names, a long label and a long title: each line of the bar is cut short
+const assertLongTextsEllipsed = async ({ page }) => {
+  await player.playFromSearchAndOpenSettings(page, LONG_TEXT_TITLE, { tap: true })
+  await player.assertDockedBarTextsEllipsed(page)
+}
+
 // Each step lingers on its result so the demo video can be followed on a phone-sized recording
 const lingering = (step) => async (context) => {
   await step(context)
@@ -245,4 +252,5 @@ module.exports = {
   assertCollapseButtonInCorner: lingering(assertCollapseButtonInCorner),
   assertCollapseReturnsToBar: lingering(assertCollapseReturnsToBar),
   assertTapOutsideReturnsToBar: lingering(assertTapOutsideReturnsToBar),
+  assertLongTextsEllipsed: lingering(assertLongTextsEllipsed),
 }
