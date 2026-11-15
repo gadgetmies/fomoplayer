@@ -156,7 +156,14 @@ const assertMatchListed = async ({ page, mobilePage }) => {
   const info = match.locator('.why-cell--column .notifications-match_info')
   expect(await info.locator('.matched-at').textContent()).to.match(/^at \d+:\d\d$/)
   expect(await info.locator('.tempo').textContent()).to.equal('±0.0 %')
-  expect(await info.locator('.score').textContent()).to.match(/^score \d+$/)
+  // How strong the match is leads the pill: the seeded score of 12 is a good match, the score only in its tooltip
+  const strength = info.locator('.notifications-match_strength')
+  expect((await strength.innerText()).trim()).to.equal('Good')
+  expect(await info.getAttribute('class')).to.contain('notifications-match_info--good')
+  expect(await strength.getAttribute('title')).to.match(/^Good match: 12 fingerprint points/)
+  expect(await info.innerText(), 'the score shows only in the tooltip').to.not.contain('12')
+  const [strengthBox, detailsBox] = [await strength.boundingBox(), await info.locator('.notifications-match_details').boundingBox()]
+  expect(strengthBox.x, 'the strength comes before where and at what tempo').to.be.lessThan(detailsBox.x)
   expect(await info.locator('svg').count(), 'the match chip has no icon').to.equal(0)
   await assertFlushWithSample(row, table)
   // The Match header and chip sit in the middle of their column
@@ -171,7 +178,7 @@ const assertMatchListed = async ({ page, mobilePage }) => {
   const middle = column.x + column.width / 2
   expect(headerText.left + headerText.width / 2, 'Match is centred in its column').to.be.closeTo(middle, 1)
   expect(chip.x + chip.width / 2, 'the match chip is centred under Match').to.be.closeTo(middle, 1)
-  await info.hover()
+  await strength.hover()
 
   await openSamplesTab(mobilePage)
   const phoneMatch = sampleRow(mobilePage, SAMPLES.matched).locator('.notifications-matches > tbody > tr.track').first()
@@ -180,6 +187,8 @@ const assertMatchListed = async ({ page, mobilePage }) => {
   const phoneInfo = phoneMatch.locator('.why-cell--inline .notifications-match_info')
   expect(await phoneInfo.isVisible(), 'on a phone the match details sit in the row').to.equal(true)
   expect(await phoneInfo.locator('.tempo').textContent()).to.equal('±0.0 %')
+  // On a phone it reads as one phrase
+  expect((await phoneInfo.innerText()).replace(/\s+/g, ' ').trim()).to.equal('Good match at 2:44 · ±0.0 %')
   expect(await mobilePage.locator('.notifications-matches .tracks-table-header-columns').isVisible()).to.equal(false)
 }
 

@@ -13,6 +13,7 @@ import {
 } from './audioSamplesApi'
 import { requestWithCredentials } from './request-json-with-credentials'
 import { formatSeconds, formatTempo, matchedAtInTrack } from './abTiming'
+import { matchStrength, matchStrengthTitle } from './matchStrength'
 import { groupSubscriptions, visibleSubscriptions } from './subscriptions'
 import SearchBar from './SearchBar'
 import './FollowedItem.css'
@@ -582,24 +583,25 @@ class NotificationsPage extends Component {
         </p>
       )
     }
-    // Where the sample was found, at what tempo and how strongly, in the reason chip the Activity rows use (no icon:
-    // the column says what it is)
-    const matchInfo = (match) => (
-      <span
-        className="why notifications-match_info"
-        title={`Matched at ${formatSeconds(matchedAtInTrack(match.match.offsetSeconds, matchPreviewStartMs(match)))}, tempo ${formatTempo(match.match.tempoFactor)}, fingerprint score ${match.match.score}`}
-      >
-        <span className="why_text">
-          <span className="matched-at">
-            at {formatSeconds(matchedAtInTrack(match.match.offsetSeconds, matchPreviewStartMs(match)))}
+    // A two-part pill: how strong the match is on the left, as it matters most (the score is in its tooltip), then
+    // where in the track and at what tempo the sample was found. On a phone it reads "Good match at 2:44 · ±0.0 %".
+    const matchInfo = (match) => {
+      const { level, label } = matchStrength(match.match.score)
+      const at = formatSeconds(matchedAtInTrack(match.match.offsetSeconds, matchPreviewStartMs(match)))
+      return (
+        <span className={`why notifications-match_info notifications-match_info--${level}`}>
+          <span className="notifications-match_strength" title={matchStrengthTitle(match.match.score)}>
+            {label}
+            <span className="notifications-match_strength-noun"> match</span>
           </span>
-          {' · '}
-          <span className="tempo">{formatTempo(match.match.tempoFactor)}</span>
-          {' · '}
-          <span className="score">score {match.match.score}</span>
+          <span className="notifications-match_details" title={`Matched at ${at}, tempo ${formatTempo(match.match.tempoFactor)}`}>
+            <span className="matched-at">at {at}</span>
+            {' · '}
+            <span className="tempo">{formatTempo(match.match.tempoFactor)}</span>
+          </span>
         </span>
-      </span>
-    )
+      )
+    }
     return this.renderSampleTrackTable({
       className: 'notifications-matches',
       label: `Matches for ${sample.filename}`,
