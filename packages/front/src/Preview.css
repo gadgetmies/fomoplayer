@@ -526,6 +526,7 @@
 
   .preview--docked-expanded {
     background: var(--page-container-background-color);
+    border-top: 1px solid #000;
     max-height: calc(100vh - 4rem);
     overflow-y: auto;
   }
@@ -539,14 +540,28 @@
     display: none;
   }
 
+  /* Back to the bar from the top right corner of the track details. The section holding it takes no height here, so
+     its top right is the details' top right. */
   .preview--docked-expanded .docked-player_collapse {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
     display: flex;
+    align-items: center;
     justify-content: center;
-    width: 100%;
-    padding: 8px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
     color: white;
-    background: #131313;
-    border-top: 1px solid #000;
+    background: transparent;
+    border: 0;
+  }
+
+  /* The title wraps before the collapse button rather than under it */
+  .preview--docked-expanded .preview_title {
+    padding-right: 44px;
+    box-sizing: border-box;
   }
 
   .preview--docked.preview--docked-expanded > .preview_details_wrapper {
