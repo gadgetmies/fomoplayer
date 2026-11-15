@@ -8,7 +8,7 @@ const { frontendURL } = require('../config')
 
 const logger = require('fomoplayer_shared').logger(__filename)
 
-// Tracks listed per sample in the email; the button links to the full list.
+// Tracks listed per sample in the email; the button opens the sample in the Notifications page's Samples tab.
 const MAX_TRACKS_PER_SAMPLE = 10
 
 const formatTrack = ({ artists, title, version }) =>
@@ -37,7 +37,7 @@ module.exports.notifySampleMatches = async () => {
         return {
           name: filename || `Sample ${sampleId}`,
           tracks,
-          searchUrl: `${frontendURL}/search/?q=${encodeURIComponent(`sample:~${sampleId}`)}`,
+          sampleUrl: `${frontendURL}/notifications/samples?sample=${sampleId}`,
         }
       })
 
