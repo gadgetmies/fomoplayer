@@ -130,34 +130,6 @@
   margin: 20px 0 6px;
 }
 
-.notifications-table-wrapper {
-  overflow-x: auto;
-}
-
-.notifications-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 2px;
-  font-size: 0.85rem;
-}
-
-.notifications-table th {
-  text-align: left;
-  font-weight: 700;
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  white-space: nowrap;
-}
-
-.notifications-table td {
-  padding: 0 8px;
-  line-height: 2rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 28ch;
-}
-
 .notifications-row {
   background: #666;
   cursor: pointer;
@@ -182,16 +154,6 @@
   background: transparent;
 }
 
-
-.notifications-icon-button {
-  background: none;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
-  min-width: 32px;
-  min-height: 32px;
-}
-
 .notifications-upload {
   display: inline-flex;
   align-items: center;
@@ -199,29 +161,220 @@
   cursor: pointer;
 }
 
-.notifications-similar {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+/* Samples: an accordion. Each sample is a header row (#666, the open one #5181bd like the selected rows) that opens
+   its matches or Sounds like right underneath it. */
+.notifications-samples {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+
+.notifications-sample {
+  border: 2px solid #666;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.notifications-sample:has(.notifications-sample_header--open) {
+  border-color: #5181bd;
+}
+
+.notifications-sample_header {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px 0 10px;
+  box-sizing: border-box;
+  background: #666;
+}
+
+.notifications-sample_header--open {
+  background: #5181bd;
+}
+
+/* Covers the whole header: a click anywhere but the controls above it opens or closes the sample */
+.notifications-sample_toggle {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  cursor: pointer;
+}
+
+.notifications-sample_toggle:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -4px;
+  border-radius: 6px;
+}
+
+.notifications-sample_play,
+.notifications-sample_delete,
+.notifications-sample_views {
+  position: relative;
+  flex: none;
+}
+
+.notifications-sample_play {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.notifications-sample_delete {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+}
+
+.notifications-sample_delete:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.notifications-sample_info,
+.notifications-sample_divider,
+.notifications-sample_chevron {
+  position: relative;
+  pointer-events: none;
+}
+
+.notifications-sample_info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
   gap: 16px;
 }
 
+.notifications-sample_name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notifications-sample_meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.notifications-sample_added {
+  font-weight: 300;
+}
+
+.notifications-sample_count {
+  min-width: 8em;
+}
+
+/* Keeps the chevron away from delete, so opening a sample does not hit delete by accident */
+.notifications-sample_divider {
+  width: 1px;
+  height: 28px;
+  margin: 0 8px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.notifications-sample_chevron {
+  flex: none;
+  width: 18px;
+}
+
+.notifications-sample_views {
+  height: 40px;
+  box-sizing: border-box;
+  flex-wrap: nowrap;
+}
+
+.notifications-sample_view {
+  font-size: 0.8rem;
+  padding: 0 16px;
+  color: inherit;
+}
+
+.notifications-sample_content {
+  background: #262626;
+  padding: 12px 16px 16px;
+}
+
+/* Matches and Sounds like: rows in the track list's colours, columns on wide screens, two lines on phones */
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+}
+
+.notifications-matches {
+  --notifications-list-columns: 28px minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) 90px 70px 56px;
+}
+
+.notifications-similar {
+  --notifications-list-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) 90px;
+}
+
+.notifications-list_header,
+.notifications-list_row {
+  display: grid;
+  grid-template-columns: var(--notifications-list-columns);
+  gap: 0 12px;
+  align-items: center;
+  padding: 0 12px;
+  text-align: left;
+}
+
+.notifications-list_header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding-bottom: 4px;
+}
+
+.notifications-list_row {
+  width: 100%;
+  min-height: 2.25rem;
+  color: inherit;
+}
+
+.notifications-list_row > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notifications-list_label {
+  font-weight: 300;
+}
+
 .notifications-follow {
-  background: #222;
-  border-radius: 0.35rem;
-  padding: 10px 12px;
+  margin-top: 16px;
 }
 
 .notifications-follow-title {
-  font-weight: 700;
-  margin-bottom: 6px;
+  font-size: 0.95rem;
+  margin: 0;
 }
 
-.notifications-follow li {
+.notifications-follow-group-title {
+  font-size: 0.85rem;
+  margin: 10px 0 4px;
+}
+
+/* One Follow button per row, as in the Follow / unfollow popup */
+.notifications-follow-list {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 4px 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.notifications-follow-count {
+  font-weight: 300;
 }
 
 /* Subscriptions as pills, like the follows in Settings › Following */
@@ -315,8 +468,133 @@
 }
 
 @media (max-width: 768px) {
-  .notifications-similar {
-    grid-template-columns: minmax(0, 1fr);
+  /* The open sample's Matches / Sounds like toggle takes a line of its own in the header */
+  .notifications-sample_header {
+    gap: 8px;
+    min-height: 62px;
+    padding: 9px 10px 9px 6px;
+  }
+
+  .notifications-sample_play,
+  .notifications-sample_delete {
+    width: 44px;
+    height: 44px;
+  }
+
+  .notifications-sample_play {
+    border-radius: 22px;
+  }
+
+  .notifications-sample_info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .notifications-sample_name {
+    max-width: 100%;
+  }
+
+  .notifications-sample_added {
+    display: none;
+  }
+
+  .notifications-sample_divider {
+    margin: 0 6px 0 2px;
+    height: 32px;
+  }
+
+  .notifications-sample_views {
+    order: 1;
+    flex-basis: 100%;
+    height: 44px;
+  }
+
+  .notifications-sample_view {
+    flex: 1;
+    font-size: 0.85rem;
+  }
+
+  .notifications-sample_content {
+    padding: 10px;
+  }
+
+  .notifications-list_header {
+    display: none;
+  }
+
+  /* Two lines: title, then artist · label; the numbers on the right */
+  .notifications-matches .notifications-list_row,
+  .notifications-similar .notifications-list_row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'title end1'
+      'byline end2';
+    column-gap: 10px;
+    row-gap: 3px;
+    min-height: 64px;
+    padding: 8px 10px;
+  }
+
+  .notifications-matches .notifications-list_row {
+    grid-template-columns: 10px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'new title end1'
+      'new byline end2';
+  }
+
+  .notifications-list_new {
+    grid-area: new;
+  }
+
+  .notifications-list_new .new-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .notifications-list_title {
+    grid-area: title;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  /* Artist and label share the second line */
+  .notifications-list_artist,
+  .notifications-list_label {
+    grid-area: byline;
+    font-size: 0.875rem;
+    font-weight: 300;
+  }
+
+  .notifications-list_row > .notifications-list_label {
+    display: none;
+  }
+
+  .notifications-list_row > .notifications-list_artist[data-label]::after {
+    content: ' · ' attr(data-label);
+  }
+
+  .notifications-list_end {
+    text-align: right;
+    font-size: 0.8125rem;
+  }
+
+  .notifications-list_end.matched-at,
+  .notifications-list_end.similarity {
+    grid-area: end1;
+  }
+
+  .notifications-list_end.matched-at::before {
+    content: 'at ';
+  }
+
+  .notifications-list_end.tempo {
+    grid-area: end2;
+    font-weight: 300;
+  }
+
+  .notifications-list_end.score {
+    display: none;
   }
 
   .notifications-activity .why-cell--column {

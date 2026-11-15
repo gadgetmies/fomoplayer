@@ -209,7 +209,8 @@ test({
       assert.strictEqual(emails[0].category, 'notification')
       assert.match(emails[0].subject, /my-sample\.mp3/)
       assert.match(emails[0].plain, /sample-match first/)
-      assert.match(emails[0].plain, new RegExp(`sample%3A~${sampleId}`))
+      assert.match(emails[0].plain, new RegExp(`/notifications/samples\\?sample=${sampleId}\\b`))
+      assert.doesNotMatch(emails[0].plain, /sample%3A~|sample:~/)
       assert.ok((await matchRows(sampleId))[0].notifiedAt)
 
       // Re-scoring with the same match must not send another email.

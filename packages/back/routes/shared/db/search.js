@@ -141,8 +141,8 @@ const appendTextFilter = (query, { idFilters, queryString }) => {
 }
 
 // Search terms that narrow the catalogue (free text, field filters, stores, added since). The similarity terms
-// (cart:~, track:~, sample:~) are not filters.
-const SIMILARITY_TERM = /(?:cart|track|sample):~\S+\s*/gi
+// (cart:~, track:~) are not filters.
+const SIMILARITY_TERM = /(?:cart|track):~\S+\s*/gi
 const stripSimilarityTerms = (originalQueryString) => originalQueryString.replace(SIMILARITY_TERM, '').trim()
 
 module.exports.hasSearchFilters = (originalQueryString, { stores, addedSince } = {}) =>
@@ -272,8 +272,6 @@ const searchTrackPage = async (
 ) => {
   const addedSinceValue = addedSince || null
   const similaritySearchTrackId = originalQueryString.match(/track:~(\d+)/)?.[1]
-  const sampleSearchId = originalQueryString.match(/sample:~(\d+)/)?.[1]
-  const useMatchScoreSort = Boolean(sampleSearchId) && !s
 
   // Hardcoded production embedding type: the only type currently generated for previews.
   // Filtering on it keeps cross-model vectors from being compared and makes the reference
@@ -314,9 +312,6 @@ AND (${Boolean(onlyNew)}::BOOLEAN <> TRUE OR user__track_heard IS NULL)
 AND (meta_account_user_id = ${userId}::INT OR meta_account_user_id IS NULL)
 AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
          `)
-      if (sampleSearchId) {
-        query.append(sql` AND track_id IN (SELECT track_id FROM sample_match_score) `)
-      }
       appendFieldFilters(query, tx, filters)
     }
 
@@ -326,24 +321,6 @@ AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
 WITH logged_user AS (SELECT ${userId}::INT AS meta_account_user_id)
 `
 
-    if (sampleSearchId) {
-      // Per-sample track → max(match_score) lookup, ownership-gated via NATURAL JOIN
-      // on user_notification_audio_sample. A non-owned sample id yields zero rows here
-      // and the downstream `track_id IN (...)` filter returns an empty result set
-      // (no 403), matching the existing `track:~<id>` posture.
-      query.append(sql`
-, sample_match_score AS
-  (SELECT track_id, MAX(user_notification_audio_sample_match_score) AS max_score
-   FROM
-     user_notification_audio_sample_match m
-     NATURAL JOIN store__track_preview
-     NATURAL JOIN store__track
-     NATURAL JOIN user_notification_audio_sample uns
-   WHERE m.user_notification_audio_sample_id = ${sampleSearchId}::INT
-     AND uns.meta_account_user_id = ${userId}::INT
-   GROUP BY track_id)
-`)
-    }
 
     if (similaritySearchTrackId) {
       // Two-phase ANN. Phase one (ann_candidates) pulls the nearest preview embeddings
@@ -471,10 +448,6 @@ FROM
   ) user_track_carts USING (track_id)
 `)
 
-    if (useMatchScoreSort) {
-      query.append(sql` LEFT JOIN sample_match_score USING (track_id) `)
-    }
-
     if (similaritySearchTrackId) {
       query.append(sql` NATURAL JOIN similar_tracks
       ORDER BY similarity NULLS LAST `)
@@ -495,40 +468,24 @@ FROM
          NATURAL LEFT JOIN (user__track NATURAL JOIN logged_user)
  `)
 
-      if (useMatchScoreSort) {
-        query.append(sql` LEFT JOIN sample_match_score USING (track_id) `)
-      }
-
       appendMatchFilters(query)
 
       query.append(sql` GROUP BY track_id, track_title, track_version `)
-
-      if (useMatchScoreSort) {
-        query.append(`, max_score`)
-      }
 
       sortColumns.forEach(([column]) => query.append(`, ${tx.escapeIdentifier(column)}`))
       appendTextFilter(query, filters)
 
       query.append(` ORDER BY `)
-      if (useMatchScoreSort) {
-        query.append(' MAX(max_score) DESC NULLS LAST, ')
-      } else {
-        sortColumns.forEach(([column, order]) =>
-          query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
-        )
-      }
+      sortColumns.forEach(([column, order]) =>
+        query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
+      )
       query.append(sql` track_id DESC
         LIMIT ${limit} OFFSET ${offset})
         ORDER BY `)
 
-      if (useMatchScoreSort) {
-        query.append(' max_score DESC NULLS LAST, ')
-      } else {
-        sortParameters.forEach(([column, order]) =>
-          query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
-        )
-      }
+      sortParameters.forEach(([column, order]) =>
+        query.append(tx.escapeIdentifier(column)).append(' ').append(order).append(' NULLS LAST, '),
+      )
       query.append(' track_id DESC')
     }
 
