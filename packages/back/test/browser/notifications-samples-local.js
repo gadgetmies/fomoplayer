@@ -1,9 +1,9 @@
 // Local demo (demo-test workflow): runs against a backend in the same runner.
 // The same steps as notifications-samples-preview.js, plus the ones that need a fingerprint match and embeddings,
-// which only the analyser writes: a match listed in Matches (as a two-line row on the phone), playing a sample without
-// opening it, Sounds like listed as similarity search results with the audio distance they share, and following a
-// Sounds like suggestion. The test server has no object storage, so the samples are inserted through the DB instead
-// of uploaded.
+// which only the analyser writes: a match listed in Matches with the main track list's track info, playing a sample
+// without opening it, Sounds like listed as similarity search results with the audio distance they share, and
+// following a Sounds like suggestion. The test server has no object storage, so the samples are inserted through the
+// DB instead of uploaded.
 const { test } = require('cascade-test')
 const { getSharedContext, getMobileContext, teardownSharedContext } = require('../lib/setup')
 const { resolveTestUserId } = require('../lib/test-user')
@@ -31,7 +31,7 @@ test({
   'a link opens the sample it names': steps.assertLinkOpensSample,
   'a confirmed delete removes the sample': steps.assertConfirmedDeleteRemovesSample,
   'on a phone the tab fits the screen': steps.assertPhoneLayoutFits,
-  'a match is listed, as a two-line row on a phone': steps.assertMatchListed,
+  'a match is listed with the track info, its details in the row on a phone': steps.assertMatchListed,
   'play leaves the sample closed': steps.assertPlayDoesNotOpenSample,
   'Sounds like lists the tracks as a similarity search does': steps.assertSoundsLikeShowsTrackInfo,
   'a similarity search shows the same audio distance': steps.assertSimilaritySearchShowsDistance,
