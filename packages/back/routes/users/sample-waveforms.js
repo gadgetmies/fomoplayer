@@ -47,9 +47,11 @@ const backfillSampleWaveforms = async ({ client, bucketName, apply, limit = Infi
         onSample({ sample, status: 'pending' })
         continue
       }
-      // A sample is read from the bucket it was uploaded to, the waveform is written to the current one
+      // Read from the current bucket, as the player and /api/storage do. The bucket name stored with a sample is the
+      // one it was uploaded to: samples from before the move to the Railway bucket still name the old MinIO bucket,
+      // which no longer exists, while their objects were copied over under the same keys.
       try {
-        const audio = await readObject(client, sample.bucketName, sample.objectKey)
+        const audio = await readObject(client, bucketName, sample.objectKey)
         const { durationMs } = await storeSampleWaveform({
           client,
           bucketName,
