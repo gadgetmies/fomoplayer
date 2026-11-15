@@ -1,0 +1,4 @@
+# Dependencies of the embedding service image only (Dockerfile); the analyser
+# workers use requirements.txt. Versions match requirements.txt.
+essentia-tensorflow==2.1b6.dev1389
+numpy==1.26.4

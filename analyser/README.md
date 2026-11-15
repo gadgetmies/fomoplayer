@@ -225,6 +225,41 @@ small (a few KB) and rotated to its size cap on every write; the
 collisions file grows unbounded — rotate or `truncate` it manually
 when you're done investigating.
 
+## Embedding service (uploaded samples)
+
+Uploaded notification samples are embedded automatically: the backend job
+`embedNotificationAudioSamples` (admin Jobs, every 10 minutes and after each
+upload) sends each pending sample's audio to `embedding_service.py` and stores
+the vector it returns. The service holds no Fomo Player credentials and never
+calls the backend; both `main.py` and the service compute vectors with
+`embedding.py`, so samples and previews stay comparable.
+
+| Endpoint | Result |
+|---|---|
+| `GET /health` | `200 {"status": "ok", "model": ...}` |
+| `POST /embed` (raw audio body, `Content-Type` names the format) | `200 {"model": ..., "embedding": [1280 floats]}`; `401` without `Authorization: Bearer <token>`; `413` over the size limit; `422 {"error": ...}` for audio that cannot be decoded or is too short |
+
+Environment: `EMBEDDING_SERVICE_TOKEN` (required; the service refuses to
+start without it), `PORT` (default 8080), `EMBEDDING_SERVICE_MAX_BYTES`
+(default 100 MB). A `.wav` body is embedded as-is, like `main.py` does for
+uploaded samples; anything else is decoded by ffmpeg.
+
+Run it locally:
+
+```bash
+docker build -t fomoplayer-embedding analyser
+docker run -p 8080:8080 -e EMBEDDING_SERVICE_TOKEN=dev-token fomoplayer-embedding
+curl -H "Authorization: Bearer dev-token" -H "Content-Type: audio/mpeg" \
+  --data-binary @sample.mp3 localhost:8080/embed
+```
+
+The backend finds it through `EMBEDDING_SERVICE_URL` and
+`EMBEDDING_SERVICE_TOKEN`; without them the job reports itself skipped. On
+Railway it runs as its own service built from `analyser/Dockerfile` with no
+public domain, and the backend reaches it on the private network.
+
+`main.py --audio-samples` still works for embedding samples by hand.
+
 ## Java runtime for Panako
 
 `panako` is a bash launcher that invokes bare `java`. On macOS the Apple
