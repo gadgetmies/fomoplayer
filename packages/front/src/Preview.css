@@ -340,9 +340,12 @@
   min-height: 44px;
 }
 
-/* Preview and Listen on the waveform's lower ends, as on the panel's waveform, a little tighter for the bar */
-.docked-player_waveform .preview-samples_container {
-  padding: 4px;
+/* Preview and Listen on the waveform's lower ends, as on the panel's waveform; a little tighter in the desktop bar. On
+   phones they keep the panel's padding, so they stay put when the bar expands into the panel. */
+@media (min-width: 591px) {
+  .docked-player_waveform .preview-samples_container {
+    padding: 4px;
+  }
 }
 
 /* Artists and title, with "Playing from" below them */
@@ -499,6 +502,11 @@
   .docked-player_waveform {
     flex: 1 1 100%;
     min-height: 80px;
+  }
+
+  /* The bar's switches sit inside its waveform, whose 1px margin the panel's (beside its waveform) do not have */
+  .docked-player_waveform .preview-samples_container {
+    margin: 3px;
   }
 
   .docked-player_info {
