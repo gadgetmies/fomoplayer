@@ -268,7 +268,9 @@ class App extends Component {
     if (!this.hasMoreTracks()) return
 
     if (listState === 'search') {
-      if (loadingMore) return
+      // A page appended while a new search is in flight would take over its request id: the new search's results
+      // would be dropped and Searching would never clear (the empty list asks for more as Find similar starts).
+      if (loadingMore || this.state.searchInProgress) return
       await this.search(this.state.searchTerms, this.state.searchFilters, true)
     } else if (['new', 'heard', 'recent'].includes(listState)) {
       if (loadingMore) return
