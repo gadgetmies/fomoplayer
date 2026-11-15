@@ -9,8 +9,10 @@ MUST be released once every analysis is done") and are not in their retry
 wait, newest first. For each one it MUST download the audio and store it in
 the configured bucket under `preview-audio/<random uuid>.mp3`, recording the
 key, size and time in `store__track_preview_audio`. Beatport previews MUST use
-their stored URL. Bandcamp previews MUST resolve the stream URL through the
-backend's Bandcamp client, once per release.
+their stored URL. Bandcamp previews MUST use the stream URL the Bandcamp client
+kept from an earlier fetch of the release when it is younger than
+`BANDCAMP_STREAM_URL_MAX_AGE_MS` (default 1 hour), and otherwise look the
+release up through the Bandcamp client, once per release.
 
 #### Scenario: A Beatport preview without analyses is stored
 - **WHEN** the job runs and a Beatport preview has no fingerprint, embedding or stored audio
@@ -20,20 +22,30 @@ backend's Bandcamp client, once per release.
 - **WHEN** two previews of the same Bandcamp release need audio
 - **THEN** the release is looked up once and both tracks' streams are stored
 
+#### Scenario: A newly added Bandcamp track needs no lookup
+- **WHEN** the watch job fetched a release minutes ago and one of its tracks needs audio
+- **THEN** the track is downloaded with the kept stream URL and the release is not looked up again
+
+#### Scenario: A refused kept URL is replaced
+- **WHEN** a kept Bandcamp stream URL answers 403 or 410
+- **THEN** the release is looked up once and the fresh URL is downloaded
+
 #### Scenario: Without storage configured the run fails and says why
 - **WHEN** the bucket client or bucket name is missing
 - **THEN** the run returns `success: false` with an error that names the missing storage
 
 ### Requirement: The job MUST throttle store traffic and back off on rate limits
 
-Downloads from one store MUST run one at a time, starting at least
-`PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` (default 1000) apart. Bandcamp lookups
-MUST go through the shared Bandcamp client (2 s spacing, shared rate-limit
-pause), and the job MUST skip Bandcamp while that client is paused. A 429 or
-403 from a store MUST stop that store for the rest of the run and pause it for
-10 minutes, doubling up to 1 hour, reset after a successful download. For a
-Bandcamp stream, a 403 or 410 MUST first trigger one fresh lookup of the
-release. A run MUST stop starting downloads after
+Beatport downloads MUST run one at a time, starting at least
+`PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` (default 1000) apart. Every Bandcamp
+request, lookups and stream downloads alike, MUST go through the shared
+Bandcamp client (2 s spacing, shared rate-limit pause), and the job MUST skip
+Bandcamp while that client is paused. A 429 or 403 from a store MUST stop that
+store for the rest of the run and pause it for 10 minutes, doubling up to
+1 hour, reset after a successful download. For a Bandcamp stream, a 403 or 410
+MUST first trigger one fresh lookup of the release; a second refusal, a 429 or
+a challenge page instead of audio MUST pause all Bandcamp requests. A response
+that is a page instead of audio MUST NOT be stored. A run MUST stop starting downloads after
 `PREVIEW_AUDIO_PREFETCH_MAX_RUN_MS` (default 8 minutes).
 
 #### Scenario: A rate limit pauses the store

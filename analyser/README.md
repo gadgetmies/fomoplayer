@@ -41,10 +41,15 @@ the backend's storage bucket (`AUDIO_SAMPLE_STORAGE_*`), under
 `preview-audio/<random uuid>.mp3`. Each preview is downloaded once for all
 three workers. The job's store traffic is kept conservative:
 
-- Bandcamp stream URLs expire, so they are looked up per release through
-  the backend's Bandcamp client: 2 s between requests, as `bandcamp.py`
-  does, sharing the backend's rate-limit pause with playback.
-- Downloads go one at a time per store, at least
+- Bandcamp stream URLs are signed per track and expire. Every Bandcamp
+  request, lookups and downloads alike (the mobile API's stream URLs are
+  `bandcamp.com/stream_redirect` links), goes through the backend's
+  Bandcamp client: 2 s between requests, as `bandcamp.py` does, sharing
+  the backend's rate-limit pause with playback. The client keeps the
+  stream URLs of the releases the watch job fetched for an hour
+  (`BANDCAMP_STREAM_URL_MAX_AGE_MS`), so newly added tracks need no
+  lookup; older ones cost one lookup per release.
+- Beatport downloads go one at a time, at least
   `PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` (default 1000) apart.
 - A 429 or 403 pauses that store for 10 min, doubling up to 1 h.
 - At most `PREVIEW_AUDIO_PREFETCH_MAX_STORED` (default 1000) files wait

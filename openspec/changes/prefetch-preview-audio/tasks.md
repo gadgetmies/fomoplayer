@@ -20,6 +20,12 @@
 - [x] 4.2 `analyse_all.sh` passes `--direct-download` through; README documents the job.
 - [x] 4.3 Python unit tests for the `audio_url` handling.
 
-## 5. Verify
+## 5. Bandcamp stream URLs
 
-- [ ] 5.1 Full backend suite green (`yarn test`); analyser unit tests green.
+- [x] 5.1 Keep the stream URLs of fetched releases in the Bandcamp client and add a throttled `fetchStream` that shares the client's request slot and pause.
+- [x] 5.2 The job downloads Bandcamp audio through `fetchStream`, with kept URLs first, and treats pages instead of audio as failures or challenges.
+- [x] 5.3 Tests for the cache, `fetchStream` and the job's use of them.
+
+## 6. Verify
+
+- [ ] 6.1 Full backend suite green (`yarn test`); analyser unit tests green.

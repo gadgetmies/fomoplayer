@@ -15,15 +15,23 @@ stops even though there is CPU to spare.
   bucket under a random key (`preview-audio/<uuid>.mp3`). Each preview is
   downloaded once for all three analyses.
 - The job's store traffic is throttled:
-  - Bandcamp stream URLs (they expire, so they are not stored) are looked up
-    through the backend's Bandcamp client. It spaces requests 2 s apart, the
-    same interval as the analyser's `bandcamp.py`, and shares the backend's
-    rate-limit pause.
-  - Audio downloads go one at a time per store, at least
-    `PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` apart (default 1000 ms). Bandcamp and
-    Beatport download in parallel because they are separate hosts.
+  - Bandcamp stream URLs are signed per track and expire, so they are not
+    stored. Every Bandcamp request goes through the backend's Bandcamp client,
+    which spaces requests 2 s apart (the analyser's `bandcamp.py` interval) and
+    shares its rate-limit pause with playback. This covers release lookups and
+    downloads, because the mobile API's stream URLs are
+    `bandcamp.com/stream_redirect` links.
+  - The client keeps the stream URLs of every release it fetches for an hour
+    (`BANDCAMP_STREAM_URL_MAX_AGE_MS`). A track the watch job has just added
+    is downloaded without looking its release up again. Older tracks cost one
+    lookup per release.
+  - Beatport downloads go one at a time, at least
+    `PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` apart (default 1000 ms), side by side
+    with Bandcamp's.
   - On a 429 or 403 the job stops downloading from that store and pauses it for
-    10 min, doubling up to 1 h (the analyser's backoff).
+    10 min, doubling up to 1 h (the analyser's backoff). A Bandcamp challenge
+    page, or a stream refused again after a fresh lookup, pauses all Bandcamp
+    requests, as other Bandcamp rate limits do.
   - The number of files stored but not yet analysed is capped
     (`PREVIEW_AUDIO_PREFETCH_MAX_STORED`, default 1000), so the bucket can't
     fill up while the workers are stopped.
@@ -57,6 +65,7 @@ _None._ The queue endpoints only gain an optional field and query parameter.
 - Code: `packages/back/jobs/prefetch-preview-audio.js` (new),
   `packages/back/routes/admin/preview-audio.js` (new),
   `packages/back/routes/admin/db.js`, `packages/back/routes/admin/api.js`,
+  `packages/back/routes/stores/bandcamp/bandcamp-api.js`,
   `packages/back/job-scheduling.js`, `packages/back/migrations/`,
   `analyser/main.py`, `analyser/panako_processor.py`, `analyser/waveform.py`,
   `analyser/analyse_all.sh`, `analyser/README.md`.
@@ -67,6 +76,7 @@ _None._ The queue endpoints only gain an optional field and query parameter.
   is at most ~5 GB, about $0.08 a month on a Railway bucket. Bucket egress to
   the workers is free.
 - Store traffic: the backend's server address now also downloads audio.
-  Bandcamp lookups share the playback client's 2 s spacing and rate-limit
-  pause, so the job cannot lift the request rate above what playback already
-  allows, and it stops whenever Bandcamp pauses the backend.
+  Every Bandcamp request (lookups and downloads) shares the playback client's
+  2 s spacing and rate-limit pause, so the job cannot lift the request rate
+  above what playback already allows, and it stops whenever Bandcamp pauses the
+  backend.

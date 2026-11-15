@@ -36,20 +36,37 @@ pause. The job also checks `isRateLimited()` before it starts on Bandcamp, so
 it never adds traffic while playback is paused. Only one job lookup is queued
 at a time, so it delays a user's lookup by at most one slot (2 s).
 
-### Throttling: one stream per store, spaced, with backoff
-The owner asked for a balance between download speed (job runtime) and
-avoiding rate limits, not strict 2 s spacing for every request.
-- Release lookups: 2 s spacing via the shared Bandcamp client, one lookup per
-  release (the previews of a release are grouped).
-- Downloads: one in flight per store, starts at least
-  `PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` (default 1000 ms) apart. The analyser's
-  fingerprint worker downloaded with 4 workers in parallel and no spacing, so
-  this is more conservative than what runs today, while a Beatport clip (~1 s
-  to fetch) still runs at about one a second.
+### Bandcamp stream URLs are signed per track
+The old page URLs (`t4.bcbits.com/stream/<file hash>/mp3-128/<track id>?ts=…&t=…&token=…`)
+and the mobile API's (`bandcamp.com/stream_redirect?track_id=<id>&ts=…&t=…`)
+both carry a signature that differs between tracks issued at the same `ts`, so
+it covers the track. No site-wide token can be fetched once and reused across
+tracks or pages. `ts` is the time the URL was issued. How long a URL stays
+valid has not been measured (this environment cannot reach Bandcamp).
+
+### Reuse the stream URLs the watch job already fetched
+`tralbum_details` returns the signed URL of every track on a release, and the
+watch job calls it for every new release. The Bandcamp client keeps those URLs
+in process, keyed by track id, for `BANDCAMP_STREAM_URL_MAX_AGE_MS` (default
+1 h, at most 50 000 entries). The prefetch job runs in the same process, so a
+newly added track costs no lookup. A release is looked up only when one of its
+tracks has no kept URL. A kept URL that is refused (403/410) is replaced by
+one fresh lookup. A URL refused again after a fresh lookup is treated as a rate
+limit. The cache is lost on a restart; the job then falls back to lookups.
+
+### Throttling
+- Every Bandcamp request goes through the shared Bandcamp client: release
+  lookups, and downloads through its `fetchStream`, which waits for the same
+  2 s request slot and honours the shared pause. The mobile API's stream URLs
+  are `bandcamp.com/stream_redirect` links, so a download is a request to the
+  edge that rate-limits the pages. `fetch` follows the redirect to the CDN. A
+  429 or a challenge page (an HTML 200 instead of audio) pauses all Bandcamp
+  requests.
+- Beatport downloads go one at a time, starts at least
+  `PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` (default 1000 ms) apart, in parallel
+  with Bandcamp's. A page instead of audio is a failed download.
 - On a 429 or 403 the store is paused for 10 min, doubling up to 1 h, and
-  reset after a successful download (the waveform worker's `Backoff`). For
-  Bandcamp, a 403 or 410 on a stream first triggers one fresh lookup, because
-  the URL may have expired (`waveform.py`'s `StreamExpired`).
+  reset after a successful download (the waveform worker's `Backoff`).
 - One run lasts at most `PREVIEW_AUDIO_PREFETCH_MAX_RUN_MS` (default 8 min).
   The scheduler skips a tick while a run is still going, so runs never overlap.
 
@@ -97,9 +114,14 @@ the analyser and backend can be deployed in either order.
 
 ## Risks / Trade-offs
 
-- [The job and playback share Bandcamp's limit on the server address] → shared
-  limiter and pause, one queued lookup, and the job skips Bandcamp while
-  paused.
+- [The job and playback share Bandcamp's limit on the server address] → one
+  shared limiter and pause for lookups and downloads, one queued job request
+  at a time, and the job skips Bandcamp while paused. At most one Bandcamp
+  request every 2 s in total, so a full track every ~2 s plus lookups for
+  older releases.
+- [The 1 h URL age is a guess] → a refused URL costs one extra lookup; measure
+  the real validity once Bandcamp is reachable and tune
+  `BANDCAMP_STREAM_URL_MAX_AGE_MS`.
 - [Workers stopped for days] → the storage cap stops the job; nothing is lost,
   it resumes once files are released.
 - [A worker crashes after the job stored a file] → the file stays until the
