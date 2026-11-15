@@ -17,6 +17,44 @@
   margin: 1pt;
 }
 
+/*
+ * Search results and follow suggestions: a single horizontally scrollable row.
+ * overflow-y stays hidden so the row never scrolls vertically: vertical wheel
+ * and touch swipes over it are not captured and scroll the page instead.
+ * touch-action lets the browser handle both pan axes natively, and
+ * overscroll-behavior-x keeps a swipe at either end from triggering the
+ * browser's back/forward gesture.
+ */
+.follow-list.follow-list--carousel {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 2pt;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  padding-bottom: 4px;
+}
+
+.follow-list.follow-list--carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.follow-list.follow-list--carousel::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.follow-list.follow-list--carousel > li {
+  flex: 0 0 auto;
+  margin: 0;
+  scroll-snap-align: start;
+}
+
 .follow-filter {
   max-width: 20em;
 }

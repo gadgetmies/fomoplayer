@@ -447,7 +447,7 @@ class Settings extends Component {
         ).map(([isNotExactMatch, grouped]) => (
           <React.Fragment key={`${activeTab}-${isNotExactMatch}`}>
             {activeTab !== 'playlist' && <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>}
-            <ul className={'no-style-list follow-list'}>
+            <ul className="no-style-list follow-list follow-list--carousel" data-test="follow-results-carousel">
               {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
                 <li key={`${storeName}-${type}-${id ?? url}`}>
                   <FollowItemButton
@@ -478,7 +478,7 @@ class Settings extends Component {
         <h5>
           {label} ({suggestions.length})
         </h5>
-        <ul className="no-style-list follow-list">
+        <ul className="no-style-list follow-list follow-list--carousel" data-test="follow-suggestions-carousel">
           {suggestions.map(({ id, name, url, storeName, count, img }) => {
             const busy = this.state.updatingSuggestion === `${type}-${id}`
             return (
