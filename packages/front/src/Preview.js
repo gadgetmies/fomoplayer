@@ -491,6 +491,21 @@ class Preview extends Component {
     )
   }
 
+  // The track's labels (with follow links) after a caption: "Labels:" in the panel's details, "On:" in the docked bar
+  renderLabelsDetail(caption = 'Labels:') {
+    const labels = this.props.currentTrack.labels
+    return (
+      <>
+        <span className="preview_label">{caption}</span>{' '}
+        <span className="preview_detail">
+          {labels?.length
+            ? followableNameLinks(labels, this.props.follows, 'label', ', ', ' & ', this.props.onAddEntityToSearch)
+            : null}
+        </span>
+      </>
+    )
+  }
+
   // Play / pause, previous and next: in the panel's button row and the docked bar's. Previous gives way on narrow
   // phones (Preview.css).
   renderPlaybackButtons() {
@@ -1092,6 +1107,9 @@ class Preview extends Component {
             {this.renderPlaybackButtons()}
             <div className="docked-player_info">
               <span className="docked-player_title">{this.renderTrackTitle()}</span>
+              {currentTrack.labels?.length ? (
+                <div className="docked-player_labels">{this.renderLabelsDetail('On:')}</div>
+              ) : null}
               {this.renderPlayingFrom()}
             </div>
           </div>
@@ -1335,19 +1353,7 @@ class Preview extends Component {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', gap: 16 }}>
                     <div style={{ fontSize: '75%' }}>
-                      <span className="preview_label">Labels:</span>{' '}
-                      <span className="preview_detail">
-                        {!currentTrack.labels?.length
-                          ? null
-                          : followableNameLinks(
-                              currentTrack.labels,
-                              this.props.follows,
-                              'label',
-                              ', ',
-                              ' & ',
-                              this.props.onAddEntityToSearch,
-                            )}
-                      </span>
+                      {this.renderLabelsDetail()}
                       <br />
                       <span className="preview_label">Released:</span>{' '}
                       <span className="preview_detail" style={{ whiteSpace: 'nowrap' }}>

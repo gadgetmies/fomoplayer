@@ -94,6 +94,7 @@ const assertBarWaveformAboveControls = async ({ page }) => {
     const label = page.locator('[data-testid="docked-player-waveform"] label', { hasText: text }).first()
     expect(await label.isVisible()).to.equal(true)
   }
+  await player.assertDockedBarShowsLabels(page)
   barSizes = await measure(page, 'bar')
   expect(barSizes.previousVisible, 'previous in the bar').to.equal(page.viewportSize().width >= PREVIOUS_HIDDEN_BELOW)
   // The expand button shares the controls' line

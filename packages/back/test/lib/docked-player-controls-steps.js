@@ -52,6 +52,7 @@ const assertRowHasMainActions = async ({ page }) => {
       .getByText(/^\d+:\d\d$/)
       .count(),
   ).to.equal(0)
+  await player.assertDockedBarShowsLabels(page)
   // Share and the store links wait behind the expand button
   expect(await barEnd(page).getByRole('button', { name: /Share/ }).count()).to.equal(0)
   expect(await more(page).count()).to.equal(0)

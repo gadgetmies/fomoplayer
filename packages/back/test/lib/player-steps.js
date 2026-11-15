@@ -48,4 +48,18 @@ const assertPreviewListenSwitch = async (page, label, { tap = false } = {}) => {
   if (initial === 'true') await press(label('Listen'), { tap })
 }
 
-module.exports = { audioIsPlaying, assertStillPlaying, assertCartButtonToggles, assertPreviewListenSwitch }
+// The docked bar names the track's labels under the title ("On: ..."), linked like the panel's
+const assertDockedBarShowsLabels = async (page) => {
+  const labels = page.locator('.docked-player .docked-player_labels')
+  expect(await labels.isVisible(), 'the labels in the docked bar').to.equal(true)
+  expect(await labels.textContent()).to.match(/^On:\s+\S/)
+  expect(await labels.locator('a').count()).to.be.at.least(1)
+}
+
+module.exports = {
+  audioIsPlaying,
+  assertStillPlaying,
+  assertCartButtonToggles,
+  assertPreviewListenSwitch,
+  assertDockedBarShowsLabels,
+}
