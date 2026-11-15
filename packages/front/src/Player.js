@@ -304,8 +304,7 @@ class Player extends Component {
     const selectedCartId = this.props.selectedCart?.id
     const selectedCartIsPurchased = this.props.selectedCart?.isPurchased
     const defaultCart = this.props.carts.find(R.prop('isDefault'))
-    const inDefaultCart =
-      !!(defaultCart && currentTrack && currentCarts.some((c) => c && c.uuid === defaultCart.uuid))
+    const inDefaultCart = !!(defaultCart && currentTrack && currentCarts.some((c) => c && c.uuid === defaultCart.uuid))
     const inCurrentCart = inCarts.find(({ id }) => id === selectedCartId)
 
     return (

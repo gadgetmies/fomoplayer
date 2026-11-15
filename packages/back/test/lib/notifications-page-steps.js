@@ -58,7 +58,10 @@ const assertSubscribingNeedsVerifiedEmail = async ({ page }) => {
   expect(await page.locator('button.notifications-upload').isDisabled()).to.equal(true)
 
   await page.locator('a[href="/settings/following"]').first().click()
-  const bell = page.locator('.follow-list li', { hasText: followedArtistName }).first().locator('button.followed-item_bell')
+  const bell = page
+    .locator('.follow-list li', { hasText: followedArtistName })
+    .first()
+    .locator('button.followed-item_bell')
   await bell.waitFor({ state: 'visible', timeout: 10000 })
   expect(await bell.isDisabled()).to.equal(true)
   expect(await bell.getAttribute('title')).to.contain('Verify your email')
@@ -130,7 +133,9 @@ const assertSubscriptionsAddAndRemove = async ({ page }) => {
     const bell = item.locator('button.followed-item_bell')
     expect(await bell.getAttribute('aria-label')).to.match(/^Unsubscribe from /)
     const visibleIcon = () =>
-      bell.evaluate((el) => [...el.querySelectorAll('svg')].find((svg) => getComputedStyle(svg).display !== 'none')?.dataset.icon)
+      bell.evaluate(
+        (el) => [...el.querySelectorAll('svg')].find((svg) => getComputedStyle(svg).display !== 'none')?.dataset.icon,
+      )
     expect(await visibleIcon()).to.equal('bell')
     await bell.hover()
     expect(await visibleIcon()).to.equal('bell-slash')
