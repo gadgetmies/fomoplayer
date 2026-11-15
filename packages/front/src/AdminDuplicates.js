@@ -3,6 +3,7 @@ import { requestJSONwithCredentials } from './request-json-with-credentials'
 import { apiURL } from './config'
 import './AdminDuplicates.css'
 import { withRouter } from 'react-router-dom'
+import AdminTabs from './AdminTabs.js'
 
 class AdminDuplicates extends Component {
   constructor(props) {
@@ -152,11 +153,9 @@ class AdminDuplicates extends Component {
   render() {
     return (
       <div className="page-container scroll-container admin-duplicates">
+        <AdminTabs />
         <div className="admin-duplicates-header">
           <h1>Suspected Duplicates</h1>
-          <button className="button button-push_button" onClick={() => this.props.history.push('/admin')}>
-            Back to Radiator
-          </button>
         </div>
         <div className="tabs">
           <button className={this.state.type === 'artist' ? 'active' : ''} onClick={() => this.fetchDuplicates('artist')}>
