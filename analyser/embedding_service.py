@@ -19,6 +19,7 @@ EMBEDDING_SERVICE_MAX_BYTES (default 100 MB).
 import hmac
 import json
 import os
+import socket
 import sys
 import tempfile
 import threading
@@ -39,7 +40,32 @@ def _suffix(content_type):
     return '.wav' if media_type in WAV_TYPES else '.audio'
 
 
-def create_server(token, model, port=0, host='0.0.0.0', max_bytes=DEFAULT_MAX_BYTES):
+class DualStackHTTPServer(ThreadingHTTPServer):
+    """Listens on IPv6 and IPv4 at once. Railway's legacy environments resolve
+    private DNS names (embedding.railway.internal) to IPv6 only, while its health
+    check connects over IPv4."""
+
+    address_family = socket.AF_INET6
+
+    def server_bind(self):
+        self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        super().server_bind()
+
+
+def _listen(address, handler):
+    """Dual-stack on `::` when `host` is None, falling back to IPv4 on hosts
+    without IPv6; an explicit host is used as given."""
+    host, port = address
+    if host is not None:
+        return ThreadingHTTPServer((host, port), handler)
+    try:
+        return DualStackHTTPServer(('::', port), handler)
+    except OSError as error:
+        print(f'[embedding-service] IPv6 unavailable ({error}), listening on IPv4 only', flush=True)
+        return ThreadingHTTPServer(('0.0.0.0', port), handler)
+
+
+def create_server(token, model, port=0, host=None, max_bytes=DEFAULT_MAX_BYTES):
     if not token:
         raise ValueError('EMBEDDING_SERVICE_TOKEN must be set')
     expected = f'Bearer {token}'.encode()
@@ -99,7 +125,7 @@ def create_server(token, model, port=0, host='0.0.0.0', max_bytes=DEFAULT_MAX_BY
                 return self._json(422, {'error': 'audio too short to embed'})
             self._json(200, {'model': embedding.DEFAULT_MODEL, 'embedding': vector})
 
-    return ThreadingHTTPServer((host, port), Handler)
+    return _listen((host, port), Handler)
 
 
 def main():
@@ -111,7 +137,7 @@ def main():
     print(f'[embedding-service] loading model {embedding.DEFAULT_MODEL}', flush=True)
     model = embedding.build_model()
     server = create_server(token, model, port=port, max_bytes=max_bytes)
-    print(f'[embedding-service] listening on port {server.server_port}', flush=True)
+    print(f'[embedding-service] listening on {server.server_address[0]} port {server.server_port}', flush=True)
     server.serve_forever()
 
 
