@@ -40,7 +40,6 @@ from pathlib import Path
 
 import psycopg2
 import psycopg2.extras
-from pydub import AudioSegment
 
 # Panako CLI needs a JRE on PATH. macOS Homebrew installs `openjdk` keg-only,
 # so unless the user has manually linked it the `java` binary isn't on the
@@ -52,6 +51,7 @@ if os.path.isdir(_BREW_JAVA) and _BREW_JAVA not in os.environ.get('PATH', ''):
 
 # Local imports — the analyser venv resolves these from this directory
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from audio_decode import to_wav  # noqa: E402
 from extraction import (  # noqa: E402
     cleanup_downloads,
     cleanup_panako_worker_dirs,
@@ -118,9 +118,8 @@ def to_wav_if_needed(downloaded_path, kind, file_id, downloads_dir):
     file_ext = os.path.splitext(downloaded_path)[1].lower()
     if file_ext in ('.mp3', '.mpeg', '.lofi', ''):
         # Beatport's .LOFI files are mp3-format despite the extension.
-        sound = AudioSegment.from_file(downloaded_path)
         wav_filename = os.path.join(downloads_dir, f"{kind}_{file_id}.wav")
-        sound.export(wav_filename, format='wav')
+        to_wav(downloaded_path, wav_filename)
         if not os.path.exists(wav_filename) or os.path.getsize(wav_filename) == 0:
             raise RuntimeError(f"Wav conversion failed: {wav_filename}")
         return wav_filename

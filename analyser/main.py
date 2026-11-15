@@ -9,7 +9,7 @@ import requests
 from auth import auth_header, get_api_url, request_error, resolve_url
 import bandcamp
 
-from pydub import AudioSegment
+from audio_decode import to_wav
 from spotipy.oauth2 import SpotifyClientCredentials
 import argparse
 import hashlib
@@ -407,8 +407,7 @@ if __name__ == '__main__':
                         file_ext = os.path.splitext(absolute_file_path)[1].lower()
                         if file_ext in ['.mp3', '.mpeg']:
                             print("Converting mp3 to wav")
-                            sound = AudioSegment.from_mp3(absolute_file_path)
-                            sound.export(output_wav_path, format="wav")
+                            to_wav(absolute_file_path, output_wav_path)
                         elif file_ext == '.wav':
                             print("File is already wav format")
                             import shutil
@@ -525,8 +524,7 @@ if __name__ == '__main__':
                         print(f"Processing: {absolute_file_path}")
 
                         print("Converting mp3 to wav")
-                        sound = AudioSegment.from_mp3(absolute_file_path)
-                        sound.export(output_wav_path, format="wav")
+                        to_wav(absolute_file_path, output_wav_path)
 
                         print("Extracting metadata from ID3 tags")
 

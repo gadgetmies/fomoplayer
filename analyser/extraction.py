@@ -22,6 +22,7 @@ import traceback
 import urllib.parse
 import urllib.request
 
+from audio_decode import to_wav
 from auth import resolve_url
 
 import requests
@@ -581,13 +582,11 @@ def _preview_to_wav(downloaded_path, preview_id, downloads_dir):
     despite the extension, so they decode via `from_file`."""
     file_ext = os.path.splitext(downloaded_path)[1].lower()
     if file_ext in ('.mp3', '.mpeg', '.lofi', ''):
-        from pydub import AudioSegment
         # Cap decode length (ffmpeg -t): Bandcamp previews are full tracks and
         # can run to hours, which wedges Panako (see PREVIEW_MAX_DURATION_S).
         # The cap also bounds the transient wav's disk footprint.
-        sound = AudioSegment.from_file(downloaded_path, duration=PREVIEW_MAX_DURATION_S)
         wav_filename = os.path.join(downloads_dir, f"preview_{preview_id}.wav")
-        sound.export(wav_filename, format='wav')
+        to_wav(downloaded_path, wav_filename, max_seconds=PREVIEW_MAX_DURATION_S)
         if not os.path.exists(wav_filename) or os.path.getsize(wav_filename) == 0:
             raise RuntimeError(f"Wav conversion failed: {wav_filename}")
         return wav_filename
