@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { useHistory } from 'react-router-dom'
 import { requestJSONwithCredentials } from './request-json-with-credentials'
 import { apiURL } from './config'
 import './AdminArtistSplit.css'
+import AdminTabs from './AdminTabs.js'
 
 const BandcampLink = ({ url, children }) =>
   url ? (
@@ -89,7 +89,6 @@ function ArtistField({ value, onChange, processing, placeholder }) {
 }
 
 function AdminArtistSplit() {
-  const history = useHistory()
   const [candidates, setCandidates] = useState([])
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
@@ -420,11 +419,9 @@ function AdminArtistSplit() {
 
   return (
     <div className="page-container scroll-container admin-artist-split">
+      <AdminTabs />
       <div className="admin-artist-split-header">
         <h1>Split Combined Artists</h1>
-        <button className="button button-push_button" onClick={() => history.push('/admin')}>
-          Back to Radiator
-        </button>
       </div>
       {loading ? <div>Loading…</div> : selected ? renderDetail() : renderList()}
     </div>
