@@ -67,7 +67,9 @@ GROUP BY 1
 ORDER BY previews DESC
 LIMIT 5;
 
--- 6. Current backlog: previews without an embedding / fingerprint.
+-- 6. Current backlog: previews the workers would pick up that have no
+--    embedding / fingerprint. Like the worker queues, previews without a URL
+--    are skipped except on Bandcamp, whose stream URL is resolved at run time.
 SELECT store_name
      , COUNT(*) FILTER (WHERE e.store__track_preview_id IS NULL) AS without_embedding
      , COUNT(*) FILTER (WHERE m.store__track_preview_id IS NULL) AS without_fingerprint
@@ -80,4 +82,5 @@ FROM store__track_preview p
      LEFT JOIN store__track_preview_fingerprint_meta m
        ON m.store__track_preview_id = p.store__track_preview_id
 WHERE NOT p.store__track_preview_missing
+  AND (p.store__track_preview_url IS NOT NULL OR store_name = 'Bandcamp')
 GROUP BY store_name;
