@@ -295,7 +295,6 @@ class Player extends Component {
   render() {
     const tracks = this.getTracks()
     const currentTrack = this.props.currentTrack
-    const hasSelectedTrack = Boolean(currentTrack && tracks.some(({ id }) => id === currentTrack.id))
     const liveCurrentRow = currentTrack ? tracks.find(({ id }) => id === currentTrack.id) : null
     const currentCarts = (liveCurrentRow && liveCurrentRow.carts) || (currentTrack && currentTrack.carts) || []
     const inCarts = currentTrack
@@ -359,7 +358,6 @@ class Player extends Component {
           onPrevious={() => this.playPreviousTrack()}
           onToggleCurrentInCart={this.toggleCurrentInCart.bind(this)}
           onAddEntityToSearch={this.props.onAddEntityToSearch}
-          hasSelectedTrack={hasSelectedTrack}
           docked={this.props.docked}
           playingFrom={this.props.mode === 'list' ? null : this.props.playingFrom?.source}
         />

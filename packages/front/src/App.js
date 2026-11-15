@@ -579,6 +579,11 @@ class App extends Component {
       }
     }
     if (patched.heard !== trackSlices.heard) partialState.heardTracks = patched.heard
+    // The playing track may be in none of the lists above (e.g. played from Notifications), so patch it as well for
+    // the player's cart button to show the change
+    if (this.state.currentTrack && this.state.currentTrack.id === trackId) {
+      partialState.currentTrack = patchTrackCarts(this.state.currentTrack, cartUuid, op)
+    }
     if (patched.searchResults !== this.state.searchResults) partialState.searchResults = patched.searchResults
 
     if (Object.keys(partialState).length > 0) this.setState(partialState)
