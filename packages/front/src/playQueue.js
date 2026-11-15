@@ -56,8 +56,10 @@ export const stepInQueue = (tracks, currentId, step, isPlayable = () => true) =>
   return tracks[index]
 }
 
-// An uploaded audio sample as a track-like item the player can play.
-export const sampleAsTrack = ({ id, url, filename }) => ({
+// An uploaded audio sample as a track-like item the player can play. A sample with a waveform rendered at upload
+// carries it and its duration as a preview spanning the whole sample; one without (rendering failed, or uploaded
+// before waveforms were rendered) leaves start_ms null, so the player generates the waveform from the audio.
+export const sampleAsTrack = ({ id, url, filename, waveformUrl, durationMs }) => ({
   id: `sample-${id}`,
   sampleId: id,
   kind: 'sample',
@@ -72,7 +74,21 @@ export const sampleAsTrack = ({ id, url, filename }) => ({
   stores: [],
   released: null,
   published: null,
-  previews: [{ id: `sample-${id}`, store: 'sample', format: 'mp3', url, waveforms: [], start_ms: null, end_ms: null }],
+  duration: durationMs ?? undefined,
+  previews: [
+    waveformUrl && durationMs
+      ? {
+          id: `sample-${id}`,
+          store: 'sample',
+          format: 'mp3',
+          url,
+          waveforms: [waveformUrl],
+          start_ms: 0,
+          end_ms: durationMs,
+          length_ms: durationMs,
+        }
+      : { id: `sample-${id}`, store: 'sample', format: 'mp3', url, waveforms: [], start_ms: null, end_ms: null },
+  ],
 })
 
 export const isSample = (track) => track?.kind === 'sample'

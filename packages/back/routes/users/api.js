@@ -86,6 +86,7 @@ const { storeUrl: bandcampStoreUrl } = require('../stores/bandcamp/logic')
 const { enableCartSync, removeCartSync, importPlaylistAsCart } = require('../shared/cart')
 const { isAdmin } = require('../shared/auth.js')
 const { getMinioClient, getBucketName, storageObjectPath } = require('../shared/minio')
+const { storeSampleWaveform } = require('./sample-waveforms')
 const {
   insertNotificationAudioSample,
   queryNotificationAudioSamples: getNotificationAudioSamples,
@@ -639,9 +640,27 @@ router.post(
         file.originalname,
       )
 
+      // The upload succeeds without a waveform: the player then generates one from the audio itself
+      let waveform = { waveformUrl: null, durationMs: null }
+      try {
+        waveform = await storeSampleWaveform({
+          client: minioClient,
+          bucketName,
+          sampleId: sample.id,
+          sampleObjectKey: objectKey,
+          audio: await fs.promises.readFile(file.path),
+        })
+      } catch (error) {
+        logger.warn('Could not render the waveform of an audio sample', {
+          error: error.message,
+          sampleId: sample.id,
+          fileType: file.mimetype,
+        })
+      }
+
       fs.unlinkSync(file.path)
 
-      res.status(201).send(sample)
+      res.status(201).send({ ...sample, url, waveformUrl: waveform.waveformUrl, durationMs: waveform.durationMs })
     } catch (error) {
       logger.error('Error uploading audio sample', {
         error: error.message,
@@ -673,6 +692,7 @@ router.delete('/notifications/audio-samples/:id', async ({ user: { id: userId },
     if (minioClient && bucketName && sample.objectKey) {
       try {
         await minioClient.removeObject(bucketName, sample.objectKey)
+        if (sample.waveformObjectKey) await minioClient.removeObject(bucketName, sample.waveformObjectKey)
       } catch (error) {
         logger.warn('Error deleting file from MinIO', error)
       }

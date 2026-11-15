@@ -118,4 +118,35 @@ describe('sampleAsTrack', () => {
     expect(track.previews).toEqual([expect.objectContaining({ store: 'sample', format: 'mp3', url: 'http://x/s.mp3' })])
     expect(samplesSource.key).toBe('samples')
   })
+
+  it('carries the waveform rendered at upload as a preview spanning the whole sample', () => {
+    const track = sampleAsTrack({
+      id: 7,
+      url: '/api/storage/s.mp3',
+      filename: 's.mp3',
+      waveformUrl: '/api/storage/s.waveform.png',
+      durationMs: 42000,
+    })
+    expect(track.duration).toBe(42000)
+    expect(track.previews).toEqual([
+      expect.objectContaining({
+        waveforms: ['/api/storage/s.waveform.png'],
+        start_ms: 0,
+        end_ms: 42000,
+        length_ms: 42000,
+      }),
+    ])
+  })
+
+  it('leaves the waveform to the player when none was rendered', () => {
+    const track = sampleAsTrack({
+      id: 7,
+      url: '/api/storage/s.mp3',
+      filename: 's.mp3',
+      waveformUrl: null,
+      durationMs: null,
+    })
+    expect(track.duration).toBeUndefined()
+    expect(track.previews).toEqual([expect.objectContaining({ waveforms: [], start_ms: null, end_ms: null })])
+  })
 })
