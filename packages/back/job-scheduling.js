@@ -32,6 +32,7 @@ const refetchBandcampLabelArtists = require('./jobs/refetch-bandcamp-label-artis
 const detectBandcampArtistNameMismatches = require('./jobs/detect-bandcamp-artist-name-mismatches')
 const detectArtistSplitCandidates = require('./jobs/detect-artist-split-candidates')
 const { findDuplicates } = require('./jobs/find-duplicates')
+const { renderSampleWaveforms } = require('./jobs/render-sample-waveforms')
 
 const init = async () => {
   await pg.queryAsync(
@@ -216,6 +217,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   detectBandcampArtistNameMismatches,
   detectArtistSplitCandidates,
   findDuplicates,
+  renderSampleWaveforms,
   ...radiator,
 }
 
