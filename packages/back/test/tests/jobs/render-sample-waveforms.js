@@ -54,7 +54,8 @@ test({
       goodKey,
       good: await insertSample(userId, goodKey),
       broken: await insertSample(userId, brokenKey),
-      objects: { [`old-bucket/${goodKey}`]: MP3, [`old-bucket/${brokenKey}`]: Buffer.from('not audio') },
+      // Stored in the current bucket only: the sample rows still name the bucket they were uploaded to
+      objects: { [`storage/${goodKey}`]: MP3, [`storage/${brokenKey}`]: Buffer.from('not audio') },
     }
   },
 
@@ -87,7 +88,7 @@ test({
     const client = fakeClient(objects)
     const { success, result } = await renderSampleWaveforms({ id: 1 }, { client, bucketName: 'storage' })
 
-    // The audio is read from the bucket the sample was uploaded to, the image written to the current one
+    // The audio is read from, and the image written to, the current bucket, not the one the sample row names
     const waveformKey = goodKey.replace(/\.mp3$/, '.waveform.png')
     assert.ok(client.put[`storage/${waveformKey}`], 'the waveform image is stored')
     const sample = await listed(userId, good)
