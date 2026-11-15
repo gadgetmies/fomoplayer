@@ -49,15 +49,31 @@ own `ts` is the request time plus 24 h, so only that hop expires quickly, and
 it is fetched straight after the redirect. The redirect works without our
 User-Agent too.
 
-### Reuse the stream URLs the watch job already fetched
-`tralbum_details` returns the signed URL of every track on a release, and the
-watch job calls it for every new release. The Bandcamp client keeps those URLs
-in process, keyed by track id, for `BANDCAMP_STREAM_URL_MAX_AGE_MS` (default
-7 days, at most 50 000 entries). The prefetch job runs in the same process, so a
-newly added track costs no lookup. A release is looked up only when one of its
-tracks has no kept URL. A kept URL that is refused (403/410) is replaced by
-one fresh lookup. A URL refused again after a fresh lookup is treated as a rate
-limit. The cache is lost on a restart; the job then falls back to lookups.
+### Store the stream URLs per preview
+`tralbum_details` returns the `stream_redirect` URL of every track on a
+release. Those URLs are stored in `store__track_preview_stream` (one row per
+preview, with the time it was fetched) whenever the backend fetches a release
+for playback or the prefetch job. A stored URL is used until it is
+`BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` old (13 by default, the age measured to
+still work) or until it fails. The lookup then replaces the URLs of every
+track of the release, which were issued together. Only `stream_redirect` URLs
+are stored; a scraped release page's CDN URLs expire within a day.
+
+A newly added release is fetched by the watch job before its preview rows
+exist, so the Bandcamp client also keeps the URLs of every release it fetched
+in process (at most 50 000) for the same age. The first time playback or the
+prefetch job needs one of those tracks, the kept URL is stored. A restart
+only costs one lookup per release.
+
+### Playback uses the stored URL
+`GET /api/stores/bandcamp/previews/:id` answers with the stored URL without
+contacting Bandcamp. When the player cannot play it, it asks once per track
+with `?refresh=true`, which looks the release up and stores the new URLs.
+The player's own lookups skip the Bandcamp request queue: a priority request
+goes out at once but takes the slot, so queued job requests wait a full
+interval after it. A prefetch of the next track (`?prefetch=true`) is not a
+listener waiting and queues like the jobs. The shared rate-limit pause still
+applies to all of them.
 
 ### Throttling
 - Every Bandcamp request goes through the shared Bandcamp client: release
@@ -124,8 +140,8 @@ the analyser and backend can be deployed in either order.
   at a time, and the job skips Bandcamp while paused. At most one Bandcamp
   request every 2 s in total, so a full track every ~2 s plus lookups for
   older releases.
-- [Bandcamp shortens the URL validity] → a refused URL costs one extra lookup;
-  tune `BANDCAMP_STREAM_URL_MAX_AGE_MS`.
+- [Bandcamp shortens the URL validity] → a refused URL costs one extra lookup
+  (the player retries once); tune `BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS`.
 - [Workers stopped for days] → the storage cap stops the job; nothing is lost,
   it resumes once files are released.
 - [A worker crashes after the job stored a file] → the file stays until the

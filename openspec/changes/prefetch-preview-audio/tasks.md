@@ -31,6 +31,14 @@
 - [x] 6.1 `bandcamp.py` keeps stream URLs in a shared file until they expire; refused or failed downloads forget them.
 - [x] 6.2 Tests for expiry, reuse across runs, forgetting and a broken file.
 
-## 7. Verify
+## 7. Stored stream URLs for playback
 
-- [x] 7.1 Full backend suite green (`yarn test`); analyser unit tests green.
+- [x] 7.1 Migration for `store__track_preview_stream`; `stream-urls.js` stores the URLs of every track of a looked-up release and serves fresh ones.
+- [x] 7.2 `BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` (13) replaces the in-memory age; the analyser reads it too.
+- [x] 7.3 Priority requests in the Bandcamp client's queue; the player endpoint takes `refresh` and `prefetch`.
+- [x] 7.4 The player retries a failed Bandcamp URL once with `refresh=true`; prefetches send `prefetch=true`.
+- [x] 7.5 Tests for storage, refresh age, refresh, the player endpoint and the priority queue.
+
+## 8. Verify
+
+- [ ] 8.1 Full backend suite green (`yarn test`); analyser unit tests green.

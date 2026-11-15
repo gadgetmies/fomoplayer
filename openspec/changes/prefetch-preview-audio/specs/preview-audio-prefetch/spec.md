@@ -9,9 +9,8 @@ MUST be released once every analysis is done") and are not in their retry
 wait, newest first. For each one it MUST download the audio and store it in
 the configured bucket under `preview-audio/<random uuid>.mp3`, recording the
 key, size and time in `store__track_preview_audio`. Beatport previews MUST use
-their stored URL. Bandcamp previews MUST use the stream URL the Bandcamp client
-kept from an earlier fetch of the release when it is younger than
-`BANDCAMP_STREAM_URL_MAX_AGE_MS` (default 7 days), and otherwise look the
+their stored URL. Bandcamp previews MUST use their stored stream URL (see
+"Bandcamp stream URLs MUST be stored per preview") and otherwise look the
 release up through the Bandcamp client, once per release.
 
 #### Scenario: A Beatport preview without analyses is stored
@@ -129,7 +128,8 @@ returns no `audio_url`, the workers MUST download from the store as before.
 it looks up in a file shared by the workers and across runs, and return a kept
 URL instead of looking the release up while the URL is valid: a
 `*.bcbits.com` URL until 15 minutes before the time in its `ts` parameter, a
-`bandcamp.com/stream_redirect` URL for 7 days. A refused or failed download
+`bandcamp.com/stream_redirect` URL for `BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS`
+(13 by default). A refused or failed download
 MUST forget the URL.
 
 #### Scenario: Another track of a looked-up release needs no lookup
@@ -139,3 +139,43 @@ MUST forget the URL.
 #### Scenario: A failed download forgets the URL
 - **WHEN** downloading a kept URL fails
 - **THEN** the URL is forgotten and the next resolve looks the release up again
+
+### Requirement: Bandcamp stream URLs MUST be stored per preview
+
+Whenever the backend looks a Bandcamp release up for playback or the prefetch
+job, it MUST store the `bandcamp.com/stream_redirect` URL of every preview of
+the release's tracks in `store__track_preview_stream`, replacing older ones.
+CDN URLs (`*.bcbits.com`) MUST NOT be stored. A stored URL MUST be used until
+it is `BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` old (default 13). A URL the
+Bandcamp client kept from a release fetched before the preview was stored MUST
+be stored when it is first used.
+
+#### Scenario: A lookup updates the whole release
+- **WHEN** a release with two stored tracks is looked up again
+- **THEN** the stored URLs of both tracks are replaced
+
+#### Scenario: An old URL is looked up again
+- **WHEN** a stored URL is older than the refresh age
+- **THEN** the release is looked up and its URLs replaced
+
+### Requirement: Playback MUST use the stored Bandcamp stream URL
+
+`GET /api/stores/bandcamp/previews/:id` MUST answer with the stored stream URL
+without contacting Bandcamp. With `refresh=true` it MUST look the release up
+and store the new URLs. Its lookups MUST skip the Bandcamp request queue but
+take the request slot, so queued requests wait a full interval after them;
+with `prefetch=true` the lookup MUST queue like other requests. When the player
+cannot play a Bandcamp URL it MUST ask once with `refresh=true` and play the
+new URL.
+
+#### Scenario: Pressing play needs no Bandcamp lookup
+- **WHEN** a listener plays a Bandcamp track whose stream URL is stored
+- **THEN** the URL is served from the database and no request goes to Bandcamp
+
+#### Scenario: A dead URL is replaced while listening
+- **WHEN** the player cannot play a stored Bandcamp URL
+- **THEN** it asks for a refreshed URL once and plays it
+
+#### Scenario: A listener goes ahead of the jobs
+- **WHEN** a listener's lookup arrives while job requests wait in the Bandcamp queue
+- **THEN** it is sent at once and the queued requests wait a full interval after it

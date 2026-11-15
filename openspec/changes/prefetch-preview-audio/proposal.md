@@ -21,10 +21,11 @@ stops even though there is CPU to spare.
     shares its rate-limit pause with playback. This covers release lookups and
     downloads, because the mobile API's stream URLs are
     `bandcamp.com/stream_redirect` links.
-  - The client keeps the stream URLs of every release it fetches for 7 days
-    (`BANDCAMP_STREAM_URL_MAX_AGE_MS`). A track the watch job has just added
-    is downloaded without looking its release up again. Older tracks cost one
-    lookup per release.
+  - Bandcamp stream URLs (`bandcamp.com/stream_redirect`, which stay usable
+    for days) are stored per preview and used until they are
+    `BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` old (13 by default) or fail. A
+    lookup replaces the URLs of every track of the release. Tracks the watch
+    job has just added use the URLs the client kept from that fetch.
   - Beatport downloads go one at a time, at least
     `PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` apart (default 1000 ms), side by side
     with Bandcamp's.
@@ -50,6 +51,11 @@ stops even though there is CPU to spare.
   of every release it looks up in a file shared by the workers and across
   runs, and uses each one until shortly before it expires, so a release page
   is fetched at most about once a day.
+- Playback uses the stored Bandcamp stream URL, so pressing play no longer
+  looks the release up at Bandcamp. When the player cannot play the URL it
+  asks for a fresh one (`?refresh=true`), once per track. A listener's lookup
+  skips the Bandcamp request queue but takes its slot; a prefetch of the next
+  track (`?prefetch=true`) waits in the queue.
 - Once a preview has every analysis (its fingerprint, its embedding for the
   production model and, for Bandcamp, its waveform) or is marked missing, the
   backend deletes its stored file. This runs when a worker posts a result and
@@ -70,6 +76,8 @@ _None._ The queue endpoints only gain an optional field and query parameter.
   `packages/back/routes/admin/preview-audio.js` (new),
   `packages/back/routes/admin/db.js`, `packages/back/routes/admin/api.js`,
   `packages/back/routes/stores/bandcamp/bandcamp-api.js`,
+  `packages/back/routes/stores/bandcamp/stream-urls.js` (new),
+  `packages/back/routes/stores/bandcamp/logic.js`, `packages/front/src/Preview.js`,
   `packages/back/job-scheduling.js`, `packages/back/migrations/`,
   `analyser/main.py`, `analyser/panako_processor.py`, `analyser/waveform.py`,
   `analyser/analyse_all.sh`, `analyser/README.md`.

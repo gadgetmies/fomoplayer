@@ -45,10 +45,11 @@ three workers. The job's store traffic is kept conservative:
   request, lookups and downloads alike (the mobile API's stream URLs are
   `bandcamp.com/stream_redirect` links), goes through the backend's
   Bandcamp client: 2 s between requests, as `bandcamp.py` does, sharing
-  the backend's rate-limit pause with playback. The client keeps the
-  stream URLs of the releases the watch job fetched for 7 days
-  (`BANDCAMP_STREAM_URL_MAX_AGE_MS`), so newly added tracks need no
-  lookup; older ones cost one lookup per release.
+  the backend's rate-limit pause with playback. Stream URLs are stored
+  per preview and used until they are
+  `BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` old (13 by default) or fail, so
+  most tracks need no lookup; a lookup replaces the URLs of every track
+  of the release.
 - Beatport downloads go one at a time, at least
   `PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` (default 1000) apart.
 - A 429 or 403 pauses that store for 10 min, doubling up to 1 h.
@@ -607,7 +608,8 @@ each release it looks up in `bandcamp_stream_urls.json` (override with
 `BANDCAMP_STREAM_CACHE`), shared by the workers and across runs. A
 release-page URL (`*.bcbits.com/stream/...`) carries its expiry in `ts`,
 24 h after it is issued, and is used until 15 minutes before then; a
-`bandcamp.com/stream_redirect` URL is used for 7 days. A refused or failed
+`bandcamp.com/stream_redirect` URL is used for
+`BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS` (13 by default). A refused or failed
 download forgets the URL, so the next attempt looks the release up again.
 `main.py` keeps a preview whose cached URL failed in the queue instead of
 marking it missing.
