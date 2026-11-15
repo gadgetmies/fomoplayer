@@ -10,7 +10,7 @@ import time
 import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pydub import AudioSegment
-from auth import auth_header, get_api_url, request_error
+from auth import auth_header, get_api_url, request_error, resolve_url, stored_audio_query
 import sys
 import datetime
 
@@ -84,10 +84,14 @@ def append_zero_fp_skiplist(preview_ids):
             f.write(f"{pid}\n")
 
 
-def get_next_previews_to_fingerprint(batch_size=10):
+def get_next_previews_to_fingerprint(batch_size=10, direct_download=False):
+    """Fetch the next previews without a fingerprint. Unless direct_download,
+    only previews whose audio the backend's prefetchPreviewAudio job stored in
+    the bucket are served, so the worker never downloads from a store."""
     print("Getting next previews to fingerprint")
     res = requests.get(
-        f"{get_api_url()}/admin/exact-match/previews/without-fingerprint?limit={batch_size}",
+        f"{get_api_url()}/admin/exact-match/previews/without-fingerprint?limit={batch_size}"
+        f"{stored_audio_query(direct_download)}",
         headers=auth_header(),
         # No timeout hangs the whole drain on one dropped connection
         # (observed 2026-10-15: 4 workers pinned for 9+ hours).
@@ -267,7 +271,16 @@ def _tally_and_score(completed_results, score_after, score_fn):
     return total_uploaded
 
 
-def process_previews(batch_size, workers, score_after, jobs_file=None):
+def resolve_stored_audio(preview):
+    """Return the preview with its url pointing at the audio the backend
+    stored in the bucket, or None when nothing is stored for it."""
+    if not preview.get('audio_url'):
+        return None
+    pid = preview.get('preview_id') or preview.get('id')
+    return {**preview, 'url': resolve_url(preview['audio_url']), 'filename': f"{pid}.mp3"}
+
+
+def process_previews(batch_size, workers, score_after, jobs_file=None, direct_download=False):
     """Fetch one batch of previews and fingerprint them in parallel.
 
     Splits the fetched batch into at most `workers` sub-batches and runs each
@@ -293,7 +306,8 @@ def process_previews(batch_size, workers, score_after, jobs_file=None):
             if str(p.get('preview_id') or p.get('id')) not in skiplist
         ]
     else:
-        fetched = get_next_previews_to_fingerprint(batch_size=batch_size + len(skiplist))
+        fetched = get_next_previews_to_fingerprint(
+            batch_size=batch_size + len(skiplist), direct_download=direct_download)
         previews_to_process = [
             p for p in fetched
             if str(p.get('preview_id') or p.get('id')) not in skiplist
@@ -323,6 +337,10 @@ def process_previews(batch_size, workers, score_after, jobs_file=None):
     deferred = 0
     for p in previews_to_process:
         pid = p.get('preview_id') or p.get('id')
+        stored = resolve_stored_audio(p)
+        if stored:
+            resolved_jobs.append(stored)
+            continue
         if p.get('url'):
             resolved_jobs.append(p)
             continue
@@ -437,6 +455,10 @@ if __name__ == '__main__':
                          "{preview_id, url?, store_track_id?, release_url?} objects) instead "
                          "of the without-fingerprint queue. Used to feed Bandcamp previews "
                          "from a direct DB export; see drain_bandcamp.sh.")
+    ap.add_argument("--direct-download", action="store_true",
+                    help="When --previews: download previews from the stores instead of only taking "
+                         "previews whose audio the backend's prefetchPreviewAudio job stored in the "
+                         "bucket. For a backend without the job (e.g. local development).")
     ap.add_argument("--score-after", type=int, default=1000,
                     help="When --previews: after every N successfully fingerprinted previews within "
                          "this invocation, pause and run scoring across all samples. 0 disables. "
@@ -520,6 +542,7 @@ if __name__ == '__main__':
                 workers=args.workers,
                 score_after=args.score_after,
                 jobs_file=args.jobs_file,
+                direct_download=args.direct_download,
             )
             if rc != 0:
                 sys.exit(rc)

@@ -17,7 +17,7 @@ import argparse
 import json
 import time
 import requests
-from auth import auth_header, get_api_url
+from auth import auth_header, get_api_url, resolve_url, stored_audio_query
 import bandcamp
 import datetime
 
@@ -52,9 +52,10 @@ MAX_RATE_LIMIT_PAUSE_S = 3600
 MAX_FORBIDDEN_PAUSES = 2
 
 
-def get_next_waveform_previews(batch_size):
+def get_next_waveform_previews(batch_size, direct_download=False):
     res = requests.get(
-        f"{get_api_url()}/admin/preview?limit={batch_size}&stores=Bandcamp",
+        f"{get_api_url()}/admin/preview?limit={batch_size}&stores=Bandcamp"
+        f"{stored_audio_query(direct_download)}",
         headers=auth_header()
     )
     res.raise_for_status()
@@ -178,6 +179,12 @@ def fetch_preview(preview, mp3_path, backoff):
 
     A 403 can also mean the page or stream is gone for good, so a preview still
     refused with 403 after MAX_FORBIDDEN_PAUSES pauses is raised as a failure."""
+    if preview.get("audio_url"):
+        # Stored in our bucket by the backend's prefetchPreviewAudio job: no
+        # store is contacted, so there is no rate limit to wait out.
+        download(resolve_url(preview["audio_url"]), mp3_path)
+        return True
+
     expired_retries = 0
     forbidden_pauses = 0
     while True:
@@ -250,6 +257,9 @@ def process_batch(previews, backoff, attempts):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument("-b", "--batch-size", type=int, default=20, help="Previews fetched per batch")
+    ap.add_argument("--direct-download", action="store_true",
+                    help="Download previews from the stores instead of only taking previews whose audio "
+                         "the backend's prefetchPreviewAudio job stored in the bucket")
     ap.add_argument("--loop", action="store_true",
                     help="Keep processing batches until no preview is left without a waveform")
     args = ap.parse_args()
@@ -260,7 +270,7 @@ if __name__ == '__main__':
     while True:
         print(f"[{datetime.datetime.now()}] Getting next previews without a waveform", flush=True)
         try:
-            previews = get_next_waveform_previews(args.batch_size)
+            previews = get_next_waveform_previews(args.batch_size, args.direct_download)
         except requests.RequestException as e:
             print(f"Fetching the queue failed: {e!r}; retrying in 60 s", flush=True)
             time.sleep(60)

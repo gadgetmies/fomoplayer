@@ -31,6 +31,40 @@ Run the analyser:
 
 ```python3 main.py```
 
+## Preview audio comes from the bucket
+
+The stores rate-limit preview downloads, so the analyser no longer
+downloads previews itself. The backend job `prefetchPreviewAudio` runs
+every 10 minutes on the production backend (Railway). It downloads the
+audio of Bandcamp and Beatport previews that still need an analysis into
+the backend's storage bucket (`AUDIO_SAMPLE_STORAGE_*`), under
+`preview-audio/<random uuid>.mp3`. Each preview is downloaded once for all
+three workers. The job's store traffic is kept conservative:
+
+- Bandcamp stream URLs expire, so they are looked up per release through
+  the backend's Bandcamp client: 2 s between requests, as `bandcamp.py`
+  does, sharing the backend's rate-limit pause with playback.
+- Downloads go one at a time per store, at least
+  `PREVIEW_AUDIO_DOWNLOAD_INTERVAL_MS` (default 1000) apart.
+- A 429 or 403 pauses that store for 10 min, doubling up to 1 h.
+- At most `PREVIEW_AUDIO_PREFETCH_MAX_STORED` (default 1000) files wait
+  for analysis. A run lasts at most `PREVIEW_AUDIO_PREFETCH_MAX_RUN_MS`
+  (default 8 min).
+
+The preview queues serve the stored file as `audio_url`
+(`/api/storage/<key>`, resolved against `FOMOPLAYER_API_URL`). The
+workers ask for stored previews only (`audio=stored`), so they never
+contact a store and can run at full speed. Once a preview has its
+fingerprint, its embedding for the production model and (for Bandcamp)
+its waveform, or is marked missing, the backend deletes its file.
+
+An empty queue now means "nothing prefetched is waiting", not that every
+preview is analysed. Pass `--direct-download` to `waveform.py`,
+`main.py`, `panako_processor.py` or `analyse_all.sh` to download from the
+stores as before, e.g. against a local backend without the job. Against
+a backend without the job the workers fall back to downloading from the
+stores on their own, because no `audio_url` is served.
+
 ## Running all workers under one tmux session
 
 `analyse_all.sh` is the recommended driver for keeping every analyser
@@ -65,6 +99,7 @@ the existing Python entry points until the backend queue is empty.
 | `--session NAME`        | tmux session name. Default `analyser`.                                                |
 | `--layout L`            | `windows` (default) — one tmux window per worker. `panes` — all workers as tiled panes in a single `workers` window with per-pane title bars. |
 | `--no-waveform`         | Skip the `waveform-previews` worker (useful when the `WAVEFORM_STORAGE_*` object storage env vars are not configured; the bucket must be the backend's `AUDIO_SAMPLE_STORAGE_BUCKET_NAME`, set `WAVEFORM_STORAGE_REGION=auto` for a Railway bucket). |
+| `--direct-download`     | Pass `--direct-download` to the preview workers: download from the stores instead of only taking previews whose audio the backend's `prefetchPreviewAudio` job stored in the bucket. |
 | `--skip-sanity-confirmation` | Pass `--skip-sanity-confirmation` through to `main.py` — embedding-collision warnings are logged but no longer block on a y/N prompt. Recommended for unattended drains. |
 | `--score-after N`       | Pass `--score-after N` through to `panako_processor.py --previews`. After every N successfully fingerprinted previews in one invocation, the worker pauses and re-scores all samples that have fingerprints, persisting results into `user_notification_audio_sample_match`. Only effective when `--batch-size >= N` (counter is per-invocation). |
 | `--no-attach`           | Don't `tmux attach` at the end; print the attach command instead.                     |
