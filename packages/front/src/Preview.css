@@ -340,9 +340,12 @@
   min-height: 44px;
 }
 
-/* Preview and Listen on the waveform's lower ends, as on the panel's waveform, a little tighter for the bar */
-.docked-player_waveform .preview-samples_container {
-  padding: 4px;
+/* Preview and Listen on the waveform's lower ends, as on the panel's waveform; a little tighter in the desktop bar. On
+   phones they keep the panel's padding, so they stay put when the bar expands into the panel. */
+@media (min-width: 591px) {
+  .docked-player_waveform .preview-samples_container {
+    padding: 4px;
+  }
 }
 
 /* Artists and title, with "Playing from" below them */
@@ -501,6 +504,11 @@
     min-height: 80px;
   }
 
+  /* The bar's switches sit inside its waveform, whose 1px margin the panel's (beside its waveform) do not have */
+  .docked-player_waveform .preview-samples_container {
+    margin: 3px;
+  }
+
   .docked-player_info {
     flex: 1 1 auto;
     min-width: 0;
@@ -518,6 +526,7 @@
 
   .preview--docked-expanded {
     background: var(--page-container-background-color);
+    border-top: 1px solid #000;
     max-height: calc(100vh - 4rem);
     overflow-y: auto;
   }
@@ -531,14 +540,28 @@
     display: none;
   }
 
+  /* Back to the bar from the top right corner of the track details. The section holding it takes no height here, so
+     its top right is the details' top right. */
   .preview--docked-expanded .docked-player_collapse {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
     display: flex;
+    align-items: center;
     justify-content: center;
-    width: 100%;
-    padding: 8px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
     color: white;
-    background: #131313;
-    border-top: 1px solid #000;
+    background: transparent;
+    border: 0;
+  }
+
+  /* The title wraps before the collapse button rather than under it */
+  .preview--docked-expanded .preview_title {
+    padding-right: 44px;
+    box-sizing: border-box;
   }
 
   .preview--docked.preview--docked-expanded > .preview_details_wrapper {
@@ -547,6 +570,14 @@
 
   .preview--docked.preview--docked-expanded > .player-collection-wrapper {
     display: block !important;
+  }
+}
+
+/* Below this width the panel's button row (play, previous, next, cart, find similar, follow, ignore, share) no
+   longer fits and share would overflow: previous gives way, in the docked bar too so the two stay aligned. */
+@media (max-width: 429px) {
+  .button.button-playback--previous {
+    display: none;
   }
 }
 

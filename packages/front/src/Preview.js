@@ -997,7 +997,7 @@ class Preview extends Component {
             </button>
             <button
               type="button"
-              className="button button-playback docked-player_button"
+              className="button button-playback button-playback--previous docked-player_button"
               aria-label={`Previous${this.props.playingFrom ? ` in ${this.props.playingFrom.label}` : ''}`}
               onClick={() => this.props.onPrevious()}
             >
@@ -1402,7 +1402,11 @@ class Preview extends Component {
               <button className="button button-playback" onClick={() => this.togglePlaying('ui')}>
                 <FontAwesomeIcon icon={this.state.playing ? 'pause' : 'play'} />
               </button>
-              <button className="button button-playback" onClick={() => this.props.onPrevious()}>
+              <button
+                className="button button-playback button-playback--previous"
+                aria-label="Previous"
+                onClick={() => this.props.onPrevious()}
+              >
                 <FontAwesomeIcon icon="step-backward" />
               </button>
               <button className="button button-playback" onClick={() => this.props.onNext()}>
