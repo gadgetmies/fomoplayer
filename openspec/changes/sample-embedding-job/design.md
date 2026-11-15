@@ -88,10 +88,21 @@ token that only guards the private network, and rotatable in the dashboard.
 
 ### Batch and schedule
 
+A run fails only when every sample in it failed: that points at the service
+or storage, while one bad file is listed in the result and retried without
+turning every run red.
+
 Default batch 20 samples per run (config `EMBEDDING_JOB_BATCH_SIZE`),
 schedule every 10 minutes, newest first, matching
 `queryNotificationAudioSamplesWithoutEmbedding`. The upload route calls
 `runJob` without awaiting; the in-progress guard prevents overlap.
+
+### Service image on Python 3.12
+
+`numpy==1.26.4`, pinned to match the analyser, has no Python 3.13 wheel and
+the slim image has no compiler; every pinned service dependency has a 3.12
+wheel. The model output does not depend on the Python version (checked:
+cosine 1.0 between the container and a 3.13 host on the same MP3).
 
 ## Risks / Trade-offs
 
