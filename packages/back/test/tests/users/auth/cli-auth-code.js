@@ -2,11 +2,38 @@
 const assert = require('assert')
 const crypto = require('crypto')
 const { test } = require('cascade-test')
-const { issueCode, consumeCode } = require('../../../../routes/shared/cli-auth-code')
+const { issueCode, consumeCode, createUsedChallengeStore } = require('../../../../routes/shared/cli-auth-code')
 
 const challengeFor = (verifier) => crypto.createHash('sha256').update(verifier).digest('base64url')
 
 test({
+  'used-challenge store marks a challenge once and reports it as used': async () => {
+    const store = createUsedChallengeStore()
+    assert.strictEqual(store.isUsed('challenge-a'), false)
+    assert.strictEqual(store.markUsed('challenge-a'), true)
+    assert.strictEqual(store.isUsed('challenge-a'), true)
+    assert.strictEqual(store.markUsed('challenge-a'), false)
+    assert.strictEqual(store.isUsed('challenge-b'), false)
+  },
+
+  'used-challenge store forgets a challenge after its time to live': async () => {
+    let now = 1000
+    const store = createUsedChallengeStore({ ttlMs: 50, now: () => now })
+    store.markUsed('challenge-a')
+    now = 1049
+    assert.strictEqual(store.isUsed('challenge-a'), true)
+    now = 1050
+    assert.strictEqual(store.isUsed('challenge-a'), false)
+    assert.strictEqual(store.markUsed('challenge-a'), true)
+  },
+
+  'used-challenge store ignores empty or missing challenges': async () => {
+    const store = createUsedChallengeStore()
+    assert.strictEqual(store.markUsed(undefined), false)
+    assert.strictEqual(store.markUsed(''), false)
+    assert.strictEqual(store.isUsed(undefined), false)
+  },
+
   'consumeCode returns the user id when the verifier matches the challenge': async () => {
     const verifier = 'verifier-1'
     const code = issueCode(42, challengeFor(verifier))
