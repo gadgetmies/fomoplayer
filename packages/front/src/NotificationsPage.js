@@ -215,6 +215,16 @@ class NotificationsPage extends Component {
     this.props.onPlay(track, { source: similarSource(sample), tracks: this.state.similar.tracks })
   }
 
+  markSimilarHeard(track) {
+    if (track.heard) return
+    this.props.onMarkHeard?.(track)
+    const heard = new Date().toISOString()
+    const { similar } = this.state
+    this.setState({
+      similar: { ...similar, tracks: similar.tracks.map((t) => (t.id === track.id ? { ...t, heard } : t)) },
+    })
+  }
+
   playSample(sample) {
     this.props.onPlay(sampleAsTrack(sample), { source: samplesSource, tracks: this.state.samples.map(sampleAsTrack) })
   }
@@ -515,7 +525,10 @@ class NotificationsPage extends Component {
           />
         </div>
         {open ? (
-          <div id={contentId} className="notifications-sample_content">
+          <div
+            id={contentId}
+            className={`notifications-sample_content${this.state.samplesView === 'similar' ? ' notifications-sample_content--similar' : ''}`}
+          >
             {this.state.samplesView === 'similar'
               ? this.renderSimilar(sample, this.state.similar)
               : this.renderMatches(sample, this.state.matches)}
@@ -632,45 +645,99 @@ class NotificationsPage extends Component {
     ]
       .map((group) => ({ ...group, entities: follow.filter(({ type }) => type === group.type) }))
       .filter(({ entities }) => entities.length > 0)
+    const carts = this.props.carts || []
+    const defaultCart = carts.find(({ isDefault }) => isDefault)
+    const stores = this.props.stores || []
+    const storeSlugs = stores.map(({ storeName }) => storeName.toLowerCase())
+    const { tracks } = similar
     return (
       <>
-        <p className="notifications-hint">
-          Tracks that sound closest to the sample (audio similarity, not a fingerprint match).
-        </p>
-        <div
-          className="notifications-list notifications-similar"
-          role="table"
-          aria-label={`Sounds like ${sample.filename}`}
-        >
-          <div className="notifications-list_header" role="row">
-            <span role="columnheader">Artist</span>
-            <span role="columnheader">Title</span>
-            <span role="columnheader">Label</span>
-            <span role="columnheader">Similarity</span>
-          </div>
-          {similar.tracks.map((track) => (
-            <button
-              key={track.id}
-              type="button"
-              role="row"
-              className={`${this.rowClass(track.id)} notifications-list_row`}
-              onClick={() => this.playSimilar(track, sample)}
-            >
-              <span role="cell" className="notifications-list_artist" data-label={labelsText(track)}>
-                {artistsText(track)}
-              </span>
-              <span role="cell" className="notifications-list_title">
-                {titleText(track)}
-              </span>
-              <span role="cell" className="notifications-list_label">
-                {labelsText(track)}
-              </span>
-              <span role="cell" className="notifications-list_end similarity">
-                {Math.round(track.similarity * 100)} %
-              </span>
-            </button>
-          ))}
-        </div>
+        {/* The same table, rows and cells as the results of a similarity search (track:~<id>): Diff is the distance */}
+        <table className="tracks-table notifications-similar" aria-label={`Sounds like ${sample.filename}`}>
+          <thead className="noselect tracks-table-header">
+            <tr className="noselect tracks-table-header-columns">
+              <th className="new-cell tracks-cell">
+                <div className="new-cell-content track-table-cell">New</div>
+              </th>
+              <th className="track-details tracks-cell">
+                <div className="track-details-left track-details-content">
+                  <div className="artist-cell track-table-cell text-header-cell">Artist</div>
+                  <div className="title-cell track-table-cell text-header-cell">Title</div>
+                  <div className="label-cell track-table-cell text-header-cell">Label</div>
+                </div>
+                <div className="track-details-center track-details-content">
+                  <div className="released-cell track-table-cell text-header-cell">Released</div>
+                </div>
+                <div className="track-details-right track-details-content">
+                  <div className="genre-cell track-table-cell">Genre</div>
+                  <div className="bpm-cell track-table-cell">BPM</div>
+                  <div className="key-cell track-table-cell">Key</div>
+                </div>
+              </th>
+              <th className="follow-ignore-cart-cell tracks-cell">
+                <div className="score-cell track-table-cell">Diff</div>
+                <div className="cart-cell track-table-cell">Cart</div>
+              </th>
+              <th className="open-share-cell tracks-cell">
+                <div className="open-cell track-table-cell">Open</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {tracks.map((track, index) => {
+              const trackCarts = (track.carts || []).filter(Boolean)
+              const inCarts = carts.filter((cart) => trackCarts.some(({ uuid }) => uuid === cart.uuid))
+              const previews = (track.previews || []).filter(({ store }) => storeSlugs.includes(store))
+              const play = () => this.playSimilar(track, sample)
+              return (
+                <Track
+                  key={track.id}
+                  mode="app"
+                  listState="search"
+                  id={track.id}
+                  index={index}
+                  title={track.title}
+                  version={track.version}
+                  artists={track.artists || []}
+                  remixers={track.remixers || []}
+                  labels={track.labels || []}
+                  released={track.released}
+                  releases={track.releases}
+                  published={track.published}
+                  added={track.added}
+                  keys={track.keys || []}
+                  bpms={Array.from(new Set((track.stores || []).map(({ bpm }) => bpm)))}
+                  genres={track.genres || []}
+                  // The cosine distance, as a similarity search lists it (the API sends 1 − distance)
+                  similarity={1 - track.similarity}
+                  trackStores={track.stores || []}
+                  stores={stores}
+                  heard={track.heard}
+                  playing={this.props.currentTrackId === track.id}
+                  carts={carts}
+                  cartFilter={this.state.cartFilter}
+                  defaultCartId={defaultCart?.id}
+                  inDefaultCart={defaultCart ? trackCarts.some(({ uuid }) => uuid === defaultCart.uuid) : false}
+                  inCarts={inCarts}
+                  processingCart={this.props.processingCart}
+                  processingTrack={this.props.processingTrack}
+                  follows={this.props.follows}
+                  noPreviews={previews.every(({ url, store }) => !url && store !== 'bandcamp')}
+                  popupAbove={tracks.length > 10 && tracks.length - index < 10}
+                  onClick={play}
+                  onDoubleClick={play}
+                  onTouchTap={play}
+                  onMarkHeardButtonClick={() => this.markSimilarHeard(track)}
+                  onCartButtonClick={this.props.onCartButtonClick}
+                  onCreateCartClick={this.props.onCreateCartClick}
+                  onMarkPurchasedButtonClick={this.props.onMarkPurchased}
+                  onCartFilterChange={(cartFilter) => this.setState({ cartFilter })}
+                  onAddEntityToSearch={this.props.onAddEntityToSearch}
+                />
+              )
+            })}
+          </tbody>
+        </table>
         {followGroups.length === 0 ? null : (
           <div className="notifications-follow">
             <h5 className="notifications-follow-title">Follow to catch it</h5>

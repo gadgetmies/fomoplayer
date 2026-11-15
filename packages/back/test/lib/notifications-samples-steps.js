@@ -67,8 +67,10 @@ const assertMatchesAndSoundsLikeToggle = async ({ page }) => {
 
   await views.locator('button', { hasText: 'Sounds like' }).click()
   expect(await views.locator('[aria-pressed="true"]').textContent()).to.match(/^Sounds like/)
+  // Not analysed yet (uploaded samples on a preview), or the tracks that sound like it
   await row
-    .locator('.notifications-sample_content', { hasText: /Similar tracks appear|closest to the sample/ })
+    .locator('.notifications-sample_content .notifications-empty, .notifications-sample_content .notifications-similar')
+    .first()
     .waitFor()
   expect(await row.locator('.notifications-matches').count()).to.equal(0)
 
@@ -163,7 +165,7 @@ const assertFollowingASuggestionRemovesIt = async ({ page }) => {
   await openSample(page, SAMPLES.matched)
   const row = sampleRow(page, SAMPLES.matched)
   await row.locator('.notifications-sample_views button', { hasText: 'Sounds like' }).click()
-  await row.locator('.notifications-similar .notifications-list_row').first().waitFor({ timeout: 10000 })
+  await row.locator('.notifications-similar > tbody > tr').first().waitFor({ timeout: 10000 })
   const button = row.locator('.notifications-follow-list button').first()
   await waitForWithTimeoutMessage(
     () => button.waitFor({ state: 'visible', timeout: 10000 }),
@@ -184,7 +186,74 @@ const assertFollowingASuggestionRemovesIt = async ({ page }) => {
   )
 }
 
+// Local only: Sounds like lists the tracks as a similarity search lists its results, flush with the open sample
+const assertSoundsLikeShowsTrackInfo = async ({ page }) => {
+  await openSamplesTab(page)
+  await openSample(page, SAMPLES.matched)
+  const row = sampleRow(page, SAMPLES.matched)
+  await row.locator('.notifications-sample_views button', { hasText: 'Sounds like' }).click()
+  const table = row.locator('table.tracks-table.notifications-similar')
+  const track = table.locator('tbody > tr.track').first()
+  await waitForWithTimeoutMessage(
+    () => track.waitFor({ state: 'visible', timeout: 10000 }),
+    'Sounds like should list the tracks as rows of the track list.',
+  )
+  // The same columns as similarity search results: artist, title, label, released, genre, BPM, key, Diff and cart
+  for (const header of ['Artist', 'Title', 'Label', 'Released', 'Genre', 'BPM', 'Key', 'Diff', 'Cart']) {
+    expect(await table.locator('thead').textContent()).to.contain(header)
+  }
+  for (const cell of ['.artist-cell', '.title-cell', '.label-cell', '.released-cell', '.genre-cell', '.bpm-cell', '.key-cell']) {
+    expect(await track.locator(cell).count(), `a Sounds like row should have a ${cell}`).to.equal(1)
+  }
+  // The audio distance ×100 with one decimal, as similarity search results show it
+  expect(await track.locator('.similarity-cell').textContent()).to.match(/^\d+\.\d$/)
+  expect(await track.locator('.title-cell').textContent()).to.not.equal('')
+  expect(await row.locator('.notifications-sample_content').textContent()).to.not.contain('closest to the sample')
+  await track.locator('.similarity-cell').hover()
+
+  // No gap between the open sample's edges and the rows
+  const content = await row.locator('.notifications-sample_content').boundingBox()
+  const tableBox = await table.boundingBox()
+  expect(tableBox.x, 'the table starts at the sample\'s left edge').to.be.closeTo(content.x, 0.5)
+  expect(tableBox.y, 'the table starts right under the sample\'s header').to.be.closeTo(content.y, 0.5)
+  expect(tableBox.width, 'the table spans the sample').to.be.closeTo(content.width, 0.5)
+}
+
+// Local only: playing a Sounds like track and finding tracks similar to it shows the same audio distance figure in
+// the search results' Diff column
+const assertSimilaritySearchShowsDistance = async ({ page }) => {
+  await openSamplesTab(page)
+  await openSample(page, SAMPLES.matched)
+  const row = sampleRow(page, SAMPLES.matched)
+  await row.locator('.notifications-sample_views button', { hasText: 'Sounds like' }).click()
+  const track = row.locator('.notifications-similar > tbody > tr.track').first()
+  await track.waitFor({ state: 'visible', timeout: 10000 })
+  const title = (await track.locator('.title-cell').textContent()).trim()
+  await track.locator('.title-cell').click()
+  await waitForWithTimeoutMessage(
+    () => page.waitForSelector(`.preview_title:has-text("${title}")`, { timeout: 10000 }),
+    'Clicking a Sounds like track should load it in the player.',
+  )
+
+  await page.locator('button[aria-label="Find similar"]').click()
+  const cells = page.locator('.tracks-table:not(.notifications-similar) > tbody > tr.track .similarity-cell')
+  await waitForWithTimeoutMessage(
+    () => cells.first().waitFor({ state: 'visible', timeout: 20000 }),
+    'Find similar should list the results with their audio distance.',
+  )
+  expect(await page.locator('.tracks-table-header').first().textContent()).to.contain('Diff')
+  const figures = (await cells.allTextContents()).map((text) => text.trim())
+  for (const figure of figures) expect(figure).to.match(/^\d+\.\d$/)
+  // The played track is its own closest result, and the others are no longer all shown as 0
+  expect(figures[0]).to.equal('0.0')
+  expect(figures.some((figure) => Number(figure) > 0)).to.equal(true)
+  // Point at each figure: in a recording this holds the results on screen before the next step moves on
+  for (let i = 0; i < figures.length; i++) await cells.nth(i).hover()
+}
+
 module.exports = {
+  assertSimilaritySearchShowsDistance,
+  assertSoundsLikeShowsTrackInfo,
   assertOpeningASampleClosesTheOther,
   assertMatchesAndSoundsLikeToggle,
   assertCancelledDeleteKeepsSample,
