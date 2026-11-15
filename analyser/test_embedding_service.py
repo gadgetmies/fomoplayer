@@ -5,6 +5,8 @@ module's (and so the preview path's), and requests without the shared token
 are refused without running the model.
 """
 
+import contextlib
+import io
 import json
 import os
 import shutil
@@ -107,6 +109,13 @@ class EmbeddingServiceTest(unittest.TestCase):
     def test_oversized_body_is_413(self):
         status, _ = self.request('POST', '/embed', b'\0' * 5_000_001)
         self.assertEqual(status, 413)
+
+    def test_request_lines_are_logged_to_stdout(self):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            self.request('GET', '/health', token=None)
+        self.assertIn('[embedding-service] 127.0.0.1 "GET /health HTTP/1.1" 200', out.getvalue())
+        self.assertEqual(err.getvalue(), '')
 
     def test_refuses_to_start_without_token(self):
         with self.assertRaises(ValueError):

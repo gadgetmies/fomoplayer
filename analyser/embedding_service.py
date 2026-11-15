@@ -47,7 +47,8 @@ def create_server(token, model, port=0, host='0.0.0.0', max_bytes=DEFAULT_MAX_BY
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):
-            sys.stderr.write(f'[embedding-service] {self.address_string()} {fmt % args}\n')
+            # stdout: Railway marks every stderr line as an error. Embedding failures keep their tracebacks on stderr.
+            print(f'[embedding-service] {self.address_string()} {fmt % args}', flush=True)
 
         def _json(self, status, body):
             data = json.dumps(body).encode()
