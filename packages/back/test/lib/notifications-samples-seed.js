@@ -88,7 +88,7 @@ const seedSamplesViaDb = async (page, userId) => {
 
   const ids = {}
   for (const [index, filename] of SAMPLE_ORDER.entries()) {
-    // The samples play the matched track's preview, with a URL fragment so A and B of the A/B pair differ
+    // The samples play the matched track's preview, with a URL fragment so each sample's URL differs from the match's
     const [{ id }] = await pg.queryRowsAsync(sql`
       INSERT INTO user_notification_audio_sample
         (meta_account_user_id, user_notification_audio_sample_bucket_name, user_notification_audio_sample_object_key,

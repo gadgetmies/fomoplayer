@@ -1,7 +1,7 @@
 // Local demo (demo-test workflow): runs against a backend in the same runner.
 // The same steps as notifications-page-preview.js, plus the ones that need notification events: those are written by
 // the notification jobs only, so they (and the follow, whose API calls Beatport) are seeded through the DB here.
-// Shows the unread badge, playing an Activity row reading it, a sample match playing as an aligned A/B pair, and a
+// Shows the unread badge, playing an Activity row reading it, a sample match playing from where it matched, and a
 // sample playing on its own. The
 // email is verified through the DB after the locked state is shown, since the real flow needs the emailed link.
 const { test } = require('cascade-test')
@@ -23,7 +23,7 @@ const {
   assertPlayingActivityRowReadsIt,
   assertActivityListsWhy,
   assertMarkAllHeard,
-  assertSampleMatchPlaysAligned,
+  assertSampleMatchPlaysFromMatch,
   assertPlayingSampleShowsNoDuration,
   assertCartButtonWorksForActivityRow,
 } = require('../lib/notifications-page-steps')
@@ -63,7 +63,7 @@ test({
   'Mark all heard reads the rest': assertMarkAllHeard,
   'the cart button works for a track played from Activity': assertCartButtonWorksForActivityRow,
   'the cart button works for a track started in another view': assertCartButtonWorksForTrackFromOtherView,
-  'a sample match plays as an aligned A/B pair': assertSampleMatchPlaysAligned,
+  'a sample match plays from where it matched, shown like a regular track': assertSampleMatchPlaysFromMatch,
   'playing a sample shows no duration and survives a reload': assertPlayingSampleShowsNoDuration,
   'a failed sample upload keeps the track playing': assertFailedUploadKeepsPlaying,
 })

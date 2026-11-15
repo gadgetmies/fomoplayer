@@ -1,7 +1,9 @@
 const path = require('path')
 const { generateSampleWaveform } = require('../shared/sample-waveform')
 const { storageObjectPath } = require('../shared/minio')
-const { updateNotificationAudioSampleWaveform } = require('./db')
+const { updateNotificationAudioSampleWaveform, queryNotificationAudioSamplesWithoutWaveform } = require('./db')
+
+const PAGE_SIZE = 50
 
 // The waveform image sits next to the sample in the bucket: notification-samples/<user>/<uuid>.waveform.png
 const waveformObjectKeyFor = (sampleObjectKey) => {
@@ -20,4 +22,52 @@ const storeSampleWaveform = async ({ client, bucketName, sampleId, sampleObjectK
   return waveform
 }
 
-module.exports = { storeSampleWaveform, waveformObjectKeyFor }
+const readObject = async (client, bucketName, objectKey) => {
+  const chunks = []
+  for await (const chunk of await client.getObject(bucketName, objectKey)) chunks.push(chunk)
+  return Buffer.concat(chunks)
+}
+
+// Renders and stores the waveforms of up to limit samples (of all users) that have none, in id order: samples
+// uploaded before waveforms were rendered at upload, and ones whose rendering failed. Without apply it only lists
+// them. A sample that fails is reported and skipped, so it does not stop the rest. onSample is told about each one.
+const backfillSampleWaveforms = async ({ client, bucketName, apply, limit = Infinity, onSample = () => {} }) => {
+  if (apply && (!client || !bucketName)) throw new Error('Object storage is not configured')
+  let afterId = 0
+  let seen = 0
+  let stored = 0
+  const failed = []
+  while (seen < limit) {
+    const samples = await queryNotificationAudioSamplesWithoutWaveform(afterId, Math.min(PAGE_SIZE, limit - seen))
+    if (samples.length === 0) break
+    for (const sample of samples) {
+      afterId = sample.id
+      seen++
+      if (!apply) {
+        onSample({ sample, status: 'pending' })
+        continue
+      }
+      // Read from the current bucket, as the player and /api/storage do. The bucket name stored with a sample is the
+      // one it was uploaded to: samples from before the move to the Railway bucket still name the old MinIO bucket,
+      // which no longer exists, while their objects were copied over under the same keys.
+      try {
+        const audio = await readObject(client, bucketName, sample.objectKey)
+        const { durationMs } = await storeSampleWaveform({
+          client,
+          bucketName,
+          sampleId: sample.id,
+          sampleObjectKey: sample.objectKey,
+          audio,
+        })
+        stored++
+        onSample({ sample, status: 'stored', durationMs })
+      } catch (error) {
+        failed.push({ id: sample.id, fileType: sample.fileType, filename: sample.filename, error: error.message })
+        onSample({ sample, status: 'failed', error })
+      }
+    }
+  }
+  return { seen, stored, failed }
+}
+
+module.exports = { storeSampleWaveform, waveformObjectKeyFor, backfillSampleWaveforms }

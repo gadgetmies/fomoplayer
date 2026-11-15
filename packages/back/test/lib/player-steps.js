@@ -76,45 +76,54 @@ const playFromSearchAndOpenSettings = async (page, title, { tap = false } = {}) 
 }
 
 // Artists, labels and title too long for the docked bar are cut short with an ellipsis on their own line, inside the
-// track's column: neither the bar nor the page scrolls sideways
+// track's column: neither the bar nor the page scrolls sideways. On the title line artists and title are cut short
+// separately, the artists first, so the title still shows however many artists there are.
 const assertDockedBarTextsEllipsed = async (page) => {
-  const {
-    lines,
-    info,
-    bar,
-    page: pageWidth,
-  } = await page.evaluate(() => {
+  const { lines, parts, info, bar, viewport } = await page.evaluate(() => {
+    const measure = (element) => {
+      const style = getComputedStyle(element)
+      const box = element.getBoundingClientRect()
+      return {
+        name: element.className,
+        truncated: element.scrollWidth > element.clientWidth,
+        ellipsis: style.textOverflow === 'ellipsis' && style.whiteSpace === 'nowrap' && style.overflow === 'hidden',
+        width: box.width,
+        fullWidth: element.scrollWidth,
+        right: box.right,
+        height: box.height,
+      }
+    }
     const infoElement = document.querySelector('.docked-player_info')
+    const title = infoElement.querySelector('.docked-player_title')
     const barElement = document.querySelector('.docked-player')
     return {
       info: infoElement.getBoundingClientRect().toJSON(),
       bar: { scroll: barElement.scrollWidth, client: barElement.clientWidth },
-      page: { scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth },
-      lines: [...infoElement.children].map((line) => {
-        const style = getComputedStyle(line)
-        return {
-          name: line.className,
-          truncated: line.scrollWidth > line.clientWidth,
-          ellipsis: style.textOverflow === 'ellipsis' && style.whiteSpace === 'nowrap' && style.overflow === 'hidden',
-          right: line.getBoundingClientRect().right,
-          height: line.getBoundingClientRect().height,
-        }
-      }),
+      viewport: { scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth },
+      lines: [...infoElement.children].map(measure),
+      parts: {
+        line: measure(title),
+        artists: measure(title.querySelector('.track-title_artists')),
+        name: measure(title.querySelector('.track-title_name')),
+      },
     }
   })
-  for (const name of ['docked-player_title', 'docked-player_labels']) {
-    const line = lines.find((candidate) => candidate.name === name)
-    expect(line, name).to.exist
-    expect(line.truncated, `${name} is cut short`).to.equal(true)
-  }
   for (const line of lines) {
     expect(line.ellipsis, `${line.name} ends in an ellipsis`).to.equal(true)
     expect(line.right, `${line.name} stays in the track's column`).to.be.at.most(info.right + 1)
     // One line each: nothing wraps onto a second
     expect(line.height, `${line.name} is one line`).to.be.below(30)
   }
+  expect(lines.find((line) => line.name === 'docked-player_labels').truncated, 'the labels are cut short').to.equal(
+    true,
+  )
+  // The artists give way to the title: cut short, while the title keeps at least half the line (or all it needs)
+  expect(parts.artists.ellipsis && parts.name.ellipsis, 'artists and title end in an ellipsis').to.equal(true)
+  expect(parts.artists.truncated, 'the artists are cut short').to.equal(true)
+  expect(parts.artists.width, 'a few letters of the artists remain').to.be.above(20)
+  expect(parts.name.width, 'the title shows').to.be.at.least(Math.min(parts.name.fullWidth, parts.line.width / 2))
   expect(bar.scroll, 'the bar does not scroll sideways').to.be.at.most(bar.client)
-  expect(pageWidth.scroll, 'the page does not scroll sideways').to.be.at.most(pageWidth.client)
+  expect(viewport.scroll, 'the page does not scroll sideways').to.be.at.most(viewport.client)
 }
 
 module.exports = {
