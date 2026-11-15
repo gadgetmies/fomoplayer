@@ -1,8 +1,8 @@
 ## Purpose
 
-Storage, count exposure, and search-token plumbing that lets the
-existing Settings page show per-sample match counts and the existing
-search-results page list matched tracks via a `sample:~<id>` query.
+Storage and count exposure for a user's audio-sample matches, shown
+per sample in the Notifications page's Samples tab, and the link the
+sample-match email uses to open a sample there.
 The exact-match scorer at
 `packages/back/routes/admin/db.js:findExactMatchForSample` already
 identifies store previews that match a user's notification audio
@@ -110,155 +110,6 @@ the same per-user filter that bounds the rest of the response.
 - **THEN** the response includes sample A with `matchCount: 3` and
   does NOT include sample C
 
-### Requirement: Track search MUST accept a `sample:~<id>` token scoped by sample ownership
-
-The system SHALL extend
-`packages/back/routes/shared/db/search.js:searchForTracks` to parse
-a new token of the form `sample:~<sample_id>` (regex
-`/sample:~(\d+)/`). When the token is present in the query string,
-the existing track-id subquery MUST be additionally constrained to
-tracks that have at least one preview in
-`user_notification_audio_sample_match` for the named sample, scoped
-to the calling user.
-
-Ownership MUST be enforced in SQL via a NATURAL JOIN against
-`user_notification_audio_sample` filtered by the calling user's
-`meta_account_user_id`. No new route-level authentication check is
-required. Tampered IDs MUST yield an empty result set (not a 403),
-matching the existing posture of the `track:~<id>` token.
-
-The new token MUST compose mechanically with the parser's existing
-filters: `sample:~5 artist:42` MUST AND-combine the two filters,
-and `sample:~5 onlyNew=true` MUST AND-combine the sample filter
-with the new-tracks filter. Malformed tokens (e.g. `sample:~abc`)
-MUST fall through to the parser's existing free-text fallback used
-for malformed `track:~` tokens.
-
-#### Scenario: Owner search returns the matched tracks
-
-- **WHEN** the calling user owns sample 7 and
-  `user_notification_audio_sample_match` contains rows mapping
-  sample 7 to previews `p1` and `p2`, and the user calls
-  `GET /me/tracks?q=sample:~7`
-- **THEN** the response contains the tracks owning previews `p1`
-  and `p2`
-
-#### Scenario: Non-owner search returns an empty result
-
-- **WHEN** sample 7 is owned by user X and user Y (not user X)
-  calls `GET /me/tracks?q=sample:~7`
-- **THEN** the response contains zero tracks (not a 403)
-
-#### Scenario: Non-existent sample ID returns an empty result
-
-- **WHEN** there is no row in `user_notification_audio_sample` with
-  id 9999 and the user calls `GET /me/tracks?q=sample:~9999`
-- **THEN** the response contains zero tracks
-
-#### Scenario: Malformed token falls back to free-text matching
-
-- **WHEN** the user calls `GET /me/tracks?q=sample:~abc`
-- **THEN** the parser does NOT apply the sample filter and the
-  token is handled by the existing free-text fallback used for
-  malformed `track:~` tokens
-
-#### Scenario: Token composes with other filters as AND
-
-- **WHEN** the calling user owns sample 7 with matched previews
-  spanning artists 42 and 43, and the user calls
-  `GET /me/tracks?q=sample:~7 artist:42`
-- **THEN** the response contains only the tracks that both match
-  sample 7 AND have artist 42
-
-### Requirement: Default sort for `sample:~` searches MUST be `MAX(match_score) DESC`
-
-The system SHALL, when the search parser identifies a `sample:~<id>`
-token AND no explicit `sort=` query parameter is present, override
-the default `sort=-released` to
-`ORDER BY MAX(user_notification_audio_sample_match_score) DESC` so
-the strongest match surfaces first.
-
-When an explicit `sort=…` query parameter is present, that
-parameter MUST win — the override SHALL apply only to the default
-sort.
-
-#### Scenario: Default sort orders by descending match score
-
-- **WHEN** the user calls `GET /me/tracks?q=sample:~7` (no
-  `sort=`) and the matched previews for sample 7 carry scores
-  `[40, 90, 60]` for tracks `[t1, t2, t3]`
-- **THEN** the response orders the tracks as `[t2, t3, t1]`
-  (strongest match first)
-
-#### Scenario: Explicit sort overrides the default
-
-- **WHEN** the user calls `GET /me/tracks?q=sample:~7&sort=-released`
-- **THEN** the response orders the tracks by descending release
-  date, NOT by `MAX(match_score)`
-
-### Requirement: Settings UI MUST render an inline "N suspected matches" link per audio sample
-
-The system SHALL, inside the audio-samples list at
-`packages/front/src/Settings.js`, render an inline anchor element
-inside each audio-sample list item, positioned after the file-size
-text and before the delete button, when and only when the sample's
-`matchCount` is a number `> 0`.
-
-Copy MUST follow:
-
-- `matchCount === 1` → `1 suspected match`
-- `matchCount > 1` → `N suspected matches`
-
-The link MUST be hidden entirely when `matchCount === 0`. The link
-MUST also be hidden when `matchCount === undefined` (in-flight on
-the first Settings load) so the row does not flash from "0" to "N".
-
-The click handler MUST call the existing `this.props.search({ q: \`sample:~\${sample.id}\` })`
-flow that the Settings component already uses for other filter
-links. The handler MUST call `event.stopPropagation()` so the click
-does not also trigger the row-level handlers (e.g. expand-on-click)
-that wrap the list item.
-
-The link MUST render with plain text-link styling (not badge
-styling), inherit body colour, sit at `font-size: 85%`, and be
-separated from the file-size text by a middot at `opacity: 0.4`.
-Hover/focus SHALL be underline-only with a focus ring on the link's
-own bounding box (no row-level treatment).
-
-#### Scenario: Link hidden when matchCount is 0
-
-- **WHEN** the audio-samples response carries `matchCount: 0` for
-  a sample row
-- **THEN** the rendered list item contains no "suspected matches"
-  link
-
-#### Scenario: Link hidden when matchCount is undefined
-
-- **WHEN** the audio-samples response is in-flight and the sample
-  row's `matchCount` is `undefined`
-- **THEN** the rendered list item contains no "suspected matches"
-  link
-
-#### Scenario: Singular copy at 1
-
-- **WHEN** the audio-samples response carries `matchCount: 1` for
-  a sample row
-- **THEN** the rendered link reads exactly `1 suspected match`
-
-#### Scenario: Plural copy at N
-
-- **WHEN** the audio-samples response carries `matchCount: 7` for
-  a sample row
-- **THEN** the rendered link reads exactly `7 suspected matches`
-
-#### Scenario: Click routes to the sample search
-
-- **WHEN** the user clicks a rendered "suspected matches" link for
-  sample id 42
-- **THEN** the component invokes `this.props.search({ q: 'sample:~42' })`
-  exactly once and the click does NOT propagate to the row-level
-  handler
-
 ### Requirement: Project `CLAUDE.md` MUST document the database naming conventions
 
 The system SHALL include a "Database naming conventions" block in
@@ -278,3 +129,14 @@ reference canonical existing examples in the schema (e.g. the
 - **WHEN** the project `CLAUDE.md` is read
 - **THEN** it contains a "Database naming conventions" section
   stating both rules and the NATURAL JOIN rationale
+
+### Requirement: A sample-match email MUST link to the sample in the Samples tab
+
+Each sample section of the sample-match notification email SHALL link its
+"Listen now" button, and the matching line of the plain-text version, to
+`<frontendURL>/notifications/samples?sample=<sample id>`, with the front-end
+address taken from configuration.
+
+#### Scenario: Email for one sample
+- **WHEN** sample 7 gets a new fingerprint match and its owner has a verified email
+- **THEN** the email's "Listen now" link for that sample is `<frontendURL>/notifications/samples?sample=7`
