@@ -9,7 +9,7 @@ import requests
 from auth import auth_header, get_api_url, request_error, resolve_url
 import bandcamp
 
-from audio_decode import to_wav
+from audio_decode import to_wav, wav_duration_seconds
 from spotipy.oauth2 import SpotifyClientCredentials
 import argparse
 import hashlib
@@ -540,7 +540,7 @@ if __name__ == '__main__':
                             # Too short for a single model patch (e.g. one-shots in a
                             # Bandcamp sample pack). Report it missing so it leaves the
                             # queue instead of being retried in every batch.
-                            print(f"Audio too short to embed ({sound.duration_seconds:.1f} s), "
+                            print(f"Audio too short to embed ({wav_duration_seconds(output_wav_path):.1f} s), "
                                   f"reporting preview {track['preview_id']} missing")
                             requests.post(f"{get_api_url()}/admin/analyse",
                                           headers=auth_header(),
