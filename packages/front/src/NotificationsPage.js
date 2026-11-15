@@ -65,13 +65,11 @@ const arrivedText = (createdAt) => {
   return days <= 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`
 }
 
-// A match row played as an aligned A/B pair: B is the match's preview, A the sample.
+// A match row plays the match's preview from where the sample matched it.
 const matchAsAbTrack = (match, sample) => ({
   ...match,
   abPair: {
     sampleId: sample.id,
-    sampleUrl: sample.url,
-    sampleTitle: sample.filename,
     previewId: match.match.previewId,
     offsetSeconds: match.match.offsetSeconds,
     tempoFactor: match.match.tempoFactor,

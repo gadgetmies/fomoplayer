@@ -322,7 +322,7 @@ const assertPlayingSampleShowsNoDuration = async ({ page }) => {
   expect(await previewDuration(page)).to.equal('-')
 }
 
-const assertSampleMatchPlaysAligned = async ({ page }) => {
+const assertSampleMatchPlaysFromMatch = async ({ page }) => {
   await openTab(page, 'Samples')
   await page.locator('.notifications-samples tr', { hasText: SAMPLE_FILENAME }).click()
   const matchRow = page.locator('.notifications-matches tbody tr').first()
@@ -330,7 +330,6 @@ const assertSampleMatchPlaysAligned = async ({ page }) => {
   expect(await matchRow.locator('.tempo').textContent()).to.equal('±0.0 %')
   await matchRow.click()
 
-  await page.waitForSelector('.preview_ab', { state: 'visible', timeout: 10000 })
   try {
     await page.waitForFunction(
       (offset) => {
@@ -347,42 +346,16 @@ const assertSampleMatchPlaysAligned = async ({ page }) => {
       src: a.currentSrc,
       ready: a.readyState,
     }))
-    throw new Error(`B should start where the sample matched; audio: ${JSON.stringify(state)}`)
+    throw new Error(`The match should start where the sample matched; audio: ${JSON.stringify(state)}`)
   }
-  await page.waitForTimeout(2000)
 
-  // Switch to the sample: it continues from the same moment, i.e. preview time − offset
-  const previewTime = await audioTime(page)
-  await page.locator('.preview_ab-option', { hasText: 'A · Your sample' }).click()
-  await waitForWithTimeoutMessage(
-    () =>
-      page.waitForFunction(() => document.querySelector('audio')?.currentSrc.includes('sample=1'), null, {
-        timeout: 10000,
-      }),
-    'A should play the sample.',
-  )
-  try {
-    await audioIsPlaying(page)
-  } catch {
-    const state = await page.$eval('audio', (a) => ({
-      t: a.currentTime,
-      paused: a.paused,
-      src: a.currentSrc,
-      ready: a.readyState,
-      error: a.error?.code,
-    }))
-    throw new Error(`A should play the sample from the matched moment; audio: ${JSON.stringify(state)}`)
-  }
-  expect(await audioTime(page)).to.be.closeTo(previewTime - SAMPLE_MATCH_OFFSET_SECONDS, 3)
-
-  // And back to the match on the same beat
-  const sampleTime = await audioTime(page)
-  await page.locator('.preview_ab-option', { hasText: 'B · Match' }).click()
-  await page.waitForFunction(() => !document.querySelector('audio')?.currentSrc.includes('sample=1'), null, {
-    timeout: 10000,
-  })
-  await audioIsPlaying(page)
-  expect(await audioTime(page)).to.be.closeTo(SAMPLE_MATCH_OFFSET_SECONDS + sampleTime, 3)
+  // The player shows the match like any other track: no sample details or A/B controls
+  const details = page.locator('.preview_details_wrapper')
+  expect(await details.locator('.preview_ab').count()).to.equal(0)
+  const text = await details.textContent()
+  expect(text).not.to.include('Matched at')
+  expect(text).not.to.include(SAMPLE_FILENAME)
+  expect(await details.locator('.preview_label', { hasText: 'Labels:' }).count()).to.equal(1)
 }
 
 module.exports = {
@@ -397,6 +370,6 @@ module.exports = {
   assertPlayingActivityRowReadsIt,
   assertActivityListsWhy,
   assertMarkAllHeard,
-  assertSampleMatchPlaysAligned,
+  assertSampleMatchPlaysFromMatch,
   assertPlayingSampleShowsNoDuration,
 }

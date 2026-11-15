@@ -1,25 +1,8 @@
-// Aligned A/B playback of a sample (A) and a fingerprint match (B). The matcher's model is
+// Timing of a sample's fingerprint match. The matcher's model is
 // preview_time = offset + tempoFactor · sample_time, with both times in seconds of the respective audio files.
 
 export const hasAlignment = (pair) =>
   Number.isFinite(pair?.offsetSeconds) && Number.isFinite(pair?.tempoFactor) && pair.tempoFactor > 0
-
-// Where B should play from when switching from A at `sampleTime`.
-export const previewTimeForSampleTime = (pair, sampleTime) =>
-  hasAlignment(pair) ? Math.max(0, pair.offsetSeconds + pair.tempoFactor * sampleTime) : 0
-
-// Where A should play from when switching from B at `previewTime`, clamped to the sample.
-export const sampleTimeForPreviewTime = (pair, previewTime, sampleDuration = Infinity) => {
-  if (!hasAlignment(pair)) return 0
-  const t = (previewTime - pair.offsetSeconds) / pair.tempoFactor
-  return Math.min(Math.max(0, t), Number.isFinite(sampleDuration) ? sampleDuration : t)
-}
-
-// The part of B the sample matched: [start, end] in preview seconds, or null without alignment or duration.
-export const loopRegion = (pair, sampleDuration) => {
-  if (!hasAlignment(pair) || !(sampleDuration > 0)) return null
-  return { start: pair.offsetSeconds, end: pair.offsetSeconds + pair.tempoFactor * sampleDuration }
-}
 
 // m:ss
 export const formatSeconds = (seconds) => {

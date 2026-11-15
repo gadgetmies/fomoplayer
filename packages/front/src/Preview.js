@@ -21,15 +21,7 @@ import { colors } from 'fomoplayer_shared/theme'
 import { Link } from 'react-router-dom'
 import { isSample } from './playQueue'
 import { formatDuration } from './duration'
-import {
-  formatSeconds,
-  formatTempo,
-  hasAlignment,
-  loopRegion,
-  matchedAtInTrack,
-  previewTimeForSampleTime,
-  sampleTimeForPreviewTime,
-} from './abTiming'
+import { hasAlignment } from './abTiming'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(value, prop))
 
@@ -51,15 +43,11 @@ class Preview extends Component {
       previousDoubleClickStarted: false,
       cartFilter: '',
       embeddingMissing: true,
-      // A sample match plays as an A/B pair (currentTrack.abPair): A is the sample, B the match's preview
-      abSource: 'B',
-      abLoop: true,
-      abSampleDuration: undefined,
       // The docked bar (Settings) shows its popup, or on phones the full panel
       dockedExpanded: false,
     }
     this._playPauseSource = undefined
-    // Seconds to seek to once the newly loaded source can play (A/B switching)
+    // Seconds to seek to once the newly loaded source can play (where a sample match starts)
     this._pendingSeek = null
     if (window.AudioContext !== undefined) {
       this.audioContext = new AudioContext()
@@ -173,7 +161,7 @@ class Preview extends Component {
       }
     }
 
-    // The same track played as a sample match (A/B pair) is a different item to play
+    // The same track played as a sample match is a different item to play
     const playbackKey = (track) => (track ? `${track.id}|${track.abPair?.sampleId ?? ''}` : null)
     if (playbackKey(prevProps.currentTrack) !== playbackKey(this.props.currentTrack)) {
       const nextTrack = this.props.currentTrack
@@ -181,16 +169,13 @@ class Preview extends Component {
       this.setState({ loading: true, embeddingMissing: true })
       const abPair = nextTrack.abPair
       this._pendingSeek = hasAlignment(abPair) ? abPair.offsetSeconds : null
-      this._bUrl = undefined
-      this.setState({ abSource: 'B', abLoop: hasAlignment(abPair), abSampleDuration: undefined })
       if (abPair) {
-        this.loadSampleDuration(abPair.sampleUrl)
-        // Commit an empty source first: when B is the preview already loaded, setting the same URL again would not
+        // Commit an empty source first: when the match is the preview already loaded, setting the same URL again would not
         // reload the audio and the seek to the matched spot would never run
         await new Promise((resolve) => this.setState({ previewUrl: undefined }, resolve))
       }
       const candidates = this.getMp3Previews(nextTrack, this.state.preferFullTracks)
-      // The match's offset is relative to the preview the sample matched, so B must be that preview
+      // The match's offset is relative to the preview the sample matched, so play that preview
       const previews = abPair
         ? R.sortBy((preview) => (String(preview.id) === String(abPair.previewId) ? 0 : 1), candidates)
         : candidates
@@ -398,87 +383,6 @@ class Preview extends Component {
 
   onClearCartFilter() {
     this.setState({ cartFilter: '' })
-  }
-
-  loadSampleDuration(url) {
-    const probe = new Audio()
-    probe.preload = 'metadata'
-    probe.onloadedmetadata = () => {
-      if (this.props.currentTrack?.abPair?.sampleUrl === url) this.setState({ abSampleDuration: probe.duration })
-    }
-    probe.src = url
-  }
-
-  // Switches between the sample (A) and the match (B), keeping the place: the matcher's alignment maps the time in
-  // one onto the other.
-  switchAbSource(target) {
-    const pair = this.props.currentTrack?.abPair
-    if (!pair || target === this.state.abSource) return
-    const player = this.getPlayer()
-    const time = player ? player.currentTime : 0
-    if (target === 'A') {
-      this._bUrl = this.state.previewUrl
-      this._pendingSeek = sampleTimeForPreviewTime(pair, time, this.state.abSampleDuration)
-      this.setState({ abSource: 'A', previewUrl: pair.sampleUrl, playing: true })
-    } else {
-      this._pendingSeek = previewTimeForSampleTime(pair, time)
-      this.setState({ abSource: 'B', previewUrl: this._bUrl, playing: true })
-    }
-  }
-
-  renderAbControls() {
-    const currentTrack = this.props.currentTrack
-    const pair = currentTrack?.abPair
-    if (!pair) return null
-    const aligned = hasAlignment(pair)
-    const previewStartMs = currentTrack.previews?.find(({ id }) => String(id) === String(pair.previewId))?.start_ms ?? 0
-    return (
-      <div className="preview_ab">
-        <div className="preview_ab-details">
-          <span className="preview_label">Matched at:</span>{' '}
-          <span className="preview_detail preview_ab-matched-at">
-            {formatSeconds(matchedAtInTrack(pair.offsetSeconds, previewStartMs))}
-          </span>{' '}
-          · <span className="preview_label">Tempo:</span>{' '}
-          <span className="preview_detail preview_ab-tempo">{formatTempo(pair.tempoFactor)}</span> ·{' '}
-          <span className="preview_label">Sample:</span> <span className="preview_detail">{pair.sampleTitle}</span>
-        </div>
-        <div className="preview_ab-controls">
-          <div role="group" aria-label="Play source" className="preview_ab-segmented">
-            <button
-              type="button"
-              aria-pressed={this.state.abSource === 'A' ? 'true' : 'false'}
-              className={this.state.abSource === 'A' ? 'preview_ab-option preview_ab-option--on' : 'preview_ab-option'}
-              onClick={() => this.switchAbSource('A')}
-            >
-              A · Your sample
-            </button>
-            <button
-              type="button"
-              aria-pressed={this.state.abSource === 'B' ? 'true' : 'false'}
-              className={this.state.abSource === 'B' ? 'preview_ab-option preview_ab-option--on' : 'preview_ab-option'}
-              onClick={() => this.switchAbSource('B')}
-            >
-              B · Match
-            </button>
-          </div>
-          <button
-            type="button"
-            aria-pressed={this.state.abLoop && aligned ? 'true' : 'false'}
-            disabled={!aligned}
-            className={`preview_ab-loop${this.state.abLoop && aligned ? ' preview_ab-loop--on' : ''}`}
-            onClick={() => this.setState({ abLoop: !this.state.abLoop })}
-          >
-            Loop match
-          </button>
-          <span className="preview_ab-hint">
-            {aligned
-              ? 'Switching keeps your place: B plays from where the sample matched, at its tempo.'
-              : 'Not aligned yet: B plays from the start of the preview.'}
-          </span>
-        </div>
-      </div>
-    )
   }
 
   // Seeks to the clicked spot of a waveform that spans the timeline (the panel's waveform or the docked bar's).
@@ -1191,7 +1095,6 @@ class Preview extends Component {
                 )}
               </div>
               {this.renderPlayingFrom()}
-              {this.renderAbControls()}
               <div style={{ display: 'flex', gap: 8, flex: 1 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', gap: 16 }}>
@@ -1294,8 +1197,6 @@ class Preview extends Component {
                   try {
                     navigator.mediaSession.playbackState = 'paused'
                     this.setState({ playing: false })
-                    // The sample of an A/B pair ends on its own; next would leave the pair
-                    if (currentTrack?.abPair && this.state.abSource === 'A') return
                     await this.props.onNext()
                   } catch (e) {
                     console.error(e)
@@ -1307,11 +1208,6 @@ class Preview extends Component {
                 onPlaying={() => {
                   if (!shouldSkip && this.state.position === 0) {
                     this.play()
-                  }
-                }}
-                onLoadedMetadata={({ currentTarget }) => {
-                  if (currentTrack?.abPair && this.state.abSource === 'A') {
-                    this.setState({ abSampleDuration: currentTarget.duration })
                   }
                 }}
                 onCanPlayThrough={() => {
@@ -1335,15 +1231,6 @@ class Preview extends Component {
                 onTimeUpdate={({ currentTarget }) => {
                   const { currentTime } = currentTarget
                   this.setState({ position: currentTime * 1000 })
-                  const abPair = currentTrack?.abPair
-                  if (abPair) {
-                    // Loop match: keep B inside the part the sample matched
-                    const region = loopRegion(abPair, this.state.abSampleDuration)
-                    if (this.state.abSource === 'B' && this.state.abLoop && region && currentTime >= region.end) {
-                      currentTarget.currentTime = region.start
-                    }
-                    if (this.state.abSource === 'A') return
-                  }
                   try {
                     mp3Preview.length_ms &&
                       currentTime &&
