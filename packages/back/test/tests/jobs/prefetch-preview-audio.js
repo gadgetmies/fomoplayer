@@ -151,7 +151,7 @@ const run = (options) =>
     {
       bucketName: BUCKET,
       isBandcampRateLimited: () => false,
-      getCachedStreamUrl: () => null,
+      getKnownStreamUrl: async () => null,
       fetchBandcampStream: options.fetch,
       suspendBandcamp: () => {},
       storePauses: createPauses(),
@@ -418,7 +418,7 @@ test({
     assert.ok((await audioRow(preview.id)).key)
   },
 
-  'a newly added Bandcamp track is downloaded with the stream URL kept from its release': async () => {
+  'a Bandcamp track with a known stream URL is downloaded without a lookup': async () => {
     await clearPreviews()
     const releaseUrl = 'https://artist.bandcamp.com/album/just-added'
     const preview = await insertPreview({ store: 'Bandcamp', releaseUrl })
@@ -428,14 +428,15 @@ test({
       client: fakeClient(),
       fetch,
       getRelease: bandcamp.getRelease,
-      getCachedStreamUrl: (trackId) => (trackId === preview.storeTrackId ? 'https://bcbits.example/kept' : null),
+      getKnownStreamUrl: async ({ store_track_id }) =>
+        store_track_id === preview.storeTrackId ? 'https://bcbits.example/kept' : null,
     })
     assert.deepStrictEqual(bandcamp.lookups, [])
     assert.deepStrictEqual(requests, ['https://bcbits.example/kept'])
     assert.strictEqual(result.result.stored, 1)
   },
 
-  'a refused kept stream URL is replaced by looking the release up': async () => {
+  'a refused known stream URL is replaced by looking the release up': async () => {
     await clearPreviews()
     const releaseUrl = 'https://artist.bandcamp.com/album/kept-expired'
     const preview = await insertPreview({ store: 'Bandcamp', releaseUrl })
@@ -445,7 +446,7 @@ test({
       client: fakeClient(),
       fetch,
       getRelease: bandcamp.getRelease,
-      getCachedStreamUrl: () => 'https://bcbits.example/expired',
+      getKnownStreamUrl: async () => 'https://bcbits.example/expired',
     })
     assert.strictEqual(bandcamp.lookups.length, 1)
     assert.strictEqual(result.result.stored, 1)

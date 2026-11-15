@@ -2,6 +2,7 @@ const crypto = require('crypto')
 const { Readable, Transform } = require('stream')
 const { getMinioClient, getBucketName } = require('../routes/shared/minio')
 const bandcampApi = require('../routes/stores/bandcamp/bandcamp-api')
+const { knownStreamUrl, refreshReleaseStreamUrls, findStreamUrl } = require('../routes/stores/bandcamp/stream-urls')
 const { markPreviewsMissing } = require('../routes/admin/db')
 const {
   OBJECT_KEY_PREFIX,
@@ -24,9 +25,9 @@ const logger = require('fomoplayer_shared').logger(__filename)
 //
 // Bandcamp stream URLs are signed for one track and expire, so they are not stored. Every Bandcamp request (release
 // lookups and the stream_redirect downloads alike, all on bandcamp.com) goes through the backend's Bandcamp client,
-// which spaces its requests 2 s apart (as the analyser does) and shares its rate-limit pause with playback. The
-// client keeps the stream URLs of every release it fetched for a while, so a track the watch job has just added is
-// downloaded without looking its release up again; other tracks cost one lookup per release.
+// which spaces its requests 2 s apart (as the analyser does) and shares its rate-limit pause with playback. Stream
+// URLs are stored per preview (stream-urls.js) and kept by the client for tracks the watch job has just added, so most
+// tracks are downloaded without looking their release up; a lookup stores the URLs of every track of the release.
 //
 // The backend releases the audio once every analysis of the preview is done.
 
@@ -119,17 +120,17 @@ const storeAudio = async ({ url, store, client, bucketName, request }) => {
   return { objectKey, fileSize: counter.bytes }
 }
 
-const findStreamUrl = (release, storeTrackId) =>
-  (release?.trackinfo || []).find((track) => String(track.track_id) === String(storeTrackId))?.file?.['mp3-128'] || null
-
 module.exports.prefetchPreviewAudio = async (
   _jobRun,
   {
     client = getMinioClient(),
     bucketName = getBucketName(),
     fetch = globalThis.fetch,
-    getRelease = bandcampApi.getReleaseAsync,
-    getCachedStreamUrl = bandcampApi.getCachedStreamUrl,
+    // Looks a release up and stores the stream URLs of all its tracks.
+    getRelease = (releaseUrl) => refreshReleaseStreamUrls(releaseUrl),
+    // A stream URL known without asking Bandcamp: stored, or kept from the release fetch that added the track.
+    getKnownStreamUrl = (preview) =>
+      knownStreamUrl({ previewId: preview.preview_id, storeTrackId: preview.store_track_id }),
     fetchBandcampStream = bandcampApi.fetchStream,
     suspendBandcamp = bandcampApi.suspendRequests,
     isBandcampRateLimited = bandcampApi.static.isRateLimited,
@@ -236,9 +237,11 @@ module.exports.prefetchPreviewAudio = async (
         release = await getRelease(releaseUrl)
         result.lookups++
       }
-      // A fresh release has the newest stream URLs; without one, those kept from an earlier fetch of the release.
+      // A fresh release has the newest stream URLs; without one, those known from before.
+      const known = new Map()
+      for (const preview of releasePreviews) known.set(preview.preview_id, await getKnownStreamUrl(preview))
       const streamUrlOf = (preview) =>
-        release ? findStreamUrl(release, preview.store_track_id) : getCachedStreamUrl(preview.store_track_id)
+        release ? findStreamUrl(release, preview.store_track_id) : known.get(preview.preview_id)
 
       if (releasePreviews.some((preview) => !streamUrlOf(preview))) {
         try {
