@@ -1,6 +1,7 @@
 const { expect } = require('chai')
 const { dismissOnboarding, waitForWithTimeoutMessage } = require('./setup')
 const { followedArtistName } = require('./follow-popup-seed')
+const { ONE_PLAYER_TITLES } = require('./one-player-seed')
 const { SAMPLE_FILENAME, SAMPLE_MATCH_OFFSET_SECONDS } = require('./notifications-page-seed')
 
 // Shared browser interactions/assertions for the notifications-page demo. The preview (demo-preview) entry runs the
@@ -324,8 +325,13 @@ const assertPlayingSampleShowsNoDuration = async ({ page }) => {
 
 const assertSampleMatchPlaysFromMatch = async ({ page }) => {
   await openTab(page, 'Samples')
-  await page.locator('.notifications-samples tr', { hasText: SAMPLE_FILENAME }).click()
-  const matchRow = page.locator('.notifications-matches tbody tr').first()
+  const sample = page.locator('.notifications-sample', {
+    has: page.locator('.notifications-sample_name', { hasText: SAMPLE_FILENAME }),
+  })
+  const toggle = sample.locator('.notifications-sample_toggle')
+  await toggle.waitFor({ state: 'visible', timeout: 10000 })
+  if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click()
+  const matchRow = sample.locator('.notifications-matches .notifications-list_row').first()
   await matchRow.waitFor({ state: 'visible', timeout: 10000 })
   expect(await matchRow.locator('.tempo').textContent()).to.equal('±0.0 %')
   await matchRow.click()
@@ -358,6 +364,105 @@ const assertSampleMatchPlaysFromMatch = async ({ page }) => {
   expect(await details.locator('.preview_label', { hasText: 'Labels:' }).count()).to.equal(1)
 }
 
+// The cart button in the player panel above the Notifications page works for whatever is playing, whether the track
+// was started from an Activity row or from a track list in another view: it adds the track to the default cart and
+// removes it again.
+const panelCartButton = '.player-collection-wrapper .preview_actions_wrapper .button-drop_down-left'
+
+const assertPanelCartButtonToggles = async (page, message, afterEachClick = async () => {}) => {
+  const button = page.locator(panelCartButton)
+  await button.waitFor({ state: 'visible', timeout: 10000 })
+  await waitForWithTimeoutMessage(
+    () => page.waitForFunction((selector) => !document.querySelector(selector)?.disabled, panelCartButton, {
+      timeout: 10000,
+    }),
+    message,
+  )
+  const before = await button.getAttribute('title')
+  const waitForTitle = (changed) =>
+    page.waitForFunction(
+      ({ selector, before, changed }) => {
+        const element = document.querySelector(selector)
+        return element && !element.disabled && (element.getAttribute('title') !== before) === changed
+      },
+      { selector: panelCartButton, before, changed },
+      { timeout: 10000 },
+    )
+  await button.click()
+  await waitForWithTimeoutMessage(
+    () => waitForTitle(true),
+    'Clicking the cart button should add the playing track to (or remove it from) the default cart.',
+  )
+  await afterEachClick()
+  await button.click()
+  await waitForWithTimeoutMessage(
+    () => waitForTitle(false),
+    'Clicking the cart button again should undo the change.',
+  )
+  await afterEachClick()
+}
+
+// Waits for the player to show the track rather than for audio, which the cart button does not depend on
+const waitForPlayerTitle = (page, title, message) =>
+  waitForWithTimeoutMessage(
+    () => page.waitForSelector(`.preview_title:has-text("${title}")`, { timeout: 10000 }),
+    message,
+  )
+
+const assertCartButtonWorksForTrackFromOtherView = async ({ page }) => {
+  const [title] = ONE_PLAYER_TITLES
+  await page.goto('/tracks/recent')
+  const row = page.locator(`.tracks-table .track:has-text("${title}")`).first()
+  await row.waitFor({ state: 'visible', timeout: 20000 })
+  await dismissOnboarding(page)
+  await row.click()
+  await waitForPlayerTitle(page, title, 'Clicking a row in Recent should load its track in the player.')
+  await page.locator('a[href="/notifications/activity"]').first().click()
+  await page.waitForSelector('.notifications-page', { state: 'visible', timeout: 10000 })
+  await assertPanelCartButtonToggles(
+    page,
+    'On the Notifications page the cart button should be enabled for a track started from the Recent list.',
+  )
+}
+
+// Local only: needs DB-seeded notification events
+const assertCartButtonWorksForActivityRow = async ({ page }) => {
+  await page.locator('a[href="/notifications/activity"]').first().click()
+  const row = page.locator('.notifications-activity tbody tr.track').first()
+  await row.waitFor({ state: 'visible', timeout: 10000 })
+  await row.click()
+  await waitForWithTimeoutMessage(
+    () =>
+      page.waitForFunction(
+        () =>
+          document
+            .querySelector('.preview_details_wrapper .preview_playing-from')
+            ?.textContent.includes('Notifications · Activity'),
+        null,
+        { timeout: 10000 },
+      ),
+    'Clicking an Activity row should load its track in the player.',
+  )
+  // The playing row below shows the same cart state as the player after each click
+  const rowCartButton = '.notifications-activity tbody tr.track.playing .button-drop_down-left'
+  const rowMatchesPlayer = () =>
+    waitForWithTimeoutMessage(
+      () =>
+        page.waitForFunction(
+          ({ panel, row }) =>
+            document.querySelector(row)?.getAttribute('title') === document.querySelector(panel)?.getAttribute('title'),
+          { panel: panelCartButton, row: rowCartButton },
+          { timeout: 10000 },
+        ),
+      'The playing Activity row should show the cart change made in the player.',
+    )
+  await assertPanelCartButtonToggles(
+    page,
+    'On the Notifications page the cart button should be enabled for a track played from Activity.',
+    rowMatchesPlayer,
+  )
+}
+
 module.exports = {
   openNotificationsFromTopBar,
   assertActivityTabOpens,
@@ -372,4 +477,6 @@ module.exports = {
   assertMarkAllHeard,
   assertSampleMatchPlaysFromMatch,
   assertPlayingSampleShowsNoDuration,
+  assertCartButtonWorksForTrackFromOtherView,
+  assertCartButtonWorksForActivityRow,
 }

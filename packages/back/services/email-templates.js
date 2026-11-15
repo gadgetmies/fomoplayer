@@ -184,13 +184,13 @@ Listen now: ${searchUrl}`
 }
 
 // One email per user covering every sample that gained new fingerprint
-// matches. `samples` is [{ name, tracks: [string], searchUrl }].
+// matches. `samples` is [{ name, tracks: [string], sampleUrl }].
 const renderSampleMatchNotification = ({ samples }) => {
   const count = samples.reduce((sum, { tracks }) => sum + tracks.length, 0)
   const tracksLabel = `${count} new track${count === 1 ? '' : 's'}`
   const preview = `${tracksLabel} matched your audio sample${samples.length === 1 ? '' : 's'} on Fomo Player.`
   const sampleSections = samples
-    .map(({ name, tracks, searchUrl }) => {
+    .map(({ name, tracks, sampleUrl }) => {
       const trackRows = tracks
         .map(
           (line) =>
@@ -205,7 +205,7 @@ const renderSampleMatchNotification = ({ samples }) => {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           ${trackRows}
         </table>
-        ${renderButton(searchUrl, 'Listen now')}`
+        ${renderButton(sampleUrl, 'Listen now')}`
     })
     .join('\n        ')
   const contentHtml = `${preheaderSpan(preview)}
@@ -215,7 +215,7 @@ const renderSampleMatchNotification = ({ samples }) => {
   const text = `${tracksLabel} matching your audio sample${samples.length === 1 ? '' : 's'}
 
 ${samples
-  .map(({ name, tracks, searchUrl }) => `Matches for "${name}":\n${tracks.join('\n')}\nListen now: ${searchUrl}`)
+  .map(({ name, tracks, sampleUrl }) => `Matches for "${name}":\n${tracks.join('\n')}\nListen now: ${sampleUrl}`)
   .join('\n\n')}`
   const subject =
     samples.length === 1

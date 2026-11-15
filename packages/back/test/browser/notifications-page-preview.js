@@ -12,6 +12,7 @@ const {
   assertActivityTabOpens,
   assertSubscribingNeedsVerifiedEmail,
   assertSettingsEmailTab,
+  assertCartButtonWorksForTrackFromOtherView,
 } = require('../lib/notifications-page-steps')
 
 test({
@@ -27,4 +28,5 @@ test({
   'the top bar opens Notifications › Activity': assertActivityTabOpens,
   'subscribing needs a verified email': assertSubscribingNeedsVerifiedEmail,
   'Settings › Notifications is now Settings › Email': assertSettingsEmailTab,
+  'the cart button works for a track started in another view': assertCartButtonWorksForTrackFromOtherView,
 })

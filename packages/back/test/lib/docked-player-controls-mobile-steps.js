@@ -1,5 +1,7 @@
 const { expect } = require('chai')
 const { waitForWithTimeoutMessage } = require('./setup')
+const player = require('./player-steps')
+const { LONG_TEXT_TITLE } = require('./one-player-seed')
 
 // Shared browser interactions/assertions for the docked player controls demo on a phone (the touch-enabled Pixel 5
 // context). On Settings the docked bar is the waveform, with Preview / Listen on its ends, above play, previous, next
@@ -18,11 +20,15 @@ const openPanel = (page) => page.locator('.preview--docked-expanded')
 const measure = async (page, scope) => {
   const [waveformSelector, switchesSelector, rowSelector] =
     scope === 'bar'
-      ? ['[data-testid="docked-player-waveform"]', '[data-testid="docked-player-waveform"]', '.docked-player_row']
+      ? [
+          '[data-testid="docked-player-waveform"] .waveform_container',
+          '[data-testid="docked-player-waveform"]',
+          '.docked-player_row',
+        ]
       : [
-          '.preview--docked-expanded .preview-wrapper .waveform_container',
-          '.preview--docked-expanded .preview-wrapper',
-          '.preview--docked-expanded .button-wrapper',
+          '.preview--docked-expanded .preview-player .preview-wrapper .waveform_container',
+          '.preview--docked-expanded .preview-player .preview-wrapper',
+          '.preview--docked-expanded .preview-player .button-wrapper',
         ]
   const box = (locator) => locator.first().boundingBox()
   const previousVisible = await page.locator(`${rowSelector} .button-playback--previous`).isVisible()
@@ -49,13 +55,6 @@ const measure = async (page, scope) => {
 }
 let barSizes
 
-const audioIsPlaying = (page) =>
-  page.waitForFunction(() => document.querySelector('audio')?.paused === false, null, { timeout: 20000 })
-
-const assertStillPlaying = async (page) => {
-  expect(await page.$eval('audio', (audio) => audio.paused)).to.equal(false)
-}
-
 // Start a track from Discover · Recent and open Settings in the app (a client-side navigation keeps it playing)
 const playAndOpenSettingsOnPhone = async (page) => {
   await page.goto('/tracks/recent')
@@ -71,7 +70,10 @@ const playAndOpenSettingsOnPhone = async (page) => {
     )
   }
   await seededRow.click()
-  await waitForWithTimeoutMessage(() => audioIsPlaying(page), 'Tapping a track on the phone should start playing it.')
+  await waitForWithTimeoutMessage(
+    () => player.audioIsPlaying(page),
+    'Tapping a track on the phone should start playing it.',
+  )
   await page.waitForTimeout(1000)
   await page.locator('a[href^="/settings"]').first().click()
   await page.waitForSelector('.settings-container', { state: 'visible', timeout: 10000 })
@@ -93,13 +95,14 @@ const assertBarWaveformAboveControls = async ({ page }) => {
     const label = page.locator('[data-testid="docked-player-waveform"] label', { hasText: text }).first()
     expect(await label.isVisible()).to.equal(true)
   }
+  await player.assertDockedBarShowsLabels(page)
   barSizes = await measure(page, 'bar')
   expect(barSizes.previousVisible, 'previous in the bar').to.equal(page.viewportSize().width >= PREVIOUS_HIDDEN_BELOW)
   // The expand button shares the controls' line
   const expand = await toggle(page).boundingBox()
   expect(expand.y).to.be.at.least(controls.y - 1)
   expect(expand.y + expand.height).to.be.at.most(controls.y + controls.height + 1)
-  await assertStillPlaying(page)
+  await player.assertStillPlaying(page)
 }
 
 // Tapping the bar's waveform seeks
@@ -126,9 +129,11 @@ const assertExpandShowsFullPlayer = async ({ page }) => {
     'Expanding the bar on a phone should show the full player.',
   )
   expect(await details.textContent()).to.contain('One Player Demo')
-  const buttons = openPanel(page).locator('.button-wrapper')
+  const buttons = openPanel(page).locator('.preview-player .button-wrapper')
   await buttons.waitFor({ state: 'visible', timeout: 5000 })
-  const waveformBox = await openPanel(page).locator('.preview-wrapper .waveform_container').boundingBox()
+  const waveformBox = await openPanel(page)
+    .locator('.preview-player .preview-wrapper .waveform_container')
+    .boundingBox()
   const buttonsBox = await buttons.boundingBox()
   expect(waveformBox.y + waveformBox.height).to.be.at.most(buttonsBox.y + 1)
   for (const name of [/similar/i, /Follow/, /Ignore/, /Share/]) {
@@ -159,43 +164,27 @@ const assertExpandShowsFullPlayer = async ({ page }) => {
   const panelBox = await openPanel(page).boundingBox()
   expect(Math.abs(panelBox.y + panelBox.height - page.viewportSize().height)).to.be.below(2)
   expect(await page.locator('.docked-player_main').isVisible()).to.equal(false)
-  await assertStillPlaying(page)
+  await player.assertStillPlaying(page)
 }
 
 // Preview / Listen over the expanded player's waveform switch the audio source
-const assertSourceSelectSwitches = async ({ page }) => {
-  const label = (text) => openPanel(page).locator('.preview-wrapper label', { hasText: text }).first()
-  const initial = await page.evaluate(() => localStorage.getItem('preferFullTracks'))
-  await label('Listen').tap()
-  expect(await page.evaluate(() => localStorage.getItem('preferFullTracks'))).to.equal('true')
-  await page.waitForTimeout(800)
-  await label('Preview').tap()
-  expect(await page.evaluate(() => localStorage.getItem('preferFullTracks'))).to.equal('false')
-  if (initial === 'true') await label('Listen').tap()
-}
-
-// The cart button adds the track to the default cart and removes it again (so re-runs start from the same state)
-const assertCartButtonToggles = async ({ page }) => {
-  const selector = '.preview--docked-expanded .button-wrapper .button-drop_down-left'
-  const before = await page.locator(selector).getAttribute('title')
-  const waitForTitle = (changed) =>
-    page.waitForFunction(
-      ({ selector, before, changed }) => {
-        const button = document.querySelector(selector)
-        return button && !button.disabled && (button.getAttribute('title') !== before) === changed
-      },
-      { selector, before, changed },
-      { timeout: 10000 },
-    )
-  await page.locator(selector).tap()
-  await waitForWithTimeoutMessage(
-    () => waitForTitle(true),
-    'The cart button in the expanded player should add the track to (or remove it from) the default cart.',
+const assertSourceSelectSwitches = ({ page }) =>
+  player.assertPreviewListenSwitch(
+    page,
+    (text) => openPanel(page).locator('.preview-player .preview-wrapper label', { hasText: text }).first(),
+    { tap: true },
   )
-  await page.waitForTimeout(800)
-  await page.locator(selector).tap()
-  await waitForTitle(false)
-}
+
+// The cart button in the expanded player adds the track to the default cart and removes it again
+const assertCartButtonToggles = ({ page }) =>
+  player.assertCartButtonToggles(
+    page,
+    '.preview--docked-expanded .preview-player .button-wrapper .button-drop_down-left',
+    {
+      tap: true,
+      where: 'in the expanded player',
+    },
+  )
 
 // The way back sits in the top right corner of the track details, clear of their text
 const assertCollapseButtonInCorner = async ({ page }) => {
@@ -227,7 +216,7 @@ const assertCollapseReturnsToBar = async ({ page }) => {
   await page.getByRole('button', { name: 'Back to the player bar' }).tap()
   await page.locator('.docked-player_main').waitFor({ state: 'visible', timeout: 5000 })
   expect(await page.locator('.preview--docked > .preview_details_wrapper').isVisible()).to.equal(false)
-  await assertStillPlaying(page)
+  await player.assertStillPlaying(page)
 }
 
 // A tap on the page behind the expanded player also goes back to the bar
@@ -238,7 +227,13 @@ const assertTapOutsideReturnsToBar = async ({ page }) => {
   await page.locator('.settings-container h1, .settings-container h2').first().tap()
   await page.locator('.docked-player_main').waitFor({ state: 'visible', timeout: 5000 })
   expect(await openPanel(page).count()).to.equal(0)
-  await assertStillPlaying(page)
+  await player.assertStillPlaying(page)
+}
+
+// A track with many long artist names, a long label and a long title: each line of the bar is cut short
+const assertLongTextsEllipsed = async ({ page }) => {
+  await player.playFromSearchAndOpenSettings(page, LONG_TEXT_TITLE, { tap: true })
+  await player.assertDockedBarTextsEllipsed(page)
 }
 
 // Each step lingers on its result so the demo video can be followed on a phone-sized recording
@@ -257,4 +252,5 @@ module.exports = {
   assertCollapseButtonInCorner: lingering(assertCollapseButtonInCorner),
   assertCollapseReturnsToBar: lingering(assertCollapseReturnsToBar),
   assertTapOutsideReturnsToBar: lingering(assertTapOutsideReturnsToBar),
+  assertLongTextsEllipsed: lingering(assertLongTextsEllipsed),
 }

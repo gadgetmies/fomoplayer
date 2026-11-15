@@ -6,7 +6,7 @@
 // screens).
 const { test } = require('cascade-test')
 const { getSharedContext, getMobileContext, teardownSharedContext } = require('../lib/setup')
-const { seedOnePlayerTracksViaApi } = require('../lib/one-player-seed')
+const { seedOnePlayerTracksViaApi, seedLongTextTrackViaApi } = require('../lib/one-player-seed')
 const steps = require('../lib/docked-player-controls-mobile-steps')
 
 test({
@@ -14,6 +14,7 @@ test({
   setup: async () => {
     const { page: desktopPage } = await getSharedContext()
     await seedOnePlayerTracksViaApi(desktopPage)
+    await seedLongTextTrackViaApi(desktopPage)
     const { page } = await getMobileContext()
     await steps.playAndOpenSettingsOnPhone(page)
     return { page, timeout: 45000 }
@@ -27,4 +28,5 @@ test({
   'the way back sits in the top right corner of the details, clear of their text': steps.assertCollapseButtonInCorner,
   'it goes back to the player bar': steps.assertCollapseReturnsToBar,
   'a tap outside goes back to the player bar': steps.assertTapOutsideReturnsToBar,
+  'long artists, labels and titles are cut short with an ellipsis': steps.assertLongTextsEllipsed,
 })

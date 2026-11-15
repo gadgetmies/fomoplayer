@@ -5,7 +5,7 @@
 // seeded through POST /api/me/tracks, the same way in both demos (docked-player-controls-mobile-*.js: on a phone).
 const { test } = require('cascade-test')
 const { getSharedContext, teardownSharedContext } = require('../lib/setup')
-const { seedOnePlayerTracksViaApi } = require('../lib/one-player-seed')
+const { seedOnePlayerTracksViaApi, seedLongTextTrackViaApi } = require('../lib/one-player-seed')
 const { playFromRecent, assertDockedPlayerKeepsPlaying } = require('../lib/one-player-steps')
 const {
   assertRowHasMainActions,
@@ -14,6 +14,7 @@ const {
   openMore,
   assertSharePopupOpens,
   assertExpandButtonAndEscapeCloseMore,
+  assertLongTextsEllipsed,
 } = require('../lib/docked-player-controls-steps')
 
 test({
@@ -21,6 +22,7 @@ test({
   setup: async () => {
     const { page } = await getSharedContext()
     await seedOnePlayerTracksViaApi(page)
+    await seedLongTextTrackViaApi(page)
     const { order } = await playFromRecent(page)
     await assertDockedPlayerKeepsPlaying({ page, order })
     return { page, order, timeout: 45000 }
@@ -32,4 +34,5 @@ test({
   'the expand button opens a popup at the right edge with share and store links stacked': openMore,
   'share opens its popup': assertSharePopupOpens,
   'the chevron and Escape close the popup': assertExpandButtonAndEscapeCloseMore,
+  'long artists, labels and titles are cut short with an ellipsis': assertLongTextsEllipsed,
 })
