@@ -10,6 +10,7 @@ class PillButton extends Component {
         onClick={(e) => this.props.onClick && this.props.onClick(e)}
         disabled={this.props.disabled}
         style={this.props.style}
+        title={this.props.title}
       >
         <span className="pill-button-contents">{this.props.children}</span>
       </button>

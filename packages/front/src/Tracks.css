@@ -511,6 +511,12 @@
     text-align: center;
   }
 
+  /* The Diff pill is a flex button, which text-align does not move: centre it under the column's header */
+  .similarity-cell:not(.cart-search-fit-cell) {
+    display: flex;
+    justify-content: center;
+  }
+
   .cart-cell {
     width: 64px;
   }
