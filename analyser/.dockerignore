@@ -1,0 +1,10 @@
+venv/
+downloads/
+panako_db/
+panako_db_worker_*/
+eval/
+research/
+data/
+**/__pycache__/
+.embedding_sanity.json
+embedding_collisions.jsonl

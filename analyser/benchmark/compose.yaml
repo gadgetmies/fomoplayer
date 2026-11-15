@@ -1,0 +1,17 @@
+# Synology Container Manager: Project → Create → point it at this folder.
+# Same limits as a production worker would get on the NAS: two cores at the
+# lowest priority and a memory cap, so file serving always comes first.
+services:
+  analyser-bench:
+    build:
+      context: ..
+      dockerfile: benchmark/Dockerfile
+    image: fomoplayer-analyser-bench
+    cpus: 2
+    cpu_shares: 128
+    mem_limit: 3g
+    # To benchmark your own music instead of synthetic tracks, uncomment and
+    # point the left side at a folder of MP3s on the NAS:
+    # volumes:
+    #   - /volume1/music/some-folder:/audio:ro
+    # command: ["--audio-dir", "/audio"]
