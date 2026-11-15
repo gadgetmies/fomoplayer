@@ -387,7 +387,7 @@ const assertSampleMatchPlaysAligned = async ({ page }) => {
 // removes it again.
 const panelCartButton = '.player-collection-wrapper .preview_actions_wrapper .button-drop_down-left'
 
-const assertPanelCartButtonToggles = async (page, message) => {
+const assertPanelCartButtonToggles = async (page, message, afterEachClick = async () => {}) => {
   const button = page.locator(panelCartButton)
   await button.waitFor({ state: 'visible', timeout: 10000 })
   await waitForWithTimeoutMessage(
@@ -411,11 +411,13 @@ const assertPanelCartButtonToggles = async (page, message) => {
     () => waitForTitle(true),
     'Clicking the cart button should add the playing track to (or remove it from) the default cart.',
   )
+  await afterEachClick()
   await button.click()
   await waitForWithTimeoutMessage(
     () => waitForTitle(false),
     'Clicking the cart button again should undo the change.',
   )
+  await afterEachClick()
 }
 
 // Waits for the player to show the track rather than for audio, which the cart button does not depend on
@@ -459,9 +461,23 @@ const assertCartButtonWorksForActivityRow = async ({ page }) => {
       ),
     'Clicking an Activity row should load its track in the player.',
   )
+  // The playing row below shows the same cart state as the player after each click
+  const rowCartButton = '.notifications-activity tbody tr.track.playing .button-drop_down-left'
+  const rowMatchesPlayer = () =>
+    waitForWithTimeoutMessage(
+      () =>
+        page.waitForFunction(
+          ({ panel, row }) =>
+            document.querySelector(row)?.getAttribute('title') === document.querySelector(panel)?.getAttribute('title'),
+          { panel: panelCartButton, row: rowCartButton },
+          { timeout: 10000 },
+        ),
+      'The playing Activity row should show the cart change made in the player.',
+    )
   await assertPanelCartButtonToggles(
     page,
     'On the Notifications page the cart button should be enabled for a track played from Activity.',
+    rowMatchesPlayer,
   )
 }
 
