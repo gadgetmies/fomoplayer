@@ -1,0 +1,6 @@
+*
+!requirements-service.txt
+!models/discogs_multi_embeddings-effnet-bs64-1.pb
+!audio_decode.py
+!embedding.py
+!embedding_service.py
