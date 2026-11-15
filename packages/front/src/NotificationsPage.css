@@ -66,18 +66,67 @@
   margin-bottom: 2px;
 }
 
-.notifications-activity .why-cell--inline {
+.notifications-activity .why-cell--inline,
+.notifications-matches .why-cell--inline {
   display: none;
 }
 
-.notifications-activity .why-cell--column {
+.notifications-activity .why-cell--column,
+.notifications-matches .why-cell--column {
   display: inline-flex;
   align-items: center;
   width: 180px;
 }
 
-.notifications-activity .why-cell--column > .track-table-cell {
+.notifications-activity .why-cell--column > .track-table-cell,
+.notifications-matches .why-cell--column > .track-table-cell {
   width: 100%;
+}
+
+/* The Match header and chip sit in the middle of their column, like the Diff pill in Sounds like */
+.notifications-matches .why-cell--column > .track-table-cell {
+  text-align: center;
+}
+
+/* The match chip as a two-part pill (the pills' 3px radius): the strength on the left, the details on the right.
+   Strong fills the left part white like a white pill, Good only outlines it, Weak leaves it plain. */
+.why.notifications-match_info {
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+}
+
+.notifications-match_strength {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border-radius: 3px 0 0 3px;
+  font-weight: 700;
+  cursor: help;
+}
+
+.notifications-match_info--strong .notifications-match_strength {
+  background: #fff;
+  color: #000;
+}
+
+.notifications-match_info--good .notifications-match_strength {
+  box-shadow: inset 0 0 0 1px #fff;
+}
+
+.notifications-match_details {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* "match" only joins the label on a phone, where it reads as one phrase: "Good match at 2:44" */
+.notifications-match_strength-noun {
+  display: none;
+  white-space: pre;
 }
 
 /* Why a track is listed: information, not an action or a view state, so neither the magenta of actions nor the
@@ -128,30 +177,6 @@
 
 .notifications-section-title {
   margin: 20px 0 6px;
-}
-
-.notifications-row {
-  background: #666;
-  cursor: pointer;
-  font-weight: 350;
-}
-
-.notifications-row--playing,
-.notifications-row--selected {
-  background: #5181bd;
-}
-
-.new-dot {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 6px;
-  background: #fff;
-  vertical-align: middle;
-}
-
-.new-dot--read {
-  background: transparent;
 }
 
 .notifications-upload {
@@ -298,62 +323,37 @@
   color: inherit;
 }
 
+/* Matches and Sounds like: the main track list's table, flush with the open sample's edges */
 .notifications-sample_content {
   background: #262626;
+}
+
+.notifications-sample_content > .notifications-hint,
+.notifications-sample_content > .notifications-empty,
+.notifications-sample_content > .notifications-follow {
+  margin: 0;
   padding: 12px 16px 16px;
 }
 
-/* Matches and Sounds like: rows in the track list's colours, columns on wide screens, two lines on phones */
-.notifications-list {
+/* A flex column like the main list's table, so long names truncate instead of widening the table */
+.notifications-sample_tracks {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-size: 0.85rem;
 }
 
-.notifications-matches {
-  --notifications-list-columns: 28px minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) 90px 70px 56px;
+.notifications-sample_tracks .tracks-table-header,
+.notifications-sample_tracks > tbody {
+  display: block;
 }
 
-.notifications-similar {
-  --notifications-list-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) 90px;
+.notifications-sample_tracks > tbody > tr {
+  margin-bottom: 2px;
 }
 
-.notifications-list_header,
-.notifications-list_row {
-  display: grid;
-  grid-template-columns: var(--notifications-list-columns);
-  gap: 0 12px;
-  align-items: center;
-  padding: 0 12px;
-  text-align: left;
+.notifications-sample_tracks > tbody > tr:last-child {
+  margin-bottom: 0;
 }
 
-.notifications-list_header {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding-bottom: 4px;
-}
-
-.notifications-list_row {
-  width: 100%;
-  min-height: 2.25rem;
-  color: inherit;
-}
-
-.notifications-list_row > span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.notifications-list_label {
-  font-weight: 300;
-}
-
-.notifications-follow {
-  margin-top: 16px;
-}
 
 .notifications-follow-title {
   font-size: 0.95rem;
@@ -515,100 +515,21 @@
     font-size: 0.85rem;
   }
 
-  .notifications-sample_content {
-    padding: 10px;
-  }
-
-  .notifications-list_header {
-    display: none;
-  }
-
-  /* Two lines: title, then artist · label; the numbers on the right */
-  .notifications-matches .notifications-list_row,
-  .notifications-similar .notifications-list_row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      'title end1'
-      'byline end2';
-    column-gap: 10px;
-    row-gap: 3px;
-    min-height: 64px;
-    padding: 8px 10px;
-  }
-
-  .notifications-matches .notifications-list_row {
-    grid-template-columns: 10px minmax(0, 1fr) auto;
-    grid-template-areas:
-      'new title end1'
-      'new byline end2';
-  }
-
-  .notifications-list_new {
-    grid-area: new;
-  }
-
-  .notifications-list_new .new-dot {
-    width: 10px;
-    height: 10px;
-  }
-
-  .notifications-list_title {
-    grid-area: title;
-    font-size: 1rem;
-    font-weight: 700;
-  }
-
-  /* Artist and label share the second line */
-  .notifications-list_artist,
-  .notifications-list_label {
-    grid-area: byline;
-    font-size: 0.875rem;
-    font-weight: 300;
-  }
-
-  .notifications-list_row > .notifications-list_label {
-    display: none;
-  }
-
-  .notifications-list_row > .notifications-list_artist[data-label]::after {
-    content: ' · ' attr(data-label);
-  }
-
-  .notifications-list_end {
-    text-align: right;
-    font-size: 0.8125rem;
-  }
-
-  .notifications-list_end.matched-at,
-  .notifications-list_end.similarity {
-    grid-area: end1;
-  }
-
-  .notifications-list_end.matched-at::before {
-    content: 'at ';
-  }
-
-  .notifications-list_end.tempo {
-    grid-area: end2;
-    font-weight: 300;
-  }
-
-  .notifications-list_end.score {
-    display: none;
-  }
-
-  .notifications-activity .why-cell--column {
+  .notifications-activity .why-cell--column,
+  .notifications-matches .why-cell--column {
     display: none;
   }
 
   /* Above the store links in the right-hand column */
-  .notifications-activity .why-cell--inline {
+  .notifications-activity .why-cell--inline,
+  .notifications-matches .why-cell--inline {
     display: block;
     margin-bottom: 4px;
     text-align: left;
   }
 
-  .notifications-activity .why-cell--inline .why {
+  .notifications-activity .why-cell--inline .why,
+  .notifications-matches .why-cell--inline .why {
     display: flex;
     align-items: flex-start;
     width: 100%;
@@ -618,12 +539,36 @@
     white-space: normal;
   }
 
-  .notifications-activity .why-cell--inline .why_icon {
+  .notifications-activity .why-cell--inline .why_icon,
+  .notifications-matches .why-cell--inline .why_icon {
     margin-top: 0.15em;
   }
 
-  .notifications-activity .why-cell--inline .why_text {
+  .notifications-activity .why-cell--inline .why_text,
+  .notifications-matches .why-cell--inline .why_text {
     overflow-wrap: anywhere;
+  }
+
+  /* The phone keeps the two-part pill, its parts at the inline chip's height */
+  .notifications-matches .why-cell--inline .notifications-match_info {
+    align-items: stretch;
+    padding: 0;
+    line-height: 1.6em;
+  }
+
+  .notifications-matches .why-cell--inline .notifications-match_strength,
+  .notifications-matches .why-cell--inline .notifications-match_details {
+    padding: 2px 6px;
+    white-space: nowrap;
+  }
+
+  .notifications-matches .why-cell--inline .notifications-match_details {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .notifications-match_strength-noun {
+    display: inline;
   }
 
   .arrived-cell:before {
@@ -639,8 +584,9 @@
 }
 
 @media (min-width: 769px) {
-  /* Make room for the Why column (180px) next to the details */
-  .notifications-activity .track-details {
+  /* Make room for the Why / Match column (180px) next to the details */
+  .notifications-activity .track-details,
+  .notifications-matches .track-details {
     width: calc(100% - 208px - 60px - 64px - 3rem - 8px - 180px);
   }
 

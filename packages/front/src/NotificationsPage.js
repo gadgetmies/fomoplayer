@@ -12,8 +12,8 @@ import {
   uploadAudioSample,
 } from './audioSamplesApi'
 import { requestWithCredentials } from './request-json-with-credentials'
-import { namesToString } from './trackFunctions'
 import { formatSeconds, formatTempo, matchedAtInTrack } from './abTiming'
+import { matchStrength, matchStrengthTitle } from './matchStrength'
 import { groupSubscriptions, visibleSubscriptions } from './subscriptions'
 import SearchBar from './SearchBar'
 import './FollowedItem.css'
@@ -43,10 +43,7 @@ const TABS = [
   { key: 'subscriptions', label: 'Subscriptions' },
 ]
 
-const artistsText = (track) => namesToString([...(track?.artists || []), ...(track?.remixers || [])])
-const labelsText = (track) => namesToString(track?.labels || [])
 const matchCountText = (count) => (count ? `${count} match${count === 1 ? '' : 'es'}` : 'No match yet')
-const titleText = (track) => (track ? `${track.title}${track.version ? ` (${track.version})` : ''}` : '')
 
 const reasonText = (reason) => {
   if (reason.type === 'sample') return `Sample match · ${reason.filename}`
@@ -207,8 +204,31 @@ class NotificationsPage extends Component {
     setTimeout(() => this.props.onUnreadChanged(), 1500)
   }
 
+  // Marking a match heard reads its notification too, as in Activity
+  markMatchHeard(match) {
+    if (!match.unread && match.heard) return
+    this.props.onMarkHeard?.(match)
+    const heard = new Date().toISOString()
+    this.setState({
+      matches: this.state.matches.map((m) =>
+        m.match.previewId === match.match.previewId ? { ...m, unread: false, heard: m.heard || heard } : m,
+      ),
+    })
+    setTimeout(() => this.props.onUnreadChanged(), 1500)
+  }
+
   playSimilar(track, sample) {
     this.props.onPlay(track, { source: similarSource(sample), tracks: this.state.similar.tracks })
+  }
+
+  markSimilarHeard(track) {
+    if (track.heard) return
+    this.props.onMarkHeard?.(track)
+    const heard = new Date().toISOString()
+    const { similar } = this.state
+    this.setState({
+      similar: { ...similar, tracks: similar.tracks.map((t) => (t.id === track.id ? { ...t, heard } : t)) },
+    })
   }
 
   playSample(sample) {
@@ -263,10 +283,6 @@ class NotificationsPage extends Component {
     } finally {
       this.setState({ following: null })
     }
-  }
-
-  rowClass(trackId) {
-    return `notifications-row${trackId === this.props.currentTrackId ? ' notifications-row--playing' : ''}`
   }
 
   // The Activity toolbar control, shown in the tab bar like the cart controls above the cart track list
@@ -563,56 +579,138 @@ class NotificationsPage extends Component {
         </p>
       )
     }
+    // A two-part pill: how strong the match is on the left, as it matters most (the score is in its tooltip), then
+    // where in the track and at what tempo the sample was found. On a phone it reads "Good match at 2:44 · ±0.0 %".
+    const matchInfo = (match) => {
+      const { level, label } = matchStrength(match.match.score)
+      const at = formatSeconds(matchedAtInTrack(match.match.offsetSeconds, matchPreviewStartMs(match)))
+      return (
+        <span className={`why notifications-match_info notifications-match_info--${level}`}>
+          <span className="notifications-match_strength" title={matchStrengthTitle(match.match.score)}>
+            {label}
+            <span className="notifications-match_strength-noun"> match</span>
+          </span>
+          <span className="notifications-match_details" title={`Matched at ${at}, tempo ${formatTempo(match.match.tempoFactor)}`}>
+            <span className="matched-at">at {at}</span>
+            {' · '}
+            <span className="tempo">{formatTempo(match.match.tempoFactor)}</span>
+          </span>
+        </span>
+      )
+    }
+    return this.renderSampleTrackTable({
+      className: 'notifications-matches',
+      label: `Matches for ${sample.filename}`,
+      whyHeader: 'Match',
+      rows: matches.map((match) => ({
+        key: match.match.previewId,
+        track: match,
+        // An unread match shows as new, like an unread notification in Activity
+        heard: match.unread ? null : match.heard || match.match.matchedAt,
+        why: matchInfo(match),
+        onPlay: () => this.playMatch(match, sample),
+        onMarkHeard: () => this.markMatchHeard(match),
+      })),
+    })
+  }
+
+  // The table, rows and cells of the main track list, for a sample's Matches and Sounds like. Rows are
+  // { key, track, heard, why?, similarity?, onPlay, onMarkHeard }; whyHeader adds the Why column (Activity's).
+  renderSampleTrackTable({ className, label, rows, whyHeader, scoreHeader = '' }) {
+    const carts = this.props.carts || []
+    const defaultCart = carts.find(({ isDefault }) => isDefault)
+    const stores = this.props.stores || []
+    const storeSlugs = stores.map(({ storeName }) => storeName.toLowerCase())
     return (
-      <div
-        className="notifications-list notifications-matches"
-        role="table"
-        aria-label={`Matches for ${sample.filename}`}
-      >
-        <div className="notifications-list_header" role="row">
-          <span role="columnheader">New</span>
-          <span role="columnheader">Artist</span>
-          <span role="columnheader">Title</span>
-          <span role="columnheader">Label</span>
-          <span role="columnheader">Matched at</span>
-          <span role="columnheader">Tempo</span>
-          <span role="columnheader">Score</span>
-        </div>
-        {matches.map((match) => (
-          <button
-            key={match.match.previewId}
-            type="button"
-            role="row"
-            className={`${this.rowClass(match.id)} notifications-list_row`}
-            onClick={() => this.playMatch(match, sample)}
-          >
-            <span role="cell" className="notifications-list_new">
-              <span
-                className={match.unread ? 'new-dot' : 'new-dot new-dot--read'}
-                aria-label={match.unread ? 'New' : 'Read'}
+      <table className={`tracks-table notifications-sample_tracks ${className}`} aria-label={label}>
+        <thead className="noselect tracks-table-header">
+          <tr className="noselect tracks-table-header-columns">
+            <th className="new-cell tracks-cell">
+              <div className="new-cell-content track-table-cell">New</div>
+            </th>
+            <th className="track-details tracks-cell">
+              <div className="track-details-left track-details-content">
+                <div className="artist-cell track-table-cell text-header-cell">Artist</div>
+                <div className="title-cell track-table-cell text-header-cell">Title</div>
+                <div className="label-cell track-table-cell text-header-cell">Label</div>
+              </div>
+              <div className="track-details-center track-details-content">
+                <div className="released-cell track-table-cell text-header-cell">Released</div>
+              </div>
+              <div className="track-details-right track-details-content">
+                <div className="genre-cell track-table-cell">Genre</div>
+                <div className="bpm-cell track-table-cell">BPM</div>
+                <div className="key-cell track-table-cell">Key</div>
+              </div>
+            </th>
+            {whyHeader ? (
+              <th className="why-cell why-cell--column tracks-cell">
+                <div className="track-table-cell text-header-cell">{whyHeader}</div>
+              </th>
+            ) : null}
+            <th className="follow-ignore-cart-cell tracks-cell">
+              <div className="score-cell track-table-cell">{scoreHeader}</div>
+              <div className="cart-cell track-table-cell">Cart</div>
+            </th>
+            <th className="open-share-cell tracks-cell">
+              <div className="open-cell track-table-cell">Open</div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ key, track, heard, why, similarity, onPlay, onMarkHeard }, index) => {
+            const trackCarts = (track.carts || []).filter(Boolean)
+            const inCarts = carts.filter((cart) => trackCarts.some(({ uuid }) => uuid === cart.uuid))
+            const previews = (track.previews || []).filter(({ store }) => storeSlugs.includes(store))
+            return (
+              <Track
+                key={key}
+                mode="app"
+                listState="search"
+                id={track.id}
+                index={index}
+                title={track.title}
+                version={track.version}
+                artists={track.artists || []}
+                remixers={track.remixers || []}
+                labels={track.labels || []}
+                released={track.released}
+                releases={track.releases}
+                published={track.published}
+                added={track.added}
+                keys={track.keys || []}
+                bpms={Array.from(new Set((track.stores || []).map(({ bpm }) => bpm)))}
+                genres={track.genres || []}
+                similarity={similarity}
+                why={why}
+                trackStores={track.stores || []}
+                stores={stores}
+                heard={heard}
+                playing={this.props.currentTrackId === track.id}
+                carts={carts}
+                cartFilter={this.state.cartFilter}
+                defaultCartId={defaultCart?.id}
+                inDefaultCart={defaultCart ? trackCarts.some(({ uuid }) => uuid === defaultCart.uuid) : false}
+                inCarts={inCarts}
+                processingCart={this.props.processingCart}
+                processingTrack={this.props.processingTrack}
+                follows={this.props.follows}
+                noPreviews={previews.every(({ url, store }) => !url && store !== 'bandcamp')}
+                popupAbove={rows.length > 10 && rows.length - index < 10}
+                onClick={onPlay}
+                onDoubleClick={onPlay}
+                onTouchTap={onPlay}
+                onMarkHeardButtonClick={onMarkHeard}
+                onCartButtonClick={this.props.onCartButtonClick}
+                onCreateCartClick={this.props.onCreateCartClick}
+                onMarkPurchasedButtonClick={this.props.onMarkPurchased}
+                onCartFilterChange={(cartFilter) => this.setState({ cartFilter })}
+                onAddEntityToSearch={this.props.onAddEntityToSearch}
               />
-            </span>
-            <span role="cell" className="notifications-list_artist" data-label={labelsText(match)}>
-              {artistsText(match)}
-            </span>
-            <span role="cell" className="notifications-list_title">
-              {titleText(match)}
-            </span>
-            <span role="cell" className="notifications-list_label">
-              {labelsText(match)}
-            </span>
-            <span role="cell" className="notifications-list_end matched-at">
-              {formatSeconds(matchedAtInTrack(match.match.offsetSeconds, matchPreviewStartMs(match)))}
-            </span>
-            <span role="cell" className="notifications-list_end tempo">
-              {formatTempo(match.match.tempoFactor)}
-            </span>
-            <span role="cell" className="notifications-list_end score">
-              {match.match.score}
-            </span>
-          </button>
-        ))}
-      </div>
+            )
+          })}
+        </tbody>
+      </table>
     )
   }
 
@@ -630,43 +728,21 @@ class NotificationsPage extends Component {
       .filter(({ entities }) => entities.length > 0)
     return (
       <>
-        <p className="notifications-hint">
-          Tracks that sound closest to the sample (audio similarity, not a fingerprint match).
-        </p>
-        <div
-          className="notifications-list notifications-similar"
-          role="table"
-          aria-label={`Sounds like ${sample.filename}`}
-        >
-          <div className="notifications-list_header" role="row">
-            <span role="columnheader">Artist</span>
-            <span role="columnheader">Title</span>
-            <span role="columnheader">Label</span>
-            <span role="columnheader">Similarity</span>
-          </div>
-          {similar.tracks.map((track) => (
-            <button
-              key={track.id}
-              type="button"
-              role="row"
-              className={`${this.rowClass(track.id)} notifications-list_row`}
-              onClick={() => this.playSimilar(track, sample)}
-            >
-              <span role="cell" className="notifications-list_artist" data-label={labelsText(track)}>
-                {artistsText(track)}
-              </span>
-              <span role="cell" className="notifications-list_title">
-                {titleText(track)}
-              </span>
-              <span role="cell" className="notifications-list_label">
-                {labelsText(track)}
-              </span>
-              <span role="cell" className="notifications-list_end similarity">
-                {Math.round(track.similarity * 100)} %
-              </span>
-            </button>
-          ))}
-        </div>
+        {/* As a similarity search (track:~<id>) lists its results: Diff is the audio distance */}
+        {this.renderSampleTrackTable({
+          className: 'notifications-similar',
+          label: `Sounds like ${sample.filename}`,
+          scoreHeader: 'Diff',
+          rows: similar.tracks.map((track) => ({
+            key: track.id,
+            track,
+            heard: track.heard,
+            // The API sends 1 − distance
+            similarity: 1 - track.similarity,
+            onPlay: () => this.playSimilar(track, sample),
+            onMarkHeard: () => this.markSimilarHeard(track),
+          })),
+        })}
         {followGroups.length === 0 ? null : (
           <div className="notifications-follow">
             <h5 className="notifications-follow-title">Follow to catch it</h5>
