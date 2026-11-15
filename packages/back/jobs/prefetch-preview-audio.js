@@ -17,11 +17,18 @@ const logger = require('fomoplayer_shared').logger(__filename)
 
 // Downloads the audio of Bandcamp and Beatport previews that still need an analysis into the storage bucket, so the
 // analyser workers (waveform, fingerprint, embedding) read it from there instead of each downloading it from the
-// store, which rate-limits them. The stores are kept at a conservative pace: one download at a time per store,
-// spaced out, and a store that answers with a rate limit is left alone for 10 minutes, doubling up to an hour (the
-// analyser's backoff). Bandcamp stream URLs expire, so they are looked up from the release through the backend's
-// Bandcamp client, which spaces its requests 2 s apart (as the analyser does) and shares its rate-limit pause with
-// playback. The backend releases the audio once every analysis of the preview is done.
+// store, which rate-limits them. The stores are kept at a conservative pace, and a store that answers with a rate
+// limit is left alone for 10 minutes, doubling up to an hour (the analyser's backoff).
+//
+// Beatport preview URLs are stored and need no token: they are downloaded one at a time, spaced out.
+//
+// Bandcamp stream URLs are signed for one track and expire, so they are not stored. Every Bandcamp request (release
+// lookups and the stream_redirect downloads alike, all on bandcamp.com) goes through the backend's Bandcamp client,
+// which spaces its requests 2 s apart (as the analyser does) and shares its rate-limit pause with playback. The
+// client keeps the stream URLs of every release it fetched for a while, so a track the watch job has just added is
+// downloaded without looking its release up again; other tracks cost one lookup per release.
+//
+// The backend releases the audio once every analysis of the preview is done.
 
 const numberFromEnv = (name, fallback) => {
   const value = Number(process.env[name])
@@ -80,9 +87,10 @@ const countBytes = () => {
   return counter
 }
 
-// Streams the audio at url into the bucket and returns its object key and size.
-const storeAudio = async ({ url, store, client, bucketName, fetch }) => {
-  const res = await fetch(url, {
+// Streams the audio at url into the bucket and returns its object key and size. request is fetch, or the Bandcamp
+// client's throttled fetchStream.
+const storeAudio = async ({ url, store, client, bucketName, request }) => {
+  const res = await request(url, {
     headers: { 'User-Agent': bandcampApi.static.userAgent },
     signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
   })
@@ -92,6 +100,8 @@ const storeAudio = async ({ url, store, client, bucketName, fetch }) => {
   if (res.status === 403) throw new RateLimited(`${store} answered 403`)
   if ([404, 410].includes(res.status)) throw new Gone(`HTTP ${res.status}`)
   if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
+  if (/text\/html/i.test(res.headers.get('content-type') || ''))
+    throw new Error('Answered with a page instead of audio')
 
   const objectKey = `${OBJECT_KEY_PREFIX}${crypto.randomUUID()}.mp3`
   const counter = countBytes()
@@ -119,6 +129,9 @@ module.exports.prefetchPreviewAudio = async (
     bucketName = getBucketName(),
     fetch = globalThis.fetch,
     getRelease = bandcampApi.getReleaseAsync,
+    getCachedStreamUrl = bandcampApi.getCachedStreamUrl,
+    fetchBandcampStream = bandcampApi.fetchStream,
+    suspendBandcamp = bandcampApi.suspendRequests,
     isBandcampRateLimited = bandcampApi.static.isRateLimited,
     storePauses = pauses,
     now = Date.now,
@@ -136,7 +149,7 @@ module.exports.prefetchPreviewAudio = async (
 
   const started = now()
   const deadline = started + maxRunMs
-  const result = { released: 0, stored: 0, missing: 0, failed: 0, rateLimited: [], capReached: false }
+  const result = { released: 0, stored: 0, missing: 0, failed: 0, lookups: 0, rateLimited: [], capReached: false }
 
   result.released = await releaseAnalysedPreviewAudio({ client, bucketName })
 
@@ -179,15 +192,8 @@ module.exports.prefetchPreviewAudio = async (
     result.rateLimited.push(store)
   }
 
-  const download = async (preview, url, throttle) => {
-    await throttle()
-    const { objectKey, fileSize } = await storeAudio({
-      url,
-      store: preview.store_name,
-      client,
-      bucketName,
-      fetch,
-    })
+  const download = async (preview, url, request) => {
+    const { objectKey, fileSize } = await storeAudio({ url, store: preview.store_name, client, bucketName, request })
     await recordStoredPreviewAudio(preview.preview_id, objectKey, fileSize)
     storePauses.reset(preview.store_name)
     room--
@@ -196,10 +202,14 @@ module.exports.prefetchPreviewAudio = async (
 
   const prefetchBeatport = async (beatportPreviews) => {
     const throttle = createThrottle(downloadIntervalMs, { now, sleep })
+    const request = async (url, init) => {
+      await throttle()
+      return fetch(url, init)
+    }
     for (const preview of beatportPreviews) {
       if (!canContinue('Beatport')) return
       try {
-        await download(preview, preview.url, throttle)
+        await download(preview, preview.url, request)
       } catch (error) {
         if (error instanceof RateLimited) return stopForRateLimit('Beatport', error)
         if (error instanceof Gone) await markMissing(preview, error.message)
@@ -209,7 +219,6 @@ module.exports.prefetchPreviewAudio = async (
   }
 
   const prefetchBandcamp = async (bandcampPreviews) => {
-    const throttle = createThrottle(downloadIntervalMs, { now, sleep })
     const releases = new Map()
     for (const preview of bandcampPreviews) {
       releases.set(preview.release_url, [...(releases.get(preview.release_url) || []), preview])
@@ -222,19 +231,26 @@ module.exports.prefetchPreviewAudio = async (
         result.rateLimited.push('Bandcamp')
         return
       }
-      let release
+      let release = null
       const lookUp = async () => {
         release = await getRelease(releaseUrl)
+        result.lookups++
       }
-      try {
-        await lookUp()
-      } catch (error) {
-        if (error.isRateLimit) return stopForRateLimit('Bandcamp', error)
-        for (const preview of releasePreviews) {
-          if ([404, 410].includes(error.statusCode)) await markMissing(preview, `release ${error.message}`)
-          else await recordFailure(preview, error)
+      // A fresh release has the newest stream URLs; without one, those kept from an earlier fetch of the release.
+      const streamUrlOf = (preview) =>
+        release ? findStreamUrl(release, preview.store_track_id) : getCachedStreamUrl(preview.store_track_id)
+
+      if (releasePreviews.some((preview) => !streamUrlOf(preview))) {
+        try {
+          await lookUp()
+        } catch (error) {
+          if (error.isRateLimit) return stopForRateLimit('Bandcamp', error)
+          for (const preview of releasePreviews) {
+            if ([404, 410].includes(error.statusCode)) await markMissing(preview, `release ${error.message}`)
+            else await recordFailure(preview, error)
+          }
+          continue
         }
-        continue
       }
 
       for (const preview of releasePreviews) {
@@ -242,18 +258,27 @@ module.exports.prefetchPreviewAudio = async (
         try {
           let lookedUpAgain = false
           for (;;) {
-            const streamUrl = findStreamUrl(release, preview.store_track_id)
+            const streamUrl = streamUrlOf(preview)
             if (!streamUrl) {
+              // A kept URL can have aged out during the run: look the release up before giving up on the track.
+              if (!release) {
+                await lookUp()
+                continue
+              }
               await markMissing(preview, 'Bandcamp does not stream the track')
               break
             }
             try {
-              await download(preview, streamUrl, throttle)
+              await download(preview, streamUrl, fetchBandcampStream)
               break
             } catch (error) {
               if (!(error instanceof StreamRefused)) throw error
-              // Stream URLs expire: look the release up once more before treating the refusal as a rate limit.
-              if (lookedUpAgain) throw new RateLimited(`Bandcamp refused the stream (${error.message})`)
+              // Stream URLs expire: look the release up once more before treating the refusal as a rate limit,
+              // which pauses all Bandcamp requests, as any other rate limit from bandcamp.com does.
+              if (lookedUpAgain) {
+                suspendBandcamp(streamUrl, `stream refused twice (${error.message})`)
+                throw new RateLimited(`Bandcamp refused the stream (${error.message})`)
+              }
               lookedUpAgain = true
               await lookUp()
             }

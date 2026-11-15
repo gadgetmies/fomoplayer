@@ -144,12 +144,16 @@ const addWaveform = (previewId) =>
         VALUES (${previewId}, '/api/storage/waveforms/x.png')`,
   )
 
+// Bandcamp streams are fetched with the same fake as the other stores unless a test passes its own.
 const run = (options) =>
   prefetchPreviewAudio(
     { id: 1 },
     {
       bucketName: BUCKET,
       isBandcampRateLimited: () => false,
+      getCachedStreamUrl: () => null,
+      fetchBandcampStream: options.fetch,
+      suspendBandcamp: () => {},
       storePauses: createPauses(),
       downloadIntervalMs: 0,
       isPreviewEnv: false,
@@ -239,7 +243,7 @@ test({
       assert.strictEqual(result.success, true)
       assert.deepStrictEqual(
         { ...result.result, rateLimited: undefined },
-        { released: 0, stored: 3, missing: 2, failed: 1, rateLimited: undefined, capReached: false },
+        { released: 0, stored: 3, missing: 2, failed: 1, lookups: 2, rateLimited: undefined, capReached: false },
       )
     },
 
@@ -412,6 +416,68 @@ test({
     assert.strictEqual(bandcamp.lookups.length, 2)
     assert.strictEqual(result.result.stored, 1)
     assert.ok((await audioRow(preview.id)).key)
+  },
+
+  'a newly added Bandcamp track is downloaded with the stream URL kept from its release': async () => {
+    await clearPreviews()
+    const releaseUrl = 'https://artist.bandcamp.com/album/just-added'
+    const preview = await insertPreview({ store: 'Bandcamp', releaseUrl })
+    const bandcamp = fakeBandcamp({})
+    const { fetch, requests } = fakeFetch({ 'https://bcbits.example/kept': 200 })
+    const result = await run({
+      client: fakeClient(),
+      fetch,
+      getRelease: bandcamp.getRelease,
+      getCachedStreamUrl: (trackId) => (trackId === preview.storeTrackId ? 'https://bcbits.example/kept' : null),
+    })
+    assert.deepStrictEqual(bandcamp.lookups, [])
+    assert.deepStrictEqual(requests, ['https://bcbits.example/kept'])
+    assert.strictEqual(result.result.stored, 1)
+  },
+
+  'a refused kept stream URL is replaced by looking the release up': async () => {
+    await clearPreviews()
+    const releaseUrl = 'https://artist.bandcamp.com/album/kept-expired'
+    const preview = await insertPreview({ store: 'Bandcamp', releaseUrl })
+    const bandcamp = fakeBandcamp({ [releaseUrl]: release({ [preview.storeTrackId]: 'https://bcbits.example/fresh' }) })
+    const { fetch } = fakeFetch({ 'https://bcbits.example/expired': 410, 'https://bcbits.example/fresh': 200 })
+    const result = await run({
+      client: fakeClient(),
+      fetch,
+      getRelease: bandcamp.getRelease,
+      getCachedStreamUrl: () => 'https://bcbits.example/expired',
+    })
+    assert.strictEqual(bandcamp.lookups.length, 1)
+    assert.strictEqual(result.result.stored, 1)
+  },
+
+  'a stream refused after a fresh lookup pauses Bandcamp for everyone': async () => {
+    await clearPreviews()
+    const releaseUrl = 'https://artist.bandcamp.com/album/refused'
+    const preview = await insertPreview({ store: 'Bandcamp', releaseUrl })
+    const bandcamp = fakeBandcamp({
+      [releaseUrl]: release({ [preview.storeTrackId]: 'https://bcbits.example/refused' }),
+    })
+    const suspended = []
+    const result = await run({
+      client: fakeClient(),
+      fetch: fakeFetch({ 'https://bcbits.example/refused': 403 }).fetch,
+      getRelease: bandcamp.getRelease,
+      suspendBandcamp: (url, reason) => suspended.push(url),
+    })
+    assert.deepStrictEqual(suspended, ['https://bcbits.example/refused'])
+    assert.deepStrictEqual(result.result.rateLimited, ['Bandcamp'])
+    assert.strictEqual(await audioRow(preview.id), undefined, 'a rate limit is not a failed attempt')
+  },
+
+  'a Beatport page instead of audio is a failed download': async () => {
+    await clearPreviews()
+    const preview = await insertPreview({ store: 'Beatport', url: 'https://bp.example/page.mp3' })
+    const fetch = async () => new Response('<html></html>', { status: 200, headers: { 'content-type': 'text/html' } })
+    const client = fakeClient()
+    await run({ client, fetch, getRelease: fakeBandcamp({}).getRelease })
+    assert.strictEqual((await audioRow(preview.id)).attempts, 1)
+    assert.deepStrictEqual(client.objects, {})
   },
 
   'the third failed download marks the preview missing': async () => {
