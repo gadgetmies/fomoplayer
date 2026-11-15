@@ -12,6 +12,7 @@ import os
 import shutil
 import socket
 import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -158,6 +159,29 @@ class EmbeddingServiceTest(unittest.TestCase):
         self.assertEqual(server.server_address[0], '0.0.0.0')
         self.assertIn('IPv6 unavailable', out.getvalue())
         self.assertEqual(self.health('127.0.0.1', server.server_port), 200)
+
+    def embed_in_child(self, quiet):
+        """Essentia logs to file descriptor 2, so run one embedding in a child
+        process and return (stderr, vector)."""
+        code = (
+            'import json, tempfile, embedding, embedding_service\n'
+            + ('embedding_service.quiet_essentia_warnings()\n' if quiet else '')
+            + f'v = embedding.embed_file({self.mp3!r}, embedding.build_model(), tempfile.mkdtemp())\n'
+            + 'print(json.dumps(v))\n'
+        )
+        result = subprocess.run([sys.executable, '-c', code], cwd=os.path.dirname(os.path.abspath(__file__)),
+                                capture_output=True, text=True, timeout=300,
+                                env=dict(os.environ, TF_CPP_MIN_LOG_LEVEL='3'))
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+        return result.stderr, json.loads(result.stdout.strip().splitlines()[-1])
+
+    def test_essentia_warnings_are_silenced(self):
+        warning = 'No network created, or last created network has been deleted'
+        noisy_err, noisy_vector = self.embed_in_child(quiet=False)
+        quiet_err, quiet_vector = self.embed_in_child(quiet=True)
+        self.assertIn(warning, noisy_err, 'control: the warning appears without the switch')
+        self.assertNotIn(warning, quiet_err)
+        self.assertEqual(quiet_vector, noisy_vector)
 
     def test_refuses_to_start_without_token(self):
         with self.assertRaises(ValueError):
