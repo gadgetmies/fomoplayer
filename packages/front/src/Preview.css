@@ -362,6 +362,33 @@
   text-overflow: ellipsis;
 }
 
+/* Artists and title are cut short separately, so the title shows however many artists there are: the artists give
+   way first (they shrink a thousand times faster), down to a few letters, then the title */
+.docked-player_title {
+  display: flex;
+}
+
+.docked-player_title .track-title_artists,
+.docked-player_title .track-title_name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.docked-player_title .track-title_artists {
+  flex: 0 1000 auto;
+  min-width: 3em;
+}
+
+.docked-player_title .track-title_separator {
+  flex: none;
+  white-space: pre;
+}
+
+.docked-player_title .track-title_name {
+  flex: 0 1 auto;
+}
+
 /* As small as the panel's details */
 .docked-player_labels {
   font-size: 75%;

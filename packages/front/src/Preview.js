@@ -9,7 +9,7 @@ import { requestWithCredentials } from './request-json-with-credentials'
 import Collection from './Collection'
 import Spinner from './Spinner'
 import StoreIcon from './StoreIcon'
-import { followableNameLinks, namesToString, trackArtistsAndTitle } from './trackFunctions'
+import { artistsAndTitle, followableNameLinks, namesToString, trackArtistsAndTitle } from './trackFunctions'
 import { getWaveformTimeline } from './waveformTimeline'
 import CopyToClipboardButton from './CopyToClipboardButton'
 import ShareLink from './ShareLink'
@@ -484,11 +484,9 @@ class Preview extends Component {
   // Artists and title (with follow links), or the uploaded sample's name: in the panel and the docked bar
   renderTrackTitle() {
     const currentTrack = this.props.currentTrack
-    return isSample(currentTrack) ? (
-      <>Your sample - {currentTrack.title}</>
-    ) : (
-      trackArtistsAndTitle(currentTrack, this.props.follows, this.props.onAddEntityToSearch)
-    )
+    return isSample(currentTrack)
+      ? artistsAndTitle('Your sample', currentTrack.title)
+      : trackArtistsAndTitle(currentTrack, this.props.follows, this.props.onAddEntityToSearch)
   }
 
   // The track's labels (with follow links) after a caption: "Labels:" in the panel's details, "On:" in the docked bar
