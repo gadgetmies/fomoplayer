@@ -41,4 +41,4 @@
 
 ## 8. Verify
 
-- [ ] 8.1 Full backend suite green (`yarn test`); analyser unit tests green.
+- [x] 8.1 Full backend suite green (`yarn test`), browser tests green (`ci:test:browser`), front-end and analyser unit tests green.
