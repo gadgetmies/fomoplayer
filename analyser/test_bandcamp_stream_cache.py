@@ -76,9 +76,9 @@ def test_cdn_urls_expire_at_their_ts():
     assert bandcamp.stream_url_expiry(cdn_url(1, 2_000_000_000), fetched_at=0) == 2_000_000_000
 
 
-def test_redirect_urls_are_trusted_for_a_week():
+def test_redirect_urls_are_trusted_for_the_refresh_age():
     fetched = 1_800_000_000
-    assert bandcamp.stream_url_expiry(redirect_url(1, fetched), fetched) == fetched + 7 * 24 * 3600
+    assert bandcamp.stream_url_expiry(redirect_url(1, fetched), fetched) == fetched + 13 * 24 * 3600
 
 
 def test_a_resolved_release_serves_its_other_tracks_without_a_lookup(page_requests):

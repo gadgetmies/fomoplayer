@@ -30,14 +30,15 @@ RATE_LIMIT_PAUSE_S = 600
 # give CDN URLs (*.bcbits.com/stream/...) whose `ts` parameter is their expiry
 # time, 24 h after they are issued (measured 2026-11-15). The mobile API gives
 # bandcamp.com/stream_redirect URLs whose `ts` is the time they were issued;
-# one issued 13 days earlier still worked. A cached URL is used until
+# one issued 13 days earlier still worked, so they are used for
+# BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS (13 by default), as in the backend. A cached URL is used until
 # EXPIRY_MARGIN_S before it expires, and a refused one is forgotten
 # (forget_stream_url) so the next resolve looks the release up again.
 STREAM_CACHE_PATH = os.getenv(
     "BANDCAMP_STREAM_CACHE",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "bandcamp_stream_urls.json"),
 )
-REDIRECT_URL_MAX_AGE_S = 7 * 24 * 3600
+REDIRECT_URL_MAX_AGE_S = float(os.getenv("BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS", "13")) * 24 * 3600
 UNKNOWN_URL_MAX_AGE_S = 3600
 EXPIRY_MARGIN_S = 15 * 60
 
