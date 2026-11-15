@@ -36,10 +36,12 @@ const openSample = async (page, filename) => {
   await waitUntilOpen(page, filename, `Opening ${filename} should show its content under its row.`)
 }
 
-// The newest sample is open on arrival; opening another one closes it and shows the new one's content under its row
+// Every sample is closed on arrival; opening one shows its content under its row, opening another closes it
 const assertOpeningASampleClosesTheOther = async ({ page }) => {
   await openSamplesTab(page)
-  await waitUntilOpen(page, SAMPLES.matched, 'The newest sample should be open when the tab opens.')
+  expect(await isOpen(page, SAMPLES.matched), 'no sample should be open when the tab opens').to.equal(false)
+  expect(await page.locator('.notifications-sample_content').count()).to.equal(0)
+  await openSample(page, SAMPLES.matched)
 
   // Click where the name is: the row's expand button covers the whole header, name included
   const name = await sampleRow(page, SAMPLES.other).locator('.notifications-sample_name').boundingBox()
@@ -104,13 +106,13 @@ const assertLinkOpensSample = async ({ page, ids }) => {
   expect(await isOpen(page, SAMPLES.matched)).to.equal(false)
 
   await openSamplesTab(page, '?sample=999999999')
-  await waitUntilOpen(page, SAMPLES.matched, 'An unknown sample id should open the tab with the newest sample open.')
+  expect(await page.locator('.notifications-sample_content').count(), 'an unknown id should open no sample').to.equal(0)
 }
 
 // On a phone the tab fits the screen: no sideways scrolling, and the toggle gets a line of its own in the header
 const assertPhoneLayoutFits = async ({ mobilePage }) => {
   await openSamplesTab(mobilePage)
-  await waitUntilOpen(mobilePage, SAMPLES.matched, 'The newest sample should be open on the phone too.')
+  await openSample(mobilePage, SAMPLES.matched)
   const views = sampleRow(mobilePage, SAMPLES.matched).locator('.notifications-sample_views')
   await views.waitFor({ state: 'visible', timeout: 5000 })
   const overflow = await mobilePage.evaluate(() => {
@@ -181,6 +183,7 @@ const assertMatchListed = async ({ page, mobilePage }) => {
   await strength.hover()
 
   await openSamplesTab(mobilePage)
+  await openSample(mobilePage, SAMPLES.matched)
   const phoneMatch = sampleRow(mobilePage, SAMPLES.matched).locator('.notifications-matches > tbody > tr.track').first()
   await phoneMatch.waitFor({ state: 'visible', timeout: 10000 })
   expect(await phoneMatch.locator('.why-cell--column').isVisible()).to.equal(false)

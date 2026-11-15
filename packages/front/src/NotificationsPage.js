@@ -155,15 +155,11 @@ class NotificationsPage extends Component {
   }
 
   async loadSamples() {
-    const previous = this.state.samples
     const samples = await loadAudioSamples()
     const linked = this.linkedSampleId(samples)
     const current = this.state.selectedSampleId
-    // Keep the open sample open, and keep all closed if the user closed them; open the first one when the list
-    // was empty before (first load, first upload)
-    const selectedSampleId =
-      linked ??
-      (samples.some(({ id }) => id === current) ? current : previous?.length ? null : (samples[0]?.id ?? null))
+    // Keep the open sample open; otherwise all stay closed until the user (or a link) opens one
+    const selectedSampleId = linked ?? (samples.some(({ id }) => id === current) ? current : null)
     if (linked !== null) this.scrollToSampleId = linked
     this.setState({ samples })
     if (selectedSampleId !== current || this.state.matches === null) await this.selectSample(selectedSampleId)
