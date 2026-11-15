@@ -9,6 +9,9 @@
 // sample from the bucket, renders its waveform with the same code as the
 // upload and records it with the sample's duration.
 //
+// In production the same backfill runs as the renderSampleWaveforms job,
+// started from Admin › Jobs, without anyone needing its credentials.
+//
 // It is DRY-RUN by default. Flags:
 //   --apply        render and store the waveforms (otherwise only list them)
 //   --limit=N      stop after N samples (default: all)
