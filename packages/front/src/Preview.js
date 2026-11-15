@@ -107,6 +107,7 @@ class Preview extends Component {
       mediaDurationMs: undefined,
       mp3Preview: preview,
       previewUrl: undefined,
+      streamRefreshed: false,
     })
 
     let url = preview.url
@@ -123,8 +124,13 @@ class Preview extends Component {
     }
   }
 
-  async fetchPreviewUrl(preview) {
-    const res = await requestWithCredentials({ path: `/stores/${preview.store}/previews/${preview.id}` })
+  // refresh: the URL we got could not be played, so the backend looks it up again from the store.
+  // prefetch: asked ahead for the next track, so it does not take priority over a listener's request.
+  async fetchPreviewUrl(preview, { refresh = false, prefetch = false } = {}) {
+    const query = [refresh && 'refresh=true', prefetch && 'prefetch=true'].filter(Boolean).join('&')
+    const res = await requestWithCredentials({
+      path: `/stores/${preview.store}/previews/${preview.id}${query ? `?${query}` : ''}`,
+    })
     const { url } = await res.json()
     return url
   }
@@ -135,7 +141,7 @@ class Preview extends Component {
     for (const preview of previews) {
       if (preview.url === null || (preview.store === 'bandcamp' && !preview.url.includes('token='))) {
         try {
-          await this.fetchPreviewUrl(preview)
+          await this.fetchPreviewUrl(preview, { prefetch: true })
         } catch (e) {
           console.error('Pre-fetch failed', e)
         }
@@ -1189,6 +1195,20 @@ class Preview extends Component {
         }}
         onError={async (e) => {
           console.error('Audio error', e)
+          // Bandcamp stream URLs are stored and eventually stop working: ask for a fresh one, once per track.
+          const { mp3Preview: failedPreview, streamRefreshed } = this.state
+          if (failedPreview?.store === 'bandcamp' && !streamRefreshed) {
+            this.setState({ streamRefreshed: true })
+            try {
+              const url = await this.fetchPreviewUrl(failedPreview, { refresh: true })
+              if (this.state.mp3Preview === failedPreview && url) {
+                this.setState({ previewUrl: url })
+                return
+              }
+            } catch (refreshError) {
+              console.error('Refreshing the stream URL failed', refreshError)
+            }
+          }
           await requestWithCredentials({
             url: '/log/error',
             method: 'POST',
