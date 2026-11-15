@@ -211,6 +211,20 @@ test({
     }
   },
 
+  'a connection failure names its cause': async ({ ids, objects }) => {
+    await clearEmbeddings(ids)
+    const fetchFn = async () => {
+      throw new TypeError('fetch failed', {
+        cause: Object.assign(new Error('connect ECONNREFUSED fd12::1:8080'), { code: 'ECONNREFUSED' }),
+      })
+    }
+    const { result } = await embedNotificationAudioSamples({ id: 1 }, options(fetchFn, objects, { limit: 3 }))
+    assert.deepStrictEqual(
+      result.failed.map(({ error }) => error),
+      ids.map(() => 'fetch failed (ECONNREFUSED)'),
+    )
+  },
+
   'a vector from another model is refused': async ({ samples, objects }) => {
     const { fetchFn } = fakeService(
       Object.fromEntries(samples.map(({ name }) => [name, { status: 200, body: { model: 'other-model', embedding: VECTOR } }])),

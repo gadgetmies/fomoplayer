@@ -11,6 +11,12 @@ const { readObject } = require('../routes/users/sample-waveforms')
 // A sample's audio is a few MB at most; the model takes seconds on CPU.
 const REQUEST_TIMEOUT_MS = 120 * 1000
 
+// fetch reports a connection failure as 'fetch failed' and keeps the reason (ECONNREFUSED, ENOTFOUND…) in cause
+const describeError = (error) => {
+  const cause = error.cause && (error.cause.code || error.cause.message)
+  return cause ? `${error.message} (${cause})` : error.message
+}
+
 const queryPendingSamples = (limit) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
@@ -87,8 +93,8 @@ module.exports.embedNotificationAudioSamples = async (
       await upsertNotificationAudioSampleEmbedding(id, EMBEDDING_TYPE, JSON.stringify(embedding))
       embedded.push(id)
     } catch (error) {
-      logger.warn('Could not embed an audio sample', { sampleId: id, error: error.message })
-      failed.push({ id, filename, error: error.message })
+      logger.warn('Could not embed an audio sample', { sampleId: id, error: describeError(error) })
+      failed.push({ id, filename, error: describeError(error) })
     }
   }
 

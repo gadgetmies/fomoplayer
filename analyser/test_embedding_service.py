@@ -10,10 +10,12 @@ import io
 import json
 import os
 import shutil
+import socket
 import subprocess
 import tempfile
 import threading
 import unittest
+from unittest import mock
 import urllib.error
 import urllib.request
 
@@ -26,6 +28,15 @@ except ImportError:  # essentia-tensorflow not installed
     embedding = None
 
 TOKEN = 'test-token'
+
+
+def _ipv6_available():
+    try:
+        with socket.socket(socket.AF_INET6) as s:
+            s.bind(('::1', 0))
+        return True
+    except OSError:
+        return False
 
 
 def _generate(path, source, *args):
@@ -116,6 +127,37 @@ class EmbeddingServiceTest(unittest.TestCase):
             self.request('GET', '/health', token=None)
         self.assertIn('[embedding-service] 127.0.0.1 "GET /health HTTP/1.1" 200', out.getvalue())
         self.assertEqual(err.getvalue(), '')
+
+    def serve_default(self):
+        server = embedding_service.create_server(TOKEN, self.model)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        return server
+
+    def health(self, host, port):
+        with self.opener.open(f'http://{host}:{port}/health', timeout=30) as res:
+            return res.status
+
+    def test_default_listener_answers_on_ipv4(self):
+        # Railway's health check connects over IPv4
+        self.assertEqual(self.health('127.0.0.1', self.serve_default().server_port), 200)
+
+    @unittest.skipUnless(_ipv6_available(), 'IPv6 is not available on this host')
+    def test_default_listener_answers_on_ipv6(self):
+        # Railway's legacy private network resolves embedding.railway.internal to IPv6 only
+        server = self.serve_default()
+        self.assertIsInstance(server, embedding_service.DualStackHTTPServer)
+        self.assertEqual(self.health('[::1]', server.server_port), 200)
+
+    def test_falls_back_to_ipv4_without_ipv6(self):
+        unsupported = mock.Mock(side_effect=OSError(97, 'Address family not supported by protocol'))
+        with mock.patch.object(embedding_service, 'DualStackHTTPServer', unsupported), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            server = self.serve_default()
+        self.assertEqual(server.server_address[0], '0.0.0.0')
+        self.assertIn('IPv6 unavailable', out.getvalue())
+        self.assertEqual(self.health('127.0.0.1', server.server_port), 200)
 
     def test_refuses_to_start_without_token(self):
         with self.assertRaises(ValueError):
