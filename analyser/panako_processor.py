@@ -369,6 +369,14 @@ def process_previews(batch_size, workers, score_after, jobs_file=None, direct_do
         # exit non-zero so the driver loop backs off instead of spinning.
         return 0 if gone_ids else 1
 
+    # Stream URLs resolved here (not stored previews' bucket URLs): a failed
+    # download forgets the URL so the next run looks the release up again.
+    resolved_track_ids = {
+        str(p.get('preview_id') or p.get('id')): p.get('store_track_id')
+        for p in previews_to_process
+        if not p.get('audio_url') and p.get('release_url') and p.get('store_track_id')
+    }
+
     jobs = [
         {
             'id': p.get('preview_id') or p.get('id'),
@@ -407,6 +415,8 @@ def process_previews(batch_size, workers, score_after, jobs_file=None, direct_do
                 for r in sub_results:
                     if r['error']:
                         print(f"    preview {r['id']} failed: {r['error']}")
+                        if str(r['error']).startswith('prep:') and str(r['id']) in resolved_track_ids:
+                            bandcamp.forget_stream_url(resolved_track_ids[str(r['id'])])
                 zero_fp_ids = [
                     r['id'] for r in sub_results
                     if r['error'] is None and r.get('fp_count') == 0

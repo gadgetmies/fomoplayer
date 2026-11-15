@@ -599,6 +599,19 @@ Two paths serve them:
   resolver's per-release page cache) and feeds it to
   `panako_processor.py --previews --jobs-file bandcamp_jobs.json`.
 
+### Bandcamp stream URL cache (2026-11-15)
+
+With `--direct-download` the workers still resolve Bandcamp stream URLs
+from release pages. `bandcamp.py` keeps the stream URL of every track of
+each release it looks up in `bandcamp_stream_urls.json` (override with
+`BANDCAMP_STREAM_CACHE`), shared by the workers and across runs. A
+release-page URL (`*.bcbits.com/stream/...`) carries its expiry in `ts`,
+24 h after it is issued, and is used until 15 minutes before then; a
+`bandcamp.com/stream_redirect` URL is used for 7 days. A refused or failed
+download forgets the URL, so the next attempt looks the release up again.
+`main.py` keeps a preview whose cached URL failed in the queue instead of
+marking it missing.
+
 ### Fixture fingerprint re-extraction
 
 The backend's hermetic regression test

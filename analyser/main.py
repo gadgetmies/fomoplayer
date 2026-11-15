@@ -483,12 +483,14 @@ if __name__ == '__main__':
                 previews = track.get('previews')
                 found = False
                 for preview in previews:
+                    from_cache = False
                     previewUrl = preview.get("url")
                     previewId = preview.get("preview_id")
                     if preview.get("audio_url"):
                         # Stored in our bucket by the backend's prefetchPreviewAudio job.
                         previewUrl = preview.get("audio_url")
                     elif not previewUrl and preview.get("store") == "Bandcamp":
+                        from_cache = bool(bandcamp.cached_stream_url(preview.get("store_track_id")))
                         previewUrl = resolve_bandcamp_url(preview)
                         if previewUrl is None:
                             print(f"Bandcamp has no stream for preview {previewId}")
@@ -510,6 +512,12 @@ if __name__ == '__main__':
                         print("Downloading preview failed")
                         if preview.get("audio_url"):
                             # Our own bucket failing is transient: keep the preview queued.
+                            print(e)
+                            continue
+                        if not preview.get("url") and preview.get("store") == "Bandcamp" and from_cache:
+                            # A cached stream URL may have expired: forget it so the next
+                            # run looks the release up again, and keep the preview queued.
+                            bandcamp.forget_stream_url(preview.get("store_track_id"))
                             print(e)
                             continue
                         tracks.append({"id": track.get('track_id'), "isrc": track.get('track_isrc'),

@@ -207,6 +207,7 @@ def fetch_preview(preview, mp3_path, backoff):
             # A cached release page carries stream URLs that expire: refetch it
             # once, and treat a second refusal as a rate limit.
             bandcamp._release_cache.pop(preview.get("release_url"), None)
+            bandcamp.forget_stream_url(preview.get("store_track_id"))
             if expired_retries == 0:
                 expired_retries += 1
                 continue
