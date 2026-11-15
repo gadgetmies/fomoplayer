@@ -5,6 +5,7 @@ const express = require('express')
 const request = require('supertest')
 const { test } = require('cascade-test')
 const { createAuthRouter } = require('../../../../routes/auth')
+const { createUsedChallengeStore } = require('../../../../routes/shared/cli-auth-code')
 
 const ALLOWED_EXTENSION_ID = 'abcdefghijklmnopabcdefghijklmnop'
 
@@ -50,7 +51,15 @@ const sessionMiddleware = (initial = {}) => {
   ]
 }
 
-const buildApp = ({ config, extensionRefreshToken, tokenServer, issueCodeFn, consumeCodeFn, session }) => {
+const buildApp = ({
+  config,
+  extensionRefreshToken,
+  tokenServer,
+  issueCodeFn,
+  consumeCodeFn,
+  session,
+  usedChallenges = createUsedChallengeStore(),
+}) => {
   const [middleware, sessionStore] = sessionMiddleware(session)
   const app = express()
   app.use(express.json())
@@ -63,6 +72,7 @@ const buildApp = ({ config, extensionRefreshToken, tokenServer, issueCodeFn, con
       tokenServer,
       issueCodeFn,
       consumeCodeFn,
+      usedChallenges,
     }),
   )
   return { app, sessionStore }
@@ -121,7 +131,94 @@ const fakeRefreshTokenStore = () => {
   }
 }
 
+const consentQuery = (codeChallenge) => ({
+  extensionId: ALLOWED_EXTENSION_ID,
+  code_challenge: codeChallenge,
+  code_challenge_method: 'S256',
+  state: 'st',
+  redirect_uri: ALLOWED_REDIRECT_URI,
+})
+
 test({
+  'GET /login/extension shows "already used" instead of consent after the link was approved': async () => {
+    const issued = []
+    const { app, sessionStore } = buildApp({
+      config: baseConfig(generatePrivateKey()),
+      extensionRefreshToken: fakeRefreshTokenStore(),
+      tokenServer: fakeTokenServer(),
+      issueCodeFn: (userId, codeChallenge) => {
+        issued.push(codeChallenge)
+        return `code-${issued.length}`
+      },
+      session: { userId: 7 },
+    })
+
+    await request(app).get('/api/auth/login/extension').query(consentQuery('approved-challenge'))
+    const confirm = await request(app).post('/api/auth/login/extension/confirm')
+    assert.strictEqual(confirm.status, 302)
+
+    const reopened = await request(app).get('/api/auth/login/extension').query(consentQuery('approved-challenge'))
+    assert.strictEqual(reopened.status, 410)
+    assert.match(reopened.text, /already been used/)
+    assert.doesNotMatch(reopened.text, /Grant extension access/)
+    assert.strictEqual(sessionStore.extensionCodeChallenge, undefined)
+
+    const reconfirm = await request(app).post('/api/auth/login/extension/confirm')
+    assert.strictEqual(reconfirm.status, 400)
+    assert.deepStrictEqual(issued, ['approved-challenge'])
+  },
+
+  'POST /login/extension/confirm issues no second code for an already approved request': async () => {
+    const issued = []
+    const usedChallenges = createUsedChallengeStore()
+    const session = {
+      userId: 7,
+      extensionId: ALLOWED_EXTENSION_ID,
+      extensionCodeChallenge: 'double-submit',
+      extensionCodeChallengeMethod: 'S256',
+      extensionState: 'st',
+      extensionRedirectUri: ALLOWED_REDIRECT_URI,
+    }
+    const build = () =>
+      buildApp({
+        config: baseConfig(generatePrivateKey()),
+        extensionRefreshToken: fakeRefreshTokenStore(),
+        tokenServer: fakeTokenServer(),
+        issueCodeFn: (userId, codeChallenge) => {
+          issued.push(codeChallenge)
+          return 'code'
+        },
+        session,
+        usedChallenges,
+      })
+    // Two sessions (e.g. two tabs) holding the same pending request.
+    const first = await request(build().app).post('/api/auth/login/extension/confirm')
+    const second = await request(build().app).post('/api/auth/login/extension/confirm')
+    assert.strictEqual(first.status, 302)
+    assert.strictEqual(second.status, 410)
+    assert.deepStrictEqual(issued, ['double-submit'])
+  },
+
+  'GET /login/extension shows "already used" after the link was denied': async () => {
+    const { app } = buildApp({
+      config: baseConfig(generatePrivateKey()),
+      extensionRefreshToken: fakeRefreshTokenStore(),
+      tokenServer: fakeTokenServer(),
+      session: { userId: 7 },
+    })
+    await request(app).get('/api/auth/login/extension').query(consentQuery('denied-challenge'))
+    const deny = await request(app).post('/api/auth/login/extension/deny')
+    assert.strictEqual(deny.status, 200)
+
+    const reopened = await request(app).get('/api/auth/login/extension').query(consentQuery('denied-challenge'))
+    assert.strictEqual(reopened.status, 410)
+    assert.match(reopened.text, /already been used/)
+
+    const fresh = await request(app).get('/api/auth/login/extension').query(consentQuery('new-challenge'))
+    assert.strictEqual(fresh.status, 200)
+    assert.match(fresh.text, /Grant extension access/)
+  },
+
   'GET /login/extension returns 503 when extension flow not configured': async () => {
     const { app } = buildApp({
       config: { ...baseConfig(generatePrivateKey()), extensionOauthAllowedIds: [] },

@@ -16,7 +16,11 @@ const { getAuthorizationUrl, requestTokens, storeName: spotifyStoreName } = requ
 const { upsertUserAuthorizationTokens } = require('./db')
 const { isSafeRedirectPath, evaluateHandoffTarget } = require('./shared/safe-redirect')
 const { mintHandoffToken: defaultMintHandoffToken, verifyHandoffToken: defaultVerifyHandoffToken } = require('./shared/auth-handoff-token')
-const { issueCode: defaultIssueCode, consumeCode: defaultConsumeCode } = require('./shared/cli-auth-code')
+const {
+  issueCode: defaultIssueCode,
+  consumeCode: defaultConsumeCode,
+  usedChallenges: defaultUsedChallenges,
+} = require('./shared/cli-auth-code')
 const { verifyActionsToken: defaultVerifyActionsToken, GITHUB_ACTIONS_ISSUER } = require('./shared/github-actions-oidc')
 const { evaluateSignUpPolicy, getRequestOrigin, isGoogleSubAllowed } = require('./shared/auth-flow')
 
@@ -28,6 +32,7 @@ const cliTemplates = {
   grant: fs.readFileSync(path.join(cliTemplateDir, 'grant.html'), 'utf8'),
   failed: fs.readFileSync(path.join(cliTemplateDir, 'failed.html'), 'utf8'),
   denied: fs.readFileSync(path.join(cliTemplateDir, 'denied.html'), 'utf8'),
+  used: fs.readFileSync(path.join(cliTemplateDir, 'used.html'), 'utf8'),
 }
 const renderCliTemplate = (templateName, replacements = {}) => {
   const template = cliTemplates[templateName]
@@ -48,6 +53,7 @@ const createAuthRouter = ({
   logger = defaultLogger,
   issueCodeFn = defaultIssueCode,
   consumeCodeFn = defaultConsumeCode,
+  usedChallenges = defaultUsedChallenges,
   verifyActionsTokenFn = defaultVerifyActionsToken,
   extensionRefreshToken = defaultExtensionRefreshToken,
   tokenServer = defaultTokenServer,
@@ -166,6 +172,14 @@ const createAuthRouter = ({
     })(req, res, next)
   })
 
+  const clearCliSession = (req) => {
+    if (!req.session) return
+    delete req.session.cliCallbackPort
+    delete req.session.cliCodeChallenge
+    delete req.session.cliCodeChallengeMethod
+    delete req.session.cliState
+  }
+
   router.get('/login/cli', (req, res) => {
     const portFromQuery = parseInt(req.query.callbackPort, 10)
     const callbackPort = Number.isInteger(portFromQuery) && portFromQuery >= 1024 && portFromQuery <= 65535
@@ -182,6 +196,12 @@ const createAuthRouter = ({
 
     if (!codeChallenge || codeChallengeMethod !== 'S256' || !state) {
       return res.status(400).json({ error: 'code_challenge (S256) and state are required' })
+    }
+
+    // An approved or denied link must not bring the consent screen back.
+    if (usedChallenges.isUsed(codeChallenge)) {
+      clearCliSession(req)
+      return res.status(410).type('html').send(renderCliTemplate('used'))
     }
 
     req.session.cliCallbackPort = callbackPort
@@ -233,12 +253,15 @@ const createAuthRouter = ({
     if (!codeChallenge || !state) {
       return res.status(400).json({ error: 'Session missing PKCE parameters' })
     }
+    // Marking the request used before issuing the code means a second confirm
+    // for the same link (another tab, a replayed form post) cannot get a code.
+    if (!usedChallenges.markUsed(codeChallenge)) {
+      clearCliSession(req)
+      return res.status(410).type('html').send(renderCliTemplate('used'))
+    }
     try {
       const code = issueCodeFn(req.user.id, codeChallenge)
-      delete req.session.cliCallbackPort
-      delete req.session.cliCodeChallenge
-      delete req.session.cliCodeChallengeMethod
-      delete req.session.cliState
+      clearCliSession(req)
       const callbackUrl = new URL(`http://localhost:${callbackPort}/`)
       callbackUrl.searchParams.set('code', code)
       callbackUrl.searchParams.set('state', state)
@@ -250,6 +273,8 @@ const createAuthRouter = ({
   })
 
   router.post('/login/cli/deny', (req, res) => {
+    usedChallenges.markUsed(req.session?.cliCodeChallenge)
+    clearCliSession(req)
     return res.status(200).type('html').send(renderCliTemplate('denied'))
   })
 
@@ -301,6 +326,20 @@ const createAuthRouter = ({
 </body>
 </html>`
 
+  const clearExtensionSession = (req) => {
+    if (!req.session) return
+    delete req.session.extensionId
+    delete req.session.extensionCodeChallenge
+    delete req.session.extensionCodeChallengeMethod
+    delete req.session.extensionState
+    delete req.session.extensionRedirectUri
+  }
+
+  const sendExtensionLinkUsed = (res) =>
+    res.status(410).type('html').send(extensionPageShell('Extension Link Already Used',
+      `<h1>This link has already been used</h1>
+  <p>This sign-in request has already been answered. To sign in again, start the login from the Fomo Player extension. You can close this tab.</p>`))
+
   router.get('/login/extension', (req, res) => {
     if (!isExtensionFlowConfigured) {
       return res.status(503).json({ error: 'Extension login is not configured on this backend' })
@@ -324,6 +363,12 @@ const createAuthRouter = ({
     if (!isAllowedExtensionRedirectUri(requestedRedirectUri)) {
       logger.warn('Rejected extension login: redirect_uri missing or not allowed', { requestedRedirectUri })
       return res.status(400).json({ error: 'Missing or invalid redirect_uri' })
+    }
+
+    // An approved or denied link must not bring the consent screen back.
+    if (usedChallenges.isUsed(codeChallenge)) {
+      clearExtensionSession(req)
+      return sendExtensionLinkUsed(res)
     }
 
     req.session.extensionId = requestedExtensionId
@@ -406,13 +451,13 @@ const createAuthRouter = ({
     if (!isAllowedExtensionRedirectUri(redirectUri)) {
       return res.status(400).json({ error: 'Session missing or invalid redirect_uri' })
     }
+    if (!usedChallenges.markUsed(codeChallenge)) {
+      clearExtensionSession(req)
+      return sendExtensionLinkUsed(res)
+    }
     try {
       const code = issueCodeFn(req.user.id, codeChallenge, { boundRedirectUri: redirectUri })
-      delete req.session.extensionId
-      delete req.session.extensionCodeChallenge
-      delete req.session.extensionCodeChallengeMethod
-      delete req.session.extensionState
-      delete req.session.extensionRedirectUri
+      clearExtensionSession(req)
       return res.redirect(buildExtensionRedirectUrl(code, state, redirectUri))
     } catch (e) {
       logger.error(`Extension login/confirm: issuing auth code failed: ${e}`)
@@ -421,11 +466,8 @@ const createAuthRouter = ({
   })
 
   router.post('/login/extension/deny', (req, res) => {
-    delete req.session.extensionId
-    delete req.session.extensionCodeChallenge
-    delete req.session.extensionCodeChallengeMethod
-    delete req.session.extensionState
-    delete req.session.extensionRedirectUri
+    usedChallenges.markUsed(req.session?.extensionCodeChallenge)
+    clearExtensionSession(req)
     return res.status(200).type('html').send(extensionPageShell('Extension Access Denied',
       `<h1>Access denied</h1>
   <p>The extension login was aborted. You can close this tab.</p>`))
