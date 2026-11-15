@@ -1,0 +1,4 @@
+ALTER TABLE user_notification_audio_sample
+  DROP COLUMN user_notification_audio_sample_waveform_object_key,
+  DROP COLUMN user_notification_audio_sample_waveform_url,
+  DROP COLUMN user_notification_audio_sample_duration_ms;

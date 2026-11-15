@@ -116,6 +116,7 @@ class Preview extends Component {
       position: 0,
       waveform: undefined,
       totalDuration: undefined,
+      mediaDurationMs: undefined,
       mp3Preview: preview,
       previewUrl: undefined,
     })
@@ -365,6 +366,8 @@ class Preview extends Component {
 
   getShouldSkip() {
     const mp3Preview = this.state.mp3Preview
+    // A sample is the user's own clip: it is played whole, however long it is
+    if (mp3Preview?.store === 'sample') return false
     const isLongPreview = mp3Preview && mp3Preview.end_ms - mp3Preview.start_ms > 130000
     return !this.state.preferFullTracks && isLongPreview
   }
@@ -600,7 +603,8 @@ class Preview extends Component {
 
   // Seeks to the clicked spot of a waveform that spans the timeline (the panel's waveform or the docked bar's).
   seekFromWaveformClick(e, { totalDuration, startOffset, endPosition }) {
-    if (e.button !== 0) return
+    // Nothing to map the click onto before the length of the audio is known
+    if (e.button !== 0 || !totalDuration) return
     const boundingRect = e.currentTarget.getBoundingClientRect()
     const trackPositionPercent = (e.clientX - boundingRect.left) / e.currentTarget.clientWidth
     const clickedPosition = totalDuration * trackPositionPercent
@@ -1153,7 +1157,9 @@ class Preview extends Component {
     const shouldSkip = this.getShouldSkip()
     const { totalDuration, startOffset, endPosition, toPositionPercent } = getWaveformTimeline({
       previewDetails: currentTrack ? previewDetails : null,
-      trackDuration: currentTrack?.duration,
+      // A sample without a waveform rendered at upload has no stored duration: use the audio's own until the player
+      // has generated the waveform
+      trackDuration: currentTrack?.duration ?? (isSample(currentTrack) ? this.state.mediaDurationMs : undefined),
       generatedWaveformDuration: this.state.totalDuration,
       shouldSkip,
     })
@@ -1240,6 +1246,9 @@ class Preview extends Component {
           }
         }}
         onLoadedMetadata={({ currentTarget }) => {
+          if (isSample(currentTrack) && Number.isFinite(currentTarget.duration)) {
+            this.setState({ mediaDurationMs: currentTarget.duration * 1000 })
+          }
           if (currentTrack?.abPair && this.state.abSource === 'A') {
             this.setState({ abSampleDuration: currentTarget.duration })
           }

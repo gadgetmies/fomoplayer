@@ -48,6 +48,7 @@
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^4.0.1",
     "minio": "^8.0.7",
+    "mpg123-decoder": "1.0.3",
     "morgan": "^1.12.1",
     "multer": "^2.4.0",
     "node-schedule": "^2.1.1",

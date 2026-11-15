@@ -1626,6 +1626,9 @@ module.exports.queryNotificationAudioSamples = async (userId) => {
       user_notification_audio_sample_file_type AS "fileType",
       user_notification_audio_sample_filename AS filename,
       user_notification_audio_sample_created_at AS "createdAt",
+      user_notification_audio_sample_waveform_url AS "waveformUrl",
+      user_notification_audio_sample_waveform_object_key AS "waveformObjectKey",
+      user_notification_audio_sample_duration_ms AS "durationMs",
       mc."matchCount"
     FROM user_notification_audio_sample
     LEFT JOIN LATERAL (
@@ -1638,6 +1641,41 @@ module.exports.queryNotificationAudioSamples = async (userId) => {
     `,
   )
 }
+
+// Records the waveform image rendered from a sample and the sample's duration.
+module.exports.updateNotificationAudioSampleWaveform = async (sampleId, { waveformObjectKey, waveformUrl, durationMs }) => {
+  await pg.queryAsync(
+    // language=PostgreSQL
+    sql`-- updateNotificationAudioSampleWaveform
+    UPDATE user_notification_audio_sample
+    SET user_notification_audio_sample_waveform_object_key = ${waveformObjectKey},
+        user_notification_audio_sample_waveform_url = ${waveformUrl},
+        user_notification_audio_sample_duration_ms = ${durationMs}
+    WHERE user_notification_audio_sample_id = ${sampleId}
+    `,
+  )
+}
+
+// Samples (of all users) uploaded before waveforms were rendered at upload, for the backfill script.
+// Keyset paged on the id, so samples that cannot be decoded do not hold up the ones after them.
+module.exports.queryNotificationAudioSamplesWithoutWaveform = async (afterId, limit) =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- queryNotificationAudioSamplesWithoutWaveform
+    SELECT
+      user_notification_audio_sample_id AS id,
+      meta_account_user_id AS "userId",
+      user_notification_audio_sample_bucket_name AS "bucketName",
+      user_notification_audio_sample_object_key AS "objectKey",
+      user_notification_audio_sample_file_type AS "fileType",
+      user_notification_audio_sample_filename AS filename
+    FROM user_notification_audio_sample
+    WHERE user_notification_audio_sample_waveform_url IS NULL
+      AND user_notification_audio_sample_id > ${afterId}
+    ORDER BY user_notification_audio_sample_id
+    LIMIT ${limit}
+    `,
+  )
 
 module.exports.deleteNotificationAudioSample = async (userId, sampleId) => {
   await pg.queryAsync(
