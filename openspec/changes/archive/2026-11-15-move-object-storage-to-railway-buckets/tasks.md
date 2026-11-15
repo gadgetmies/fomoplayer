@@ -24,6 +24,6 @@
 
 ## 5. Switch-over (operations)
 
-- [ ] 5.1 Re-run the copy, then point production `AUDIO_SAMPLE_STORAGE_*` at the bucket (`REGION=auto`, `URL_STYLE=virtual`).
-- [ ] 5.2 Update the analyser's `WAVEFORM_STORAGE_*` to the same bucket.
-- [ ] 5.3 After verification, delete the MinIO `Bucket` service and its volume.
+- [x] 5.1 Re-run the copy, then point production `AUDIO_SAMPLE_STORAGE_*` at the bucket (`REGION=auto`, `URL_STYLE=virtual`).
+- [ ] 5.2 Update the analyser's `WAVEFORM_STORAGE_*` to the same bucket. Deferred: no analyser or waveform worker runs at the moment; set it before the next run.
+- [x] 5.3 After verification, delete the MinIO `Bucket` and `Console` services in production. Their volume `whistle-volume` and the one-off `minio-migration` service are removed separately.
