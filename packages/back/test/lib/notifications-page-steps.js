@@ -431,16 +431,10 @@ const assertCartButtonWorksForActivityRow = async ({ page }) => {
   const row = page.locator('.notifications-activity tbody tr.track').first()
   await row.waitFor({ state: 'visible', timeout: 10000 })
   await row.click()
+  // The player does not name its source on the page the track was played from, so wait for the row to be the playing one
   await waitForWithTimeoutMessage(
     () =>
-      page.waitForFunction(
-        () =>
-          document
-            .querySelector('.preview_details_wrapper .preview_playing-from')
-            ?.textContent.includes('Notifications · Activity'),
-        null,
-        { timeout: 10000 },
-      ),
+      page.waitForSelector('.notifications-activity tbody tr.track.playing', { state: 'visible', timeout: 10000 }),
     'Clicking an Activity row should load its track in the player.',
   )
   // The playing row below shows the same cart state as the player after each click
