@@ -165,19 +165,22 @@ const startSuspension = (url, reason) => {
   return error
 }
 
-const getPageSource = async (url, options = {}) => {
-  if (suspendedUntil) {
-    if (suspendedUntil < Date.now()) {
-      suspendedUntil = null
-      requestCount = 0
-    } else {
-      const error = new Error(`Bandcamp requests are paused until ${suspendedUntil.toISOString()}`)
-      error.isRateLimit = true
-      error.isSuspended = true
-      error.retryAfter = suspendedUntil
-      throw error
-    }
+const throwIfSuspended = () => {
+  if (!suspendedUntil) return
+  if (suspendedUntil < Date.now()) {
+    suspendedUntil = null
+    requestCount = 0
+    return
   }
+  const error = new Error(`Bandcamp requests are paused until ${suspendedUntil.toISOString()}`)
+  error.isRateLimit = true
+  error.isSuspended = true
+  error.retryAfter = suspendedUntil
+  throw error
+}
+
+const getPageSource = async (url, options = {}) => {
+  throwIfSuspended()
   await waitForRequestSlot()
   requestCount++
   const res = await fetch(url, { method: 'GET', ...options, headers: withUserAgent(options.headers) })
@@ -204,6 +207,39 @@ const getPageSource = async (url, options = {}) => {
   return text
 }
 
+// Requests a track's audio stream. The mobile endpoint's stream URLs are bandcamp.com/stream_redirect links, so a
+// download is a request to the same edge that rate-limits the pages: it waits for a request slot and honours the
+// pause like any other request, and fetch follows the redirect to the CDN. Resolves with the response of an audio
+// stream. A 403 or 410 is returned to the caller, which looks the release up again once in case the signed URL
+// expired, and reports a second refusal with suspendRequests. A 429 or a challenge page pauses Bandcamp requests.
+const fetchStream = async (url, options = {}) => {
+  throwIfSuspended()
+  await waitForRequestSlot()
+  requestCount++
+  const res = await fetch(url, { method: 'GET', ...options, headers: withUserAgent(options.headers) })
+  if (res.status === 429) {
+    const error = startSuspension(url, 'HTTP 429')
+    error.statusCode = 429
+    throw error
+  }
+  if (!res.ok) return res
+  if (/text\/html/i.test(res.headers.get('content-type') || '')) {
+    const text = await res.text()
+    if (isChallengePage(text)) {
+      const error = startSuspension(url, 'client challenge page')
+      error.isChallenge = true
+      throw error
+    }
+    const error = new Error(`Stream ${url} answered with a page instead of audio`)
+    error.statusCode = res.status
+    throw error
+  }
+  consecutiveRateLimits = 0
+  return res
+}
+
+const suspendRequests = (url, reason) => startSuspension(url, reason)
+
 const isRateLimited = () => {
   return suspendedUntil !== null && suspendedUntil >= Date.now()
 }
@@ -217,6 +253,37 @@ const scrapeRelease = async (itemUrl) => {
   return { ...getReleaseInfo(dom), url: itemUrl, pageType, pageName }
 }
 
+// The signed stream URLs of the tracks of every release fetched, so the preview audio prefetch job can download a
+// newly added track without looking its release up again. A URL is signed for one track (the signature covers the
+// track id), so there is no token that could be reused across tracks; a URL is only trusted for
+// BANDCAMP_STREAM_URL_MAX_AGE_MS, and a refused one is looked up again by the caller.
+const STREAM_URL_MAX_AGE_MS = Number(process.env.BANDCAMP_STREAM_URL_MAX_AGE_MS ?? 60 * 60 * 1000)
+const MAX_CACHED_STREAM_URLS = 50000
+const streamUrls = new Map() // track id -> { url, fetchedAt }
+
+const rememberStreamUrls = (releaseInfo) => {
+  const fetchedAt = Date.now()
+  for (const track of releaseInfo?.trackinfo || []) {
+    const url = track.file?.['mp3-128']
+    if (!url || !track.track_id) continue
+    const trackId = String(track.track_id)
+    streamUrls.delete(trackId)
+    streamUrls.set(trackId, { url, fetchedAt })
+  }
+  // Map keeps insertion order: drop the oldest entries beyond the cap.
+  for (const trackId of streamUrls.keys()) {
+    if (streamUrls.size <= MAX_CACHED_STREAM_URLS) break
+    streamUrls.delete(trackId)
+  }
+}
+
+const getCachedStreamUrl = (trackId, maxAgeMs = STREAM_URL_MAX_AGE_MS) => {
+  const cached = streamUrls.get(String(trackId))
+  return cached && Date.now() - cached.fetchedAt <= maxAgeMs ? cached.url : null
+}
+
+const resetStreamUrls = () => streamUrls.clear()
+
 const getRelease = (itemUrl, callback) => {
   return resolveRelease(itemUrl)
     .then(async (resolved) => {
@@ -228,9 +295,13 @@ const getRelease = (itemUrl, callback) => {
       warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
       return { ...tralbumToReleaseInfo(await getTralbumDetails(ids), itemUrl), pageType, pageName }
     })
-    .then((releaseInfo) => callback(null, releaseInfo))
+    .then((releaseInfo) => {
+      rememberStreamUrls(releaseInfo)
+      callback(null, releaseInfo)
+    })
     .catch((e) => {
-      if (!e.isRateLimit) logger.error(`Fetching release from ${itemUrl} failed: ${e.message}`, { statusCode: e.statusCode })
+      if (!e.isRateLimit)
+        logger.error(`Fetching release from ${itemUrl} failed: ${e.message}`, { statusCode: e.statusCode })
       callback(e)
     })
 }
@@ -551,7 +622,11 @@ module.exports = {
     getPageDetails,
     getSearchResults,
   }),
+  fetchStream,
+  getCachedStreamUrl,
+  suspendRequests,
   static: {
+    resetStreamUrls,
     getTagsFromUrl,
     getTagName,
     getTagUrl,
