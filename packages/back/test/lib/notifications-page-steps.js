@@ -325,8 +325,13 @@ const assertPlayingSampleShowsNoDuration = async ({ page }) => {
 
 const assertSampleMatchPlaysAligned = async ({ page }) => {
   await openTab(page, 'Samples')
-  await page.locator('.notifications-samples tr', { hasText: SAMPLE_FILENAME }).click()
-  const matchRow = page.locator('.notifications-matches tbody tr').first()
+  const sample = page.locator('.notifications-sample', {
+    has: page.locator('.notifications-sample_name', { hasText: SAMPLE_FILENAME }),
+  })
+  const toggle = sample.locator('.notifications-sample_toggle')
+  await toggle.waitFor({ state: 'visible', timeout: 10000 })
+  if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click()
+  const matchRow = sample.locator('.notifications-matches .notifications-list_row').first()
   await matchRow.waitFor({ state: 'visible', timeout: 10000 })
   expect(await matchRow.locator('.tempo').textContent()).to.equal('±0.0 %')
   await matchRow.click()
