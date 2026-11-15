@@ -46,6 +46,10 @@ stops even though there is CPU to spare.
   `audio_url`, so they never contact the stores. `--direct-download` restores
   the old behaviour, which runs without the job (local development, or a
   backend that does not have the job deployed yet).
+- With `--direct-download`, the analyser's `bandcamp.py` keeps the stream URLs
+  of every release it looks up in a file shared by the workers and across
+  runs, and uses each one until shortly before it expires, so a release page
+  is fetched at most about once a day.
 - Once a preview has every analysis (its fingerprint, its embedding for the
   production model and, for Bandcamp, its waveform) or is marked missing, the
   backend deletes its stored file. This runs when a worker posts a result and

@@ -122,3 +122,20 @@ returns no `audio_url`, the workers MUST download from the store as before.
 #### Scenario: A worker never contacts the store for stored audio
 - **WHEN** a queue entry has an `audio_url`
 - **THEN** the worker downloads that URL, resolved against `FOMOPLAYER_API_URL`, and makes no Bandcamp lookup
+
+### Requirement: The analyser MUST reuse Bandcamp stream URLs until they expire
+
+`analyser/bandcamp.py` MUST keep the stream URL of every track of each release
+it looks up in a file shared by the workers and across runs, and return a kept
+URL instead of looking the release up while the URL is valid: a
+`*.bcbits.com` URL until 15 minutes before the time in its `ts` parameter, a
+`bandcamp.com/stream_redirect` URL for 7 days. A refused or failed download
+MUST forget the URL.
+
+#### Scenario: Another track of a looked-up release needs no lookup
+- **WHEN** a worker resolves a track whose release another run looked up an hour ago
+- **THEN** the kept URL is returned and no release page is requested
+
+#### Scenario: A failed download forgets the URL
+- **WHEN** downloading a kept URL fails
+- **THEN** the URL is forgotten and the next resolve looks the release up again

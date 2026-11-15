@@ -26,6 +26,11 @@
 - [x] 5.2 The job downloads Bandcamp audio through `fetchStream`, with kept URLs first, and treats pages instead of audio as failures or challenges.
 - [x] 5.3 Tests for the cache, `fetchStream` and the job's use of them.
 
-## 6. Verify
+## 6. Analyser stream URL cache
 
-- [x] 6.1 Full backend suite green (`yarn test`); analyser unit tests green.
+- [x] 6.1 `bandcamp.py` keeps stream URLs in a shared file until they expire; refused or failed downloads forget them.
+- [x] 6.2 Tests for expiry, reuse across runs, forgetting and a broken file.
+
+## 7. Verify
+
+- [x] 7.1 Full backend suite green (`yarn test`); analyser unit tests green.
