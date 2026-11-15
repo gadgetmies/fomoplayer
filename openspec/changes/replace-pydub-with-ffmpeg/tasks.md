@@ -24,3 +24,4 @@
 - 2.2: a 12-second stereo MP3 embedded with Discogs-EffNet through the pydub WAV and the helper WAV gave bit-identical vectors.
 - 3.1/3.2: fresh Python 3.13 venv from `requirements.txt` (no `pydub`, no `audioop`): `main.py --help` runs; analyser tests 24 passed, 3 skipped (the pydub comparison, and two Panako integration tests that need `panako` on PATH, not installed here).
 - Found, not changed here: `run_fingerprint_and_report.py` imports `psycopg2`, which `requirements.txt` has never listed; its test needs `psycopg2-binary` installed separately.
+- Merge boundary: full backend suite (`yarn test`) 658 passed, 0 failed, run against a local Postgres 16 + pgvector 0.6.0 test database; the change touches no backend code.
