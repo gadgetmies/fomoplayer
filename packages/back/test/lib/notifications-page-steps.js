@@ -282,9 +282,8 @@ const assertPlayingActivityRowReadsIt = async ({ page }) => {
   const before = await unreadCount(page)
   await row.click()
   await waitForWithTimeoutMessage(() => audioIsPlaying(page), 'Clicking an Activity row should play its track.')
-  expect(await page.locator('.preview_details_wrapper .preview_playing-from').textContent()).to.contain(
-    'Notifications · Activity',
-  )
+  // Activity is on screen, so the player does not link back to it
+  expect(await page.locator('.preview_details_wrapper .preview_playing-from').count()).to.equal(0)
   await waitForWithTimeoutMessage(
     () =>
       page.waitForFunction(

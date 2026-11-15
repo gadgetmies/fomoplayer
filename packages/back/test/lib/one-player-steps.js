@@ -43,10 +43,9 @@ const playFromRecent = async (page) => {
   return { order }
 }
 
-const assertPlayingFromRecent = async ({ page }) => {
-  const playingFrom = page.locator('.preview .preview_details_wrapper .preview_playing-from')
-  expect(await playingFrom.textContent()).to.contain('Playing from Discover · Recent')
-  expect(await playingFrom.locator('a').getAttribute('href')).to.equal('/tracks/recent')
+// The list the track plays from is on screen, so the player does not link back to it
+const assertNoPlayingFromOnItsList = async ({ page }) => {
+  expect(await page.locator('.preview .preview_details_wrapper .preview_playing-from').count()).to.equal(0)
 }
 
 const openSettingsInApp = async (page) => {
@@ -63,7 +62,11 @@ const assertDockedPlayerKeepsPlaying = async ({ page, order }) => {
     'Settings should show the docked mini player while a track is playing.',
   )
   expect(await bar.locator('.docked-player_title').textContent()).to.contain(order[0])
-  expect(await bar.locator('.preview_playing-from').textContent()).to.contain('Discover · Recent')
+  // Away from the list, the bar names it and links back to it
+  const playingFrom = bar.locator('.preview_playing-from')
+  expect((await playingFrom.textContent()).trim()).to.equal('From Discover · Recent')
+  expect(await playingFrom.locator('a').getAttribute('href')).to.equal('/tracks/recent')
+  expect(await playingFrom.locator('a svg.fa-arrow-left').count()).to.equal(1)
   const before = await page.$eval('audio', (audio) => audio.currentTime)
   await page.waitForTimeout(1500)
   const after = await page.$eval('audio', (audio) => ({ time: audio.currentTime, paused: audio.paused }))
@@ -124,7 +127,7 @@ const assertDockedPauseStopsAudio = async ({ page }) => {
 }
 
 const assertPlayingFromSearchSwitchesSource = async ({ page }) => {
-  // Back to the list through the "Playing from" link, then start a track from a search
+  // Back to the list through the "From" link, then start a track from a search
   await page.locator('.docked-player .preview_playing-from a').click()
   await page.waitForSelector('.tracks-table', { state: 'visible', timeout: 10000 })
   const searchInput = page.locator('.search_input_pills').first()
@@ -133,26 +136,22 @@ const assertPlayingFromSearchSwitchesSource = async ({ page }) => {
   await page.waitForURL(/\/search/, { timeout: 10000 })
   await page.waitForSelector(rowSelector(ONE_PLAYER_TITLES[2]), { timeout: 15000 })
   await page.locator(rowSelector(ONE_PLAYER_TITLES[2])).first().click()
+  await waitForWithTimeoutMessage(() => audioIsPlaying(page), 'The search result should start playing.')
+  // On the search the player does not link back to it; back on Discover it names the search
+  expect(await page.locator('.preview_details_wrapper .preview_playing-from').count()).to.equal(0)
+  await page.locator('a[href="/tracks/new"]:visible').first().click()
+  await page.waitForURL(/\/tracks\/new/, { timeout: 10000 })
   const playingFrom = page.locator('.preview_details_wrapper .preview_playing-from')
-  try {
-    await page.waitForFunction(
-      () => document.querySelector('.preview_details_wrapper .preview_playing-from')?.textContent.includes('Search · '),
-      null,
-      { timeout: 10000 },
-    )
-  } catch {
-    throw new Error(
-      `Playing a search result should make the search the source; the player says "${await playingFrom.textContent()}" at ${page.url()}`,
-    )
-  }
+  await playingFrom.waitFor({ state: 'visible', timeout: 10000 })
   const label = (await playingFrom.textContent()).toLowerCase()
-  expect(label).to.contain('playing from search · ')
+  expect(label).to.contain('from search · ')
   expect(label).to.contain('one player demo')
+  expect(await playingFrom.locator('a').getAttribute('href')).to.match(/^\/search\/\?q=/)
 }
 
 module.exports = {
   playFromRecent,
-  assertPlayingFromRecent,
+  assertNoPlayingFromOnItsList,
   assertDockedPlayerKeepsPlaying,
   assertDockedNextFollowsSource,
   assertDockedWaveformSeeks,

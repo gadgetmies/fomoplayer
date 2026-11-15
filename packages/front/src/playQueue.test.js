@@ -1,4 +1,12 @@
-import { listSource, queueTracks, stepInQueue, sampleAsTrack, samplesSource, isSample } from './playQueue'
+import {
+  listSource,
+  isViewingSource,
+  queueTracks,
+  stepInQueue,
+  sampleAsTrack,
+  samplesSource,
+  isSample,
+} from './playQueue'
 
 const tracks = (...ids) => ids.map((id) => ({ id }))
 
@@ -29,6 +37,33 @@ describe('listSource', () => {
 
   it('has no source for a cart that is not loaded', () => {
     expect(listSource({ listState: 'carts' })).toBeNull()
+  })
+})
+
+describe('isViewingSource', () => {
+  const recent = listSource({ listState: 'recent' })
+  const search = listSource({ listState: 'search', location: { search: '?q=noisia' } })
+  const settings = { pathname: '/settings/following', search: '' }
+
+  it('is viewing the source while its list is on screen', () => {
+    expect(isViewingSource(recent, { onScreenSource: recent, location: { pathname: '/tracks/recent' } })).toBe(true)
+  })
+
+  it('is not viewing the source while another list or view is on screen', () => {
+    expect(isViewingSource(recent, { onScreenSource: listSource({ listState: 'new' }), location: settings })).toBe(
+      false,
+    )
+    expect(isViewingSource(recent, { onScreenSource: null, location: settings })).toBe(false)
+  })
+
+  it('matches a source without a list by its address, filters included', () => {
+    expect(isViewingSource(samplesSource, { location: { pathname: '/notifications/samples', search: '' } })).toBe(true)
+    expect(isViewingSource(search, { location: { pathname: '/search/', search: '?q=noisia' } })).toBe(true)
+    expect(isViewingSource(search, { location: { pathname: '/search/', search: '?q=other' } })).toBe(false)
+  })
+
+  it('has nothing to view without a source', () => {
+    expect(isViewingSource(null, { onScreenSource: recent, location: settings })).toBe(false)
   })
 })
 

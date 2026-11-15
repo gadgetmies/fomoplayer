@@ -273,7 +273,7 @@
   }
 }
 
-/* "Playing from <source>" under the track title, and in the docked player */
+/* "From <source>" with a back icon, under the track title and in the docked player, when another view is on screen */
 .preview_playing-from {
   font-size: 75%;
   font-weight: 300;
@@ -345,7 +345,7 @@
   padding: 4px;
 }
 
-/* Artists and title, with "Playing from" below them */
+/* Artists and title, with "From <source>" below them */
 .docked-player_info {
   flex: 0 1 280px;
   min-width: 120px;
