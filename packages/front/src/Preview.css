@@ -573,6 +573,14 @@
   }
 }
 
+/* Below this width the panel's button row (play, previous, next, cart, find similar, follow, ignore, share) no
+   longer fits and share would overflow: previous gives way, in the docked bar too so the two stay aligned. */
+@media (max-width: 429px) {
+  .button.button-playback--previous {
+    display: none;
+  }
+}
+
 /* Aligned A/B playback of a sample match */
 .preview_ab {
   display: flex;
