@@ -28,4 +28,4 @@
 
 ## 6. Verify
 
-- [ ] 6.1 Full backend suite green (`yarn test`); analyser unit tests green.
+- [x] 6.1 Full backend suite green (`yarn test`); analyser unit tests green.
