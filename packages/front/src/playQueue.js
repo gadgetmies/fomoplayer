@@ -27,6 +27,14 @@ export const listSource = ({ listState, selectedCart, location }) => {
   return null
 }
 
+// Whether the view on screen is the one the track plays from, so the player need not link back to it: the list on
+// screen is the source, or the address is the source's own (the notifications tabs, which have no list source).
+export const isViewingSource = (source, { onScreenSource, location }) => {
+  if (!source) return false
+  if (onScreenSource && onScreenSource.key === source.key) return true
+  return Boolean(location) && `${location.pathname}${location.search || ''}` === source.path
+}
+
 export const queueTracks = (playingFrom, onScreen) => {
   if (!playingFrom?.source) return onScreen?.tracks || []
   if (onScreen?.source && onScreen.source.key === playingFrom.source.key) return onScreen.tracks || []

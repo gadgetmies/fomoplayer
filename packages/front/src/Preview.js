@@ -897,9 +897,9 @@ class Preview extends Component {
     if (!source) return null
     return (
       <div className="preview_playing-from">
-        <span className="preview_label">Playing from</span>{' '}
-        <Link to={source.path} className="preview_playing-from-link">
-          {source.label}
+        <span className="preview_label">From</span>{' '}
+        <Link to={source.path} className="preview_playing-from-link" aria-label={`Back to ${source.label}`}>
+          {source.label} <FontAwesomeIcon icon="arrow-left" />
         </Link>
       </div>
     )

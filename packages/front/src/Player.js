@@ -3,7 +3,7 @@ import Tracks from './Tracks.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import { PlayerHelp } from './PlayerHelp'
-import { isSample, listSource, queueTracks, stepInQueue } from './playQueue'
+import { isSample, isViewingSource, listSource, queueTracks, stepInQueue } from './playQueue'
 
 class Player extends Component {
   constructor(props) {
@@ -139,6 +139,16 @@ class Player extends Component {
       selectedCart: this.props.selectedCart,
       location: window.location,
     })
+  }
+
+  // The source the player links back to: none in the cart-only list mode, nor while that source is the view on screen.
+  // The docked bar (Settings) and the panel beside Notifications hide the list, so the list there does not count.
+  getPlayingFromToShow() {
+    const source = this.props.playingFrom?.source
+    if (this.props.mode === 'list' || !source) return null
+    const listOnScreen = !this.props.docked && !this.props.panelOnly
+    const onScreenSource = listOnScreen ? this.getOnScreenSource() : null
+    return isViewingSource(source, { onScreenSource, location: window.location }) ? null : source
   }
 
   // The tracks next / previous step through: the list the current track was started from.
@@ -304,8 +314,7 @@ class Player extends Component {
     const selectedCartId = this.props.selectedCart?.id
     const selectedCartIsPurchased = this.props.selectedCart?.isPurchased
     const defaultCart = this.props.carts.find(R.prop('isDefault'))
-    const inDefaultCart =
-      !!(defaultCart && currentTrack && currentCarts.some((c) => c && c.uuid === defaultCart.uuid))
+    const inDefaultCart = !!(defaultCart && currentTrack && currentCarts.some((c) => c && c.uuid === defaultCart.uuid))
     const inCurrentCart = inCarts.find(({ id }) => id === selectedCartId)
 
     return (
@@ -361,7 +370,7 @@ class Player extends Component {
           onAddEntityToSearch={this.props.onAddEntityToSearch}
           hasSelectedTrack={hasSelectedTrack}
           docked={this.props.docked}
-          playingFrom={this.props.mode === 'list' ? null : this.props.playingFrom?.source}
+          playingFrom={this.getPlayingFromToShow()}
         />
         <div style={{ display: this.props.docked || this.props.panelOnly ? 'none' : 'contents' }}>
           <Tracks
