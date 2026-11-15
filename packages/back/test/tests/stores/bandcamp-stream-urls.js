@@ -1,6 +1,6 @@
 /**
- * Bandcamp stream URLs are stored per preview, so playing a Bandcamp track does not look its release up at Bandcamp
- * every time. A stored URL is replaced when it is older than the refresh age or when the player could not play it;
+ * Bandcamp stream URLs are stored on each preview (store__track_preview_url_ephemeral), so playing a Bandcamp track
+ * does not look its release up at Bandcamp every time. The watch job stores them with the tracks it adds. A stored URL is replaced when it is older than the refresh age or when the player could not play it;
  * the lookup replaces the URLs of every track of the release, as they were issued together.
  */
 const assert = require('assert')
@@ -9,8 +9,11 @@ const sql = require('sql-template-strings')
 
 const { initDb, pg } = require('../../lib/db')
 const bandcampApi = require('../../../routes/stores/bandcamp/bandcamp-api')
-const { storeStreamUrls, getStreamUrl, knownStreamUrl } = require('../../../routes/stores/bandcamp/stream-urls')
+const { storeStreamUrls, getStreamUrl } = require('../../../routes/stores/bandcamp/stream-urls')
 const { getPreviewDetails } = require('../../../routes/stores/bandcamp/logic')
+const { bandcampReleasesTransform } = require('fomoplayer_browser_extension/src/js/transforms/bandcamp')
+const { addBandcampTracks } = require('../../lib/tracks')
+const { resolveTestUserId } = require('../../lib/test-user')
 
 const BANDCAMP_STORE_ID = 2
 const RELEASE_URL = 'https://stream-urls.bandcamp.com/album/one'
@@ -51,7 +54,7 @@ const releaseOf = (tracks, n = 1) => ({
 const storedUrl = async (previewId) =>
   (
     await pg.queryRowsAsync(
-      sql`SELECT store__track_preview_stream_url AS url FROM store__track_preview_stream
+      sql`SELECT store__track_preview_url_ephemeral AS url FROM store__track_preview
           WHERE store__track_preview_id = ${previewId}`,
     )
   )[0]?.url
@@ -132,8 +135,8 @@ test({
     const ageDays = bandcampApi.static.streamUrlRefreshAgeMs / (24 * 60 * 60 * 1000)
     assert.strictEqual(ageDays, 13, 'the refresh age defaults to 13 days')
     await pg.queryAsync(
-      sql`UPDATE store__track_preview_stream
-          SET store__track_preview_stream_fetched_at = NOW() - INTERVAL '14 days'
+      sql`UPDATE store__track_preview
+          SET store__track_preview_url_ephemeral_fetched_at = NOW() - INTERVAL '14 days'
           WHERE store__track_preview_id = ${second.previewId}`,
     )
     const { calls, fetchRelease } = fakeFetchRelease(tracks)
@@ -145,18 +148,88 @@ test({
     assert.strictEqual(url, redirect(second.storeTrackId, 2))
   },
 
-  'a URL kept from a release fetched before the preview was stored is stored': async ({ first }) => {
-    await pg.queryAsync(sql`DELETE FROM store__track_preview_stream WHERE store__track_preview_id = ${first.previewId}`)
-    const original = bandcampApi.getCachedStreamUrl
-    bandcampApi.getCachedStreamUrl = (trackId) =>
-      String(trackId) === first.storeTrackId ? redirect(first.storeTrackId, 9) : null
+  'tracks the watch job adds come with their stream URL': async () => {
+    const watchedRelease = (n) => ({
+      url: 'https://stream-urls-watch.bandcamp.com/album/watched',
+      id: 777001,
+      artist: 'Stream Watch',
+      album_release_date: '01 Jan 2024 00:00:00 GMT',
+      current: {
+        title: 'Watched',
+        band_id: 777002,
+        release_date: '01 Jan 2024 00:00:00 GMT',
+        publish_date: '01 Jan 2024 00:00:00 GMT',
+      },
+      pageType: 'artist',
+      pageName: 'Stream Watch',
+      trackinfo: [
+        {
+          id: 777003,
+          track_id: 777003,
+          title: 'Watched track',
+          duration: 100,
+          file: { 'mp3-128': redirect(777003, n) },
+        },
+      ],
+    })
+    const userId = await resolveTestUserId()
+    const ephemeralRows = () =>
+      pg.queryRowsAsync(
+        sql`SELECT store__track_preview_id AS id, store__track_preview_url AS url
+                 , store__track_preview_url_ephemeral AS ephemeral
+            FROM store__track_preview NATURAL JOIN store__track WHERE store__track_store_id = '777003'`,
+      )
     try {
-      const url = await knownStreamUrl({ previewId: first.previewId, storeTrackId: first.storeTrackId })
-      assert.strictEqual(url, redirect(first.storeTrackId, 9))
+      await addBandcampTracks(bandcampReleasesTransform([watchedRelease(1)]), [userId])
+      const [added] = await ephemeralRows()
+      assert.deepStrictEqual(
+        { url: added.url, ephemeral: added.ephemeral },
+        { url: null, ephemeral: redirect(777003, 1) },
+      )
+
+      await addBandcampTracks(bandcampReleasesTransform([watchedRelease(2)]), [userId])
+      const rows = await ephemeralRows()
+      assert.strictEqual(rows.length, 1, 'adding the track again keeps one preview')
+      assert.strictEqual(rows[0].ephemeral, redirect(777003, 2), 'and stores the newer stream URL')
     } finally {
-      bandcampApi.getCachedStreamUrl = original
+      const trackIds = (
+        await pg.queryRowsAsync(sql`SELECT track_id FROM store__track WHERE store__track_store_id = '777003'`)
+      ).map(({ track_id }) => track_id)
+      created.tracks.push(...trackIds)
+      await pg.queryAsync(
+        sql`DELETE FROM store__track_preview WHERE store__track_id IN
+              (SELECT store__track_id FROM store__track WHERE store__track_store_id = '777003')`,
+      )
     }
-    assert.strictEqual(await storedUrl(first.previewId), redirect(first.storeTrackId, 9))
+  },
+
+  'the transform leaves short-lived CDN URLs out': () => {
+    const [track] = bandcampReleasesTransform([
+      {
+        url: 'https://cdn.bandcamp.com/album/x',
+        id: 1,
+        artist: 'A',
+        album_release_date: '01 Jan 2024 00:00:00 GMT',
+        current: {
+          title: 'X',
+          band_id: 2,
+          release_date: '01 Jan 2024 00:00:00 GMT',
+          publish_date: '01 Jan 2024 00:00:00 GMT',
+        },
+        pageType: 'artist',
+        pageName: 'A',
+        trackinfo: [
+          {
+            id: 3,
+            track_id: 3,
+            title: 'T',
+            duration: 1,
+            file: { 'mp3-128': 'https://t4.bcbits.com/stream/a/mp3-128/3?ts=1' },
+          },
+        ],
+      },
+    ])
+    assert.deepStrictEqual(track.previews, [{ format: 'mp3', start_ms: 0, end_ms: 1000 }])
   },
 
   'the player': {
@@ -172,7 +245,7 @@ test({
 
     'gets the stored URL': async ({ first, fake }) => {
       const { url } = await getPreviewDetails(first.previewId)
-      assert.strictEqual(url, redirect(first.storeTrackId, 9))
+      assert.strictEqual(url, redirect(first.storeTrackId, 2))
       assert.deepStrictEqual(fake.calls, [])
     },
 
@@ -184,9 +257,9 @@ test({
 
     'a prefetch for the next track waits in the queue': async ({ second, fake }) => {
       await pg.queryAsync(
-        sql`DELETE FROM store__track_preview_stream WHERE store__track_preview_id = ${second.previewId}`,
+        sql`UPDATE store__track_preview SET store__track_preview_url_ephemeral = NULL
+            WHERE store__track_preview_id = ${second.previewId}`,
       )
-      bandcampApi.forgetStreamUrl(second.storeTrackId)
       await getPreviewDetails(second.previewId, { prefetch: true })
       assert.deepStrictEqual(fake.calls.at(-1), { url: RELEASE_URL, priority: false })
     },

@@ -27,6 +27,7 @@
     },
     "previews": [
       {
+        "url_ephemeral": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1618408696&ts=1793632523&t=8098c503fcefb39303fafda25f71b206c2c81c36",
         "format": "mp3",
         "start_ms": 0,
         "end_ms": 266667
@@ -73,6 +74,7 @@
     },
     "previews": [
       {
+        "url_ephemeral": "https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=3961297937&ts=1793632523&t=1933a99b1208bb142e2560928c239f5a4ad1d378",
         "format": "mp3",
         "start_ms": 0,
         "end_ms": 421818

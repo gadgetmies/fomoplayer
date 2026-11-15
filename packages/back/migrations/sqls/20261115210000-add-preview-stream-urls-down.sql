@@ -1,1 +1,0 @@
-DROP TABLE store__track_preview_stream;

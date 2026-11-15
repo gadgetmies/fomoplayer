@@ -1,8 +1,7 @@
 /**
  * The preview audio prefetch job downloads Bandcamp tracks through the Bandcamp client: the stream URLs the mobile
  * endpoint returns are bandcamp.com/stream_redirect links, so a download is a request to the same edge as the page
- * requests and must share their spacing and rate-limit pause. The client also keeps the stream URLs of the releases
- * it fetched, so a newly added track is downloaded without looking its release up again.
+ * requests and must share their spacing and rate-limit pause.
  */
 const assert = require('assert')
 const fs = require('fs')
@@ -10,7 +9,7 @@ const path = require('path')
 const { test } = require('cascade-test')
 
 const bandcampApi = require('../../../routes/stores/bandcamp/bandcamp-api.js')
-const { resetRateLimit, resetReleaseIndex, resetStreamUrls, isRateLimited, getRequestCount } = bandcampApi.static
+const { resetRateLimit, resetReleaseIndex, isRateLimited, getRequestCount } = bandcampApi.static
 
 const fixture = (name) => fs.readFileSync(path.join(__dirname, '..', '..', 'fixtures', 'bandcamp', name), 'utf8')
 const challengeHtml = fixture('bandcamp-client-challenge.html')
@@ -38,33 +37,30 @@ const STREAM_URL = 'https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=1&
 const reset = () => {
   resetRateLimit()
   resetReleaseIndex()
-  resetStreamUrls()
 }
 
 test({
-  'a fetched release keeps the stream URLs of its tracks': async () => {
+  'a fetched release carries the stream_redirect URL of each track': async () => {
     reset()
     const [track] = releaseJson.tracks
-    await withFetch(
+    const release = await withFetch(
       async (url) => (url.includes('tralbum_details') ? jsonResponse(releaseJson) : htmlResponse(artistHtml)),
       async () => {
         const { releaseUrls } = await bandcampApi.getArtistAsync('https://noisia.bandcamp.com')
-        await bandcampApi.getReleaseAsync(releaseUrls[0])
+        return bandcampApi.fetchRelease(releaseUrls[0])
       },
     )
-    assert.strictEqual(bandcampApi.getCachedStreamUrl(track.track_id), track.streaming_url['mp3-128'])
-    assert.strictEqual(bandcampApi.getCachedStreamUrl(String(track.track_id)), track.streaming_url['mp3-128'])
-    assert.strictEqual(bandcampApi.getCachedStreamUrl(1), null)
-    bandcampApi.forgetStreamUrl(track.track_id)
-    assert.strictEqual(bandcampApi.getCachedStreamUrl(track.track_id), null, 'a forgotten URL is not used')
+    const url = release.trackinfo.find(({ track_id }) => track_id === track.track_id).file['mp3-128']
+    assert.strictEqual(url, track.streaming_url['mp3-128'])
+    assert.strictEqual(bandcampApi.static.isRedirectStreamUrl(url), true)
   },
 
-  'a stream_redirect URL is trusted for the refresh age, a CDN URL until its ts': () => {
-    const { streamUrlExpiry, streamUrlRefreshAgeMs } = bandcampApi.static
+  'only stream_redirect URLs count as lasting, for 13 days by default': () => {
+    const { isRedirectStreamUrl, streamUrlRefreshAgeMs } = bandcampApi.static
     assert.strictEqual(streamUrlRefreshAgeMs, 13 * 24 * 60 * 60 * 1000)
-    assert.strictEqual(streamUrlExpiry(STREAM_URL, 1000), 1000 + streamUrlRefreshAgeMs)
-    const cdn = 'https://t4.bcbits.com/stream/abc/mp3-128/1?p=0&ts=1794865832&t=x&token=1794865832_x'
-    assert.strictEqual(streamUrlExpiry(cdn, 1000), 1794865832 * 1000)
+    assert.strictEqual(isRedirectStreamUrl(STREAM_URL), true)
+    assert.strictEqual(isRedirectStreamUrl('https://t4.bcbits.com/stream/abc/mp3-128/1?p=0&ts=1&t=x'), false)
+    assert.strictEqual(isRedirectStreamUrl('not a url'), false)
   },
 
   'an audio stream is returned and counted as a Bandcamp request': async () => {

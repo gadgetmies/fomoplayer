@@ -272,17 +272,13 @@ const scrapeRelease = async (itemUrl, { priority } = {}) => {
   return { ...getReleaseInfo(dom), url: itemUrl, pageType, pageName }
 }
 
-// The signed stream URLs of the tracks of every release fetched, so a track is played or downloaded without
-// looking its release up again. A URL is signed for one track (the signature covers the track id), so there is no
-// token that could be reused across tracks. Measured on 2026-11-15: a stream_redirect URL (what the mobile endpoint
-// returns) issued 13 days earlier still redirected to a playable stream; only the CDN URL it redirects to expires,
-// 24 h after the redirect. So a stream_redirect URL is trusted for BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS (13 by
-// default). A CDN URL (from a scraped release page) carries its expiry in its ts parameter. A refused URL is
-// looked up again by the caller. The stored copy of these URLs is in stream-urls.js.
+// Bandcamp stream URLs are signed for one track (the signature covers the track id), so there is no token that could
+// be reused across tracks. Measured on 2026-11-15: a stream_redirect URL (what the mobile endpoint returns) issued 13
+// days earlier still redirected to a playable stream; only the CDN URL it redirects to expires, 24 h after the
+// redirect. stream-urls.js stores stream_redirect URLs per preview and trusts them for
+// BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS (13 by default).
 const DAY_MS = 24 * 60 * 60 * 1000
 const STREAM_URL_REFRESH_AGE_MS = Number(process.env.BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS ?? 13) * DAY_MS
-const MAX_CACHED_STREAM_URLS = 50000
-const streamUrls = new Map() // track id -> { url, fetchedAt }
 
 const isRedirectStreamUrl = (url) => {
   try {
@@ -291,43 +287,6 @@ const isRedirectStreamUrl = (url) => {
     return false
   }
 }
-
-// The time (epoch ms) after which a stream URL fetched at fetchedAt must not be used.
-const streamUrlExpiry = (url, fetchedAt) => {
-  try {
-    const parsed = new URL(url)
-    const ts = Number(parsed.searchParams.get('ts'))
-    if (parsed.hostname.endsWith('bcbits.com') && Number.isFinite(ts) && ts > 0) return ts * 1000
-  } catch {
-    return fetchedAt
-  }
-  return fetchedAt + STREAM_URL_REFRESH_AGE_MS
-}
-
-const rememberStreamUrls = (releaseInfo) => {
-  const fetchedAt = Date.now()
-  for (const track of releaseInfo?.trackinfo || []) {
-    const url = track.file?.['mp3-128']
-    if (!url || !track.track_id) continue
-    const trackId = String(track.track_id)
-    streamUrls.delete(trackId)
-    streamUrls.set(trackId, { url, fetchedAt })
-  }
-  // Map keeps insertion order: drop the oldest entries beyond the cap.
-  for (const trackId of streamUrls.keys()) {
-    if (streamUrls.size <= MAX_CACHED_STREAM_URLS) break
-    streamUrls.delete(trackId)
-  }
-}
-
-const getCachedStreamUrl = (trackId) => {
-  const cached = streamUrls.get(String(trackId))
-  return cached && Date.now() < streamUrlExpiry(cached.url, cached.fetchedAt) ? cached.url : null
-}
-
-const forgetStreamUrl = (trackId) => streamUrls.delete(String(trackId))
-
-const resetStreamUrls = () => streamUrls.clear()
 
 // Fetches a release's details. With priority (a listener pressing play) its requests skip the queue.
 const fetchRelease = async (itemUrl, { priority = false } = {}) => {
@@ -341,7 +300,6 @@ const fetchRelease = async (itemUrl, { priority = false } = {}) => {
     warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
     releaseInfo = { ...tralbumToReleaseInfo(await getTralbumDetails(ids, { priority }), itemUrl), pageType, pageName }
   }
-  rememberStreamUrls(releaseInfo)
   return releaseInfo
 }
 
@@ -673,13 +631,9 @@ module.exports = {
   }),
   fetchRelease,
   fetchStream,
-  getCachedStreamUrl,
-  forgetStreamUrl,
   suspendRequests,
   static: {
-    resetStreamUrls,
     isRedirectStreamUrl,
-    streamUrlExpiry,
     streamUrlRefreshAgeMs: STREAM_URL_REFRESH_AGE_MS,
     setMinRequestInterval: (ms) => {
       minRequestIntervalMs = ms
