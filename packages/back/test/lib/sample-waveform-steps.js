@@ -1,4 +1,6 @@
+const { PassThrough } = require('stream')
 const { expect } = require('chai')
+const { decodePNGFromStream } = require('pureimage')
 const { dismissOnboarding, waitForWithTimeoutMessage } = require('./setup')
 const { SAMPLE_WAVEFORM_FILENAME, SAMPLE_WAVEFORM_DURATION_SECONDS } = require('./sample-waveform-seed')
 
@@ -28,6 +30,15 @@ const storedSample = (page) =>
       ),
     SAMPLE_WAVEFORM_FILENAME,
   )
+
+// The colour drawn at a point of the waveform, as fractions of its width and height
+const waveformColorAt = async (page, x, y) => {
+  const stream = new PassThrough()
+  stream.end(await page.locator('.waveform_container').screenshot())
+  const image = await decodePNGFromStream(stream)
+  const rgba = image.getPixelRGBA(Math.round(image.width * x), Math.round(image.height * y))
+  return { r: (rgba >>> 24) & 0xff, g: (rgba >>> 16) & 0xff, b: (rgba >>> 8) & 0xff }
+}
 
 const playUploadedSample = async (page) => {
   await page.goto('/notifications/samples')
@@ -102,6 +113,16 @@ const assertClickingWaveformSeeks = async ({ page }) => {
     'The progress on the waveform should move to where it was clicked.',
   )
   expect(await getProgressPercent(page)).to.be.closeTo(75, 8)
+
+  // The played part is drawn: the loud section (25-50 % of the sample) shows the blue progress gradient, not the grey
+  // waveform. It is masked with the waveform image, which fails to load when the image comes from another origin.
+  const played = await waveformColorAt(page, 0.37, 0.5)
+  expect(
+    played.b - played.r,
+    `the played part is blue, got rgb(${played.r}, ${played.g}, ${played.b})`,
+  ).to.be.greaterThan(60)
+  const unplayed = await waveformColorAt(page, 0.9, 0.5)
+  expect(Math.abs(unplayed.b - unplayed.r), 'the part after the position is grey').to.be.lessThan(20)
 
   // And back to the quiet start
   await waveform.click({ position: { x: width * 0.1, y: height / 2 } })
