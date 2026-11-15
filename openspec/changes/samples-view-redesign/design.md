@@ -109,6 +109,4 @@ still comes from config. The unused `.suspected-matches-link` rules in
 ## Migration Plan
 
 Front end and server ship together in one deploy; no database change.
-Rollback is a revert of the merge. The `notifications-page` and
-`notification-backend` OpenSpec changes are archived before this one so the
-MODIFIED and ADDED deltas apply to their requirements.
+Rollback is a revert of the merge.

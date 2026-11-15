@@ -45,11 +45,9 @@ the player changes.
 
 - `notifications-page`: the Samples requirement changes to the accordion with
   a Matches / Sounds like toggle and per-sample delete; a link can open a given
-  sample. Its base requirement is in the `notifications-page` change, which
-  must be archived before this one.
+  sample.
 - `sample-sounds-like`: follow suggestions leave out followed artists and
-  labels before the top five are picked. Its base requirement is in the
-  `notification-backend` change, which must be archived before this one.
+  labels before the top five are picked.
 - `suspected-sample-matches-display`: the `sample:~<id>` search term, its
   default sort and the old Settings link requirement are removed, and the
   sample-match email links to the Samples tab.
