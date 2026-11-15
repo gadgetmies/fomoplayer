@@ -37,10 +37,27 @@ export const followableNameLinks = (followable, follows, type, separator = ', ',
   )
 }
 
-export const trackArtistsAndTitle = (track, follows, onEntityClick = null) => (
+// "Artists - title", the parts in spans of their own, so a one-line layout can cut each short separately (the docked
+// player bar); inline they read as one line of text
+export const artistsAndTitle = (artists, title) => (
   <>
-    {followableNameLinks(R.uniq([track.artists, track.remixers].flat()) || [], follows, 'artist', ', ', ' & ', onEntityClick)} - {trackTitle(track)}
+    <span className="track-title_artists">{artists}</span>
+    <span className="track-title_separator"> - </span>
+    <span className="track-title_name">{title}</span>
   </>
 )
+
+export const trackArtistsAndTitle = (track, follows, onEntityClick = null) =>
+  artistsAndTitle(
+    followableNameLinks(
+      R.uniq([track.artists, track.remixers].flat()) || [],
+      follows,
+      'artist',
+      ', ',
+      ' & ',
+      onEntityClick,
+    ),
+    trackTitle(track),
+  )
 
 export const trackArtistsAndTitleText = (track) => `${namesToString(track.artists || [])} - ${trackTitle(track)}`
