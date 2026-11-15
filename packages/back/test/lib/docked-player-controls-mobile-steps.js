@@ -18,11 +18,15 @@ const openPanel = (page) => page.locator('.preview--docked-expanded')
 const measure = async (page, scope) => {
   const [waveformSelector, switchesSelector, rowSelector] =
     scope === 'bar'
-      ? ['[data-testid="docked-player-waveform"]', '[data-testid="docked-player-waveform"]', '.docked-player_row']
+      ? [
+          '[data-testid="docked-player-waveform"] .waveform_container',
+          '[data-testid="docked-player-waveform"]',
+          '.docked-player_row',
+        ]
       : [
-          '.preview--docked-expanded .preview-wrapper .waveform_container',
-          '.preview--docked-expanded .preview-wrapper',
-          '.preview--docked-expanded .button-wrapper',
+          '.preview--docked-expanded .preview-player .preview-wrapper .waveform_container',
+          '.preview--docked-expanded .preview-player .preview-wrapper',
+          '.preview--docked-expanded .preview-player .button-wrapper',
         ]
   const box = (locator) => locator.first().boundingBox()
   const previousVisible = await page.locator(`${rowSelector} .button-playback--previous`).isVisible()
@@ -126,9 +130,11 @@ const assertExpandShowsFullPlayer = async ({ page }) => {
     'Expanding the bar on a phone should show the full player.',
   )
   expect(await details.textContent()).to.contain('One Player Demo')
-  const buttons = openPanel(page).locator('.button-wrapper')
+  const buttons = openPanel(page).locator('.preview-player .button-wrapper')
   await buttons.waitFor({ state: 'visible', timeout: 5000 })
-  const waveformBox = await openPanel(page).locator('.preview-wrapper .waveform_container').boundingBox()
+  const waveformBox = await openPanel(page)
+    .locator('.preview-player .preview-wrapper .waveform_container')
+    .boundingBox()
   const buttonsBox = await buttons.boundingBox()
   expect(waveformBox.y + waveformBox.height).to.be.at.most(buttonsBox.y + 1)
   for (const name of [/similar/i, /Follow/, /Ignore/, /Share/]) {
@@ -164,7 +170,7 @@ const assertExpandShowsFullPlayer = async ({ page }) => {
 
 // Preview / Listen over the expanded player's waveform switch the audio source
 const assertSourceSelectSwitches = async ({ page }) => {
-  const label = (text) => openPanel(page).locator('.preview-wrapper label', { hasText: text }).first()
+  const label = (text) => openPanel(page).locator('.preview-player .preview-wrapper label', { hasText: text }).first()
   const initial = await page.evaluate(() => localStorage.getItem('preferFullTracks'))
   await label('Listen').tap()
   expect(await page.evaluate(() => localStorage.getItem('preferFullTracks'))).to.equal('true')
@@ -176,7 +182,7 @@ const assertSourceSelectSwitches = async ({ page }) => {
 
 // The cart button adds the track to the default cart and removes it again (so re-runs start from the same state)
 const assertCartButtonToggles = async ({ page }) => {
-  const selector = '.preview--docked-expanded .button-wrapper .button-drop_down-left'
+  const selector = '.preview--docked-expanded .preview-player .button-wrapper .button-drop_down-left'
   const before = await page.locator(selector).getAttribute('title')
   const waitForTitle = (changed) =>
     page.waitForFunction(

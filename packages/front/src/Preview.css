@@ -78,11 +78,28 @@
   display: none;
 }
 
+/* The space between the player's waveform and its button row, and under the row: the panel's and the docked bar's */
+.preview {
+  --player-spacing: 8px;
+}
+
+/* The panel's waveform above its button row */
+.preview-player {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--player-spacing);
+  margin-bottom: var(--player-spacing);
+}
+
+/* Cart, find similar, follow, ignore and share: in the panel and the docked bar */
 .preview_actions_wrapper {
   display: flex;
   gap: 8px;
   flex: 1;
   justify-content: flex-end;
+  font-size: 75%;
+  font-weight: 350;
 }
 
 .preview-icons-container {
@@ -306,46 +323,25 @@
   box-sizing: border-box;
 }
 
-/* Controls and track on the left, the waveform in the middle with Preview and Listen on its ends, the actions and the
-   expand button on the right. On narrower screens the waveform moves above the row, as it always sits on phones. */
+/* The panel's playback buttons and track on the left, its waveform block in the middle, its actions and the expand
+   button on the right: the same components as the player above the track lists, laid out in one row. On narrower
+   screens the waveform moves above the row, as it always sits on phones. */
 .docked-player_main {
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
 }
 
+/* A button-wrapper, like the panel's button row */
 .docked-player_row {
   flex: 0 0 auto;
-  display: flex;
   align-items: center;
-  gap: 4px;
-  min-height: 80px;
-  padding: 0 8px;
-  box-sizing: border-box;
-  font-size: 0.9rem;
 }
 
-/* Tall enough to make out the drops and breaks; click to seek. As tall as the bar: the panel's waveform_container
-   height of 100% would stop it stretching, the bar having no fixed height. */
+/* The panel's waveform block; as tall as the bar, so not the panel's height of 100% */
 .docked-player_waveform {
-  position: relative;
   flex: 1 1 240px;
   height: auto;
-  min-height: 56px;
-  cursor: pointer;
-}
-
-.docked-player_button {
-  min-width: 44px;
-  min-height: 44px;
-}
-
-/* Preview and Listen on the waveform's lower ends, as on the panel's waveform; a little tighter in the desktop bar. On
-   phones they keep the panel's padding, so they stay put when the bar expands into the panel. */
-@media (min-width: 591px) {
-  .docked-player_waveform .preview-samples_container {
-    padding: 4px;
-  }
 }
 
 /* Artists and title, with "From <source>" below them */
@@ -354,7 +350,8 @@
   min-width: 120px;
   display: flex;
   flex-direction: column;
-  margin: 0 8px;
+  justify-content: center;
+  font-size: 0.9rem;
 }
 
 .docked-player_title {
@@ -369,13 +366,12 @@
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 4px 0 8px;
+  gap: var(--player-spacing);
+  padding-right: var(--player-spacing);
 }
 
 .docked-player_actions {
   flex: 0 0 auto;
-  gap: 4px;
 }
 
 .docked-player_actions .button-push_button_label {
@@ -478,35 +474,17 @@
    the track lists show (details, waveform with Preview / Listen, then the controls), with a bar on top to go back.
    The bar's waveform, buttons and spacing match that panel's, so expanding keeps them in size. */
 @media (max-width: 590px) {
+  /* Spaced like the panel: the waveform above the row, then the space under it */
   .docked-player_main {
-    row-gap: 8px;
-    padding-bottom: 8px;
+    row-gap: var(--player-spacing);
+    padding-bottom: var(--player-spacing);
   }
 
-  /* Shares its line with the expand button; spaced like the panel's button row */
+  /* Shares its line with the expand button */
   .docked-player_row {
     flex: 1 1 0;
     min-width: 0;
-    min-height: 45px;
-    padding: 0 0 0 8px;
-    gap: 8px;
-    font-size: 1rem;
-  }
-
-  /* Sized like the panel's playback buttons: 3ch, but not narrower than the icon */
-  .docked-player_row .docked-player_button {
-    min-width: auto;
-    min-height: 45px;
-  }
-
-  .docked-player_waveform {
-    flex: 1 1 100%;
-    min-height: 80px;
-  }
-
-  /* The bar's switches sit inside its waveform, whose 1px margin the panel's (beside its waveform) do not have */
-  .docked-player_waveform .preview-samples_container {
-    margin: 3px;
+    align-items: stretch;
   }
 
   .docked-player_info {
@@ -515,11 +493,17 @@
   }
 
   .docked-player_end {
-    padding: 0 4px;
+    padding-right: 0;
   }
 
-  /* The full panel has these on phones */
-  .docked-player .docked-player_actions,
+  /* The expanded panel has the actions on phones. They stay in the bar's row, out of sight and taking no width, so the
+     row is as tall as the panel's, whose height they set. */
+  .docked-player .docked-player_actions {
+    visibility: hidden;
+    width: 0;
+    overflow: hidden;
+  }
+
   .docked-player .docked-player_more {
     display: none;
   }
