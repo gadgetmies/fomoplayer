@@ -107,6 +107,8 @@ class NotificationsPage extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (prevProps.tab !== this.props.tab || (!prevProps.visible && this.props.visible)) this.loadTab()
+    // The rows carry their carts: reload them when a cart changes, from a row or from the player above the page
+    else if (this.props.tab === 'activity' && prevProps.carts !== this.props.carts) this.loadTab()
     // The filter pill turned into its field: type straight away
     if (this.state.subscriptionFilterOpen && !prevState.subscriptionFilterOpen) {
       this.subscriptionFilterContainer?.querySelector('input')?.focus()
@@ -357,11 +359,7 @@ class NotificationsPage extends Component {
                     onDoubleClick={play}
                     onTouchTap={play}
                     onMarkHeardButtonClick={(trackId) => this.markEventHeard(trackId)}
-                    onCartButtonClick={async (...args) => {
-                      await this.props.onCartButtonClick(...args)
-                      // The rows carry their carts: reload them so the cart button shows the change
-                      this.setState({ events: await loadNotificationEvents() })
-                    }}
+                    onCartButtonClick={this.props.onCartButtonClick}
                     onCreateCartClick={this.props.onCreateCartClick}
                     onMarkPurchasedButtonClick={this.props.onMarkPurchased}
                     onCartFilterChange={(cartFilter) => this.setState({ cartFilter })}

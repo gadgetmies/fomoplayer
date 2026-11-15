@@ -18,12 +18,14 @@ const {
   assertSubscriptionsAddAndRemove,
   assertFollowingBellSubscribesArtist,
   assertSettingsEmailTab,
+  assertCartButtonWorksForTrackFromOtherView,
   assertUnreadBadge,
   assertPlayingActivityRowReadsIt,
   assertActivityListsWhy,
   assertMarkAllHeard,
   assertSampleMatchPlaysAligned,
   assertPlayingSampleShowsNoDuration,
+  assertCartButtonWorksForActivityRow,
 } = require('../lib/notifications-page-steps')
 
 test({
@@ -59,6 +61,8 @@ test({
   'Activity lists tracks like the track list, with why each is there': assertActivityListsWhy,
   'playing an Activity row reads it': assertPlayingActivityRowReadsIt,
   'Mark all heard reads the rest': assertMarkAllHeard,
+  'the cart button works for a track played from Activity': assertCartButtonWorksForActivityRow,
+  'the cart button works for a track started in another view': assertCartButtonWorksForTrackFromOtherView,
   'a sample match plays as an aligned A/B pair': assertSampleMatchPlaysAligned,
   'playing a sample shows no duration and survives a reload': assertPlayingSampleShowsNoDuration,
   'a failed sample upload keeps the track playing': assertFailedUploadKeepsPlaying,
