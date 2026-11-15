@@ -15,7 +15,7 @@ import tempfile
 import unittest
 import wave
 
-from audio_decode import AudioDecodeError, to_wav
+from audio_decode import AudioDecodeError, to_wav, wav_duration_seconds
 
 try:
     from pydub import AudioSegment
@@ -57,6 +57,10 @@ class ToWavTest(unittest.TestCase):
     def test_caps_length(self):
         _, rate, channels, frames = _read(to_wav(self.long_mp3, self.out('capped.wav'), max_seconds=2))
         self.assertEqual(len(frames) // (2 * channels), 2 * rate)
+
+    def test_wav_duration_seconds(self):
+        path = to_wav(self.long_mp3, self.out('duration.wav'), max_seconds=3)
+        self.assertAlmostEqual(wav_duration_seconds(path), 3.0, places=3)
 
     def test_undecodable_input_raises_with_ffmpeg_message(self):
         bad = self.out('bad.mp3')

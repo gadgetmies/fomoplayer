@@ -10,10 +10,17 @@ ones (see test_audio_decode.py for the sample-identical comparison).
 
 import os
 import subprocess
+import wave
 
 
 class AudioDecodeError(RuntimeError):
     pass
+
+
+def wav_duration_seconds(path):
+    """Length of a PCM WAV file in seconds, read from its header."""
+    with wave.open(path) as w:
+        return w.getnframes() / w.getframerate()
 
 
 def to_wav(src, dst, max_seconds=None):
