@@ -14,6 +14,7 @@ const {
 } = require('./bandcamp-api.js')
 
 const { queryAlbumUrl, queryKnownReleaseUrls, searchFollowEntities } = require('./db.js')
+const { getStreamUrl } = require('./stream-urls.js')
 const { flagMislabeledByUrl, clearMislabeledByUrl } = require('../../shared/db/bandcampMislabeledCache.js')
 const logger = require('fomoplayer_shared').logger(__filename)
 
@@ -49,16 +50,17 @@ const getStoreDbId = () => {
   }
 }
 
-module.exports.getPreviewDetails = async (previewId) => {
+// The stream URL of a Bandcamp preview for the player. The stored URL is served without asking Bandcamp; with refresh
+// (the player could not play the URL it got) the release is looked up again and the URLs of all its tracks are
+// replaced. A listener is waiting, so the lookup skips the Bandcamp request queue (but takes its slot); a prefetch of
+// the next track does not.
+module.exports.getPreviewDetails = async (previewId, { refresh = false, prefetch = false } = {}) => {
   const storeId = await getStoreDbId()
   const details = await queryPreviewDetails(previewId)
   for (const detail of details) {
     const storeTrackId = detail.store_track_id
-    const albumUrl = await queryAlbumUrl(storeId, storeTrackId)
-    const albumInfo = await getReleaseAsync(albumUrl)
-    logger.debug('albuminfo trackinfo', albumInfo.trackinfo)
-    logger.debug('details', details)
-    const url = await albumInfo.trackinfo.find(R.propEq(parseInt(storeTrackId, 10), 'track_id'))?.file?.['mp3-128']
+    const releaseUrl = await queryAlbumUrl(storeId, storeTrackId)
+    const url = await getStreamUrl({ previewId, storeTrackId, releaseUrl }, { refresh, priority: !prefetch })
     if (url) {
       return {
         ...details,

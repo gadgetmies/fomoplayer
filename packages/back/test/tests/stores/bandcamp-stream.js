@@ -54,8 +54,17 @@ test({
     )
     assert.strictEqual(bandcampApi.getCachedStreamUrl(track.track_id), track.streaming_url['mp3-128'])
     assert.strictEqual(bandcampApi.getCachedStreamUrl(String(track.track_id)), track.streaming_url['mp3-128'])
-    assert.strictEqual(bandcampApi.getCachedStreamUrl(track.track_id, -1), null, 'an aged URL is not trusted')
     assert.strictEqual(bandcampApi.getCachedStreamUrl(1), null)
+    bandcampApi.forgetStreamUrl(track.track_id)
+    assert.strictEqual(bandcampApi.getCachedStreamUrl(track.track_id), null, 'a forgotten URL is not used')
+  },
+
+  'a stream_redirect URL is trusted for the refresh age, a CDN URL until its ts': () => {
+    const { streamUrlExpiry, streamUrlRefreshAgeMs } = bandcampApi.static
+    assert.strictEqual(streamUrlRefreshAgeMs, 13 * 24 * 60 * 60 * 1000)
+    assert.strictEqual(streamUrlExpiry(STREAM_URL, 1000), 1000 + streamUrlRefreshAgeMs)
+    const cdn = 'https://t4.bcbits.com/stream/abc/mp3-128/1?p=0&ts=1794865832&t=x&token=1794865832_x'
+    assert.strictEqual(streamUrlExpiry(cdn, 1000), 1794865832 * 1000)
   },
 
   'an audio stream is returned and counted as a Bandcamp request': async () => {
@@ -113,6 +122,39 @@ test({
       () => assert.rejects(bandcampApi.fetchStream(STREAM_URL), /instead of audio/),
     )
     assert.strictEqual(isRateLimited(), false)
+  },
+
+  'a priority request skips the queue but takes the slot': async () => {
+    reset()
+    const { setMinRequestInterval } = bandcampApi.static
+    setMinRequestInterval(300)
+    const started = []
+    let t0
+    try {
+      await withFetch(
+        async (url) => {
+          started.push({ url, at: Date.now() - t0 })
+          return audioResponse()
+        },
+        async () => {
+          // A request that just went out: the queued ones wait a full interval after it.
+          await bandcampApi.fetchStream(`${STREAM_URL}&first`)
+          t0 = Date.now()
+          started.length = 0
+          const queued = [bandcampApi.fetchStream(`${STREAM_URL}&q=1`), bandcampApi.fetchStream(`${STREAM_URL}&q=2`)]
+          await new Promise((resolve) => setTimeout(resolve, 50))
+          await bandcampApi.fetchStream(`${STREAM_URL}&listener`, { priority: true })
+          await Promise.all(queued)
+        },
+      )
+    } finally {
+      setMinRequestInterval(Number(process.env.BANDCAMP_MIN_REQUEST_INTERVAL_MS ?? 2000))
+    }
+    const at = Object.fromEntries(started.map(({ url, at }) => [url.split('&').pop(), at]))
+    assert.deepStrictEqual(Object.keys(at), ['listener', 'q=1', 'q=2'], 'the listener goes ahead of the queue')
+    assert.ok(at.listener < 150, `the listener did not wait for the interval (${at.listener} ms)`)
+    assert.ok(at['q=1'] - at.listener >= 290, 'the queue waits a full interval after the listener')
+    assert.ok(at['q=2'] - at['q=1'] >= 290, 'queued requests stay an interval apart')
   },
 
   'a stream refused twice can pause all Bandcamp requests': () => {

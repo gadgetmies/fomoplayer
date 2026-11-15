@@ -26,19 +26,38 @@ const MAX_SUSPENSION_MS = 2 /* hours */ * 60 * 60 * 1000
 const suspensionMs = (consecutive) => Math.min(SUSPENSION_MS * 2 ** Math.max(consecutive - 1, 0), MAX_SUSPENSION_MS)
 
 // Space requests out instead of firing a job's whole batch at once: bursts
-// from one datacenter address are what Bandcamp's edge flags. Requests are
-// serialised through a promise chain so concurrent callers also wait their turn.
-const MIN_REQUEST_INTERVAL_MS = Number(process.env.BANDCAMP_MIN_REQUEST_INTERVAL_MS ?? 2000)
+// from one datacenter address are what Bandcamp's edge flags. Requests wait in
+// a queue and are let through one at a time, MIN_REQUEST_INTERVAL_MS apart.
+// A priority request (a listener pressing play) does not wait in the queue: it
+// goes out at once, but it takes the slot, so the queued requests wait a full
+// interval after it.
+let minRequestIntervalMs = Number(process.env.BANDCAMP_MIN_REQUEST_INTERVAL_MS ?? 2000)
 let lastRequestAt = 0
-let requestQueue = Promise.resolve()
-const waitForRequestSlot = () => {
-  const slot = requestQueue.then(async () => {
-    const wait = lastRequestAt + MIN_REQUEST_INTERVAL_MS - Date.now()
-    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait))
+const requestQueue = []
+let queueTimer = null
+const releaseQueuedRequests = () => {
+  if (queueTimer || requestQueue.length === 0) return
+  const wait = lastRequestAt + minRequestIntervalMs - Date.now()
+  if (wait > 0) {
+    queueTimer = setTimeout(() => {
+      queueTimer = null
+      releaseQueuedRequests()
+    }, wait)
+    return
+  }
+  lastRequestAt = Date.now()
+  requestQueue.shift()()
+  releaseQueuedRequests()
+}
+const waitForRequestSlot = ({ priority = false } = {}) => {
+  if (priority) {
     lastRequestAt = Date.now()
+    return Promise.resolve()
+  }
+  return new Promise((resolve) => {
+    requestQueue.push(resolve)
+    releaseQueuedRequests()
   })
-  requestQueue = slot.catch(() => {})
-  return slot
 }
 
 // The challenge page comes back with HTTP 200, so it has to be recognised from
@@ -179,9 +198,9 @@ const throwIfSuspended = () => {
   throw error
 }
 
-const getPageSource = async (url, options = {}) => {
+const getPageSource = async (url, { priority, ...options } = {}) => {
   throwIfSuspended()
-  await waitForRequestSlot()
+  await waitForRequestSlot({ priority })
   requestCount++
   const res = await fetch(url, { method: 'GET', ...options, headers: withUserAgent(options.headers) })
   if ([429, 403].includes(res.status)) {
@@ -212,9 +231,9 @@ const getPageSource = async (url, options = {}) => {
 // pause like any other request, and fetch follows the redirect to the CDN. Resolves with the response of an audio
 // stream. A 403 or 410 is returned to the caller, which looks the release up again once in case the signed URL
 // expired, and reports a second refusal with suspendRequests. A 429 or a challenge page pauses Bandcamp requests.
-const fetchStream = async (url, options = {}) => {
+const fetchStream = async (url, { priority, ...options } = {}) => {
   throwIfSuspended()
-  await waitForRequestSlot()
+  await waitForRequestSlot({ priority })
   requestCount++
   const res = await fetch(url, { method: 'GET', ...options, headers: withUserAgent(options.headers) })
   if (res.status === 429) {
@@ -245,23 +264,45 @@ const isRateLimited = () => {
 }
 
 const getReleaseInfo = (dom) => extractJSON('[data-tralbum]', 'data-tralbum', dom)
-const scrapeRelease = async (itemUrl) => {
-  const dom = new JSDOM(await getPageSource(itemUrl))
+const scrapeRelease = async (itemUrl, { priority } = {}) => {
+  const dom = new JSDOM(await getPageSource(itemUrl, { priority }))
   const pageName = getName(dom)
   const pageType = detectPageType(dom)
   warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
   return { ...getReleaseInfo(dom), url: itemUrl, pageType, pageName }
 }
 
-// The signed stream URLs of the tracks of every release fetched, so the preview audio prefetch job can download a
-// newly added track without looking its release up again. A URL is signed for one track (the signature covers the
-// track id), so there is no token that could be reused across tracks. Measured on 2026-11-15: a stream_redirect URL
-// issued 13 days earlier still redirected to a playable stream (only the CDN URL it redirects to expires, after 24 h),
-// so a URL is trusted for BANDCAMP_STREAM_URL_MAX_AGE_MS, 7 days by default, and a refused one is looked up again by
-// the caller.
-const STREAM_URL_MAX_AGE_MS = Number(process.env.BANDCAMP_STREAM_URL_MAX_AGE_MS ?? 7 * 24 * 60 * 60 * 1000)
+// The signed stream URLs of the tracks of every release fetched, so a track is played or downloaded without
+// looking its release up again. A URL is signed for one track (the signature covers the track id), so there is no
+// token that could be reused across tracks. Measured on 2026-11-15: a stream_redirect URL (what the mobile endpoint
+// returns) issued 13 days earlier still redirected to a playable stream; only the CDN URL it redirects to expires,
+// 24 h after the redirect. So a stream_redirect URL is trusted for BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS (13 by
+// default). A CDN URL (from a scraped release page) carries its expiry in its ts parameter. A refused URL is
+// looked up again by the caller. The stored copy of these URLs is in stream-urls.js.
+const DAY_MS = 24 * 60 * 60 * 1000
+const STREAM_URL_REFRESH_AGE_MS = Number(process.env.BANDCAMP_STREAM_URL_REFRESH_AGE_DAYS ?? 13) * DAY_MS
 const MAX_CACHED_STREAM_URLS = 50000
 const streamUrls = new Map() // track id -> { url, fetchedAt }
+
+const isRedirectStreamUrl = (url) => {
+  try {
+    return new URL(url).pathname.endsWith('/stream_redirect')
+  } catch {
+    return false
+  }
+}
+
+// The time (epoch ms) after which a stream URL fetched at fetchedAt must not be used.
+const streamUrlExpiry = (url, fetchedAt) => {
+  try {
+    const parsed = new URL(url)
+    const ts = Number(parsed.searchParams.get('ts'))
+    if (parsed.hostname.endsWith('bcbits.com') && Number.isFinite(ts) && ts > 0) return ts * 1000
+  } catch {
+    return fetchedAt
+  }
+  return fetchedAt + STREAM_URL_REFRESH_AGE_MS
+}
 
 const rememberStreamUrls = (releaseInfo) => {
   const fetchedAt = Date.now()
@@ -279,31 +320,36 @@ const rememberStreamUrls = (releaseInfo) => {
   }
 }
 
-const getCachedStreamUrl = (trackId, maxAgeMs = STREAM_URL_MAX_AGE_MS) => {
+const getCachedStreamUrl = (trackId) => {
   const cached = streamUrls.get(String(trackId))
-  return cached && Date.now() - cached.fetchedAt <= maxAgeMs ? cached.url : null
+  return cached && Date.now() < streamUrlExpiry(cached.url, cached.fetchedAt) ? cached.url : null
 }
+
+const forgetStreamUrl = (trackId) => streamUrls.delete(String(trackId))
 
 const resetStreamUrls = () => streamUrls.clear()
 
+// Fetches a release's details. With priority (a listener pressing play) its requests skip the queue.
+const fetchRelease = async (itemUrl, { priority = false } = {}) => {
+  const resolved = await resolveRelease(itemUrl, { priority })
+  let releaseInfo
+  if (!resolved) {
+    logger.warn(`Release ${itemUrl} is not listed on its /music page, scraping the release page instead`)
+    releaseInfo = await scrapeRelease(itemUrl, { priority })
+  } else {
+    const { ids, pageType, pageName } = resolved
+    warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
+    releaseInfo = { ...tralbumToReleaseInfo(await getTralbumDetails(ids, { priority }), itemUrl), pageType, pageName }
+  }
+  rememberStreamUrls(releaseInfo)
+  return releaseInfo
+}
+
 const getRelease = (itemUrl, callback) => {
-  return resolveRelease(itemUrl)
-    .then(async (resolved) => {
-      if (!resolved) {
-        logger.warn(`Release ${itemUrl} is not listed on its /music page, scraping the release page instead`)
-        return scrapeRelease(itemUrl)
-      }
-      const { ids, pageType, pageName } = resolved
-      warnOnNameSubdomainMismatch(itemUrl, pageType, pageName)
-      return { ...tralbumToReleaseInfo(await getTralbumDetails(ids), itemUrl), pageType, pageName }
-    })
-    .then((releaseInfo) => {
-      rememberStreamUrls(releaseInfo)
-      callback(null, releaseInfo)
-    })
+  return fetchRelease(itemUrl)
+    .then((releaseInfo) => callback(null, releaseInfo))
     .catch((e) => {
-      if (!e.isRateLimit)
-        logger.error(`Fetching release from ${itemUrl} failed: ${e.message}`, { statusCode: e.statusCode })
+      if (!e.isRateLimit) logger.error(`Fetching release from ${itemUrl} failed: ${e.message}`, { statusCode: e.statusCode })
       callback(e)
     })
 }
@@ -375,12 +421,12 @@ const resetReleaseIndex = () => {
 
 // Find the ids of a release, fetching its subdomain's /music page when the
 // release has not been seen on an indexed page recently.
-const resolveRelease = async (itemUrl) => {
+const resolveRelease = async (itemUrl, { priority = false } = {}) => {
   const origin = new URL(itemUrl).origin
   const key = normalizeReleaseUrl(itemUrl, origin)
   const page = indexedPages.get(origin)
   if (!knownReleaseIds.has(key) && !(page && Date.now() - page.fetchedAt < RELEASE_INDEX_TTL_MS)) {
-    rememberPage(origin, new JSDOM(await getPageSource(origin + '/music')))
+    rememberPage(origin, new JSDOM(await getPageSource(origin + '/music', { priority })))
   }
   const ids = knownReleaseIds.get(key)
   if (!ids) return null
@@ -438,8 +484,9 @@ const tralbumToReleaseInfo = (tralbum, itemUrl, now = Date.now()) => {
   }
 }
 
-const getTralbumDetails = async ({ bandId, type, id }) => {
+const getTralbumDetails = async ({ bandId, type, id }, { priority = false } = {}) => {
   const text = await getPageSource(TRALBUM_DETAILS_URL, {
+    priority,
     method: 'POST',
     body: JSON.stringify({ band_id: Number(bandId), tralbum_type: type === 'track' ? 't' : 'a', tralbum_id: Number(id) }),
     headers: { 'Content-Type': 'application/json; charset=UTF-8' },
@@ -624,11 +671,19 @@ module.exports = {
     getPageDetails,
     getSearchResults,
   }),
+  fetchRelease,
   fetchStream,
   getCachedStreamUrl,
+  forgetStreamUrl,
   suspendRequests,
   static: {
     resetStreamUrls,
+    isRedirectStreamUrl,
+    streamUrlExpiry,
+    streamUrlRefreshAgeMs: STREAM_URL_REFRESH_AGE_MS,
+    setMinRequestInterval: (ms) => {
+      minRequestIntervalMs = ms
+    },
     getTagsFromUrl,
     getTagName,
     getTagUrl,
