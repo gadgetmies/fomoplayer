@@ -46,7 +46,7 @@ three workers. The job's store traffic is kept conservative:
   `bandcamp.com/stream_redirect` links), goes through the backend's
   Bandcamp client: 2 s between requests, as `bandcamp.py` does, sharing
   the backend's rate-limit pause with playback. The client keeps the
-  stream URLs of the releases the watch job fetched for an hour
+  stream URLs of the releases the watch job fetched for 7 days
   (`BANDCAMP_STREAM_URL_MAX_AGE_MS`), so newly added tracks need no
   lookup; older ones cost one lookup per release.
 - Beatport downloads go one at a time, at least

@@ -41,14 +41,19 @@ The old page URLs (`t4.bcbits.com/stream/<file hash>/mp3-128/<track id>?ts=…&t
 and the mobile API's (`bandcamp.com/stream_redirect?track_id=<id>&ts=…&t=…`)
 both carry a signature that differs between tracks issued at the same `ts`, so
 it covers the track. No site-wide token can be fetched once and reused across
-tracks or pages. `ts` is the time the URL was issued. How long a URL stays
-valid has not been measured (this environment cannot reach Bandcamp).
+tracks or pages. `ts` is the time the URL was issued.
+
+Measured on 2026-11-15 (5 requests): a `stream_redirect` URL issued 13 days
+earlier still answered 302 to a CDN URL that served audio (206). The CDN URL's
+own `ts` is the request time plus 24 h, so only that hop expires quickly, and
+it is fetched straight after the redirect. The redirect works without our
+User-Agent too.
 
 ### Reuse the stream URLs the watch job already fetched
 `tralbum_details` returns the signed URL of every track on a release, and the
 watch job calls it for every new release. The Bandcamp client keeps those URLs
 in process, keyed by track id, for `BANDCAMP_STREAM_URL_MAX_AGE_MS` (default
-1 h, at most 50 000 entries). The prefetch job runs in the same process, so a
+7 days, at most 50 000 entries). The prefetch job runs in the same process, so a
 newly added track costs no lookup. A release is looked up only when one of its
 tracks has no kept URL. A kept URL that is refused (403/410) is replaced by
 one fresh lookup. A URL refused again after a fresh lookup is treated as a rate
@@ -119,9 +124,8 @@ the analyser and backend can be deployed in either order.
   at a time, and the job skips Bandcamp while paused. At most one Bandcamp
   request every 2 s in total, so a full track every ~2 s plus lookups for
   older releases.
-- [The 1 h URL age is a guess] → a refused URL costs one extra lookup; measure
-  the real validity once Bandcamp is reachable and tune
-  `BANDCAMP_STREAM_URL_MAX_AGE_MS`.
+- [Bandcamp shortens the URL validity] → a refused URL costs one extra lookup;
+  tune `BANDCAMP_STREAM_URL_MAX_AGE_MS`.
 - [Workers stopped for days] → the storage cap stops the job; nothing is lost,
   it resumes once files are released.
 - [A worker crashes after the job stored a file] → the file stays until the

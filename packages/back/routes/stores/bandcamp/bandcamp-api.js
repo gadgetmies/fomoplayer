@@ -255,9 +255,11 @@ const scrapeRelease = async (itemUrl) => {
 
 // The signed stream URLs of the tracks of every release fetched, so the preview audio prefetch job can download a
 // newly added track without looking its release up again. A URL is signed for one track (the signature covers the
-// track id), so there is no token that could be reused across tracks; a URL is only trusted for
-// BANDCAMP_STREAM_URL_MAX_AGE_MS, and a refused one is looked up again by the caller.
-const STREAM_URL_MAX_AGE_MS = Number(process.env.BANDCAMP_STREAM_URL_MAX_AGE_MS ?? 60 * 60 * 1000)
+// track id), so there is no token that could be reused across tracks. Measured on 2026-11-15: a stream_redirect URL
+// issued 13 days earlier still redirected to a playable stream (only the CDN URL it redirects to expires, after 24 h),
+// so a URL is trusted for BANDCAMP_STREAM_URL_MAX_AGE_MS, 7 days by default, and a refused one is looked up again by
+// the caller.
+const STREAM_URL_MAX_AGE_MS = Number(process.env.BANDCAMP_STREAM_URL_MAX_AGE_MS ?? 7 * 24 * 60 * 60 * 1000)
 const MAX_CACHED_STREAM_URLS = 50000
 const streamUrls = new Map() // track id -> { url, fetchedAt }
 

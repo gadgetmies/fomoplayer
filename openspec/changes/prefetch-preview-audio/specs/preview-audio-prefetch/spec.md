@@ -11,7 +11,7 @@ the configured bucket under `preview-audio/<random uuid>.mp3`, recording the
 key, size and time in `store__track_preview_audio`. Beatport previews MUST use
 their stored URL. Bandcamp previews MUST use the stream URL the Bandcamp client
 kept from an earlier fetch of the release when it is younger than
-`BANDCAMP_STREAM_URL_MAX_AGE_MS` (default 1 hour), and otherwise look the
+`BANDCAMP_STREAM_URL_MAX_AGE_MS` (default 7 days), and otherwise look the
 release up through the Bandcamp client, once per release.
 
 #### Scenario: A Beatport preview without analyses is stored

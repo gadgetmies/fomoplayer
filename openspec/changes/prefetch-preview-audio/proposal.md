@@ -21,7 +21,7 @@ stops even though there is CPU to spare.
     shares its rate-limit pause with playback. This covers release lookups and
     downloads, because the mobile API's stream URLs are
     `bandcamp.com/stream_redirect` links.
-  - The client keeps the stream URLs of every release it fetches for an hour
+  - The client keeps the stream URLs of every release it fetches for 7 days
     (`BANDCAMP_STREAM_URL_MAX_AGE_MS`). A track the watch job has just added
     is downloaded without looking its release up again. Older tracks cost one
     lookup per release.
