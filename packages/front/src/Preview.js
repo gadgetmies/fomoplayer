@@ -484,6 +484,123 @@ class Preview extends Component {
     )
   }
 
+  // Artists and title (with follow links), or the uploaded sample's name: in the panel and the docked bar
+  renderTrackTitle() {
+    const currentTrack = this.props.currentTrack
+    return isSample(currentTrack) ? (
+      <>Your sample - {currentTrack.title}</>
+    ) : (
+      trackArtistsAndTitle(currentTrack, this.props.follows, this.props.onAddEntityToSearch)
+    )
+  }
+
+  // The track's labels (with follow links) after a caption: "Labels:" in the panel's details, "On:" in the docked bar
+  renderLabelsDetail(caption = 'Labels:') {
+    const labels = this.props.currentTrack.labels
+    return (
+      <>
+        <span className="preview_label">{caption}</span>{' '}
+        <span className="preview_detail">
+          {labels?.length
+            ? followableNameLinks(labels, this.props.follows, 'label', ', ', ' & ', this.props.onAddEntityToSearch)
+            : null}
+        </span>
+      </>
+    )
+  }
+
+  // Play / pause, previous and next: in the panel's button row and the docked bar's. Previous gives way on narrow
+  // phones (Preview.css).
+  renderPlaybackButtons() {
+    const source = this.props.playingFrom ? ` in ${this.props.playingFrom.label}` : ''
+    return (
+      <>
+        <button
+          type="button"
+          className="button button-playback"
+          aria-label={this.state.playing ? 'Pause' : 'Play'}
+          onClick={() => this.togglePlaying('ui')}
+        >
+          <FontAwesomeIcon icon={this.state.playing ? 'pause' : 'play'} />
+        </button>
+        <button
+          type="button"
+          className="button button-playback button-playback--previous"
+          aria-label={`Previous${source}`}
+          onClick={() => this.props.onPrevious()}
+        >
+          <FontAwesomeIcon icon="step-backward" />
+        </button>
+        <button
+          type="button"
+          className="button button-playback"
+          aria-label={`Next${source}`}
+          onClick={() => this.props.onNext()}
+        >
+          <FontAwesomeIcon icon="step-forward" />
+        </button>
+      </>
+    )
+  }
+
+  // The waveform with its loading overlay, the embedding strip under it and Preview / Listen on its ends: the panel's
+  // and the docked bar's, so the two stay alike. children holds what only one copy has (the panel's audio element);
+  // placement keeps their radio ids apart.
+  renderWaveform(ctx, { placement, timeline, children = null, className = '', testId }) {
+    const { waveform, totalDuration, startOffset, endPosition, shouldSkip, toPositionPercent } = timeline
+    const { currentTrack } = ctx
+    return (
+      <div className={`preview-wrapper ${className}`} style={{ position: 'relative' }} data-testid={testId}>
+        <div
+          className="waveform_container"
+          style={{ flex: 5, position: 'relative' }}
+          onMouseDown={(e) => this.seekFromWaveformClick(e, { totalDuration, startOffset, endPosition })}
+        >
+          {this.renderWaveformLayers({
+            waveform,
+            toPositionPercent,
+            shouldSkip,
+            startOffset,
+            endPosition,
+            totalDuration,
+          })}
+          {this.state.loading ? (
+            <div onMouseDown={(e) => e.stopPropagation()} className="loading-overlay">
+              <Spinner size="large" />
+            </div>
+          ) : null}
+        </div>
+        {children}
+        {currentTrack ? (
+          <>
+            {/* Uploaded samples are not tracks and have no embedding */}
+            {isSample(currentTrack) ? null : (
+              <img
+                style={{
+                  width: '100%',
+                  height: 2,
+                  position: 'absolute',
+                  bottom: -5,
+                  border: '1px solid #000',
+                  display: this.state.embeddingMissing ? 'none' : 'block',
+                }}
+                alt={'embedding'}
+                src={`${apiURL}/tracks/${currentTrack.id}/embedding.png`}
+                onError={(e) => {
+                  this.setState({ embeddingMissing: true })
+                }}
+                onLoad={(e) => {
+                  this.setState({ embeddingMissing: false })
+                }}
+              />
+            )}
+            {this.renderSourceSelect(ctx, placement)}
+          </>
+        ) : null}
+      </div>
+    )
+  }
+
   // Seeks to the clicked spot of a waveform that spans the timeline (the panel's waveform or the docked bar's).
   seekFromWaveformClick(e, { totalDuration, startOffset, endPosition }) {
     // Nothing to map the click onto before the length of the audio is known
@@ -588,7 +705,7 @@ class Preview extends Component {
             onCartButtonClick={this.props.onCartButtonClick}
             onCreateCartClick={this.props.onCreateCartClick}
             onMarkPurchasedButtonClick={this.props.onMarkPurchasedButtonClick}
-            disabled={!this.props.currentTrack || !this.props.hasSelectedTrack}
+            disabled={!this.props.currentTrack}
             popupAbove={popupAbove}
           />
         )}
@@ -990,66 +1107,24 @@ class Preview extends Component {
           </>
         ) : null}
         <div className="docked-player_main">
-          <div className="docked-player_row">
-            <button
-              type="button"
-              className="button button-playback docked-player_button"
-              aria-label={this.state.playing ? 'Pause' : 'Play'}
-              onClick={() => this.togglePlaying('ui')}
-            >
-              <FontAwesomeIcon icon={this.state.playing ? 'pause' : 'play'} />
-            </button>
-            <button
-              type="button"
-              className="button button-playback button-playback--previous docked-player_button"
-              aria-label={`Previous${this.props.playingFrom ? ` in ${this.props.playingFrom.label}` : ''}`}
-              onClick={() => this.props.onPrevious()}
-            >
-              <FontAwesomeIcon icon="step-backward" />
-            </button>
-            <button
-              type="button"
-              className="button button-playback docked-player_button"
-              aria-label={`Next${this.props.playingFrom ? ` in ${this.props.playingFrom.label}` : ''}`}
-              onClick={() => this.props.onNext()}
-            >
-              <FontAwesomeIcon icon="step-forward" />
-            </button>
+          <div className="button-wrapper docked-player_row">
+            {this.renderPlaybackButtons()}
             <div className="docked-player_info">
-              <span className="docked-player_title">
-                {isSample(currentTrack) ? (
-                  <>Your sample - {currentTrack.title}</>
-                ) : (
-                  <>
-                    <b>{namesToString(R.uniq([currentTrack.artists, currentTrack.remixers].flat()))}</b> -{' '}
-                    {currentTrack.title}
-                    {currentTrack.version ? ` (${currentTrack.version})` : ''}
-                  </>
-                )}
-              </span>
+              <span className="docked-player_title">{this.renderTrackTitle()}</span>
+              {currentTrack.labels?.length ? (
+                <div className="docked-player_labels">{this.renderLabelsDetail('On:')}</div>
+              ) : null}
               {this.renderPlayingFrom()}
             </div>
           </div>
-          {/* Between the track and the actions on wide screens; above them on narrower screens and phones. Preview and
-              Listen sit on its ends, as on the panel's waveform. */}
-          <div
-            className="waveform_container docked-player_waveform"
-            data-testid="docked-player-waveform"
-            onMouseDown={(e) => this.seekFromWaveformClick(e, { totalDuration, startOffset, endPosition })}
-          >
-            {this.renderWaveformLayers({
-              waveform,
-              toPositionPercent,
-              shouldSkip,
-              startOffset,
-              endPosition,
-              totalDuration,
-            })}
-            {/* A press on the switches does not seek */}
-            <div className="docked-player_source-select" onMouseDown={(e) => e.stopPropagation()}>
-              {this.renderSourceSelect(ctx, 'bar')}
-            </div>
-          </div>
+          {/* The panel's waveform block: between the track and the actions on wide screens; above them on narrower
+              screens and phones */}
+          {this.renderWaveform(ctx, {
+            placement: 'bar',
+            timeline: { waveform, totalDuration, startOffset, endPosition, shouldSkip, toPositionPercent },
+            className: 'docked-player_waveform',
+            testId: 'docked-player-waveform',
+          })}
           {/* At the right edge, so the popup the chevron opens sits above it */}
           <div className="docked-player_end">
             {/* The panel's main actions as icons; hidden on phones, where the expanded panel has them */}
@@ -1060,7 +1135,7 @@ class Preview extends Component {
             )}
             <button
               type="button"
-              className="button button-playback docked-player_button docked-player_expand"
+              className="button button-playback docked-player_expand"
               aria-label={expanded ? 'Fewer player controls' : 'More player controls'}
               aria-expanded={expanded ? 'true' : 'false'}
               aria-controls="docked-player-more"
@@ -1147,6 +1222,95 @@ class Preview extends Component {
 
     const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
     const currentTrackStores = currentTrack?.stores.filter(({ code }) => storeSlugs.includes(code))
+    // The one audio element of the app's player, inside the panel's waveform block (hidden when docked)
+    const audioElement = (
+      <audio
+        ref="player0"
+        onEnded={async () => {
+          try {
+            navigator.mediaSession.playbackState = 'paused'
+            this.setState({ playing: false })
+            // The sample of an A/B pair ends on its own; next would leave the pair
+            if (currentTrack?.abPair && this.state.abSource === 'A') return
+            await this.props.onNext()
+          } catch (e) {
+            console.error(e)
+          }
+        }}
+        onPlay={async () => {
+          await this.props.markHeard(currentTrack.id)
+        }}
+        onPlaying={() => {
+          if (!shouldSkip && this.state.position === 0) {
+            this.play()
+          }
+        }}
+        onLoadedMetadata={({ currentTarget }) => {
+          if (isSample(currentTrack) && Number.isFinite(currentTarget.duration)) {
+            this.setState({ mediaDurationMs: currentTarget.duration * 1000 })
+          }
+          if (currentTrack?.abPair && this.state.abSource === 'A') {
+            this.setState({ abSampleDuration: currentTarget.duration })
+          }
+        }}
+        onCanPlayThrough={() => {
+          if (this._pendingSeek !== null) {
+            const seekTo = this._pendingSeek
+            this._pendingSeek = null
+            this.getPlayer().currentTime = seekTo
+            this.setState({ position: seekTo * 1000 })
+            this.play()
+            return
+          }
+          if (shouldSkip && this.state.position === 0) {
+            this.setState({
+              position: previewDetails.start_ms,
+            })
+            this.getPlayer().currentTime = (previewDetails.start_ms - mp3Preview.start_ms) / 1000
+          }
+          this.play()
+        }}
+        onPause={() => this.setPlaying(false)}
+        onTimeUpdate={({ currentTarget }) => {
+          const { currentTime } = currentTarget
+          this.setState({ position: currentTime * 1000 })
+          const abPair = currentTrack?.abPair
+          if (abPair) {
+            // Loop match: keep B inside the part the sample matched
+            const region = loopRegion(abPair, this.state.abSampleDuration)
+            if (this.state.abSource === 'B' && this.state.abLoop && region && currentTime >= region.end) {
+              currentTarget.currentTime = region.start
+            }
+            if (this.state.abSource === 'A') return
+          }
+          try {
+            mp3Preview.length_ms &&
+              currentTime &&
+              currentTime < mp3Preview.length_ms / 1000 &&
+              navigator.mediaSession.setPositionState({
+                duration: mp3Preview.length_ms / 1000,
+                playbackRate: 1,
+                position: currentTime,
+              })
+            if (this.getShouldSkip() && currentTime * 1000 > previewDetails.end_ms) {
+              this.props.onNext()
+            }
+          } catch (e) {
+            console.error(e, currentTime, mp3Preview.length_ms)
+          }
+        }}
+        onError={async (e) => {
+          console.error('Audio error', e)
+          await requestWithCredentials({
+            url: '/log/error',
+            method: 'POST',
+            body: { message: 'Audio playback error', error: e.toString() },
+          })
+        }}
+        controlsList="nodownload"
+        src={this.state.previewUrl}
+      />
+    )
     const ctx = {
       currentTrack,
       previews,
@@ -1190,11 +1354,7 @@ class Preview extends Component {
           {currentTrack ? (
             <>
               <div style={{ marginTop: '0' }} className="preview_title">
-                {isSample(currentTrack) ? (
-                  <>Your sample - {currentTrack.title}</>
-                ) : (
-                  trackArtistsAndTitle(currentTrack, this.props.follows, this.props.onAddEntityToSearch)
-                )}
+                {this.renderTrackTitle()}
               </div>
               {this.renderPlayingFrom()}
               {this.renderAbControls()}
@@ -1202,19 +1362,7 @@ class Preview extends Component {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', gap: 16 }}>
                     <div style={{ fontSize: '75%' }}>
-                      <span className="preview_label">Labels:</span>{' '}
-                      <span className="preview_detail">
-                        {!currentTrack.labels?.length
-                          ? null
-                          : followableNameLinks(
-                              currentTrack.labels,
-                              this.props.follows,
-                              'label',
-                              ', ',
-                              ' & ',
-                              this.props.onAddEntityToSearch,
-                            )}
-                      </span>
+                      {this.renderLabelsDetail()}
                       <br />
                       <span className="preview_label">Released:</span>{' '}
                       <span className="preview_detail" style={{ whiteSpace: 'nowrap' }}>
@@ -1273,158 +1421,15 @@ class Preview extends Component {
           )}
         </div>
         <div className="player-collection-wrapper noselect" style={{ flex: 1, display: 'flex' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 8, marginBottom: 8 }}>
-            <div className="preview-wrapper" style={{ position: 'relative' }}>
-              <div
-                className="waveform_container"
-                style={{ flex: 5, position: 'relative' }}
-                onMouseDown={(e) => this.seekFromWaveformClick(e, { totalDuration, startOffset, endPosition })}
-              >
-                {this.renderWaveformLayers({
-                  waveform,
-                  toPositionPercent,
-                  shouldSkip,
-                  startOffset,
-                  endPosition,
-                  totalDuration,
-                })}
-                {this.state.loading ? (
-                  <div onMouseDown={(e) => e.stopPropagation()} className="loading-overlay">
-                    <Spinner size="large" />
-                  </div>
-                ) : null}
-              </div>
-              <audio
-                ref="player0"
-                onEnded={async () => {
-                  try {
-                    navigator.mediaSession.playbackState = 'paused'
-                    this.setState({ playing: false })
-                    // The sample of an A/B pair ends on its own; next would leave the pair
-                    if (currentTrack?.abPair && this.state.abSource === 'A') return
-                    await this.props.onNext()
-                  } catch (e) {
-                    console.error(e)
-                  }
-                }}
-                onPlay={async () => {
-                  await this.props.markHeard(currentTrack.id)
-                }}
-                onPlaying={() => {
-                  if (!shouldSkip && this.state.position === 0) {
-                    this.play()
-                  }
-                }}
-                onLoadedMetadata={({ currentTarget }) => {
-                  if (isSample(currentTrack) && Number.isFinite(currentTarget.duration)) {
-                    this.setState({ mediaDurationMs: currentTarget.duration * 1000 })
-                  }
-                  if (currentTrack?.abPair && this.state.abSource === 'A') {
-                    this.setState({ abSampleDuration: currentTarget.duration })
-                  }
-                }}
-                onCanPlayThrough={() => {
-                  if (this._pendingSeek !== null) {
-                    const seekTo = this._pendingSeek
-                    this._pendingSeek = null
-                    this.getPlayer().currentTime = seekTo
-                    this.setState({ position: seekTo * 1000 })
-                    this.play()
-                    return
-                  }
-                  if (shouldSkip && this.state.position === 0) {
-                    this.setState({
-                      position: previewDetails.start_ms,
-                    })
-                    this.getPlayer().currentTime = (previewDetails.start_ms - mp3Preview.start_ms) / 1000
-                  }
-                  this.play()
-                }}
-                onPause={() => this.setPlaying(false)}
-                onTimeUpdate={({ currentTarget }) => {
-                  const { currentTime } = currentTarget
-                  this.setState({ position: currentTime * 1000 })
-                  const abPair = currentTrack?.abPair
-                  if (abPair) {
-                    // Loop match: keep B inside the part the sample matched
-                    const region = loopRegion(abPair, this.state.abSampleDuration)
-                    if (this.state.abSource === 'B' && this.state.abLoop && region && currentTime >= region.end) {
-                      currentTarget.currentTime = region.start
-                    }
-                    if (this.state.abSource === 'A') return
-                  }
-                  try {
-                    mp3Preview.length_ms &&
-                      currentTime &&
-                      currentTime < mp3Preview.length_ms / 1000 &&
-                      navigator.mediaSession.setPositionState({
-                        duration: mp3Preview.length_ms / 1000,
-                        playbackRate: 1,
-                        position: currentTime,
-                      })
-                    if (this.getShouldSkip() && currentTime * 1000 > previewDetails.end_ms) {
-                      this.props.onNext()
-                    }
-                  } catch (e) {
-                    console.error(e, currentTime, mp3Preview.length_ms)
-                  }
-                }}
-                onError={async (e) => {
-                  console.error('Audio error', e)
-                  await requestWithCredentials({
-                    url: '/log/error',
-                    method: 'POST',
-                    body: { message: 'Audio playback error', error: e.toString() },
-                  })
-                }}
-                controlsList="nodownload"
-                src={this.state.previewUrl}
-              />
-              {currentTrack ? (
-                <>
-                  {/* Uploaded samples are not tracks and have no embedding */}
-                  {isSample(currentTrack) ? null : (
-                    <img
-                      style={{
-                        width: '100%',
-                        height: 2,
-                        position: 'absolute',
-                        bottom: -5,
-                        border: '1px solid #000',
-                        display: this.state.embeddingMissing ? 'none' : 'block',
-                      }}
-                      alt={'embedding'}
-                      src={`${apiURL}/tracks/${currentTrack.id}/embedding.png`}
-                      onError={(e) => {
-                        this.setState({ embeddingMissing: true })
-                      }}
-                      onLoad={(e) => {
-                        this.setState({ embeddingMissing: false })
-                      }}
-                    />
-                  )}
-                  {this.renderSourceSelect(ctx, 'panel')}
-                </>
-              ) : null}
-            </div>
+          <div className="preview-player">
+            {this.renderWaveform(ctx, {
+              placement: 'panel',
+              timeline: { waveform, totalDuration, startOffset, endPosition, shouldSkip, toPositionPercent },
+              children: audioElement,
+            })}
             <div className="button-wrapper">
-              <button className="button button-playback" onClick={() => this.togglePlaying('ui')}>
-                <FontAwesomeIcon icon={this.state.playing ? 'pause' : 'play'} />
-              </button>
-              <button
-                className="button button-playback button-playback--previous"
-                aria-label="Previous"
-                onClick={() => this.props.onPrevious()}
-              >
-                <FontAwesomeIcon icon="step-backward" />
-              </button>
-              <button className="button button-playback" onClick={() => this.props.onNext()}>
-                <FontAwesomeIcon icon="step-forward" />
-              </button>
-              <div
-                className="preview_actions_wrapper"
-                style={{ fontSize: '75%', fontWeight: 350, display: isSample(currentTrack) ? 'none' : undefined }}
-              >
+              {this.renderPlaybackButtons()}
+              <div className="preview_actions_wrapper" style={{ display: isSample(currentTrack) ? 'none' : undefined }}>
                 {this.renderTrackActions(ctx, { popupAbove: false })}
               </div>
             </div>

@@ -1,11 +1,13 @@
 const { expect } = require('chai')
 const { waitForWithTimeoutMessage } = require('./setup')
+const player = require('./player-steps')
+const { LONG_TEXT_TITLE } = require('./one-player-seed')
 
 // Shared browser interactions/assertions for the docked player controls demo on wider screens. Preview and Listen sit
 // on the ends of the docked bar's waveform, as on the full player's; after the waveform come cart, find similar, follow
-// and ignore as icons and an expand button that opens a popup above them with share and the store links, stacked. The phone layout has its own
-// steps (docked-player-controls-mobile-steps.js). Both entry files import these verbatim; the tracks are seeded
-// through the API in both.
+// and ignore as icons and an expand button that opens a popup above them with share and the store links, stacked. The
+// phone layout has its own steps (docked-player-controls-mobile-steps.js); the controls both exercise are in
+// player-steps.js. Both entry files import these verbatim; the tracks are seeded through the API in both.
 
 const row = (page) => page.locator('.docked-player_row')
 const barEnd = (page) => page.locator('.docked-player_end')
@@ -13,10 +15,6 @@ const waveformSwitch = (page, text) =>
   page.locator('[data-testid="docked-player-waveform"] label', { hasText: text }).first()
 const more = (page) => page.locator('[data-testid="docked-player-more"]')
 const toggle = (page) => page.locator('.docked-player .docked-player_expand')
-
-const assertStillPlaying = async (page) => {
-  expect(await page.$eval('audio', (audio) => audio.paused)).to.equal(false)
-}
 
 const assertRowHasMainActions = async ({ page }) => {
   for (const name of [/similar/i, /Follow/, /Ignore/]) {
@@ -55,43 +53,19 @@ const assertRowHasMainActions = async ({ page }) => {
       .getByText(/^\d+:\d\d$/)
       .count(),
   ).to.equal(0)
+  await player.assertDockedBarShowsLabels(page)
   // Share and the store links wait behind the expand button
   expect(await barEnd(page).getByRole('button', { name: /Share/ }).count()).to.equal(0)
   expect(await more(page).count()).to.equal(0)
 }
 
-// The cart button adds the track to the default cart and removes it again (so re-runs start from the same state)
-const assertCartButtonToggles = async ({ page }) => {
-  const selector = '.docked-player_end .button-drop_down-left'
-  const before = await page.locator(selector).getAttribute('title')
-  const waitForTitle = (changed) =>
-    page.waitForFunction(
-      ({ selector, before, changed }) => {
-        const button = document.querySelector(selector)
-        return button && !button.disabled && (button.getAttribute('title') !== before) === changed
-      },
-      { selector, before, changed },
-      { timeout: 10000 },
-    )
-  await page.locator(selector).click()
-  await waitForWithTimeoutMessage(
-    () => waitForTitle(true),
-    'The cart button in the docked bar should add the track to (or remove it from) the default cart.',
-  )
-  await page.locator(selector).click()
-  await waitForTitle(false)
-}
+// The cart button in the bar adds the track to the default cart and removes it again
+const assertCartButtonToggles = ({ page }) =>
+  player.assertCartButtonToggles(page, '.docked-player_end .button-drop_down-left', { where: 'in the docked bar' })
 
 // Preview / Listen on the bar's waveform change the same setting as the ones over the full player's, without seeking
-const assertSourceToggleSwitches = async ({ page }) => {
-  const initial = await page.evaluate(() => localStorage.getItem('preferFullTracks'))
-  await waveformSwitch(page, 'Listen').click()
-  expect(await page.evaluate(() => localStorage.getItem('preferFullTracks'))).to.equal('true')
-  await page.waitForTimeout(500)
-  await waveformSwitch(page, 'Preview').click()
-  expect(await page.evaluate(() => localStorage.getItem('preferFullTracks'))).to.equal('false')
-  if (initial === 'true') await waveformSwitch(page, 'Listen').click()
-}
+const assertSourceToggleSwitches = ({ page }) =>
+  player.assertPreviewListenSwitch(page, (text) => waveformSwitch(page, text))
 
 const openMore = async ({ page }) => {
   expect(await toggle(page).getAttribute('aria-expanded')).to.equal('false')
@@ -127,7 +101,7 @@ const openMore = async ({ page }) => {
   expect(linkTops.length).to.be.at.least(2)
   linkTops.slice(1).forEach(({ top }, index) => expect(top).to.be.at.least(linkTops[index].bottom - 1))
   expect(await more(page).getByRole('slider').count()).to.equal(0)
-  await assertStillPlaying(page)
+  await player.assertStillPlaying(page)
 }
 
 // The share popup opens to the left of the bar's popup, which sits at the viewport's right edge. Like the full
@@ -162,7 +136,13 @@ const assertExpandButtonAndEscapeCloseMore = async ({ page }) => {
   await page.keyboard.press('Escape')
   await more(page).waitFor({ state: 'detached', timeout: 5000 })
   expect(await toggle(page).getAttribute('aria-expanded')).to.equal('false')
-  await assertStillPlaying(page)
+  await player.assertStillPlaying(page)
+}
+
+// A track with many long artist names, a long label and a long title: each line of the bar is cut short
+const assertLongTextsEllipsed = async ({ page }) => {
+  await player.playFromSearchAndOpenSettings(page, LONG_TEXT_TITLE)
+  await player.assertDockedBarTextsEllipsed(page)
 }
 
 module.exports = {
@@ -172,4 +152,5 @@ module.exports = {
   openMore,
   assertSharePopupOpens,
   assertExpandButtonAndEscapeCloseMore,
+  assertLongTextsEllipsed,
 }
