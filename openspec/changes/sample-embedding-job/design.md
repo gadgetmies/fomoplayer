@@ -12,8 +12,8 @@ See proposal.md for why. Today:
 - The production backend image is `node:22` with no Python. The embedding
   model (Discogs-EffNet, `discogs_multi_embeddings-effnet-bs64-1`) only runs in
   the Python analyser via Essentia + TensorFlow.
-- `main.py --audio-samples` decodes a sample to WAV with `pydub` (which shells
-  out to `ffmpeg`), loads it with Essentia `MonoLoader` at 16 kHz
+- `main.py --audio-samples` decodes a sample to WAV with `ffmpeg` (through the
+  helper from `replace-pydub-with-ffmpeg`, which this change depends on), loads it with Essentia `MonoLoader` at 16 kHz
   (`resampleQuality=4`), runs the model with output `PartitionedCall:1`, and
   averages the per-patch rows (`embeddings.T.mean(1)`). Previews go through
   the same steps. Sounds like compares the two, so they must stay identical.
@@ -26,7 +26,6 @@ See proposal.md for why. Today:
 - Samples get embeddings automatically, visibly in admin Jobs.
 - No long-lived admin API key anywhere outside the backend.
 - One code path for the model, shared by previews and samples.
-- The analyser runs on Python 3.13 without the `audioop` backport.
 
 **Non-Goals:**
 - Moving preview embedding, fingerprinting or waveforms into the job system.
@@ -76,22 +75,16 @@ returns the vector. `main.py` (previews and samples) and the service both call
 it. The parity requirement in the spec is then a property of one function,
 checked by a test that runs it against the old inline code on fixture audio.
 
-### Replace `pydub` with a direct `ffmpeg` helper
+### Token generated once, shared by Railway reference
 
-`pydub` 0.25.1 (2021) imports `audioop`, removed from the standard library in
-Python 3.13. It is a thin wrapper here: every call site decodes to a 16-bit
-PCM WAV via `ffmpeg`. `analyser/audio_decode.py` exposes
-`to_wav(src, dst, max_seconds=None)` running
-`ffmpeg -nostdin -y -i src -vn -acodec pcm_s16le [-t N] -f wav dst`, keeping
-the source sample rate and channels as `pydub` did, and raising with
-ffmpeg's stderr on failure.
-
-Alternatives considered:
-- *Keep `pydub` plus `audioop-lts`*: works, but keeps an unmaintained
-  dependency alive through a backport.
-- *Let Essentia decode MP3 directly*: Essentia bundles its own decoder, which
-  can differ slightly from system `ffmpeg`; that would shift sample
-  embeddings away from the stored preview embeddings.
+Railway generates random values only inside templates, so the agent generates
+a 32-byte token in its container and sets it as `EMBEDDING_SERVICE_TOKEN` on
+the `embedding` service. The backend gets
+`EMBEDDING_SERVICE_TOKEN=${{embedding.EMBEDDING_SERVICE_TOKEN}}` and
+`EMBEDDING_SERVICE_URL=http://${{embedding.RAILWAY_PRIVATE_DOMAIN}}:${{embedding.PORT}}`,
+so the value is set in one place and rotating it is one edit plus a redeploy.
+The value appears once in the agent session's transcript; acceptable for a
+token that only guards the private network, and rotatable in the dashboard.
 
 ### Batch and schedule
 
@@ -102,10 +95,8 @@ schedule every 10 minutes, newest first, matching
 
 ## Risks / Trade-offs
 
-- [Decoded audio differs after dropping `pydub`] → before removing it, a test
-  decodes fixture files (`.mp3`, `.wav`, Beatport `.LOFI`) both ways and
-  requires identical PCM samples; and an embedding of each through the new
-  path must have cosine ≥ 0.9999 with the old path.
+- [Shared module drifts from the old inline embedding code] → a test requires
+  cosine ≥ 0.9999 between the two on fixture audio before the inline code goes.
 - [A sample that never decodes is retried every run] → it costs one failed
   request per run and is named in each run result; if such samples pile up,
   add a failure marker (column `user_notification_audio_sample_embedding_failed_at`)
@@ -120,13 +111,16 @@ schedule every 10 minutes, newest first, matching
 
 ## Migration Plan
 
-1. Merge and deploy the analyser changes and the service image; owner creates
-   the Railway service in production from `analyser/Dockerfile`, no public
-   domain, and sets `EMBEDDING_SERVICE_TOKEN`.
-2. Owner sets `EMBEDDING_SERVICE_URL` and `EMBEDDING_SERVICE_TOKEN` on the
-   backend. Until then the job runs and reports skipped.
-3. The migration registers the job and schedule on deploy; the first run
-   embeds any pending samples.
+The owner asked the agent to do every step, including the Railway ones; the
+agent confirms with the owner before each production change.
+
+1. After `replace-pydub-with-ffmpeg` and this change merge, the agent creates
+   the `embedding` service in production from this repository with
+   `analyser/Dockerfile`, no public domain, and sets its token.
+2. The agent sets the backend's two reference variables. Until then the job
+   runs and reports skipped.
+3. The migration registers the job and schedule on the backend deploy; the
+   first run embeds any pending samples.
 
 Rollback: disable the job (`job_enabled = false`) or unset the URL; the down
 migration removes the job rows. Manual `main.py --audio-samples` keeps working
