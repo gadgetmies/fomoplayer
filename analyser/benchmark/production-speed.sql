@@ -1,68 +1,63 @@
--- 1. Embedding throughput, per store. Gap = seconds since the previous saved
---    embedding (any store), counted only inside a run (gap <= 10 min).
-WITH e AS (
-  SELECT store_name
-       , store__track_preview_embedding_updated_at AS t
-       , COALESCE(store__track_preview_end_ms - store__track_preview_start_ms, store__track_preview_track_duration_ms) / 1000.0 AS audio_s
+-- Read-only queries for `fomoplayer query "<statement>"`, one statement per
+-- call. The query endpoint stops a statement after 3 seconds, so each query
+-- covers a bounded time window and joins only what it needs. Change the dates
+-- to the run you want to look at (query 1 finds the busy weeks).
+
+-- 1. When the analyser ran: tracks saved per week.
+SELECT date_trunc('week', store__track_preview_embedding_updated_at)::date AS week, COUNT(*) AS embeddings
+FROM store__track_preview_embedding
+GROUP BY 1 ORDER BY 1 DESC LIMIT 12;
+
+SELECT date_trunc('week', store__track_preview_fingerprint_extracted_at)::date AS week, COUNT(*) AS fingerprints
+FROM store__track_preview_fingerprint_meta
+GROUP BY 1 ORDER BY 1 DESC LIMIT 12;
+
+-- 2. Throughput per day within one week. A gap is the time since the previous
+--    saved row; gaps over 10 minutes are pauses between runs and left out of
+--    the busy hours. The fingerprint worker runs 4 processes in parallel, so
+--    its gaps are throughput, not time per track. Swap in
+--    store__track_preview_fingerprint_meta / ..._fingerprint_extracted_at for
+--    fingerprints.
+SELECT t::date AS day
+     , COUNT(*) AS tracks
+     , ROUND(SUM(gap_s) FILTER (WHERE gap_s <= 600)::numeric / 3600, 1) AS busy_hours
+     , ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY gap_s)::numeric, 2) AS median_gap_s
+     , ROUND((COUNT(*) FILTER (WHERE gap_s <= 600)
+              / NULLIF(SUM(gap_s) FILTER (WHERE gap_s <= 600), 0) * 3600)::numeric) AS tracks_per_busy_hour
+FROM (
+  SELECT store__track_preview_embedding_updated_at AS t
+       , EXTRACT(EPOCH FROM store__track_preview_embedding_updated_at
+                 - LAG(store__track_preview_embedding_updated_at) OVER (ORDER BY store__track_preview_embedding_updated_at)) AS gap_s
   FROM store__track_preview_embedding
-       JOIN store__track_preview USING (store__track_preview_id)
-       JOIN store__track USING (store__track_id)
-       JOIN store USING (store_id)
-  WHERE store__track_preview_embedding_type = 'discogs_multi_embeddings-effnet-bs64-1'
-), g AS (
-  SELECT *, EXTRACT(EPOCH FROM t - LAG(t) OVER (ORDER BY t)) AS gap_s FROM e
-)
-SELECT store_name
-     , COUNT(*) AS tracks
-     , MIN(t)::date AS first_day
-     , MAX(t)::date AS last_day
-     , ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY gap_s)::numeric, 2) AS median_gap_s
-     , ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY audio_s)::numeric, 0) AS median_audio_s
-     , ROUND((SUM(gap_s) / NULLIF(SUM(audio_s), 0) * 60)::numeric, 2) AS s_per_audio_minute
-FROM g
-WHERE gap_s > 0 AND gap_s <= 600
-GROUP BY store_name
-ORDER BY tracks DESC;
+  WHERE store__track_preview_embedding_updated_at >= DATE '2026-09-28'
+    AND store__track_preview_embedding_updated_at < DATE '2026-09-28' + 7
+) x
+GROUP BY 1 ORDER BY 1;
 
--- 2. Fingerprint throughput, per store. The fingerprint worker runs 4
---    processes in parallel by default, so a gap is throughput, not per-track time.
-WITH f AS (
-  SELECT store_name
-       , store__track_preview_fingerprint_extracted_at AS t
-       , COALESCE(store__track_preview_end_ms - store__track_preview_start_ms, store__track_preview_track_duration_ms) / 1000.0 AS audio_s
-  FROM store__track_preview_fingerprint_meta
-       JOIN store__track_preview USING (store__track_preview_id)
-       JOIN store__track USING (store__track_id)
-       JOIN store USING (store_id)
-), g AS (
-  SELECT *, EXTRACT(EPOCH FROM t - LAG(t) OVER (ORDER BY t)) AS gap_s FROM f
-)
-SELECT store_name
+-- 3. Store mix and preview length for one day of a run (store_id 1 = Beatport,
+--    2 = Bandcamp; see `SELECT * FROM store`).
+SELECT st.store_id
      , COUNT(*) AS tracks
-     , MIN(t)::date AS first_day
-     , MAX(t)::date AS last_day
-     , ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY gap_s)::numeric, 2) AS median_gap_s
-     , ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY audio_s)::numeric, 0) AS median_audio_s
-     , ROUND((SUM(gap_s) / NULLIF(SUM(audio_s), 0) * 60)::numeric, 2) AS s_per_audio_minute
-FROM g
-WHERE gap_s > 0 AND gap_s <= 600
-GROUP BY store_name
-ORDER BY tracks DESC;
+     , ROUND(AVG(p.store__track_preview_end_ms - p.store__track_preview_start_ms) / 1000.0) AS avg_audio_s
+FROM store__track_preview_embedding x
+     JOIN store__track_preview p ON p.store__track_preview_id = x.store__track_preview_id
+     JOIN store__track st ON st.store__track_id = p.store__track_id
+WHERE x.store__track_preview_embedding_updated_at >= DATE '2026-10-04'
+  AND x.store__track_preview_embedding_updated_at < DATE '2026-10-04' + 1
+GROUP BY 1;
 
--- 3. Daily inflow of new previews over the last 60 days, per store.
-SELECT store_name
+-- 4. Inflow: new previews and minutes of audio over the last 60 days, per store.
+SELECT st.store_id
      , COUNT(*) AS previews_60d
-     , ROUND(COUNT(*) / 60.0) AS per_day_avg
-     , ROUND(SUM(COALESCE(store__track_preview_end_ms - store__track_preview_start_ms, store__track_preview_track_duration_ms) / 60000.0)) AS audio_minutes_60d
-FROM store__track_preview
-     JOIN store__track USING (store__track_id)
-     JOIN track USING (track_id)
-     JOIN store USING (store_id)
-WHERE track_added > NOW() - INTERVAL '60 days'
-GROUP BY store_name
-ORDER BY previews_60d DESC;
+     , ROUND(AVG(p.store__track_preview_end_ms - p.store__track_preview_start_ms) / 1000.0) AS avg_audio_s
+     , ROUND(SUM(p.store__track_preview_end_ms - p.store__track_preview_start_ms) / 60000.0) AS audio_minutes_60d
+FROM track t
+     JOIN store__track st ON st.track_id = t.track_id
+     JOIN store__track_preview p ON p.store__track_id = st.store__track_id
+WHERE t.track_added > NOW() - INTERVAL '60 days'
+GROUP BY 1;
 
--- 4. Busiest days, to size for peaks rather than the average.
+-- 5. Busiest days for new previews, to size for peaks rather than the average.
 SELECT track_added::date AS day, COUNT(*) AS previews
 FROM store__track_preview
      JOIN store__track USING (store__track_id)
@@ -72,7 +67,7 @@ GROUP BY 1
 ORDER BY previews DESC
 LIMIT 5;
 
--- 5. Current backlog: previews without an embedding / fingerprint.
+-- 6. Current backlog: previews without an embedding / fingerprint.
 SELECT store_name
      , COUNT(*) FILTER (WHERE e.store__track_preview_id IS NULL) AS without_embedding
      , COUNT(*) FILTER (WHERE m.store__track_preview_id IS NULL) AS without_fingerprint
