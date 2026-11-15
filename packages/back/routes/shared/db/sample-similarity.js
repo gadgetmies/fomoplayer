@@ -98,7 +98,8 @@ SELECT ARRAY(SELECT DISTINCT sa.artist_id
   return { artistIds: new Set(artistIds), labelIds: new Set(labelIds) }
 }
 
-// The artists and labels that appear most often among the tracks, most frequent first; artists win ties.
+// The artists and labels the user does not follow yet that appear most often among the tracks, most frequent first;
+// artists win ties. Followed ones are dropped before the top ones are picked, so they never take a place.
 const tallyFollowSuggestions = (tracks, { artistIds, labelIds }) => {
   const tally = new Map()
   const count = (type, { id, name }, followed) => {
@@ -112,6 +113,7 @@ const tallyFollowSuggestions = (tracks, { artistIds, labelIds }) => {
     for (const label of R.uniqBy(R.prop('id'), track.labels ?? [])) count('label', label, labelIds.has(label.id))
   }
   return [...tally.values()]
+    .filter(({ followed }) => !followed)
     .sort((a, b) => b.count - a.count || (a.type === b.type ? a.id - b.id : a.type === 'artist' ? -1 : 1))
     .slice(0, MAX_FOLLOW_SUGGESTIONS)
 }
