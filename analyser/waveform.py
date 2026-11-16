@@ -14,12 +14,14 @@ import sys
 from audio_decode import to_wav
 
 import argparse
+import contextlib
 import json
 import time
 import requests
 from auth import auth_header, get_api_url, resolve_url, stored_audio_query
 import bandcamp
 import datetime
+import prefetch
 
 waveform_storage_url = os.getenv("WAVEFORM_STORAGE_HOST")
 access_key = os.getenv("WAVEFORM_STORAGE_BUCKET_ACCESS_KEY")
@@ -218,34 +220,64 @@ def fetch_preview(preview, mp3_path, backoff):
             expired_retries = 0
 
 
-def process_batch(previews, backoff, attempts):
+def prepare_preview(preview, work_dir, backoff):
+    """Download a preview and decode it to a WAV in `work_dir`. Runs on a
+    prefetch thread while an earlier preview is drawn. Returns the WAV path,
+    or None when Bandcamp doesn't stream the track. The downloaded file is
+    deleted once decoded."""
+    preview_id = preview.get("preview_id")
+    mp3_path = os.path.join(work_dir, f"preview_{preview_id}.mp3")
+    try:
+        if fetch_preview(preview, mp3_path, backoff) is None:
+            return None
+        return to_wav(mp3_path, os.path.join(work_dir, f"preview_{preview_id}.wav"))
+    finally:
+        if os.path.exists(mp3_path):
+            os.remove(mp3_path)
+
+
+def uses_store(preview):
+    """A preview not stored in our bucket is fetched from Bandcamp: prepare it
+    on the single store thread, where the rate-limit backoff and Bandcamp's
+    caches stay one request at a time."""
+    return not preview.get("audio_url")
+
+
+def process_batch(previews, backoff, attempts, download_workers=4):
     waveform_details = []
     missing_previews = []
 
     with tempfile.TemporaryDirectory() as temp_dir_name:
-        mp3_path = os.path.join(temp_dir_name, "preview.mp3")
-        output_wav_path = os.path.join(temp_dir_name, "output.wav")
-        waveform_png_path = os.path.join(temp_dir_name, "waveform.png")
-
-        for preview in previews:
-            preview_id = preview.get("preview_id")
-            print(f"Processing preview {preview_id} of store track {preview.get('id')} / {preview.get('url')}", flush=True)
-            try:
-                if fetch_preview(preview, mp3_path, backoff) is None:
-                    print(f"Bandcamp has no stream for preview {preview_id}")
-                    missing_previews.append({"preview_id": preview_id, "missing": True})
-                    continue
-                to_wav(mp3_path, output_wav_path)
-                generate_waveform(output_wav_path, waveform_png_path)
-                waveform_url = upload_waveform(waveform_png_path)
-                waveform_details.append({"id": preview_id, "waveform_url": waveform_url,
-                                         "waveform_start_ms": preview.get("preview_start_ms"),
-                                         "waveform_end_ms": preview.get("preview_end_ms")})
-            except Exception as e:
-                attempts[preview_id] = attempts.get(preview_id, 0) + 1
-                print(f"Preview {preview_id} failed (attempt {attempts[preview_id]}/{MAX_ATTEMPTS}): {e!r}")
-                if attempts[preview_id] >= MAX_ATTEMPTS:
-                    missing_previews.append({"preview_id": preview_id, "missing": True})
+        # The next previews download and decode in the background while this
+        # thread draws and uploads; matplotlib's pyplot stays on this thread.
+        batch = prefetch.ordered(previews, lambda p: prepare_preview(p, temp_dir_name, backoff), uses_store,
+                                 workers=download_workers)
+        with contextlib.closing(batch):
+            for preview, future in batch:
+                preview_id = preview.get("preview_id")
+                print(f"Processing preview {preview_id} of store track {preview.get('id')} / {preview.get('url')}", flush=True)
+                wav_path = None
+                try:
+                    wav_path = future.result()
+                    if wav_path is None:
+                        print(f"Bandcamp has no stream for preview {preview_id}")
+                        missing_previews.append({"preview_id": preview_id, "missing": True})
+                        continue
+                    waveform_png_path = os.path.join(temp_dir_name, f"waveform_{preview_id}.png")
+                    generate_waveform(wav_path, waveform_png_path)
+                    waveform_url = upload_waveform(waveform_png_path)
+                    os.remove(waveform_png_path)
+                    waveform_details.append({"id": preview_id, "waveform_url": waveform_url,
+                                             "waveform_start_ms": preview.get("preview_start_ms"),
+                                             "waveform_end_ms": preview.get("preview_end_ms")})
+                except Exception as e:
+                    attempts[preview_id] = attempts.get(preview_id, 0) + 1
+                    print(f"Preview {preview_id} failed (attempt {attempts[preview_id]}/{MAX_ATTEMPTS}): {e!r}")
+                    if attempts[preview_id] >= MAX_ATTEMPTS:
+                        missing_previews.append({"preview_id": preview_id, "missing": True})
+                finally:
+                    if wav_path and os.path.exists(wav_path):
+                        os.remove(wav_path)
 
     if waveform_details:
         post_to_api("/admin/waveform", waveform_details)
@@ -262,6 +294,9 @@ if __name__ == '__main__':
                          "the backend's prefetchPreviewAudio job stored in the bucket")
     ap.add_argument("--loop", action="store_true",
                     help="Keep processing batches until no preview is left without a waveform")
+    ap.add_argument("--download-workers", type=int, default=4,
+                    help="How many previews stored in our bucket download and decode in parallel while "
+                         "waveforms are drawn. Previews fetched from Bandcamp are always fetched one at a time.")
     args = ap.parse_args()
 
     backoff = Backoff()
@@ -282,7 +317,7 @@ if __name__ == '__main__':
             sys.exit(0 if args.loop else 2)
         # Cached release pages hold stream URLs that expire; keep them for one batch only.
         bandcamp._release_cache.clear()
-        done, missing = process_batch(previews, backoff, attempts)
+        done, missing = process_batch(previews, backoff, attempts, args.download_workers)
         total_done += done
         total_missing += missing
         print(f"[{datetime.datetime.now()}] Batch: {done} waveforms, {missing} missing. "
