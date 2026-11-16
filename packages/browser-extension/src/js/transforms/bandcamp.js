@@ -159,7 +159,14 @@ module.exports.bandcampReleasesTransform = L.collect([
           ),
           previews: L.partsOf(
             L.pick({
-              // url: ['file', 'mp3-128'], // TODO: do not include the url because it will be fetched separately?
+              // Bandcamp stream URLs are signed and do not last, so they are never the preview's url. The
+              // bandcamp.com/stream_redirect ones the backend gets from the mobile endpoint stay usable for days and
+              // are stored as the preview's url_ephemeral; the CDN URLs on release pages expire within a day.
+              url_ephemeral: [
+                'file',
+                'mp3-128',
+                L.when((url) => /^https:\/\/bandcamp\.com\/stream_redirect\?/.test(url)),
+              ],
               format: R.always('mp3'),
               start_ms: R.always(0),
               end_ms: durationLens,

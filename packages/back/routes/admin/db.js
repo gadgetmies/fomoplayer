@@ -4,6 +4,7 @@ const logger = require('fomoplayer_shared').logger(__filename)
 const R = require('ramda')
 const BPromise = require('bluebird')
 const config = require('../../config')
+const { STORAGE_ROUTE_PREFIX } = require('../shared/minio')
 const { matchFingerprints } = require('../shared/db/fingerprint-matching')
 const {
   getCachedMislabeled,
@@ -159,7 +160,18 @@ module.exports.storeConfig = async ({ config, lens, name }) => {
   return details
 }
 
-module.exports.queryNextTracksToAnalyse = async ({ model, batch_size, purchased }) => {
+// The stored audio of a preview (aliased p), downloaded by the prefetchPreviewAudio job: the analyser reads it from
+// the bucket through this path instead of downloading it from the store.
+const storedAudioKey = () => sql`(SELECT a.store__track_preview_audio_object_key
+   FROM store__track_preview_audio a
+   WHERE a.store__track_preview_id = p.store__track_preview_id)`
+const storedAudioUrl = () => sql`(${STORAGE_ROUTE_PREFIX}::TEXT || `.append(storedAudioKey()).append(')')
+// With ?audio=stored a queue only serves previews whose audio is stored, so the analyser never downloads from a store.
+const storedOnlyCondition = (audio) =>
+  audio === 'stored' ? sql`
+  AND `.append(storedAudioKey()).append(' IS NOT NULL') : sql``
+
+module.exports.queryNextTracksToAnalyse = async ({ model, batch_size, purchased, audio }) => {
   logger.info(`Searching for ${purchased ? 'purchased' : 'new'}`)
   if (!model) throw new Error('Model not set')
   return pg.queryRowsAsync(
@@ -174,6 +186,7 @@ SELECT track_id
                       'end_ms', store__track_preview_end_ms,
                       'store', store_name,
                       'store_track_id', store__track_store_id,
+                      'audio_url', `.append(storedAudioUrl()).append(sql`,
                       -- Bandcamp stream URLs expire and aren't stored; the analyser
                       -- resolves them from the release page.
                       'release_url', CASE WHEN store__track_preview_url IS NULL THEN
@@ -196,7 +209,10 @@ WHERE NOT EXISTS (SELECT 1 FROM store__track_preview_embedding e
                          AND store__track_preview_embedding_type = ${model})
   AND (store__track_preview_url IS NOT NULL OR store_name = 'Bandcamp')
   AND NOT store__track_preview_missing
-GROUP BY track_id, track_isrc`
+`)
+      .append(storedOnlyCondition(audio))
+      .append(`
+GROUP BY track_id, track_isrc`)
       // language=
       .append(purchased ? ', cart_is_purchased' : '')
       .append(' ORDER BY ')
@@ -253,7 +269,7 @@ FROM
   `,
   )
 
-module.exports.queryTracksWithoutWaveform = (limit, stores) => {
+module.exports.queryTracksWithoutWaveform = (limit, stores, audio) => {
   return pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- Query previews without waveform
@@ -265,6 +281,7 @@ SELECT store__track_id               AS id
      , store__track_preview_end_ms   AS preview_end_ms
      , store__track_url              AS url
      , store__track_store_id         AS store_track_id
+     , `.append(storedAudioUrl()).append(sql`          AS audio_url
      -- Bandcamp stream URLs expire and aren't stored; the analyser resolves
      -- them from the release page.
      , CASE WHEN store__track_preview_url IS NULL THEN
@@ -277,15 +294,17 @@ SELECT store__track_id               AS id
 FROM
   store__track
   NATURAL JOIN store
-  NATURAL JOIN store__track_preview
+  NATURAL JOIN store__track_preview p
   NATURAL LEFT JOIN store__track_preview_waveform
 WHERE store__track_preview_waveform_url IS NULL
   AND (${stores}::TEXT[] IS NULL OR store_name = ANY(${stores}))
   AND store__track_preview_missing IS NOT TRUE
-  AND (store_name = 'Bandcamp' OR store__track_preview_url IS NOT NULL)
+  AND (store_name = 'Bandcamp' OR store__track_preview_url IS NOT NULL)`)
+      .append(storedOnlyCondition(audio))
+      .append(sql`
 ORDER BY store__track_published DESC NULLS LAST
 LIMIT ${limit}
-    `,
+    `),
   )
 }
 
@@ -377,7 +396,7 @@ module.exports.upsertNotificationAudioSampleEmbedding = async (sampleId, model, 
   )
 }
 
-module.exports.queryPreviewsWithoutFingerprint = async (limit) => {
+module.exports.queryPreviewsWithoutFingerprint = async (limit, audio) => {
   return await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`-- queryPreviewsWithoutFingerprint
@@ -388,6 +407,7 @@ SELECT
   -- bandcamp.resolve_stream_url matches against the release page, same as
   -- queryNextTracksToAnalyse serves the embeddings worker.
   store__track_store_id AS "store_track_id",
+  `.append(storedAudioUrl()).append(sql` AS "audio_url",
   -- Bandcamp stream URLs expire and aren't stored; the analyser resolves
   -- them from the release page.
   CASE WHEN store__track_preview_url IS NULL THEN
@@ -397,16 +417,18 @@ SELECT
      WHERE rt.track_id = store__track.track_id
        AND sr.store_id = store.store_id
      LIMIT 1) END AS "release_url"
-FROM store__track_preview
+FROM store__track_preview p
   NATURAL JOIN store__track
   NATURAL JOIN store
   NATURAL LEFT JOIN store__track_preview_fingerprint_meta
 WHERE store__track_preview_fingerprint_meta.store__track_preview_id IS NULL
   AND (store__track_preview_url IS NOT NULL OR store_name = 'Bandcamp')
-  AND NOT store__track_preview_missing
+  AND NOT store__track_preview_missing`)
+      .append(storedOnlyCondition(audio))
+      .append(sql`
 ORDER BY store__track_preview_id DESC
 LIMIT ${limit || 100}
-    `,
+    `),
   )
 }
 

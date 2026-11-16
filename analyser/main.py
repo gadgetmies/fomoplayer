@@ -5,7 +5,7 @@ load_dotenv()
 
 import json
 import requests
-from auth import auth_header, get_api_url, request_error, resolve_url
+from auth import auth_header, get_api_url, request_error, resolve_url, stored_audio_query
 import bandcamp
 
 from audio_decode import to_wav, wav_duration_seconds
@@ -34,6 +34,9 @@ ap.add_argument("-m", "--model", help="Model type (e.g. 'discogs_multi_embedding
 ap.add_argument("-p", "--purchased", help="Analyse purchased tracks")
 ap.add_argument("-a", "--audio-samples", action="store_true", help="Process uploaded audio samples instead of store previews")
 ap.add_argument("-b", "--batch-size", type=int, default=10, help="Batch size for fetching samples")
+ap.add_argument("--direct-download", action="store_true",
+                help="Download previews from the stores instead of only taking previews whose audio the "
+                     "backend's prefetchPreviewAudio job stored in the bucket")
 ap.add_argument("--sanity-window", type=int, default=20,
                 help="How many previously generated embeddings to keep on disk and compare against to detect bit-identical duplicates. 0 disables the check.")
 ap.add_argument("--skip-sanity-confirmation", action="store_true",
@@ -229,12 +232,14 @@ def _parse_json_or_explain(action, res):
         )
 
 
-def get_next_analysis_tracks(model=DEFAULT_MODEL, purchased=True, batch_size=10):
+def get_next_analysis_tracks(model=DEFAULT_MODEL, purchased=True, batch_size=10, direct_download=False):
     print("Getting next tracks to analyse")
     print(purchased)
-    print(f"{get_api_url()}/admin/analyse?model={model}&batch_size={batch_size}&purchased={'true' if purchased else ''}")
+    url = (f"{get_api_url()}/admin/analyse?model={model}&batch_size={batch_size}"
+           f"&purchased={'true' if purchased else ''}{stored_audio_query(direct_download)}")
+    print(url)
     res = requests.get(
-        f"{get_api_url()}/admin/analyse?model={model}&batch_size={batch_size}&purchased={'true' if purchased else ''}",
+        url,
         headers=auth_header()
     )
     if (res.status_code != 200):
@@ -435,7 +440,8 @@ if __name__ == '__main__':
     else:
         # Process store track previews (original behavior)
         purchased = args.purchased is not None
-        tracks_to_process = get_next_analysis_tracks(purchased=purchased, batch_size=args.batch_size)
+        tracks_to_process = get_next_analysis_tracks(purchased=purchased, batch_size=args.batch_size,
+                                                     direct_download=args.direct_download)
         print(f"Got {len(tracks_to_process)} tracks")
 
         if (len(tracks_to_process) == 0):
@@ -449,9 +455,14 @@ if __name__ == '__main__':
                 previews = track.get('previews')
                 found = False
                 for preview in previews:
+                    from_cache = False
                     previewUrl = preview.get("url")
                     previewId = preview.get("preview_id")
-                    if not previewUrl and preview.get("store") == "Bandcamp":
+                    if preview.get("audio_url"):
+                        # Stored in our bucket by the backend's prefetchPreviewAudio job.
+                        previewUrl = preview.get("audio_url")
+                    elif not previewUrl and preview.get("store") == "Bandcamp":
+                        from_cache = bool(bandcamp.cached_stream_url(preview.get("store_track_id")))
                         previewUrl = resolve_bandcamp_url(preview)
                         if previewUrl is None:
                             print(f"Bandcamp has no stream for preview {previewId}")
@@ -471,6 +482,16 @@ if __name__ == '__main__':
                         break
                     except Exception as e:
                         print("Downloading preview failed")
+                        if preview.get("audio_url"):
+                            # Our own bucket failing is transient: keep the preview queued.
+                            print(e)
+                            continue
+                        if not preview.get("url") and preview.get("store") == "Bandcamp" and from_cache:
+                            # A cached stream URL may have expired: forget it so the next
+                            # run looks the release up again, and keep the preview queued.
+                            bandcamp.forget_stream_url(preview.get("store_track_id"))
+                            print(e)
+                            continue
                         tracks.append({"id": track.get('track_id'), "isrc": track.get('track_isrc'),
                                        "preview_id": preview.get("preview_id"),
                                        "missing": True})

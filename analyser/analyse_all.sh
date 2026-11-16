@@ -10,6 +10,7 @@ AUDIO_SAMPLES=0
 PURCHASED=0
 NO_ATTACH=0
 NO_WAVEFORM=0
+DIRECT_DOWNLOAD=0
 SKIP_SANITY=0
 SCORE_AFTER=""
 FINGERPRINT_WORKERS=""
@@ -24,6 +25,7 @@ Usage: $(basename "$0") [--previews] [--audio-samples]
                        [--session NAME]
                        [--layout windows|panes]
                        [--no-waveform]
+                       [--direct-download]
                        [--skip-sanity-confirmation]
                        [--score-after N]
                        [--fingerprint-workers N]
@@ -42,6 +44,10 @@ At least one of --previews or --audio-samples is required.
                     panes:   all workers as tiled panes in a single 'workers' window.
   --no-waveform     Skip the waveform-previews worker (useful when MinIO env vars
                     are not configured).
+  --direct-download Pass --direct-download to the preview workers: download
+                    previews from the stores instead of only taking the ones
+                    the backend's prefetchPreviewAudio job stored in the bucket.
+                    For a backend without that job (e.g. local development).
   --skip-sanity-confirmation
                     Pass --skip-sanity-confirmation through to main.py so
                     embedding-collision warnings don't block on a y/N prompt.
@@ -69,6 +75,7 @@ while [[ $# -gt 0 ]]; do
     --session)        SESSION="$2"; shift 2 ;;
     --layout)         LAYOUT="$2"; shift 2 ;;
     --no-waveform)    NO_WAVEFORM=1; shift ;;
+    --direct-download) DIRECT_DOWNLOAD=1; shift ;;
     --skip-sanity-confirmation) SKIP_SANITY=1; shift ;;
     --score-after)    SCORE_AFTER="$2"; shift 2 ;;
     --fingerprint-workers) FINGERPRINT_WORKERS="$2"; shift 2 ;;
@@ -147,6 +154,11 @@ if [[ $PURCHASED -eq 1 ]]; then
   purchased_arg=" -p true"
 fi
 
+direct_arg=""
+if [[ $DIRECT_DOWNLOAD -eq 1 ]]; then
+  direct_arg=" --direct-download"
+fi
+
 sanity_arg=""
 if [[ $SKIP_SANITY -eq 1 ]]; then
   sanity_arg=" --skip-sanity-confirmation"
@@ -220,10 +232,10 @@ spawn() {
 }
 
 if [[ $PREVIEWS -eq 1 ]]; then
-  spawn "fingerprint-previews" "python panako_processor.py --previews${batch_arg}${score_after_arg}${fingerprint_workers_arg}"
-  spawn "embedding-previews"   "python main.py -m \"$MODEL\"${batch_arg}${purchased_arg}${sanity_arg}"
+  spawn "fingerprint-previews" "python panako_processor.py --previews${batch_arg}${score_after_arg}${fingerprint_workers_arg}${direct_arg}"
+  spawn "embedding-previews"   "python main.py -m \"$MODEL\"${batch_arg}${purchased_arg}${sanity_arg}${direct_arg}"
   if [[ $NO_WAVEFORM -eq 0 ]]; then
-    spawn "waveform-previews"  "python waveform.py"
+    spawn "waveform-previews"  "python waveform.py${direct_arg}"
   fi
 fi
 

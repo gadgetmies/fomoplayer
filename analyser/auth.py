@@ -118,6 +118,14 @@ def resolve_url(url):
     return urljoin(get_api_url(), url)
 
 
+def stored_audio_query(direct_download):
+    """Query parameter that limits a preview queue to previews whose audio the
+    backend's prefetchPreviewAudio job stored in the bucket, so a worker never
+    downloads from a store (which rate-limits). An older backend ignores it and
+    serves previews without `audio_url`; the workers then download as before."""
+    return "" if direct_download else "&audio=stored"
+
+
 def request_error(action, res):
     """Build an error message for a failed backend response.
 

@@ -51,6 +51,8 @@ const {
   removeArtistCredit,
 } = require('./db')
 const { ensureIsAdmin } = require('../shared/auth.js')
+const { releaseAnalysedPreviewAudio } = require('./preview-audio')
+const { getMinioClient, getBucketName } = require('../shared/minio')
 const config = require('../../config')
 const { isDatabaseResetAllowed } = require('./database-reset-policy')
 const { resetDatabase, databaseResetEnvironmentName } = require('./reset-database')
@@ -132,6 +134,20 @@ router.post('/radiator/config', async ({ body: { name, lens, config } }, res) =>
   res.status(201).send(storedConfig)
 })
 
+// Removes the audio the prefetchPreviewAudio job stored for these previews once every analysis of them is done. A
+// failure is logged and left for the job's next sweep: it must not fail the worker's request.
+const releasePreviewAudio = async (previewIds) => {
+  try {
+    await releaseAnalysedPreviewAudio({
+      client: getMinioClient(),
+      bucketName: getBucketName(),
+      previewIds: previewIds.filter((id) => id !== undefined && id !== null),
+    })
+  } catch (error) {
+    logger.warn('Could not release stored preview audio', { error: error.message })
+  }
+}
+
 // Bandcamp stream URLs expire and are not stored. The analyser resolves them
 // itself from the release page (store_track_id and release_url), throttled and
 // pausing on rate limits: resolving them here would fetch Bandcamp from the
@@ -146,16 +162,18 @@ router.post('/analyse', async ({ body }, res) => {
     results.push(await upsertTrackAnalysis(id, model, embeddings))
   }
   await markPreviewsMissing(body.filter(({ missing }) => missing).map(({ preview_id }) => preview_id))
+  await releasePreviewAudio(body.map(({ id, preview_id }) => preview_id ?? id))
   res.send(results)
 })
 
-router.get('/preview', async ({ query: { limit, stores } }, res) => {
-  res.send(await queryTracksWithoutWaveform(limit, stores.split(',')))
+router.get('/preview', async ({ query: { limit, stores, audio } }, res) => {
+  res.send(await queryTracksWithoutWaveform(limit, stores.split(','), audio))
 })
 
 router.post('/waveform', async ({ body }, res) => {
   await insertWaveforms(body)
   const tracks = await updateTrackDetailsForPreviewTracks(body)
+  await releasePreviewAudio(body.map(({ id }) => id))
   return res.status(200).send(tracks)
 })
 
@@ -172,14 +190,15 @@ router.post('/notification-audio-samples/embeddings', async ({ body }, res) => {
   res.send(results)
 })
 
-router.get('/exact-match/previews/without-fingerprint', async ({ query: { limit } }, res) => {
-  const previews = await queryPreviewsWithoutFingerprint(limit ? parseInt(limit, 10) : undefined)
+router.get('/exact-match/previews/without-fingerprint', async ({ query: { limit, audio } }, res) => {
+  const previews = await queryPreviewsWithoutFingerprint(limit ? parseInt(limit, 10) : undefined, audio)
   res.send(previews)
 })
 
 router.post('/exact-match/previews/fingerprints', async ({ body: { preview_id, fingerprints } }, res) => {
   try {
     await upsertPreviewFingerprints(preview_id, fingerprints)
+    await releasePreviewAudio([preview_id])
     res.send({ success: true, preview_id })
   } catch (error) {
     logger.error('Error uploading preview fingerprints', { error: error.message, stack: error.stack })

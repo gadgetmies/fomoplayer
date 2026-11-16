@@ -740,6 +740,23 @@ https://${apiURL}/admin/merge-tracks/${secondId}/to/${firstId} (${secondTitle} (
     .then(getFieldFromResult('store__track_id'))
 
   for (const preview of track.previews) {
+    if (!preview.url && preview.url_ephemeral) {
+      // A preview without a permanent URL (Bandcamp) is unique per store track; keep the URL that works for a while.
+      await tx.queryAsync(
+        // language=PostgreSQL
+        sql`-- addStoreTrack INSERT INTO store__track_preview url_ephemeral
+        INSERT
+        INTO store__track_preview
+        ( store__track_id, store__track_preview_format, store__track_preview_start_ms, store__track_preview_end_ms
+        , store__track_preview_source, store__track_preview_url_ephemeral, store__track_preview_url_ephemeral_fetched_at)
+        VALUES ( ${storeTrackId}, ${preview.format}, ${preview.start_ms}, ${preview.end_ms}, ${sourceId}
+               , ${preview.url_ephemeral}, NOW())
+        ON CONFLICT (store__track_id, (store__track_preview_url IS NULL)) WHERE store__track_preview_url IS NULL DO UPDATE
+          SET store__track_preview_url_ephemeral            = EXCLUDED.store__track_preview_url_ephemeral
+            , store__track_preview_url_ephemeral_fetched_at = NOW()
+        `,
+      )
+    }
     await tx.queryAsync(
       // language=PostgreSQL
       sql`-- addStoreTrack INSERT INTO store__track_preview

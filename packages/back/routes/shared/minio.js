@@ -79,4 +79,5 @@ module.exports = {
   storageObjectPath,
   presignedObjectUrl,
   PRESIGNED_URL_EXPIRY_SECONDS,
+  STORAGE_ROUTE_PREFIX,
 }
