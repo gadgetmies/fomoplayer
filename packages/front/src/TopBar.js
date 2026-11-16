@@ -199,7 +199,7 @@ class TopBar extends Component {
               className={this.props.searchActive ? '' : 'search__inactive'}
               genres={this.state.genres || []}
             />
-            {/* A search kept while another page (Settings, Notifications) is open: back to its results */}
+            {/* A search kept while another page (Settings, Admin) is open: back to its results */}
             {!this.props.searchActive && this.props.searchTerms?.length > 0 && (
               <SpinnerButton
                 type="button"

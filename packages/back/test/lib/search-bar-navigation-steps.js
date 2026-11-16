@@ -3,8 +3,8 @@ const { dismissOnboarding, waitForWithTimeoutMessage } = require('./setup')
 
 // Shared steps for the search-bar-navigation demo: the top bar search keeps its magnifying glass (centred) without
 // focus; Settings keeps an active search with a way back to its results; going back to a search shows its terms at
-// once, before the results arrive; and another track list (Discover) empties the bar. The label comes from the
-// Concussion fixture the one-player seed adds.
+// once, before the results arrive; and another track list (Discover) or Notifications empties the bar. The label
+// comes from the Concussion fixture the one-player seed adds.
 
 const LABEL = 'Vision Recordings'
 const TEXT = 'concussion'
@@ -101,13 +101,22 @@ const assertBackShowsSearchAtOnce = async ({ page }) => {
   }
 }
 
-// Another track list replaces the search: the bar is emptied, entity and text terms alike
-const assertOtherListClearsSearch = async ({ page }) => {
-  await page.locator('a[href="/tracks/new"]').first().click()
-  await page.waitForURL(/\/tracks\/new/, { timeout: 10000 })
+// Opening the page behind the link empties the bar, entity and text terms alike, with no way back offered
+const expectLinkClearsSearch = async (page, href, url) => {
+  await page.locator(`a[href="${href}"]`).first().click()
+  await page.waitForURL(url, { timeout: 10000 })
   await page.waitForFunction((bar) => !document.querySelector(`${bar} .search_pill`), BAR, { timeout: 5000 })
   expect(await page.locator(`${BAR} input`).inputValue()).to.equal('')
   expect(await page.locator('.show_search_results_button').count()).to.equal(0)
+}
+
+// Another track list replaces the search
+const assertOtherListClearsSearch = ({ page }) => expectLinkClearsSearch(page, '/tracks/new', /\/tracks\/new/)
+
+// So does Notifications
+const assertNotificationsClearsSearch = async ({ page }) => {
+  await searchLabelAndText(page)
+  await expectLinkClearsSearch(page, '/notifications/activity', /\/notifications\/activity/)
 }
 
 module.exports = {
@@ -116,4 +125,5 @@ module.exports = {
   assertSettingsKeepsSearchWithWayBack,
   assertBackShowsSearchAtOnce,
   assertOtherListClearsSearch,
+  assertNotificationsClearsSearch,
 }
