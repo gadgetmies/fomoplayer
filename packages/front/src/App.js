@@ -176,6 +176,9 @@ class LocationWatcherBase extends Component {
 
 const LocationWatcher = withRouter(LocationWatcherBase)
 
+// Views that replace an active search when navigated to; any other page keeps the search in the top bar
+const SEARCH_RESETTING_VIEWS = ['tracks', 'carts']
+
 class App extends Component {
   constructor(props) {
     super(props)
@@ -450,11 +453,16 @@ class App extends Component {
         nextState.searchTerms = searchTerms
         nextState.searchFilters = filters
         nextState.listState = 'search'
+        // Back / forward to a search: the bar shows that search's terms at once, typed text replaced
+        nextState.searchBarResetCount = this.state.searchBarResetCount + 1
         shouldSetState = true
         this.search(searchTerms, filters)
       }
-    } else if (this.state.searchTerms.length > 0) {
+    } else if (this.state.searchTerms.length > 0 && SEARCH_RESETTING_VIEWS.includes(pathname.split('/')[1])) {
+      // Another track list (Discover, a cart) replaces the search: empty the bar, typed text too. Other pages
+      // (Settings, Notifications) keep it, so the top bar can take the user back to the results.
       nextState.searchTerms = []
+      nextState.searchBarResetCount = this.state.searchBarResetCount + 1
       shouldSetState = true
     }
 

@@ -8,6 +8,7 @@ import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
 import GlobalSearchBar from './GlobalSearchBar'
 import DropDownButton from './DropDownButton'
+import SpinnerButton from './SpinnerButton'
 import { isMobile } from 'react-device-detect'
 import Popup from './Popup'
 import { searchTermsToString } from './searchTerms'
@@ -198,6 +199,23 @@ class TopBar extends Component {
               className={this.props.searchActive ? '' : 'search__inactive'}
               genres={this.state.genres || []}
             />
+            {/* A search kept while another page (Settings, Notifications) is open: back to its results */}
+            {!this.props.searchActive && this.props.searchTerms?.length > 0 && (
+              <SpinnerButton
+                type="button"
+                size={'top_bar'}
+                icon={'search'}
+                className="show_search_results_button"
+                style={{ whiteSpace: 'nowrap' }}
+                title="Show the results of this search"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  this.handleSearch(this.state.committedTerms, this.state.inputValue)
+                }}
+              >
+                <span className="button-top_bar_button_label">Show results</span>
+              </SpinnerButton>
+            )}
             {this.props.searchActive && (
               <>
                 <span
