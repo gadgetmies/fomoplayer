@@ -30,35 +30,6 @@ const tracklistPlay = ({ trackId, startSeconds, endSeconds, alternates = [] }) =
   windows: 3,
 })
 
-test({
-  'counts layers like other plays and does not count a found layer as a false positive': () => {
-    const truth = {
-      plays: [
-        truthPlay({ row: 0, trackId: 1, startSeconds: 0, endSeconds: 120 }),
-        truthPlay({ row: 1, trackId: 2, startSeconds: 100, endSeconds: 220 }),
-        // The vocal plays inside the preview.
-        truthPlay({ row: 'L1', trackId: 3, startSeconds: 30, endSeconds: 90, layer: true, stems: 'vocals' }),
-        // Only parts outside the preview play.
-        truthPlay({ row: 'L2', trackId: 4, startSeconds: 150, endSeconds: 200, overlap: 0, layer: true }),
-      ],
-    }
-    const tracklist = {
-      plays: [
-        tracklistPlay({ trackId: 1, startSeconds: 10, endSeconds: 110 }),
-        // The layer is found through another release of the same track.
-        tracklistPlay({ trackId: 30, startSeconds: 40, endSeconds: 80, alternates: [{ trackId: 3 }] }),
-      ],
-    }
-    const { metrics, lines } = evaluate(tracklist, truth)
-    assert.strictEqual(metrics.recognisable, 3)
-    assert.strictEqual(metrics.found, 2)
-    assert.strictEqual(metrics.correct, 2)
-    assert.strictEqual(metrics.precision, 1)
-    assert(lines.some((l) => l.startsWith('FOUND') && l.includes('[layer: vocals]')))
-    assert(lines.some((l) => l.startsWith('MISSED') && l.includes('Track 2')))
-    assert(lines.some((l) => l.startsWith('n/a') && l.includes('Track 4 [layer]')))
-  },
-})
 
 // --- pairwise alignment for synthetic sets (recogniser feasibility study) ---
 
@@ -105,7 +76,36 @@ const alignedTracklist = ({ incomingAnchor = 100 - 40 / 1.02, incomingTempo = 1.
   windows: [{ startSeconds: 60, endSeconds: 90, rows: [{ track_id: 1, match_score: 12 }] }],
 })
 
+
 test({
+  'counts layers like other plays and does not count a found layer as a false positive': () => {
+    const truth = {
+      plays: [
+        truthPlay({ row: 0, trackId: 1, startSeconds: 0, endSeconds: 120 }),
+        truthPlay({ row: 1, trackId: 2, startSeconds: 100, endSeconds: 220 }),
+        // The vocal plays inside the preview.
+        truthPlay({ row: 'L1', trackId: 3, startSeconds: 30, endSeconds: 90, layer: true, stems: 'vocals' }),
+        // Only parts outside the preview play.
+        truthPlay({ row: 'L2', trackId: 4, startSeconds: 150, endSeconds: 200, overlap: 0, layer: true }),
+      ],
+    }
+    const tracklist = {
+      plays: [
+        tracklistPlay({ trackId: 1, startSeconds: 10, endSeconds: 110 }),
+        // The layer is found through another release of the same track.
+        tracklistPlay({ trackId: 30, startSeconds: 40, endSeconds: 80, alternates: [{ trackId: 3 }] }),
+      ],
+    }
+    const { metrics, lines } = evaluate(tracklist, truth)
+    assert.strictEqual(metrics.recognisable, 3)
+    assert.strictEqual(metrics.found, 2)
+    assert.strictEqual(metrics.correct, 2)
+    assert.strictEqual(metrics.precision, 1)
+    assert(lines.some((l) => l.startsWith('FOUND') && l.includes('[layer: vocals]')))
+    assert(lines.some((l) => l.startsWith('MISSED') && l.includes('Track 2')))
+    assert(lines.some((l) => l.startsWith('n/a') && l.includes('Track 4 [layer]')))
+  },
+
   'scores a correctly placed pair as aligned with no error': () => {
     const { metrics, transitions } = evaluate(alignedTracklist(), syntheticTruth())
     assert.strictEqual(metrics.transitions, 1)
@@ -141,9 +141,7 @@ test({
     assert.ok(first.meanOwnLevel > 0.99)
     assert.ok(first.maxOtherLevel > 0.5 && first.meanOtherLevel < 0.5, JSON.stringify(first))
   },
-})
 
-test({
   'scores a pair whose incoming play is only detected well after the crossover': () => {
     // The incoming track is mixed in quietly: the matcher sees it from 140 s,
     // 40 s after the crossover, but its anchor is still right.
