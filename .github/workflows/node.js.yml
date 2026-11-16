@@ -57,6 +57,9 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Test Railway watch-path matching
+        run: node --test .github/scripts/railway-watched-paths.test.js
+
       - name: Setup database
         run: psql -h postgres -U postgres -c 'CREATE DATABASE "multi-store-player-test";'
         env:

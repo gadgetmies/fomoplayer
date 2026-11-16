@@ -24,6 +24,12 @@ set -euo pipefail
 # If the preview logs in but reports no version (RAILWAY_GIT_COMMIT_SHA unset),
 # the commit cannot be checked; the script warns and continues rather than
 # failing every demo.
+#
+# Railway skips pushes that only change files outside the `build.watchPatterns`
+# in railway.json (OpenSpec artifacts, docs, the analyser, ...), so the preview
+# keeps serving an earlier commit. When every file changed between the deployed
+# commit and <expected-sha> is outside those patterns, the deployed build is
+# the PR's code and the wait ends. Run from a checkout of the repository.
 
 URL="${1:?usage: wait-for-preview-deploy.sh <preview-url> <expected-sha>}"
 EXPECTED_SHA="${2:?usage: wait-for-preview-deploy.sh <preview-url> <expected-sha>}"
@@ -79,6 +85,27 @@ fetch_deployed_version() {
   }
 }
 
+# Succeeds when every file changed between the deployed commit and
+# EXPECTED_SHA is outside Railway's watch paths, i.e. Railway skipped those
+# pushes and the deployed build already has the PR's code. Only the two
+# commits' trees are needed, so a shallow checkout fetches them by SHA.
+only_unwatched_changes_since() {
+  local deployed="$1" sha changed watched
+  for sha in "$deployed" "$EXPECTED_SHA"; do
+    git cat-file -e "${sha}^{commit}" 2>/dev/null ||
+      git fetch -q --no-tags --depth=1 origin "$sha" 2>/dev/null || return 1
+  done
+  changed="$(git diff --no-renames --name-only "$deployed" "$EXPECTED_SHA")" || return 1
+  watched="$(printf '%s\n' "$changed" | node "${SCRIPT_DIR}/railway-watched-paths.js")" || return 1
+  if [ -n "$watched" ]; then
+    return 1
+  fi
+  echo "Changes since ${deployed:0:7} are all outside Railway's watch paths, so Railway did not redeploy:"
+  printf '%s\n' "$changed" | sed 's/^/  /'
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "Waiting for ${URL} to serve ${EXPECTED_SHA} ..."
 for i in $(seq 1 "$ATTEMPTS"); do
   if fetch_deployed_version; then
@@ -88,6 +115,10 @@ for i in $(seq 1 "$ATTEMPTS"); do
     fi
     if [ -z "$DEPLOYED_VERSION" ]; then
       echo "::warning::The preview does not report its commit (RAILWAY_GIT_COMMIT_SHA unset), so it cannot be checked to be ${EXPECTED_SHA}; continuing."
+      exit 0
+    fi
+    if only_unwatched_changes_since "$DEPLOYED_VERSION"; then
+      echo "Preview serves ${DEPLOYED_VERSION:0:7}, which has the code of ${EXPECTED_SHA:0:7} (attempt ${i})"
       exit 0
     fi
     echo "Attempt ${i}/${ATTEMPTS}: preview serves ${DEPLOYED_VERSION:0:7}, waiting for ${EXPECTED_SHA:0:7}; retrying in ${INTERVAL}s"
