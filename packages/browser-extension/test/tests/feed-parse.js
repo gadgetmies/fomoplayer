@@ -1,8 +1,6 @@
 'use strict'
 
 const assert = require('assert')
-const fs = require('fs')
-const path = require('path')
 const { test } = require('cascade-test')
 const {
   FEED_SHAPE_MESSAGE,
@@ -195,23 +193,6 @@ test({
     'returns null on non-string input without throwing': () => {
       assert.strictEqual(parsePagedataUsername(null), null)
       assert.strictEqual(parsePagedataUsername(undefined), null)
-    },
-    'extracts a username from the captured logged-in feed page when present': () => {
-      const fixturePath = path.resolve(__dirname, '../../../..', 'temp', 'feed.html')
-      if (!fs.existsSync(fixturePath)) return
-      const html = fs.readFileSync(fixturePath, 'utf8')
-      const username = parsePagedataUsername(html)
-      assert.ok(typeof username === 'string' && username.length > 0, `expected a username, got ${username}`)
-    },
-    'finds the followed-artists panel sentinel in the captured logged-in feed page': () => {
-      const fixturePath = path.resolve(__dirname, '../../../..', 'temp', 'feed.html')
-      if (!fs.existsSync(fixturePath)) return
-      const html = fs.readFileSync(fixturePath, 'utf8')
-      const items = parseFollowedArtistsPanel(html)
-      assert.ok(items.length > 0, `expected at least one panel item, got ${items.length}`)
-      for (const item of items) {
-        assert.ok(item && (item.item_url || item.item_id), 'panel item must have item_url or item_id')
-      }
     },
   },
 

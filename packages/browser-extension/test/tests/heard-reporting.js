@@ -29,7 +29,7 @@ test({
     },
 
     'attachHeardReporting': {
-      'sends a heard message synchronously when the audio play event fires': () => {
+      'sends a heard message synchronously when the audio play event fires, with no playback-duration threshold (matches Preview.js onPlay)': () => {
         const audio = createFakeAudio()
         const track = { fomoplayerTrackId: 7, title: 'fixture' }
         const sent = []
@@ -38,25 +38,6 @@ test({
         audio.dispatchEventNamed('play')
 
         assert.deepStrictEqual(sent, [{ type: 'bandcamp:report-heard', track }])
-      },
-
-      'does not delay reporting — message is emitted within the same tick as play': () => {
-        const audio = createFakeAudio()
-        const sent = []
-        attachHeardReporting(audio, () => ({ fomoplayerTrackId: 1 }), (msg) => sent.push(msg))
-
-        audio.dispatchEventNamed('play')
-        assert.strictEqual(sent.length, 1, 'sendMessage must have been called synchronously')
-      },
-
-      'applies no minimum-playback-duration threshold (matches Preview.js onPlay)': () => {
-        const audio = createFakeAudio()
-        const sent = []
-        attachHeardReporting(audio, () => ({ fomoplayerTrackId: 1 }), (msg) => sent.push(msg))
-
-        audio.dispatchEventNamed('play')
-
-        assert.strictEqual(sent.length, 1)
       },
 
       'skips when there is no current track (no fomoplayerTrackId mapping)': () => {
