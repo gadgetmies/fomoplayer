@@ -4,7 +4,11 @@ const sql = require('sql-template-strings')
 
 const { initDb, pg } = require('../../lib/db')
 const { prefetchPreviewAudio, createPauses } = require('../../../jobs/prefetch-preview-audio')
-const { releaseAnalysedPreviewAudio, PRODUCTION_EMBEDDING_TYPE } = require('../../../routes/admin/preview-audio')
+const {
+  releaseAnalysedPreviewAudio,
+  queryPreviewsToAnalyse,
+  PRODUCTION_EMBEDDING_TYPE,
+} = require('../../../routes/admin/preview-audio')
 const {
   queryPreviewsWithoutFingerprint,
   queryTracksWithoutWaveform,
@@ -574,5 +578,90 @@ test({
     const result = await run({ client: fakeClient(), fetch, getRelease: fakeBandcamp({}).getRelease, maxStored: 1 })
     assert.deepStrictEqual(requests, [])
     assert.strictEqual(result.result.capReached, true)
+  },
+
+  'the combined analysis queue': {
+    setup: async () => {
+      await clearPreviews()
+      const store = async (preview) => {
+        await pg.queryAsync(
+          sql`INSERT INTO store__track_preview_audio (store__track_preview_id, store__track_preview_audio_object_key)
+              VALUES (${preview.id}, ${`preview-audio/${preview.id}.mp3`})`,
+        )
+        return preview
+      }
+      const beatport = await store(await insertPreview({ store: 'Beatport', url: 'https://bp.example/a.mp3' }))
+      const bandcamp = await store(await insertPreview({ store: 'Bandcamp' }))
+      const fingerprinted = await store(await insertPreview({ store: 'Bandcamp' }))
+      await addFingerprint(fingerprinted.id)
+      const analysedBeatport = await store(await insertPreview({ store: 'Beatport', url: 'https://bp.example/b.mp3' }))
+      await addFingerprint(analysedBeatport.id)
+      await addEmbedding(analysedBeatport.id)
+      const unstored = await insertPreview({ store: 'Beatport', url: 'https://bp.example/c.mp3' })
+      const missing = await store(await insertPreview({ store: 'Beatport', url: 'https://bp.example/d.mp3' }))
+      await pg.queryAsync(
+        sql`UPDATE store__track_preview SET store__track_preview_missing = TRUE
+            WHERE store__track_preview_id = ${missing.id}`,
+      )
+      const queue = await queryPreviewsToAnalyse(100)
+      return { beatport, bandcamp, fingerprinted, analysedBeatport, unstored, missing, queue }
+    },
+
+    'serves stored previews needing an analysis, newest first, with what each needs': async ({
+      beatport,
+      bandcamp,
+      fingerprinted,
+      queue,
+    }) => {
+      // Not served: the analysed Beatport preview, the one without stored audio and the missing one.
+      assert.deepStrictEqual(
+        queue.map(({ preview_id, store_name, audio_url, needs_fingerprint, needs_embedding, needs_waveform }) => ({
+          preview_id: Number(preview_id),
+          store_name,
+          audio_url,
+          needs: [needs_fingerprint, needs_embedding, needs_waveform],
+        })),
+        [
+          {
+            preview_id: fingerprinted.id,
+            store_name: 'Bandcamp',
+            audio_url: `/api/storage/preview-audio/${fingerprinted.id}.mp3`,
+            needs: [false, true, true],
+          },
+          {
+            preview_id: bandcamp.id,
+            store_name: 'Bandcamp',
+            audio_url: `/api/storage/preview-audio/${bandcamp.id}.mp3`,
+            needs: [true, true, true],
+          },
+          {
+            preview_id: beatport.id,
+            store_name: 'Beatport',
+            audio_url: `/api/storage/preview-audio/${beatport.id}.mp3`,
+            // Waveforms are only made for Bandcamp previews.
+            needs: [true, true, false],
+          },
+        ],
+      )
+    },
+
+    'carries the track and the preview window': async ({ beatport, queue }) => {
+      const entry = queue.find(({ preview_id }) => Number(preview_id) === beatport.id)
+      assert.ok(entry.track_id)
+      assert.ok('preview_start_ms' in entry && 'preview_end_ms' in entry)
+    },
+
+    'checks the embedding of the requested model': async ({ fingerprinted }) => {
+      await addEmbedding(fingerprinted.id)
+      await addWaveform(fingerprinted.id)
+      const other = await queryPreviewsToAnalyse(100, 'discogs_artist_embeddings-effnet-bs64-1')
+      const production = await queryPreviewsToAnalyse(100)
+      assert.ok(other.some(({ preview_id }) => Number(preview_id) === fingerprinted.id))
+      assert.ok(!production.some(({ preview_id }) => Number(preview_id) === fingerprinted.id))
+    },
+
+    'honours the limit': async () => {
+      assert.strictEqual((await queryPreviewsToAnalyse(1)).length, 1)
+    },
   },
 })

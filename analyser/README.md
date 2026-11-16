@@ -108,26 +108,34 @@ the existing Python entry points until the backend queue is empty.
 
 | Flag                    | Effect                                                                                |
 |-------------------------|---------------------------------------------------------------------------------------|
-| `--previews`            | Spawn `fingerprint-previews`, `embedding-previews`, `waveform-previews` windows.      |
+| `--previews`            | Spawn the `analyse-previews` window (see "Combined preview worker" below). With `--direct-download` or `--separate-workers`: the `fingerprint-previews`, `embedding-previews`, `waveform-previews` windows instead. |
 | `--audio-samples`       | Spawn `fingerprint-samples` window.                                                   |
-| `--purchased`           | Pass `-p true` to the `embedding-previews` worker (`main.py`).                        |
+| `--purchased`           | Pass `-p true` to the `embedding-previews` worker (`main.py`). Separate workers only. |
 | `--batch-size N`        | Pass `-b N` to every spawned worker (where supported).                                |
 | `--model NAME`          | Pass `-m NAME` to `main.py`. Default `discogs_multi_embeddings-effnet-bs64-1`.        |
 | `--session NAME`        | tmux session name. Default `analyser`.                                                |
 | `--layout L`            | `windows` (default) — one tmux window per worker. `panes` — all workers as tiled panes in a single `workers` window with per-pane title bars. |
 | `--no-waveform`         | Skip the `waveform-previews` worker (useful when the `WAVEFORM_STORAGE_*` object storage env vars are not configured; the bucket must be the backend's `AUDIO_SAMPLE_STORAGE_BUCKET_NAME`, set `WAVEFORM_STORAGE_REGION=auto` for a Railway bucket). |
-| `--direct-download`     | Pass `--direct-download` to the preview workers: download from the stores instead of only taking previews whose audio the backend's `prefetchPreviewAudio` job stored in the bucket. |
+| `--direct-download`     | Pass `--direct-download` to the preview workers: download from the stores instead of only taking previews whose audio the backend's `prefetchPreviewAudio` job stored in the bucket. Implies `--separate-workers`. |
+| `--separate-workers`    | Run the three separate preview workers instead of `analyse-previews`. |
+| `--fingerprint-workers N` | Parallel Panako processes: `--fingerprint-workers` of `analyse-previews`, `--workers` of `fingerprint-previews`. Default 4. |
 | `--idle-wait SECONDS`   | When a worker finds its queue empty, wait this long and ask again instead of stopping (the backend adds prefetched audio every 10 minutes). Default `120`; `0` stops each loop once its queue is drained, the default with `--direct-download`. |
 | `--skip-sanity-confirmation` | Pass `--skip-sanity-confirmation` through to `main.py` — embedding-collision warnings are logged but no longer block on a y/N prompt. Recommended for unattended drains. |
-| `--score-after N`       | Pass `--score-after N` through to `panako_processor.py --previews`. After every N successfully fingerprinted previews in one invocation, the worker pauses and re-scores all samples that have fingerprints, persisting results into `user_notification_audio_sample_match`. Only effective when `--batch-size >= N` (counter is per-invocation). |
+| `--score-after N`       | Separate workers only. Pass `--score-after N` through to `panako_processor.py --previews`. After every N successfully fingerprinted previews in one invocation, the worker pauses and re-scores all samples that have fingerprints, persisting results into `user_notification_audio_sample_match`. Only effective when `--batch-size >= N` (counter is per-invocation). |
 | `--no-attach`           | Don't `tmux attach` at the end; print the attach command instead.                     |
 
 ### Window names
 
+- `analyse-previews` — `analyse_previews.py --loop --idle-wait <--idle-wait>` (default for `--previews`)
 - `fingerprint-previews` — `panako_processor.py --previews`
-- `embedding-previews` — `main.py`
+- `embedding-previews` — `main.py --loop --idle-wait <--idle-wait>`
 - `waveform-previews` — `waveform.py`
 - `fingerprint-samples` — `panako_processor.py --audio-samples`
+
+The embedding worker runs with `--loop`, so it loads the model once and
+keeps processing batches; with `--idle-wait` it also waits for the next
+prefetch run itself, model still loaded, and only exits `2` when the
+idle wait is `0`.
 
 Each window's loop re-invokes its worker while it exits `0` and sleeps 5 s
 and retries on any other non-zero status. When the worker exits `2`
@@ -148,6 +156,83 @@ mean unrecoverable error. `analyse_all.sh`'s per-window loop uses this
 to distinguish "empty" from "error" — log-line parsing is no longer
 needed. With prefetched audio an empty queue is usually temporary, so the
 loop waits and asks again (`--idle-wait`) rather than stopping.
+
+## Combined preview worker
+
+`analyse_previews.py` analyses the previews whose audio the backend
+stored. The separate workers each downloaded and decoded every stored
+preview; this one reads `GET /admin/preview-analysis`, which lists stored
+previews with the analyses each still needs (`needs_fingerprint`,
+`needs_embedding`, `needs_waveform`), downloads and decodes each preview
+once, and runs only the analyses it needs on that one WAV.
+
+The analyses run at the same time, each at its own pace, not in lockstep:
+
+- embedding: one process, the model loaded once;
+- waveform: one process (it needs the `WAVEFORM_STORAGE_*` variables, or
+  pass `--no-waveform`);
+- fingerprints: `--fingerprint-workers` processes (default 4). A free
+  process takes every WAV ready for fingerprinting, up to
+  `--fingerprint-chunk` (default 8), into one Panako run, so Java starts
+  once per chunk; when fingerprinting falls behind, its chunks fill up.
+
+A WAV is deleted as soon as every analysis that needs it is done. New
+downloads wait while more than `--max-in-flight` previews (default 16)
+are between download and deletion or their WAVs exceed
+`--max-decoded-mb` (default 1024). The run therefore takes about as long
+as its slowest analysis, like the separate workers, with one download and
+one decode per preview instead of up to three.
+
+Results equal the separate workers': the WAV is decoded the same way, and
+fingerprints still read at most `PREVIEW_MAX_DURATION_S` of it (the WAV
+is truncated, which gives the same samples as a capped decode).
+Embeddings, missing previews and waveforms are reported in batches at
+least every 30 s (one request each, resent entry by entry if it fails);
+fingerprints are uploaded per preview as before. A failed download or
+analysis is retried after 10 minutes; a preview that fails to decode,
+or whose waveform fails, three times is reported missing.
+
+| Flag | Effect |
+|------|--------|
+| `--loop` / `--idle-wait S` | As for `main.py` below: keep going, and on an empty queue exit `2` or wait `S` seconds. |
+| `-b N` | Previews fetched at a time (default 20). |
+| `--download-workers N` | Parallel downloads and decodes (default 4). |
+| `--fingerprint-workers N`, `--fingerprint-chunk N` | See above. |
+| `--max-in-flight N`, `--max-decoded-mb MB` | Disk bound, see above. |
+| `--no-waveform` | Skip waveforms. |
+| `--work-dir DIR` | Where downloads and WAVs go (default a temporary directory). |
+
+It does not handle `--direct-download`, Bandcamp stream lookups, audio
+samples or `--score-after`: use the separate workers for those.
+
+`bench_preview_workers.py` runs the separate workers and the combined one
+on the same generated previews against a stub backend and prints the
+time, downloads and peak disk of each. Panako is replaced by a stand-in
+burning CPU (`--panako-*` flags) unless `--real-panako` is given. Don't
+run it next to live workers: the separate fingerprint worker clears
+`analyser/downloads/`.
+
+## Embedding and waveform throughput
+
+`main.py` (previews) and `waveform.py` download and decode the next
+previews on background threads while the model runs, or while a
+waveform is drawn, and still process and report them in queue order.
+
+| Flag | Worker | Effect |
+|------|--------|--------|
+| `--loop` | `main.py` | Keep the model loaded and process batches until the queue is empty, then exit `2`. Without it, one batch per run as before. |
+| `--idle-wait SECONDS` | `main.py` | With `--loop`: on an empty queue, wait and ask again instead of exiting. `0` (default) exits `2`. |
+| `--download-workers N` | `main.py`, `waveform.py` | Parallel downloads of previews stored in our bucket (default 4). Previews fetched from a store (Bandcamp lookups, `--direct-download`) are always fetched one at a time on one thread, so store traffic is unchanged. |
+
+Each downloaded file is deleted as soon as it is decoded, and at most
+`N + 1` decoded previews wait ahead of the one being processed, so a
+worker needs up to about `(N + 2) × 60 MB` of temporary disk for full
+Bandcamp tracks (about 360 MB with the default 4).
+
+`main.py` reports each batch's embeddings and missing previews in one
+`POST /admin/analyse`. That endpoint fails the whole list if one entry
+fails, so on an error the worker resends the entries one per request
+and only the failing ones stay queued.
 
 ### Preconditions
 

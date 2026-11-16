@@ -162,8 +162,44 @@ WHERE (${previewIds}::BIGINT[] IS NULL OR a.store__track_preview_id = ANY (${pre
   return released
 }
 
+// The combined analyser worker's queue (analyser/analyse_previews.py): previews whose audio is stored and that still
+// need an analysis, newest first like the prefetch job stores them, each with the analyses it needs. The needs follow
+// analysedCondition, with the embedding checked for `model`.
+const queryPreviewsToAnalyse = async (limit, model = PRODUCTION_EMBEDDING_TYPE) => {
+  const rows = await pg.queryRowsAsync(
+    sql`-- queryPreviewsToAnalyse
+SELECT *
+FROM (SELECT p.store__track_preview_id AS preview_id
+           , st.track_id
+           , s.store_name
+           , p.store__track_preview_start_ms AS preview_start_ms
+           , p.store__track_preview_end_ms AS preview_end_ms
+           , a.store__track_preview_audio_object_key AS object_key
+           , NOT EXISTS (SELECT 1 FROM store__track_preview_fingerprint_meta m
+                         WHERE m.store__track_preview_id = p.store__track_preview_id) AS needs_fingerprint
+           , NOT EXISTS (SELECT 1 FROM store__track_preview_embedding e
+                         WHERE e.store__track_preview_id = p.store__track_preview_id
+                           AND e.store__track_preview_embedding_type = ${model}) AS needs_embedding
+           , (s.store_name = ANY (${WAVEFORM_STORES})
+              AND NOT EXISTS (SELECT 1 FROM store__track_preview_waveform w
+                              WHERE w.store__track_preview_id = p.store__track_preview_id
+                                AND w.store__track_preview_waveform_url IS NOT NULL)) AS needs_waveform
+      FROM store__track_preview p
+        JOIN store__track_preview_audio a ON a.store__track_preview_id = p.store__track_preview_id
+        JOIN store__track st ON st.store__track_id = p.store__track_id
+        JOIN store s ON s.store_id = st.store_id
+      WHERE a.store__track_preview_audio_object_key IS NOT NULL
+        AND NOT p.store__track_preview_missing) previews
+WHERE needs_fingerprint OR needs_embedding OR needs_waveform
+ORDER BY preview_id DESC
+LIMIT ${limit}`,
+  )
+  return rows.map(({ object_key, ...row }) => ({ ...row, audio_url: audioUrl(object_key) }))
+}
+
 module.exports = {
   PRODUCTION_EMBEDDING_TYPE,
+  queryPreviewsToAnalyse,
   PREFETCH_STORES,
   OBJECT_KEY_PREFIX,
   MAX_FAILED_ATTEMPTS,

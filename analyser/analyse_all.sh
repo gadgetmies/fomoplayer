@@ -11,6 +11,7 @@ PURCHASED=0
 NO_ATTACH=0
 NO_WAVEFORM=0
 DIRECT_DOWNLOAD=0
+SEPARATE_WORKERS=0
 IDLE_WAIT=""
 SKIP_SANITY=0
 SCORE_AFTER=""
@@ -27,6 +28,7 @@ Usage: $(basename "$0") [--previews] [--audio-samples]
                        [--layout windows|panes]
                        [--no-waveform]
                        [--direct-download]
+                       [--separate-workers]
                        [--idle-wait SECONDS]
                        [--skip-sanity-confirmation]
                        [--score-after N]
@@ -35,21 +37,30 @@ Usage: $(basename "$0") [--previews] [--audio-samples]
 
 At least one of --previews or --audio-samples is required.
 
-  --previews        Spawn fingerprint-previews, embedding-previews, waveform-previews workers.
+  --previews        Spawn the analyse-previews worker: one download and decode per
+                    stored preview, shared by its fingerprint, embedding and
+                    waveform analyses. With --direct-download or
+                    --separate-workers: the fingerprint-previews,
+                    embedding-previews and waveform-previews workers instead.
   --audio-samples   Spawn fingerprint-samples worker.
-  --purchased       Pass -p true to the embedding-previews worker.
+  --purchased       Pass -p true to the embedding-previews worker (separate
+                    workers only).
   --batch-size N    Pass -b N to every spawned worker.
   --model NAME      Pass -m NAME to the embedding-previews worker.
                     Default: $MODEL
   --session NAME    tmux session name. Default: $SESSION
   --layout L        windows: one tmux window per worker (default).
                     panes:   all workers as tiled panes in a single 'workers' window.
-  --no-waveform     Skip the waveform-previews worker (useful when MinIO env vars
+  --no-waveform     Skip waveforms (useful when the WAVEFORM_STORAGE_* env vars
                     are not configured).
   --direct-download Pass --direct-download to the preview workers: download
                     previews from the stores instead of only taking the ones
                     the backend's prefetchPreviewAudio job stored in the bucket.
                     For a backend without that job (e.g. local development).
+                    Implies --separate-workers.
+  --separate-workers
+                    Run the three separate preview workers instead of
+                    analyse-previews.
   --idle-wait SECONDS
                     When a worker finds its queue empty, wait this long and ask
                     again instead of stopping. The backend adds prefetched audio
@@ -59,14 +70,15 @@ At least one of --previews or --audio-samples is required.
                     Pass --skip-sanity-confirmation through to main.py so
                     embedding-collision warnings don't block on a y/N prompt.
                     Recommended for unattended runs.
-  --score-after N   Pass --score-after N to fingerprint-previews so the worker
+  --score-after N   (Separate workers only.) Pass --score-after N to
+                    fingerprint-previews so the worker
                     runs sample scoring (against ALL fingerprinted samples)
                     every N previews fingerprinted within one invocation. 0
                     disables. Effective only when batch-size >= N.
   --fingerprint-workers N
-                    Pass --workers N to the fingerprint-previews worker only,
-                    setting how many parallel processes fingerprint each fetched
-                    batch. Omitted → the worker default (4) applies. Recommended
+                    How many parallel Panako processes fingerprint previews
+                    (--fingerprint-workers of analyse-previews, --workers of
+                    fingerprint-previews). Omitted → the worker default (4). Recommended
                     ceiling: cores − 1..2; use 1 to restore serial behaviour.
   --no-attach       Don't 'tmux attach' after launching.
 EOF
@@ -82,7 +94,8 @@ while [[ $# -gt 0 ]]; do
     --session)        SESSION="$2"; shift 2 ;;
     --layout)         LAYOUT="$2"; shift 2 ;;
     --no-waveform)    NO_WAVEFORM=1; shift ;;
-    --direct-download) DIRECT_DOWNLOAD=1; shift ;;
+    --direct-download) DIRECT_DOWNLOAD=1; SEPARATE_WORKERS=1; shift ;;
+    --separate-workers) SEPARATE_WORKERS=1; shift ;;
     --idle-wait)      IDLE_WAIT="$2"; shift 2 ;;
     --skip-sanity-confirmation) SKIP_SANITY=1; shift ;;
     --score-after)    SCORE_AFTER="$2"; shift 2 ;;
@@ -256,9 +269,25 @@ spawn() {
   fi
 }
 
-if [[ $PREVIEWS -eq 1 ]]; then
+if [[ $PREVIEWS -eq 1 && $SEPARATE_WORKERS -eq 0 ]]; then
+  for unused in PURCHASED:--purchased SCORE_AFTER:--score-after; do
+    var="${unused%%:*}"
+    if [[ -n "${!var}" && "${!var}" != "0" ]]; then
+      echo "Warning: ${unused#*:} only applies to the separate workers (--separate-workers); ignored." >&2
+    fi
+  done
+  combined_args=""
+  if [[ -n "$FINGERPRINT_WORKERS" ]]; then combined_args+=" --fingerprint-workers $FINGERPRINT_WORKERS"; fi
+  if [[ $NO_WAVEFORM -eq 1 ]]; then combined_args+=" --no-waveform"; fi
+  # One download and decode per preview, shared by all three analyses. --loop
+  # keeps the models loaded, --idle-wait waits for the next prefetch run.
+  spawn "analyse-previews" "python analyse_previews.py --loop --idle-wait $IDLE_WAIT -m \"$MODEL\"${batch_arg}${sanity_arg}${combined_args}"
+elif [[ $PREVIEWS -eq 1 ]]; then
   spawn "fingerprint-previews" "python panako_processor.py --previews${batch_arg}${score_after_arg}${fingerprint_workers_arg}${direct_arg}"
-  spawn "embedding-previews"   "python main.py -m \"$MODEL\"${batch_arg}${purchased_arg}${sanity_arg}${direct_arg}"
+  # --loop keeps the model loaded across batches, and --idle-wait makes main.py
+  # wait for the next prefetch run itself (model still loaded) instead of
+  # exiting 2 and being restarted by the window loop.
+  spawn "embedding-previews"   "python main.py --loop --idle-wait $IDLE_WAIT -m \"$MODEL\"${batch_arg}${purchased_arg}${sanity_arg}${direct_arg}"
   if [[ $NO_WAVEFORM -eq 0 ]]; then
     spawn "waveform-previews"  "python waveform.py${direct_arg}"
   fi

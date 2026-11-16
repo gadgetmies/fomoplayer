@@ -632,6 +632,17 @@ def fingerprint_preview_subbatch(jobs):
     if not prepared:
         return results
 
+    return results + fingerprint_prepared(prepared, cache_dir)
+
+
+def fingerprint_prepared(prepared, cache_dir):
+    """Phases B and C of `fingerprint_preview_subbatch`: one batched Panako
+    store+resolve over `prepared` (`{'id', 'audio_path'}` dicts) in
+    `cache_dir`, then per-file `.tdb` read + upload. Returns one
+    `{'id', 'fp_count', 'error'}` dict per prepared file. Also used by the
+    combined preview worker on WAVs it decoded itself."""
+    results = []
+
     # Phase B: one batched Panako store+resolve over the prepared files.
     try:
         file_ids = _batched_panako_store([p['audio_path'] for p in prepared], cache_dir)

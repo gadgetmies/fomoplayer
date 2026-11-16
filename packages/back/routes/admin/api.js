@@ -52,7 +52,7 @@ const {
   removeArtistCredit,
 } = require('./db')
 const { ensureIsAdmin } = require('../shared/auth.js')
-const { releaseAnalysedPreviewAudio } = require('./preview-audio')
+const { releaseAnalysedPreviewAudio, queryPreviewsToAnalyse } = require('./preview-audio')
 const { getMinioClient, getBucketName } = require('../shared/minio')
 const config = require('../../config')
 const { isDatabaseResetAllowed } = require('./database-reset-policy')
@@ -210,6 +210,12 @@ router.post('/notification-audio-samples/embeddings', async ({ body }, res) => {
     results.push(await upsertNotificationAudioSampleEmbedding(id, model, embeddings))
   }
   res.send(results)
+})
+
+// The combined analyser worker's queue: stored previews with the analyses each still needs.
+router.get('/preview-analysis', async ({ query: { limit, model } }, res) => {
+  const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 500)
+  res.send(await queryPreviewsToAnalyse(parsedLimit, model || undefined))
 })
 
 router.get('/exact-match/previews/without-fingerprint', async ({ query: { limit, audio } }, res) => {
