@@ -376,3 +376,9 @@
     margin-left: 4px;
   }
 }
+
+/* The same gap the search bar keeps from the Subscribe button beside it */
+.show_search_results_link {
+  margin-left: 8px;
+  flex-shrink: 0;
+}
