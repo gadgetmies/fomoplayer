@@ -1024,7 +1024,7 @@ class Settings extends Component {
                       onClearSearch={() => this.setState({ followedArtistsFilter: '' })}
                     />
                   </div>
-                  <ul className="no-style-list follow-list">
+                  <ul className="no-style-list follow-list" data-test="followed-artists-list">
                     {this.state.artistFollows
                       .filter(
                         ({ name }) =>
@@ -1082,7 +1082,7 @@ class Settings extends Component {
                       onClearSearch={() => this.setState({ followedLabelsFilter: '' })}
                     />
                   </div>
-                  <ul className="no-style-list follow-list">
+                  <ul className="no-style-list follow-list" data-test="followed-labels-list">
                     {this.state.labelFollows
                       .filter(
                         ({ name }) =>
@@ -1129,7 +1129,7 @@ class Settings extends Component {
                       onClearSearch={() => this.setState({ followedPlaylistsFilter: '' })}
                     />
                   </div>
-                  <ul className="no-style-list follow-list">
+                  <ul className="no-style-list follow-list" data-test="followed-playlists-list">
                     {this.state.playlistFollows
                       .filter(
                         ({ name }) =>
@@ -1433,7 +1433,7 @@ class Settings extends Component {
           {this.state.page === 'ignores' ? (
             <>
               <h4>Artists ({this.state.artistIgnores.length})</h4>
-              <ul className="no-style-list follow-list">
+              <ul className="no-style-list follow-list follow-list--scroll">
                 {this.state.artistIgnores.map(({ name, id }) => (
                   <li key={id}>
                     <span className="button pill pill-button">
@@ -1459,7 +1459,7 @@ class Settings extends Component {
                 ))}
               </ul>
               <h4>Labels ({this.state.labelIgnores.length})</h4>
-              <ul className="no-style-list follow-list">
+              <ul className="no-style-list follow-list follow-list--scroll">
                 {this.state.labelIgnores.map(({ name, id }) => (
                   <li key={id}>
                     <span className="button pill pill-button">
@@ -1485,7 +1485,7 @@ class Settings extends Component {
                 ))}
               </ul>
               <h4>Artists on labels ({this.state.artistOnLabelIgnores.length})</h4>
-              <ul className="no-style-list follow-list">
+              <ul className="no-style-list follow-list follow-list--scroll">
                 {this.state.artistOnLabelIgnores.map(({ artist, label }) => (
                   <li key={`${artist.id}-${label.id}`}>
                     <span className="button pill pill-button">

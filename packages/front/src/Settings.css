@@ -3,12 +3,17 @@
 }
 
 .follow-list {
-  max-height: 185px;
-  overflow-y: scroll;
   margin: 0.5em 0;
 }
 
-.follow-list::-webkit-scrollbar {
+/* The ignore lists stay capped in a scroll box; the followed artist, label and
+   playlist lists grow with their contents and scroll with the page. */
+.follow-list.follow-list--scroll {
+  max-height: 185px;
+  overflow-y: scroll;
+}
+
+.follow-list.follow-list--scroll::-webkit-scrollbar {
   width: 0;
 }
 
@@ -29,7 +34,6 @@
   display: flex;
   flex-wrap: nowrap;
   gap: 2pt;
-  max-height: none;
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
