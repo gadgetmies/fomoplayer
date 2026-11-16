@@ -1,10 +1,11 @@
 const logger = require('fomoplayer_shared').logger(__filename)
 const router = require('express').Router()
-const { runJob } = require('../../job-scheduling')
+const { runJob, updateJobs } = require('../../job-scheduling')
 const {
   mergeTracks,
   getJobs,
   getJobRuns,
+  setJobEnabled,
   getQueryResults,
   storeConfig,
   getConfigs,
@@ -99,6 +100,27 @@ async function startJobRun(name, res) {
 router.get('/jobs/:name/runs', async ({ params: { name } }, res) => {
   res.send(await getJobRuns(name))
 })
+
+// Enables or disables a job's schedule. A disabled job is not run on its schedule but can still be run by hand.
+// The store and reschedule functions are injected so tests can exercise the handler without the live scheduler.
+const setJobEnabledHandler =
+  (setEnabled, reschedule, log = logger) =>
+  async ({ user, params: { name }, body }, res) => {
+    const enabled = body?.enabled
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).send({ error: 'Body must be { "enabled": true | false }' })
+    }
+    const job = await setEnabled(name, enabled)
+    if (!job) {
+      return res.status(404).send({ error: `No job named '${name}'` })
+    }
+    log.info(`Admin ${user?.id ?? 'unknown'} ${enabled ? 'enabled' : 'disabled'} job ${name}`)
+    // Apply the change to the in-process schedule now instead of waiting for the next updateJobs run.
+    await reschedule()
+    res.send(job)
+  }
+
+router.put('/jobs/:name/enabled', setJobEnabledHandler(setJobEnabled, updateJobs))
 
 router.get('/jobs/:name/run', ({ user: { id: userId }, params: { name } }, res) => {
   return startJobRun(name, res)
@@ -443,3 +465,4 @@ router.post('/tracks/:trackId/credits/remove', async ({ params: { trackId }, bod
 module.exports = router
 module.exports.fingerprintDiagnosticsHandler = fingerprintDiagnosticsHandler
 module.exports.bulkScoreSamplesHandler = bulkScoreSamplesHandler
+module.exports.setJobEnabledHandler = setJobEnabledHandler

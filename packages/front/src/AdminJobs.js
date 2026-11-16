@@ -3,6 +3,7 @@ import { requestJSONwithCredentials, requestWithCredentials } from './request-js
 import { apiURL } from './config'
 import './AdminJobs.css'
 import AdminTabs from './AdminTabs.js'
+import ToggleButton from './ToggleButton'
 
 const POLL_INTERVAL_MS = 5000
 
@@ -45,6 +46,7 @@ function AdminJobs() {
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [launching, setLaunching] = useState(null)
+  const [toggling, setToggling] = useState(null)
   const [expanded, setExpanded] = useState(null)
   const [runsByJob, setRunsByJob] = useState({})
 
@@ -102,6 +104,23 @@ function AdminJobs() {
     setTimeout(fetchJobs, 1000)
   }
 
+  // Turns the job's schedule on or off. A disabled job can still be started with Run.
+  const toggleEnabled = async (job) => {
+    setToggling(job.name)
+    try {
+      await requestJSONwithCredentials({
+        url: `${apiURL}/admin/jobs/${job.name}/enabled`,
+        method: 'PUT',
+        body: { enabled: !job.enabled },
+      })
+    } catch (e) {
+      console.error(`Failed to ${job.enabled ? 'disable' : 'enable'} job ${job.name}`, e)
+    } finally {
+      await fetchJobs()
+      setToggling(null)
+    }
+  }
+
   return (
     <div className="page-container scroll-container admin-jobs">
       <AdminTabs />
@@ -140,7 +159,17 @@ function AdminJobs() {
                   <tr>
                     <td>{job.name}</td>
                     <td className="muted">{job.schedule || '—'}</td>
-                    <td>{job.enabled ? 'Yes' : 'No'}</td>
+                    <td>
+                      {/* ToggleButton is uncontrolled (defaultChecked), so key it on the stored state: it remounts
+                          and shows the saved value after a toggle, a failed save or a change seen by polling. */}
+                      <ToggleButton
+                        key={String(job.enabled)}
+                        id={`admin-job-enabled-${job.name}`}
+                        checked={job.enabled}
+                        disabled={toggling === job.name}
+                        onChange={() => toggleEnabled(job)}
+                      />
+                    </td>
                     <td className="muted">{formatDateTime(job.lastRun && job.lastRun.started)}</td>
                     <td>
                       <span className={status.className}>{status.label}</span>
