@@ -48,17 +48,16 @@ jobs:
           PREVIEW_URL="https://${{ vars.RAILWAY_SERVICE_NAME }}-${{ vars.RAILWAY_PROJECT_NAME }}-pr-${{ github.event.pull_request.number }}.up.railway.app"
           echo "url=${PREVIEW_URL}" >> "$GITHUB_OUTPUT"
 
-      # ── 2. Wait for the Railway preview to be live ────────────────────────
-      - name: Wait for preview deployment
-        run: |
-          URL="${{ steps.preview.outputs.url }}"
-          echo "Polling ${URL}/api/health ..."
-          for i in $(seq 1 30); do
-            STATUS=$(curl -o /dev/null -s -w "%{http_code}" "${URL}/api/health" || echo 000)
-            if [ "$STATUS" = "200" ]; then echo "Ready (attempt ${i})"; exit 0; fi
-            echo "Attempt ${i}/30 — HTTP ${STATUS} — retrying in 10s"; sleep 10
-          done
-          echo "::error::Preview did not become ready within 5 minutes"; exit 1
+      # ── 2. Wait for the Railway preview to serve this PR's commit ─────────
+      # A 200 from the preview is not enough: while Railway deploys a new push
+      # the previous build keeps answering, and the demo would record old code.
+      # The script logs in as the preview admin (keyless OIDC, like the demo)
+      # and polls /api/admin/info until the deployed commit is the PR head.
+      - name: Wait for the PR's commit to be deployed
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash .github/scripts/wait-for-preview-deploy.sh "$PREVIEW_URL" "$EXPECTED_SHA"
 
       # ── 3. Extract the test file path from the PR body ────────────────────
       # The PR body must contain a fenced demo-preview block with the path to a
