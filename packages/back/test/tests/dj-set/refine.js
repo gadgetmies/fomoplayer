@@ -2,9 +2,18 @@ const assert = require('assert')
 const { test } = require('cascade-test')
 const { internals } = require('../../../scripts/dj-set/lib/refine.js')
 
-const { bestTempo, log10PoissonTail } = internals
+const { bestTempo, log10PoissonTail, placementsOf } = internals
 
-const PARAMS = { tempoSearch: 0.02, tempoStep: 0.001, bucketSeconds: 0.5, segmentMin: 4, maxTempoDeviation: 0.08 }
+const PARAMS = {
+  tempoSearch: 0.02,
+  tempoStep: 0.001,
+  bucketSeconds: 0.5,
+  segmentMin: 4,
+  maxTempoDeviation: 0.08,
+  placementShare: 0.25,
+  placementSeparationSeconds: 1,
+  maxPlacements: 4,
+}
 
 // One matched pair per set fingerprint i at set time s, preview time p.
 const pairsAlong = ({ from, to, step = 0.25, tempo, offset, startIndex = 0 }) => {
@@ -51,5 +60,34 @@ test({
     assert.strictEqual(log10PoissonTail(0, 1), 0)
     // No underflow to −Infinity for very strong peaks.
     assert(Number.isFinite(log10PoissonTail(500, 0.1)))
+  },
+
+  'reports the fine offset the pairs agree on, not the bucket centre': () => {
+    // True offset 30.02 s sits at a 0.5 s bucket edge: the bucket centre is
+    // 30.25 s, the median residual is the offset itself.
+    const pairs = pairsAlong({ from: 0, to: 60, tempo: 1.0, offset: 30.02 })
+    const best = bestTempo(pairs, 1.0, PARAMS)
+    assert(Math.abs(best.segments[0].fineOffsetSeconds - 30.02) < 0.01, `fine ${best.segments[0].fineOffsetSeconds}`)
+    assert(Math.abs(best.segments[0].offsetSeconds - 30.02) > 0.2, `bucket ${best.segments[0].offsetSeconds}`)
+  },
+
+  'lists both placements of a track that repeats a section': () => {
+    // The same 30 s of set time matches the preview at two offsets 110 s
+    // apart (a repeated section), the second slightly weaker.
+    const strong = pairsAlong({ from: 100, to: 130, tempo: 1.0, offset: 70 })
+    const weak = pairsAlong({ from: 100, to: 130, step: 0.36, tempo: 1.0, offset: -40, startIndex: 1000 })
+    const placements = placementsOf([...strong, ...weak], 1.0, PARAMS)
+    assert.strictEqual(placements.length, 2)
+    assert(placements[0].count > placements[1].count)
+    assert(Math.abs(placements[0].fineAnchorSeconds + 70) < 0.01, `first ${placements[0].fineAnchorSeconds}`)
+    assert(Math.abs(placements[1].fineAnchorSeconds - 40) < 0.01, `second ${placements[1].fineAnchorSeconds}`)
+  },
+
+  'leaves out placements far weaker than the strongest and merges neighbours': () => {
+    const strong = pairsAlong({ from: 100, to: 130, tempo: 1.0, offset: 70 })
+    const stray = pairsAlong({ from: 100, to: 102, tempo: 1.0, offset: -40, startIndex: 1000 })
+    assert.strictEqual(placementsOf([...strong, ...stray], 1.0, PARAMS).length, 1)
+    // Both bucket phases see the same cluster: one placement, not two.
+    assert.strictEqual(placementsOf(strong, 1.0, PARAMS).length, 1)
   },
 })

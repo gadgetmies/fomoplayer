@@ -20,6 +20,9 @@
 //   DATABASE_URL=<production url> node scripts/dj-set/tracklist.js \
 //     --fingerprints=set.fps.json --output=set.tracklist.json
 // Options (defaults in brackets):
+//   --library-store=<dir>         match against a local library's Panako file store
+//                                 (lib/library-store.js: <dir>/panako_db + library.sqlite)
+//                                 instead of DATABASE_URL, which is then not needed
 //   --mirror-url=<url>            [postgres://localhost/fomoplayer-dj-set]
 //   --refresh-mirror              forget mirrored rows (and cached window results) and fetch again
 //   --fetch-concurrency=2         parallel production fetches
@@ -39,9 +42,15 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 const sql = require('sql-template-strings')
-const { pg, assertReadOnly } = require('./lib/read-only-db')
-const { openMirror, resetMirror, mirrorHashes } = require('./lib/local-mirror')
 const { parseArgs } = require('./lib/args')
+
+const args = parseArgs(process.argv.slice(2))
+const libraryStore = args['library-store'] || null
+// Production is only read when no library store is given (the module refuses
+// to load without DATABASE_URL).
+const { pg, assertReadOnly } = libraryStore ? { pg: null, assertReadOnly: async () => {} } : require('./lib/read-only-db')
+const { openMirror, resetMirror, mirrorHashes } = require('./lib/local-mirror')
+const { mirrorFromLibrary, libraryTrackNames } = require('./lib/library-store')
 const { stitch } = require('./lib/stitch')
 const { refine } = require('./lib/refine')
 const { matchFingerprints } = require('../../routes/shared/db/fingerprint-matching')
@@ -75,6 +84,7 @@ const cacheKey = (fingerprints, matcherOptions) =>
 
 const trackNames = async (trackIds) => {
   if (trackIds.length === 0) return new Map()
+  if (libraryStore) return libraryTrackNames(libraryStore, trackIds)
   const rows = await pg.queryRowsAsync(sql`
     SELECT t.track_id, t.track_title, t.track_version
          , (SELECT string_agg(artist_name, ', ' ORDER BY artist_name)
@@ -97,7 +107,6 @@ const timestamp = (seconds) => {
 }
 
 const main = async () => {
-  const args = parseArgs(process.argv.slice(2))
   if (!args.fingerprints || !args.output) {
     throw new Error('usage: tracklist.js --fingerprints=<set.fps.json> --output=<tracklist.json> [options]')
   }
@@ -125,19 +134,28 @@ const main = async () => {
     }
   }
   const fetchStartedAt = Date.now()
-  const mirrored = await mirrorHashes(
-    { source: pg, mirror, sourceUrl: process.env.DATABASE_URL_PRIVATE || process.env.DATABASE_URL, mirrorUrl },
-    set.fingerprints.map((fp) => fp.hash),
-    {
-      concurrency: number(args['fetch-concurrency'], 2),
-      onProgress: ({ done, total, rowCount, bytes }) =>
-        process.stderr.write(
-          `\rmirroring ${total} hashes: ` +
-            (bytes === undefined ? `${done} done, ${rowCount} rows` : `${(bytes / 1e6).toFixed(0)} MB streamed`) +
-            `, ${Math.round((Date.now() - fetchStartedAt) / 1000)} s   `,
-        ),
-    },
-  )
+  const setHashes = set.fingerprints.map((fp) => fp.hash)
+  const mirrored = libraryStore
+    ? await mirrorFromLibrary({ mirror, storeDir: libraryStore }, setHashes, {
+        onProgress: ({ done, total, rowCount }) =>
+          process.stderr.write(
+            `\rscanning library store: ${done}/${total} files, ${rowCount} rows, ` +
+              `${Math.round((Date.now() - fetchStartedAt) / 1000)} s   `,
+          ),
+      })
+    : await mirrorHashes(
+        { source: pg, mirror, sourceUrl: process.env.DATABASE_URL_PRIVATE || process.env.DATABASE_URL, mirrorUrl },
+        setHashes,
+        {
+          concurrency: number(args['fetch-concurrency'], 2),
+          onProgress: ({ done, total, rowCount, bytes }) =>
+            process.stderr.write(
+              `\rmirroring ${total} hashes: ` +
+                (bytes === undefined ? `${done} done, ${rowCount} rows` : `${(bytes / 1e6).toFixed(0)} MB streamed`) +
+                `, ${Math.round((Date.now() - fetchStartedAt) / 1000)} s   `,
+            ),
+        },
+      )
   process.stderr.write(`\nmirror: ${mirrored.requested} set hashes, ${mirrored.fetched} fetched now\n`)
 
   const windows = windowsOf(set.fingerprints, set.durationSeconds, windowSeconds, hopSeconds)

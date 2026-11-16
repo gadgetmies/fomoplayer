@@ -30,6 +30,9 @@ const DEFAULTS = {
   minSignificance: 10, // −log10 chance of the play's strongest segment
   alternateOverlap: 0.2, // share of aligned fingerprints that makes an alternate
   maxConcurrent: 3, // tracks audible at once in a DJ set
+  placementShare: 0.25, // an alternative placement needs this share of the strongest one's fingerprints
+  placementSeparationSeconds: 1, // placements closer than this are one placement
+  maxPlacements: 4,
 }
 
 // Groups pairs by offset bucket at tempo `a`. A true alignment can straddle
@@ -50,6 +53,12 @@ const offsetClusters = (pairs, a, bucketSeconds) => {
       const indexes = new Set(members.map((pr) => pr.i))
       const residuals = members.map((pr) => pr.p - a * pr.s)
       const mean = residuals.reduce((sum, r) => sum + r, 0) / residuals.length
+      // The bucket centre is the offset to within half a bucket; the median
+      // residual is the fine offset the pairs themselves agree on — what a
+      // reconstruction placing the track on the beat needs (a bucket is 0.5 s,
+      // a beat at 174 BPM 0.34 s).
+      const sortedResiduals = [...residuals].sort((x, y) => x - y)
+      const fineOffsetSeconds = sortedResiduals[Math.floor(sortedResiduals.length / 2)]
       // Residual spread: within the plateau of tempos that keep the pairs in
       // one bucket, the true tempo lines them up tightest.
       const spread = residuals.reduce((sum, r) => sum + (r - mean) ** 2, 0) / residuals.length
@@ -57,6 +66,7 @@ const offsetClusters = (pairs, a, bucketSeconds) => {
       const times = members.map((pr) => pr.s).sort((x, y) => x - y)
       clusters.push({
         offsetSeconds,
+        fineOffsetSeconds,
         spread,
         indexes,
         from: times[Math.floor(times.length * 0.1)],
@@ -111,6 +121,32 @@ const bestTempo = (pairs, centre, { tempoSearch, tempoStep, bucketSeconds, segme
   return best
 }
 
+// Every place the track could sit in the set at tempo `a`, strongest first.
+// The play's own anchor is the strongest one; the others are offset clusters
+// that overlap it in set time (sequentialSegments drops them) — a track that
+// repeats a section almost exactly matches at both offsets, and a caller with
+// more context (the neighbouring plays) may tell which one is playing.
+const placementsOf = (pairs, a, { bucketSeconds, segmentMin, placementShare, placementSeparationSeconds, maxPlacements }) => {
+  const clusters = offsetClusters(pairs, a, bucketSeconds)
+    .filter((c) => c.indexes.size >= segmentMin)
+    .sort((x, y) => y.indexes.size - x.indexes.size)
+  const top = clusters.length ? clusters[0].indexes.size : 0
+  const placements = []
+  for (const c of clusters) {
+    if (c.indexes.size < placementShare * top || placements.length >= maxPlacements) break
+    const fineAnchorSeconds = -c.fineOffsetSeconds / a
+    if (placements.some((o) => Math.abs(o.fineAnchorSeconds - fineAnchorSeconds) < placementSeparationSeconds)) continue
+    placements.push({
+      anchorSeconds: -c.offsetSeconds / a,
+      fineAnchorSeconds,
+      count: c.indexes.size,
+      fromSeconds: c.from,
+      toSeconds: c.to,
+    })
+  }
+  return placements
+}
+
 const refinePlay = async (mirror, setFingerprints, play, params) => {
   const from = play.startSeconds - params.marginSeconds
   const to = play.endSeconds + params.marginSeconds
@@ -142,15 +178,17 @@ const refinePlay = async (mirror, setFingerprints, play, params) => {
   const alignedIndexes = [...new Set(best.tempo.segments.flatMap((c) => [...c.indexes]))]
   const positions = alignedIndexes.map((i) => setFingerprints[i].position)
   // The strongest segment's offset gives the anchor (preview 0 s in the set).
-  const { offsetSeconds } = best.tempo.segments[0]
+  const { offsetSeconds, fineOffsetSeconds } = best.tempo.segments[0]
   return {
     ...play,
     previewId: best.previewId,
     tempoFactor: best.tempo.tempoFactor,
     anchorSeconds: -offsetSeconds / best.tempo.tempoFactor,
+    fineAnchorSeconds: -fineOffsetSeconds / best.tempo.tempoFactor,
     windowScore: play.score,
     score: best.tempo.score,
     segments: best.tempo.segments.length,
+    placements: placementsOf(best.pairs, best.tempo.tempoFactor, params),
     peak: best.tempo.segments[0].indexes.size,
     pairCount: best.pairCount,
     offsetRangeSeconds: Math.max(...offsets) - Math.min(...offsets) + params.bucketSeconds,
@@ -240,4 +278,4 @@ module.exports.refine = async (mirror, setFingerprints, plays, options = {}) => 
 module.exports.REFINE_DEFAULTS = DEFAULTS
 
 // Exposed for unit tests.
-module.exports.internals = { bestTempo, log10PoissonTail, sequentialSegments, offsetClusters }
+module.exports.internals = { bestTempo, log10PoissonTail, sequentialSegments, offsetClusters, placementsOf }
