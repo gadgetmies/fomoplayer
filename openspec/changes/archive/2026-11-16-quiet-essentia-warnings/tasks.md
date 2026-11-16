@@ -13,3 +13,7 @@
 ## Workflow follow-up
 
 - After merge, check the `embedding` service's Railway logs for a request without the warning flood or a rate-limit message, then archive the change.
+
+## Post-merge check
+
+- 2026-11-16 08:14 UTC: a production upload started the job at once and the `embedding` service logged exactly one line for it, `"POST /embed HTTP/1.1" 200` at info level, with no Essentia warning flood and no Railway rate-limit message (before the fix, one request produced about 2,000 warnings and 3,407 dropped lines).
