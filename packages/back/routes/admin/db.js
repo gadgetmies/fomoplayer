@@ -75,6 +75,19 @@ ORDER BY j.job_name`,
   }))
 }
 
+// Turns a job's schedule on or off. Returns the job's new state, or null when no job has this name.
+module.exports.setJobEnabled = async (name, enabled) => {
+  const rows = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`-- setJobEnabled
+UPDATE job
+SET job_enabled = ${enabled}
+WHERE job_name = ${name}
+RETURNING job_name AS name, job_enabled AS enabled`,
+  )
+  return rows[0] || null
+}
+
 module.exports.getJobRuns = async (name, limit = 20) =>
   await pg.queryRowsAsync(
     // language=PostgreSQL
