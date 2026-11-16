@@ -26,6 +26,8 @@ import threading
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+import essentia
+
 from audio_decode import AudioDecodeError
 import embedding
 
@@ -128,7 +130,15 @@ def create_server(token, model, port=0, host=None, max_bytes=DEFAULT_MAX_BYTES):
     return _listen((host, port), Handler)
 
 
+def quiet_essentia_warnings():
+    """Each embedding makes Essentia warn 'No network created, or last created
+    network has been deleted...' about 2,000 times, which overruns Railway's log
+    rate limit and drops other lines. Its errors stay on."""
+    essentia.log.warningActive = False
+
+
 def main():
+    quiet_essentia_warnings()
     token = os.environ.get('EMBEDDING_SERVICE_TOKEN')
     if not token:
         sys.exit('EMBEDDING_SERVICE_TOKEN is not set; refusing to start without it')
