@@ -18,9 +18,9 @@ The top bar search loses track of itself across navigation:
 - The magnifying glass always shows and is centred.
 - The app changes the URL through the router's history, so back / forward to
   a search updates the view and the bar at once, before the results arrive.
-- Discover and the carts empty the search bar (entity and text terms, typed
-  text too). Other pages (Settings, Notifications) keep the search and show a
-  "Show results" button in the top bar that runs it again.
+- Discover, the carts and Notifications empty the search bar (entity and
+  text terms, typed text too). Other pages (Settings, Admin) keep the search
+  and show a "Show results" button in the top bar that runs it again.
 
 ## Capabilities
 

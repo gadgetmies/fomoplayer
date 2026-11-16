@@ -21,10 +21,10 @@ search's terms in the top bar immediately, before its results arrive.
 
 ### Requirement: Navigating away MUST either keep the search with a way back or clear it
 
-Opening another track list (Discover, a cart) SHALL empty the top bar search,
-artist, label and text terms and typed text alike. Opening any other page
-(Settings, Notifications) SHALL keep the search in the top bar and show a
-"Show results" button that opens its results again.
+Opening another track list (Discover, a cart) or Notifications SHALL empty
+the top bar search, artist, label and text terms and typed text alike.
+Opening any other page (Settings, Admin) SHALL keep the search in the top bar
+and show a "Show results" button that opens its results again.
 
 #### Scenario: Settings
 - **WHEN** the user opens Settings with a search active
@@ -32,4 +32,8 @@ artist, label and text terms and typed text alike. Opening any other page
 
 #### Scenario: Discover
 - **WHEN** the user opens Discover with a search active
+- **THEN** the top bar search is empty
+
+#### Scenario: Notifications
+- **WHEN** the user opens Notifications with a search active
 - **THEN** the top bar search is empty
