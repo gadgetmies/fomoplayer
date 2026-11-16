@@ -159,6 +159,7 @@ const Root = (props) => <div className="root" style={{ height: '100vh' }} {...pr
 
 class LocationWatcherBase extends Component {
   componentDidMount() {
+    this.props.onHistory?.(this.props.history)
     this.props.onLocationChange(this.props.location)
   }
 
@@ -247,9 +248,22 @@ class App extends Component {
     this.lastLocationSignature = ''
   }
 
+  // Changes the URL through the router, so it knows the entry: links to the page it thought was open would otherwise
+  // replace the entry, and its history ignores going back to an entry pushed past it (whose state is undefined).
+  navigate(url, { replace = false } = {}) {
+    // The app's own state already matches this URL: the location sync must not act on it (e.g. search again or reset
+    // the search bar while the user types)
+    this.lastLocationSignature = url
+    if (this.routerHistory) {
+      replace ? this.routerHistory.replace(url) : this.routerHistory.push(url)
+    } else {
+      replace ? window.history.replaceState({}, '', url) : window.history.pushState({}, '', url)
+    }
+  }
+
   setListState(listState) {
     this.setState({ listState })
-    window.history.replaceState(undefined, undefined, `/${listState}`)
+    this.navigate(`/${listState}`, { replace: true })
   }
 
   hasMoreTracks() {
@@ -943,7 +957,7 @@ class App extends Component {
     const names = entityNamesToUrlParam(searchTerms)
     const parameters = `q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}&offset=${offset}`
     if (!append) {
-      window.history.pushState(undefined, undefined, `/search?${parameters}`)
+      this.navigate(`/search?${parameters}`)
     }
     try {
       const { tracks: searchResults, page } = await (
@@ -997,11 +1011,7 @@ class App extends Component {
     const terms = searchTerms.map((term) => (term === cartTerm && name ? { ...term, name } : term))
     const query = searchTermsToQueryString(terms)
     const names = entityNamesToUrlParam(terms)
-    window.history.pushState(
-      undefined,
-      undefined,
-      `/search?q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}`,
-    )
+    this.navigate(`/search?q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}`)
     const cartSearch = {
       uuid: cartTerm.id,
       name,
@@ -1246,7 +1256,10 @@ class App extends Component {
           }}
         >
           <Router>
-            <LocationWatcher onLocationChange={this.syncStateWithLocation.bind(this)} />
+            <LocationWatcher
+              onHistory={(history) => (this.routerHistory = history)}
+              onLocationChange={this.syncStateWithLocation.bind(this)}
+            />
             {this.state.loading ? (
               <div className="loading-overlay">
                 <div className="loading-message">{this.state.launchMessage.text}</div>
