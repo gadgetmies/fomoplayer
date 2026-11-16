@@ -1,5 +1,20 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "watchPatterns": [
+      "**",
+      "!/analyser/**",
+      "!/openspec/**",
+      "!/docs/**",
+      "!/backlog/**",
+      "!/scripts/**",
+      "!/.github/**",
+      "!/.claude/**",
+      "!/.agents/**",
+      "!/packages/cli/**",
+      "!/*.md"
+    ]
+  },
   "deploy": {
     "preDeployCommand": "/bin/sh -c 'unset PGSSLMODE; yarn db:wait && yarn db-migrate:prod:retry'"
   }
