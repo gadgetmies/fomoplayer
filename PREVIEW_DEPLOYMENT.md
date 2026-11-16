@@ -15,6 +15,24 @@ Use these variables to make dynamic PR preview domains work without per-PR code 
   [PR-preview consumer configuration (handoff target)](#pr-preview-consumer-configuration-handoff-target)
   below.
 
+## Which changes deploy
+
+`build.watchPatterns` in `railway.json` limits which changed files start a
+Railway build of the app service, in production and in PR previews. Changes
+only under `analyser/` (deployed by its own `embedding` service, which watches
+`/analyser/**`), `openspec/`, `docs/`, `backlog/`, `scripts/`, `.github/`,
+`.claude/`, `.agents/`, `packages/cli/` or root-level `*.md` files are skipped.
+Everything else deploys, including `packages/back/test/` (the cart-sync job
+requires `test/lib/tracks.js`) and `packages/browser-extension/` (the backend
+requires its store transforms).
+
+A skipped push leaves the earlier deployment serving, so the PR demo workflow's
+`.github/scripts/wait-for-preview-deploy.sh` also accepts an earlier deployed
+commit when every file changed since it is outside the watch patterns
+(`.github/scripts/railway-watched-paths.js`). To redeploy without a watched
+change, use **Deploy Latest Commit** in the Railway command palette: empty
+commits do not trigger a build once watch paths are set.
+
 ## Backend CORS variables
 
 - `FRONTEND_URL`: Primary exact origin allowed by CORS (for non-preview/static domains).
