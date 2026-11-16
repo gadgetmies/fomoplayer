@@ -41,10 +41,8 @@ const GlobalSearchBar = ({
   styles,
   className,
   genres = [],
-  // Opt-in for pickers (Notifications › Subscriptions): which entity prefixes are searched, and a popup that shows
-  // while searching and when nothing matches.
+  // Which entity prefixes are looked up (Notifications › Subscriptions only takes artists and labels)
   entityTypes = ENTITY_TYPES,
-  showEntitySearchStatus = false,
 }) => {
   const [inputValue, setInputValue] = useState('')
   const [inQuote, setInQuote] = useState(false)
@@ -107,10 +105,9 @@ const GlobalSearchBar = ({
     !entitySearchIsId &&
     entitySearchType === entitySearchPrefix &&
     entityResults.length > 0 &&
-    (!showEntitySearchStatus || entityResultsFor === `${entitySearchPrefix}:${entitySearchText}`)
-  // With showEntitySearchStatus: 'searching' until the answer for the current text arrives, then 'none' if it is empty
+    entityResultsFor === `${entitySearchPrefix}:${entitySearchText}`
+  // A popup saying 'searching' until the answer for the current text arrives, then 'none' if it is empty
   const entitySearchStatus =
-    !showEntitySearchStatus ||
     entitySearchPrefix === null ||
     entitySearchText === null ||
     entitySearchIsId ||
@@ -139,7 +136,7 @@ const GlobalSearchBar = ({
         setEntityResults(Array.isArray(results) ? results : [])
         setEntitySearchType(entitySearchPrefix)
         setEntityResultsFor(`${entitySearchPrefix}:${entitySearchText}`)
-        setSelectedEntityIndex(showEntitySearchStatus && results?.length ? 0 : -1)
+        setSelectedEntityIndex(results?.length ? 0 : -1)
       } catch {
         if (seq !== entitySearchSeqRef.current) return
         setEntityResults([])

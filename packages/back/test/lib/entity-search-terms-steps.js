@@ -2,13 +2,14 @@ const { expect } = require('chai')
 const { dismissOnboarding, waitForWithTimeoutMessage } = require('./setup')
 
 // Shared steps for the entity-search-terms demo: names of several words typed after artist: / label: stay in the
-// lookup (space and quotes do not end the term), a picked match becomes a pill, and in Notifications › Subscriptions
+// lookup (space and quotes do not end the term), a name nothing matches says so, a picked match becomes a pill, and in Notifications › Subscriptions
 // several picked pills are added as one subscription. The names come from the Concussion fixture the one-player seed
 // adds (Noisia on Vision Recordings).
 
 const ARTIST = 'Noisia'
 const LABEL = 'Vision Recordings'
 const COMBINED_NAME = `${ARTIST} · ${LABEL}`
+const NO_MATCH = 'Nosuch Artist Atall'
 
 const pillNames = (page, barSelector) => page.locator(`${barSelector} .search_pill .search_pill_name`).allTextContents()
 
@@ -39,9 +40,28 @@ const pickFromLookup = async (page, barSelector, typed, name, pick) => {
 }
 
 const clickSuggestion = (suggestion) => suggestion.click()
-const pickWithKeyboard = async (_suggestion, input) => {
-  await input.press('ArrowDown')
+// The first match is preselected, so Enter picks it
+const pickWithKeyboard = (_suggestion, input) => input.press('Enter')
+
+// A name of several words that matches nothing: the popup says so, and Enter adds nothing
+const assertNoMatchSaysSo = async (page, barSelector, typed, message) => {
+  const input = page.locator(`${barSelector} input`)
+  const pillsBefore = await pillNames(page, barSelector)
+  await input.pressSequentially(typed, { delay: 40 })
+  await waitForWithTimeoutMessage(
+    () =>
+      page.waitForFunction(
+        ({ selector, message }) =>
+          document.querySelector(`${selector} [data-testid="entity-search-status"]`)?.textContent.includes(message),
+        { selector: barSelector, message },
+        { timeout: 10000 },
+      ),
+    `Typing ${typed} should say "${message}".`,
+  )
   await input.press('Enter')
+  expect(await pillNames(page, barSelector)).to.deep.equal(pillsBefore)
+  expect(await input.inputValue()).to.equal(typed)
+  await input.fill('')
 }
 
 const openTopBarSearch = async (page) => {
@@ -54,6 +74,7 @@ const openTopBarSearch = async (page) => {
 const assertTopBarKeepsSpacesInLookup = async ({ page }) => {
   const bar = '.menu_search'
   await page.locator(`${bar} input`).click()
+  await assertNoMatchSaysSo(page, bar, `artist:${NO_MATCH}`, `No artists match “${NO_MATCH}”`)
   await pickFromLookup(page, bar, `label:${LABEL}`, LABEL, clickSuggestion)
   await pickFromLookup(page, bar, `artist:"${ARTIST}"`, ARTIST, pickWithKeyboard)
   await page.locator(`${bar} input`).press('Enter')
@@ -80,6 +101,7 @@ const openSubscriptions = async (page) => {
 const assertSubscriptionCombinesPickedPills = async ({ page }) => {
   await openSubscriptions(page)
   const bar = '.notifications-add-search'
+  await assertNoMatchSaysSo(page, bar, `label:"${NO_MATCH}"`, `No labels match “${NO_MATCH}”`)
   const combined = page.locator('[data-group="searches"] .notifications-subscription', { hasText: COMBINED_NAME })
   // A previous run on the persistent preview may have left the subscription: start without it
   if (await combined.count()) {
@@ -89,8 +111,7 @@ const assertSubscriptionCombinesPickedPills = async ({ page }) => {
 
   await pickFromLookup(page, bar, `artist:${ARTIST}`, ARTIST, clickSuggestion)
   expect(await combined.count()).to.equal(0)
-  // With the lookup's status popup the first match is preselected, so Enter picks it
-  await pickFromLookup(page, bar, `label:"${LABEL}"`, LABEL, (_suggestion, input) => input.press('Enter'))
+  await pickFromLookup(page, bar, `label:"${LABEL}"`, LABEL, pickWithKeyboard)
   expect(await combined.count()).to.equal(0)
 
   await page.locator('.notifications-add-search_button').click()

@@ -897,7 +897,6 @@ class NotificationsPage extends Component {
             onClearSearch={() => this.setState({ newSearchTerms: [], newSearchInput: '' })}
             // A picked artist or label becomes a pill, so several can be combined; Enter or Add subscribes
             entityTypes={['artist', 'label']}
-            showEntitySearchStatus
             placeholder="Search text, or artist:Name / label:Name"
             styles="top_bar"
             className="notifications-add-search_bar"
