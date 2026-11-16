@@ -74,7 +74,10 @@ const assertSettingsKeepsSearchWithWayBack = async ({ page }) => {
   )
   // An outlined pill link (navigation), not a primary button; hovering it does not move it from under the pointer
   expect(await showResults.evaluate((el) => el.tagName === 'A' && el.classList.contains('pill-link'))).to.equal(true)
+  // Spaced from the search bar like the Subscribe button is
+  const barRight = await page.locator(`${BAR} .search_container`).evaluate((el) => el.getBoundingClientRect().right)
   const before = await showResults.boundingBox()
+  expect(before.x - barRight, 'Show results should be spaced from the search bar.').to.be.at.least(8)
   await showResults.hover()
   await page.waitForTimeout(400)
   const after = await showResults.boundingBox()
