@@ -19,6 +19,7 @@ import { SettingsHelp } from './SettingsHelp'
 import { CartSelectorDropDownButton } from './CartSelectorDropDownButton'
 import ImportPlaylistButton from './ImportPlaylistButton'
 import FollowedItem from './FollowedItem'
+import FollowCarousel from './FollowCarousel'
 import SearchBar from './SearchBar'
 import ConfirmButton from './ConfirmButton'
 
@@ -447,7 +448,7 @@ class Settings extends Component {
         ).map(([isNotExactMatch, grouped]) => (
           <React.Fragment key={`${activeTab}-${isNotExactMatch}`}>
             {activeTab !== 'playlist' && <h6>{isNotExactMatch === 'true' ? 'Related:' : 'Exact matches:'}</h6>}
-            <ul className={'no-style-list follow-list'}>
+            <FollowCarousel data-test="follow-results-carousel" label={`${activeTab} search results`}>
               {grouped.map(({ id, name, store: { name: storeName }, type, url, img }) => (
                 <li key={`${storeName}-${type}-${id ?? url}`}>
                   <FollowItemButton
@@ -464,7 +465,7 @@ class Settings extends Component {
                   />
                 </li>
               ))}
-            </ul>
+            </FollowCarousel>
           </React.Fragment>
         ))}
       </>
@@ -478,7 +479,7 @@ class Settings extends Component {
         <h5>
           {label} ({suggestions.length})
         </h5>
-        <ul className="no-style-list follow-list">
+        <FollowCarousel data-test="follow-suggestions-carousel" label={`${label.toLowerCase()} suggestions`}>
           {suggestions.map(({ id, name, url, storeName, count, img }) => {
             const busy = this.state.updatingSuggestion === `${type}-${id}`
             return (
@@ -520,7 +521,7 @@ class Settings extends Component {
               </li>
             )
           })}
-        </ul>
+        </FollowCarousel>
       </>
     )
   }

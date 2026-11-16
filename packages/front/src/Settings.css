@@ -17,6 +17,123 @@
   margin: 1pt;
 }
 
+/*
+ * Search results and follow suggestions: a single horizontally scrollable row.
+ * overflow-y stays hidden so the row never scrolls vertically: vertical wheel
+ * and touch swipes over it are not captured and scroll the page instead.
+ * touch-action lets the browser handle both pan axes natively, and
+ * overscroll-behavior-x keeps a swipe at either end from triggering the
+ * browser's back/forward gesture.
+ */
+.follow-list.follow-list--carousel {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 2pt;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  padding-bottom: 4px;
+}
+
+.follow-list.follow-list--carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.follow-list.follow-list--carousel::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.follow-list.follow-list--carousel > li {
+  flex: 0 0 auto;
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+/* Wrapper holding the carousel row and, for mouse users, its arrow buttons. */
+.follow-carousel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0.5em 0;
+}
+
+.follow-carousel > .follow-list.follow-list--carousel {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  --follow-carousel-fade: 32px;
+}
+
+/* Fade the edge that has more cards behind it, so the row reads as
+   scrollable even when no card is cut in half at the edge. */
+.follow-carousel[data-can-scroll-right='true'] > .follow-list--carousel {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--follow-carousel-fade)), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--follow-carousel-fade)), transparent);
+}
+
+.follow-carousel[data-can-scroll-left='true'] > .follow-list--carousel {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - var(--follow-carousel-fade)), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - var(--follow-carousel-fade)), transparent);
+}
+
+.follow-carousel[data-can-scroll-left='true'][data-can-scroll-right='true'] > .follow-list--carousel {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--follow-carousel-fade),
+    #000 calc(100% - var(--follow-carousel-fade)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--follow-carousel-fade),
+    #000 calc(100% - var(--follow-carousel-fade)),
+    transparent
+  );
+}
+
+/* Arrow buttons are for mouse users only: touch devices swipe. Scrolling the row
+   only changes what is on screen, so they use the outlined pill of the
+   Notifications page's "Show all" toggle (.notifications-pill-toggle) rather
+   than the magenta of actions that change stored data or the blue of selected
+   tabs. */
+.follow-carousel-arrow {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 64px;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  color: #fff;
+}
+
+.follow-carousel-arrow:hover:not(:disabled) {
+  background: #444;
+}
+
+/* The pill has no disabled look of its own; dim it like a disabled tab
+   (SelectButton.css). */
+.follow-carousel-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .follow-carousel-arrow {
+    display: inline-flex;
+  }
+}
+
 .follow-filter {
   max-width: 20em;
 }
