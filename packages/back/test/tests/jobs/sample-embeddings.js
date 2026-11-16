@@ -68,8 +68,16 @@ const options = (fetchFn, objects, extra = {}) => ({
   client: fakeClient(objects),
   bucketName: 'storage',
   fetchFn,
+  // Three short waits that record themselves instead of sleeping, so retries cost no test time
+  retryDelaysMs: [10, 20, 40],
+  sleep: async () => {},
   ...extra,
 })
+
+const refused = () =>
+  new TypeError('fetch failed', {
+    cause: Object.assign(new Error('connect ECONNREFUSED fd12::1:8080'), { code: 'ECONNREFUSED' }),
+  })
 
 const jobRuns = async () =>
   pg.queryRowsAsync(
@@ -222,6 +230,63 @@ test({
     assert.deepStrictEqual(
       result.failed.map(({ error }) => error),
       ids.map(() => 'fetch failed (ECONNREFUSED)'),
+    )
+  },
+
+  'a sample sent while the service sleeps is retried until it wakes, in the same run': async ({ samples, objects, ids }) => {
+    await clearEmbeddings(ids)
+    const [first] = samples
+    const service = fakeService({})
+    let refusals = 2
+    const fetchFn = async (url, request) => {
+      if (refusals > 0) {
+        refusals--
+        throw refused()
+      }
+      return service.fetchFn(url, request)
+    }
+    const waits = []
+    const { success, result } = await embedNotificationAudioSamples(
+      { id: 1 },
+      options(fetchFn, objects, { limit: 3, sleep: async (ms) => waits.push(ms) }),
+    )
+    assert.deepStrictEqual(waits, [10, 20], 'waits grow until the service answers')
+    assert.strictEqual(success, true)
+    assert.deepStrictEqual(result.failed, [])
+    assert.deepStrictEqual(await embeddingOf(first.id), [EMBEDDING_TYPE])
+    assert.deepStrictEqual(ourCalls(service.calls, samples).map(({ audio }) => audio), ['first', 'broken', 'third'])
+  },
+
+  'an HTTP answer is not retried': async ({ samples, objects, ids }) => {
+    await clearEmbeddings(ids)
+    const { calls, fetchFn } = fakeService({ broken: { status: 422, body: { error: 'could not decode audio' } } })
+    const waits = []
+    await embedNotificationAudioSamples(
+      { id: 1 },
+      options(fetchFn, objects, { limit: 3, sleep: async (ms) => waits.push(ms) }),
+    )
+    assert.deepStrictEqual(waits, [])
+    assert.strictEqual(ourCalls(calls, samples).filter(({ audio }) => audio === 'broken').length, 1)
+  },
+
+  'a service down for the whole run is waited for once, then each sample is tried once': async ({ ids, objects }) => {
+    await clearEmbeddings(ids)
+    let calls = 0
+    const fetchFn = async () => {
+      calls++
+      throw refused()
+    }
+    const waits = []
+    const { success, result } = await embedNotificationAudioSamples(
+      { id: 1 },
+      options(fetchFn, objects, { limit: 3, sleep: async (ms) => waits.push(ms) }),
+    )
+    assert.deepStrictEqual(waits, [10, 20, 40], 'only the first sample waits')
+    assert.strictEqual(calls, 4 + 1 + 1)
+    assert.strictEqual(success, false)
+    assert.deepStrictEqual(
+      result.failed.map(({ id, error }) => [id, error]),
+      ids.map((id) => [id, 'fetch failed (ECONNREFUSED)']),
     )
   },
 
