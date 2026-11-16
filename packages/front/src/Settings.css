@@ -99,18 +99,38 @@
   );
 }
 
-/* Arrow buttons are for mouse users only: touch devices swipe. */
+/* Arrow buttons are for mouse users only: touch devices swipe. Scrolling the row
+   only changes what is on screen, so they use the outlined pill of the
+   Notifications page's "Show all" toggle (.notifications-pill-toggle) rather
+   than the magenta of actions that change stored data or the blue of selected
+   tabs. */
 .follow-carousel-arrow {
   display: none;
   flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
   width: 32px;
   height: 64px;
   padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  color: #fff;
+}
+
+.follow-carousel-arrow:hover:not(:disabled) {
+  background: #444;
+}
+
+/* The pill has no disabled look of its own; dim it like a disabled tab
+   (SelectButton.css). */
+.follow-carousel-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .follow-carousel-arrow {
-    display: block;
+    display: inline-flex;
   }
 }
 

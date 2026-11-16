@@ -83,7 +83,7 @@ const FollowCarousel = ({ children, 'data-test': dataTest, label }) => {
       {overflows && (
         <button
           type="button"
-          className="button button-push_button button-push_button-small button-push_button-primary follow-carousel-arrow follow-carousel-arrow--previous"
+          className="follow-carousel-arrow follow-carousel-arrow--previous"
           disabled={!canScrollLeft}
           aria-label={`Scroll ${label} left`}
           title="Previous"
@@ -99,7 +99,7 @@ const FollowCarousel = ({ children, 'data-test': dataTest, label }) => {
       {overflows && (
         <button
           type="button"
-          className="button button-push_button button-push_button-small button-push_button-primary follow-carousel-arrow follow-carousel-arrow--next"
+          className="follow-carousel-arrow follow-carousel-arrow--next"
           disabled={!canScrollRight}
           aria-label={`Scroll ${label} right`}
           title="Next"
