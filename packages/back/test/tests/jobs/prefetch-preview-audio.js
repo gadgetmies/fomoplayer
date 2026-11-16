@@ -19,10 +19,11 @@ const fakeClient = () => {
   const objects = {}
   return {
     objects,
-    putObject: async (bucket, key, stream) => {
-      const chunks = []
-      for await (const chunk of stream) chunks.push(chunk)
-      objects[`${bucket}/${key}`] = Buffer.concat(chunks)
+    // Like the Railway bucket through the minio client: an upload without its size goes multipart, and the bucket's
+    // answer to completing it cannot be parsed, so it fails as it did in production.
+    putObject: async (bucket, key, body, size) => {
+      if (!Buffer.isBuffer(body) || size !== body.length) throw new Error('BUG: failed to parse server response')
+      objects[`${bucket}/${key}`] = body
     },
     removeObject: async (bucket, key) => {
       delete objects[`${bucket}/${key}`]

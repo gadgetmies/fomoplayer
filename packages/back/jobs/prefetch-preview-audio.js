@@ -1,5 +1,4 @@
 const crypto = require('crypto')
-const { Readable, Transform } = require('stream')
 const { getMinioClient, getBucketName } = require('../routes/shared/minio')
 const bandcampApi = require('../routes/stores/bandcamp/bandcamp-api')
 const {
@@ -45,6 +44,8 @@ const MAX_RUN_MS = numberFromEnv('PREVIEW_AUDIO_PREFETCH_MAX_RUN_MS', 8 * 60 * 1
 const MAX_STORED = numberFromEnv('PREVIEW_AUDIO_PREFETCH_MAX_STORED', 1000)
 const BATCH_SIZE = 500
 const DOWNLOAD_TIMEOUT_MS = 60 * 1000
+// Larger than any preview or full track; guards memory against a response that is not a track.
+const MAX_AUDIO_BYTES = 100 * 1024 * 1024
 const PAUSE_MS = 10 * 60 * 1000
 const MAX_PAUSE_MS = 60 * 60 * 1000
 
@@ -81,19 +82,8 @@ const createThrottle = (intervalMs, { now, sleep }) => {
   }
 }
 
-const countBytes = () => {
-  const counter = new Transform({
-    transform(chunk, _encoding, callback) {
-      counter.bytes += chunk.length
-      callback(null, chunk)
-    },
-  })
-  counter.bytes = 0
-  return counter
-}
-
-// Streams the audio at url into the bucket and returns its object key and size. request is fetch, or the Bandcamp
-// client's throttled fetchStream.
+// Downloads the audio at url and stores it in the bucket, returning its object key and size. request is fetch, or
+// the Bandcamp client's throttled fetchStream.
 const storeAudio = async ({ url, store, client, bucketName, request }) => {
   const res = await request(url, {
     headers: { 'User-Agent': bandcampApi.static.userAgent },
@@ -108,20 +98,19 @@ const storeAudio = async ({ url, store, client, bucketName, request }) => {
   if (/text\/html/i.test(res.headers.get('content-type') || ''))
     throw new Error('Answered with a page instead of audio')
 
+  // The file is read whole and uploaded with its size. Without a size the storage client streams it as a multipart
+  // upload, and the Railway bucket answers the completing request in a form the client cannot parse ("BUG: failed to
+  // parse server response"), so nothing was stored. A preview is a few megabytes at most (a full Bandcamp track), and
+  // each store downloads one at a time.
+  const length = Number(res.headers.get('content-length'))
+  if (length > MAX_AUDIO_BYTES) throw new Error(`Audio too large (${length} bytes)`)
+  const audio = Buffer.from(await res.arrayBuffer())
+  if (audio.length === 0) throw new Error('Empty response')
+  if (audio.length > MAX_AUDIO_BYTES) throw new Error(`Audio too large (${audio.length} bytes)`)
+
   const objectKey = `${OBJECT_KEY_PREFIX}${crypto.randomUUID()}.mp3`
-  const counter = countBytes()
-  const body = Readable.fromWeb(res.body)
-  body.on('error', (error) => counter.destroy(error))
-  try {
-    await client.putObject(bucketName, objectKey, body.pipe(counter), undefined, { 'Content-Type': 'audio/mpeg' })
-  } finally {
-    body.destroy()
-  }
-  if (counter.bytes === 0) {
-    await client.removeObject(bucketName, objectKey).catch(() => {})
-    throw new Error('Empty response')
-  }
-  return { objectKey, fileSize: counter.bytes }
+  await client.putObject(bucketName, objectKey, audio, audio.length, { 'Content-Type': 'audio/mpeg' })
+  return { objectKey, fileSize: audio.length }
 }
 
 module.exports.prefetchPreviewAudio = async (
