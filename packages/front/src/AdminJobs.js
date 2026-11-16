@@ -45,6 +45,7 @@ function AdminJobs() {
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [launching, setLaunching] = useState(null)
+  const [toggling, setToggling] = useState(null)
   const [expanded, setExpanded] = useState(null)
   const [runsByJob, setRunsByJob] = useState({})
 
@@ -102,6 +103,23 @@ function AdminJobs() {
     setTimeout(fetchJobs, 1000)
   }
 
+  // Turns the job's schedule on or off. A disabled job can still be started with Run.
+  const toggleEnabled = async (job) => {
+    setToggling(job.name)
+    try {
+      await requestJSONwithCredentials({
+        url: `${apiURL}/admin/jobs/${job.name}/enabled`,
+        method: 'PUT',
+        body: { enabled: !job.enabled },
+      })
+    } catch (e) {
+      console.error(`Failed to ${job.enabled ? 'disable' : 'enable'} job ${job.name}`, e)
+    } finally {
+      await fetchJobs()
+      setToggling(null)
+    }
+  }
+
   return (
     <div className="page-container scroll-container admin-jobs">
       <AdminTabs />
@@ -146,6 +164,15 @@ function AdminJobs() {
                       <span className={status.className}>{status.label}</span>
                     </td>
                     <td className="admin-jobs-actions">
+                      <button
+                        type="button"
+                        className="button button-push_button button-push_button-small"
+                        disabled={toggling === job.name}
+                        aria-label={`${job.enabled ? 'Disable' : 'Enable'} ${job.name}`}
+                        onClick={() => toggleEnabled(job)}
+                      >
+                        {job.enabled ? 'Disable' : 'Enable'}
+                      </button>
                       <button
                         type="button"
                         className="button button-push_button button-push_button-small"
