@@ -82,28 +82,6 @@ test({
     )
   },
 
-  'cookieSecure is false in non-production environments': () => {
-    const originalNodeEnv = process.env.NODE_ENV
-    try {
-      for (const env of ['development', 'test', 'ci']) {
-        process.env.NODE_ENV = env
-        assert.strictEqual(process.env.NODE_ENV === 'production', false)
-      }
-    } finally {
-      process.env.NODE_ENV = originalNodeEnv
-    }
-  },
-
-  'cookieSecure is true in production environment': () => {
-    const originalNodeEnv = process.env.NODE_ENV
-    try {
-      process.env.NODE_ENV = 'production'
-      assert.strictEqual(process.env.NODE_ENV === 'production', true)
-    } finally {
-      process.env.NODE_ENV = originalNodeEnv
-    }
-  },
-
   'SameSite=None cookie invariant: Secure flag must be present': async () => {
     const app = express()
     app.set('trust proxy', 1)

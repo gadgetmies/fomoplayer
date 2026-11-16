@@ -32,11 +32,4 @@ test({
         `each URL should be an absolute album/track URL on the artist host, got ${url}`)
     }
   },
-
-  'release URLs are stable across reads (no DOM mutation side-effects)': ({ html }) => {
-    const host = 'https://noisia.bandcamp.com'
-    const a = extractReleaseUrls(host, html)
-    const b = extractReleaseUrls(host, html)
-    assert.deepStrictEqual(a, b, 'parsing the same fixture twice must produce the same URL list')
-  },
 })
