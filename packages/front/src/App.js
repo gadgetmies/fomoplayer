@@ -966,7 +966,10 @@ class App extends Component {
     const names = entityNamesToUrlParam(searchTerms)
     const parameters = `q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}&offset=${offset}`
     if (!append) {
-      this.navigate(`/search?${parameters}`)
+      // The same search already open (e.g. from the top bar's "Show results" link) only gets its full URL: no new entry
+      const current = new URLSearchParams(window.location.search)
+      const sameSearch = /^\/search\/?$/.test(window.location.pathname) && current.get('q') === query
+      this.navigate(`/search?${parameters}`, { replace: sameSearch })
     }
     try {
       const { tracks: searchResults, page } = await (

@@ -8,11 +8,18 @@ import ExternalLink from './ExternalLink'
 import Onboarding from './Onboarding'
 import GlobalSearchBar from './GlobalSearchBar'
 import DropDownButton from './DropDownButton'
-import SpinnerButton from './SpinnerButton'
 import { isMobile } from 'react-device-detect'
 import Popup from './Popup'
-import { searchTermsToString } from './searchTerms'
+import { entityNamesToUrlParam, searchTermsToQueryString, searchTermsToString } from './searchTerms'
 import { requestJSONwithCredentials } from './request-json-with-credentials'
+
+// The URL of a search's results, with the names its artist and label pills show
+const searchResultsPath = (searchTerms) => {
+  const names = entityNamesToUrlParam(searchTerms)
+  return `/search?q=${encodeURIComponent(searchTermsToQueryString(searchTerms))}${
+    names ? `&names=${encodeURIComponent(names)}` : ''
+  }`
+}
 
 class TopBar extends Component {
   constructor(props) {
@@ -199,23 +206,6 @@ class TopBar extends Component {
               className={this.props.searchActive ? '' : 'search__inactive'}
               genres={this.state.genres || []}
             />
-            {/* A search kept while another page (Settings, Admin) is open: back to its results */}
-            {!this.props.searchActive && this.props.searchTerms?.length > 0 && (
-              <SpinnerButton
-                type="button"
-                size={'top_bar'}
-                icon={'search'}
-                className="show_search_results_button"
-                style={{ whiteSpace: 'nowrap' }}
-                title="Show the results of this search"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  this.handleSearch(this.state.committedTerms, this.state.inputValue)
-                }}
-              >
-                <span className="button-top_bar_button_label">Show results</span>
-              </SpinnerButton>
-            )}
             {this.props.searchActive && (
               <>
                 <span
@@ -318,6 +308,19 @@ class TopBar extends Component {
               </>
             )}
           </div>
+          {/* A search kept while another page (Settings, Admin) is open: a link back to its results. Outside
+              .menu_search, whose hover widens the search bar and would move the link from under the pointer. */}
+          {!this.props.searchActive && this.props.searchTerms?.length > 0 && (
+            <Link
+              to={searchResultsPath(this.props.searchTerms)}
+              // Icon only on narrow screens (pill-link-expand), where the label would squeeze the search bar
+              className="pill pill-small pill-link pill-link-expand show_search_results_link"
+              title="Back to the results of this search"
+              aria-label="Show results"
+            >
+              <FontAwesomeIcon icon="search" /> <span className="pill-link-text">Show results</span>
+            </Link>
+          )}
           <div style={{ alignItems: 'center' }} className="menu_right">
             <Popup
               open={this.state.supportMenuOpen}

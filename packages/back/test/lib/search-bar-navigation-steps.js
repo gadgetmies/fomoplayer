@@ -67,11 +67,18 @@ const assertSettingsKeepsSearchWithWayBack = async ({ page }) => {
   await page.waitForURL(/\/settings/, { timeout: 10000 })
   await page.locator('.settings-container').first().waitFor({ state: 'visible', timeout: 10000 })
   expect(await pillNames(page)).to.deep.equal([LABEL, TEXT])
-  const showResults = page.locator('.show_search_results_button')
+  const showResults = page.locator('.show_search_results_link')
   await waitForWithTimeoutMessage(
     () => showResults.waitFor({ state: 'visible', timeout: 5000 }),
     'Settings should offer a way back to the search results.',
   )
+  // An outlined pill link (navigation), not a primary button; hovering it does not move it from under the pointer
+  expect(await showResults.evaluate((el) => el.tagName === 'A' && el.classList.contains('pill-link'))).to.equal(true)
+  const before = await showResults.boundingBox()
+  await showResults.hover()
+  await page.waitForTimeout(400)
+  const after = await showResults.boundingBox()
+  expect(Math.abs(after.x - before.x), 'Hovering "Show results" should not move it.').to.be.below(1)
   await showResults.click()
   await page.waitForURL(/\/search\?/, { timeout: 10000 })
   expect(await pillNames(page)).to.deep.equal([LABEL, TEXT])
@@ -95,10 +102,29 @@ const assertBackShowsSearchAtOnce = async ({ page }) => {
     await page.waitForURL(/\/search\?/, { timeout: 10000 })
     await page.waitForTimeout(300)
     expect(await pillNames(page)).to.deep.equal([LABEL, TEXT])
-    expect(await page.locator('.show_search_results_button').count()).to.equal(0)
+    expect(await page.locator('.show_search_results_link').count()).to.equal(0)
   } finally {
     await page.unroute(SEARCH_REQUEST)
   }
+}
+
+// On a phone: search, open Settings from the top bar, tap "Show results": the results open again
+const assertShowResultsTapOnMobile = async ({ mobilePage: page }) => {
+  await openDiscover(page)
+  await searchLabelAndText(page)
+  // Leave the search so the menu buttons show again on a narrow screen
+  await page.locator('.menu_search input').blur()
+  await page.locator('a[href="/settings/following"]').first().tap()
+  await page.waitForURL(/\/settings/, { timeout: 10000 })
+  const showResults = page.locator('.show_search_results_link')
+  await waitForWithTimeoutMessage(
+    () => showResults.waitFor({ state: 'visible', timeout: 5000 }),
+    'Settings should offer a way back to the search results on a phone too.',
+  )
+  await showResults.tap()
+  await page.waitForURL(/\/search\?/, { timeout: 10000 })
+  expect(await pillNames(page)).to.deep.equal([LABEL, TEXT])
+  await page.locator('.settings-container').first().waitFor({ state: 'hidden', timeout: 5000 })
 }
 
 // Opening the page behind the link empties the bar, entity and text terms alike, with no way back offered
@@ -107,7 +133,7 @@ const expectLinkClearsSearch = async (page, href, url) => {
   await page.waitForURL(url, { timeout: 10000 })
   await page.waitForFunction((bar) => !document.querySelector(`${bar} .search_pill`), BAR, { timeout: 5000 })
   expect(await page.locator(`${BAR} input`).inputValue()).to.equal('')
-  expect(await page.locator('.show_search_results_button').count()).to.equal(0)
+  expect(await page.locator('.show_search_results_link').count()).to.equal(0)
 }
 
 // Another track list replaces the search
@@ -124,6 +150,7 @@ module.exports = {
   assertSearchIconShownAndCentred,
   assertSettingsKeepsSearchWithWayBack,
   assertBackShowsSearchAtOnce,
+  assertShowResultsTapOnMobile,
   assertOtherListClearsSearch,
   assertNotificationsClearsSearch,
 }

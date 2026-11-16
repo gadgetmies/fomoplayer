@@ -1,15 +1,16 @@
 // Preview demo (demo-preview workflow): runs against the deployed Railway PR preview with no direct DB access.
-// The top bar search across navigation: its icon, Settings keeping the search with a way back, back showing the
-// search at once, and Discover and Notifications emptying the bar. Tracks are seeded through the API, the same in
-// both demos.
+// The top bar search across navigation: its icon, Settings keeping the search with a way back (also tapped on a
+// phone), back showing the search at once, and Discover and Notifications emptying the bar. Tracks are seeded
+// through the API, the same in both demos.
 const { test } = require('cascade-test')
-const { getSharedContext, teardownSharedContext } = require('../lib/setup')
+const { getSharedContext, getMobileContext, teardownSharedContext } = require('../lib/setup')
 const { seedOnePlayerTracksViaApi } = require('../lib/one-player-seed')
 const {
   openDiscover,
   assertSearchIconShownAndCentred,
   assertSettingsKeepsSearchWithWayBack,
   assertBackShowsSearchAtOnce,
+  assertShowResultsTapOnMobile,
   assertOtherListClearsSearch,
   assertNotificationsClearsSearch,
 } = require('../lib/search-bar-navigation-steps')
@@ -20,7 +21,8 @@ test({
     const { page } = await getSharedContext()
     await seedOnePlayerTracksViaApi(page)
     await openDiscover(page)
-    return { page, timeout: 60000 }
+    const { page: mobilePage } = await getMobileContext()
+    return { page, mobilePage, timeout: 60000 }
   },
 
   'the search icon shows, centred, with and without focus': assertSearchIconShownAndCentred,
@@ -28,4 +30,5 @@ test({
   'going back to a search shows its terms before the results arrive': assertBackShowsSearchAtOnce,
   'Discover empties the search bar': assertOtherListClearsSearch,
   'Notifications empties the search bar': assertNotificationsClearsSearch,
+  'on a phone, tapping "Show results" opens the results again': assertShowResultsTapOnMobile,
 })
