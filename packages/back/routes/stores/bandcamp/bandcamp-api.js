@@ -587,8 +587,13 @@ const mapSearchResults = ({ auto: { results } }) =>
     img,
   }))
 
+const SEARCH_API_URL = 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic'
+
+// Through getPageSource so a search honours the pause and its challenge page is recognised. Someone is waiting for
+// the results, so the request does not queue behind the fetch jobs.
 const getSearchResults = (query, callback) => {
-  return fetch('https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic', {
+  return getPageSource(SEARCH_API_URL, {
+    priority: true,
     method: 'POST',
     body: JSON.stringify({
       search_text: query,
@@ -596,14 +601,13 @@ const getSearchResults = (query, callback) => {
       fan_id: null,
       full_page: false,
     }),
-    headers: withUserAgent({ 'Content-Type': 'application/json; charset=UTF-8' }),
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
   })
-    .then((res) => res.json())
     .then((res) => {
-      callback(null, mapSearchResults(res))
+      callback(null, mapSearchResults(JSON.parse(res)))
     })
     .catch((e) => {
-      logger.error(`Searching for ${query} failed`, { statusCode: e.statusCode })
+      if (!e.isRateLimit) logger.error(`Searching for ${query} failed: ${e.message}`, { statusCode: e.statusCode })
       logger.silly(e)
       callback(e)
     })
