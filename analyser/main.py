@@ -15,6 +15,7 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import argparse
 import hashlib
 import os
+import shutil
 import spotipy
 import sys
 import taglib
@@ -43,6 +44,22 @@ ap.add_argument("--sanity-window", type=int, default=20,
 ap.add_argument("--skip-sanity-confirmation", action="store_true",
                 help="Skip the y/N prompt when an embedding collision is detected; log the warning and continue. Required for unattended runs (e.g. analyse_all.sh).")
 args = ap.parse_args()
+
+
+# A stalled download or request must not hang the worker: urlretrieve and
+# requests wait forever by default, and a hung download kept the embedding
+# worker idle for two hours (2026-11-16) while its tmux pane looked alive.
+# The download timeout applies to each wait for data, so a slow but moving
+# download still finishes.
+DOWNLOAD_TIMEOUT_S = float(os.getenv("ANALYSER_DOWNLOAD_TIMEOUT_S", "60"))
+API_TIMEOUT_S = 120
+
+
+def download(url, path):
+    """Download url to path, giving up after DOWNLOAD_TIMEOUT_S without data."""
+    with urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT_S) as response, open(path, "wb") as out:
+        shutil.copyfileobj(response, out)
+    return path
 
 
 SANITY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".embedding_sanity.json")
@@ -241,7 +258,8 @@ def get_next_analysis_tracks(model=DEFAULT_MODEL, purchased=True, batch_size=10,
     print(url)
     res = requests.get(
         url,
-        headers=auth_header()
+        headers=auth_header(),
+        timeout=API_TIMEOUT_S,
     )
     if (res.status_code != 200):
         raise Exception(request_error("Next tracks request", res))
@@ -253,7 +271,8 @@ def get_next_audio_samples(batch_size=10):
     print(f"{get_api_url()}/admin/notification-audio-samples/without-embedding?limit={batch_size}")
     res = requests.get(
         f"{get_api_url()}/admin/notification-audio-samples/without-embedding?limit={batch_size}",
-        headers=auth_header()
+        headers=auth_header(),
+        timeout=API_TIMEOUT_S,
     )
     if (res.status_code != 200):
         raise Exception(request_error("Next audio samples request", res))
@@ -375,7 +394,7 @@ if __name__ == '__main__':
                 
                 print(f"Downloading audio sample with id {sampleId} from : {sampleUrl}")
                 try:
-                    urllib.request.urlretrieve(resolve_url(sampleUrl), temp_filename)
+                    download(resolve_url(sampleUrl), temp_filename)
                     print(f"Downloaded to: {temp_filename}")
                     samples.append({
                         "id": sampleId,
@@ -426,7 +445,8 @@ if __name__ == '__main__':
                         }]
                         res = requests.post(f"{get_api_url()}/admin/notification-audio-samples/embeddings",
                                             headers=auth_header(),
-                                            json=data)
+                                            json=data,
+                                            timeout=API_TIMEOUT_S)
                         if res.status_code != 200:
                             print(f"Error reporting results for {sample['id']}")
                             print(f"Status code: {res.status_code}")
@@ -479,7 +499,8 @@ if __name__ == '__main__':
                             continue
                     print(f"Downloading preview with id {previewId} from : {previewUrl}")
                     try:
-                        local_filename, _ = urllib.request.urlretrieve(resolve_url(previewUrl))
+                        local_filename = download(resolve_url(previewUrl),
+                                                  os.path.join(temp_dir_name, f"preview_{previewId}"))
                         print(f"Downloaded to: {local_filename}")
                         tracks.append({"id": track.get('track_id'), "isrc": track.get('track_isrc'),
                                        "preview_id": preview.get("preview_id"), "url": previewUrl,
@@ -518,7 +539,8 @@ if __name__ == '__main__':
                     data = [{"preview_id": track.get("preview_id"), "missing": True}]
                     res = requests.post(f"{get_api_url()}/admin/analyse",
                                         headers=auth_header(),
-                                        json=data)
+                                        json=data,
+                                        timeout=API_TIMEOUT_S)
                 else:
                     absolute_file_path = track.get("path").replace("'", "\''")
                     try:
@@ -545,7 +567,8 @@ if __name__ == '__main__':
                                   f"reporting preview {track['preview_id']} missing")
                             requests.post(f"{get_api_url()}/admin/analyse",
                                           headers=auth_header(),
-                                          json=[{"preview_id": track["preview_id"], "missing": True}])
+                                          json=[{"preview_id": track["preview_id"], "missing": True}],
+                                          timeout=API_TIMEOUT_S)
                         else:
                             vector = embeddings.T.mean(1).tolist()
 
@@ -562,7 +585,8 @@ if __name__ == '__main__':
                                      "spotify": spotify_details}]
                             res = requests.post(f"{get_api_url()}/admin/analyse",
                                                 headers=auth_header(),
-                                                json=data)
+                                                json=data,
+                                                timeout=API_TIMEOUT_S)
                             if res.status_code != 200:
                                 print(f"Error reporting results for {track['id']}")
                                 print(f"Status code: {res.status_code}")
