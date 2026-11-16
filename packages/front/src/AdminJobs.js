@@ -3,6 +3,7 @@ import { requestJSONwithCredentials, requestWithCredentials } from './request-js
 import { apiURL } from './config'
 import './AdminJobs.css'
 import AdminTabs from './AdminTabs.js'
+import ToggleButton from './ToggleButton'
 
 const POLL_INTERVAL_MS = 5000
 
@@ -158,21 +159,22 @@ function AdminJobs() {
                   <tr>
                     <td>{job.name}</td>
                     <td className="muted">{job.schedule || '—'}</td>
-                    <td>{job.enabled ? 'Yes' : 'No'}</td>
+                    <td>
+                      {/* ToggleButton is uncontrolled (defaultChecked), so key it on the stored state: it remounts
+                          and shows the saved value after a toggle, a failed save or a change seen by polling. */}
+                      <ToggleButton
+                        key={String(job.enabled)}
+                        id={`admin-job-enabled-${job.name}`}
+                        checked={job.enabled}
+                        disabled={toggling === job.name}
+                        onChange={() => toggleEnabled(job)}
+                      />
+                    </td>
                     <td className="muted">{formatDateTime(job.lastRun && job.lastRun.started)}</td>
                     <td>
                       <span className={status.className}>{status.label}</span>
                     </td>
                     <td className="admin-jobs-actions">
-                      <button
-                        type="button"
-                        className="button button-push_button button-push_button-small"
-                        disabled={toggling === job.name}
-                        aria-label={`${job.enabled ? 'Disable' : 'Enable'} ${job.name}`}
-                        onClick={() => toggleEnabled(job)}
-                      >
-                        {job.enabled ? 'Disable' : 'Enable'}
-                      </button>
                       <button
                         type="button"
                         className="button button-push_button button-push_button-small"
