@@ -20,7 +20,8 @@ The top bar search loses track of itself across navigation:
   a search updates the view and the bar at once, before the results arrive.
 - Discover, the carts and Notifications empty the search bar (entity and
   text terms, typed text too). Other pages (Settings, Admin) keep the search
-  and show a "Show results" button in the top bar that runs it again.
+  and show an outlined "Show results" pill link in the top bar that opens its
+  results again.
 
 ## Capabilities
 

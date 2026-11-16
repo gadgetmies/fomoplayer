@@ -24,7 +24,9 @@ search's terms in the top bar immediately, before its results arrive.
 Opening another track list (Discover, a cart) or Notifications SHALL empty
 the top bar search, artist, label and text terms and typed text alike.
 Opening any other page (Settings, Admin) SHALL keep the search in the top bar
-and show a "Show results" button that opens its results again.
+and show a "Show results" link, styled as an outlined pill (navigation, not an
+action; the icon alone on narrow screens), that opens its results again.
+Hovering or tapping the link SHALL NOT move it or resize the search bar.
 
 #### Scenario: Settings
 - **WHEN** the user opens Settings with a search active
