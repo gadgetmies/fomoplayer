@@ -12,3 +12,7 @@
 ## Workflow follow-up
 
 - After merge, let the `embedding` service sleep, upload a sample and confirm it is embedded within the same job run; then archive the change.
+
+## Post-merge check
+
+- 2026-11-16 19:10 UTC: after the `embedding` service had slept, a production upload reached the backend at 19:10:08 and started the job at 19:10:09; the service container started at 19:10:12 while the job waited, answered `POST /embed 200`, and the run completed at 19:10:16 with no warning. The owner confirmed it works.
