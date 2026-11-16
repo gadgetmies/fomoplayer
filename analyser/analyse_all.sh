@@ -258,7 +258,10 @@ spawn() {
 
 if [[ $PREVIEWS -eq 1 ]]; then
   spawn "fingerprint-previews" "python panako_processor.py --previews${batch_arg}${score_after_arg}${fingerprint_workers_arg}${direct_arg}"
-  spawn "embedding-previews"   "python main.py -m \"$MODEL\"${batch_arg}${purchased_arg}${sanity_arg}${direct_arg}"
+  # --loop keeps the model loaded across batches, and --idle-wait makes main.py
+  # wait for the next prefetch run itself (model still loaded) instead of
+  # exiting 2 and being restarted by the window loop.
+  spawn "embedding-previews"   "python main.py --loop --idle-wait $IDLE_WAIT -m \"$MODEL\"${batch_arg}${purchased_arg}${sanity_arg}${direct_arg}"
   if [[ $NO_WAVEFORM -eq 0 ]]; then
     spawn "waveform-previews"  "python waveform.py${direct_arg}"
   fi

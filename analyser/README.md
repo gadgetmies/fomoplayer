@@ -125,9 +125,14 @@ the existing Python entry points until the backend queue is empty.
 ### Window names
 
 - `fingerprint-previews` — `panako_processor.py --previews`
-- `embedding-previews` — `main.py`
+- `embedding-previews` — `main.py --loop --idle-wait <--idle-wait>`
 - `waveform-previews` — `waveform.py`
 - `fingerprint-samples` — `panako_processor.py --audio-samples`
+
+The embedding worker runs with `--loop`, so it loads the model once and
+keeps processing batches; with `--idle-wait` it also waits for the next
+prefetch run itself, model still loaded, and only exits `2` when the
+idle wait is `0`.
 
 Each window's loop re-invokes its worker while it exits `0` and sleeps 5 s
 and retries on any other non-zero status. When the worker exits `2`
@@ -148,6 +153,28 @@ mean unrecoverable error. `analyse_all.sh`'s per-window loop uses this
 to distinguish "empty" from "error" — log-line parsing is no longer
 needed. With prefetched audio an empty queue is usually temporary, so the
 loop waits and asks again (`--idle-wait`) rather than stopping.
+
+## Embedding and waveform throughput
+
+`main.py` (previews) and `waveform.py` download and decode the next
+previews on background threads while the model runs, or while a
+waveform is drawn, and still process and report them in queue order.
+
+| Flag | Worker | Effect |
+|------|--------|--------|
+| `--loop` | `main.py` | Keep the model loaded and process batches until the queue is empty, then exit `2`. Without it, one batch per run as before. |
+| `--idle-wait SECONDS` | `main.py` | With `--loop`: on an empty queue, wait and ask again instead of exiting. `0` (default) exits `2`. |
+| `--download-workers N` | `main.py`, `waveform.py` | Parallel downloads of previews stored in our bucket (default 4). Previews fetched from a store (Bandcamp lookups, `--direct-download`) are always fetched one at a time on one thread, so store traffic is unchanged. |
+
+Each downloaded file is deleted as soon as it is decoded, and at most
+`N + 1` decoded previews wait ahead of the one being processed, so a
+worker needs up to about `(N + 2) × 60 MB` of temporary disk for full
+Bandcamp tracks (about 360 MB with the default 4).
+
+`main.py` reports each batch's embeddings and missing previews in one
+`POST /admin/analyse`. That endpoint fails the whole list if one entry
+fails, so on an error the worker resends the entries one per request
+and only the failing ones stay queued.
 
 ### Preconditions
 
