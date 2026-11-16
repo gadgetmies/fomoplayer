@@ -20,6 +20,9 @@ mis-reads it as one entity).
   `track:` followed by a name that is not an id), space is part of the name
   and keeps the lookup open. Quotes around the name are accepted and are not
   sent to the lookup; a quoted number is a name, not an id.
+- Every pill search bar (not only Notifications › Subscriptions) shows the
+  "Searching…" / "No artists match" popup for an active lookup and preselects
+  the first match.
 - Picking a match in Notifications › Subscriptions adds it as a pill, like in
   the top bar. The search is added with Enter (in an empty field) or Add, so
   pills can be combined.

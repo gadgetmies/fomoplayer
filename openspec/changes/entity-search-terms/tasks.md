@@ -2,6 +2,7 @@
 
 - [x] 1.1 Keep space in an active entity lookup; accept quotes around the name (`GlobalSearchBar.js`, `searchTerms.js`)
 - [x] 1.2 Unit tests for the entity input parsing
+- [x] 1.3 Show the searching / no-match popup in every pill search bar, not only Subscriptions
 
 ## 2. Subscriptions
 

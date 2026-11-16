@@ -25,3 +25,15 @@ name, not used as an id.
 #### Scenario: Quoted label
 - **WHEN** the user types `label:"Vision Recordings"`
 - **THEN** the lookup searches labels for "Vision Recordings"
+
+### Requirement: Every pill search bar MUST say when a lookup is searching or matches nothing
+
+While an entity lookup is active, every pill search bar SHALL show a popup
+saying it is searching until the matches for the current name arrive, and
+saying that nothing matches when there are none. The first match SHALL be
+preselected so Enter picks it. While the lookup is searching or matches
+nothing, Enter SHALL NOT add the typed text; Escape SHALL close the popup.
+
+#### Scenario: No artist matches in the top bar
+- **WHEN** the user types `artist:foo bar baz` in the top bar and no artist matches
+- **THEN** a popup says no artists match “foo bar baz” and pressing Enter adds nothing
