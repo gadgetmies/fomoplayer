@@ -17,3 +17,7 @@
 ## Workflow follow-up
 
 - After merge and redeploy, confirm sample 20 (uploaded 2026-11-15 22:30 UTC) gets an embedding within one job run, then archive the change.
+
+## Post-merge check
+
+- 2026-11-15 22:45 UTC: the service logs `listening on :: port 8080` and answers Railway's IPv4 health check as `::ffff:100.64.0.1`. The 22:50 UTC job run reached it over the IPv6 private network and stored sample 20's vector; on 2026-11-16 the owner confirmed the sample's Sounds like list in the app.
