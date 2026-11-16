@@ -17,6 +17,22 @@ const describeError = (error) => {
   return cause ? `${error.message} (${cause})` : error.message
 }
 
+// The embedding service sleeps when idle (Railway app sleeping): the first connection only wakes it and is refused
+// while it starts (about 4 s, including loading the model). Retry such connection failures with these waits, about
+// 30 s in all; an HTTP answer came from a running service and is final.
+const WAKE_RETRY_DELAYS_MS = [1000, 2000, 4000, 8000, 16000]
+const CONNECTION_ERROR_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'ETIMEDOUT',
+  'EAI_AGAIN',
+  'UND_ERR_SOCKET',
+])
+const isConnectionError = (error) => Boolean(error.cause && CONNECTION_ERROR_CODES.has(error.cause.code))
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 const queryPendingSamples = (limit) =>
   pg.queryRowsAsync(
     // language=PostgreSQL
@@ -52,6 +68,27 @@ const requestEmbedding = async ({ fetchFn, serviceUrl, token, audio, fileType })
   return body.embedding
 }
 
+// Retries requestEmbedding while the service cannot be connected to. Once a sample has used up the waits without
+// connecting, `reach.reachable` is false and later samples in the run get a single try, so a service that is really
+// down does not stretch the run.
+const requestEmbeddingWhenAwake = async (request, { retryDelaysMs, sleep, reach }) => {
+  const delays = reach.reachable ? retryDelaysMs : []
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const embedding = await request()
+      reach.reachable = true
+      return embedding
+    } catch (error) {
+      if (!isConnectionError(error)) throw error
+      if (attempt >= delays.length) {
+        reach.reachable = false
+        throw error
+      }
+      await sleep(delays[attempt])
+    }
+  }
+}
+
 // Embeds uploaded audio samples that have no embedding of the production type, newest first, so their Sounds like
 // lists fill in. Runs on a schedule and right after each upload. Each sample's audio is read from the current bucket
 // and sent to the embedding service (analyser/embedding_service.py), which only turns audio into a vector; the
@@ -76,6 +113,8 @@ module.exports.embedNotificationAudioSamples = async (
     client = getMinioClient(),
     bucketName = getBucketName(),
     fetchFn = fetch,
+    retryDelaysMs = WAKE_RETRY_DELAYS_MS,
+    sleep = wait,
   } = {},
 ) => {
   if (!serviceUrl || !token) {
@@ -86,10 +125,14 @@ module.exports.embedNotificationAudioSamples = async (
   const pending = await queryPendingSamples(limit)
   const embedded = []
   const failed = []
+  const reach = { reachable: true }
   for (const { id, objectKey, fileType, filename } of pending) {
     try {
       const audio = await readObject(client, bucketName, objectKey)
-      const embedding = await requestEmbedding({ fetchFn, serviceUrl, token, audio, fileType })
+      const embedding = await requestEmbeddingWhenAwake(
+        () => requestEmbedding({ fetchFn, serviceUrl, token, audio, fileType }),
+        { retryDelaysMs, sleep, reach },
+      )
       await upsertNotificationAudioSampleEmbedding(id, EMBEDDING_TYPE, JSON.stringify(embedding))
       embedded.push(id)
     } catch (error) {
