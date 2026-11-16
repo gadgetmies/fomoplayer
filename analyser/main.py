@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+import essentia
 import json
 import requests
 from auth import auth_header, get_api_url, request_error, resolve_url, stored_audio_query
@@ -332,6 +333,11 @@ def resolve_bandcamp_url(preview):
 
 
 if __name__ == '__main__':
+    # Each embedding makes Essentia warn 'No network created, or last created
+    # network has been deleted...' about 2,000 times, which buries the
+    # worker's own output (the embedding service silences it the same way).
+    # Its errors stay on.
+    essentia.log.warningActive = False
     print(f"[{datetime.datetime.now()}] Starting")
 
     sanity = EmbeddingSanityChecker(args.sanity_window, args.skip_sanity_confirmation)

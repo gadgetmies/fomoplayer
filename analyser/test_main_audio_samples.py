@@ -85,6 +85,8 @@ class MainAudioSamplesTest(unittest.TestCase):
                      FOMOPLAYER_API_KEY='fp_test', TF_CPP_MIN_LOG_LEVEL='3',
                      NO_PROXY='127.0.0.1', no_proxy='127.0.0.1'))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        # Essentia's warnings would otherwise print ~2,000 lines per embedding.
+        self.assertNotIn('No network created', result.stdout + result.stderr)
         self.assertEqual(len(self.handler.posted), 1, result.stdout)
         posted = self.handler.posted[0]
         self.assertEqual((posted['id'], posted['model']), (7, embedding.DEFAULT_MODEL))
