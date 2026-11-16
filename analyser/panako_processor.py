@@ -9,7 +9,7 @@ import requests
 import time
 import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from pydub import AudioSegment
+from audio_decode import to_wav
 from auth import auth_header, get_api_url, request_error, resolve_url, stored_audio_query
 import sys
 import datetime
@@ -509,9 +509,8 @@ if __name__ == '__main__':
                             print(f"Error: MP3 file is missing or empty before conversion: {downloaded_path}")
                             continue
 
-                        sound = AudioSegment.from_mp3(downloaded_path)
                         wav_filename = os.path.join(downloads_dir, f"sample_{sample_id}.wav")
-                        sound.export(wav_filename, format="wav")
+                        to_wav(downloaded_path, wav_filename)
 
                         if not os.path.exists(wav_filename):
                             print(f"Error: Converted WAV file does not exist: {wav_filename}")

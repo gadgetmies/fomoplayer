@@ -2,14 +2,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from essentia.standard import MonoLoader, TensorflowPredictEffnetDiscogs
 
 import json
 import requests
 from auth import auth_header, get_api_url, request_error, resolve_url, stored_audio_query
 import bandcamp
 
-from pydub import AudioSegment
+from audio_decode import to_wav, wav_duration_seconds
+from embedding import DEFAULT_MODEL, build_model, compute_temporal_embedding, embed_file
 from spotipy.oauth2 import SpotifyClientCredentials
 import argparse
 import hashlib
@@ -232,8 +232,7 @@ def _parse_json_or_explain(action, res):
         )
 
 
-def get_next_analysis_tracks(model='discogs_multi_embeddings-effnet-bs64-1', purchased=True, batch_size=10,
-                             direct_download=False):
+def get_next_analysis_tracks(model=DEFAULT_MODEL, purchased=True, batch_size=10, direct_download=False):
     print("Getting next tracks to analyse")
     print(purchased)
     url = (f"{get_api_url()}/admin/analyse?model={model}&batch_size={batch_size}"
@@ -331,17 +330,6 @@ def resolve_bandcamp_url(preview):
     return False
 
 
-def build_model(model_name):
-    graph_filename = f"./models/{model_name}.pb"
-    return TensorflowPredictEffnetDiscogs(graphFilename=graph_filename, output="PartitionedCall:1")
-
-
-def compute_temporal_embedding(wav_path, model):
-    """Load audio at 16kHz and run the model, returning the (n_patches, 1280)
-    per-patch temporal embedding matrix."""
-    audio = MonoLoader(filename=wav_path, sampleRate=16000, resampleQuality=4)()
-    return model(audio)
-
 
 if __name__ == '__main__':
     print(f"[{datetime.datetime.now()}] Starting")
@@ -399,7 +387,11 @@ if __name__ == '__main__':
                     })
                     print(e)
 
-            output_wav_path = os.path.join(temp_dir_name, "output.wav")
+            # Build the model once and reuse it across the batch.
+            model_name = args.model or DEFAULT_MODEL
+            print("Preparing model")
+            model = build_model(model_name)
+
             for sample in samples:
                 if (sample['missing']):
                     print(f"Skipping missing audio sample with id: {sample['id']}")
@@ -409,31 +401,11 @@ if __name__ == '__main__':
                     try:
                         print(f"Processing: {absolute_file_path}")
 
-                        # Determine file format and convert to wav if needed
-                        file_ext = os.path.splitext(absolute_file_path)[1].lower()
-                        if file_ext in ['.mp3', '.mpeg']:
-                            print("Converting mp3 to wav")
-                            sound = AudioSegment.from_mp3(absolute_file_path)
-                            sound.export(output_wav_path, format="wav")
-                        elif file_ext == '.wav':
-                            print("File is already wav format")
-                            import shutil
-                            shutil.copy(absolute_file_path, output_wav_path)
-                        else:
-                            print(f"Unsupported file format: {file_ext}")
-                            continue
-
-                        print("Preparing audio")
-                        audio = MonoLoader(filename=output_wav_path, sampleRate=16000, resampleQuality=4)()
-                        print("Preparing model")
-                        model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
-                        graphFilename = f"./models/{model_name}.pb"
-                        model = TensorflowPredictEffnetDiscogs(
-                            graphFilename=graphFilename,
-                            output="PartitionedCall:1")
                         print("Processing audio")
-                        embeddings = model(audio)
-                        vector = embeddings.T.mean(1).tolist()
+                        vector = embed_file(absolute_file_path, model, temp_dir_name)
+                        if vector is None:
+                            print(f"Audio sample {sample['id']} is too short to embed, skipping")
+                            continue
 
                         label = f"filename={sample['filename']}" if sample.get("filename") else None
                         if not sanity.record_and_check(sample.get("id"), vector, label=label):
@@ -460,8 +432,8 @@ if __name__ == '__main__':
 
                     print("Cleaning up temp files")
                     try:
-                        if os.path.exists(output_wav_path):
-                            os.remove(output_wav_path)
+                        if os.path.exists(absolute_file_path):
+                            os.remove(absolute_file_path)
                     except Exception as e:
                         print("Failed removing temp file")
                         print(e)
@@ -528,7 +500,7 @@ if __name__ == '__main__':
                     print(f"Failed to find a working preview for track {track.get('track_id')}")
 
             # Build the model once and reuse it across the batch.
-            model_name = args.model or 'discogs_multi_embeddings-effnet-bs64-1'
+            model_name = args.model or DEFAULT_MODEL
             print("Preparing model")
             model = build_model(model_name)
 
@@ -547,8 +519,7 @@ if __name__ == '__main__':
                         print(f"Processing: {absolute_file_path}")
 
                         print("Converting mp3 to wav")
-                        sound = AudioSegment.from_mp3(absolute_file_path)
-                        sound.export(output_wav_path, format="wav")
+                        to_wav(absolute_file_path, output_wav_path)
 
                         print("Extracting metadata from ID3 tags")
 
@@ -564,7 +535,7 @@ if __name__ == '__main__':
                             # Too short for a single model patch (e.g. one-shots in a
                             # Bandcamp sample pack). Report it missing so it leaves the
                             # queue instead of being retried in every batch.
-                            print(f"Audio too short to embed ({sound.duration_seconds:.1f} s), "
+                            print(f"Audio too short to embed ({wav_duration_seconds(output_wav_path):.1f} s), "
                                   f"reporting preview {track['preview_id']} missing")
                             requests.post(f"{get_api_url()}/admin/analyse",
                                           headers=auth_header(),

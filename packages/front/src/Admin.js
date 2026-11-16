@@ -7,6 +7,7 @@ import beautify from 'js-beautify'
 import { withRouter } from 'react-router-dom'
 import AdminDatabaseReset from './AdminDatabaseReset'
 import './Admin.css'
+import AdminTabs from './AdminTabs.js'
 
 const L = require('partial.lenses')
 const R = require('ramda')
@@ -167,34 +168,9 @@ class Admin extends Component {
     }
     return (
       <div className="page-container scroll-container admin-page">
+        <AdminTabs />
         <div className="admin-page-header">
           <h1>Radiator</h1>
-          <div className="admin-page-header-actions">
-            <button
-              className="button button-push_button button-push_button-primary"
-              onClick={() => this.props.history.push('/admin/jobs')}
-            >
-              Jobs
-            </button>
-            <button
-              className="button button-push_button button-push_button-primary"
-              onClick={() => this.props.history.push('/admin/duplicates')}
-            >
-              Manage Duplicates
-            </button>
-            <button
-              className="button button-push_button button-push_button-primary"
-              onClick={() => this.props.history.push('/admin/mislabeled')}
-            >
-              Fix Mislabeled
-            </button>
-            <button
-              className="button button-push_button button-push_button-primary"
-              onClick={() => this.props.history.push('/admin/artist-split')}
-            >
-              Split Artists
-            </button>
-          </div>
         </div>
         <div className="admin-grid">
           <div className="admin-column">

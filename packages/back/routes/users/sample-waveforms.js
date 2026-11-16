@@ -70,4 +70,4 @@ const backfillSampleWaveforms = async ({ client, bucketName, apply, limit = Infi
   return { seen, stored, failed }
 }
 
-module.exports = { storeSampleWaveform, waveformObjectKeyFor, backfillSampleWaveforms }
+module.exports = { storeSampleWaveform, waveformObjectKeyFor, backfillSampleWaveforms, readObject }

@@ -36,10 +36,12 @@ const openSample = async (page, filename) => {
   await waitUntilOpen(page, filename, `Opening ${filename} should show its content under its row.`)
 }
 
-// The newest sample is open on arrival; opening another one closes it and shows the new one's content under its row
+// Every sample is closed on arrival; opening one shows its content under its row, opening another closes it
 const assertOpeningASampleClosesTheOther = async ({ page }) => {
   await openSamplesTab(page)
-  await waitUntilOpen(page, SAMPLES.matched, 'The newest sample should be open when the tab opens.')
+  expect(await isOpen(page, SAMPLES.matched), 'no sample should be open when the tab opens').to.equal(false)
+  expect(await page.locator('.notifications-sample_content').count()).to.equal(0)
+  await openSample(page, SAMPLES.matched)
 
   // Click where the name is: the row's expand button covers the whole header, name included
   const name = await sampleRow(page, SAMPLES.other).locator('.notifications-sample_name').boundingBox()
@@ -67,8 +69,10 @@ const assertMatchesAndSoundsLikeToggle = async ({ page }) => {
 
   await views.locator('button', { hasText: 'Sounds like' }).click()
   expect(await views.locator('[aria-pressed="true"]').textContent()).to.match(/^Sounds like/)
+  // Not analysed yet (uploaded samples on a preview), or the tracks that sound like it
   await row
-    .locator('.notifications-sample_content', { hasText: /Similar tracks appear|closest to the sample/ })
+    .locator('.notifications-sample_content .notifications-empty, .notifications-sample_content .notifications-similar')
+    .first()
     .waitFor()
   expect(await row.locator('.notifications-matches').count()).to.equal(0)
 
@@ -102,13 +106,13 @@ const assertLinkOpensSample = async ({ page, ids }) => {
   expect(await isOpen(page, SAMPLES.matched)).to.equal(false)
 
   await openSamplesTab(page, '?sample=999999999')
-  await waitUntilOpen(page, SAMPLES.matched, 'An unknown sample id should open the tab with the newest sample open.')
+  expect(await page.locator('.notifications-sample_content').count(), 'an unknown id should open no sample').to.equal(0)
 }
 
 // On a phone the tab fits the screen: no sideways scrolling, and the toggle gets a line of its own in the header
 const assertPhoneLayoutFits = async ({ mobilePage }) => {
   await openSamplesTab(mobilePage)
-  await waitUntilOpen(mobilePage, SAMPLES.matched, 'The newest sample should be open on the phone too.')
+  await openSample(mobilePage, SAMPLES.matched)
   const views = sampleRow(mobilePage, SAMPLES.matched).locator('.notifications-sample_views')
   await views.waitFor({ state: 'visible', timeout: 5000 })
   const overflow = await mobilePage.evaluate(() => {
@@ -126,23 +130,69 @@ const assertPhoneLayoutFits = async ({ mobilePage }) => {
   expect(viewsBox.y).to.be.greaterThan(nameBox.y + nameBox.height - 1)
 }
 
-// Local only: the DB-seeded match shows in Matches, as a two-line row on the phone
+// The open sample's track table has no gap to the sample's edges or its header
+const assertFlushWithSample = async (row, table) => {
+  const content = await row.locator('.notifications-sample_content').boundingBox()
+  const tableBox = await table.boundingBox()
+  expect(tableBox.x, "the table starts at the sample's left edge").to.be.closeTo(content.x, 0.5)
+  expect(tableBox.y, "the table starts right under the sample's header").to.be.closeTo(content.y, 0.5)
+  expect(tableBox.width, 'the table spans the sample').to.be.closeTo(content.width, 0.5)
+}
+
+// Local only: the DB-seeded match is listed in Matches with the main track list's rows and cells, flush with the
+// open sample, where and at what tempo the sample was found in a Match column; on a phone that moves into the details
 const assertMatchListed = async ({ page, mobilePage }) => {
   await openSamplesTab(page)
   await openSample(page, SAMPLES.matched)
-  const match = sampleRow(page, SAMPLES.matched).locator('.notifications-matches .notifications-list_row').first()
+  const row = sampleRow(page, SAMPLES.matched)
+  const table = row.locator('table.tracks-table.notifications-matches')
+  const match = table.locator('tbody > tr.track').first()
   await match.waitFor({ state: 'visible', timeout: 10000 })
-  expect(await match.locator('.notifications-list_title').textContent()).to.contain(ONE_PLAYER_TITLES[2])
-  expect(await match.locator('.tempo').textContent()).to.equal('±0.0 %')
+  for (const header of ['Artist', 'Title', 'Label', 'Released', 'Genre', 'BPM', 'Key', 'Match', 'Cart']) {
+    expect(await table.locator('thead').textContent()).to.contain(header)
+  }
+  expect(await match.locator('.title-cell').textContent()).to.contain(ONE_PLAYER_TITLES[2])
+  for (const cell of ['.artist-cell', '.label-cell', '.released-cell', '.genre-cell', '.bpm-cell', '.key-cell']) {
+    expect(await match.locator(cell).count(), `a match row should have a ${cell}`).to.equal(1)
+  }
+  const info = match.locator('.why-cell--column .notifications-match_info')
+  expect(await info.locator('.matched-at').textContent()).to.match(/^at \d+:\d\d$/)
+  expect(await info.locator('.tempo').textContent()).to.equal('±0.0 %')
+  // How strong the match is leads the pill: the seeded score of 12 is a good match, the score only in its tooltip
+  const strength = info.locator('.notifications-match_strength')
+  expect((await strength.innerText()).trim()).to.equal('Good')
+  expect(await info.getAttribute('class')).to.contain('notifications-match_info--good')
+  expect(await strength.getAttribute('title')).to.match(/^Good match: 12 fingerprint points/)
+  expect(await info.innerText(), 'the score shows only in the tooltip').to.not.contain('12')
+  const [strengthBox, detailsBox] = [await strength.boundingBox(), await info.locator('.notifications-match_details').boundingBox()]
+  expect(strengthBox.x, 'the strength comes before where and at what tempo').to.be.lessThan(detailsBox.x)
+  expect(await info.locator('svg').count(), 'the match chip has no icon').to.equal(0)
+  await assertFlushWithSample(row, table)
+  // The Match header and chip sit in the middle of their column
+  const column = await table.locator('thead .why-cell--column').boundingBox()
+  const headerText = await table.locator('thead .why-cell--column .text-header-cell').evaluate((cell) => {
+    const range = document.createRange()
+    range.selectNodeContents(cell)
+    const { left, width } = range.getBoundingClientRect()
+    return { left, width }
+  })
+  const chip = await info.boundingBox()
+  const middle = column.x + column.width / 2
+  expect(headerText.left + headerText.width / 2, 'Match is centred in its column').to.be.closeTo(middle, 1)
+  expect(chip.x + chip.width / 2, 'the match chip is centred under Match').to.be.closeTo(middle, 1)
+  await strength.hover()
 
   await openSamplesTab(mobilePage)
-  const phoneMatch = sampleRow(mobilePage, SAMPLES.matched)
-    .locator('.notifications-matches .notifications-list_row')
-    .first()
+  await openSample(mobilePage, SAMPLES.matched)
+  const phoneMatch = sampleRow(mobilePage, SAMPLES.matched).locator('.notifications-matches > tbody > tr.track').first()
   await phoneMatch.waitFor({ state: 'visible', timeout: 10000 })
-  const box = await phoneMatch.boundingBox()
-  expect(box.height, 'a match on a phone is a two-line row').to.be.at.least(56)
-  expect(await mobilePage.locator('.notifications-matches .notifications-list_header').isVisible()).to.equal(false)
+  expect(await phoneMatch.locator('.why-cell--column').isVisible()).to.equal(false)
+  const phoneInfo = phoneMatch.locator('.why-cell--inline .notifications-match_info')
+  expect(await phoneInfo.isVisible(), 'on a phone the match details sit in the row').to.equal(true)
+  expect(await phoneInfo.locator('.tempo').textContent()).to.equal('±0.0 %')
+  // On a phone it reads as one phrase
+  expect((await phoneInfo.innerText()).replace(/\s+/g, ' ').trim()).to.equal('Good match at 2:44 · ±0.0 %')
+  expect(await mobilePage.locator('.notifications-matches .tracks-table-header-columns').isVisible()).to.equal(false)
 }
 
 // Local only (the uploaded preview samples are not real audio): play leaves the row as it was
@@ -163,7 +213,7 @@ const assertFollowingASuggestionRemovesIt = async ({ page }) => {
   await openSample(page, SAMPLES.matched)
   const row = sampleRow(page, SAMPLES.matched)
   await row.locator('.notifications-sample_views button', { hasText: 'Sounds like' }).click()
-  await row.locator('.notifications-similar .notifications-list_row').first().waitFor({ timeout: 10000 })
+  await row.locator('.notifications-similar > tbody > tr').first().waitFor({ timeout: 10000 })
   const button = row.locator('.notifications-follow-list button').first()
   await waitForWithTimeoutMessage(
     () => button.waitFor({ state: 'visible', timeout: 10000 }),
@@ -184,7 +234,74 @@ const assertFollowingASuggestionRemovesIt = async ({ page }) => {
   )
 }
 
+// Local only: Sounds like lists the tracks as a similarity search lists its results, flush with the open sample
+const assertSoundsLikeShowsTrackInfo = async ({ page }) => {
+  await openSamplesTab(page)
+  await openSample(page, SAMPLES.matched)
+  const row = sampleRow(page, SAMPLES.matched)
+  await row.locator('.notifications-sample_views button', { hasText: 'Sounds like' }).click()
+  const table = row.locator('table.tracks-table.notifications-similar')
+  const track = table.locator('tbody > tr.track').first()
+  await waitForWithTimeoutMessage(
+    () => track.waitFor({ state: 'visible', timeout: 10000 }),
+    'Sounds like should list the tracks as rows of the track list.',
+  )
+  // The same columns as similarity search results: artist, title, label, released, genre, BPM, key, Diff and cart
+  for (const header of ['Artist', 'Title', 'Label', 'Released', 'Genre', 'BPM', 'Key', 'Diff', 'Cart']) {
+    expect(await table.locator('thead').textContent()).to.contain(header)
+  }
+  for (const cell of ['.artist-cell', '.title-cell', '.label-cell', '.released-cell', '.genre-cell', '.bpm-cell', '.key-cell']) {
+    expect(await track.locator(cell).count(), `a Sounds like row should have a ${cell}`).to.equal(1)
+  }
+  // The audio distance ×100 with one decimal, as similarity search results show it
+  expect(await track.locator('.similarity-cell').textContent()).to.match(/^\d+\.\d$/)
+  expect(await track.locator('.title-cell').textContent()).to.not.equal('')
+  expect(await row.locator('.notifications-sample_content').textContent()).to.not.contain('closest to the sample')
+  await track.locator('.similarity-cell').hover()
+
+  await assertFlushWithSample(row, table)
+
+  // The Diff pill sits in the middle of its column, under the header
+  const header = await table.locator('thead .score-cell').boundingBox()
+  const pill = await track.locator('.similarity-cell button').boundingBox()
+  expect(pill.x + pill.width / 2, 'the Diff pill is centred under Diff').to.be.closeTo(header.x + header.width / 2, 1)
+}
+
+// Local only: playing a Sounds like track and finding tracks similar to it shows the same audio distance figure in
+// the search results' Diff column
+const assertSimilaritySearchShowsDistance = async ({ page }) => {
+  await openSamplesTab(page)
+  await openSample(page, SAMPLES.matched)
+  const row = sampleRow(page, SAMPLES.matched)
+  await row.locator('.notifications-sample_views button', { hasText: 'Sounds like' }).click()
+  const track = row.locator('.notifications-similar > tbody > tr.track').first()
+  await track.waitFor({ state: 'visible', timeout: 10000 })
+  const title = (await track.locator('.title-cell').textContent()).trim()
+  await track.locator('.title-cell').click()
+  await waitForWithTimeoutMessage(
+    () => page.waitForSelector(`.preview_title:has-text("${title}")`, { timeout: 10000 }),
+    'Clicking a Sounds like track should load it in the player.',
+  )
+
+  await page.locator('button[aria-label="Find similar"]').click()
+  const cells = page.locator('.tracks-table:not(.notifications-similar) > tbody > tr.track .similarity-cell')
+  await waitForWithTimeoutMessage(
+    () => cells.first().waitFor({ state: 'visible', timeout: 20000 }),
+    'Find similar should list the results with their audio distance.',
+  )
+  expect(await page.locator('.tracks-table-header').first().textContent()).to.contain('Diff')
+  const figures = (await cells.allTextContents()).map((text) => text.trim())
+  for (const figure of figures) expect(figure).to.match(/^\d+\.\d$/)
+  // The played track is its own closest result, and the others are no longer all shown as 0
+  expect(figures[0]).to.equal('0.0')
+  expect(figures.some((figure) => Number(figure) > 0)).to.equal(true)
+  // Point at each figure: in a recording this holds the results on screen before the next step moves on
+  for (let i = 0; i < figures.length; i++) await cells.nth(i).hover()
+}
+
 module.exports = {
+  assertSimilaritySearchShowsDistance,
+  assertSoundsLikeShowsTrackInfo,
   assertOpeningASampleClosesTheOther,
   assertMatchesAndSoundsLikeToggle,
   assertCancelledDeleteKeepsSample,

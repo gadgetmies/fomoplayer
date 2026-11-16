@@ -33,6 +33,7 @@ const detectBandcampArtistNameMismatches = require('./jobs/detect-bandcamp-artis
 const detectArtistSplitCandidates = require('./jobs/detect-artist-split-candidates')
 const { findDuplicates } = require('./jobs/find-duplicates')
 const { renderSampleWaveforms } = require('./jobs/render-sample-waveforms')
+const { embedNotificationAudioSamples } = require('./jobs/sample-embeddings')
 const { prefetchPreviewAudio } = require('./jobs/prefetch-preview-audio')
 
 const init = async () => {
@@ -219,6 +220,7 @@ SELECT job_name AS name, job_schedule AS schedule, job_enabled AS enabled FROM j
   detectArtistSplitCandidates,
   findDuplicates,
   renderSampleWaveforms,
+  embedNotificationAudioSamples,
   prefetchPreviewAudio,
   ...radiator,
 }

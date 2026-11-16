@@ -7,6 +7,7 @@ import PillButton from './PillButton'
 import StoreIcon from './StoreIcon'
 import scoreWeights from './scoreWeights'
 import { followableNameLinks, namesToString } from './trackFunctions'
+import { audioDistanceTitle, formatAudioDistance } from './audioDistance'
 import { Link } from 'react-router-dom'
 import Popup from './Popup'
 import { GroupDot } from './CartSearchControls'
@@ -427,8 +428,9 @@ class Track extends Component {
                 <PillButton
                   className={'table-cell-button'}
                   style={{ display: 'flex', paddingBottom: 7, justifyContent: 'center' }}
+                  title={audioDistanceTitle}
                 >
-                  {isNumber(this.props.similarity) ? Math.round(this.props.similarity) : '-'}
+                  {formatAudioDistance(this.props.similarity)}
                 </PillButton>
               )}
               {this.props.listState === 'new' && (

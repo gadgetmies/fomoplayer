@@ -26,6 +26,7 @@ import urllib.request
 # Allow both `python -m analyser.eval.extraction` (package import) and
 # `python -m eval.extraction` from analyser/ (sibling import).
 try:
+    from analyser.audio_decode import to_wav
     from analyser.extraction import (
         PANAKO_CONFIG_ARGS,
         PANAKO_STORE_EXTRA_ARGS,
@@ -34,6 +35,7 @@ try:
     )
 except ImportError:  # pragma: no cover - import-path shim
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from audio_decode import to_wav  # type: ignore[no-redef]
     from extraction import (  # type: ignore[no-redef]
         PANAKO_CONFIG_ARGS,
         PANAKO_STORE_EXTRA_ARGS,
@@ -117,12 +119,9 @@ def _ensure_wav(path, dest_dir):
         return path
     if ext not in (".mp3", ".mpeg"):
         raise RuntimeError(f"Unsupported audio extension: {ext}")
-    from pydub import AudioSegment
-
-    sound = AudioSegment.from_mp3(path)
     wav_name = os.path.splitext(os.path.basename(path))[0] + ".wav"
     wav_path = os.path.join(dest_dir, wav_name)
-    sound.export(wav_path, format="wav")
+    to_wav(path, wav_path)
     if not os.path.exists(wav_path) or os.path.getsize(wav_path) == 0:
         raise RuntimeError(f"Converted WAV is missing or empty: {wav_path}")
     return wav_path

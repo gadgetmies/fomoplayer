@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { useHistory } from 'react-router-dom'
 import { requestJSONwithCredentials } from './request-json-with-credentials'
 import { apiURL } from './config'
 import './AdminMislabeled.css'
+import AdminTabs from './AdminTabs.js'
 
 const REASON_LABELS = {
   url_collides_with_label: 'URL is also a label URL',
@@ -198,7 +198,6 @@ function TrackReassign({ onReassign, processing }) {
 }
 
 function AdminMislabeled() {
-  const history = useHistory()
   const [type, setType] = useState('artist')
   const [entities, setEntities] = useState([])
   const [loading, setLoading] = useState(true)
@@ -796,13 +795,9 @@ function AdminMislabeled() {
 
   return (
     <div className="page-container scroll-container admin-mislabeled">
+      <AdminTabs />
       <div className="admin-mislabeled-header">
         <h1>Mislabeled Artists &amp; Labels</h1>
-        <div className="mislabeled-actions">
-          <button className="button button-push_button" onClick={() => history.push('/admin')}>
-            Back to Radiator
-          </button>
-        </div>
       </div>
 
       <div className="tabs">

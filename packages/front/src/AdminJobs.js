@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { useHistory } from 'react-router-dom'
 import { requestJSONwithCredentials, requestWithCredentials } from './request-json-with-credentials'
 import { apiURL } from './config'
 import './AdminJobs.css'
+import AdminTabs from './AdminTabs.js'
 
 const POLL_INTERVAL_MS = 5000
 
@@ -42,7 +42,6 @@ function JobRuns({ state }) {
 }
 
 function AdminJobs() {
-  const history = useHistory()
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [launching, setLaunching] = useState(null)
@@ -105,14 +104,12 @@ function AdminJobs() {
 
   return (
     <div className="page-container scroll-container admin-jobs">
+      <AdminTabs />
       <div className="admin-jobs-header">
         <h1>Jobs</h1>
         <div className="admin-jobs-header-actions">
           <button className="button button-push_button" onClick={fetchJobs}>
             Refresh
-          </button>
-          <button className="button button-push_button" onClick={() => history.push('/admin')}>
-            Back to Radiator
           </button>
         </div>
       </div>

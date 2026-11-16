@@ -6,7 +6,12 @@ Install pyenv with the following command:
 
 Install python 3.13 with the following command: 
 
-```pyenv install 3.12```
+```pyenv install 3.13```
+
+Install ffmpeg, which the workers use to decode downloaded audio to WAV
+(`audio_decode.py`):
+
+```brew install ffmpeg```
 
 Create a virtual environment with the following command: 
 
@@ -261,6 +266,41 @@ small (a few KB) and rotated to its size cap on every write; the
 collisions file grows unbounded — rotate or `truncate` it manually
 when you're done investigating.
 
+## Embedding service (uploaded samples)
+
+Uploaded notification samples are embedded automatically: the backend job
+`embedNotificationAudioSamples` (admin Jobs, every 10 minutes and after each
+upload) sends each pending sample's audio to `embedding_service.py` and stores
+the vector it returns. The service holds no Fomo Player credentials and never
+calls the backend; both `main.py` and the service compute vectors with
+`embedding.py`, so samples and previews stay comparable.
+
+| Endpoint | Result |
+|---|---|
+| `GET /health` | `200 {"status": "ok", "model": ...}` |
+| `POST /embed` (raw audio body, `Content-Type` names the format) | `200 {"model": ..., "embedding": [1280 floats]}`; `401` without `Authorization: Bearer <token>`; `413` over the size limit; `422 {"error": ...}` for audio that cannot be decoded or is too short |
+
+Environment: `EMBEDDING_SERVICE_TOKEN` (required; the service refuses to
+start without it), `PORT` (default 8080), `EMBEDDING_SERVICE_MAX_BYTES`
+(default 100 MB). A `.wav` body is embedded as-is, like `main.py` does for
+uploaded samples; anything else is decoded by ffmpeg.
+
+Run it locally:
+
+```bash
+docker build -t fomoplayer-embedding analyser
+docker run -p 8080:8080 -e EMBEDDING_SERVICE_TOKEN=dev-token fomoplayer-embedding
+curl -H "Authorization: Bearer dev-token" -H "Content-Type: audio/mpeg" \
+  --data-binary @sample.mp3 localhost:8080/embed
+```
+
+The backend finds it through `EMBEDDING_SERVICE_URL` and
+`EMBEDDING_SERVICE_TOKEN`; without them the job reports itself skipped. On
+Railway it runs as its own service built from `analyser/Dockerfile` with no
+public domain, and the backend reaches it on the private network.
+
+`main.py --audio-samples` still works for embedding samples by hand.
+
 ## Java runtime for Panako
 
 `panako` is a bash launcher that invokes bare `java`. On macOS the Apple
@@ -349,8 +389,8 @@ fails to produce a dominant Δt peak (peak ≥ 3× the median bucket
 count over the rest of the histogram).
 
 **Exit non-zero means: the extractor stage failed; the backend matcher
-is not the suspect.** Inspect the audio conversion (pydub sample rate /
-channels) or the Panako version before looking at storage or scoring.
+is not the suspect.** Inspect the audio conversion (`audio_decode.to_wav`:
+sample rate / channels) or the Panako version before looking at storage or scoring.
 
 The script accepts `--pair A B` to compare arbitrary files, `--json`
 for machine-readable output, and `--bucket-seconds` / `--peak-multiplier`
@@ -419,8 +459,9 @@ noise rows that otherwise fill the persisted match set).
   positive case; weak rec→preview overlap is consistent with normal
   acoustic-capture noise, not a broken extractor. Documented gap:
   `(h, f1)` coherence drops to 0% for any pair involving the `.wav` rec
-  (vs 40–95% for pure-`.mp3` pairs); likely a pydub/Panako preprocessing
-  asymmetry. Tracked as a follow-up because Stage 2 stays hash-only.
+  (vs 40–95% for pure-`.mp3` pairs); likely a WAV-conversion/Panako preprocessing
+  asymmetry (measured when conversion still went through pydub, which
+  `audio_decode.py` reproduces sample for sample). Tracked as a follow-up because Stage 2 stays hash-only.
 - **Upload.** Diagnostic-endpoint vs local-CLI numbers were not in
   conflict for our fixtures; the existing upload path is sufficient
   to satisfy the binding regression.

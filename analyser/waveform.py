@@ -11,7 +11,7 @@ import uuid
 from minio import Minio
 import urllib.request
 import sys
-from pydub import AudioSegment
+from audio_decode import to_wav
 
 import argparse
 import json
@@ -235,8 +235,7 @@ def process_batch(previews, backoff, attempts):
                     print(f"Bandcamp has no stream for preview {preview_id}")
                     missing_previews.append({"preview_id": preview_id, "missing": True})
                     continue
-                sound = AudioSegment.from_mp3(mp3_path)
-                sound.export(output_wav_path, format="wav")
+                to_wav(mp3_path, output_wav_path)
                 generate_waveform(output_wav_path, waveform_png_path)
                 waveform_url = upload_waveform(waveform_png_path)
                 waveform_details.append({"id": preview_id, "waveform_url": waveform_url,
