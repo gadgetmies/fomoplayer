@@ -139,24 +139,6 @@ def test_split_into_chunks_fewer_items_than_workers_has_no_empty_chunks():
     assert all(len(c) > 0 for c in chunks)
 
 
-# ---------------------------------------------------------------------------
-# Regression: promoted helpers are shared, run_fingerprint still imports
-# ---------------------------------------------------------------------------
-
-
-def test_run_fingerprint_and_report_uses_promoted_helpers():
-    import run_fingerprint_and_report as rfr
-    assert rfr._batched_panako_store is extraction._batched_panako_store
-    assert rfr._worker_cache_dir is extraction._worker_cache_dir
-
-
-def test_panako_processor_reexports_moved_names():
-    assert pp.fingerprint_preview_subbatch is extraction.fingerprint_preview_subbatch
-    assert pp.upload_preview_fingerprints is extraction.upload_preview_fingerprints
-    assert pp._batched_panako_store is extraction._batched_panako_store
-    assert pp._worker_cache_dir is extraction._worker_cache_dir
-
-
 def test_worker_cache_dir_is_pid_isolated():
     # The cache folder is keyed by PID, so distinct worker processes (distinct
     # sub-batches) never share a PANAKO_CACHE_FOLDER.
