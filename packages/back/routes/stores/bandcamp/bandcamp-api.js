@@ -7,6 +7,8 @@ const { JSDOM } = jsdom
 const vm = require('vm')
 
 let suspendedUntil = null
+// What started the current pause, worded for the errors requests fail with while it lasts
+let suspensionCause = null
 let requestCount = 0
 // Rate limits hit in a row without a successful request in between; each
 // one doubles the pause so a lasting block is probed less and less often.
@@ -76,6 +78,9 @@ const scrapeJSON = R.curry((pattern, string) => {
 
 const extractJSON = R.curry((selector, attribute = undefined, dom) => {
   const element = dom.window.document.querySelector(selector)
+  if (element === null) {
+    throw new Error(`No element matching ${selector} on page "${dom.window.document.title}"`)
+  }
   const text = attribute ? element.getAttribute(attribute) : element.textContent
   return JSON.parse(text)
 })
@@ -168,16 +173,24 @@ const warnOnNameSubdomainMismatch = (url, pageType, pageName) => {
 // pauses all Bandcamp requests and is logged once, here, when the pause
 // starts. Requests made while paused fail fast with a quiet error so callers
 // can stop without logging the same condition again.
+// Only a 429 or 403 is called a rate limit; a challenge page or a refused stream is named as what it was.
+const describeSuspension = (reason) => {
+  if (/^HTTP (429|403)$/.test(reason)) return `Bandcamp rate limited (${reason})`
+  if (reason === 'client challenge page') return 'Bandcamp served a client challenge page'
+  return `Bandcamp refused a request (${reason})`
+}
+
 const startSuspension = (url, reason) => {
   consecutiveRateLimits++
   const pauseMs = suspensionMs(consecutiveRateLimits)
   suspendedUntil = new Date(Date.now() + pauseMs)
+  suspensionCause = describeSuspension(reason)
   logger.warn(
-    `Bandcamp rate limited (${reason}) after ${requestCount} requests, at ${url}. ` +
+    `${suspensionCause} after ${requestCount} requests, at ${url}. ` +
       `Pausing Bandcamp requests for ${Math.round(pauseMs / 60000)} min until ${suspendedUntil.toISOString()}` +
-      (consecutiveRateLimits > 1 ? ` (${consecutiveRateLimits} rate limits in a row)` : ''),
+      (consecutiveRateLimits > 1 ? ` (${consecutiveRateLimits} pauses in a row)` : ''),
   )
-  const error = new Error(`Bandcamp rate limited (${reason}); requests paused until ${suspendedUntil.toISOString()}`)
+  const error = new Error(`${suspensionCause}; requests paused until ${suspendedUntil.toISOString()}`)
   error.isRateLimit = true
   error.requestCount = requestCount
   error.retryAfter = suspendedUntil
@@ -188,10 +201,11 @@ const throwIfSuspended = () => {
   if (!suspendedUntil) return
   if (suspendedUntil < Date.now()) {
     suspendedUntil = null
+    suspensionCause = null
     requestCount = 0
     return
   }
-  const error = new Error(`Bandcamp requests are paused until ${suspendedUntil.toISOString()}`)
+  const error = new Error(`Bandcamp requests are paused until ${suspendedUntil.toISOString()} (${suspensionCause})`)
   error.isRateLimit = true
   error.isSuspended = true
   error.retryAfter = suspendedUntil
@@ -584,8 +598,13 @@ const mapSearchResults = ({ auto: { results } }) =>
     img,
   }))
 
+const SEARCH_API_URL = 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic'
+
+// Through getPageSource so a search honours the pause and its challenge page is recognised. Someone is waiting for
+// the results, so the request does not queue behind the fetch jobs.
 const getSearchResults = (query, callback) => {
-  return fetch('https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic', {
+  return getPageSource(SEARCH_API_URL, {
+    priority: true,
     method: 'POST',
     body: JSON.stringify({
       search_text: query,
@@ -593,14 +612,13 @@ const getSearchResults = (query, callback) => {
       fan_id: null,
       full_page: false,
     }),
-    headers: withUserAgent({ 'Content-Type': 'application/json; charset=UTF-8' }),
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
   })
-    .then((res) => res.json())
     .then((res) => {
-      callback(null, mapSearchResults(res))
+      callback(null, mapSearchResults(JSON.parse(res)))
     })
     .catch((e) => {
-      logger.error(`Searching for ${query} failed`, { statusCode: e.statusCode })
+      if (!e.isRateLimit) logger.error(`Searching for ${query} failed: ${e.message}`, { statusCode: e.statusCode })
       logger.silly(e)
       callback(e)
     })
@@ -615,6 +633,7 @@ const getRequestCount = () => requestCount
 // Test support: clear a suspension left behind by an earlier request.
 const resetRateLimit = () => {
   suspendedUntil = null
+  suspensionCause = null
   requestCount = 0
   consecutiveRateLimits = 0
 }

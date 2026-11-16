@@ -331,9 +331,13 @@ const assertSampleMatchPlaysFromMatch = async ({ page }) => {
   const toggle = sample.locator('.notifications-sample_toggle')
   await toggle.waitFor({ state: 'visible', timeout: 10000 })
   if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click()
-  const matchRow = sample.locator('.notifications-matches .notifications-list_row').first()
-  await matchRow.waitFor({ state: 'visible', timeout: 10000 })
-  expect(await matchRow.locator('.tempo').textContent()).to.equal('±0.0 %')
+  // Matches are rows of the main track list, where and at what tempo the sample was found in the Match column
+  const matchRow = sample.locator('table.tracks-table.notifications-matches > tbody > tr.track').first()
+  await waitForWithTimeoutMessage(
+    () => matchRow.waitFor({ state: 'visible', timeout: 10000 }),
+    'The open sample should list its match as a track list row.',
+  )
+  expect(await matchRow.locator('.why-cell--column .notifications-match_info .tempo').textContent()).to.equal('±0.0 %')
   await matchRow.click()
 
   try {
