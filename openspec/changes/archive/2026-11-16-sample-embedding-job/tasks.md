@@ -26,9 +26,9 @@ Prerequisite: `replace-pydub-with-ffmpeg` is merged into `master` and merged int
 
 ## 5. Production deployment (agent, after the merge; confirm with the owner before each production change)
 
-- [ ] 5.1 Create the `embedding` service in the production environment of Railway project `fomoplayer` from this repository, building `analyser/Dockerfile`, with no public domain; verify its deployment succeeds and its logs show the model loaded.
-- [ ] 5.2 Generate a 32-byte token in the agent container and set it as `EMBEDDING_SERVICE_TOKEN` on `embedding`; set on the `fomoplayer` service `EMBEDDING_SERVICE_TOKEN=${{embedding.EMBEDDING_SERVICE_TOKEN}}` and `EMBEDDING_SERVICE_URL=http://${{embedding.RAILWAY_PRIVATE_DOMAIN}}:${{embedding.PORT}}`; verify both services redeploy and `embedding` logs no 401s from the backend.
-- [ ] 5.3 Start `embedNotificationAudioSamples` from admin Jobs (or wait for its schedule) and verify the run result shows samples processed or zero pending, and that a newly uploaded sample's Sounds like request stops returning `pending` within one run.
+- [x] 5.1 Create the `embedding` service in the production environment of Railway project `fomoplayer` from this repository, building `analyser/Dockerfile`, with no public domain; verify its deployment succeeds and its logs show the model loaded.
+- [x] 5.2 Generate a 32-byte token in the agent container and set it as `EMBEDDING_SERVICE_TOKEN` on `embedding`; set on the `fomoplayer` service `EMBEDDING_SERVICE_TOKEN=${{embedding.EMBEDDING_SERVICE_TOKEN}}` and `EMBEDDING_SERVICE_URL=http://${{embedding.RAILWAY_PRIVATE_DOMAIN}}:${{embedding.PORT}}`; verify both services redeploy and `embedding` logs no 401s from the backend.
+- [x] 5.3 Start `embedNotificationAudioSamples` from admin Jobs (or wait for its schedule) and verify the run result shows samples processed or zero pending, and that a newly uploaded sample's Sounds like request stops returning `pending` within one run.
 
 ## Verification notes
 
@@ -39,6 +39,10 @@ Prerequisite: `replace-pydub-with-ffmpeg` is merged into `master` and merged int
 - 4.1: the job against the real service container, the test database and a real MP3: the sample went from `pending` to embedded (1280 dimensions) and Sounds like stopped returning `pending`.
 - 4.2: analyser tests 36 passed, 3 skipped (pydub comparison; two Panako integration tests need `panako` on PATH).
 - 4.2: full backend suite (`yarn test`) 676 passed, 0 failed against a local Postgres 16 + pgvector 0.6.0 test database.
+- 5.1: `embedding` service created in production on 2026-11-15 (root directory `/analyser`, health check `/health`, watch path `/analyser/**`, region `us-west2` next to the backend, no public domain); first deployment succeeded and its logs showed the model loaded and the health check answering.
+- 5.2: token generated in the agent container and set on `embedding` with `PORT=8080`; the backend got both reference variables and redeployed. Its later run reached the service and stored a vector, so the token was accepted.
+- 5.3: the first upload (sample 20, 2026-11-15 22:30 UTC) started the job at once but failed with `fetch failed`: this legacy Railway environment resolves `embedding.railway.internal` to IPv6 only and the service listened on IPv4. Fixed by `embedding-service-ipv6` (#456); the 22:50 UTC run then reached the service over IPv6 and stored the vector. On 2026-11-16 the owner confirmed in the app that the sample's Sounds like list is filled and the results look right.
+- Follow-ups shipped as their own changes: `embedding-service-stdout-logs` (#454), `embedding-service-ipv6` (#456), `quiet-essentia-warnings` (#457).
 
 ## Workflow follow-up
 

@@ -13,3 +13,7 @@
 
 - After merge, check the `embedding` service's Railway logs show request lines at info level.
 - Archive the change after merge.
+
+## Post-merge check
+
+- 2026-11-16 07:49 UTC: after the `embedding` service redeployed, its Railway logs show request lines (`"GET /health HTTP/1.1" 200`) at info level.
