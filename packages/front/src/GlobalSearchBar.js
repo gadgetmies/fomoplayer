@@ -41,10 +41,9 @@ const GlobalSearchBar = ({
   styles,
   className,
   genres = [],
-  // Opt-in for pickers (Notifications › Subscriptions): which entity prefixes are searched, a callback that takes a
-  // picked entity instead of adding it as a pill, and a popup that shows while searching and when nothing matches.
+  // Opt-in for pickers (Notifications › Subscriptions): which entity prefixes are searched, and a popup that shows
+  // while searching and when nothing matches.
   entityTypes = ENTITY_TYPES,
-  onEntitySelect,
   showEntitySearchStatus = false,
 }) => {
   const [inputValue, setInputValue] = useState('')
@@ -262,17 +261,8 @@ const GlobalSearchBar = ({
     focusInput()
   }
 
+  // A picked match becomes a pill; the search itself runs (or is added) with Enter, so pills can be combined
   const commitEntity = (entity) => {
-    if (onEntitySelect) {
-      setInputValue('')
-      setSelectedEntityIndex(-1)
-      setEntityResults([])
-      setEntitySearchType(null)
-      setEntityResultsFor(null)
-      onChange(terms, '')
-      onEntitySelect({ type: entitySearchPrefix, id: entity.id, name: entity.name })
-      return
-    }
     const similarPrefix = entitySearchPrefix === 'track' && entitySearchSimilar ? '~' : ''
     const newTerm = {
       type: entitySearchPrefix,
