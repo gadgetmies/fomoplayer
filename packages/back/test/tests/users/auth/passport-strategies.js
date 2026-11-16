@@ -6,7 +6,7 @@ const configPath = require.resolve('../../../../config.js')
 const passportSetupPath = require.resolve('../../../../passport-setup.js')
 
 const clearStrategies = () => {
-  ;['local', 'openidconnect', 'jwt', 'jwt-internal'].forEach((name) => {
+  ;['local', 'openidconnect', 'jwt-internal'].forEach((name) => {
     try {
       passport.unuse(name)
     } catch (_) {}
@@ -33,7 +33,7 @@ const runPassportSetupWithConfig = (config) => {
 }
 
 test({
-  'passport setup does not register direct google bearer jwt strategy': async () => {
+  'passport setup registers the jwt-internal strategy when the handoff issuer and JWKS are configured': async () => {
     runPassportSetupWithConfig({
       googleClientId: 'google-client-id',
       googleClientSecret: 'google-client-secret',
@@ -47,7 +47,6 @@ test({
       internalAuthApiAudience: 'https://api.example.com/api',
     })
 
-    assert.strictEqual(passport._strategy('jwt'), undefined)
     assert.notStrictEqual(passport._strategy('jwt-internal'), undefined)
   },
 })

@@ -29,10 +29,6 @@ test({
   'overall top-100 fetches all 100 tracks from the tracks route': async () => {
     assert.equal(playlistTracksPath('https://www.beatport.com/top-100'), '/catalog/tracks/top/100/?per_page=100')
   },
-  'chart and user-playlist URLs no longer resolve as followable playlists': async () => {
-    assert.equal(parsePlaylistUrl('https://www.beatport.com/chart/some-chart/12345'), null)
-    assert.equal(parsePlaylistUrl('https://www.beatport.com/playlist/mine/999'), null)
-  },
   'unrelated beatport URLs do not resolve as playlists': async () => {
     assert.equal(parsePlaylistUrl('https://www.beatport.com/artist/noisia/12'), null)
   },

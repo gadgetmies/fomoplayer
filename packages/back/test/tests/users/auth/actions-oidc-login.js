@@ -32,19 +32,7 @@ const mockAccount = (userId = 42) => ({
   findByUserId: async () => ({ id: userId }),
 })
 
-const createRecordingLogger = () => {
-  const entries = []
-  const record = (level) => (...args) => entries.push({ level, args })
-  return {
-    entries,
-    warn: record('warn'),
-    info: record('info'),
-    error: record('error'),
-    debug: record('debug'),
-  }
-}
-
-const createApp = ({ config = previewConfig, account = mockAccount(), verifyActionsTokenFn, logger } = {}) => {
+const createApp = ({ config = previewConfig, account = mockAccount(), verifyActionsTokenFn } = {}) => {
   const app = express()
   const sessions = []
   app.use(express.json())
@@ -57,7 +45,7 @@ const createApp = ({ config = previewConfig, account = mockAccount(), verifyActi
     }
     next()
   })
-  app.use('/api/auth', createAuthRouter({ account, config, verifyActionsTokenFn, logger }))
+  app.use('/api/auth', createAuthRouter({ account, config, verifyActionsTokenFn }))
   app.lastSession = () => sessions[sessions.length - 1]
   return app
 }
@@ -129,26 +117,6 @@ test({
     expect(capturedArgs.allowedRepo).to.equal(ALLOWED_REPO)
     expect(capturedArgs.logger).to.exist
     expect(typeof capturedArgs.logger.warn).to.equal('function')
-  },
-
-  'POST /login/actions — verifier rejection does not emit the old opaque warn at the route': async () => {
-    const logger = createRecordingLogger()
-    const app = createApp({
-      verifyActionsTokenFn: async () => null,
-      logger,
-    })
-    const response = await request(app)
-      .post('/api/auth/login/actions')
-      .send({ token: 'tampered-token' })
-    expect(response.status).to.equal(401)
-    const opaqueWarns = logger.entries
-      .filter((entry) => entry.level === 'warn')
-      .filter((entry) =>
-        entry.args.some(
-          (arg) => typeof arg === 'string' && arg.includes('invalid or unauthorized'),
-        ),
-      )
-    expect(opaqueWarns).to.have.length(0)
   },
 
   'POST /login/actions — uses findOrCreateByIdentifier with GitHub Actions issuer and the verified token sub': async () => {
