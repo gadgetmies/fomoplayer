@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { useEffect, useRef, useState } from 'react'
 import SearchBarBase from './SearchBarBase'
 import Spinner from './Spinner'
-import { parseSingleTerm } from './searchTerms'
+import { parseEntityInput, parseSingleTerm } from './searchTerms'
 import { requestJSONwithCredentials } from './request-json-with-credentials'
 
 const ENTITY_TYPES = ['artist', 'label', 'release', 'track']
@@ -96,12 +96,12 @@ const GlobalSearchBar = ({
     ? genres.filter((g) => !genreSearchText || g.name.toLowerCase().includes(genreSearchText.toLowerCase()))
     : []
 
-  const entityPrefixMatch = inputValue.match(/^(artist|label|release|track):(~?)(.+)$/i)
-  const matchedPrefix = entityPrefixMatch?.[1].toLowerCase() ?? null
-  const entitySearchPrefix = entityTypes.includes(matchedPrefix) ? matchedPrefix : null
-  const entitySearchSimilar = entityPrefixMatch?.[2] === '~'
-  const entitySearchText = entityPrefixMatch?.[3] ?? null
-  const entitySearchIsId = entitySearchText !== null && /^\d+$/.test(entitySearchText)
+  // An artist:/label:… name being looked up; quotes around it are not part of the name
+  const entityInput = parseEntityInput(inputValue, entityTypes)
+  const entitySearchPrefix = entityInput?.prefix ?? null
+  const entitySearchSimilar = entityInput?.similar ?? false
+  const entitySearchText = entityInput?.text ?? null
+  const entitySearchIsId = entityInput?.isId ?? false
   const showEntityPopup =
     entitySearchPrefix !== null &&
     entitySearchText !== null &&
@@ -323,7 +323,10 @@ const GlobalSearchBar = ({
 
     const trimmed = value.trim()
     const isGenrePrefix = /^genre:/i.test(trimmed)
-    if (!inQuote && value.endsWith(' ') && trimmed && !isGenrePrefix) {
+    // While a name is being looked up, space belongs to the name (label:Vision Recordings)
+    const entityInput = parseEntityInput(value, entityTypes)
+    const isEntityLookup = entityInput !== null && !entityInput.isId
+    if (!inQuote && value.endsWith(' ') && trimmed && !isGenrePrefix && !isEntityLookup) {
       const newTerm = parseSingleTerm(trimmed)
       const newTerms = [...terms, newTerm]
       setInputValue('')
