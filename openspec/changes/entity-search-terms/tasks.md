@@ -13,3 +13,8 @@
 ## 3. Demo
 
 - [x] 3.1 `entity-search-terms-local.js` / `entity-search-terms-preview.js` with shared steps; update the notifications demo's subscribe step
+
+## 4. Subscription unavailable
+
+- [x] 4.1 The top bar warning opens an explaining popup on hover / tap, linking to Settings › Email (`TopBar.js`)
+- [x] 4.2 `subscription-unavailable-local.js` / `subscription-unavailable-preview.js` (desktop hover, mobile tap)

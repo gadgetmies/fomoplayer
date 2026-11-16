@@ -30,13 +30,20 @@ mis-reads it as one entity).
   `label:<id>` term of a combined text, and the notification email does the
   same.
 
+- The top bar's "Subscription unavailable" warning opens a popup on hover
+  (desktop) or tap (mobile) explaining that subscribing needs a verified
+  email and linking to Settings › Email. Its hand-built popup never opened
+  (it lacked the classes the popup CSS needs) and linked to Settings ›
+  Following.
+
 ## Capabilities
 
 ### New Capabilities
 - `search-entity-terms`: typing entity terms in the pill search bars.
 
 ### Modified Capabilities
-- `notifications-page`: adding a search subscription builds it from pills.
+- `notifications-page`: adding a search subscription builds it from pills;
+  the top bar explains why subscribing is unavailable.
 
 ## Impact
 
@@ -44,5 +51,7 @@ mis-reads it as one entity).
   `NotificationsPage.js`.
 - `packages/back/routes/users/db.js`, `routes/shared/db/notification-events.js`,
   `jobs/notifications.js`, and a new `routes/shared/subscription-names.js`.
+- `packages/front/src/TopBar.js` / `TopBar.css` for the warning popup.
+- Demo tests `subscription-unavailable-local.js` / `-preview.js`.
 - Demo tests `entity-search-terms-local.js` / `entity-search-terms-preview.js`;
   the notifications demo's subscribe step now adds the picked artist with Enter.

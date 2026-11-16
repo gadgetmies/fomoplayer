@@ -18,3 +18,17 @@ and label's name, in the list, in Activity and in the notification email.
 #### Scenario: Artist and label in one subscription
 - **WHEN** the user picks the artist Noisia, then the label Vision Recordings, then presses Add
 - **THEN** one search subscription is added, listed under Searches as "Noisia · Vision Recordings"
+
+## ADDED Requirements
+
+### Requirement: The top bar MUST explain why subscribing to a search is unavailable
+
+When a search is active and the user's email is not set or not verified, the
+top bar SHALL show "Subscription unavailable" with an exclamation icon (the
+icon alone on narrow screens). Hovering it on desktop or tapping it on mobile
+SHALL open a popup saying that subscribing needs a verified email address and
+linking to Settings › Email, with a Dismiss button that hides the warning.
+
+#### Scenario: Tapping the warning on a phone
+- **WHEN** a user without a verified email has a search active on a phone and taps the exclamation icon
+- **THEN** a popup explains that subscribing needs a verified email and links to Settings › Email
