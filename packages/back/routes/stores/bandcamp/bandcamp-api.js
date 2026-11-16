@@ -76,6 +76,9 @@ const scrapeJSON = R.curry((pattern, string) => {
 
 const extractJSON = R.curry((selector, attribute = undefined, dom) => {
   const element = dom.window.document.querySelector(selector)
+  if (element === null) {
+    throw new Error(`No element matching ${selector} on page "${dom.window.document.title}"`)
+  }
   const text = attribute ? element.getAttribute(attribute) : element.textContent
   return JSON.parse(text)
 })
