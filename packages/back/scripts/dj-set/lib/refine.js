@@ -30,6 +30,9 @@ const DEFAULTS = {
   minSignificance: 10, // −log10 chance of the play's strongest segment
   alternateOverlap: 0.2, // share of aligned fingerprints that makes an alternate
   maxConcurrent: 3, // tracks audible at once in a DJ set
+  placementShare: 0.25, // an alternative placement needs this share of the strongest one's fingerprints
+  placementSeparationSeconds: 1, // placements closer than this are one placement
+  maxPlacements: 4,
 }
 
 // Groups pairs by offset bucket at tempo `a`. A true alignment can straddle
@@ -118,6 +121,32 @@ const bestTempo = (pairs, centre, { tempoSearch, tempoStep, bucketSeconds, segme
   return best
 }
 
+// Every place the track could sit in the set at tempo `a`, strongest first.
+// The play's own anchor is the strongest one; the others are offset clusters
+// that overlap it in set time (sequentialSegments drops them) — a track that
+// repeats a section almost exactly matches at both offsets, and a caller with
+// more context (the neighbouring plays) may tell which one is playing.
+const placementsOf = (pairs, a, { bucketSeconds, segmentMin, placementShare, placementSeparationSeconds, maxPlacements }) => {
+  const clusters = offsetClusters(pairs, a, bucketSeconds)
+    .filter((c) => c.indexes.size >= segmentMin)
+    .sort((x, y) => y.indexes.size - x.indexes.size)
+  const top = clusters.length ? clusters[0].indexes.size : 0
+  const placements = []
+  for (const c of clusters) {
+    if (c.indexes.size < placementShare * top || placements.length >= maxPlacements) break
+    const fineAnchorSeconds = -c.fineOffsetSeconds / a
+    if (placements.some((o) => Math.abs(o.fineAnchorSeconds - fineAnchorSeconds) < placementSeparationSeconds)) continue
+    placements.push({
+      anchorSeconds: -c.offsetSeconds / a,
+      fineAnchorSeconds,
+      count: c.indexes.size,
+      fromSeconds: c.from,
+      toSeconds: c.to,
+    })
+  }
+  return placements
+}
+
 const refinePlay = async (mirror, setFingerprints, play, params) => {
   const from = play.startSeconds - params.marginSeconds
   const to = play.endSeconds + params.marginSeconds
@@ -159,6 +188,7 @@ const refinePlay = async (mirror, setFingerprints, play, params) => {
     windowScore: play.score,
     score: best.tempo.score,
     segments: best.tempo.segments.length,
+    placements: placementsOf(best.pairs, best.tempo.tempoFactor, params),
     peak: best.tempo.segments[0].indexes.size,
     pairCount: best.pairCount,
     offsetRangeSeconds: Math.max(...offsets) - Math.min(...offsets) + params.bucketSeconds,
@@ -248,4 +278,4 @@ module.exports.refine = async (mirror, setFingerprints, plays, options = {}) => 
 module.exports.REFINE_DEFAULTS = DEFAULTS
 
 // Exposed for unit tests.
-module.exports.internals = { bestTempo, log10PoissonTail, sequentialSegments, offsetClusters }
+module.exports.internals = { bestTempo, log10PoissonTail, sequentialSegments, offsetClusters, placementsOf }
