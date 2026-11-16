@@ -54,6 +54,11 @@
   display: block;
 }
 
+/* Tapping the warning on a phone takes the focus out of the search, which hides it: keep it while its popup is open */
+.email_not_verified_container.email_not_verified_container--open {
+  display: block;
+}
+
 .menu_right {
   display: flex;
   margin-left: 8px;
@@ -201,10 +206,6 @@
 }
 
 @media (max-width: 590px) {
-  .popup_content-notification {
-    bottom: auto;
-  }
-
   .text-input-top_bar:focus {
     width: 100%;
   }

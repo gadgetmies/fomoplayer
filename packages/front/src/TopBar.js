@@ -23,6 +23,8 @@ class TopBar extends Component {
       searchDebounce: undefined,
       supportMenuOpen: false,
       emailVerificationDismissed: localStorage.getItem('emailVerificationDismissed') === 'true',
+      // The popup explaining why subscribing is unavailable
+      emailInfoOpen: false,
       discoverMenuOpen: false,
       cartsMenuOpen: false,
       genres: [],
@@ -249,41 +251,51 @@ class TopBar extends Component {
                   </DropDownButton>
                 </span>
                 {!this.props.userSettings.emailVerified && !this.state.emailVerificationDismissed && (
-                  <div
-                    style={{
-                      padding: '0 8px 0 4px',
-                      height: '100%',
-                      flex: 0,
-                    }}
-                    className="email_not_verified_container popup_container"
-                  >
-                    <span
-                      className={'popup-anchor'}
-                      style={{ height: '100%', display: 'flex', gap: 8, alignItems: 'center' }}
-                    >
-                      <FontAwesomeIcon icon={'circle-exclamation'} />{' '}
-                      <span className="button-top_bar_button_label" style={{ fontSize: '75%' }}>
-                        Subscription unavailable
+                  // Hover (desktop) or tap (mobile) explains why subscribing is unavailable. While open it stays shown
+                  // even though tapping it took the focus out of the search, which otherwise hides it on narrow screens.
+                  <Popup
+                    className={`email_not_verified_container${
+                      this.state.emailInfoOpen ? ' email_not_verified_container--open' : ''
+                    }`}
+                    style={{ height: '100%', flex: 0 }}
+                    open={this.state.emailInfoOpen}
+                    onOpenChanged={(emailInfoOpen) => this.setState({ emailInfoOpen })}
+                    popupClassName={'popup_content-left'}
+                    anchor={
+                      <span
+                        className="email_not_verified_anchor"
+                        style={{ height: '100%', display: 'flex', gap: 8, alignItems: 'center', padding: '0 8px 0 4px' }}
+                      >
+                        <FontAwesomeIcon icon={'circle-exclamation'} />{' '}
+                        <span className="button-top_bar_button_label" style={{ fontSize: '75%' }}>
+                          Subscription unavailable
+                        </span>
                       </span>
-                    </span>
-                    <div
-                      className={'popup_content popup_content-notification popup_content-left'}
-                      style={{ minWidth: 250, flexDirection: 'column' }}
-                    >
-                      <span style={{ padding: '1rem' }}>
-                        E-mail is not set or verified.{' '}
-                        <Link to={'/settings/following'}>
-                          <strong>Please update details in the settings</strong>.
+                    }
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '1rem', minWidth: 250 }}>
+                      <strong>Subscription unavailable</strong>
+                      <span>
+                        Subscribing to a search emails you when new tracks match it, so it needs a verified email
+                        address, and yours is not set or not verified yet.
+                      </span>
+                      <span>
+                        <Link to={'/settings/email'} onClick={() => this.setState({ emailInfoOpen: false })}>
+                          <strong>Add or verify your email in Settings › Email</strong>
                         </Link>
+                        , then come back to subscribe.
                       </span>
                       <button
                         className={'button button-push_button button-push_button-primary button-push_button-small'}
-                        onClick={this.dismissEmailVerification.bind(this)}
+                        onClick={() => {
+                          this.setState({ emailInfoOpen: false })
+                          this.dismissEmailVerification()
+                        }}
                       >
                         Dismiss
                       </button>
                     </div>
-                  </div>
+                  </Popup>
                 )}
               </>
             )}
