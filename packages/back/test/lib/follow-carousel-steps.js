@@ -8,6 +8,10 @@
 //   - a horizontal swipe scrolls the carousel, and
 //   - a vertical swipe that starts on a carousel scrolls the page, not the
 //     carousel — the carousel must not trap vertical scrolling.
+// On a desktop context (a fine, hovering pointer) they check the mouse
+// controls: previous/next arrow buttons, the edge fade that marks the side with
+// more cards, and Shift + wheel scrolling the row sideways while a plain wheel
+// keeps scrolling the page.
 //
 // Imported verbatim by both the -local and -preview entry files.
 
@@ -140,6 +144,103 @@ const assertCarousel = async (page, selector, label) => {
 
 const assertSuggestionsCarousel = async ({ page }) => {
   await assertCarousel(page, SUGGESTIONS_CAROUSEL, 'follow suggestions')
+  // Touch devices swipe: the mouse arrow buttons stay hidden.
+  const arrows = page.locator('.follow-carousel-arrow')
+  for (let i = 0; i < (await arrows.count()); i++) {
+    expect(await arrows.nth(i).isVisible(), 'arrow buttons are hidden on touch devices').to.equal(false)
+  }
+}
+
+const carouselState = (page, selector) =>
+  page.evaluate((selector) => {
+    const list = document.querySelector(selector)
+    const wrapper = list.closest('.follow-carousel')
+    return {
+      scrollLeft: list.scrollLeft,
+      maxScrollLeft: list.scrollWidth - list.clientWidth,
+      canScrollLeft: wrapper.dataset.canScrollLeft === 'true',
+      canScrollRight: wrapper.dataset.canScrollRight === 'true',
+      maskImage: getComputedStyle(list).maskImage || getComputedStyle(list).webkitMaskImage,
+    }
+  }, selector)
+
+// Narrow enough that the four seeded artist suggestions overflow the row.
+const NARROW_DESKTOP_VIEWPORT = { width: 480, height: 720 }
+
+// Mouse controls on a desktop context: arrows, edge fade and Shift + wheel.
+const assertMouseControls = async ({ desktopPage: page }) => {
+  const originalViewport = page.viewportSize()
+  await page.setViewportSize(NARROW_DESKTOP_VIEWPORT)
+  try {
+    await gotoFollowing(page)
+    const carousel = page.locator(SUGGESTIONS_CAROUSEL).first()
+    const wrapper = page.locator('.follow-carousel', { has: carousel }).first()
+    await carousel.scrollIntoViewIfNeeded()
+    const previous = wrapper.locator('[data-test="follow-carousel-previous"]')
+    const next = wrapper.locator('[data-test="follow-carousel-next"]')
+
+    // At the start: only the right edge fades, "previous" is disabled.
+    await waitForWithTimeoutMessage(
+      () => next.waitFor({ state: 'visible', timeout: 10000 }),
+      'Show the carousel arrow buttons for a mouse pointer when the row overflows.',
+    )
+    let state = await carouselState(page, SUGGESTIONS_CAROUSEL)
+    expect(state.maxScrollLeft, 'the row overflows at this width').to.be.greaterThan(0)
+    expect(state.canScrollLeft, 'starts scrolled to the left').to.equal(false)
+    expect(state.canScrollRight, 'more cards to the right').to.equal(true)
+    expect(state.maskImage, 'the right edge fades').to.include('gradient')
+    expect(await previous.isDisabled(), '"previous" is disabled at the start').to.equal(true)
+    expect(await next.isEnabled(), '"next" is enabled at the start').to.equal(true)
+
+    // "Next" scrolls the row right and enables "previous".
+    await next.click()
+    await page.waitForFunction((selector) => document.querySelector(selector).scrollLeft > 0, SUGGESTIONS_CAROUSEL, {
+      timeout: 5000,
+    })
+    await page.waitForTimeout(600)
+    state = await carouselState(page, SUGGESTIONS_CAROUSEL)
+    expect(state.canScrollLeft, '"next" scrolled the row right').to.equal(true)
+    expect(await previous.isEnabled(), '"previous" is enabled once scrolled').to.equal(true)
+
+    // "Previous" scrolls back to the start.
+    await previous.click()
+    await page.waitForFunction((selector) => document.querySelector(selector).scrollLeft <= 1, SUGGESTIONS_CAROUSEL, {
+      timeout: 5000,
+    })
+    await page.waitForTimeout(600)
+    expect(await previous.isDisabled(), '"previous" is disabled again at the start').to.equal(true)
+
+    // Shift + wheel over the row scrolls it sideways and leaves the page alone.
+    const box = await carousel.boundingBox()
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    const pageTopBefore = await pageScrollTop(page, SUGGESTIONS_CAROUSEL)
+    await page.keyboard.down('Shift')
+    try {
+      await page.mouse.wheel(0, 120)
+    } finally {
+      await page.keyboard.up('Shift')
+    }
+    await page.waitForTimeout(400)
+    state = await carouselState(page, SUGGESTIONS_CAROUSEL)
+    expect(state.scrollLeft, 'Shift + wheel scrolls the row sideways').to.be.greaterThan(0)
+    expect(await pageScrollTop(page, SUGGESTIONS_CAROUSEL), 'Shift + wheel does not scroll the page').to.equal(
+      pageTopBefore,
+    )
+
+    // A plain wheel over the row still scrolls the page, not the row.
+    const rowLeftBefore = state.scrollLeft
+    await page.mouse.wheel(0, 200)
+    await page.waitForTimeout(400)
+    expect(
+      await pageScrollTop(page, SUGGESTIONS_CAROUSEL),
+      'a plain wheel over the row scrolls the page',
+    ).to.be.greaterThan(pageTopBefore + 50)
+    expect((await carouselState(page, SUGGESTIONS_CAROUSEL)).scrollLeft, 'a plain wheel leaves the row').to.equal(
+      rowLeftBefore,
+    )
+  } finally {
+    if (originalViewport) await page.setViewportSize(originalViewport)
+  }
 }
 
 // Searching by name fills the results carousel. The search goes to the stores
@@ -156,4 +257,4 @@ const assertSearchResultsCarousel = async ({ page }) => {
   await assertCarousel(page, RESULTS_CAROUSEL, 'follow search results')
 }
 
-module.exports = { gotoFollowing, assertSuggestionsCarousel, assertSearchResultsCarousel }
+module.exports = { gotoFollowing, assertSuggestionsCarousel, assertSearchResultsCarousel, assertMouseControls }
