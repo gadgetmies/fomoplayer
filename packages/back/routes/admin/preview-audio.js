@@ -31,9 +31,10 @@ const analysedCondition = () => sql`(
                       WHERE w.store__track_preview_id = p.store__track_preview_id
                         AND w.store__track_preview_waveform_url IS NOT NULL))))`
 
-// Previews to download, newest first: not analysed, not stored, not waiting to retry a failure. Bandcamp previews
-// need the release page to look up their stream; the analyser defers those without one too.
-const queryPreviewsToPrefetch = (limit) =>
+// Previews to download, newest first: not analysed, not stored, not waiting to retry a failure and not known to be
+// larger than maxBytes. Bandcamp previews need the release page to look up their stream; the analyser defers those
+// without one too.
+const queryPreviewsToPrefetch = (limit, maxBytes) =>
   pg.queryRowsAsync(
     sql`-- queryPreviewsToPrefetch
 SELECT *
@@ -55,6 +56,8 @@ FROM (SELECT p.store__track_preview_id AS preview_id
         AND a.store__track_preview_audio_object_key IS NULL
         AND (a.store__track_preview_id IS NULL
              OR a.store__track_preview_audio_last_attempt_at < NOW() - ${RETRY_AFTER}::INTERVAL)
+        -- A preview found too large keeps its size here; raising the limit lets it be downloaded again.
+        AND (a.store__track_preview_audio_file_size IS NULL OR a.store__track_preview_audio_file_size <= ${maxBytes})
         AND (s.store_name = 'Bandcamp' OR p.store__track_preview_url IS NOT NULL)
         AND NOT `
       .append(analysedCondition())
@@ -104,6 +107,20 @@ RETURNING store__track_preview_audio_failed_attempts AS attempts`,
   )
   return attempts
 }
+
+// Records that the preview's audio is larger than the job downloads, without counting it as a failed attempt: the
+// preview is not marked missing (it still plays), only left out of prefetching while the limit is below its size.
+const recordPreviewAudioTooLarge = (previewId, fileSize) =>
+  pg.queryAsync(
+    sql`-- recordPreviewAudioTooLarge
+INSERT INTO store__track_preview_audio ( store__track_preview_id, store__track_preview_audio_file_size
+                                       , store__track_preview_audio_last_error)
+VALUES (${previewId}, ${fileSize}, 'Too large to prefetch')
+ON CONFLICT (store__track_preview_id) DO UPDATE
+  SET store__track_preview_audio_file_size       = EXCLUDED.store__track_preview_audio_file_size
+    , store__track_preview_audio_last_error      = EXCLUDED.store__track_preview_audio_last_error
+    , store__track_preview_audio_last_attempt_at = NOW()`,
+  )
 
 const isMissingObject = (error) => ['NoSuchKey', 'NotFound'].includes(error?.code)
 
@@ -155,5 +172,6 @@ module.exports = {
   countStoredPreviewAudio,
   recordStoredPreviewAudio,
   recordPreviewAudioFailure,
+  recordPreviewAudioTooLarge,
   releaseAnalysedPreviewAudio,
 }

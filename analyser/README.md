@@ -61,6 +61,11 @@ three workers. The job's store traffic is kept conservative:
 - At most `PREVIEW_AUDIO_PREFETCH_MAX_STORED` (default 1000) files wait
   for analysis. A run lasts at most `PREVIEW_AUDIO_PREFETCH_MAX_RUN_MS`
   (default 8 min).
+- Files larger than `PREVIEW_AUDIO_MAX_BYTES` (default 30 MB, about 32
+  minutes at 128 kbps; capped below 64 MiB, where the storage client
+  switches to a multipart upload the Railway bucket cannot complete) are
+  not prefetched, so long recordings such as DJ mixes are not analysed
+  from the bucket. They are not marked missing and still play.
 
 The preview queues serve the stored file as `audio_url`
 (`/api/storage/<key>`, resolved against `FOMOPLAYER_API_URL`). The
