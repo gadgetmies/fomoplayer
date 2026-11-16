@@ -2,7 +2,7 @@
 -- analyser workers read it from the bucket instead of the store. The row is
 -- deleted, and the object removed, once every analysis of the preview is done.
 -- A row without an object key records failed download attempts.
-CREATE TABLE store__track_preview_audio
+CREATE TABLE IF NOT EXISTS store__track_preview_audio
 (
   store__track_preview_id                    BIGINT PRIMARY KEY NOT NULL
     REFERENCES store__track_preview (store__track_preview_id) ON DELETE CASCADE,

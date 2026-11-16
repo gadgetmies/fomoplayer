@@ -6,5 +6,5 @@
 -- fails, the release is looked up again, which replaces the URLs of every track
 -- of the release. store__track_preview_url stays for permanent URLs only.
 ALTER TABLE store__track_preview
-  ADD COLUMN store__track_preview_url_ephemeral            TEXT,
-  ADD COLUMN store__track_preview_url_ephemeral_fetched_at TIMESTAMPTZ;
+  ADD COLUMN IF NOT EXISTS store__track_preview_url_ephemeral TEXT,
+  ADD COLUMN IF NOT EXISTS store__track_preview_url_ephemeral_fetched_at TIMESTAMPTZ;
