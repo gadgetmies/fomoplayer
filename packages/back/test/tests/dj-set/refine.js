@@ -53,3 +53,14 @@ test({
     assert(Number.isFinite(log10PoissonTail(500, 0.1)))
   },
 })
+
+test({
+  'reports the fine offset the pairs agree on, not the bucket centre': () => {
+    // True offset 30.02 s sits at a 0.5 s bucket edge: the bucket centre is
+    // 30.25 s, the median residual is the offset itself.
+    const pairs = pairsAlong({ from: 0, to: 60, tempo: 1.0, offset: 30.02 })
+    const best = bestTempo(pairs, 1.0, PARAMS)
+    assert(Math.abs(best.segments[0].fineOffsetSeconds - 30.02) < 0.01, `fine ${best.segments[0].fineOffsetSeconds}`)
+    assert(Math.abs(best.segments[0].offsetSeconds - 30.02) > 0.2, `bucket ${best.segments[0].offsetSeconds}`)
+  },
+})

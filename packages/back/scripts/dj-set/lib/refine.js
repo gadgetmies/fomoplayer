@@ -50,6 +50,12 @@ const offsetClusters = (pairs, a, bucketSeconds) => {
       const indexes = new Set(members.map((pr) => pr.i))
       const residuals = members.map((pr) => pr.p - a * pr.s)
       const mean = residuals.reduce((sum, r) => sum + r, 0) / residuals.length
+      // The bucket centre is the offset to within half a bucket; the median
+      // residual is the fine offset the pairs themselves agree on — what a
+      // reconstruction placing the track on the beat needs (a bucket is 0.5 s,
+      // a beat at 174 BPM 0.34 s).
+      const sortedResiduals = [...residuals].sort((x, y) => x - y)
+      const fineOffsetSeconds = sortedResiduals[Math.floor(sortedResiduals.length / 2)]
       // Residual spread: within the plateau of tempos that keep the pairs in
       // one bucket, the true tempo lines them up tightest.
       const spread = residuals.reduce((sum, r) => sum + (r - mean) ** 2, 0) / residuals.length
@@ -57,6 +63,7 @@ const offsetClusters = (pairs, a, bucketSeconds) => {
       const times = members.map((pr) => pr.s).sort((x, y) => x - y)
       clusters.push({
         offsetSeconds,
+        fineOffsetSeconds,
         spread,
         indexes,
         from: times[Math.floor(times.length * 0.1)],
@@ -142,12 +149,13 @@ const refinePlay = async (mirror, setFingerprints, play, params) => {
   const alignedIndexes = [...new Set(best.tempo.segments.flatMap((c) => [...c.indexes]))]
   const positions = alignedIndexes.map((i) => setFingerprints[i].position)
   // The strongest segment's offset gives the anchor (preview 0 s in the set).
-  const { offsetSeconds } = best.tempo.segments[0]
+  const { offsetSeconds, fineOffsetSeconds } = best.tempo.segments[0]
   return {
     ...play,
     previewId: best.previewId,
     tempoFactor: best.tempo.tempoFactor,
     anchorSeconds: -offsetSeconds / best.tempo.tempoFactor,
+    fineAnchorSeconds: -fineOffsetSeconds / best.tempo.tempoFactor,
     windowScore: play.score,
     score: best.tempo.score,
     segments: best.tempo.segments.length,
