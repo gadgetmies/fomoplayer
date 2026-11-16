@@ -14,6 +14,7 @@ const {
   countStoredPreviewAudio,
   recordStoredPreviewAudio,
   recordPreviewAudioFailure,
+  recordPreviewAudioTooLarge,
   releaseAnalysedPreviewAudio,
 } = require('../routes/admin/preview-audio')
 const config = require('../config')
@@ -44,13 +45,26 @@ const MAX_RUN_MS = numberFromEnv('PREVIEW_AUDIO_PREFETCH_MAX_RUN_MS', 8 * 60 * 1
 const MAX_STORED = numberFromEnv('PREVIEW_AUDIO_PREFETCH_MAX_STORED', 1000)
 const BATCH_SIZE = 500
 const DOWNLOAD_TIMEOUT_MS = 60 * 1000
-// Larger than any preview or full track; guards memory against a response that is not a track.
-const MAX_AUDIO_BYTES = 100 * 1024 * 1024
+// The storage client uploads a file larger than its part size (64 MiB) as a multipart upload, whose completion it
+// cannot parse from the Railway bucket, so files are kept below it.
+const MULTIPART_THRESHOLD_BYTES = 64 * 1024 * 1024
+// 30 MB is about 32 minutes at 128 kbps, Bandcamp's stream quality: longer than tracks, shorter than most DJ mixes.
+// Longer recordings are left out of prefetching (they still play).
+const MAX_AUDIO_BYTES = Math.min(
+  numberFromEnv('PREVIEW_AUDIO_MAX_BYTES', 30 * 1024 * 1024),
+  MULTIPART_THRESHOLD_BYTES - 1,
+)
 const PAUSE_MS = 10 * 60 * 1000
 const MAX_PAUSE_MS = 60 * 60 * 1000
 
 class RateLimited extends Error {}
 class Gone extends Error {}
+class TooLarge extends Error {
+  constructor(bytes) {
+    super(`Audio too large to prefetch (${bytes} bytes)`)
+    this.bytes = bytes
+  }
+}
 class StreamRefused extends Error {}
 
 // Per-store pause after a rate limit. Kept across runs: the scheduler starts a new run every 10 minutes.
@@ -84,7 +98,7 @@ const createThrottle = (intervalMs, { now, sleep }) => {
 
 // Downloads the audio at url and stores it in the bucket, returning its object key and size. request is fetch, or
 // the Bandcamp client's throttled fetchStream.
-const storeAudio = async ({ url, store, client, bucketName, request }) => {
+const storeAudio = async ({ url, store, client, bucketName, request, maxBytes }) => {
   const res = await request(url, {
     headers: { 'User-Agent': bandcampApi.static.userAgent },
     signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
@@ -103,10 +117,14 @@ const storeAudio = async ({ url, store, client, bucketName, request }) => {
   // parse server response"), so nothing was stored. A preview is a few megabytes at most (a full Bandcamp track), and
   // each store downloads one at a time.
   const length = Number(res.headers.get('content-length'))
-  if (length > MAX_AUDIO_BYTES) throw new Error(`Audio too large (${length} bytes)`)
+  if (length > maxBytes) {
+    // Leave the body unread: the announced size is enough.
+    await res.body.cancel().catch(() => {})
+    throw new TooLarge(length)
+  }
   const audio = Buffer.from(await res.arrayBuffer())
   if (audio.length === 0) throw new Error('Empty response')
-  if (audio.length > MAX_AUDIO_BYTES) throw new Error(`Audio too large (${audio.length} bytes)`)
+  if (audio.length > maxBytes) throw new TooLarge(audio.length)
 
   const objectKey = `${OBJECT_KEY_PREFIX}${crypto.randomUUID()}.mp3`
   await client.putObject(bucketName, objectKey, audio, audio.length, { 'Content-Type': 'audio/mpeg' })
@@ -133,6 +151,7 @@ module.exports.prefetchPreviewAudio = async (
     maxRunMs = MAX_RUN_MS,
     maxStored = MAX_STORED,
     batchSize = BATCH_SIZE,
+    maxBytes = MAX_AUDIO_BYTES,
     isPreviewEnv = config.isPreviewEnv,
   } = {},
 ) => {
@@ -142,7 +161,16 @@ module.exports.prefetchPreviewAudio = async (
 
   const started = now()
   const deadline = started + maxRunMs
-  const result = { released: 0, stored: 0, missing: 0, failed: 0, lookups: 0, rateLimited: [], capReached: false }
+  const result = {
+    released: 0,
+    stored: 0,
+    missing: 0,
+    failed: 0,
+    tooLarge: 0,
+    lookups: 0,
+    rateLimited: [],
+    capReached: false,
+  }
 
   result.released = await releaseAnalysedPreviewAudio({ client, bucketName })
 
@@ -152,12 +180,18 @@ module.exports.prefetchPreviewAudio = async (
     return { success: true, result: { ...result, capReached: true } }
   }
 
-  const previews = await queryPreviewsToPrefetch(Math.min(batchSize, room))
+  const previews = await queryPreviewsToPrefetch(Math.min(batchSize, room), maxBytes)
 
   const markMissing = async (preview, reason) => {
     logger.info('Marking preview missing', { previewId: preview.preview_id, reason })
     await markPreviewsMissing([preview.preview_id])
     result.missing++
+  }
+
+  const recordTooLarge = async (preview, error) => {
+    logger.info('Preview audio is too large to prefetch', { previewId: preview.preview_id, bytes: error.bytes })
+    await recordPreviewAudioTooLarge(preview.preview_id, error.bytes)
+    result.tooLarge++
   }
 
   const recordFailure = async (preview, error) => {
@@ -186,7 +220,14 @@ module.exports.prefetchPreviewAudio = async (
   }
 
   const download = async (preview, url, request) => {
-    const { objectKey, fileSize } = await storeAudio({ url, store: preview.store_name, client, bucketName, request })
+    const { objectKey, fileSize } = await storeAudio({
+      url,
+      store: preview.store_name,
+      client,
+      bucketName,
+      request,
+      maxBytes,
+    })
     await recordStoredPreviewAudio(preview.preview_id, objectKey, fileSize)
     storePauses.reset(preview.store_name)
     room--
@@ -206,6 +247,7 @@ module.exports.prefetchPreviewAudio = async (
       } catch (error) {
         if (error instanceof RateLimited) return stopForRateLimit('Beatport', error)
         if (error instanceof Gone) await markMissing(preview, error.message)
+        else if (error instanceof TooLarge) await recordTooLarge(preview, error)
         else await recordFailure(preview, error)
       }
     }
@@ -280,7 +322,8 @@ module.exports.prefetchPreviewAudio = async (
           }
         } catch (error) {
           if (error instanceof RateLimited || error.isRateLimit) return stopForRateLimit('Bandcamp', error)
-          await recordFailure(preview, error)
+          if (error instanceof TooLarge) await recordTooLarge(preview, error)
+          else await recordFailure(preview, error)
         }
       }
     }

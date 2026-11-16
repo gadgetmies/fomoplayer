@@ -244,7 +244,16 @@ test({
       assert.strictEqual(result.success, true)
       assert.deepStrictEqual(
         { ...result.result, rateLimited: undefined },
-        { released: 0, stored: 3, missing: 2, failed: 1, lookups: 2, rateLimited: undefined, capReached: false },
+        {
+          released: 0,
+          stored: 3,
+          missing: 2,
+          failed: 1,
+          tooLarge: 0,
+          lookups: 2,
+          rateLimited: undefined,
+          capReached: false,
+        },
       )
     },
 
@@ -480,6 +489,64 @@ test({
     await run({ client, fetch, getRelease: fakeBandcamp({}).getRelease })
     assert.strictEqual((await audioRow(preview.id)).attempts, 1)
     assert.deepStrictEqual(client.objects, {})
+  },
+
+  'a track larger than the limit is skipped, not failed, until the limit allows it': async () => {
+    await clearPreviews()
+    const url = 'https://bp.example/long-mix.mp3'
+    const preview = await insertPreview({ store: 'Beatport', url })
+    const client = fakeClient()
+    const getRelease = fakeBandcamp({}).getRelease
+
+    const first = await run({ client, fetch: fakeFetch({ [url]: 200 }).fetch, getRelease, maxBytes: 5 })
+    assert.strictEqual(first.result.tooLarge, 1)
+    assert.strictEqual(first.result.failed, 0)
+    assert.deepStrictEqual(client.objects, {})
+    const row = await audioRow(preview.id)
+    assert.deepStrictEqual(
+      { key: row.key, size: Number(row.size), attempts: row.attempts },
+      {
+        key: null,
+        size: `audio of ${url}`.length,
+        attempts: 0,
+      },
+    )
+    assert.strictEqual(await isMissing(preview.id), false, 'a long track still plays')
+
+    await pg.queryAsync(
+      sql`UPDATE store__track_preview_audio
+          SET store__track_preview_audio_last_attempt_at = NOW() - INTERVAL '2 hours'
+          WHERE store__track_preview_id = ${preview.id}`,
+    )
+    const skipped = fakeFetch({ [url]: 200 })
+    await run({ client, fetch: skipped.fetch, getRelease, maxBytes: 5 })
+    assert.deepStrictEqual(skipped.requests, [], 'it is not downloaded again under the same limit')
+
+    const raised = await run({ client, fetch: fakeFetch({ [url]: 200 }).fetch, getRelease, maxBytes: 1000 })
+    assert.strictEqual(raised.result.stored, 1, 'a higher limit lets it be stored')
+  },
+
+  'a track announced as too large is not read': async () => {
+    await clearPreviews()
+    const preview = await insertPreview({ store: 'Beatport', url: 'https://bp.example/announced.mp3' })
+    let read = false
+    // highWaterMark 0: the stream pulls only when the body is read, not ahead of time.
+    const body = new ReadableStream(
+      {
+        pull(controller) {
+          read = true
+          controller.enqueue(new Uint8Array(10))
+          controller.close()
+        },
+      },
+      { highWaterMark: 0 },
+    )
+    const fetch = async () =>
+      new Response(body, { status: 200, headers: { 'content-type': 'audio/mpeg', 'content-length': '999999' } })
+    const result = await run({ client: fakeClient(), fetch, getRelease: fakeBandcamp({}).getRelease, maxBytes: 1000 })
+    assert.strictEqual(result.result.tooLarge, 1)
+    assert.strictEqual(read, false)
+    assert.strictEqual(Number((await audioRow(preview.id)).size), 999999)
   },
 
   'the third failed download marks the preview missing': async () => {
