@@ -75,7 +75,8 @@ fingerprint, its embedding for the production model and (for Bandcamp)
 its waveform, or is marked missing, the backend deletes its file.
 
 An empty queue now means "nothing prefetched is waiting", not that every
-preview is analysed. Pass `--direct-download` to `waveform.py`,
+preview is analysed, so `analyse_all.sh` keeps its workers waiting for
+the next prefetch run instead of stopping (see `--idle-wait`). Pass `--direct-download` to `waveform.py`,
 `main.py`, `panako_processor.py` or `analyse_all.sh` to download from the
 stores as before, e.g. against a local backend without the job. Against
 a backend without the job the workers fall back to downloading from the
@@ -116,6 +117,7 @@ the existing Python entry points until the backend queue is empty.
 | `--layout L`            | `windows` (default) — one tmux window per worker. `panes` — all workers as tiled panes in a single `workers` window with per-pane title bars. |
 | `--no-waveform`         | Skip the `waveform-previews` worker (useful when the `WAVEFORM_STORAGE_*` object storage env vars are not configured; the bucket must be the backend's `AUDIO_SAMPLE_STORAGE_BUCKET_NAME`, set `WAVEFORM_STORAGE_REGION=auto` for a Railway bucket). |
 | `--direct-download`     | Pass `--direct-download` to the preview workers: download from the stores instead of only taking previews whose audio the backend's `prefetchPreviewAudio` job stored in the bucket. |
+| `--idle-wait SECONDS`   | When a worker finds its queue empty, wait this long and ask again instead of stopping (the backend adds prefetched audio every 10 minutes). Default `120`; `0` stops each loop once its queue is drained, the default with `--direct-download`. |
 | `--skip-sanity-confirmation` | Pass `--skip-sanity-confirmation` through to `main.py` — embedding-collision warnings are logged but no longer block on a y/N prompt. Recommended for unattended drains. |
 | `--score-after N`       | Pass `--score-after N` through to `panako_processor.py --previews`. After every N successfully fingerprinted previews in one invocation, the worker pauses and re-scores all samples that have fingerprints, persisting results into `user_notification_audio_sample_match`. Only effective when `--batch-size >= N` (counter is per-invocation). |
 | `--no-attach`           | Don't `tmux attach` at the end; print the attach command instead.                     |
@@ -127,9 +129,12 @@ the existing Python entry points until the backend queue is empty.
 - `waveform-previews` — `waveform.py`
 - `fingerprint-samples` — `panako_processor.py --audio-samples`
 
-Each window's loop re-invokes its worker while it exits `0`, sleeps 5 s
-and retries on any other non-zero status, and breaks cleanly when the
-worker exits `2` (queue drained). Windows are created with
+Each window's loop re-invokes its worker while it exits `0` and sleeps 5 s
+and retries on any other non-zero status. When the worker exits `2`
+(queue empty) the loop waits `--idle-wait` seconds (default 120) and asks
+again, because the backend refills the queues with prefetched audio every
+10 minutes; with `--idle-wait 0` (the default with `--direct-download`)
+it breaks cleanly instead. Windows are created with
 `remain-on-exit on`, so the pane stays visible with its final
 scrollback after the loop ends — operators can review what the worker
 last printed before closing the session.
@@ -140,8 +145,9 @@ last printed before closing the session.
 `2` when their "next batch" backend endpoint returns an empty list, and
 status `0` after processing a non-empty batch. Other non-zero statuses
 mean unrecoverable error. `analyse_all.sh`'s per-window loop uses this
-to distinguish "drained" from "error" — log-line parsing is no longer
-needed.
+to distinguish "empty" from "error" — log-line parsing is no longer
+needed. With prefetched audio an empty queue is usually temporary, so the
+loop waits and asks again (`--idle-wait`) rather than stopping.
 
 ### Preconditions
 

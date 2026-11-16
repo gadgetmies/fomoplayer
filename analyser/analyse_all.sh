@@ -11,6 +11,7 @@ PURCHASED=0
 NO_ATTACH=0
 NO_WAVEFORM=0
 DIRECT_DOWNLOAD=0
+IDLE_WAIT=""
 SKIP_SANITY=0
 SCORE_AFTER=""
 FINGERPRINT_WORKERS=""
@@ -26,6 +27,7 @@ Usage: $(basename "$0") [--previews] [--audio-samples]
                        [--layout windows|panes]
                        [--no-waveform]
                        [--direct-download]
+                       [--idle-wait SECONDS]
                        [--skip-sanity-confirmation]
                        [--score-after N]
                        [--fingerprint-workers N]
@@ -48,6 +50,11 @@ At least one of --previews or --audio-samples is required.
                     previews from the stores instead of only taking the ones
                     the backend's prefetchPreviewAudio job stored in the bucket.
                     For a backend without that job (e.g. local development).
+  --idle-wait SECONDS
+                    When a worker finds its queue empty, wait this long and ask
+                    again instead of stopping. The backend adds prefetched audio
+                    every 10 minutes, so an empty queue is usually temporary.
+                    Default: 120, or 0 (stop when drained) with --direct-download.
   --skip-sanity-confirmation
                     Pass --skip-sanity-confirmation through to main.py so
                     embedding-collision warnings don't block on a y/N prompt.
@@ -76,6 +83,7 @@ while [[ $# -gt 0 ]]; do
     --layout)         LAYOUT="$2"; shift 2 ;;
     --no-waveform)    NO_WAVEFORM=1; shift ;;
     --direct-download) DIRECT_DOWNLOAD=1; shift ;;
+    --idle-wait)      IDLE_WAIT="$2"; shift 2 ;;
     --skip-sanity-confirmation) SKIP_SANITY=1; shift ;;
     --score-after)    SCORE_AFTER="$2"; shift 2 ;;
     --fingerprint-workers) FINGERPRINT_WORKERS="$2"; shift 2 ;;
@@ -126,8 +134,25 @@ fi
 # Build the per-window inner loop.
 # `source venv/bin/activate` runs first, then the python worker is re-invoked
 # until it signals empty queue (rc=2). Other non-zero rc triggers a 5s backoff.
+if [[ -z "$IDLE_WAIT" ]]; then
+  if [[ $DIRECT_DOWNLOAD -eq 1 ]]; then IDLE_WAIT=0; else IDLE_WAIT=120; fi
+fi
+if ! [[ "$IDLE_WAIT" =~ ^[0-9]+$ ]]; then
+  echo "Error: --idle-wait must be a whole number of seconds, got '$IDLE_WAIT'" >&2
+  exit 1
+fi
+
+# An empty queue (rc=2) either stops the loop (IDLE_WAIT=0) or waits IDLE_WAIT
+# seconds and asks again: with prefetched audio the backend refills the queues
+# every 10 minutes, so a worker that stopped would miss the new files.
 make_loop() {
   local worker_cmd="$1"
+  local on_empty
+  if [[ "$IDLE_WAIT" -gt 0 ]]; then
+    on_empty="echo \"[analyse_all] queue empty (rc=2), checking again in ${IDLE_WAIT}s...\"; sleep $IDLE_WAIT"
+  else
+    on_empty='echo "[analyse_all] queue drained (rc=2), stopping loop"; break'
+  fi
   cat <<EOF
 cd '$SCRIPT_DIR'
 source venv/bin/activate
@@ -136,7 +161,7 @@ while :; do
   rc=\$?
   case \$rc in
     0) ;;
-    2) echo "[analyse_all] queue drained (rc=2), stopping loop"; break ;;
+    2) $on_empty ;;
     *) echo "[analyse_all] worker exited rc=\$rc, retrying in 5s..."; sleep 5 ;;
   esac
 done
