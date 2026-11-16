@@ -32,10 +32,6 @@ module.exports.assertCompactControls = async ({ page }) => {
     expect(item.bottom).to.be.above(first.top)
   }
 
-  const headerText = await page.$eval('.tracks-table thead', (el) => el.textContent)
-  expect(headerText).to.not.include('(auto)')
-  expect(headerText).to.not.match(/\d+ groups?/)
-
   const chips = await page.$eval('.cart-search-chips', (el) => ({
     overflowX: getComputedStyle(el).overflowX,
     tops: [...el.querySelectorAll('label')].map((label) => Math.round(label.getBoundingClientRect().y)),

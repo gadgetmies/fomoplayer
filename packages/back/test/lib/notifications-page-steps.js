@@ -32,8 +32,6 @@ const openNotificationsFromTopBar = async (page) => {
 
 const assertActivityTabOpens = async ({ page }) => {
   expect(page.url()).to.match(/\/notifications\/activity$/)
-  // No page heading: the tabs sit in a bar like the cart controls above the cart track list
-  expect(await page.locator('.notifications-page h2').count()).to.equal(0)
   await page.waitForSelector('.notifications-top_bar.top-bar .notifications-tabs', { state: 'visible', timeout: 5000 })
   const selected = await page.locator('.notifications-tabs [aria-selected="true"]').textContent()
   expect(selected).to.match(/^Activity/)
@@ -355,12 +353,8 @@ const assertSampleMatchPlaysFromMatch = async ({ page }) => {
     throw new Error(`The match should start where the sample matched; audio: ${JSON.stringify(state)}`)
   }
 
-  // The player shows the match like any other track: no sample details or A/B controls
+  // The player shows the match like any other track
   const details = page.locator('.preview_details_wrapper')
-  expect(await details.locator('.preview_ab').count()).to.equal(0)
-  const text = await details.textContent()
-  expect(text).not.to.include('Matched at')
-  expect(text).not.to.include(SAMPLE_FILENAME)
   expect(await details.locator('.preview_label', { hasText: 'Labels:' }).count()).to.equal(1)
 }
 

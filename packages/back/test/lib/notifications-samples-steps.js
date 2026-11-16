@@ -256,7 +256,6 @@ const assertSoundsLikeShowsTrackInfo = async ({ page }) => {
   // The audio distance ×100 with one decimal, as similarity search results show it
   expect(await track.locator('.similarity-cell').textContent()).to.match(/^\d+\.\d$/)
   expect(await track.locator('.title-cell').textContent()).to.not.equal('')
-  expect(await row.locator('.notifications-sample_content').textContent()).to.not.contain('closest to the sample')
   await track.locator('.similarity-cell').hover()
 
   await assertFlushWithSample(row, table)

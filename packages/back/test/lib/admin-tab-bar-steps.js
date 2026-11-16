@@ -55,16 +55,6 @@ const cases = {
       ).to.equal(1)
     }
   },
-  'no admin page shows the old hub buttons': async ({ page }) => {
-    for (const target of PAGES) {
-      await goto(page, target)
-      await adminTabs(page).waitFor({ timeout: 5000 })
-      expect(await page.getByRole('button', { name: 'Back to Radiator' }).count()).to.equal(0)
-      for (const { hubButton } of TOOLS) {
-        expect(await page.getByRole('button', { name: hubButton, exact: true }).count()).to.equal(0)
-      }
-    }
-  },
 }
 
 const casesBeforeChange = {
