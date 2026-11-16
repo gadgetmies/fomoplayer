@@ -55,6 +55,65 @@
   scroll-snap-align: start;
 }
 
+/* Wrapper holding the carousel row and, for mouse users, its arrow buttons. */
+.follow-carousel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0.5em 0;
+}
+
+.follow-carousel > .follow-list.follow-list--carousel {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  --follow-carousel-fade: 32px;
+}
+
+/* Fade the edge that has more cards behind it, so the row reads as
+   scrollable even when no card is cut in half at the edge. */
+.follow-carousel[data-can-scroll-right='true'] > .follow-list--carousel {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--follow-carousel-fade)), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--follow-carousel-fade)), transparent);
+}
+
+.follow-carousel[data-can-scroll-left='true'] > .follow-list--carousel {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - var(--follow-carousel-fade)), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - var(--follow-carousel-fade)), transparent);
+}
+
+.follow-carousel[data-can-scroll-left='true'][data-can-scroll-right='true'] > .follow-list--carousel {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--follow-carousel-fade),
+    #000 calc(100% - var(--follow-carousel-fade)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--follow-carousel-fade),
+    #000 calc(100% - var(--follow-carousel-fade)),
+    transparent
+  );
+}
+
+/* Arrow buttons are for mouse users only: touch devices swipe. */
+.follow-carousel-arrow {
+  display: none;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 64px;
+  padding: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .follow-carousel-arrow {
+    display: block;
+  }
+}
+
 .follow-filter {
   max-width: 20em;
 }
