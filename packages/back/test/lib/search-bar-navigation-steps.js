@@ -1,0 +1,119 @@
+const { expect } = require('chai')
+const { dismissOnboarding, waitForWithTimeoutMessage } = require('./setup')
+
+// Shared steps for the search-bar-navigation demo: the top bar search keeps its magnifying glass (centred) without
+// focus; Settings keeps an active search with a way back to its results; going back to a search shows its terms at
+// once, before the results arrive; and another track list (Discover) empties the bar. The label comes from the
+// Concussion fixture the one-player seed adds.
+
+const LABEL = 'Vision Recordings'
+const TEXT = 'concussion'
+const BAR = '.menu_search'
+const SEARCH_REQUEST = '**/api/tracks?**'
+
+const pillNames = (page) => page.locator(`${BAR} .search_pill .search_pill_name`).allTextContents()
+
+const iconPosition = (page) =>
+  page.evaluate((bar) => {
+    const icon = document.querySelector(`${bar} .search-input-icon svg`)
+    const box = document.querySelector(`${bar} .search_bar`).getBoundingClientRect()
+    if (!icon || !icon.getBoundingClientRect().height) return null
+    const r = icon.getBoundingClientRect()
+    return { iconCentre: r.top + r.height / 2, barCentre: box.top + box.height / 2 }
+  }, BAR)
+
+const expectIconCentred = async (page, when) => {
+  const position = await iconPosition(page)
+  expect(position, `The search icon should show ${when}.`).to.not.equal(null)
+  expect(Math.abs(position.iconCentre - position.barCentre), `The search icon should be centred ${when}.`).to.be.below(
+    1.5,
+  )
+}
+
+const openDiscover = async (page) => {
+  await page.goto('/tracks/new')
+  await page.waitForSelector(`${BAR} input`, { state: 'visible', timeout: 20000 })
+  await dismissOnboarding(page)
+}
+
+const assertSearchIconShownAndCentred = async ({ page }) => {
+  await page.locator('body').click({ position: { x: 5, y: 300 } })
+  await expectIconCentred(page, 'without focus')
+  await page.locator(`${BAR} input`).click()
+  await expectIconCentred(page, 'with focus')
+}
+
+// The label picked from the lookup and a text term, searched with Enter
+const searchLabelAndText = async (page) => {
+  const input = page.locator(`${BAR} input`)
+  await input.click()
+  await input.pressSequentially(`label:${LABEL}`, { delay: 40 })
+  const suggestion = page.locator(`${BAR} .search_genre_option`, { hasText: LABEL }).first()
+  await waitForWithTimeoutMessage(
+    () => suggestion.waitFor({ state: 'visible', timeout: 10000 }),
+    `Typing label:${LABEL} should suggest it.`,
+  )
+  await suggestion.click()
+  await input.pressSequentially(`${TEXT} `, { delay: 40 })
+  await input.press('Enter')
+  await page.waitForURL(/\/search\?/, { timeout: 10000 })
+  expect(await pillNames(page)).to.deep.equal([LABEL, TEXT])
+  await expectIconCentred(page, 'with a search active')
+}
+
+const assertSettingsKeepsSearchWithWayBack = async ({ page }) => {
+  await searchLabelAndText(page)
+  await page.locator('a[href="/settings/following"]').first().click()
+  await page.waitForURL(/\/settings/, { timeout: 10000 })
+  await page.locator('.settings-container').first().waitFor({ state: 'visible', timeout: 10000 })
+  expect(await pillNames(page)).to.deep.equal([LABEL, TEXT])
+  const showResults = page.locator('.show_search_results_button')
+  await waitForWithTimeoutMessage(
+    () => showResults.waitFor({ state: 'visible', timeout: 5000 }),
+    'Settings should offer a way back to the search results.',
+  )
+  await showResults.click()
+  await page.waitForURL(/\/search\?/, { timeout: 10000 })
+  expect(await pillNames(page)).to.deep.equal([LABEL, TEXT])
+  // Settings closes as the results open
+  await waitForWithTimeoutMessage(
+    () => page.locator('.settings-container').first().waitFor({ state: 'hidden', timeout: 5000 }),
+    'Settings should close when the results open.',
+  )
+}
+
+// Back from Settings to the search: the terms show before the (slowed down) search answers
+const assertBackShowsSearchAtOnce = async ({ page }) => {
+  await page.locator('a[href="/settings/following"]').first().click()
+  await page.waitForURL(/\/settings/, { timeout: 10000 })
+  await page.route(SEARCH_REQUEST, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 4000))
+    await route.continue().catch(() => {})
+  })
+  try {
+    await page.goBack()
+    await page.waitForURL(/\/search\?/, { timeout: 10000 })
+    await page.waitForTimeout(300)
+    expect(await pillNames(page)).to.deep.equal([LABEL, TEXT])
+    expect(await page.locator('.show_search_results_button').count()).to.equal(0)
+  } finally {
+    await page.unroute(SEARCH_REQUEST)
+  }
+}
+
+// Another track list replaces the search: the bar is emptied, entity and text terms alike
+const assertOtherListClearsSearch = async ({ page }) => {
+  await page.locator('a[href="/tracks/new"]').first().click()
+  await page.waitForURL(/\/tracks\/new/, { timeout: 10000 })
+  await page.waitForFunction((bar) => !document.querySelector(`${bar} .search_pill`), BAR, { timeout: 5000 })
+  expect(await page.locator(`${BAR} input`).inputValue()).to.equal('')
+  expect(await page.locator('.show_search_results_button').count()).to.equal(0)
+}
+
+module.exports = {
+  openDiscover,
+  assertSearchIconShownAndCentred,
+  assertSettingsKeepsSearchWithWayBack,
+  assertBackShowsSearchAtOnce,
+  assertOtherListClearsSearch,
+}
