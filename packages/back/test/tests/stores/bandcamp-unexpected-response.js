@@ -70,4 +70,35 @@ test({
       await assert.rejects(bandcampApi.getSearchResultsAsync('noisia'), (e) => e.isSuspended === true)
       assert.strictEqual(requestCount(), 1)
     }),
+
+  'a pause started by a challenge page is not called a rate limit': () =>
+    withPage(CHALLENGE_PAGE, async () => {
+      await assert.rejects(bandcampApi.getArtistAsync('https://noisia.bandcamp.com'), (e) => {
+        assert.match(e.message, /^Bandcamp served a client challenge page; requests paused until /)
+        return true
+      })
+      await assert.rejects(bandcampApi.getArtistAsync('https://noisia.bandcamp.com'), (e) => {
+        assert.match(e.message, /^Bandcamp requests are paused until \S+ \(Bandcamp served a client challenge page\)$/)
+        return true
+      })
+    }),
+
+  'a pause started by a 429 is called a rate limit': async () => {
+    const original = global.fetch
+    global.fetch = async () => new Response('Too Many Requests', { status: 429 })
+    resetRateLimit()
+    try {
+      await assert.rejects(bandcampApi.getArtistAsync('https://noisia.bandcamp.com'), (e) => {
+        assert.match(e.message, /^Bandcamp rate limited \(HTTP 429\); requests paused until /)
+        return true
+      })
+      await assert.rejects(bandcampApi.getArtistAsync('https://noisia.bandcamp.com'), (e) => {
+        assert.match(e.message, /\(Bandcamp rate limited \(HTTP 429\)\)$/)
+        return true
+      })
+    } finally {
+      global.fetch = original
+      resetRateLimit()
+    }
+  },
 })

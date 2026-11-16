@@ -7,6 +7,8 @@ const { JSDOM } = jsdom
 const vm = require('vm')
 
 let suspendedUntil = null
+// What started the current pause, worded for the errors requests fail with while it lasts
+let suspensionCause = null
 let requestCount = 0
 // Rate limits hit in a row without a successful request in between; each
 // one doubles the pause so a lasting block is probed less and less often.
@@ -171,16 +173,24 @@ const warnOnNameSubdomainMismatch = (url, pageType, pageName) => {
 // pauses all Bandcamp requests and is logged once, here, when the pause
 // starts. Requests made while paused fail fast with a quiet error so callers
 // can stop without logging the same condition again.
+// Only a 429 or 403 is called a rate limit; a challenge page or a refused stream is named as what it was.
+const describeSuspension = (reason) => {
+  if (/^HTTP (429|403)$/.test(reason)) return `Bandcamp rate limited (${reason})`
+  if (reason === 'client challenge page') return 'Bandcamp served a client challenge page'
+  return `Bandcamp refused a request (${reason})`
+}
+
 const startSuspension = (url, reason) => {
   consecutiveRateLimits++
   const pauseMs = suspensionMs(consecutiveRateLimits)
   suspendedUntil = new Date(Date.now() + pauseMs)
+  suspensionCause = describeSuspension(reason)
   logger.warn(
-    `Bandcamp rate limited (${reason}) after ${requestCount} requests, at ${url}. ` +
+    `${suspensionCause} after ${requestCount} requests, at ${url}. ` +
       `Pausing Bandcamp requests for ${Math.round(pauseMs / 60000)} min until ${suspendedUntil.toISOString()}` +
-      (consecutiveRateLimits > 1 ? ` (${consecutiveRateLimits} rate limits in a row)` : ''),
+      (consecutiveRateLimits > 1 ? ` (${consecutiveRateLimits} pauses in a row)` : ''),
   )
-  const error = new Error(`Bandcamp rate limited (${reason}); requests paused until ${suspendedUntil.toISOString()}`)
+  const error = new Error(`${suspensionCause}; requests paused until ${suspendedUntil.toISOString()}`)
   error.isRateLimit = true
   error.requestCount = requestCount
   error.retryAfter = suspendedUntil
@@ -191,10 +201,11 @@ const throwIfSuspended = () => {
   if (!suspendedUntil) return
   if (suspendedUntil < Date.now()) {
     suspendedUntil = null
+    suspensionCause = null
     requestCount = 0
     return
   }
-  const error = new Error(`Bandcamp requests are paused until ${suspendedUntil.toISOString()}`)
+  const error = new Error(`Bandcamp requests are paused until ${suspendedUntil.toISOString()} (${suspensionCause})`)
   error.isRateLimit = true
   error.isSuspended = true
   error.retryAfter = suspendedUntil
@@ -622,6 +633,7 @@ const getRequestCount = () => requestCount
 // Test support: clear a suspension left behind by an earlier request.
 const resetRateLimit = () => {
   suspendedUntil = null
+  suspensionCause = null
   requestCount = 0
   consecutiveRateLimits = 0
 }
