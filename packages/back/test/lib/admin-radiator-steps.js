@@ -25,7 +25,9 @@ const assertRadiatorShowsSeededData = async ({ page }) => {
     () =>
       page.waitForFunction(
         (name) =>
-          Array.from(document.querySelectorAll('#admin-radiator-load option')).some((o) => o.textContent.trim() === name),
+          Array.from(document.querySelectorAll('#admin-radiator-load option')).some(
+            (o) => o.textContent.trim() === name,
+          ),
         PRESET_NAME,
         { timeout: 15000 },
       ),
@@ -48,6 +50,27 @@ const assertRadiatorShowsSeededData = async ({ page }) => {
       .click({ timeout: 5000 })
       .catch(() => {})
   }
+
+  // The Data section summarises each radiator query instead of printing a week of results into a text box, which froze
+  // the view once the runs held many rows.
+  await page
+    .locator('.admin-section-toggle', { hasText: /^Data$/ })
+    .first()
+    .click({ timeout: 5000 })
+  const addedRow = page.locator('.admin-radiator-data-table tr', { hasText: ADDED_TRACKS_JOB })
+  await waitForWithTimeoutMessage(
+    () => addedRow.first().waitFor({ timeout: 15000 }),
+    `Summarise the ${ADDED_TRACKS_JOB} runs in the Data section's table.`,
+  )
+  expect(await addedRow.first().textContent(), 'the latest run is shown as successful').to.contain('Success')
+  expect(
+    await page.locator('.admin-radiator-data button', { hasText: 'Download JSON' }).isEnabled(),
+    'the full data can be downloaded',
+  ).to.equal(true)
+  await addedRow
+    .first()
+    .scrollIntoViewIfNeeded({ timeout: 5000 })
+    .catch(() => {})
 
   // Hard assertion against the same endpoint the view reads. Use a browser-side
   // fetch (not page.request) so it goes through the browser network with the
