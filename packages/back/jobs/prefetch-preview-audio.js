@@ -142,7 +142,8 @@ const describeFailure = (error) => {
   } catch {
     host = null
   }
-  const cause = error.cause?.code || error.cause?.name || error.cause?.message || null
+  // The code when there is one (ENOTFOUND, ECONNRESET), otherwise the message: a bare Error's name says nothing.
+  const cause = error.cause?.code || error.cause?.message || error.cause?.name || null
   const connectionFailure =
     (error.name === 'TypeError' && error.message === 'fetch failed') ||
     ['TimeoutError', 'AbortError'].includes(error.name)

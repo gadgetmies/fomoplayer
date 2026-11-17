@@ -590,6 +590,20 @@ test({
     assert.deepStrictEqual(row, { attempts: 2, error: 'fetch failed (ENOTFOUND from gone.example)' })
   },
 
+  'a connection failure without an error code is logged with its message': async () => {
+    await clearPreviews()
+    const preview = await insertPreview({ store: 'Beatport', url: 'https://odd.example/redirects.mp3' })
+    const fetch = async () => {
+      throw Object.assign(new TypeError('fetch failed'), { cause: new Error('redirect count exceeded') })
+    }
+    await run({ client: fakeClient(), fetch, getRelease: fakeBandcamp({}).getRelease })
+    const [row] = await pg.queryRowsAsync(
+      sql`SELECT store__track_preview_audio_last_error AS error
+          FROM store__track_preview_audio WHERE store__track_preview_id = ${preview.id}`,
+    )
+    assert.strictEqual(row.error, 'fetch failed (redirect count exceeded from odd.example)')
+  },
+
   'a download that times out does not count towards missing': async () => {
     await clearPreviews()
     const preview = await insertPreview({ store: 'Beatport', url: 'https://slow.example/timeout.mp3' })
