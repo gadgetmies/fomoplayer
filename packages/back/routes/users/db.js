@@ -3,6 +3,7 @@ const R = require('ramda')
 const pg = require('fomoplayer_shared').db.pg
 const logger = require('fomoplayer_shared').logger(__filename)
 const BPromise = require('bluebird')
+const { queryEntityTermNames, subscriptionDisplayName } = require('../shared/subscription-names')
 
 module.exports.addPurchasedTracksToUsers = async (userIds, items) => {
   if (!items || items.length === 0) return
@@ -1389,47 +1390,28 @@ FROM `
   )
 }
 
-module.exports.queryNotifications = async (userId, stores) =>
-  pg.queryRowsAsync(
+module.exports.queryNotifications = async (userId, stores) => {
+  const notifications = await pg.queryRowsAsync(
     // language=PostgreSQL
     sql`--queryNotifications
-WITH notification_data AS (
-  SELECT 
-    user_search_notification_id AS id, 
-    user_search_notification_string AS text, 
-    store_name AS "storeName",
-    store_purchase_available AS "purchaseAvailable",
-    CASE 
-      WHEN user_search_notification_string ~ '^artist:(\\d+)$' 
-      THEN (regexp_match(user_search_notification_string, '^artist:(\\d+)$'))[1]::INTEGER 
-      ELSE NULL 
-    END AS artist_id,
-    CASE 
-      WHEN user_search_notification_string ~ '^label:(\\d+)$' 
-      THEN (regexp_match(user_search_notification_string, '^label:(\\d+)$'))[1]::INTEGER 
-      ELSE NULL 
-    END AS label_id
-  FROM user_search_notification 
-  NATURAL JOIN user_search_notification__store 
-  NATURAL JOIN store
-  WHERE meta_account_user_id = ${userId} AND
-        (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
-)
-SELECT 
-  id,
-  text,
-  "storeName",
-  "purchaseAvailable",
-  CASE
-    WHEN notification_data.artist_id IS NOT NULL THEN COALESCE(artist.artist_name, text)
-    WHEN notification_data.label_id IS NOT NULL THEN COALESCE(label.label_name, text)
-    ELSE text
-  END AS "displayName"
-FROM notification_data
-LEFT JOIN artist ON notification_data.artist_id = artist.artist_id
-LEFT JOIN label ON notification_data.label_id = label.label_id
+SELECT user_search_notification_id     AS id,
+       user_search_notification_string AS text,
+       store_name                      AS "storeName",
+       store_purchase_available        AS "purchaseAvailable"
+FROM user_search_notification
+       NATURAL JOIN user_search_notification__store
+       NATURAL JOIN store
+WHERE meta_account_user_id = ${userId}
+  AND (${stores} :: TEXT IS NULL OR LOWER(store_name) = ANY (${stores}))
 `,
   )
+  // Every artist:<id> / label:<id> term is named, also in a search that combines several of them
+  const names = await queryEntityTermNames(notifications.map(({ text }) => text))
+  return notifications.map((notification) => ({
+    ...notification,
+    displayName: subscriptionDisplayName(notification.text, names),
+  }))
+}
 
 module.exports.updateNotifications = async (tx, userId, operations) => {
   for (const { op, text, storeName } of operations) {

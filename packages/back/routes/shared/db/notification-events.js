@@ -1,6 +1,7 @@
 const pg = require('fomoplayer_shared').db.pg
 const sql = require('sql-template-strings')
 const { queryTrackDetails } = require('./cart-similarity')
+const { queryEntityTermNames, subscriptionDisplayName } = require('../subscription-names')
 
 // Tracks in the track-list shape, keyed by track id, for attaching to events and matches.
 const trackDetailsById = async (userId, trackIds) => {
@@ -19,19 +20,10 @@ SELECT e.user_notification_event_id                 AS id
      , e.track_id                                   AS "trackId"
      , e.user_search_notification_id                AS "notificationId"
      , n.user_search_notification_string            AS "searchText"
-     , COALESCE(a.artist_name, l.label_name, n.user_search_notification_string) AS "displayName"
      , e.user_notification_audio_sample_id          AS "sampleId"
      , s.user_notification_audio_sample_filename    AS filename
 FROM user_notification_event e
        LEFT JOIN user_search_notification n USING (user_search_notification_id)
-       LEFT JOIN artist a ON a.artist_id = CASE
-                                              WHEN n.user_search_notification_string ~ '^artist:\\d+$'
-                                                THEN SUBSTRING(n.user_search_notification_string FROM 8)::INT
-                                            END
-       LEFT JOIN label l ON l.label_id = CASE
-                                           WHEN n.user_search_notification_string ~ '^label:\\d+$'
-                                             THEN SUBSTRING(n.user_search_notification_string FROM 7)::INT
-                                         END
        LEFT JOIN user_notification_audio_sample s USING (user_notification_audio_sample_id)
 WHERE e.meta_account_user_id = ${userId}
   AND (${before}::INT IS NULL OR e.user_notification_event_id < ${before}::INT)
@@ -42,13 +34,15 @@ LIMIT ${limit}`,
     userId,
     rows.map(({ trackId }) => trackId),
   )
-  return rows.map(({ id, createdAt, read, trackId, notificationId, searchText, displayName, sampleId, filename }) => ({
+  // Named like the subscriptions: every artist:<id> / label:<id> term, also in a search combining several
+  const names = await queryEntityTermNames(rows.map(({ searchText }) => searchText))
+  return rows.map(({ id, createdAt, read, trackId, notificationId, searchText, sampleId, filename }) => ({
     id,
     createdAt,
     read,
     reason: sampleId
       ? { type: 'sample', sampleId, filename }
-      : { type: 'search', notificationId, text: searchText, displayName },
+      : { type: 'search', notificationId, text: searchText, displayName: subscriptionDisplayName(searchText, names) },
     track: tracks.get(trackId) ?? null,
   }))
 }

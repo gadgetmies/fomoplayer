@@ -3,8 +3,10 @@ const { test } = require('cascade-test')
 const sql = require('sql-template-strings')
 const { initDb, pg } = require('../../lib/db')
 const { queryNotifications } = require('../../../routes/users/db')
+const { subscriptionEmailText } = require('../../../routes/shared/subscription-names')
 
-// Artist and label subscriptions (artist:<id> / label:<id>) are listed by the entity's name.
+// Artist and label subscriptions (artist:<id> / label:<id>) are listed by the entity's name, also when a search combines
+// several of them with text.
 
 test({
   setup: async () => {
@@ -18,7 +20,12 @@ test({
     const [{ label_id: labelId }] = await pg.queryRowsAsync(
       sql`INSERT INTO label (label_name) VALUES ('Display Name Label') RETURNING label_id`,
     )
-    for (const text of [`artist:${artistId}`, `label:${labelId}`, 'plain search']) {
+    for (const text of [
+      `artist:${artistId}`,
+      `label:${labelId}`,
+      'plain search',
+      `artist:${artistId} label:${labelId} "deep cut"`,
+    ]) {
       const [{ id }] = await pg.queryRowsAsync(sql`
         INSERT INTO user_search_notification (meta_account_user_id, user_search_notification_string)
         VALUES (${userId}, ${text}) RETURNING user_search_notification_id AS id
@@ -44,6 +51,18 @@ test({
       [`artist:${artistId}`]: 'Display Name Artist',
       [`label:${labelId}`]: 'Display Name Label',
       'plain search': 'plain search',
+      [`artist:${artistId} label:${labelId} "deep cut"`]: 'Display Name Artist · Display Name Label · deep cut',
     })
+  },
+
+  'the email names every artist and label of a combined search': async ({ artistId, labelId }) => {
+    const names = new Map([
+      [`artist:${artistId}`, 'Display Name Artist'],
+      [`label:${labelId}`, 'Display Name Label'],
+    ])
+    assert.strictEqual(
+      subscriptionEmailText(`artist:${artistId} label:${labelId} techno`, names),
+      'artist: "Display Name Artist" label: "Display Name Label" techno',
+    )
   },
 })

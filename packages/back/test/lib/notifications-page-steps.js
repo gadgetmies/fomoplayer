@@ -98,7 +98,8 @@ const assertSubscriptionsAddAndRemove = async ({ page }) => {
   expect(await page.locator('.notifications-subscription', { hasText: 'Nosuchartistatall' }).count()).to.equal(0)
   await input.fill('')
 
-  // A known artist picked from the suggestions is subscribed to at once. Names match whole words, as in the top bar.
+  // A known artist picked from the suggestions becomes a pill, and Enter subscribes. Names match whole words, as in
+  // the top bar.
   await input.pressSequentially(`artist:${followedArtistName}`, { delay: 50 })
   const suggestion = page.locator('.notifications-add-search .search_genre_option', { hasText: followedArtistName })
   await waitForWithTimeoutMessage(
@@ -106,6 +107,10 @@ const assertSubscriptionsAddAndRemove = async ({ page }) => {
     `Typing artist:${followedArtistName} should suggest ${followedArtistName}.`,
   )
   await suggestion.first().click()
+  await page
+    .locator('.notifications-add-search .search_pill_name', { hasText: followedArtistName })
+    .waitFor({ state: 'visible', timeout: 5000 })
+  await input.press('Enter')
   const artist = page.locator('[data-group="artists"] .notifications-subscription', { hasText: followedArtistName })
   await waitForWithTimeoutMessage(
     () => artist.waitFor({ state: 'visible', timeout: 10000 }),

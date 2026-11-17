@@ -57,6 +57,22 @@ const splitTextByWhitespace = (text) => {
   return terms
 }
 
+// Quotes group a name of several words (label:"Vision Recordings"); the closing one may not be typed yet
+const unquote = (text) => text.replace(/^"/, '').replace(/"$/, '')
+
+// The artist:/label:/release:/track: lookup being typed in a search bar, or null when the text is not one. A quoted
+// number is a name, not an id.
+export const parseEntityInput = (value, entityTypes = ['artist', 'label', 'release', 'track']) => {
+  const match = value.match(/^(artist|label|release|track):(~?)(.*)$/is)
+  if (!match) return null
+  const prefix = match[1].toLowerCase()
+  if (!entityTypes.includes(prefix)) return null
+  const quoted = match[3].trimStart().startsWith('"')
+  const text = unquote(match[3].trim()).trim()
+  if (!text) return null
+  return { prefix, similar: match[2] === '~', text, isId: !quoted && /^\d+$/.test(text) }
+}
+
 const parseFilterTerm = (type, value, raw) => {
   switch (type) {
     case 'artist':
@@ -64,6 +80,13 @@ const parseFilterTerm = (type, value, raw) => {
     case 'release':
     case 'track':
     case 'genre': {
+      if (type !== 'genre' && value.replace(/^~/, '').startsWith('"')) {
+        // A quoted name: never an id, and stored without its quotes
+        const similar = type === 'track' && value.startsWith('~')
+        const name = unquote(value.replace(/^~/, '').trim()).trim()
+        if (name) return { type, value: raw, name, ...(similar ? { similar: true } : {}) }
+        break
+      }
       if (type === 'track' && value.startsWith('~')) {
         const idValue = value.slice(1)
         const id = parseInt(idValue, 10)

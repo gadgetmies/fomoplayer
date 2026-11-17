@@ -6,7 +6,7 @@ const { searchForTracks } = require('../routes/shared/db/search')
 const BPromise = require('bluebird')
 const { scheduleEmail } = require('../services/mailer')
 const { renderNotification } = require('../services/email-templates')
-const { queryEntityDetails } = require('../routes/shared/db/entities')
+const { queryEntityTermNames, subscriptionEmailText } = require('../routes/shared/subscription-names')
 const { frontendURL } = require('../config')
 
 const logger = require('fomoplayer_shared').logger(__filename)
@@ -26,14 +26,8 @@ module.exports.updateNotifications = async () => {
         storeIds,
       })
 
-      const entityDetailsMatch = text.match(/(.+):(\d+)/)
-
-      if (entityDetailsMatch) {
-        const [_, entityType, entityId] = entityDetailsMatch
-        logger.info(`Querying entity details for ${entityType}:${entityId}`)
-        const { name } = await queryEntityDetails(entityType, entityId)
-        followText = `${entityType}: "${name}"`
-      }
+      // artist: "<name>" for every artist:<id> / label:<id> / release:<id> term, also in a search combining several of them
+      followText = subscriptionEmailText(text, await queryEntityTermNames([text]))
 
       const uriEncoded = encodeURIComponent(text)
 
