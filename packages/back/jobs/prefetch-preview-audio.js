@@ -131,6 +131,24 @@ const storeAudio = async ({ url, store, client, bucketName, request, maxBytes })
   return { objectKey, fileSize: audio.length }
 }
 
+// The host a failed request went to, the underlying cause (Node's fetch reports only "fetch failed" and keeps the
+// reason, e.g. ENOTFOUND or ECONNRESET, in error.cause), and whether no connection could be made at all. Those
+// failures, and timeouts, are not the preview's fault: an unreachable host or a network outage must not get previews
+// marked missing.
+const describeFailure = (error) => {
+  let host = null
+  try {
+    host = error.url ? new URL(error.url).host : null
+  } catch {
+    host = null
+  }
+  const cause = error.cause?.code || error.cause?.name || error.cause?.message || null
+  const connectionFailure =
+    (error.name === 'TypeError' && error.message === 'fetch failed') ||
+    ['TimeoutError', 'AbortError'].includes(error.name)
+  return { host, cause, connectionFailure }
+}
+
 module.exports.prefetchPreviewAudio = async (
   _jobRun,
   {
@@ -195,10 +213,22 @@ module.exports.prefetchPreviewAudio = async (
   }
 
   const recordFailure = async (preview, error) => {
-    const attempts = await recordPreviewAudioFailure(preview.preview_id, error.message)
-    logger.warn('Downloading preview audio failed', { previewId: preview.preview_id, attempts, error: error.message })
+    const { host, cause, connectionFailure } = describeFailure(error)
+    const message =
+      cause || host ? `${error.message} (${[cause, host && `from ${host}`].filter(Boolean).join(' ')})` : error.message
+    const attempts = await recordPreviewAudioFailure(preview.preview_id, message, { countAttempt: !connectionFailure })
+    logger.warn('Downloading preview audio failed', {
+      previewId: preview.preview_id,
+      attempts,
+      error: error.message,
+      cause,
+      host,
+      connectionFailure,
+    })
     result.failed++
-    if (attempts >= MAX_FAILED_ATTEMPTS) await markMissing(preview, `${attempts} failed downloads`)
+    if (!connectionFailure && attempts >= MAX_FAILED_ATTEMPTS) {
+      await markMissing(preview, `${attempts} failed downloads`)
+    }
   }
 
   // Returns false when the store should not be asked for anything more in this run.
@@ -227,6 +257,9 @@ module.exports.prefetchPreviewAudio = async (
       bucketName,
       request,
       maxBytes,
+    }).catch((error) => {
+      error.url ??= url
+      throw error
     })
     await recordStoredPreviewAudio(preview.preview_id, objectKey, fileSize)
     storePauses.reset(preview.store_name)
@@ -268,7 +301,10 @@ module.exports.prefetchPreviewAudio = async (
       }
       let release = null
       const lookUp = async () => {
-        release = await getRelease(releaseUrl)
+        release = await getRelease(releaseUrl).catch((error) => {
+          error.url ??= releaseUrl
+          throw error
+        })
         result.lookups++
       }
       // A fresh release has the newest stream URLs; without one, those known from before.

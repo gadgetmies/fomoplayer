@@ -92,15 +92,18 @@ ON CONFLICT (store__track_preview_id) DO UPDATE
     , store__track_preview_audio_last_attempt_at = NOW()`,
   )
 
-// Returns the number of failed attempts so far, this one included.
-const recordPreviewAudioFailure = async (previewId, error) => {
+// Returns the number of failed attempts so far, this one included. A failure that is not the preview's fault (no
+// connection could be made) is recorded and retried after the wait, but with countAttempt false it does not count
+// towards marking the preview missing.
+const recordPreviewAudioFailure = async (previewId, error, { countAttempt = true } = {}) => {
+  const counted = countAttempt ? 1 : 0
   const [{ attempts }] = await pg.queryRowsAsync(
     sql`-- recordPreviewAudioFailure
 INSERT INTO store__track_preview_audio ( store__track_preview_id, store__track_preview_audio_failed_attempts
                                        , store__track_preview_audio_last_error)
-VALUES (${previewId}, 1, ${error})
+VALUES (${previewId}, ${counted}, ${error})
 ON CONFLICT (store__track_preview_id) DO UPDATE
-  SET store__track_preview_audio_failed_attempts = store__track_preview_audio.store__track_preview_audio_failed_attempts + 1
+  SET store__track_preview_audio_failed_attempts = store__track_preview_audio.store__track_preview_audio_failed_attempts + ${counted}
     , store__track_preview_audio_last_error      = EXCLUDED.store__track_preview_audio_last_error
     , store__track_preview_audio_last_attempt_at = NOW()
 RETURNING store__track_preview_audio_failed_attempts AS attempts`,

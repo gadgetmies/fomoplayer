@@ -566,6 +566,46 @@ test({
     assert.strictEqual(await isMissing(preview.id), true)
   },
 
+  'a download that cannot connect is recorded with its cause and host but does not count towards missing': async () => {
+    await clearPreviews()
+    const preview = await insertPreview({ store: 'Beatport', url: 'https://gone.example/unreachable.mp3' })
+    await pg.queryAsync(
+      sql`INSERT INTO store__track_preview_audio
+            (store__track_preview_id, store__track_preview_audio_failed_attempts, store__track_preview_audio_last_attempt_at)
+          VALUES (${preview.id}, 2, NOW() - INTERVAL '2 hours')`,
+    )
+    // Node's fetch rejects with this when no connection can be made.
+    const fetch = async () => {
+      throw Object.assign(new TypeError('fetch failed'), {
+        cause: Object.assign(new Error('getaddrinfo ENOTFOUND gone.example'), { code: 'ENOTFOUND' }),
+      })
+    }
+    const result = await run({ client: fakeClient(), fetch, getRelease: fakeBandcamp({}).getRelease })
+    assert.strictEqual(result.result.failed, 1)
+    assert.strictEqual(await isMissing(preview.id), false, 'an unreachable host does not hide the preview')
+    const [row] = await pg.queryRowsAsync(
+      sql`SELECT store__track_preview_audio_failed_attempts AS attempts, store__track_preview_audio_last_error AS error
+          FROM store__track_preview_audio WHERE store__track_preview_id = ${preview.id}`,
+    )
+    assert.deepStrictEqual(row, { attempts: 2, error: 'fetch failed (ENOTFOUND from gone.example)' })
+  },
+
+  'a download that times out does not count towards missing': async () => {
+    await clearPreviews()
+    const preview = await insertPreview({ store: 'Beatport', url: 'https://slow.example/timeout.mp3' })
+    await pg.queryAsync(
+      sql`INSERT INTO store__track_preview_audio
+            (store__track_preview_id, store__track_preview_audio_failed_attempts, store__track_preview_audio_last_attempt_at)
+          VALUES (${preview.id}, 2, NOW() - INTERVAL '2 hours')`,
+    )
+    const fetch = async () => {
+      throw new DOMException('The operation was aborted due to timeout', 'TimeoutError')
+    }
+    await run({ client: fakeClient(), fetch, getRelease: fakeBandcamp({}).getRelease })
+    assert.strictEqual(await isMissing(preview.id), false)
+    assert.strictEqual((await audioRow(preview.id)).attempts, 2)
+  },
+
   'nothing is downloaded once the stored audio is at its cap': async () => {
     await clearPreviews()
     const stored = await insertPreview({ store: 'Beatport', url: 'https://bp.example/already.mp3' })
