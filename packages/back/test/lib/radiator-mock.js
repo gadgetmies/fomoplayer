@@ -28,7 +28,10 @@ const radiatorPresets = [
     config: JSON.stringify(
       {
         type: 'bar',
-        options: { responsive: true, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Added tracks by store' } } },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'top' }, title: { display: true, text: 'Added tracks by store' } },
+        },
       },
       null,
       2,
@@ -61,6 +64,28 @@ module.exports.runRadiatorJobsViaDb = async () => {
     SELECT job_id, NOW(), TRUE, ${JSON.stringify(result)}
     FROM job WHERE job_name = ${ADDED_TRACKS_JOB}
   `)
+}
+
+// A week of runs of a query listing a row per missing preview: what froze the Data section before it summarised the
+// runs. Only seeded locally: through the API, a query this large now fails instead of storing its rows.
+const LARGE_RESULT_JOB = 'missing-previews.sql'
+
+module.exports.seedLargeRadiatorRunsViaDb = async ({ runs = 7, rowsPerRun = 20000 } = {}) => {
+  const rows = Array.from({ length: rowsPerRun }, (_, i) => ({
+    track_id: i,
+    store__track_id: i,
+    store__track_preview_id: i,
+    store__track_preview_url: `https://example.com/previews/${i}.mp3`,
+    store__track_preview_missing: true,
+  }))
+  await pg.queryAsync(sql`INSERT INTO job (job_name) VALUES (${LARGE_RESULT_JOB}) ON CONFLICT DO NOTHING`)
+  for (let day = 0; day < runs; day++) {
+    await pg.queryAsync(sql`
+      INSERT INTO job_run (job_id, job_run_started, job_run_ended, job_run_success, job_run_result)
+      SELECT job_id, NOW() - ${`${day} days`}::INTERVAL, NOW() - ${`${day} days`}::INTERVAL, TRUE, ${JSON.stringify(rows)}
+      FROM job WHERE job_name = ${LARGE_RESULT_JOB}
+    `)
+  }
 }
 
 // ── Preview: seed through the admin API (requires an admin session) ──────────

@@ -25,7 +25,9 @@ const assertRadiatorShowsSeededData = async ({ page }) => {
     () =>
       page.waitForFunction(
         (name) =>
-          Array.from(document.querySelectorAll('#admin-radiator-load option')).some((o) => o.textContent.trim() === name),
+          Array.from(document.querySelectorAll('#admin-radiator-load option')).some(
+            (o) => o.textContent.trim() === name,
+          ),
         PRESET_NAME,
         { timeout: 15000 },
       ),
@@ -40,14 +42,51 @@ const assertRadiatorShowsSeededData = async ({ page }) => {
     .scrollIntoViewIfNeeded({ timeout: 5000 })
     .catch(() => {})
 
-  // Best-effort: open the data panels so the recording shows the values.
-  for (const section of ['Chart data', 'Collected data']) {
+  // The preset's lens collects a value per store for the chart. It uses lens functions the view itself does not, which
+  // production builds (the tests use one) only keep when the view hands the whole library to the lens.
+  await page.locator('.admin-section-toggle', { hasText: 'Chart data' }).first().click({ timeout: 5000 })
+  await waitForWithTimeoutMessage(
+    () =>
+      page.waitForFunction(
+        () => {
+          const box = document.querySelector('.admin-page-chart ~ .admin-field textarea')
+          return box && !box.classList.contains('error') && JSON.parse(box.value).datasets.length > 0
+        },
+        null,
+        { timeout: 15000 },
+      ),
+    'Draw the chart from the preset lens (the Chart data box has datasets and no error).',
+  )
+
+  // Best-effort: open the collected data so the recording shows the values.
+  for (const section of ['Collected data']) {
     await page
       .locator('.admin-section-toggle', { hasText: section })
       .first()
       .click({ timeout: 5000 })
       .catch(() => {})
   }
+
+  // The Data section summarises each radiator query instead of printing a week of results into a text box, which froze
+  // the view once the runs held many rows.
+  await page
+    .locator('.admin-section-toggle', { hasText: /^Data$/ })
+    .first()
+    .click({ timeout: 5000 })
+  const addedRow = page.locator('.admin-radiator-data-table tr', { hasText: ADDED_TRACKS_JOB })
+  await waitForWithTimeoutMessage(
+    () => addedRow.first().waitFor({ timeout: 15000 }),
+    `Summarise the ${ADDED_TRACKS_JOB} runs in the Data section's table.`,
+  )
+  expect(await addedRow.first().textContent(), 'the latest run is shown as successful').to.contain('Success')
+  expect(
+    await page.locator('.admin-radiator-data button', { hasText: 'Download JSON' }).isEnabled(),
+    'the full data can be downloaded',
+  ).to.equal(true)
+  await addedRow
+    .first()
+    .scrollIntoViewIfNeeded({ timeout: 5000 })
+    .catch(() => {})
 
   // Hard assertion against the same endpoint the view reads. Use a browser-side
   // fetch (not page.request) so it goes through the browser network with the

@@ -7,16 +7,34 @@ import beautify from 'js-beautify'
 import { withRouter } from 'react-router-dom'
 import AdminDatabaseReset from './AdminDatabaseReset'
 import './Admin.css'
+import './AdminJobs.css'
 import AdminTabs from './AdminTabs.js'
+import { previewJSON, summariseRadiatorData } from './radiatorData'
 
 const L = require('partial.lenses')
 const R = require('ramda')
 
-class Admin extends Component {
-  updateData(e) {
-    this.setState({ data: e.target.value })
-  }
+// Typing in the lens or config box redraws the chart once typing pauses for this long, not on every keystroke.
+const CHART_UPDATE_DELAY_MS = 300
 
+// A lens is code typed into the view, so it can use any function of the lens and ramda libraries. Passing the libraries
+// in whole keeps every function in the build: with a direct eval the bundler only saw this file use L.collect and left
+// the rest of partial.lenses out of production builds, so a lens using L.when failed.
+// eslint-disable-next-line no-new-func
+const evaluateLens = (code) => new Function('L', 'R', `return (${code})`)(L, R)
+
+const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '—')
+
+const downloadJSON = (data, fileName) => {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+class Admin extends Component {
   updateName(e) {
     this.setState({ name: e.target.value })
   }
@@ -67,7 +85,7 @@ class Admin extends Component {
     const data = await requestJSONwithCredentials({ url: `${apiURL}/admin/radiator` })
     const configs = await requestJSONwithCredentials({ url: `${apiURL}/admin/radiator/config` })
     this.setState({
-      data: JSON.stringify(data, null, 2),
+      data,
       configs,
       loading: false,
     })
@@ -78,23 +96,32 @@ class Admin extends Component {
     this.updateChart()
   }
 
+  componentWillUnmount() {
+    clearTimeout(this.chartUpdateTimeout)
+  }
+
+  scheduleChartUpdate() {
+    clearTimeout(this.chartUpdateTimeout)
+    this.chartUpdateTimeout = setTimeout(() => this.updateChart(), CHART_UPDATE_DELAY_MS)
+  }
+
   updateConfig(e) {
     const config = e.target.value
     window.localStorage.setItem('config', config)
-    this.setState({ config: config }, this.updateChart.bind(this))
+    this.setState({ config: config }, this.scheduleChartUpdate.bind(this))
   }
 
   updateLens(e) {
     const text = e.target.value
     window.localStorage.setItem('lens', text)
-    this.setState({ lens: text }, this.updateChart.bind(this))
+    this.setState({ lens: text }, this.scheduleChartUpdate.bind(this))
   }
 
   updateChart() {
     let chartData = []
     try {
-      const lensCode = eval(this.state.lens)
-      const collectOutput = L.collect(lensCode, JSON.parse(this.state.data))
+      const lensCode = evaluateLens(this.state.lens)
+      const collectOutput = L.collect(lensCode, this.state.data)
       this.setState({ collectOutput })
       const grouped = R.groupBy(R.prop('label'), collectOutput)
       chartData = {
@@ -162,6 +189,55 @@ class Admin extends Component {
     await this.updateRadiatorData()
   }
 
+  renderDataSummary() {
+    const summaries = summariseRadiatorData(this.state.data)
+    return (
+      <div className="admin-radiator-data">
+        {summaries.length === 0 ? (
+          <div className="muted">No radiator runs in the past week.</div>
+        ) : (
+          <table className="admin-jobs-table admin-radiator-data-table">
+            <thead>
+              <tr>
+                <th>Query</th>
+                <th>Runs</th>
+                <th>Latest run</th>
+                <th>Status</th>
+                <th>Rows</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summaries.map(({ job, runs, latestStarted, latestSuccess, latestRows, latestError }) => (
+                <tr key={job}>
+                  <td>{job}</td>
+                  <td className="muted">{runs}</td>
+                  <td className="muted">{formatDateTime(latestStarted)}</td>
+                  <td>
+                    <span
+                      className={latestSuccess ? 'admin-jobs-status-success' : 'admin-jobs-status-failed'}
+                      title={latestError || undefined}
+                    >
+                      {latestSuccess ? 'Success' : 'Failed'}
+                    </span>
+                  </td>
+                  <td className="muted">{latestRows === null ? '—' : latestRows}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <button
+          type="button"
+          className="button button-push_button button-push_button-small"
+          disabled={summaries.length === 0}
+          onClick={() => downloadJSON(this.state.data, 'radiator-data.json')}
+        >
+          Download JSON
+        </button>
+      </div>
+    )
+  }
+
   render() {
     let config = {
       type: 'line',
@@ -189,7 +265,7 @@ class Admin extends Component {
                   disabled
                   rows={10}
                   className={this.state.dataError ? 'error' : ''}
-                  value={JSON.stringify(this.state.chartData, null, 2)}
+                  value={previewJSON(this.state.chartData)}
                 />
               )}
             </div>
@@ -205,7 +281,7 @@ class Admin extends Component {
                   disabled
                   rows={10}
                   className={this.state.dataError ? 'error' : ''}
-                  value={JSON.stringify(this.state.collectOutput, null, 2)}
+                  value={previewJSON(this.state.collectOutput)}
                 />
               )}
             </div>
@@ -218,9 +294,7 @@ class Admin extends Component {
               >
                 Data
               </span>
-              {this.state.dataVisible && (
-                <textarea onChange={this.updateData.bind(this)} rows={10} value={this.state.data} />
-              )}
+              {this.state.dataVisible && this.renderDataSummary()}
             </div>
             <form onSubmit={this.saveConfig.bind(this)}>
               <div className="admin-field">
