@@ -17,6 +17,12 @@ const R = require('ramda')
 // Typing in the lens or config box redraws the chart once typing pauses for this long, not on every keystroke.
 const CHART_UPDATE_DELAY_MS = 300
 
+// A lens is code typed into the view, so it can use any function of the lens and ramda libraries. Passing the libraries
+// in whole keeps every function in the build: with a direct eval the bundler only saw this file use L.collect and left
+// the rest of partial.lenses out of production builds, so a lens using L.when failed.
+// eslint-disable-next-line no-new-func
+const evaluateLens = (code) => new Function('L', 'R', `return (${code})`)(L, R)
+
 const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '—')
 
 const downloadJSON = (data, fileName) => {
@@ -114,7 +120,7 @@ class Admin extends Component {
   updateChart() {
     let chartData = []
     try {
-      const lensCode = eval(this.state.lens)
+      const lensCode = evaluateLens(this.state.lens)
       const collectOutput = L.collect(lensCode, this.state.data)
       this.setState({ collectOutput })
       const grouped = R.groupBy(R.prop('label'), collectOutput)

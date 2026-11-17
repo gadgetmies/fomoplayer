@@ -42,8 +42,24 @@ const assertRadiatorShowsSeededData = async ({ page }) => {
     .scrollIntoViewIfNeeded({ timeout: 5000 })
     .catch(() => {})
 
-  // Best-effort: open the data panels so the recording shows the values.
-  for (const section of ['Chart data', 'Collected data']) {
+  // The preset's lens collects a value per store for the chart. It uses lens functions the view itself does not, which
+  // production builds (the tests use one) only keep when the view hands the whole library to the lens.
+  await page.locator('.admin-section-toggle', { hasText: 'Chart data' }).first().click({ timeout: 5000 })
+  await waitForWithTimeoutMessage(
+    () =>
+      page.waitForFunction(
+        () => {
+          const box = document.querySelector('.admin-page-chart ~ .admin-field textarea')
+          return box && !box.classList.contains('error') && JSON.parse(box.value).datasets.length > 0
+        },
+        null,
+        { timeout: 15000 },
+      ),
+    'Draw the chart from the preset lens (the Chart data box has datasets and no error).',
+  )
+
+  // Best-effort: open the collected data so the recording shows the values.
+  for (const section of ['Collected data']) {
     await page
       .locator('.admin-section-toggle', { hasText: section })
       .first()
