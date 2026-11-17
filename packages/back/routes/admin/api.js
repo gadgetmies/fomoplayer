@@ -223,31 +223,55 @@ router.get('/exact-match/previews/without-fingerprint', async ({ query: { limit,
   res.send(previews)
 })
 
-router.post('/exact-match/previews/fingerprints', async ({ body: { preview_id, fingerprints } }, res) => {
-  try {
-    await upsertPreviewFingerprints(preview_id, fingerprints)
-    await releasePreviewAudio([preview_id])
-    res.send({ success: true, preview_id })
-  } catch (error) {
-    logger.error('Error uploading preview fingerprints', { error: error.message, stack: error.stack })
-    res.status(500).send({ error: error.message })
+// Stores fingerprints the analyser uploads. The request timeout (routes/shared/request-timeout.js) can answer the
+// analyser before a large upload is stored, while the store goes on; the handler then must not answer a second time.
+// It logs a warning when the fingerprints were stored after the timeout, and an error whenever storing fails.
+const storeFingerprintsHandler =
+  ({ idField, label, store, afterStore = async () => {}, log = logger }) =>
+  async (req, res) => {
+    const { [idField]: id, fingerprints } = req.body
+    try {
+      await store(id, fingerprints)
+      await afterStore(id)
+    } catch (error) {
+      log.error(`Storing ${label} fingerprints failed`, {
+        [idField]: id,
+        timedOut: Boolean(req.timedout),
+        error: error.message,
+        stack: error.stack,
+      })
+      if (!req.timedout && !res.headersSent) res.status(500).send({ error: error.message })
+      return
+    }
+    if (req.timedout || res.headersSent) {
+      log.warn(`Stored ${label} fingerprints after the request timed out`, {
+        [idField]: id,
+        fingerprintCount: fingerprints?.length ?? 0,
+      })
+      return
+    }
+    res.send({ success: true, [idField]: id })
   }
-})
+
+router.post(
+  '/exact-match/previews/fingerprints',
+  storeFingerprintsHandler({
+    idField: 'preview_id',
+    label: 'preview',
+    store: upsertPreviewFingerprints,
+    afterStore: (previewId) => releasePreviewAudio([previewId]),
+  }),
+)
 
 router.get('/exact-match/audio-samples/without-fingerprint', async ({ query: { limit } }, res) => {
   const samples = await queryAudioSamplesWithoutFingerprint(limit ? parseInt(limit, 10) : undefined)
   res.send(samples)
 })
 
-router.post('/exact-match/audio-samples/fingerprints', async ({ body: { sample_id, fingerprints } }, res) => {
-  try {
-    await upsertAudioSampleFingerprints(sample_id, fingerprints)
-    res.send({ success: true, sample_id })
-  } catch (error) {
-    logger.error('Error uploading audio sample fingerprints', { error: error.message, stack: error.stack })
-    res.status(500).send({ error: error.message })
-  }
-})
+router.post(
+  '/exact-match/audio-samples/fingerprints',
+  storeFingerprintsHandler({ idField: 'sample_id', label: 'audio sample', store: upsertAudioSampleFingerprints }),
+)
 
 // Factory so the handler can be unit-tested with a stub diagnostics query.
 const fingerprintDiagnosticsHandler = (queryFn, log = logger) =>
@@ -471,4 +495,5 @@ router.post('/tracks/:trackId/credits/remove', async ({ params: { trackId }, bod
 module.exports = router
 module.exports.fingerprintDiagnosticsHandler = fingerprintDiagnosticsHandler
 module.exports.bulkScoreSamplesHandler = bulkScoreSamplesHandler
+module.exports.storeFingerprintsHandler = storeFingerprintsHandler
 module.exports.setJobEnabledHandler = setJobEnabledHandler

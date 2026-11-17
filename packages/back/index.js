@@ -41,7 +41,7 @@ const compression = require('compression')
 const path = require('path')
 const fs = require('fs')
 const R = require('ramda')
-const timeout = require('connect-timeout')
+const { createRequestTimeout } = require('./routes/shared/request-timeout')
 const rateLimit = require('express-rate-limit')
 
 const { ensureAuthenticated } = require('./routes/shared/auth.js')
@@ -80,7 +80,7 @@ app.use(
   }),
 )
 
-app.use(timeout('25s'))
+app.use(createRequestTimeout())
 
 if (process.env.USE_RATE_LIMITER) {
   logger.debug('Enabling rate limiter')
