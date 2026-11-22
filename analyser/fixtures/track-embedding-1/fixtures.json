@@ -1,0 +1,41 @@
+{
+  "version": "track-embedding/1",
+  "fixtures": [
+    {
+      "audio": "mp3-44100-stereo.mp3",
+      "audio_sha256": "cfab09c4cea1ff9167b5043f09b79d8d9b61d04fe534bf134caac3e6f3029f4e",
+      "description": "MP3, 44.1 kHz, stereo",
+      "reference": "mp3-44100-stereo.npy"
+    },
+    {
+      "audio": "aac-48000-stereo.m4a",
+      "audio_sha256": "5d1eed5bfe8cab628a53761f56c87ff05b8265916be7b516b7dcf29c67bcc446",
+      "description": "AAC in M4A, 48 kHz, stereo",
+      "reference": "aac-48000-stereo.npy"
+    },
+    {
+      "audio": "wav-16000-mono.wav",
+      "audio_sha256": "fdb81678953fbe98aa32330560d27d611e6f0a3bc1a037b9d45096649e8aa57f",
+      "description": "WAV 16-bit PCM, 16 kHz, mono (no resampling)",
+      "reference": "wav-16000-mono.npy"
+    },
+    {
+      "audio": "flac-22050-mono.flac",
+      "audio_sha256": "71858c0a53e7f2568c7ba1ea3de83a28691e659df0cd03b1cfd6b81846afbcac",
+      "description": "FLAC, 22.05 kHz, mono",
+      "reference": "flac-22050-mono.npy"
+    },
+    {
+      "audio": "wav-44100-stereo-one-patch.wav",
+      "audio_sha256": "258627d677b725d685285353059473fecefb2de36f50a533e23fb05d7310c474",
+      "description": "WAV 16-bit PCM, 44.1 kHz, stereo, just above one patch (one patch)",
+      "reference": "wav-44100-stereo-one-patch.npy"
+    },
+    {
+      "audio": "wav-16000-mono-190-frames.wav",
+      "audio_sha256": "4b192ae5ae2d8e5c3a959cca7aaeeb5040a200278852c3b7edd6dda2ead1743a",
+      "description": "WAV 16-bit PCM, 16 kHz, mono, 190 front-end frames: its second 128-frame patch would end on the last frame and is left out (one patch)",
+      "reference": "wav-16000-mono-190-frames.npy"
+    }
+  ]
+}

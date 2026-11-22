@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-import essentia
 import json
 import requests
 from auth import auth_header, get_api_url, request_error, resolve_url, stored_audio_query
@@ -12,7 +11,7 @@ import prefetch
 from analysis_reports import post_analysis
 
 from audio_decode import to_wav, wav_duration_seconds
-from embedding import DEFAULT_MODEL, build_model, compute_temporal_embedding, embed_file
+from embedding import DEFAULT_MODEL, build_model, embed_file
 from spotipy.oauth2 import SpotifyClientCredentials
 import argparse
 import contextlib
@@ -291,8 +290,8 @@ def process_preview_batch(tracks_to_process, model, model_name, sanity, work_dir
             preview_id = prepared["preview_id"]
             try:
                 print(f"Processing preview {preview_id}: {wav_path}")
-                embeddings = compute_temporal_embedding(wav_path, model)
-                if len(embeddings) == 0:
+                vector = embed_file(wav_path, model)
+                if vector is None:
                     # Too short for a single model patch (e.g. one-shots in a
                     # Bandcamp sample pack). Report it missing so it leaves the
                     # queue instead of being retried in every batch.
@@ -300,7 +299,6 @@ def process_preview_batch(tracks_to_process, model, model_name, sanity, work_dir
                           f"reporting preview {preview_id} missing")
                     entries.append({"preview_id": preview_id, "missing": True})
                 else:
-                    vector = embeddings.T.mean(1).tolist()
                     track_id = track.get('track_id')
                     label = f"track_id={track_id}" if track_id is not None else None
                     if not sanity.record_and_check(preview_id, vector, label=label, group_key=track_id):
@@ -325,11 +323,6 @@ def process_preview_batch(tracks_to_process, model, model_name, sanity, work_dir
 
 
 if __name__ == '__main__':
-    # Each embedding makes Essentia warn 'No network created, or last created
-    # network has been deleted...' about 2,000 times, which buries the
-    # worker's own output (the embedding service silences it the same way).
-    # Its errors stay on.
-    essentia.log.warningActive = False
     print(f"[{datetime.datetime.now()}] Starting")
 
     sanity = EmbeddingSanityChecker(args.sanity_window, args.skip_sanity_confirmation)
@@ -400,7 +393,7 @@ if __name__ == '__main__':
                         print(f"Processing: {absolute_file_path}")
 
                         print("Processing audio")
-                        vector = embed_file(absolute_file_path, model, temp_dir_name)
+                        vector = embed_file(absolute_file_path, model)
                         if vector is None:
                             print(f"Audio sample {sample['id']} is too short to embed, skipping")
                             continue

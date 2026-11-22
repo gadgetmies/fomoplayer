@@ -1,9 +1,9 @@
 ## 1. Switch the analyser
 
-- [ ] 1.1 Pin `track-embedding` (git tag), add `samplerate` + `onnxruntime`, model download pinned by sha256
+- [x] 1.1 Pin `track-embedding` (git tag), add `samplerate` + `onnxruntime`, model download pinned by sha256
 - [ ] 1.2 Comparison script: package vs stored vectors for ≥ 200 previews + 20 notification samples; record the result in this change (gate)
-- [ ] 1.3 `embedding.py` / `embedding_service.py` / `main.py` on the package; drop `essentia-tensorflow` from requirements and the Dockerfile
-- [ ] 1.4 Analyser tests incl. the conformance fixtures
+- [x] 1.3 `embedding.py` / `embedding_service.py` / `main.py` on the package; drop `essentia-tensorflow` from requirements and the Dockerfile
+- [x] 1.4 Analyser tests incl. the conformance fixtures
 
 ## 2. Endpoints
 

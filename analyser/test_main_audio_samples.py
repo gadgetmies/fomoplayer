@@ -20,7 +20,7 @@ import numpy as np
 
 try:
     import embedding
-except ImportError:  # essentia-tensorflow not installed
+except ImportError:  # track-embedding not installed
     embedding = None
 
 ANALYSER_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -59,7 +59,7 @@ class _Backend(BaseHTTPRequestHandler):
             self._send(404, b'{}')
 
 
-@unittest.skipIf(embedding is None, 'essentia-tensorflow is not installed')
+@unittest.skipIf(embedding is None, 'track-embedding is not installed')
 @unittest.skipUnless(shutil.which('ffmpeg'), 'ffmpeg is not installed')
 class MainAudioSamplesTest(unittest.TestCase):
     def setUp(self):
@@ -82,16 +82,14 @@ class MainAudioSamplesTest(unittest.TestCase):
             cwd=self.dir, capture_output=True, text=True, timeout=300,
             env=dict(os.environ,
                      FOMOPLAYER_API_URL=f'http://127.0.0.1:{self.server.server_port}/api',
-                     FOMOPLAYER_API_KEY='fp_test', TF_CPP_MIN_LOG_LEVEL='3',
+                     FOMOPLAYER_API_KEY='fp_test',
                      NO_PROXY='127.0.0.1', no_proxy='127.0.0.1'))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        # Essentia's warnings would otherwise print ~2,000 lines per embedding.
-        self.assertNotIn('No network created', result.stdout + result.stderr)
         self.assertEqual(len(self.handler.posted), 1, result.stdout)
         posted = self.handler.posted[0]
         self.assertEqual((posted['id'], posted['model']), (7, embedding.DEFAULT_MODEL))
 
-        expected = embedding.embed_file(self.mp3, embedding.build_model(), self.dir)
+        expected = embedding.embed_file(self.mp3, embedding.build_model())
         actual = np.asarray(json.loads(posted['embeddings']))
         cosine = float(actual @ expected / np.linalg.norm(actual) / np.linalg.norm(expected))
         self.assertGreaterEqual(cosine, 0.9999)

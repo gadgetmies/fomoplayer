@@ -17,13 +17,13 @@ from analysis_fakes import Preview, StubBackend
 
 try:
     import embedding
-except ImportError:  # essentia-tensorflow not installed
+except ImportError:  # track-embedding not installed
     embedding = None
 
 ANALYSER_DIR = os.path.dirname(os.path.abspath(__file__))
 
 pytestmark = [
-    pytest.mark.skipif(embedding is None, reason='essentia-tensorflow is not installed'),
+    pytest.mark.skipif(embedding is None, reason='track-embedding is not installed'),
     pytest.mark.skipif(not shutil.which('ffmpeg'), reason='ffmpeg is not installed'),
 ]
 
@@ -53,7 +53,7 @@ def env(tmp_path):
                      FOMOPLAYER_API_KEY='fp_test', WAVEFORM_STORAGE_HOST='bucket.invalid',
                      WAVEFORM_STORAGE_BUCKET_NAME='waveforms', WAVEFORM_STORAGE_BUCKET_ACCESS_KEY='k',
                      WAVEFORM_STORAGE_BUCKET_SECRET_KEY='s', PREVIEW_MAX_DURATION_S='3',
-                     ANALYSER_REPORT_INTERVAL_S='1', TF_CPP_MIN_LOG_LEVEL='3',
+                     ANALYSER_REPORT_INTERVAL_S='1',
                      NO_PROXY='127.0.0.1', no_proxy='127.0.0.1'),
     }
 
@@ -99,7 +99,7 @@ def test_each_preview_is_downloaded_once_and_gets_only_the_analyses_it_needs(env
     model = embedding.build_model()
     for entry in (e for e in analysed if 'embeddings' in e):
         name = {4: 'all', 3: 'beatport'}[entry['id']]
-        expected = embedding.embed_file(str(tmp / f'{name}.mp3'), model, str(tmp))
+        expected = embedding.embed_file(str(tmp / f'{name}.mp3'), model)
         assert _cosine(json.loads(entry['embeddings']), expected) >= 0.9999
         assert entry['model'] == embedding.DEFAULT_MODEL
 
