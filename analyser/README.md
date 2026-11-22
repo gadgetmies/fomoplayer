@@ -39,6 +39,12 @@ Run the embedding tests (the conformance fixtures in
 
 ```venv/bin/python -m pytest test_embedding.py test_embedding_service.py```
 
+`compare_stored_embeddings.py` compares the package's vectors with vectors
+already stored for 200 previews and 20 notification samples, reading the
+database read-only (`DATABASE_URL`) and the audio from the preview URLs and
+the back end's storage redirect (`FOMOPLAYER_API_URL`); it exits 1 when any
+vector is below cosine 0.99999.
+
 Initialise Postgres vector database
 
 ```brew install postgres```
