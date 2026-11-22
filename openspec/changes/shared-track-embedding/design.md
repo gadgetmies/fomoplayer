@@ -37,7 +37,13 @@ obtains the key with the existing `/api-keys/exchange-handoff` browser hand-off.
 - [libsamplerate differs across builds] → tolerance, not bit equality; fixtures run in both suites.
 - [Previews vs full tracks] → measured by `preview-vs-full-track-embeddings`; a later version may embed a window.
 
+### D5 — Same exclusions as the cart similarity search
+
+Results leave out the tracks the API key's user has heard, ignores (artist, label, release, artist on label) or bought,
+as the cart similarity search does; the index pool per query vector is five times the limit so the exclusions rarely
+shorten the list.
+
 ## Open Questions
 
-- Should results exclude tracks the user already has in their fomoplayer collection / ignores? (Proposed: same
-  filters as cart similarity search.)
+- None for this change. Whether heard tracks should be left out for a desktop client too is an owner decision recorded
+  with the implementation (D5 follows the cart similarity search until decided otherwise).

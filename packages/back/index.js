@@ -113,6 +113,8 @@ app.options('/{*splat}', cors(corsOptions)) // include before other routes
 app.use('/api/sentry-webhook', require('./routes/sentry-webhook.js')())
 
 app.use('/api/admin', bodyParser.json({ limit: '20mb', extended: true, type: ['application/json', 'application/*+json'] }))
+// Up to 50 vectors of 1280 numbers (routes/embeddings): about 1.4 MB of JSON.
+app.use('/api/embeddings', bodyParser.json({ limit: '4mb', type: ['application/json', 'application/*+json'] }))
 app.use(bodyParser.json({ limit: '1mb', extended: true, type: ['application/json', 'application/*+json'] }))
 
 // body-parser 2 leaves req.body undefined when no body was parsed; handlers destructure it.

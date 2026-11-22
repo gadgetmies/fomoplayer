@@ -7,10 +7,10 @@
 
 ## 2. Endpoints
 
-- [ ] 2.1 Version mapping `EMBEDDING_VERSIONS`
-- [ ] 2.2 `GET /api/embeddings/versions`
-- [ ] 2.3 `POST /api/embeddings/similar-tracks` (validation, nearest-query-vector ranking on the HNSW index, API-key auth + rate limit)
-- [ ] 2.4 Back-end API tests (ranking, 400, 401, 409)
+- [x] 2.1 Version mapping `EMBEDDING_VERSIONS`
+- [x] 2.2 `GET /api/embeddings/versions`
+- [x] 2.3 `POST /api/embeddings/similar-tracks` (validation, nearest-query-vector ranking on the HNSW index, API-key auth + rate limit)
+- [x] 2.4 Back-end API tests (ranking, 400, 401, 409)
 
 ## 3. Merge
 
