@@ -34,7 +34,12 @@ previews holding a vector of that version.
 
 ## `POST /api/embeddings/similar-tracks`
 
-Request (JSON, at most 4 MB):
+`POST /api/embeddings/similar-tracks[?includeHeard=true]`
+
+Query parameter: `includeHeard`, `true` or `false` (default `false`): whether tracks the user has heard may be
+returned. Any other value is a `400`.
+
+Request body (JSON, at most 4 MB):
 
 ```json
 {
@@ -51,8 +56,9 @@ Request (JSON, at most 4 MB):
 - `limit`: optional, an integer from 1 to 200; default 50.
 
 Each track's distance is the smallest cosine distance between any of its previews' vectors and any query vector
-(several query vectors search as one, without averaging). Tracks the API key's user has heard, ignores (artist, label,
-release, or artist on label) or bought are left out, as in the cart similarity search. The search uses the HNSW
+(several query vectors search as one, without averaging). Tracks the API key's user ignores (artist, label, release,
+or artist on label) or bought are always left out, and tracks the user has heard unless `includeHeard=true`, as in the
+cart similarity search. The search uses the HNSW
 index, so it is approximate.
 
 Response, nearest first:
@@ -89,7 +95,7 @@ Errors:
 
 | Status | Body | When |
 |---|---|---|
-| 400 | `{ "error": "invalid_request", "message": … }` | the body breaks a rule above; nothing is searched |
+| 400 | `{ "error": "invalid_request", "message": … }` | the body or `includeHeard` breaks a rule above; nothing is searched |
 | 409 | `{ "error": "embedding_version_unsupported", "message": …, "versions": [ …as GET /versions… ] }` | the version is not indexed here |
 
 Example:

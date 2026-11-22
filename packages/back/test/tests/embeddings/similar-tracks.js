@@ -91,8 +91,8 @@ const request =
     return { status: res.status, json, text }
   }
 
-const search = (req, rawKey, body) =>
-  req('POST', '/api/embeddings/similar-tracks', {
+const search = (req, rawKey, body, query = '') =>
+  req('POST', `/api/embeddings/similar-tracks${query}`, {
     rawKey,
     body: { version: VERSION, coverage: 'full', vectors: QUERIES, ...body },
   })
@@ -201,11 +201,37 @@ test({
   },
 
   'leaves out heard, ignored and purchased tracks': async ({ req, rawKey, trackIdByKey }) => {
-    const { json } = await search(req, rawKey, { limit: 200 })
+    for (const query of ['', '?includeHeard=false']) {
+      const { json } = await search(req, rawKey, { limit: 200 }, query)
+      const ids = json.tracks.map(({ id }) => id)
+      expect(ids, query).to.not.include.members([trackIdByKey.heardA])
+      expect(ids, query).to.not.include.members([trackIdByKey.ignoredA])
+      expect(ids, query).to.not.include.members([trackIdByKey.purchasedB])
+    }
+  },
+
+  'includeHeard=true returns heard tracks, still without ignored or purchased ones': async ({
+    req,
+    rawKey,
+    trackIdByKey,
+  }) => {
+    const { status, json } = await search(req, rawKey, { limit: 200 }, '?includeHeard=true')
+    expect(status).to.equal(200)
     const ids = json.tracks.map(({ id }) => id)
-    expect(ids).to.not.include.members([trackIdByKey.heardA])
+    expect(ids).to.include(trackIdByKey.heardA)
     expect(ids).to.not.include.members([trackIdByKey.ignoredA])
     expect(ids).to.not.include.members([trackIdByKey.purchasedB])
+    // heardA sits exactly on style A's axis, so it ranks first among the seeded tracks.
+    const seededIds = new Set(Object.values(trackIdByKey))
+    expect(ids.filter((id) => seededIds.has(id))[0]).to.equal(trackIdByKey.heardA)
+  },
+
+  'answers 400 to an includeHeard value other than true or false': async ({ req, rawKey }) => {
+    for (const query of ['?includeHeard=yes', '?includeHeard=1', '?includeHeard=']) {
+      const { status, json } = await search(req, rawKey, {}, query)
+      expect(status, query).to.equal(400)
+      expect(json.error, query).to.equal('invalid_request')
+    }
   },
 
   'describes each track with its metadata, store links and Fomo Player link': async ({

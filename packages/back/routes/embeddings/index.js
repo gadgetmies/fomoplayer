@@ -4,7 +4,7 @@
 // Nothing from a request is stored or logged.
 //
 //   GET  /api/embeddings/versions       -> { versions: [{ version, coverage, count }] }
-//   POST /api/embeddings/similar-tracks -> { version, tracks: [...] }
+//   POST /api/embeddings/similar-tracks[?includeHeard=true] -> { version, tracks: [...] }
 //
 // API-key clients only (Authorization: Bearer fp_…), counted by the API-key rate limiter like every API-key request.
 const router = require('express').Router()
@@ -40,6 +40,9 @@ const isVector = (v) =>
   v.length === EMBEDDING_DIMENSIONS &&
   v.every((x) => typeof x === 'number' && Number.isFinite(x)) &&
   v.some((x) => x !== 0)
+
+// `includeHeard` query parameter: heard tracks are left out unless it is `true`.
+const parseIncludeHeard = (value) => (value === undefined || value === 'false' ? false : value === 'true' ? true : null)
 
 // The request body's problem, or undefined when it is valid.
 const validationError = (body) => {
@@ -97,7 +100,11 @@ router.get('/versions', async (req, res) => {
   res.json({ versions: await indexedVersions() })
 })
 
-router.post('/similar-tracks', async ({ body, user: { id: userId } }, res) => {
+router.post('/similar-tracks', async ({ body, query, user: { id: userId } }, res) => {
+  const includeHeard = parseIncludeHeard(query.includeHeard)
+  if (includeHeard === null) {
+    return res.status(400).json({ error: 'invalid_request', message: '`includeHeard` must be true or false' })
+  }
   const problem = validationError(body)
   if (problem) return res.status(400).json({ error: 'invalid_request', message: problem })
 
@@ -111,7 +118,7 @@ router.post('/similar-tracks', async ({ body, user: { id: userId } }, res) => {
     })
   }
 
-  const nearest = await queryNearestTracks({ userId, type, vectors, limit })
+  const nearest = await queryNearestTracks({ userId, type, vectors, limit, includeHeard })
   const details = new Map(
     (
       await queryTrackDetails(

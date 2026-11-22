@@ -36,12 +36,12 @@ SELECT EXISTS (SELECT 1 FROM store__track_preview_embedding WHERE store__track_p
  * Each query vector takes its nearest previews from the HNSW index (`ORDER BY vector <=> query LIMIT pool` per vector,
  * the only shape pgvector serves from the index); a track's distance is the smallest distance between any of its
  * previews and any query vector, and `queryIndex` is the 0-based position of that query vector. The same tracks are
- * left out as in the cart similarity search: tracks the user has heard, ignores (artist, label, release, artist on
- * label) or purchased.
+ * left out as in the cart similarity search: tracks the user ignores (artist, label, release, artist on label) or
+ * purchased, and tracks the user has heard unless `includeHeard`.
  *
  * @returns {Promise<{trackId: number, distance: number, queryIndex: number}[]>}
  */
-module.exports.queryNearestTracks = ({ userId, type, vectors, limit }) =>
+module.exports.queryNearestTracks = ({ userId, type, vectors, limit, includeHeard = false }) =>
   BPromise.using(pg.getTransaction(), async (tx) => {
     const poolSize = Math.min(MAX_POOL, Math.max(MIN_POOL, limit * POOL_FACTOR))
     // HNSW returns at most ef_search rows per scan, so it must be at least the pool size.
@@ -67,11 +67,12 @@ WITH
                 ORDER BY st.track_id, ann.distance, ann.ord)
 SELECT track_id AS "trackId", distance, (ord - 1)::INT AS "queryIndex"
 FROM ann_track c
-WHERE NOT EXISTS (SELECT 1
-                  FROM user__track ut
-                  WHERE ut.track_id = c.track_id
-                    AND ut.meta_account_user_id = ${userId}
-                    AND ut.user__track_heard IS NOT NULL)
+WHERE (${includeHeard}::BOOLEAN
+       OR NOT EXISTS (SELECT 1
+                      FROM user__track ut
+                      WHERE ut.track_id = c.track_id
+                        AND ut.meta_account_user_id = ${userId}
+                        AND ut.user__track_heard IS NOT NULL))
   AND NOT EXISTS (SELECT 1
                   FROM track__cart tc
                          JOIN cart USING (cart_id)

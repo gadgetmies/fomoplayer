@@ -41,9 +41,9 @@ obtains the key with the existing `/api-keys/exchange-handoff` browser hand-off.
 
 Results leave out the tracks the API key's user has heard, ignores (artist, label, release, artist on label) or bought,
 as the cart similarity search does; the index pool per query vector is five times the limit so the exclusions rarely
-shorten the list.
+shorten the list. Heard tracks can be asked for with the query parameter `includeHeard=true` (owner decision,
+2026-11-23); ignored and bought tracks are always left out.
 
 ## Open Questions
 
-- None for this change. Whether heard tracks should be left out for a desktop client too is an owner decision recorded
-  with the implementation (D5 follows the cart similarity search until decided otherwise).
+- None for this change.
