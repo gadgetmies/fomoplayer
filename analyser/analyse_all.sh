@@ -17,6 +17,7 @@ SKIP_SANITY=0
 SCORE_AFTER=""
 FINGERPRINT_WORKERS=""
 LAYOUT="windows"
+PROGRESS=1
 
 usage() {
   cat <<EOF
@@ -33,6 +34,7 @@ Usage: $(basename "$0") [--previews] [--audio-samples]
                        [--skip-sanity-confirmation]
                        [--score-after N]
                        [--fingerprint-workers N]
+                       [--no-progress]
                        [--no-attach]
 
 At least one of --previews or --audio-samples is required.
@@ -80,6 +82,10 @@ At least one of --previews or --audio-samples is required.
                     (--fingerprint-workers of analyse-previews, --workers of
                     fingerprint-previews). Omitted → the worker default (4). Recommended
                     ceiling: cores − 1..2; use 1 to restore serial behaviour.
+  --no-progress     Don't add the progress status lines (previews in the bucket,
+                    left and total, rate, ETA; see analysis_progress.py). It
+                    counts from the production database through 'railway' unless
+                    ANALYSIS_PROGRESS_DATABASE_URL is set.
   --no-attach       Don't 'tmux attach' after launching.
 EOF
 }
@@ -100,6 +106,7 @@ while [[ $# -gt 0 ]]; do
     --skip-sanity-confirmation) SKIP_SANITY=1; shift ;;
     --score-after)    SCORE_AFTER="$2"; shift 2 ;;
     --fingerprint-workers) FINGERPRINT_WORKERS="$2"; shift 2 ;;
+    --no-progress)    PROGRESS=0; shift ;;
     --no-attach)      NO_ATTACH=1; shift ;;
     -h|--help)        usage; exit 0 ;;
     *)
@@ -306,6 +313,18 @@ fi
 # drag to select text (copies to the tmux buffer on release). Scoped to this
 # session so it doesn't depend on the user's ~/.tmux.conf.
 tmux set-option -t "$SESSION" mouse on
+
+# Two more status lines with the analysis progress: unanalysed previews in the
+# bucket and left / total, then rate and ETA (two short lines fit a phone-width
+# client). tmux runs the script every status-interval; the script asks the
+# database at most every five minutes.
+if [[ $PROGRESS -eq 1 ]]; then
+  progress_cmd="cd $(printf '%q' "$SCRIPT_DIR") && venv/bin/python analysis_progress.py"
+  tmux set-option -t "$SESSION" status 3
+  tmux set-option -t "$SESSION" status-interval 30
+  tmux set-option -t "$SESSION" 'status-format[1]' "#[align=left]#($progress_cmd --part counts)"
+  tmux set-option -t "$SESSION" 'status-format[2]' "#[align=left]#($progress_cmd --part rate)"
+fi
 
 if [[ $NO_ATTACH -eq 1 ]]; then
   echo "Session \"$SESSION\" started. Attach with: tmux attach -t $SESSION"
