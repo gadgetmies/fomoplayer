@@ -1,5 +1,9 @@
 wavio==0.0.9
-essentia-tensorflow==2.1b6.dev1389
+# Embeddings: the shared track-embedding reference package (track-embedding/1),
+# pinned by release tag; samplerate and onnxruntime are its decoder and model runtime.
+track-embedding @ git+https://github.com/gadgetmies/track-embedding@v1.0.1
+samplerate==0.2.4
+onnxruntime==1.32.0
 requests==2.33.0
 python-dotenv==1.2.2
 numpy==1.26.4

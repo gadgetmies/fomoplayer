@@ -1,0 +1,8 @@
+{
+  "made_by": "fomoplayer analyser/embedding.py (Essentia MonoLoader + TensorflowPredictEffnetDiscogs, output PartitionedCall:1, mean over patches)",
+  "fomoplayer_commit": "c90c42983ec63aa647fc4f441766e36cd7f00655",
+  "essentia_version": "2.1-beta6-dev",
+  "model_graph": "discogs_multi_embeddings-effnet-bs64-1.pb",
+  "model_graph_sha256": "2c964064951217e1e345461cf88884086a21f4bca2ae0d48187ee75edc263cd7",
+  "ffmpeg": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers"
+}

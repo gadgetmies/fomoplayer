@@ -2,10 +2,17 @@
 
 ## Discogs-EffNet (`discogs_multi_embeddings-effnet-bs64-1`)
 
-Files: `discogs_multi_embeddings-effnet-bs64-1.pb`, `discogs_multi_embeddings-effnet-bs64-1.json`
+Files: `discogs_multi_embeddings-effnet-bs64-1.pb`, `discogs_multi_embeddings-effnet-bs64-1.json`,
+and `discogs_multi_embeddings-effnet-bs64-1.onnx` (not in git).
 
-These files are redistributed unmodified from the Essentia models repository and are licensed
-separately from the rest of this repository.
+The analyser and the embedding service run the ONNX form of the model through the shared
+`track_embedding` package (`embedding.py`). The `.onnx` file is downloaded into this folder (or into
+`TRACK_EMBEDDING_MODELS_DIR`) the first time a worker builds the model, and checked against the size
+and sha256 pinned in the package's manifest. The `.pb` TensorFlow graph is no longer used by the
+analyser; the effnet-perception research package (`analyser/research/effnet-perception`) still reads it.
+
+These files are redistributed or downloaded unmodified from the Essentia models repository and are
+licensed separately from the rest of this repository.
 
 - **Authors:** Pablo Alonso-Jiménez, Xavier Serra and Dmitry Bogdanov, Music Technology Group (MTG),
   Universitat Pompeu Fabra
@@ -13,7 +20,7 @@ separately from the rest of this repository.
   [LICENSE](https://essentia.upf.edu/models/LICENSE))
 - **Source:**
   <https://essentia.upf.edu/models/feature-extractors/discogs-effnet/discogs_multi_embeddings-effnet-bs64-1.pb>
-  (metadata: the `.json` file next to it)
+  and `….onnx` in the same folder (metadata: the `.json` file next to it)
 - **Licence:** [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
   (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode). The models
   repository's LICENSE file names the licence "Attribution-NonCommercial-NoDerivatives 4.0" in its

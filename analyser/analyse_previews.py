@@ -7,7 +7,7 @@ combined queue (`GET /admin/preview-analysis`), which says which analyses
 each preview still needs, downloads and decodes each preview once, and runs
 those analyses at the same time on the one WAV:
 
-- embedding: one process, model built once (TensorFlow already uses every
+- embedding: one process, model built once (ONNX Runtime already uses every
   core for one inference);
 - waveform: one process (matplotlib and the bucket client live there);
 - fingerprints: `--fingerprint-workers` processes, each taking the WAVs that
@@ -59,8 +59,8 @@ from audio_decode import to_wav
 from auth import auth_header, get_api_url, request_error, resolve_url
 from embedding_sanity import EmbeddingSanityChecker
 
-# embedding.DEFAULT_MODEL; not imported because embedding loads TensorFlow,
-# which only the embedding process needs.
+# embedding.DEFAULT_MODEL; not imported because embedding imports the
+# track_embedding package, which only the embedding process needs.
 DEFAULT_MODEL = 'discogs_multi_embeddings-effnet-bs64-1'
 
 DOWNLOAD_TIMEOUT_S = float(os.getenv("ANALYSER_DOWNLOAD_TIMEOUT_S", "60"))

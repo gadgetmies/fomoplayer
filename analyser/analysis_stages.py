@@ -3,11 +3,11 @@
 Each function runs in a worker process of its own stage (started with
 `spawn`), on a WAV the coordinator decoded once for every analysis. Imports
 are lazy so a process only loads what its stage needs: the embedding process
-loads TensorFlow and the model once, the waveform process matplotlib and the
+loads ONNX Runtime and the model once, the waveform process matplotlib and the
 bucket client, the fingerprint processes only `extraction`.
 
 The analyses compute exactly what the separate workers compute:
-- embedding: `embedding.compute_temporal_embedding`, averaged as `main.py` does;
+- embedding: `embedding.embed_file`, as `main.py` does;
 - waveform: `waveform.generate_waveform` + `upload_waveform`;
 - fingerprints: `extraction.fingerprint_prepared` on at most
   `PREVIEW_MAX_DURATION_S` of the WAV, as `_preview_to_wav` decodes it; the
@@ -25,9 +25,6 @@ _model = None
 def init_embedding(model_name):
     """Process initializer of the embedding stage: build the model once."""
     global _model
-    import essentia
-    # Each embedding makes Essentia warn ~2,000 times (see main.py).
-    essentia.log.warningActive = False
     from embedding import build_model
     _model = build_model(model_name)
 
@@ -37,11 +34,11 @@ def embed(wav_path):
     model patch. Returns `(vector, duration_s)`; the duration is only read for
     too-short audio, for the log."""
     from audio_decode import wav_duration_seconds
-    from embedding import compute_temporal_embedding
-    embeddings = compute_temporal_embedding(wav_path, _model)
-    if len(embeddings) == 0:
+    from embedding import embed_file
+    vector = embed_file(wav_path, _model)
+    if vector is None:
         return None, wav_duration_seconds(wav_path)
-    return embeddings.T.mean(1).tolist(), None
+    return vector, None
 
 
 def init_waveform():

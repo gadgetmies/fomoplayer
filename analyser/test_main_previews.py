@@ -22,7 +22,7 @@ import numpy as np
 
 try:
     import embedding
-except ImportError:  # essentia-tensorflow not installed
+except ImportError:  # track-embedding not installed
     embedding = None
 
 ANALYSER_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -75,7 +75,7 @@ class _Backend(BaseHTTPRequestHandler):
             self._send(200, b'[]')
 
 
-@unittest.skipIf(embedding is None, 'essentia-tensorflow is not installed')
+@unittest.skipIf(embedding is None, 'track-embedding is not installed')
 @unittest.skipUnless(shutil.which('ffmpeg'), 'ffmpeg is not installed')
 class MainPreviewsTest(unittest.TestCase):
     def setUp(self):
@@ -106,12 +106,12 @@ class MainPreviewsTest(unittest.TestCase):
             env=dict(os.environ,
                      FOMOPLAYER_API_URL=f'http://127.0.0.1:{server.server_port}/api',
                      FOMOPLAYER_API_KEY='fp_test', SPOTIPY_CLIENT_ID='test', SPOTIPY_CLIENT_SECRET='test',
-                     TF_CPP_MIN_LOG_LEVEL='3', ANALYSER_NO_PROGRESS_WAIT_S='0',
+                     ANALYSER_NO_PROGRESS_WAIT_S='0',
                      NO_PROXY='127.0.0.1', no_proxy='127.0.0.1'))
 
     def _assert_vector(self, entry, name):
         path = os.path.join(self.dir, f'{name}.mp3')
-        expected = embedding.embed_file(path, self.model, self.dir)
+        expected = embedding.embed_file(path, self.model)
         actual = np.asarray(json.loads(entry['embeddings']))
         cosine = float(actual @ expected / np.linalg.norm(actual) / np.linalg.norm(expected))
         self.assertGreaterEqual(cosine, 0.9999, name)
@@ -152,7 +152,7 @@ class MainPreviewsTest(unittest.TestCase):
             env=dict(os.environ,
                      FOMOPLAYER_API_URL=f'http://127.0.0.1:{server.server_port}/api',
                      FOMOPLAYER_API_KEY='fp_test', SPOTIPY_CLIENT_ID='test', SPOTIPY_CLIENT_SECRET='test',
-                     TF_CPP_MIN_LOG_LEVEL='3', PYTHONUNBUFFERED='1',
+                     PYTHONUNBUFFERED='1',
                      NO_PROXY='127.0.0.1', no_proxy='127.0.0.1'))
         self.addCleanup(proc.stdout.close)
         lines = []
