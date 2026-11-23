@@ -133,6 +133,13 @@ export const patchTrackCartMembership = (slices, trackId, cartUuid, op) => {
 export const loadedCartTrackCount = (tracks, cartUuid) =>
   (tracks || []).filter((t) => t && (t.carts || []).some((c) => c && c.uuid === cartUuid)).length
 
+// Cart records from `/me/carts` (no tracks) keeping the tracks already loaded for each cart.
+export const mergeCartListPreservingTracks = (existingCarts, freshCarts) =>
+  freshCarts.map((cart) => {
+    const existing = (existingCarts || []).find(({ uuid }) => uuid === cart.uuid)
+    return existing && existing.tracks && !cart.tracks ? { ...cart, tracks: existing.tracks } : cart
+  })
+
 // A cart response ({ cart, tracks, page }) as the cart record kept in the state: the cart's fields with its tracks.
 export const cartRecord = ({ cart, tracks }) => ({ ...cart, tracks })
 
@@ -289,29 +296,48 @@ class App extends Component {
       this.setState({ loadingMore: true })
       await this.updateTracks(true)
     } else if (listState === 'carts') {
-      if (!cartPagination || cartPagination.loadingMore || !selectedCartUuid || !selectedCart) return
-      this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
-      const nextOffset = cartPagination.offset + cartPagination.count
-      const { cart, tracks: appendedTracks, page } = await requestJSONwithCredentials({
-        path: `/carts/${selectedCartUuid}?offset=${nextOffset}&limit=${CART_TRACKS_PAGE_SIZE}`,
-      })
-      const carts = this.state.carts.slice()
-      const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
-      if (cartIndex !== -1) {
-        const existingTracks = carts[cartIndex].tracks || []
-        carts[cartIndex] = { ...carts[cartIndex], ...cart, tracks: existingTracks.concat(appendedTracks) }
+      // The flag is set synchronously: the state flag is only seen after a render, so a scroll and an auto-load in the
+      // same tick would both fetch the same page
+      if (!cartPagination || cartPagination.loadingMore || this.loadingMoreCartTracks || !selectedCartUuid || !selectedCart)
+        return
+      this.loadingMoreCartTracks = true
+      try {
+        this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
+        const generation = this.cartTracksGeneration
+        const nextOffset = cartPagination.offset + cartPagination.count
+        const { cart, tracks: appendedTracks, page } = await requestJSONwithCredentials({
+          path: `/carts/${selectedCartUuid}?offset=${nextOffset}&limit=${CART_TRACKS_PAGE_SIZE}`,
+        })
+        // Another cart was selected (or this one reloaded) meanwhile: the page belongs to a list no longer on screen
+        if (this.state.selectedCartUuid !== selectedCartUuid || this.cartTracksGeneration !== generation) {
+          return
+        }
+        const carts = this.state.carts.slice()
+        const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
+        if (cartIndex !== -1) {
+          // Tracks added to the cart since the last page shift the offsets, so a page can repeat rows already listed
+          const existingTracks = carts[cartIndex].tracks || []
+          carts[cartIndex] = { ...carts[cartIndex], ...cart, tracks: deduplicateTracks(existingTracks, appendedTracks) }
+        }
+        const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
+        this.setState({
+          carts,
+          selectedCart: updatedSelectedCart,
+          cartPagination: {
+            offset: 0,
+            count: this.state.cartPagination.count + appendedTracks.length,
+            total: page.total,
+            loadingMore: false,
+          },
+        })
+      } catch (e) {
+        console.error('Loading more cart tracks failed', e)
+        if (this.state.cartPagination) {
+          this.setState({ cartPagination: { ...this.state.cartPagination, loadingMore: false } })
+        }
+      } finally {
+        this.loadingMoreCartTracks = false
       }
-      const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
-      this.setState({
-        carts,
-        selectedCart: updatedSelectedCart,
-        cartPagination: {
-          offset: 0,
-          count: cartPagination.count + appendedTracks.length,
-          total: page.total,
-          loadingMore: false,
-        },
-      })
     }
   }
 
@@ -493,7 +519,12 @@ class App extends Component {
     const carts = await requestJSONwithCredentials({
       path: `/me/carts`,
     })
-    const visibleCarts = carts.filter(({ deleted }) => !deleted)
+    // `/me/carts` lists carts without their tracks: keep the loaded ones, or the cart on screen (and the play queue
+    // stepping through it) would empty
+    const visibleCarts = mergeCartListPreservingTracks(
+      this.state.carts,
+      carts.filter(({ deleted }) => !deleted),
+    )
     const selectedCartUuid = this.state.selectedCartUuid || visibleCarts[0]?.uuid
     const selectedCart = selectedCartUuid ? visibleCarts.find(({ uuid }) => uuid === selectedCartUuid) : undefined
 
@@ -1173,6 +1204,7 @@ class App extends Component {
   }
 
   async selectCart(selectedCartUuid) {
+    this.cartTracksGeneration = (this.cartTracksGeneration || 0) + 1
     this.setState({ selectedCartUuid, fetchingCartDetails: true, cartPagination: null })
     const path = `/carts/${selectedCartUuid}?offset=0&limit=${CART_TRACKS_PAGE_SIZE}`
     const response = await requestJSONwithCredentials({ path })

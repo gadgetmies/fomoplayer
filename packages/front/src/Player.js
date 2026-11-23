@@ -160,7 +160,11 @@ class Player extends Component {
   // The tracks next / previous step through: the list the current track was started from.
   getQueueTracks() {
     if (this.props.mode === 'list') return this.getTracks()
-    return queueTracks(this.props.playingFrom, { source: this.getOnScreenSource(), tracks: this.getTracks() })
+    return queueTracks(
+      this.props.playingFrom,
+      { source: this.getOnScreenSource(), tracks: this.getTracks() },
+      this.props.currentTrack?.id,
+    )
   }
 
   getTrackIndex(track) {
@@ -188,7 +192,10 @@ class Player extends Component {
       this.props.onUpdateTracksClicked()
     }
 
-    await this.props.onSetCurrentTrack(nextTrack)
+    // Keep the snapshot in step with the queue, so it holds the tracks paged in since playback started: once the
+    // source is off screen, next continues from the current track instead of the top of an older snapshot.
+    const playingFrom = this.props.playingFrom
+    await this.props.onSetCurrentTrack(nextTrack, playingFrom?.source ? { ...playingFrom, tracks: queue } : undefined)
   }
 
   async playPreviousTrack() {

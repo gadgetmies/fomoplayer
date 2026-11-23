@@ -1,6 +1,7 @@
 import {
   loadedCartTrackCount,
   mergeCartDetailsPreservingTracks,
+  mergeCartListPreservingTracks,
   patchTrackCarts,
   patchTrackCartMembership,
 } from './App'
@@ -193,5 +194,21 @@ describe('keeping a removed track listed in the cart on screen', () => {
     const inCart = { carts: [{ uuid: 'uuid-1' }, { uuid: 'other' }] }
     const tracks = [{ id: 10, ...inCart }, { id: 11, carts: [{ uuid: 'other' }] }, { id: 12, ...inCart }]
     expect(loadedCartTrackCount(tracks, 'uuid-1')).toBe(2)
+  })
+})
+
+describe('mergeCartListPreservingTracks', () => {
+  it('keeps the loaded tracks of carts listed without tracks', () => {
+    const existing = [cart(1, [{ id: 10 }, { id: 11 }]), cart(2, [{ id: 20 }])]
+    const fresh = [
+      { ...cart(1), tracks: undefined, name: 'renamed', trackCount: 5 },
+      { ...cart(3), tracks: undefined },
+    ]
+    const merged = mergeCartListPreservingTracks(existing, fresh)
+    expect(merged.map((c) => c.id)).toEqual([1, 3])
+    expect(merged[0].tracks.map((t) => t.id)).toEqual([10, 11])
+    expect(merged[0].name).toBe('renamed')
+    expect(merged[0].trackCount).toBe(5)
+    expect(merged[1].tracks).toBeUndefined()
   })
 })
