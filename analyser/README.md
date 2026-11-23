@@ -122,6 +122,7 @@ the existing Python entry points until the backend queue is empty.
 | `--idle-wait SECONDS`   | When a worker finds its queue empty, wait this long and ask again instead of stopping (the backend adds prefetched audio every 10 minutes). Default `120`; `0` stops each loop once its queue is drained, the default with `--direct-download`. |
 | `--skip-sanity-confirmation` | Pass `--skip-sanity-confirmation` through to `main.py` — embedding-collision warnings are logged but no longer block on a y/N prompt. Recommended for unattended drains. |
 | `--score-after N`       | Separate workers only. Pass `--score-after N` through to `panako_processor.py --previews`. After every N successfully fingerprinted previews in one invocation, the worker pauses and re-scores all samples that have fingerprints, persisting results into `user_notification_audio_sample_match`. Only effective when `--batch-size >= N` (counter is per-invocation). |
+| `--no-progress`         | Don't add the two progress status lines (see "Progress status lines" below).          |
 | `--no-attach`           | Don't `tmux attach` at the end; print the attach command instead.                     |
 
 ### Window names
@@ -146,6 +147,36 @@ it breaks cleanly instead. Windows are created with
 `remain-on-exit on`, so the pane stays visible with its final
 scrollback after the loop ends — operators can review what the worker
 last printed before closing the session.
+
+### Progress status lines
+
+The session gets two extra tmux status lines from `analysis_progress.py`:
+
+```
+bucket 960 · left 21417/139423
+440/h · ETA 2d 1h
+```
+
+For the previews of the prefetched stores (Bandcamp, Beatport): unanalysed
+previews whose audio is in the bucket, unanalysed previews in total out of
+all previews, the analysis rate over about the last hour and the time left
+at that rate. "Analysed" is the backend's `analysedCondition`
+(`packages/back/routes/admin/preview-audio.js`); keep the query in sync.
+The rate counts previews that became analysed, so new previews arriving do
+not hide progress; it reads `…` for the first ten minutes.
+
+The script reads the production database read-only, at most once every five
+minutes (`--refresh`); in between it prints the cached counts from
+`$TMPDIR/fomoplayer-analysis-progress-<uid>.json`. The database URL comes
+from `ANALYSIS_PROGRESS_DATABASE_URL`, or else from `railway variables` for
+the `pgvector` service (`ANALYSIS_PROGRESS_RAILWAY_ENVIRONMENT`, default
+`production`), run in this directory. When a refresh fails the last counts
+are shown with `(stale)`. Run it by hand:
+
+```bash
+venv/bin/python analysis_progress.py              # one line
+venv/bin/python analysis_progress.py --refresh 0  # ask the database now
+```
 
 ### `exit(2)` convention for empty queues
 
