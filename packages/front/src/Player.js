@@ -445,7 +445,8 @@ class Player extends Component {
               const trackCount = this.getTracks().length - 1
               if (requestedTrackIndex === trackCount) this.props.onUpdateTracksClicked()
               const source = this.getOnScreenSource()
-              this.props.onSetCurrentTrack(requestedTrack, source ? { source, tracks: this.getTracks() } : null)
+              // A copy, so later edits to the list on screen do not reorder the queue
+              this.props.onSetCurrentTrack(requestedTrack, source ? { source, tracks: this.getTracks().slice() } : null)
             }}
             onRemoveFromCart={this.props.onRemoveFromCart}
             onRequestNotificationUpdate={this.props.onRequestNotificationUpdate}

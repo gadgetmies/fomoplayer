@@ -709,7 +709,8 @@ class App extends Component {
     const updatedTrack = R.assoc('heard', (new Date()).toISOString(), track)
     const playedTrackIndex = this.state.heardTracks.findIndex(R.propEq(track.id, 'id'))
     if (playedTrackIndex !== -1) {
-      updatedHeardTracks.splice(playedTrackIndex, 1)
+      // Not in place: the player's queue may be this same array
+      updatedHeardTracks = R.remove(playedTrackIndex, 1, updatedHeardTracks)
     } else {
       // TODO: Probably safer to not store the count, but instead calculate it from the array length
       this.setState({ listenedTracks: this.state.listenedTracks + 1 })
