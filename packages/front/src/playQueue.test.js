@@ -1,4 +1,5 @@
 import {
+  heldSourceTracks,
   listSource,
   isViewingSource,
   queueTracks,
@@ -81,10 +82,44 @@ describe('queueTracks', () => {
     expect(queueTracks({ source: recent, tracks: snapshot }, { source: cart, tracks: tracks(9) })).toBe(snapshot)
   })
 
-  it('falls back to the list on screen without a source or snapshot', () => {
+  it('uses the list on screen without a source', () => {
     const live = tracks(5)
     expect(queueTracks(null, { source: cart, tracks: live })).toBe(live)
-    expect(queueTracks({ source: recent, tracks: [] }, { source: cart, tracks: live })).toBe(live)
+  })
+
+  it('uses the source tracks the app holds when the snapshot is gone, as after a reload', () => {
+    const held = tracks(1, 2)
+    expect(queueTracks({ source: recent, tracks: [] }, { source: cart, tracks: tracks(9) }, held)).toBe(held)
+  })
+
+  it('has no queue rather than the list on screen when the source tracks are unknown', () => {
+    expect(queueTracks({ source: recent, tracks: [] }, { source: cart, tracks: tracks(9) }, null)).toBeNull()
+  })
+})
+
+describe('heldSourceTracks', () => {
+  const held = {
+    tracks: { new: tracks(1), recentlyAdded: tracks(2) },
+    heardTracks: tracks(3),
+    carts: [{ uuid: 'a', tracks: tracks(4) }, { uuid: 'b' }],
+  }
+
+  it('finds the Discover lists and loaded carts', () => {
+    expect(heldSourceTracks(listSource({ listState: 'new' }), held)).toBe(held.tracks.new)
+    expect(heldSourceTracks(listSource({ listState: 'recent' }), held)).toBe(held.tracks.recentlyAdded)
+    expect(heldSourceTracks(listSource({ listState: 'heard' }), held)).toBe(held.heardTracks)
+    expect(heldSourceTracks(listSource({ listState: 'carts', selectedCart: { uuid: 'a', name: 'A' } }), held)).toBe(
+      held.carts[0].tracks,
+    )
+  })
+
+  it('has nothing for a cart not loaded, a search or the samples', () => {
+    expect(
+      heldSourceTracks(listSource({ listState: 'carts', selectedCart: { uuid: 'b', name: 'B' } }), held),
+    ).toBeNull()
+    expect(heldSourceTracks(listSource({ listState: 'search', location: { search: '?q=x' } }), held)).toBeNull()
+    expect(heldSourceTracks(samplesSource, held)).toBeNull()
+    expect(heldSourceTracks(null, held)).toBeNull()
   })
 })
 

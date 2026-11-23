@@ -3,7 +3,7 @@ import Tracks from './Tracks.js'
 import React, { Component } from 'react'
 import * as R from 'ramda'
 import { PlayerHelp } from './PlayerHelp'
-import { isSample, isViewingSource, listSource, queueTracks, stepInQueue } from './playQueue'
+import { heldSourceTracks, isSample, isViewingSource, listSource, queueTracks, stepInQueue } from './playQueue'
 
 // Stop auto-skipping after this many tracks in a row fail to play, so a store
 // outage doesn't race through (and request previews for) the whole list.
@@ -157,10 +157,20 @@ class Player extends Component {
     return isViewingSource(source, { onScreenSource, location: window.location }) ? null : source
   }
 
-  // The tracks next / previous step through: the list the current track was started from.
-  getQueueTracks() {
-    if (this.props.mode === 'list') return this.getTracks()
-    return queueTracks(this.props.playingFrom, { source: this.getOnScreenSource(), tracks: this.getTracks() })
+  // The tracks next / previous step through: the list the current track was started from. `playingFrom` is set when
+  // that list's tracks are no longer known (a search or the samples, after a reload): the queue then continues from
+  // the list on screen, and the player names that list as the source instead of one it can no longer follow.
+  getQueue() {
+    if (this.props.mode === 'list') return { tracks: this.getTracks() }
+    const onScreen = { source: this.getOnScreenSource(), tracks: this.getTracks() }
+    const { playingFrom, tracks: discoverLists, heardTracks, carts } = this.props
+    const held = heldSourceTracks(playingFrom?.source, { tracks: discoverLists, heardTracks, carts })
+    const tracks = queueTracks(playingFrom, onScreen, held)
+    if (tracks) return { tracks }
+    return {
+      tracks: onScreen.tracks,
+      playingFrom: onScreen.source ? { source: onScreen.source, tracks: onScreen.tracks.slice() } : null,
+    }
   }
 
   getTrackIndex(track) {
@@ -174,7 +184,7 @@ class Player extends Component {
   }
 
   async jumpTracks(numberOfTracksToJump) {
-    const queue = this.getQueueTracks()
+    const { tracks: queue, playingFrom } = this.getQueue()
     const currentId = this.props.currentTrack?.id
     const nextTrack = stepInQueue(queue, currentId, numberOfTracksToJump, (track) => this.isPlayable(track))
     if (!nextTrack) {
@@ -188,7 +198,7 @@ class Player extends Component {
       this.props.onUpdateTracksClicked()
     }
 
-    await this.props.onSetCurrentTrack(nextTrack)
+    await this.props.onSetCurrentTrack(nextTrack, playingFrom)
   }
 
   async playPreviousTrack() {
@@ -201,10 +211,9 @@ class Player extends Component {
 
   async playNextUnheard() {
     const currentId = this.props.currentTrack?.id
-    const nextUnheard = this.getQueueTracks().find(
-      (track) => track.id !== currentId && R.isNil(track.heard) && this.isPlayable(track),
-    )
-    if (nextUnheard) await this.props.onSetCurrentTrack(nextUnheard)
+    const { tracks, playingFrom } = this.getQueue()
+    const nextUnheard = tracks.find((track) => track.id !== currentId && R.isNil(track.heard) && this.isPlayable(track))
+    if (nextUnheard) await this.props.onSetCurrentTrack(nextUnheard, playingFrom)
   }
 
   async handlePlaybackFailed(track) {
@@ -322,7 +331,7 @@ class Player extends Component {
 
   async markHeard(id) {
     const track =
-      this.getQueueTracks().find(R.propEq(id, 'id')) ||
+      this.getQueue().tracks.find(R.propEq(id, 'id')) ||
       (this.props.currentTrack?.id === id ? this.props.currentTrack : undefined)
     if (track) return this.props.markHeard(track)
   }

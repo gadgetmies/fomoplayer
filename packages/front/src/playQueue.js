@@ -35,10 +35,29 @@ export const isViewingSource = (source, { onScreenSource, location }) => {
   return Boolean(location) && `${location.pathname}${location.search || ''}` === source.path
 }
 
-export const queueTracks = (playingFrom, onScreen) => {
+// The tracks of a source the app still holds in its state: the Discover lists and the carts it has loaded. Null for a
+// source it does not hold (an earlier search, the audio samples). `held` is `{ tracks, heardTracks, carts }`, where
+// `tracks` holds the Discover lists by list name.
+export const heldSourceTracks = (source, held = {}) => {
+  if (!source) return null
+  if (source.key === 'new') return held.tracks?.new || null
+  if (source.key === 'recent') return held.tracks?.recentlyAdded || null
+  if (source.key === 'heard') return held.heardTracks || null
+  if (source.key.startsWith('cart:')) {
+    return (held.carts || []).find(({ uuid }) => `cart:${uuid}` === source.key)?.tracks || null
+  }
+  return null
+}
+
+// The tracks next / previous step through. Without a source, the list on screen. With one: the live list while it is
+// on screen, otherwise the snapshot taken when playback started, otherwise (the snapshot is lost when the page
+// reloads) the source's tracks the app still holds. Null when none of these has the source's tracks, so the caller
+// does not step through the list on screen while the player still names the source.
+export const queueTracks = (playingFrom, onScreen, heldTracks) => {
   if (!playingFrom?.source) return onScreen?.tracks || []
   if (onScreen?.source && onScreen.source.key === playingFrom.source.key) return onScreen.tracks || []
-  return playingFrom.tracks?.length ? playingFrom.tracks : onScreen?.tracks || []
+  if (playingFrom.tracks?.length) return playingFrom.tracks
+  return heldTracks?.length ? heldTracks : null
 }
 
 // The track `step` positions away from `currentId`, skipping tracks `isPlayable` rejects, or null at either end.
