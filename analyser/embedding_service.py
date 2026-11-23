@@ -1,4 +1,5 @@
-"""HTTP service that turns audio into a Discogs-EffNet embedding.
+"""HTTP service that turns audio into a Discogs-EffNet embedding
+(`track-embedding/1`, computed by `embedding.py` with the shared package).
 
 Runs next to the backend on a private network. The backend's
 `embedNotificationAudioSamples` job POSTs each pending sample's audio here and
@@ -26,20 +27,10 @@ import threading
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-import essentia
-
 from audio_decode import AudioDecodeError
 import embedding
 
-WAV_TYPES = {'audio/wav', 'audio/x-wav', 'audio/wave', 'audio/vnd.wave'}
 DEFAULT_MAX_BYTES = 100 * 1024 * 1024
-
-
-def _suffix(content_type):
-    """`.wav` uploads are embedded as-is (as main.py does); everything else is
-    decoded by ffmpeg, which detects the format from the content."""
-    media_type = (content_type or '').split(';')[0].strip().lower()
-    return '.wav' if media_type in WAV_TYPES else '.audio'
 
 
 class DualStackHTTPServer(ThreadingHTTPServer):
@@ -112,17 +103,18 @@ def create_server(token, model, port=0, host=None, max_bytes=DEFAULT_MAX_BYTES):
                 return self._json(413, {'error': f'body over {max_bytes} bytes'})
 
             with tempfile.TemporaryDirectory(prefix='embed_') as work_dir:
-                path = os.path.join(work_dir, 'input' + _suffix(self.headers.get('Content-Type')))
+                # FFmpeg detects the format from the content, whatever the Content-Type says.
+                path = os.path.join(work_dir, 'input')
                 with open(path, 'wb') as f:
                     f.write(self.rfile.read(length))
                 try:
                     with inference_lock:
-                        vector = embedding.embed_file(path, model, work_dir)
+                        vector = embedding.embed_file(path, model)
                 except AudioDecodeError as e:
                     return self._json(422, {'error': str(e)})
-                except Exception as e:  # Essentia raises RuntimeError on unreadable WAVs
+                except Exception as e:  # not the audio's fault (model file, runtime): the sample stays queued
                     traceback.print_exc()
-                    return self._json(422, {'error': f'could not embed audio: {e}'})
+                    return self._json(500, {'error': f'could not embed audio: {e}'})
             if vector is None:
                 return self._json(422, {'error': 'audio too short to embed'})
             self._json(200, {'model': embedding.DEFAULT_MODEL, 'embedding': vector})
@@ -130,15 +122,7 @@ def create_server(token, model, port=0, host=None, max_bytes=DEFAULT_MAX_BYTES):
     return _listen((host, port), Handler)
 
 
-def quiet_essentia_warnings():
-    """Each embedding makes Essentia warn 'No network created, or last created
-    network has been deleted...' about 2,000 times, which overruns Railway's log
-    rate limit and drops other lines. Its errors stay on."""
-    essentia.log.warningActive = False
-
-
 def main():
-    quiet_essentia_warnings()
     token = os.environ.get('EMBEDDING_SERVICE_TOKEN')
     if not token:
         sys.exit('EMBEDDING_SERVICE_TOKEN is not set; refusing to start without it')

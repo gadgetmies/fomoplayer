@@ -25,6 +25,26 @@ Install dependencies with the following command:
 
 ```pip install -r requirements.txt```
 
+Embeddings come from the shared `track_embedding` package
+(github.com/gadgetmies/track-embedding, pinned by release tag in
+`requirements.txt`; specification version `track-embedding/1`, stored as
+`discogs_multi_embeddings-effnet-bs64-1`). The first worker that builds the
+model downloads the ONNX Discogs-EffNet model (CC BY-NC-SA 4.0, see
+`models/README.md`) into `models/`, or reads it from
+`TRACK_EMBEDDING_MODELS_DIR` when set. Essentia and TensorFlow are no longer
+needed.
+
+Run the embedding tests (the conformance fixtures in
+`fixtures/track-embedding-1` must match within cosine 0.99999):
+
+```venv/bin/python -m pytest test_embedding.py test_embedding_service.py```
+
+`compare_stored_embeddings.py` compares the package's vectors with vectors
+already stored for 200 previews and 20 notification samples, reading the
+database read-only (`DATABASE_URL`) and the audio from the preview URLs and
+the back end's storage redirect (`FOMOPLAYER_API_URL`); it exits 1 when any
+vector is below cosine 0.99999.
+
 Initialise Postgres vector database
 
 ```brew install postgres```
@@ -122,6 +142,7 @@ the existing Python entry points until the backend queue is empty.
 | `--idle-wait SECONDS`   | When a worker finds its queue empty, wait this long and ask again instead of stopping (the backend adds prefetched audio every 10 minutes). Default `120`; `0` stops each loop once its queue is drained, the default with `--direct-download`. |
 | `--skip-sanity-confirmation` | Pass `--skip-sanity-confirmation` through to `main.py` — embedding-collision warnings are logged but no longer block on a y/N prompt. Recommended for unattended drains. |
 | `--score-after N`       | Separate workers only. Pass `--score-after N` through to `panako_processor.py --previews`. After every N successfully fingerprinted previews in one invocation, the worker pauses and re-scores all samples that have fingerprints, persisting results into `user_notification_audio_sample_match`. Only effective when `--batch-size >= N` (counter is per-invocation). |
+| `--no-progress`         | Don't add the two progress status lines (see "Progress status lines" below).          |
 | `--no-attach`           | Don't `tmux attach` at the end; print the attach command instead.                     |
 
 ### Window names
@@ -146,6 +167,36 @@ it breaks cleanly instead. Windows are created with
 `remain-on-exit on`, so the pane stays visible with its final
 scrollback after the loop ends — operators can review what the worker
 last printed before closing the session.
+
+### Progress status lines
+
+The session gets two extra tmux status lines from `analysis_progress.py`:
+
+```
+bucket 960 · left 21417/139423
+440/h · ETA 2d 1h
+```
+
+For the previews of the prefetched stores (Bandcamp, Beatport): unanalysed
+previews whose audio is in the bucket, unanalysed previews in total out of
+all previews, the analysis rate over about the last hour and the time left
+at that rate. "Analysed" is the backend's `analysedCondition`
+(`packages/back/routes/admin/preview-audio.js`); keep the query in sync.
+The rate counts previews that became analysed, so new previews arriving do
+not hide progress; it reads `…` for the first ten minutes.
+
+The script reads the production database read-only, at most once every five
+minutes (`--refresh`); in between it prints the cached counts from
+`$TMPDIR/fomoplayer-analysis-progress-<uid>.json`. The database URL comes
+from `ANALYSIS_PROGRESS_DATABASE_URL`, or else from `railway variables` for
+the `pgvector` service (`ANALYSIS_PROGRESS_RAILWAY_ENVIRONMENT`, default
+`production`), run in this directory. When a refresh fails the last counts
+are shown with `(stale)`. Run it by hand:
+
+```bash
+venv/bin/python analysis_progress.py              # one line
+venv/bin/python analysis_progress.py --refresh 0  # ask the database now
+```
 
 ### `exit(2)` convention for empty queues
 
@@ -374,12 +425,11 @@ calls the backend; both `main.py` and the service compute vectors with
 | Endpoint | Result |
 |---|---|
 | `GET /health` | `200 {"status": "ok", "model": ...}` |
-| `POST /embed` (raw audio body, `Content-Type` names the format) | `200 {"model": ..., "embedding": [1280 floats]}`; `401` without `Authorization: Bearer <token>`; `413` over the size limit; `422 {"error": ...}` for audio that cannot be decoded or is too short |
+| `POST /embed` (raw audio body; FFmpeg detects the format) | `200 {"model": ..., "embedding": [1280 floats]}`; `401` without `Authorization: Bearer <token>`; `413` over the size limit; `422 {"error": ...}` for audio that cannot be decoded or is too short; `500 {"error": ...}` when embedding fails for another reason (the sample stays queued) |
 
 Environment: `EMBEDDING_SERVICE_TOKEN` (required; the service refuses to
 start without it), `PORT` (default 8080), `EMBEDDING_SERVICE_MAX_BYTES`
-(default 100 MB). A `.wav` body is embedded as-is, like `main.py` does for
-uploaded samples; anything else is decoded by ffmpeg.
+(default 100 MB). The image downloads the model at build time.
 
 Run it locally:
 

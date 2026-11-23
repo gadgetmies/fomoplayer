@@ -119,3 +119,6 @@ __pycache__/
 
 # Lavish review pages (generated, may embed personal data)
 .lavish/
+
+# Downloaded by analyser/embedding.py (CC BY-NC-SA 4.0 model, never committed)
+analyser/models/*.onnx

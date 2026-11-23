@@ -12,7 +12,6 @@ import os
 import shutil
 import socket
 import subprocess
-import sys
 import tempfile
 import threading
 import unittest
@@ -25,7 +24,7 @@ import numpy as np
 try:
     import embedding
     import embedding_service
-except ImportError:  # essentia-tensorflow not installed
+except ImportError:  # track-embedding not installed
     embedding = None
 
 TOKEN = 'test-token'
@@ -45,7 +44,7 @@ def _generate(path, source, *args):
                     *args, path], check=True)
 
 
-@unittest.skipIf(embedding is None, 'essentia-tensorflow is not installed')
+@unittest.skipIf(embedding is None, 'track-embedding is not installed')
 @unittest.skipUnless(shutil.which('ffmpeg'), 'ffmpeg is not installed')
 class EmbeddingServiceTest(unittest.TestCase):
     @classmethod
@@ -93,13 +92,19 @@ class EmbeddingServiceTest(unittest.TestCase):
         self.assertEqual(status, 200, body)
         self.assertEqual(body['model'], embedding.DEFAULT_MODEL)
         self.assertEqual(len(body['embedding']), 1280)
-        expected = embedding.embed_file(self.mp3, self.model, tempfile.mkdtemp(dir=self.dir))
+        expected = embedding.embed_file(self.mp3, self.model)
         np.testing.assert_allclose(body['embedding'], expected, rtol=0, atol=1e-6)
 
-    def test_wav_is_embedded_as_is(self):
+    def test_wav_vector_matches_shared_module(self):
         status, body = self.request('POST', '/embed', self.read(self.wav), content_type='audio/wav')
         self.assertEqual(status, 200, body)
-        np.testing.assert_allclose(body['embedding'], embedding.embed_wav(self.wav, self.model), rtol=0, atol=1e-6)
+        np.testing.assert_allclose(body['embedding'], embedding.embed_file(self.wav, self.model), rtol=0, atol=1e-6)
+
+    def test_format_is_detected_from_the_content(self):
+        # Browsers label uploads loosely; a WAV sent as audio/mpeg is still a WAV.
+        status, body = self.request('POST', '/embed', self.read(self.wav), content_type='audio/mpeg')
+        self.assertEqual(status, 200, body)
+        np.testing.assert_allclose(body['embedding'], embedding.embed_file(self.wav, self.model), rtol=0, atol=1e-6)
 
     def test_missing_or_wrong_token_is_401(self):
         for token in (None, 'wrong-token', ''):
@@ -159,29 +164,6 @@ class EmbeddingServiceTest(unittest.TestCase):
         self.assertEqual(server.server_address[0], '0.0.0.0')
         self.assertIn('IPv6 unavailable', out.getvalue())
         self.assertEqual(self.health('127.0.0.1', server.server_port), 200)
-
-    def embed_in_child(self, quiet):
-        """Essentia logs to file descriptor 2, so run one embedding in a child
-        process and return (stderr, vector)."""
-        code = (
-            'import json, tempfile, embedding, embedding_service\n'
-            + ('embedding_service.quiet_essentia_warnings()\n' if quiet else '')
-            + f'v = embedding.embed_file({self.mp3!r}, embedding.build_model(), tempfile.mkdtemp())\n'
-            + 'print(json.dumps(v))\n'
-        )
-        result = subprocess.run([sys.executable, '-c', code], cwd=os.path.dirname(os.path.abspath(__file__)),
-                                capture_output=True, text=True, timeout=300,
-                                env=dict(os.environ, TF_CPP_MIN_LOG_LEVEL='3'))
-        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
-        return result.stderr, json.loads(result.stdout.strip().splitlines()[-1])
-
-    def test_essentia_warnings_are_silenced(self):
-        warning = 'No network created, or last created network has been deleted'
-        noisy_err, noisy_vector = self.embed_in_child(quiet=False)
-        quiet_err, quiet_vector = self.embed_in_child(quiet=True)
-        self.assertIn(warning, noisy_err, 'control: the warning appears without the switch')
-        self.assertNotIn(warning, quiet_err)
-        self.assertEqual(quiet_vector, noisy_vector)
 
     def test_refuses_to_start_without_token(self):
         with self.assertRaises(ValueError):
