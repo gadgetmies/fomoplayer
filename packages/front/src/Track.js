@@ -250,6 +250,7 @@ class Track extends Component {
     return (
       <tr
         ref={'row'}
+        data-track-id={this.props.id}
         style={{
           display: 'flex',
           width: '100%',
