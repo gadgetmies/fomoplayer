@@ -25,9 +25,34 @@ const reserveRandomPort = async () =>
     server.on('error', reject)
   })
 
+// Resolves once something accepts connections on 127.0.0.1:port.
+const waitForPort = (port, deadline) =>
+  new Promise((resolve, reject) => {
+    const attempt = () => {
+      const socket = net.connect(port, '127.0.0.1')
+      socket.once('connect', () => {
+        socket.destroy()
+        resolve()
+      })
+      socket.once('error', () => {
+        socket.destroy()
+        if (Date.now() > deadline) reject(new Error(`Nothing listening on port ${port}`))
+        else setTimeout(attempt, 50)
+      })
+    }
+    attempt()
+  })
+
+// Starts the backend on a free port. Resolves only when the port accepts
+// connections: the backend logs "Listening" right after calling listen(), and
+// a server that dies after that line (for example EADDRINUSE because another
+// process took the reserved port) would otherwise surface as ECONNREFUSED in
+// the first request. If the server exits before the test kills it, its exit
+// code and last output are written to stderr so that failure names its cause.
 module.exports.startServer = async ({ env: envOverrides = {} } = {}) => {
   const port = await reserveRandomPort()
   const baseUrl = `http://localhost:${port}`
+  const deadline = Date.now() + 30000
 
   return new Promise((resolve, reject) => {
     const server = spawn('node', ['index.js'], {
@@ -46,28 +71,49 @@ module.exports.startServer = async ({ env: envOverrides = {} } = {}) => {
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 
-    const timeout = setTimeout(() => {
+    let output = ''
+    let settled = false
+    const remember = (data) => {
+      output = (output + data.toString()).slice(-4000)
+    }
+    const fail = (err) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeout)
       server.kill()
-      reject(new Error('Server startup timed out after 30s'))
-    }, 30000)
+      reject(err)
+    }
+
+    const timeout = setTimeout(() => fail(new Error('Server startup timed out after 30s')), 30000)
 
     server.stdout.on('data', (data) => {
-      if (data.toString().includes('Listening')) {
-        clearTimeout(timeout)
-        server.stdout.unref()
-        server.stderr.unref()
-        server.unref()
-        resolve({ server, port })
+      remember(data)
+      if (!settled && data.toString().includes('Listening')) {
+        waitForPort(port, deadline).then(() => {
+          if (settled) return
+          settled = true
+          clearTimeout(timeout)
+          server.stdout.unref()
+          server.stderr.unref()
+          server.unref()
+          resolve({ server, port })
+        }, fail)
       }
     })
 
     server.stderr.on('data', (data) => {
+      remember(data)
       process.stderr.write(data)
     })
 
-    server.on('error', (err) => {
-      clearTimeout(timeout)
-      reject(err)
+    server.on('error', fail)
+
+    server.on('exit', (code, signal) => {
+      // A kill by the test (SIGTERM) is the normal end.
+      if (signal === 'SIGTERM' || signal === 'SIGKILL') return
+      const message = `Test server on port ${port} exited (code ${code}, signal ${signal}). Last output:\n${output}`
+      if (!settled) fail(new Error(message))
+      else process.stderr.write(`${message}\n`)
     })
   })
 }
