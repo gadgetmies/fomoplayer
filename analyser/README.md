@@ -25,6 +25,26 @@ Install dependencies with the following command:
 
 ```pip install -r requirements.txt```
 
+Embeddings come from the shared `track_embedding` package
+(github.com/gadgetmies/track-embedding, pinned by release tag in
+`requirements.txt`; specification version `track-embedding/1`, stored as
+`discogs_multi_embeddings-effnet-bs64-1`). The first worker that builds the
+model downloads the ONNX Discogs-EffNet model (CC BY-NC-SA 4.0, see
+`models/README.md`) into `models/`, or reads it from
+`TRACK_EMBEDDING_MODELS_DIR` when set. Essentia and TensorFlow are no longer
+needed.
+
+Run the embedding tests (the conformance fixtures in
+`fixtures/track-embedding-1` must match within cosine 0.99999):
+
+```venv/bin/python -m pytest test_embedding.py test_embedding_service.py```
+
+`compare_stored_embeddings.py` compares the package's vectors with vectors
+already stored for 200 previews and 20 notification samples, reading the
+database read-only (`DATABASE_URL`) and the audio from the preview URLs and
+the back end's storage redirect (`FOMOPLAYER_API_URL`); it exits 1 when any
+vector is below cosine 0.99999.
+
 Initialise Postgres vector database
 
 ```brew install postgres```
@@ -405,12 +425,11 @@ calls the backend; both `main.py` and the service compute vectors with
 | Endpoint | Result |
 |---|---|
 | `GET /health` | `200 {"status": "ok", "model": ...}` |
-| `POST /embed` (raw audio body, `Content-Type` names the format) | `200 {"model": ..., "embedding": [1280 floats]}`; `401` without `Authorization: Bearer <token>`; `413` over the size limit; `422 {"error": ...}` for audio that cannot be decoded or is too short |
+| `POST /embed` (raw audio body; FFmpeg detects the format) | `200 {"model": ..., "embedding": [1280 floats]}`; `401` without `Authorization: Bearer <token>`; `413` over the size limit; `422 {"error": ...}` for audio that cannot be decoded or is too short; `500 {"error": ...}` when embedding fails for another reason (the sample stays queued) |
 
 Environment: `EMBEDDING_SERVICE_TOKEN` (required; the service refuses to
 start without it), `PORT` (default 8080), `EMBEDDING_SERVICE_MAX_BYTES`
-(default 100 MB). A `.wav` body is embedded as-is, like `main.py` does for
-uploaded samples; anything else is decoded by ffmpeg.
+(default 100 MB). The image downloads the model at build time.
 
 Run it locally:
 

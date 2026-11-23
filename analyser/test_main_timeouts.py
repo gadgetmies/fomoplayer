@@ -17,7 +17,7 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 try:
-    import embedding  # noqa: F401  (main.py needs essentia-tensorflow)
+    import embedding  # noqa: F401  (main.py needs track-embedding)
 except ImportError:
     embedding = None
 
@@ -67,7 +67,7 @@ class _Backend(BaseHTTPRequestHandler):
         self._send_json([])
 
 
-@unittest.skipIf(embedding is None, 'essentia-tensorflow is not installed')
+@unittest.skipIf(embedding is None, 'track-embedding is not installed')
 class StalledDownloadTest(unittest.TestCase):
     def test_a_stalled_download_times_out_and_keeps_the_preview_queued(self):
         handler = type('Backend', (_Backend,), {'served': False, 'posted': []})
@@ -82,7 +82,7 @@ class StalledDownloadTest(unittest.TestCase):
             env=dict(os.environ,
                      FOMOPLAYER_API_URL=f'http://127.0.0.1:{server.server_port}/api',
                      FOMOPLAYER_API_KEY='fp_test', ANALYSER_DOWNLOAD_TIMEOUT_S='2',
-                     SPOTIPY_CLIENT_ID='test', SPOTIPY_CLIENT_SECRET='test', TF_CPP_MIN_LOG_LEVEL='3',
+                     SPOTIPY_CLIENT_ID='test', SPOTIPY_CLIENT_SECRET='test',
                      NO_PROXY='127.0.0.1', no_proxy='127.0.0.1'))
         elapsed = time.monotonic() - started
 

@@ -1,4 +1,7 @@
 # Dependencies of the embedding service image only (Dockerfile); the analyser
 # workers use requirements.txt. Versions match requirements.txt.
-essentia-tensorflow==2.1b6.dev1389
+track-embedding @ git+https://github.com/gadgetmies/track-embedding@v1.0.1
+samplerate==0.2.4
+onnxruntime==1.32.0
+scipy==1.16.3
 numpy==1.26.4
