@@ -50,6 +50,10 @@ class StubBackend:
         self.downloading = 0
         self.max_downloading = 0
         self.download_delay = 0
+        # A slow or failing fingerprint upload, like the production INSERT.
+        self.fingerprint_delay = 0
+        self.fingerprint_status = 200
+        self.events = []  # (time.monotonic(), 'download' | 'upload-start' | 'upload-end', preview_id)
         self.posts = {'analyse': [], 'waveform': [], 'fingerprints': []}
         backend = self
 
@@ -73,6 +77,7 @@ class StubBackend:
                 if url.path.startswith('/api/storage/preview-audio/'):
                     preview_id = int(url.path.rsplit('/', 1)[1].split('.')[0])
                     with backend.lock:
+                        backend.events.append((time.monotonic(), 'download', preview_id))
                         backend.downloads[preview_id] = backend.downloads.get(preview_id, 0) + 1
                         backend.downloading += 1
                         backend.max_downloading = max(backend.max_downloading, backend.downloading)
@@ -96,6 +101,15 @@ class StubBackend:
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 url = urlparse(self.path)
+                if url.path == '/api/admin/exact-match/previews/fingerprints':
+                    with backend.lock:
+                        backend.events.append((time.monotonic(), 'upload-start', body['preview_id']))
+                    time.sleep(backend.fingerprint_delay)
+                    with backend.lock:
+                        backend.events.append((time.monotonic(), 'upload-end', body['preview_id']))
+                    if backend.fingerprint_status != 200:
+                        self._send(backend.fingerprint_status, b'{"error": "stub"}')
+                        return
                 with backend.lock:
                     if url.path == '/api/admin/analyse':
                         backend.posts['analyse'].append(body)

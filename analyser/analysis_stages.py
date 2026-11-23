@@ -10,7 +10,9 @@ The analyses compute exactly what the separate workers compute:
 - embedding: `embedding.compute_temporal_embedding`, averaged as `main.py` does;
 - waveform: `waveform.generate_waveform` + `upload_waveform`;
 - fingerprints: `extraction.fingerprint_prepared` on at most
-  `PREVIEW_MAX_DURATION_S` of the WAV, as `_preview_to_wav` decodes it.
+  `PREVIEW_MAX_DURATION_S` of the WAV, as `_preview_to_wav` decodes it; the
+  coordinator uploads them (`upload_fingerprints`), so the WAV is released
+  when Panako is done rather than when the upload is.
 """
 
 import os
@@ -81,10 +83,11 @@ def capped_wav(src, dst, max_seconds):
 
 
 def fingerprint_chunk(jobs):
-    """Fingerprint and upload a chunk of WAVs (`{'id', 'wav'}` dicts) in one
-    Panako store + resolve. Each chunk gets a fresh cache folder, removed
+    """Fingerprint a chunk of WAVs (`{'id', 'wav'}` dicts) in one Panako
+    store + resolve. Each chunk gets a fresh cache folder, removed
     afterwards, so a long-running process does not grow it. Returns one
-    `{'id', 'fp_count', 'error'}` dict per job."""
+    `{'id', 'fp_count', 'error', 'fingerprints'}` dict per job (no
+    `fingerprints` on error); nothing is uploaded."""
     import extraction
     cache_dir = extraction._worker_cache_dir()
     shutil.rmtree(cache_dir, ignore_errors=True)
@@ -99,7 +102,15 @@ def fingerprint_chunk(jobs):
             except Exception as e:  # noqa: BLE001
                 results.append({'id': job['id'], 'fp_count': 0, 'error': f'prep: {e}'[:200]})
         if prepared:
-            results += extraction.fingerprint_prepared(prepared, cache_dir)
+            results += extraction.fingerprint_prepared(prepared, cache_dir, upload=False)
         return results
     finally:
         shutil.rmtree(cache_dir, ignore_errors=True)
+
+
+def upload_fingerprints(preview_id, fingerprints):
+    """Upload one preview's fingerprints; runs on the coordinator's upload
+    thread. `upload_preview_fingerprints` holds the machine-wide
+    `.upload_lock`, so uploads stay one at a time across all workers."""
+    import extraction
+    extraction.upload_preview_fingerprints(preview_id, fingerprints)

@@ -175,6 +175,19 @@ The analyses run at the same time, each at its own pace, not in lockstep:
   process takes every WAV ready for fingerprinting, up to
   `--fingerprint-chunk` (default 8), into one Panako run, so Java starts
   once per chunk; when fingerprinting falls behind, its chunks fill up.
+  The processes return the fingerprints, and one upload thread in the
+  coordinator sends them to the backend, one preview at a time (under
+  `.upload_lock`, shared with the other workers). Uploads are the slow
+  part: each fingerprint row costs a random read of the backend's 7 GB
+  hash index (2–18 s per preview, measured 2026-11-23), so a preview's WAV
+  and in-flight slot are released when Panako is done, not when its upload
+  is. No new Panako run starts while `--max-queued-uploads` previews
+  (default 8) wait for their upload, and at most
+  `--max-fingerprint-in-flight` slots (default half of `--max-in-flight`)
+  go to previews that need a fingerprint. The other slots go to previews
+  that need only an embedding or a waveform, so those pass the ones
+  waiting for uploads: the run takes about as long as the slower of
+  uploads and embeddings, not their sum.
 
 A WAV is deleted as soon as every analysis that needs it is done. New
 downloads wait while more than `--max-in-flight` previews (default 16)
@@ -188,8 +201,8 @@ fingerprints still read at most `PREVIEW_MAX_DURATION_S` of it (the WAV
 is truncated, which gives the same samples as a capped decode).
 Embeddings, missing previews and waveforms are reported in batches at
 least every 30 s (one request each, resent entry by entry if it fails);
-fingerprints are uploaded per preview as before. A failed download or
-analysis is retried after 10 minutes; a preview that fails to decode,
+fingerprints are uploaded per preview as before. A failed download,
+analysis or upload is retried after 10 minutes; a preview that fails to decode,
 or whose waveform fails, three times is reported missing.
 
 | Flag | Effect |
@@ -199,6 +212,8 @@ or whose waveform fails, three times is reported missing.
 | `--download-workers N` | Parallel downloads and decodes (default 4). |
 | `--fingerprint-workers N`, `--fingerprint-chunk N` | See above. |
 | `--max-in-flight N`, `--max-decoded-mb MB` | Disk bound, see above. |
+| `--max-queued-uploads N` | Memory bound on fingerprints waiting for upload, see above (default 8). |
+| `--max-fingerprint-in-flight N` | Slots for previews that need a fingerprint, see above (default half of `--max-in-flight`). |
 | `--no-waveform` | Skip waveforms. |
 | `--work-dir DIR` | Where downloads and WAVs go (default a temporary directory). |
 

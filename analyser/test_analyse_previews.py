@@ -149,3 +149,69 @@ def test_empty_queue_exits_2(env):
     finally:
         backend.close()
     assert result.returncode == 2, output
+
+
+def test_a_slow_fingerprint_upload_does_not_hold_back_other_previews(env):
+    tmp = env['tmp']
+    audio = _mp3(tmp / 'a.mp3', 4)
+    previews = [Preview(5, 5, 'Beatport', audio)] + [
+        Preview(i, i, 'Beatport', audio, fingerprint=True) for i in (4, 3, 2)]  # embedding only
+    backend = StubBackend(previews)
+    backend.fingerprint_delay = 8
+    try:
+        result, output = _run(env, backend, '--max-in-flight', '1')
+    finally:
+        backend.close()
+    assert result.returncode == 0, output
+    upload_end = next(t for t, kind, pid in backend.events if kind == 'upload-end' and pid == 5)
+    downloaded = {pid: t for t, kind, pid in backend.events if kind == 'download'}
+    assert all(downloaded[i] < upload_end for i in (4, 3, 2)), backend.events
+    assert all(not p.needs(a) for p in backend.previews.values() for a in p.has)
+    assert os.listdir(env['work']) == []
+
+
+def test_a_preview_waiting_for_its_upload_is_not_fetched_again(env):
+    tmp = env['tmp']
+    audio = _mp3(tmp / 'a.mp3', 4)
+    backend = StubBackend([Preview(i, i, 'Beatport', audio) for i in range(1, 5)])
+    backend.fingerprint_delay = 1.5
+    try:
+        result, output = _run(env, backend, '--loop', '--batch-size', '1')
+    finally:
+        backend.close()
+    assert result.returncode == 2, output
+    assert backend.downloads == {i: 1 for i in range(1, 5)}
+    assert all(not p.needs(a) for p in backend.previews.values() for a in p.has)
+
+
+def test_a_failed_fingerprint_upload_leaves_the_preview_queued(env):
+    tmp = env['tmp']
+    backend = StubBackend([Preview(1, 1, 'Beatport', _mp3(tmp / 'a.mp3', 4))])
+    backend.fingerprint_status = 500
+    try:
+        result, output = _run(env, backend)
+    finally:
+        backend.close()
+    assert result.returncode == 0, output
+    preview = backend.previews[1]
+    assert preview.needs('fingerprint') and not preview.needs('embedding'), output
+    assert os.listdir(env['work']) == []
+
+
+def test_previews_needing_only_an_embedding_pass_previews_waiting_for_fingerprints(env):
+    tmp = env['tmp']
+    audio = _mp3(tmp / 'a.mp3', 4)
+    needs_fingerprint = [Preview(i, i, 'Beatport', audio) for i in range(12, 4, -1)]   # newest: served first
+    embedding_only = [Preview(i, i, 'Beatport', audio, fingerprint=True) for i in range(4, 0, -1)]
+    backend = StubBackend(needs_fingerprint + embedding_only)
+    backend.fingerprint_delay = 3
+    try:
+        result, output = _run(env, backend, '--batch-size', '12', '--max-in-flight', '4',
+                              '--max-fingerprint-in-flight', '2', '--max-queued-uploads', '1')
+    finally:
+        backend.close()
+    assert result.returncode == 0, output
+    second_upload_end = [t for t, kind, _ in backend.events if kind == 'upload-end'][1]
+    downloaded = {pid: t for t, kind, pid in backend.events if kind == 'download'}
+    assert all(downloaded[p.id] < second_upload_end for p in embedding_only), backend.events
+    assert all(not p.needs(a) for p in backend.previews.values() for a in p.has)
