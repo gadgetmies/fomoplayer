@@ -162,6 +162,12 @@ if ! [[ "$IDLE_WAIT" =~ ^[0-9]+$ ]]; then
   exit 1
 fi
 
+# Pause flag toggled from tmux by analyser_pause.sh (prefix P or the status bar
+# label): the window loops don't start a worker while it exists, and
+# analyse_previews.py finishes its running work and then idles.
+PAUSE_FILE="$SCRIPT_DIR/.pause-$SESSION"
+rm -f "$PAUSE_FILE" "$PAUSE_FILE.state"
+
 # An empty queue (rc=2) either stops the loop (IDLE_WAIT=0) or waits IDLE_WAIT
 # seconds and asks again: with prefetched audio the backend refills the queues
 # every 10 minutes, so a worker that stopped would miss the new files.
@@ -176,7 +182,15 @@ make_loop() {
   cat <<EOF
 cd '$SCRIPT_DIR'
 source venv/bin/activate
+export ANALYSER_PAUSE_FILE='$PAUSE_FILE'
 while :; do
+  if [ -e "\$ANALYSER_PAUSE_FILE" ]; then
+    echo "[analyse_all] paused, waiting for resume (prefix P or the status bar)..."
+    echo paused > "\$ANALYSER_PAUSE_FILE.state"
+    while [ -e "\$ANALYSER_PAUSE_FILE" ]; do sleep 2; done
+    rm -f "\$ANALYSER_PAUSE_FILE.state"
+    echo "[analyse_all] resumed"
+  fi
   $worker_cmd
   rc=\$?
   case \$rc in
@@ -318,12 +332,29 @@ tmux set-option -t "$SESSION" mouse on
 # bucket and left / total, then rate and ETA (two short lines fit a phone-width
 # client). tmux runs the script every status-interval; the script asks the
 # database at most every five minutes.
+# Pause/resume: prefix P, or tap the label at the right of the last status
+# line. tmux key bindings are server-wide, so both act only in sessions that
+# have @analyser_dir; other status clicks keep tmux's default.
+pause_cmd="$(printf '%q' "$SCRIPT_DIR/analyser_pause.sh")"
+pause_label="#[align=right]#($pause_cmd status #{session_name}) #[range=user|pause]#{?#{==:#{@analyser_paused},1},▶ resume,⏸ pause}#[norange default]"
+tmux set-option -t "$SESSION" @analyser_dir "$SCRIPT_DIR"
+tmux set-option -t "$SESSION" @analyser_paused 0
+tmux bind-key P if-shell -F '#{@analyser_dir}' \
+  "run-shell '#{@analyser_dir}/analyser_pause.sh toggle #{session_name}'"
+tmux bind-key -n MouseDown1Status if-shell -F '#{&&:#{@analyser_dir},#{==:#{mouse_status_range},pause}}' \
+  "run-shell '#{@analyser_dir}/analyser_pause.sh toggle #{session_name}'" \
+  "switch-client -t ="
+
 if [[ $PROGRESS -eq 1 ]]; then
   progress_cmd="cd $(printf '%q' "$SCRIPT_DIR") && venv/bin/python analysis_progress.py"
   tmux set-option -t "$SESSION" status 3
-  tmux set-option -t "$SESSION" status-interval 30
+  tmux set-option -t "$SESSION" status-interval 10
   tmux set-option -t "$SESSION" 'status-format[1]' "#[align=left]#($progress_cmd --part counts)"
-  tmux set-option -t "$SESSION" 'status-format[2]' "#[align=left]#($progress_cmd --part rate)"
+  tmux set-option -t "$SESSION" 'status-format[2]' "#[align=left]#($progress_cmd --part rate)$pause_label"
+else
+  tmux set-option -t "$SESSION" status 2
+  tmux set-option -t "$SESSION" status-interval 10
+  tmux set-option -t "$SESSION" 'status-format[1]' "$pause_label"
 fi
 
 if [[ $NO_ATTACH -eq 1 ]]; then
