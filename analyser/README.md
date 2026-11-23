@@ -198,6 +198,23 @@ venv/bin/python analysis_progress.py              # one line
 venv/bin/python analysis_progress.py --refresh 0  # ask the database now
 ```
 
+### Pausing and resuming
+
+Press `prefix` `P` (`Ctrl-b P` by default), or tap `⏸ pause` at the right
+of the last status line, to pause; do the same (`▶ resume`) to resume. The
+toggle creates or removes `analyser/.pause-<session>` (git-ignored; the
+same works by hand: `./analyser_pause.sh toggle analyser`).
+
+Pausing is graceful. `analyse_previews.py` starts no queue fetch, download
+or Panako run; the downloads, embeddings, waveforms and Panako runs already
+running and the queued fingerprint uploads finish and are reported. The
+note next to the label reads `pausing: N running`, then `paused`, and the
+worker idles with its models loaded. Previews fetched but not finished stay
+on disk until you resume; nothing about them has been reported, so if the
+machine restarts meanwhile the backend serves them again. The window loops
+do not restart a worker while paused, so the separate workers
+(`--separate-workers`) pause between runs.
+
 ### `exit(2)` convention for empty queues
 
 `main.py`, `panako_processor.py`, and `waveform.py` now exit with status

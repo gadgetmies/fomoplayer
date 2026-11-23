@@ -66,6 +66,8 @@ secrets.*.js
 packages/analyser/venv
 analyser/.fomo_player_token
 analyser/.embedding_sanity.json
+# Pause flags of analyse_all.sh sessions (analyser_pause.sh)
+analyser/.pause-*
 analyser/embedding_collisions.jsonl
 analyser/venv/
 analyser/__pycache__/
