@@ -3,6 +3,7 @@ const { pg } = require('fomoplayer_shared').db
 const sql = require('sql-template-strings')
 const path = require('path')
 const logger = require('fomoplayer_shared').logger(__filename)
+const { runRadiatorQuery } = require('./run-query')
 
 const queriesPath = `${__dirname}/queries/`
 const queryFiles = readdirSync(path.resolve(queriesPath))
@@ -12,16 +13,7 @@ module.exports = Object.fromEntries(
     .map((file) => [file, readFileSync(`${queriesPath}/${file}`, 'utf8')])
     .map(([file, query]) => {
       logger.info(`Initialising radiator query job for: ${file}`)
-      return [
-        file,
-        async () => {
-          try {
-            return { result: await pg.queryRowsAsync(query), success: true }
-          } catch (e) {
-            return { result: [e], success: false }
-          }
-        },
-      ]
+      return [file, () => runRadiatorQuery(query)]
     }),
 )
 ;(async () => {

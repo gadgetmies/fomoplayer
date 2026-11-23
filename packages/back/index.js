@@ -41,7 +41,7 @@ const compression = require('compression')
 const path = require('path')
 const fs = require('fs')
 const R = require('ramda')
-const timeout = require('connect-timeout')
+const { createRequestTimeout } = require('./routes/shared/request-timeout')
 const rateLimit = require('express-rate-limit')
 
 const { ensureAuthenticated } = require('./routes/shared/auth.js')
@@ -80,7 +80,7 @@ app.use(
   }),
 )
 
-app.use(timeout('25s'))
+app.use(createRequestTimeout())
 
 if (process.env.USE_RATE_LIMITER) {
   logger.debug('Enabling rate limiter')
@@ -113,6 +113,8 @@ app.options('/{*splat}', cors(corsOptions)) // include before other routes
 app.use('/api/sentry-webhook', require('./routes/sentry-webhook.js')())
 
 app.use('/api/admin', bodyParser.json({ limit: '20mb', extended: true, type: ['application/json', 'application/*+json'] }))
+// Up to 50 vectors of 1280 numbers (routes/embeddings): about 1.4 MB of JSON.
+app.use('/api/embeddings', bodyParser.json({ limit: '4mb', type: ['application/json', 'application/*+json'] }))
 app.use(bodyParser.json({ limit: '1mb', extended: true, type: ['application/json', 'application/*+json'] }))
 
 // body-parser 2 leaves req.body undefined when no body was parsed; handlers destructure it.

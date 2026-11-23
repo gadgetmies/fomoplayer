@@ -4,7 +4,7 @@ const { test } = require('cascade-test')
 const { getSharedContext, teardownSharedContext } = require('../lib/setup')
 const { seedTracks } = require('../lib/seed')
 const { resolveTestUserId } = require('../lib/test-user')
-const { seedRadiatorPresetsViaDb, runRadiatorJobsViaDb } = require('../lib/radiator-mock')
+const { seedRadiatorPresetsViaDb, runRadiatorJobsViaDb, seedLargeRadiatorRunsViaDb } = require('../lib/radiator-mock')
 const { gotoRadiator, assertRadiatorShowsSeededData } = require('../lib/admin-radiator-steps')
 
 test({
@@ -15,6 +15,7 @@ test({
     await seedTracks({ userIds: [userId] })
     await seedRadiatorPresetsViaDb()
     await runRadiatorJobsViaDb()
+    await seedLargeRadiatorRunsViaDb()
     await gotoRadiator(page)
     return { page, timeout: 30000 }
   },
