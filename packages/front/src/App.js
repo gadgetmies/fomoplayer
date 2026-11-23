@@ -128,6 +128,11 @@ export const patchTrackCartMembership = (slices, trackId, cartUuid, op) => {
   }
 }
 
+// The number of the cart's tracks the loaded rows cover on the server, i.e. the offset of the next page: rows kept on
+// screen after being removed from the cart are no longer in the cart on the server and do not count.
+export const loadedCartTrackCount = (tracks, cartUuid) =>
+  (tracks || []).filter((t) => t && (t.carts || []).some((c) => c && c.uuid === cartUuid)).length
+
 // A cart response ({ cart, tracks, page }) as the cart record kept in the state: the cart's fields with its tracks.
 export const cartRecord = ({ cart, tracks }) => ({ ...cart, tracks })
 
@@ -137,10 +142,17 @@ export const cartRecord = ({ cart, tracks }) => ({ ...cart, tracks })
 // extend past the first page after infinite-scroll) and splice the single
 // added/removed row in place. Top-level metadata (name, storeDetails,
 // trackCount, etc.) is taken from the PATCH response.
-export const mergeCartDetailsPreservingTracks = (existing, response, { addedTrackId, removedTrackId } = {}) => {
+// `keepRemovedRow` leaves a removed track's row in place (the cart on screen keeps listing it, with an add button,
+// until the cart is reloaded); otherwise the row is spliced out.
+export const mergeCartDetailsPreservingTracks = (
+  existing,
+  response,
+  { addedTrackId, removedTrackId, keepRemovedRow = false } = {},
+) => {
   const existingTracks = (existing && existing.tracks) || []
   let nextTracks = existingTracks
   if (removedTrackId != null) {
+    if (keepRemovedRow) return { ...existing, ...response, tracks: existingTracks }
     const idx = existingTracks.findIndex((t) => t && t.id === removedTrackId)
     if (idx !== -1) {
       nextTracks = existingTracks.slice(0, idx).concat(existingTracks.slice(idx + 1))
@@ -546,16 +558,16 @@ class App extends Component {
 
     if (cartIndex !== -1) {
       const existingCart = this.state.carts[cartIndex]
-      const existingTracksForMerge =
-        this.state.selectedCart && this.state.selectedCart.id === cartDetails.id
-          ? patched.selectedCartTracks
-          : existingCart.tracks
+      const isSelectedCart = Boolean(this.state.selectedCart && this.state.selectedCart.id === cartDetails.id)
+      const existingTracksForMerge = isSelectedCart ? patched.selectedCartTracks : existingCart.tracks
       const merged = mergeCartDetailsPreservingTracks(
         { ...existingCart, tracks: existingTracksForMerge },
         cartDetails,
         {
           addedTrackId: op === 'add' ? trackId : undefined,
           removedTrackId: op === 'remove' ? trackId : undefined,
+          // The cart on screen keeps listing a removed track, its button switched to add, until the cart reloads
+          keepRemovedRow: isSelectedCart,
         },
       )
       const clonedCarts = this.state.carts.slice()
@@ -568,7 +580,7 @@ class App extends Component {
             merged.trackCount != null
               ? merged.trackCount
               : this.state.cartPagination.total + (op === 'add' ? 1 : -1)
-          const count = merged.tracks ? merged.tracks.length : this.state.cartPagination.count
+          const count = merged.tracks ? loadedCartTrackCount(merged.tracks, merged.uuid) : this.state.cartPagination.count
           partialState.cartPagination = { ...this.state.cartPagination, total, count }
         }
       }

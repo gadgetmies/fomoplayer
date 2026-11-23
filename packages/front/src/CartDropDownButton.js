@@ -10,6 +10,7 @@ export const CartDropDownButton = ({
   processingCart,
   inCart,
   removeLabel,
+  addLabel = 'Add to default cart',
   trackId,
   carts,
   currentCartId,
@@ -29,7 +30,7 @@ export const CartDropDownButton = ({
   return (
     <DropDownButton
       icon={inCart ? 'minus' : 'cart-plus'}
-      title={inCart ? removeLabel : 'Add to default cart'}
+      title={inCart ? removeLabel : addLabel}
       buttonClassName={buttonClassName || ''}
       popupClassName={`cart-popup popup_content-small ${popupClassName || ''}`}
       buttonStyle={{ opacity: 1 }}

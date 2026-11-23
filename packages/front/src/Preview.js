@@ -585,6 +585,7 @@ class Preview extends Component {
       processingCart,
       inCart,
       removeLabel,
+      addLabel,
       trackId,
       currentCartId,
       cartFilter,
@@ -614,6 +615,7 @@ class Preview extends Component {
               processingCart,
               inCart,
               removeLabel,
+              addLabel,
               trackId,
               currentCartId,
               cartFilter,
@@ -1135,7 +1137,8 @@ class Preview extends Component {
     const inDefaultCart = this.props.inDefaultCart
     const inCart = this.props.listState === 'carts' ? inCurrentCart : inDefaultCart
     const processingCart = this.props.processingCart
-    const removeLabel = this.props.listState === 'carts' ? 'Remove from current cart' : 'Remove from default cart'
+    const removeLabel = this.props.listState === 'carts' ? 'Remove from cart' : 'Remove from default cart'
+    const addLabel = this.props.listState === 'carts' ? 'Add to cart' : 'Add to default cart'
 
     const onCartFilterChange = this.onCartFilterChange.bind(this)
     const onClearCartFilter = this.onClearCartFilter.bind(this)
@@ -1244,6 +1247,7 @@ class Preview extends Component {
       processingCart,
       inCart,
       removeLabel,
+      addLabel,
       trackId,
       currentCartId,
       cartFilter,
