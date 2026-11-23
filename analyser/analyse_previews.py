@@ -26,6 +26,12 @@ So the run takes about as long as its slowest stage, like the separate
 workers, while new downloads wait whenever the WAVs on disk exceed
 `--max-decoded-mb` or `--max-in-flight` previews.
 
+Pausing: while the file named by ANALYSER_PAUSE_FILE exists (analyse_all.sh
+toggles it from tmux), no queue fetch, download or Panako run starts; the
+analyses already running and the queued uploads finish and are reported,
+then the worker idles with its models loaded until the file is removed. It
+writes `pausing: N running` or `paused` to `<file>.state` meanwhile.
+
 Exit codes follow the other workers: 0 after processing, 2 when the queue is
 empty (with `--loop --idle-wait S`, wait and ask again instead), others on
 errors.
@@ -71,6 +77,8 @@ RETRY_AFTER_S = float(os.getenv("ANALYSER_RETRY_AFTER_S", "600"))
 # Reports are sent at least this often, so results reach the backend and
 # stored files are released promptly.
 REPORT_INTERVAL_S = float(os.getenv("ANALYSER_REPORT_INTERVAL_S", "30"))
+# How often a pause flag is looked for, in seconds.
+PAUSE_POLL_S = 2
 # A preview that fails to decode, or whose waveform fails, this many times is
 # reported missing, as waveform.py and the prefetch job do.
 MAX_ATTEMPTS = 3
@@ -188,6 +196,53 @@ class Analyser:
         self.queue_dry = False
         self.done = 0
         self.stats = {EMBEDDING: 0, WAVEFORM: 0, FINGERPRINT: 0, 'missing': 0, 'downloads': 0}
+        self.pause_file = os.getenv('ANALYSER_PAUSE_FILE') or None
+        self.pause_state = None
+
+    # --- pause ---
+
+    def paused(self):
+        return bool(self.pause_file) and os.path.exists(self.pause_file)
+
+    def set_pause_state(self, text):
+        """Write `text` to `<pause file>.state` (None removes it), only when it changes."""
+        if text == self.pause_state:
+            return
+        path = f"{self.pause_file}.state"
+        if text is None:
+            if os.path.exists(path):
+                os.remove(path)
+            log("Resumed")
+        else:
+            with open(f"{path}.tmp", "w") as f:
+                f.write(text + "\n")
+            os.replace(f"{path}.tmp", path)
+            if text == 'paused':
+                log(f"Paused; remove {self.pause_file} (or toggle it in tmux) to resume")
+        self.pause_state = text
+
+    def drain_while_paused(self):
+        """While paused: let running work finish and report it, then idle.
+        Returns once the pause file is gone."""
+        while self.paused():
+            if self.futures:
+                self.set_pause_state(f"pausing: {len(self.futures)} running")
+                done, _ = wait(list(self.futures), timeout=PAUSE_POLL_S, return_when=FIRST_COMPLETED)
+                self.handle(done)
+                if time.monotonic() - self.last_report >= REPORT_INTERVAL_S:
+                    self.report()
+                continue
+            self.report()
+            self.set_pause_state('paused')
+            time.sleep(PAUSE_POLL_S)
+        if self.pause_state is not None:
+            self.set_pause_state(None)
+
+    def sleep(self, seconds):
+        """Sleep, returning early when a pause starts."""
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline and not self.paused():
+            time.sleep(min(PAUSE_POLL_S, max(0, deadline - time.monotonic())))
 
     # --- stage pools, started on first use ---
 
@@ -439,10 +494,12 @@ class Analyser:
     def run(self):
         """Returns the exit code."""
         args = self.args
+        self.drain_while_paused()
         if self.fetch() == 0 and not (args.loop and args.idle_wait > 0):
             log("No previews to analyse")
             return 2
         while True:
+            self.drain_while_paused()
             # Previews waiting for a fingerprint slot stay pending, so count
             # the ones that could start.
             if args.loop and self.downloadable() < args.download_workers and not self.queue_dry:
@@ -459,10 +516,12 @@ class Analyser:
                 if args.idle_wait <= 0:
                     return 2
                 log(f"No previews to analyse, checking again in {args.idle_wait:g} s")
-                time.sleep(args.idle_wait)
+                self.sleep(args.idle_wait)
                 self.queue_dry = False
                 continue
-            done, _ = wait(list(self.futures), timeout=REPORT_INTERVAL_S, return_when=FIRST_COMPLETED)
+            # Short enough to notice a pause promptly.
+            done, _ = wait(list(self.futures), timeout=min(REPORT_INTERVAL_S, PAUSE_POLL_S),
+                           return_when=FIRST_COMPLETED)
             self.handle(done)
             if time.monotonic() - self.last_report >= REPORT_INTERVAL_S:
                 self.report()
