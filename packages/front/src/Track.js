@@ -163,7 +163,8 @@ class Track extends Component {
     const inCart = this.props.listState === 'carts' ? inCurrentCart : inDefaultCart
     const processingCart = this.props.processingCart
     const processingTrack = this.props.processingTrack
-    const removeLabel = this.props.listState === 'carts' ? 'Remove from current cart' : 'Remove from default cart'
+    const removeLabel = this.props.listState === 'carts' ? 'Remove from cart' : 'Remove from default cart'
+    const addLabel = this.props.listState === 'carts' ? 'Add to cart' : 'Add to default cart'
     const noPreviews = this.props.noPreviews
     const scoreDetails = this.props.scoreDetails || {}
 
@@ -249,6 +250,7 @@ class Track extends Component {
     return (
       <tr
         ref={'row'}
+        data-track-id={this.props.id}
         style={{
           display: 'flex',
           width: '100%',
@@ -539,6 +541,7 @@ class Track extends Component {
                     processingCart,
                     inCart,
                     removeLabel,
+                    addLabel,
                     trackId,
                     currentCartId,
                     cartFilter,

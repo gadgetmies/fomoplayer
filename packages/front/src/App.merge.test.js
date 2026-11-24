@@ -1,4 +1,10 @@
-import { mergeCartDetailsPreservingTracks, patchTrackCarts, patchTrackCartMembership } from './App'
+import {
+  loadedCartTrackCount,
+  mergeCartDetailsPreservingTracks,
+  mergeCartListPreservingTracks,
+  patchTrackCarts,
+  patchTrackCartMembership,
+} from './App'
 
 const cart = (id, tracks = [], extra = {}) => ({
   id,
@@ -164,5 +170,45 @@ describe('patchTrackCartMembership', () => {
     }
     const out = patchTrackCartMembership(slices, 1, 'uuid-7', 'remove')
     expect(out.new[0].carts).toEqual([{ uuid: 'uuid-3' }])
+  })
+})
+
+describe('keeping a removed track listed in the cart on screen', () => {
+  it('keeps the removed row in place, with the cart membership it was given', () => {
+    const existing = cart(1, [{ id: 10 }, { id: 11, carts: [] }, { id: 12 }])
+    const response = cart(1, [{ id: 10 }, { id: 12 }], { trackCount: 2 })
+    const merged = mergeCartDetailsPreservingTracks(existing, response, { removedTrackId: 11, keepRemovedRow: true })
+    expect(merged.tracks.map((t) => t.id)).toEqual([10, 11, 12])
+    expect(merged.tracks[1].carts).toEqual([])
+    expect(merged.trackCount).toBe(2)
+  })
+
+  it('does not duplicate the row when the removed track is added back', () => {
+    const existing = cart(1, [{ id: 10 }, { id: 11, carts: [{ uuid: 'uuid-1' }] }])
+    const response = cart(1, [{ id: 11 }, { id: 10 }], { trackCount: 2 })
+    const merged = mergeCartDetailsPreservingTracks(existing, response, { addedTrackId: 11 })
+    expect(merged.tracks.map((t) => t.id)).toEqual([10, 11])
+  })
+
+  it('pages on from the rows still in the cart, not the rows listed', () => {
+    const inCart = { carts: [{ uuid: 'uuid-1' }, { uuid: 'other' }] }
+    const tracks = [{ id: 10, ...inCart }, { id: 11, carts: [{ uuid: 'other' }] }, { id: 12, ...inCart }]
+    expect(loadedCartTrackCount(tracks, 'uuid-1')).toBe(2)
+  })
+})
+
+describe('mergeCartListPreservingTracks', () => {
+  it('keeps the loaded tracks of carts listed without tracks', () => {
+    const existing = [cart(1, [{ id: 10 }, { id: 11 }]), cart(2, [{ id: 20 }])]
+    const fresh = [
+      { ...cart(1), tracks: undefined, name: 'renamed', trackCount: 5 },
+      { ...cart(3), tracks: undefined },
+    ]
+    const merged = mergeCartListPreservingTracks(existing, fresh)
+    expect(merged.map((c) => c.id)).toEqual([1, 3])
+    expect(merged[0].tracks.map((t) => t.id)).toEqual([10, 11])
+    expect(merged[0].name).toBe('renamed')
+    expect(merged[0].trackCount).toBe(5)
+    expect(merged[1].tracks).toBeUndefined()
   })
 })

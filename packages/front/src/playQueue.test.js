@@ -86,6 +86,17 @@ describe('queueTracks', () => {
     expect(queueTracks(null, { source: cart, tracks: live })).toBe(live)
     expect(queueTracks({ source: recent, tracks: [] }, { source: cart, tracks: live })).toBe(live)
   })
+
+  it('keeps to the snapshot while the live list no longer holds the playing track', () => {
+    const snapshot = tracks(1, 2, 3, 4)
+    const reloaded = tracks(1, 2)
+    expect(queueTracks({ source: cart, tracks: snapshot }, { source: cart, tracks: reloaded }, 3)).toBe(snapshot)
+  })
+
+  it('uses the live list when the snapshot does not hold the playing track either', () => {
+    const live = tracks(1, 2)
+    expect(queueTracks({ source: cart, tracks: tracks(5) }, { source: cart, tracks: live }, 3)).toBe(live)
+  })
 })
 
 describe('stepInQueue', () => {

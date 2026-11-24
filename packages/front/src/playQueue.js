@@ -35,10 +35,18 @@ export const isViewingSource = (source, { onScreenSource, location }) => {
   return Boolean(location) && `${location.pathname}${location.search || ''}` === source.path
 }
 
-export const queueTracks = (playingFrom, onScreen) => {
+// `currentId` is the playing track: a live list that no longer holds it (reloaded to its first page) gives way to the
+// snapshot that does, so next does not restart from the top of the list.
+export const queueTracks = (playingFrom, onScreen, currentId) => {
   if (!playingFrom?.source) return onScreen?.tracks || []
-  if (onScreen?.source && onScreen.source.key === playingFrom.source.key) return onScreen.tracks || []
-  return playingFrom.tracks?.length ? playingFrom.tracks : onScreen?.tracks || []
+  const snapshot = playingFrom.tracks || []
+  if (onScreen?.source && onScreen.source.key === playingFrom.source.key) {
+    const live = onScreen.tracks || []
+    const holds = (list) => list.some(({ id }) => id === currentId)
+    if (currentId === undefined || holds(live) || !holds(snapshot)) return live
+    return snapshot
+  }
+  return snapshot.length ? snapshot : onScreen?.tracks || []
 }
 
 // The track `step` positions away from `currentId`, skipping tracks `isPlayable` rejects, or null at either end.

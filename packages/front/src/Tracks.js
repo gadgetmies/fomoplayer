@@ -113,16 +113,16 @@ class Tracks extends Component {
       const scrollTop = this.tbodyRef.current.scrollTop
       const clientHeight = this.tbodyRef.current.clientHeight
       const tracks = this.getCartFilteredTracks()
-      this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+      this.updateVisibleRange(scrollTop, clientHeight, tracks)
     }
 
     setTimeout(() => {
       const tracks = this.getCartFilteredTracks()
-      this.measureTrackHeights(tracks)
+      this.measureTrackHeights()
       if (this.tbodyRef.current) {
         const scrollTop = this.tbodyRef.current.scrollTop
         const clientHeight = this.tbodyRef.current.clientHeight
-        this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+        this.updateVisibleRange(scrollTop, clientHeight, tracks)
       }
       this.tryAutoLoadMoreWithoutScroll(tracks.length)
     }, 0)
@@ -149,11 +149,11 @@ class Tracks extends Component {
     ) {
       setTimeout(() => {
         const tracks = this.getCartFilteredTracks()
-        this.measureTrackHeights(tracks)
+        this.measureTrackHeights()
         if (this.tbodyRef.current) {
           const scrollTop = this.tbodyRef.current.scrollTop
           const clientHeight = this.tbodyRef.current.clientHeight
-          this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+          this.updateVisibleRange(scrollTop, clientHeight, tracks)
         }
         this.tryAutoLoadMoreWithoutScroll(tracks.length)
       }, 0)
@@ -191,93 +191,71 @@ class Tracks extends Component {
     }
   }
 
-  measureTrackHeights(tracks) {
+  // Records the space each rendered row takes in the list, keyed by track id so a row keeps its height when rows
+  // before it are added, removed or filtered out. The space includes the row's vertical margins: the spacers stand in
+  // for whole rows, and leaving the margins out made the content jump whenever rows moved in or out of the spacers.
+  measureTrackHeights() {
     if (!this.tbodyRef.current) return
-    
-    let totalMeasured = 0
-    let averageHeight = this.trackHeight
-    
-    const { visibleStartIndex, visibleEndIndex } = this.state
-    const tbody = this.tbodyRef.current
-    const trackElements = Array.from(tbody.querySelectorAll('tr.track'))
-    
-    trackElements.forEach((trackElement, localIndex) => {
-      const actualIndex = visibleStartIndex + localIndex
-      if (actualIndex < tracks.length) {
-        const height = trackElement.getBoundingClientRect().height
-        if (height > 0) {
-          this.trackHeights.set(actualIndex, height)
-          totalMeasured++
-        }
-      }
+
+    const trackElements = Array.from(this.tbodyRef.current.querySelectorAll('tr.track[data-track-id]'))
+    let measured = false
+    trackElements.forEach((trackElement) => {
+      const height = trackElement.getBoundingClientRect().height
+      if (height <= 0) return
+      const style = window.getComputedStyle(trackElement)
+      const margins = (parseFloat(style.marginTop) || 0) + (parseFloat(style.marginBottom) || 0)
+      this.trackHeights.set(trackElement.dataset.trackId, height + margins)
+      measured = true
     })
-    
-    if (totalMeasured > 0) {
+
+    if (measured) {
       const heights = Array.from(this.trackHeights.values())
-      averageHeight = heights.reduce((sum, h) => sum + h, 0) / heights.length
-      this.trackHeight = averageHeight
+      this.trackHeight = heights.reduce((sum, h) => sum + h, 0) / heights.length
     }
   }
 
-  getTrackHeight(index) {
-    return this.trackHeights.get(index) || this.trackHeight
+  getTrackHeight(track) {
+    return (track && this.trackHeights.get(String(track.id))) || this.trackHeight
   }
 
-  getTotalHeightUpToIndex(index, totalTracks) {
+  getTotalHeightUpToIndex(index, tracks) {
     let total = 0
-    let measuredCount = 0
-    let measuredTotal = 0
-    
-    for (let i = 0; i < index && i < totalTracks; i++) {
-      const height = this.trackHeights.get(i)
-      if (height) {
-        total += height
-        measuredCount++
-        measuredTotal += height
-      } else {
-        total += this.trackHeight
-      }
+    for (let i = 0; i < index && i < tracks.length; i++) {
+      total += this.getTrackHeight(tracks[i])
     }
-    
-    if (measuredCount > 0 && measuredCount < index) {
-      const averageMeasured = measuredTotal / measuredCount
-      if (Math.abs(averageMeasured - this.trackHeight) > 2) {
-        this.trackHeight = averageMeasured
-      }
-    }
-    
     return total
   }
 
-  findVisibleRange(scrollTop, clientHeight, totalTracks) {
+  findVisibleRange(scrollTop, clientHeight, tracks) {
+    const totalTracks = tracks.length
     let currentTop = 0
     let startIndex = 0
     let endIndex = totalTracks
     const overscanHeight = this.overscan * this.trackHeight
-    
+
     for (let i = 0; i < totalTracks; i++) {
-      const height = this.getTrackHeight(i)
+      const height = this.getTrackHeight(tracks[i])
       if (currentTop + height > scrollTop - overscanHeight) {
         startIndex = Math.max(0, i - this.overscan)
         break
       }
       currentTop += height
     }
-    
+
     currentTop = 0
     for (let i = 0; i < totalTracks; i++) {
-      currentTop += this.getTrackHeight(i)
+      currentTop += this.getTrackHeight(tracks[i])
       if (currentTop > scrollTop + clientHeight + overscanHeight) {
         endIndex = Math.min(totalTracks, i + this.overscan + 1)
         break
       }
     }
-    
+
     return { startIndex, endIndex }
   }
 
-  updateVisibleRange(scrollTop, clientHeight, totalTracks) {
-    const { startIndex, endIndex } = this.findVisibleRange(scrollTop, clientHeight, totalTracks)
+  updateVisibleRange(scrollTop, clientHeight, tracks) {
+    const { startIndex, endIndex } = this.findVisibleRange(scrollTop, clientHeight, tracks)
     
     if (
       startIndex !== this.state.visibleStartIndex ||
@@ -298,12 +276,12 @@ class Tracks extends Component {
     this.resizeTimeout = setTimeout(() => {
       this.trackHeights.clear()
       const tracks = this.getCartFilteredTracks()
-      this.measureTrackHeights(tracks)
+      this.measureTrackHeights()
 
       if (this.tbodyRef.current) {
         const scrollTop = this.tbodyRef.current.scrollTop
         const clientHeight = this.tbodyRef.current.clientHeight
-        this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+        this.updateVisibleRange(scrollTop, clientHeight, tracks)
         this.tryAutoLoadMoreWithoutScroll(tracks.length)
       }
     }, 100)
@@ -364,7 +342,7 @@ class Tracks extends Component {
 
     const tracks = this.getCartFilteredTracks()
 
-    this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+    this.updateVisibleRange(scrollTop, clientHeight, tracks)
 
     const preloadThreshold = clientHeight * 1.5
 
@@ -424,7 +402,7 @@ class Tracks extends Component {
     const index = tracks.findIndex(({ id }) => id === trackId)
     this.setState({ selectedTrack: trackId })
     if (index < 0 || !this.tbodyRef?.current) return
-    this.tbodyRef.current.scrollTo({ top: this.getTotalHeightUpToIndex(index, tracks.length), behavior: 'smooth' })
+    this.tbodyRef.current.scrollTo({ top: this.getTotalHeightUpToIndex(index, tracks), behavior: 'smooth' })
   }
 
   scrollCurrentIntoView() {
@@ -504,14 +482,14 @@ class Tracks extends Component {
     const defaultCart = this.props.carts.find(R.prop('isDefault'))
     const { visibleStartIndex, visibleEndIndex } = this.state
     const visibleTracks = tracks.slice(visibleStartIndex, visibleEndIndex)
-    const topSpacerHeight = this.getTotalHeightUpToIndex(visibleStartIndex, tracks.length)
-    const bottomSpacerHeight = this.getTotalHeightUpToIndex(tracks.length, tracks.length) - 
-                                this.getTotalHeightUpToIndex(visibleEndIndex, tracks.length)
+    const topSpacerHeight = this.getTotalHeightUpToIndex(visibleStartIndex, tracks)
+    const bottomSpacerHeight =
+      this.getTotalHeightUpToIndex(tracks.length, tracks) - this.getTotalHeightUpToIndex(visibleEndIndex, tracks)
 
     return (
       <>
         {topSpacerHeight > 0 && (
-          <tr style={{ height: topSpacerHeight, display: 'block' }}>
+          <tr style={{ height: topSpacerHeight, display: 'block', margin: 0 }}>
             <td style={{ display: 'block', height: '100%' }} />
           </tr>
         )}
@@ -635,7 +613,7 @@ class Tracks extends Component {
             )
           })}
         {bottomSpacerHeight > 0 && (
-          <tr style={{ height: bottomSpacerHeight, display: 'block' }}>
+          <tr style={{ height: bottomSpacerHeight, display: 'block', margin: 0 }}>
             <td style={{ display: 'block', height: '100%' }} />
           </tr>
         )}
@@ -927,7 +905,7 @@ class Tracks extends Component {
           </thead>
           <tbody
             ref={this.tbodyRef}
-            style={{ overflow: 'scroll', display: 'block', flex: 1, overscrollBehaviorY: 'contain' }}
+            style={{ overflow: 'scroll', display: 'block', flex: 1, overscrollBehaviorY: 'contain', overflowAnchor: 'none' }}
             onScroll={this.handleScroll}
             onTouchStart={this.handleTouchStart}
             onTouchMove={this.handleTouchMove}
