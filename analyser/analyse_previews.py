@@ -43,6 +43,7 @@ load_dotenv()
 
 import argparse
 import datetime
+import glob
 import itertools
 import json
 import multiprocessing
@@ -113,7 +114,8 @@ def parse_args(argv=None):
                     help="No new Panako run starts while this many previews wait for their fingerprint upload")
     ap.add_argument("--no-waveform", action="store_true",
                     help="Skip waveforms (when the WAVEFORM_STORAGE_* variables are not configured)")
-    ap.add_argument("--work-dir", help="Where downloads and WAVs go (default: a temporary directory)")
+    ap.add_argument("--work-dir", help="Where downloads and WAVs go (default: a temporary directory). "
+                                       "Leftovers of a killed run there are deleted on start.")
     ap.add_argument("--sanity-window", type=int, default=20,
                     help="Recent embeddings compared to catch bit-identical duplicates. 0 disables the check.")
     ap.add_argument("--skip-sanity-confirmation", action="store_true",
@@ -537,12 +539,31 @@ class Analyser:
         self.uploads.shutdown(wait=True, cancel_futures=True)
 
 
+# The files this worker writes into its work folder.
+LEFTOVER_PATTERNS = ('preview_*.mp3', 'preview_*.wav', 'waveform_*.png')
+
+
+def remove_leftovers(work_dir):
+    """Delete the files a killed run left in a fixed work folder (a clean
+    exit leaves none), and nothing else there. Returns how many."""
+    removed = 0
+    for pattern in LEFTOVER_PATTERNS:
+        for path in glob.glob(os.path.join(work_dir, pattern)):
+            os.remove(path)
+            removed += 1
+    return removed
+
+
 def main(argv=None):
     args = parse_args(argv)
     log("Starting")
     work_dir_context = tempfile.TemporaryDirectory(prefix='analyse_previews_') if not args.work_dir else None
     work_dir = args.work_dir or work_dir_context.name
     os.makedirs(work_dir, exist_ok=True)
+    if args.work_dir:
+        removed = remove_leftovers(work_dir)
+        if removed:
+            log(f"Deleted {removed} leftover file(s) from {work_dir}")
     analyser = Analyser(args, work_dir)
     try:
         code = analyser.run()
