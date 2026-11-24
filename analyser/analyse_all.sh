@@ -302,6 +302,10 @@ if [[ $PREVIEWS -eq 1 && $SEPARATE_WORKERS -eq 0 ]]; then
   if [[ $NO_WAVEFORM -eq 1 ]]; then combined_args+=" --no-waveform"; fi
   # One download and decode per preview, shared by all three analyses. --loop
   # keeps the models loaded, --idle-wait waits for the next prefetch run.
+  # A fixed work folder per session: a killed worker's decoded previews are
+  # deleted when the loop starts the next one, instead of piling up in a
+  # fresh temporary folder per run.
+  combined_args+=" --work-dir $(printf '%q' "$SCRIPT_DIR/work/$SESSION")"
   spawn "analyse-previews" "python analyse_previews.py --loop --idle-wait $IDLE_WAIT -m \"$MODEL\"${batch_arg}${sanity_arg}${combined_args}"
 elif [[ $PREVIEWS -eq 1 ]]; then
   spawn "fingerprint-previews" "python panako_processor.py --previews${batch_arg}${score_after_arg}${fingerprint_workers_arg}${direct_arg}"

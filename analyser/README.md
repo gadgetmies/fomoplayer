@@ -283,7 +283,7 @@ or whose waveform fails, three times is reported missing.
 | `--max-queued-uploads N` | Memory bound on fingerprints waiting for upload, see above (default 8). |
 | `--max-fingerprint-in-flight N` | Slots for previews that need a fingerprint, see above (default half of `--max-in-flight`). |
 | `--no-waveform` | Skip waveforms. |
-| `--work-dir DIR` | Where downloads and WAVs go (default a temporary directory). |
+| `--work-dir DIR` | Where downloads and WAVs go (default a temporary directory). On start the worker deletes the `preview_*.mp3`, `preview_*.wav` and `waveform_*.png` a killed run left there. `analyse_all.sh` passes `analyser/work/<session>`, so a restarted window does not leave up to `--max-decoded-mb` behind; don't share one folder between two workers. |
 
 It does not handle `--direct-download`, Bandcamp stream lookups, audio
 samples or `--score-after`: use the separate workers for those.

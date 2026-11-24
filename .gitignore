@@ -68,6 +68,8 @@ analyser/.fomo_player_token
 analyser/.embedding_sanity.json
 # Pause flags of analyse_all.sh sessions (analyser_pause.sh)
 analyser/.pause-*
+# analyse_all.sh work folders of analyse_previews.py
+analyser/work/
 analyser/embedding_collisions.jsonl
 analyser/venv/
 analyser/__pycache__/

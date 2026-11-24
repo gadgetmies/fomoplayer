@@ -290,3 +290,17 @@ def test_pausing_mid_run_finishes_running_work_and_starts_nothing_new(env):
     assert worker.returncode == 0, output
     assert backend.downloads == {i: 1 for i in range(1, 9)}
     assert all(not p.needs(a) for p in backend.previews.values() for a in p.has)
+
+
+def test_leftovers_of_a_killed_worker_are_deleted_on_start(env):
+    work = env['work']
+    for name in ('preview_999.wav', 'preview_998.mp3', 'waveform_997.png'):
+        (work / name).write_bytes(b'x' * 1000)
+    (work / 'notes.txt').write_text('not the worker\'s')
+    backend = StubBackend([])
+    try:
+        result, output = _run(env, backend)
+    finally:
+        backend.close()
+    assert result.returncode == 2, output
+    assert sorted(os.listdir(work)) == ['notes.txt']
