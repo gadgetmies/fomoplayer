@@ -131,7 +131,7 @@
 }
 
 /* The heading centred over the centred button group. */
-th.review-cell .track-table-cell {
-  flex: 1;
+th.review-cell > .track-table-cell {
+  width: 100%;
   text-align: center;
 }

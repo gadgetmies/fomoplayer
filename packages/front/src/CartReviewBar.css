@@ -59,3 +59,17 @@
     display: inline;
   }
 }
+
+/* Menu entries at the bar buttons' height, never squeezed when the menu scrolls. */
+.cart-review-popup-content > * {
+  flex-shrink: 0;
+}
+
+.cart-review-popup-content .cart-button {
+  min-height: 40px;
+  margin-bottom: 0;
+  padding-top: 10px;
+  padding-bottom: 12px;
+  white-space: normal;
+  overflow: visible;
+}
