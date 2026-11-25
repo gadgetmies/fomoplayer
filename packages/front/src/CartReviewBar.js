@@ -31,14 +31,15 @@ export const CartReviewSwitch = ({ cartReview, disabled, onChange }) => (
   </span>
 )
 
-// A bar button that opens its menu on click (on every device, not on hover).
+// A bar button that opens its menu on click (on every device, not on hover). The menu lines up with the button's
+// right edge, so it stays on screen at the bar's right end.
 const MenuButton = ({ open, onOpenChanged, disabled, testId, title, label, children }) => (
   <DropDown
     open={open}
     openOnHover={false}
     onOpenChanged={onOpenChanged}
     disabled={disabled}
-    popupClassName="popup_content-right cart-review-popup"
+    popupClassName="popup_content-left cart-review-popup"
     anchor={
       <button
         type="button"
