@@ -11,13 +11,26 @@ those analyses at the same time on the one WAV:
   core for one inference);
 - waveform: one process (matplotlib and the bucket client live there);
 - fingerprints: `--fingerprint-workers` processes, each taking the WAVs that
-  are ready, up to `--fingerprint-chunk`, into one Panako run.
+  are ready, up to `--fingerprint-chunk`, into one Panako run. They return
+  the fingerprints, and one upload thread here sends them to the backend one
+  at a time (uploads are slow: each row is a random read of the backend's
+  hash index), so a preview's WAV and in-flight slot are released when
+  Panako is done, not when its upload is. At most
+  `--max-fingerprint-in-flight` slots go to previews that need a
+  fingerprint; the others go to previews that need only an embedding or a
+  waveform, which then pass those waiting for slow uploads.
 
 The stages are not run in lockstep: each works through previews at its own
 pace, and a preview's WAV is deleted once every stage that needs it is done.
 So the run takes about as long as its slowest stage, like the separate
 workers, while new downloads wait whenever the WAVs on disk exceed
 `--max-decoded-mb` or `--max-in-flight` previews.
+
+Pausing: while the file named by ANALYSER_PAUSE_FILE exists (analyse_all.sh
+toggles it from tmux), no queue fetch, download or Panako run starts; the
+analyses already running and the queued uploads finish and are reported,
+then the worker idles with its models loaded until the file is removed. It
+writes `pausing: N running` or `paused` to `<file>.state` meanwhile.
 
 Exit codes follow the other workers: 0 after processing, 2 when the queue is
 empty (with `--loop --idle-wait S`, wait and ask again instead), others on
@@ -30,6 +43,7 @@ load_dotenv()
 
 import argparse
 import datetime
+import glob
 import itertools
 import json
 import multiprocessing
@@ -64,6 +78,8 @@ RETRY_AFTER_S = float(os.getenv("ANALYSER_RETRY_AFTER_S", "600"))
 # Reports are sent at least this often, so results reach the backend and
 # stored files are released promptly.
 REPORT_INTERVAL_S = float(os.getenv("ANALYSER_REPORT_INTERVAL_S", "30"))
+# How often a pause flag is looked for, in seconds.
+PAUSE_POLL_S = 2
 # A preview that fails to decode, or whose waveform fails, this many times is
 # reported missing, as waveform.py and the prefetch job do.
 MAX_ATTEMPTS = 3
@@ -91,14 +107,23 @@ def parse_args(argv=None):
                     help="No new download starts while the WAVs not yet deleted exceed this")
     ap.add_argument("--max-in-flight", type=int, default=16,
                     help="Most previews between download and deletion at once")
+    ap.add_argument("--max-fingerprint-in-flight", type=int,
+                    help="Most in-flight previews that need a fingerprint (default: half of --max-in-flight), "
+                         "so previews needing only other analyses are not stuck behind slow uploads")
+    ap.add_argument("--max-queued-uploads", type=int, default=8,
+                    help="No new Panako run starts while this many previews wait for their fingerprint upload")
     ap.add_argument("--no-waveform", action="store_true",
                     help="Skip waveforms (when the WAVEFORM_STORAGE_* variables are not configured)")
-    ap.add_argument("--work-dir", help="Where downloads and WAVs go (default: a temporary directory)")
+    ap.add_argument("--work-dir", help="Where downloads and WAVs go (default: a temporary directory). "
+                                       "Leftovers of a killed run there are deleted on start.")
     ap.add_argument("--sanity-window", type=int, default=20,
                     help="Recent embeddings compared to catch bit-identical duplicates. 0 disables the check.")
     ap.add_argument("--skip-sanity-confirmation", action="store_true",
                     help="Log embedding collisions instead of asking y/N (for unattended runs)")
-    return ap.parse_args(argv)
+    args = ap.parse_args(argv)
+    if args.max_fingerprint_in_flight is None:
+        args.max_fingerprint_in_flight = max(1, args.max_in_flight // 2)
+    return args
 
 
 def download(url, path):
@@ -155,6 +180,9 @@ class Analyser:
         self.downloads = ThreadPoolExecutor(max_workers=max(1, args.download_workers),
                                             thread_name_prefix='download')
         self.pools = {}
+        # One thread: uploads are serialised machine-wide by .upload_lock anyway.
+        self.uploads = ThreadPoolExecutor(max_workers=1, thread_name_prefix='upload')
+        self.uploading = set()        # ids whose fingerprints are queued for or being uploaded
         self.seq = itertools.count()
         self.pending = deque()        # Items waiting for a download
         self.active = {}              # id -> Item, from download start until its WAV is deleted
@@ -170,6 +198,53 @@ class Analyser:
         self.queue_dry = False
         self.done = 0
         self.stats = {EMBEDDING: 0, WAVEFORM: 0, FINGERPRINT: 0, 'missing': 0, 'downloads': 0}
+        self.pause_file = os.getenv('ANALYSER_PAUSE_FILE') or None
+        self.pause_state = None
+
+    # --- pause ---
+
+    def paused(self):
+        return bool(self.pause_file) and os.path.exists(self.pause_file)
+
+    def set_pause_state(self, text):
+        """Write `text` to `<pause file>.state` (None removes it), only when it changes."""
+        if text == self.pause_state:
+            return
+        path = f"{self.pause_file}.state"
+        if text is None:
+            if os.path.exists(path):
+                os.remove(path)
+            log("Resumed")
+        else:
+            with open(f"{path}.tmp", "w") as f:
+                f.write(text + "\n")
+            os.replace(f"{path}.tmp", path)
+            if text == 'paused':
+                log(f"Paused; remove {self.pause_file} (or toggle it in tmux) to resume")
+        self.pause_state = text
+
+    def drain_while_paused(self):
+        """While paused: let running work finish and report it, then idle.
+        Returns once the pause file is gone."""
+        while self.paused():
+            if self.futures:
+                self.set_pause_state(f"pausing: {len(self.futures)} running")
+                done, _ = wait(list(self.futures), timeout=PAUSE_POLL_S, return_when=FIRST_COMPLETED)
+                self.handle(done)
+                if time.monotonic() - self.last_report >= REPORT_INTERVAL_S:
+                    self.report()
+                continue
+            self.report()
+            self.set_pause_state('paused')
+            time.sleep(PAUSE_POLL_S)
+        if self.pause_state is not None:
+            self.set_pause_state(None)
+
+    def sleep(self, seconds):
+        """Sleep, returning early when a pause starts."""
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline and not self.paused():
+            time.sleep(min(PAUSE_POLL_S, max(0, deadline - time.monotonic())))
 
     # --- stage pools, started on first use ---
 
@@ -206,7 +281,7 @@ class Analyser:
         """Ask the queue for more previews. Returns how many new ones were
         queued. Reports are sent first, so the queue reflects them."""
         self.report()
-        skip = set(self.active) | {i.id for i in self.pending}
+        skip = set(self.active) | self.uploading | {i.id for i in self.pending}
         skip |= {pid for pid in self.retry_until if self.blocked(pid)}
         limit = min(self.args.batch_size + len(skip), 500)
         res = requests.get(f"{get_api_url()}/admin/preview-analysis?limit={limit}&model={self.args.model}",
@@ -230,12 +305,35 @@ class Analyser:
 
     # --- downloads ---
 
+    def fingerprints_full(self):
+        """True while --max-fingerprint-in-flight previews that need a
+        fingerprint hold a slot: then only previews that do not need one
+        start, so they are not stuck behind slow fingerprint uploads."""
+        holding = sum(1 for item in self.active.values() if FINGERPRINT in item.needs)
+        return holding >= self.args.max_fingerprint_in_flight
+
+    def next_download(self):
+        """The oldest pending preview that may start now, removed from
+        pending, or None."""
+        skip_fingerprints = self.fingerprints_full()
+        for index, item in enumerate(self.pending):
+            if not (skip_fingerprints and FINGERPRINT in item.needs):
+                del self.pending[index]
+                return item
+        return None
+
+    def downloadable(self):
+        skip_fingerprints = self.fingerprints_full()
+        return sum(1 for item in self.pending if not (skip_fingerprints and FINGERPRINT in item.needs))
+
     def start_downloads(self):
         budget = self.args.max_decoded_mb * 1e6
         downloading = sum(1 for _, kind, _ in self.futures.values() if kind == 'download')
-        while (self.pending and downloading < self.args.download_workers
+        while (downloading < self.args.download_workers
                and len(self.active) < self.args.max_in_flight and self.decoded_bytes < budget):
-            item = self.pending.popleft()
+            item = self.next_download()
+            if item is None:
+                break
             self.active[item.id] = item
             self.submit('download', [item], self.downloads, prepare, item.preview, self.work_dir)
             downloading += 1
@@ -267,7 +365,8 @@ class Analyser:
     def dispatch_fingerprints(self):
         # A free process takes everything ready, up to the chunk size: small
         # chunks while fingerprinting keeps up, full ones when it falls behind.
-        while self.fingerprint_ready and self.fingerprints_running < self.args.fingerprint_workers:
+        while (self.fingerprint_ready and self.fingerprints_running < self.args.fingerprint_workers
+               and len(self.uploading) < self.args.max_queued_uploads):
             chunk = [self.fingerprint_ready.popleft()
                      for _ in range(min(self.args.fingerprint_chunk, len(self.fingerprint_ready)))]
             self.submit(FINGERPRINT, chunk, self.pool(FINGERPRINT), analysis_stages.fingerprint_chunk,
@@ -339,7 +438,20 @@ class Analyser:
                 log(f"Fingerprinting preview {item.id} failed: {result['error']}")
                 self.retry_later(item)
             else:
-                self.stats[FINGERPRINT] += 1
+                self.uploading.add(item.id)
+                self.submit('upload', [item], self.uploads, analysis_stages.upload_fingerprints,
+                            item.id, result['fingerprints'])
+
+    def on_uploaded(self, item, future):
+        self.uploading.discard(item.id)
+        try:
+            future.result()
+        except Exception as e:
+            # Stays queued in the backend; tried again after RETRY_AFTER_S.
+            log(f"Uploading fingerprints of preview {item.id} failed: {e}")
+            self.retry_later(item)
+            return
+        self.stats[FINGERPRINT] += 1
 
     def stage_done(self, item, stage):
         item.pending.discard(stage)
@@ -356,6 +468,9 @@ class Analyser:
             _, kind, items = self.futures.pop(future)
             if kind == 'download':
                 self.on_prepared(items[0], future)
+                continue
+            if kind == 'upload':
+                self.on_uploaded(items[0], future)
                 continue
             if kind == EMBEDDING:
                 self.on_embedding(items[0], future)
@@ -381,11 +496,15 @@ class Analyser:
     def run(self):
         """Returns the exit code."""
         args = self.args
+        self.drain_while_paused()
         if self.fetch() == 0 and not (args.loop and args.idle_wait > 0):
             log("No previews to analyse")
             return 2
         while True:
-            if args.loop and len(self.pending) < args.download_workers and not self.queue_dry:
+            self.drain_while_paused()
+            # Previews waiting for a fingerprint slot stay pending, so count
+            # the ones that could start.
+            if args.loop and self.downloadable() < args.download_workers and not self.queue_dry:
                 self.fetch()
             self.start_downloads()
             self.dispatch_fingerprints()
@@ -399,20 +518,40 @@ class Analyser:
                 if args.idle_wait <= 0:
                     return 2
                 log(f"No previews to analyse, checking again in {args.idle_wait:g} s")
-                time.sleep(args.idle_wait)
+                self.sleep(args.idle_wait)
                 self.queue_dry = False
                 continue
-            done, _ = wait(list(self.futures), timeout=REPORT_INTERVAL_S, return_when=FIRST_COMPLETED)
+            # Short enough to notice a pause promptly.
+            done, _ = wait(list(self.futures), timeout=min(REPORT_INTERVAL_S, PAUSE_POLL_S),
+                           return_when=FIRST_COMPLETED)
             self.handle(done)
             if time.monotonic() - self.last_report >= REPORT_INTERVAL_S:
                 self.report()
                 log(f"Progress: {self.done} preview(s) done, {len(self.active)} in flight, "
+                    f"{len(self.uploading)} awaiting upload, "
                     f"{self.decoded_bytes / 1e6:.0f} MB decoded on disk, {self.stats}")
 
     def close(self):
         self.downloads.shutdown(wait=True, cancel_futures=True)
         for pool in self.pools.values():
             pool.shutdown(wait=True, cancel_futures=True)
+        # Queued uploads are dropped: those previews stay queued in the backend.
+        self.uploads.shutdown(wait=True, cancel_futures=True)
+
+
+# The files this worker writes into its work folder.
+LEFTOVER_PATTERNS = ('preview_*.mp3', 'preview_*.wav', 'waveform_*.png')
+
+
+def remove_leftovers(work_dir):
+    """Delete the files a killed run left in a fixed work folder (a clean
+    exit leaves none), and nothing else there. Returns how many."""
+    removed = 0
+    for pattern in LEFTOVER_PATTERNS:
+        for path in glob.glob(os.path.join(work_dir, pattern)):
+            os.remove(path)
+            removed += 1
+    return removed
 
 
 def main(argv=None):
@@ -421,6 +560,10 @@ def main(argv=None):
     work_dir_context = tempfile.TemporaryDirectory(prefix='analyse_previews_') if not args.work_dir else None
     work_dir = args.work_dir or work_dir_context.name
     os.makedirs(work_dir, exist_ok=True)
+    if args.work_dir:
+        removed = remove_leftovers(work_dir)
+        if removed:
+            log(f"Deleted {removed} leftover file(s) from {work_dir}")
     analyser = Analyser(args, work_dir)
     try:
         code = analyser.run()

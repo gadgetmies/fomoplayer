@@ -14,6 +14,9 @@ import CartSearchControls from './CartSearchControls'
 import { isMobile } from 'react-device-detect'
 import { trackMatchesAllTerms } from './searchTerms'
 import { requestJSONwithCredentials } from './request-json-with-credentials'
+import CartReviewBar, { CartReviewSwitch } from './CartReviewBar'
+import UndoNotice from './UndoNotice'
+import { emptyReviewTabMessage, isReviewing, reviewStateOf } from './cartReview'
 
 const DESKTOP_REFRESH_MEDIA_QUERY = '(hover: hover) and (pointer: fine)'
 
@@ -478,6 +481,28 @@ class Tracks extends Component {
     })
   }
 
+  // Whether the selected cart is under review here (owner, review switched on).
+  isReviewingSelectedCart() {
+    return (
+      this.props.listState === 'carts' &&
+      this.props.mode === 'app' &&
+      isReviewing(this.props.cartReview, this.props.selectedCart?.uuid)
+    )
+  }
+
+  // The review controls of a track row in the cart under review.
+  reviewPropsFor(track) {
+    if (!this.isReviewingSelectedCart()) return undefined
+    const cartReview = this.props.cartReview
+    const title = `${track.title}${track.version ? ` (${track.version})` : ''}`
+    return {
+      state: reviewStateOf(track, cartReview),
+      dimRejected: cartReview.reviewFilter === 'all',
+      onDecide: (state) => this.props.onDecideCartTrack(track.id, state),
+      onSwipeDecide: (state) => this.props.onDecideCartTrack(track.id, state, { undoNotice: { title } }),
+    }
+  }
+
   renderTracks(tracks) {
     const defaultCart = this.props.carts.find(R.prop('isDefault'))
     const { visibleStartIndex, visibleEndIndex } = this.state
@@ -530,6 +555,7 @@ class Tracks extends Component {
                 mode={this.props.mode}
                 listState={this.props.listState}
                 cartUuid={this.props.selectedCart?.uuid}
+                review={this.reviewPropsFor(track)}
                 carts={this.props.carts}
                 cartFilter={this.state.cartFilter}
                 defaultCartId={this.props.carts.find(R.prop('isDefault'))?.id}
@@ -689,6 +715,11 @@ class Tracks extends Component {
         <th>{tracks.length} results</th>
       ) : null
 
+    const reviewing = this.isReviewingSelectedCart()
+    const cartReview = this.props.cartReview
+    const reviewAvailable =
+      this.props.mode === 'app' && cartReview?.available && cartReview.cartUuid === this.props.selectedCart?.uuid
+
     return (
       <div
         style={{
@@ -709,7 +740,7 @@ class Tracks extends Component {
             {this.props.listState === 'carts' && !listInfo && (
               <tr className={'top-bar input-layout'} style={{ width: '100%', background: 'rgb(34, 34, 34)' }}>
                 <td
-                  className="tracks-top_bar_group"
+                  className={`tracks-top_bar_group ${reviewing ? 'cart-review-bar' : ''}`}
                   style={{
                     padding: 4,
                   }}
@@ -727,10 +758,31 @@ class Tracks extends Component {
                         onSearch={this.handleTrackListFilterSearch.bind(this)}
                         onClearSearch={this.handleTrackListFilterClear.bind(this)}
                       />
-                      <span className={'cart-details'}>
-                        Tracks in cart: {this.props.selectedCart?.trackCount}
-                      </span>
-                      {this.props.onFindSimilarToCart && this.props.selectedCart?.uuid && (
+                      {reviewAvailable && (
+                        <CartReviewSwitch
+                          cartReview={cartReview}
+                          disabled={this.props.fetchingCartDetails}
+                          onChange={(enabled) => this.props.onSetCartReviewEnabled(enabled)}
+                        />
+                      )}
+                      {reviewing && (
+                        <CartReviewBar
+                          cartReview={cartReview}
+                          carts={this.props.carts}
+                          stores={this.props.stores}
+                          disabled={this.props.fetchingCartDetails}
+                          onSetFilter={this.props.onSetCartReviewFilter}
+                          onSetStoreFocus={this.props.onSetCartStoreFocus}
+                          onModifyRejected={this.props.onModifyRejectedTracks}
+                          onShowNotice={this.props.onShowNotice}
+                        />
+                      )}
+                      {!reviewing && (
+                        <span className={'cart-details'}>
+                          Tracks in cart: {this.props.selectedCart?.trackCount}
+                        </span>
+                      )}
+                      {!reviewing && this.props.onFindSimilarToCart && this.props.selectedCart?.uuid && (
                         <button
                           type="button"
                           className="button button-push_button button-push_button-small button-push_button-primary"
@@ -748,6 +800,18 @@ class Tracks extends Component {
                     </span>
                   )}
                 </td>
+              </tr>
+            )}
+            {this.props.listState === 'carts' && this.props.notice && (
+              <tr style={{ display: 'block' }}>
+                <td style={{ display: 'block', padding: 0 }}>
+                  <UndoNotice notice={this.props.notice} onDismiss={this.props.onDismissNotice} />
+                </td>
+              </tr>
+            )}
+            {reviewing && !listInfo && tracks.length === 0 && (
+              <tr className="cart-review-empty" data-testid="cart-review-empty">
+                <th>{emptyReviewTabMessage(cartReview.reviewFilter)}</th>
               </tr>
             )}
 
@@ -809,6 +873,11 @@ class Tracks extends Component {
                   <div className={'key-cell track-table-cell'}>Key</div>
                 </div>
               </th>
+              {reviewing && (
+                <th className={'review-cell tracks-cell'}>
+                  <div className={'track-table-cell'}>Review</div>
+                </th>
+              )}
               {this.props.mode === 'app' && (
                 <th className={'follow-ignore-cart-cell tracks-cell'}>
                   <div className={'score-cell track-table-cell'} style={this.props.cartSearch ? { textAlign: 'center' } : undefined}>

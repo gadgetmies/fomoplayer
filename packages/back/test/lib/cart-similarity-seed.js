@@ -100,6 +100,8 @@ const ensureOk = (label, res) => {
 }
 
 module.exports.CART_NAME = CART_NAME
+module.exports.fetchViaBrowser = fetchViaBrowser
+module.exports.ensureOk = ensureOk
 module.exports.titleOf = titleOf
 module.exports.DEMO_TRACKS = DEMO_TRACKS
 

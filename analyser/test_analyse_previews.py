@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 import numpy as np
 import pytest
@@ -149,3 +150,157 @@ def test_empty_queue_exits_2(env):
     finally:
         backend.close()
     assert result.returncode == 2, output
+
+
+def test_a_slow_fingerprint_upload_does_not_hold_back_other_previews(env):
+    tmp = env['tmp']
+    audio = _mp3(tmp / 'a.mp3', 4)
+    previews = [Preview(5, 5, 'Beatport', audio)] + [
+        Preview(i, i, 'Beatport', audio, fingerprint=True) for i in (4, 3, 2)]  # embedding only
+    backend = StubBackend(previews)
+    backend.fingerprint_delay = 8
+    try:
+        result, output = _run(env, backend, '--max-in-flight', '1')
+    finally:
+        backend.close()
+    assert result.returncode == 0, output
+    upload_end = next(t for t, kind, pid in backend.events if kind == 'upload-end' and pid == 5)
+    downloaded = {pid: t for t, kind, pid in backend.events if kind == 'download'}
+    assert all(downloaded[i] < upload_end for i in (4, 3, 2)), backend.events
+    assert all(not p.needs(a) for p in backend.previews.values() for a in p.has)
+    assert os.listdir(env['work']) == []
+
+
+def test_a_preview_waiting_for_its_upload_is_not_fetched_again(env):
+    tmp = env['tmp']
+    audio = _mp3(tmp / 'a.mp3', 4)
+    backend = StubBackend([Preview(i, i, 'Beatport', audio) for i in range(1, 5)])
+    backend.fingerprint_delay = 1.5
+    try:
+        result, output = _run(env, backend, '--loop', '--batch-size', '1')
+    finally:
+        backend.close()
+    assert result.returncode == 2, output
+    assert backend.downloads == {i: 1 for i in range(1, 5)}
+    assert all(not p.needs(a) for p in backend.previews.values() for a in p.has)
+
+
+def test_a_failed_fingerprint_upload_leaves_the_preview_queued(env):
+    tmp = env['tmp']
+    backend = StubBackend([Preview(1, 1, 'Beatport', _mp3(tmp / 'a.mp3', 4))])
+    backend.fingerprint_status = 500
+    try:
+        result, output = _run(env, backend)
+    finally:
+        backend.close()
+    assert result.returncode == 0, output
+    preview = backend.previews[1]
+    assert preview.needs('fingerprint') and not preview.needs('embedding'), output
+    assert os.listdir(env['work']) == []
+
+
+def test_previews_needing_only_an_embedding_pass_previews_waiting_for_fingerprints(env):
+    tmp = env['tmp']
+    audio = _mp3(tmp / 'a.mp3', 4)
+    needs_fingerprint = [Preview(i, i, 'Beatport', audio) for i in range(12, 4, -1)]   # newest: served first
+    embedding_only = [Preview(i, i, 'Beatport', audio, fingerprint=True) for i in range(4, 0, -1)]
+    backend = StubBackend(needs_fingerprint + embedding_only)
+    backend.fingerprint_delay = 3
+    try:
+        result, output = _run(env, backend, '--batch-size', '12', '--max-in-flight', '4',
+                              '--max-fingerprint-in-flight', '2', '--max-queued-uploads', '1')
+    finally:
+        backend.close()
+    assert result.returncode == 0, output
+    second_upload_end = [t for t, kind, _ in backend.events if kind == 'upload-end'][1]
+    downloaded = {pid: t for t, kind, pid in backend.events if kind == 'download'}
+    assert all(downloaded[p.id] < second_upload_end for p in embedding_only), backend.events
+    assert all(not p.needs(a) for p in backend.previews.values() for a in p.has)
+
+
+def _start(env, backend, pause_file, *args):
+    """Start the worker in the background with a pause flag path."""
+    return subprocess.Popen(
+        [sys.executable, os.path.join(ANALYSER_DIR, 'analyse_previews.py'), '--skip-sanity-confirmation',
+         '--sanity-window', '0', '--work-dir', str(env['work']), *args],
+        cwd=str(env['tmp']), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        env=dict(env['vars'], FOMOPLAYER_API_URL=backend.api_url, ANALYSER_PAUSE_FILE=str(pause_file)))
+
+
+def _wait_for(condition, timeout=120):
+    deadline = time.monotonic() + timeout
+    while not condition():
+        assert time.monotonic() < deadline, 'timed out'
+        time.sleep(0.2)
+
+
+def _state(pause_file):
+    try:
+        return (pause_file.parent / (pause_file.name + '.state')).read_text().strip()
+    except FileNotFoundError:
+        return None
+
+
+def test_a_worker_paused_from_the_start_downloads_nothing_until_resumed(env):
+    tmp = env['tmp']
+    audio = _mp3(tmp / 'a.mp3', 4)
+    backend = StubBackend([Preview(i, i, 'Beatport', audio) for i in (2, 1)])
+    pause_file = tmp / 'pause'
+    pause_file.touch()
+    worker = _start(env, backend, pause_file)
+    try:
+        _wait_for(lambda: _state(pause_file) == 'paused')
+        time.sleep(3)
+        assert backend.downloads == {}
+        pause_file.unlink()
+        output, _ = worker.communicate(timeout=300)
+    finally:
+        worker.kill()
+        backend.close()
+    assert worker.returncode == 0, output
+    assert backend.downloads == {2: 1, 1: 1}
+    assert all(not p.needs(a) for p in backend.previews.values() for a in p.has)
+    assert _state(pause_file) is None
+
+
+def test_pausing_mid_run_finishes_running_work_and_starts_nothing_new(env):
+    tmp = env['tmp']
+    audio = _mp3(tmp / 'a.mp3', 4)
+    backend = StubBackend([Preview(i, i, 'Beatport', audio) for i in range(8, 0, -1)])
+    backend.fingerprint_delay = 2
+    pause_file = tmp / 'pause'
+    worker = _start(env, backend, pause_file, '--max-in-flight', '2', '--download-workers', '1')
+    try:
+        _wait_for(lambda: backend.downloads)
+        pause_file.touch()
+        _wait_for(lambda: _state(pause_file) == 'paused')
+        with backend.lock:
+            downloads = dict(backend.downloads)
+            started = sum(1 for _, kind, _ in backend.events if kind == 'upload-start')
+            ended = sum(1 for _, kind, _ in backend.events if kind == 'upload-end')
+        assert started == ended          # no upload cut off
+        assert len(downloads) < 8        # the rest waits
+        time.sleep(4)
+        assert backend.downloads == downloads   # nothing new while paused
+        pause_file.unlink()
+        output, _ = worker.communicate(timeout=300)
+    finally:
+        worker.kill()
+        backend.close()
+    assert worker.returncode == 0, output
+    assert backend.downloads == {i: 1 for i in range(1, 9)}
+    assert all(not p.needs(a) for p in backend.previews.values() for a in p.has)
+
+
+def test_leftovers_of_a_killed_worker_are_deleted_on_start(env):
+    work = env['work']
+    for name in ('preview_999.wav', 'preview_998.mp3', 'waveform_997.png'):
+        (work / name).write_bytes(b'x' * 1000)
+    (work / 'notes.txt').write_text('not the worker\'s')
+    backend = StubBackend([])
+    try:
+        result, output = _run(env, backend)
+    finally:
+        backend.close()
+    assert result.returncode == 2, output
+    assert sorted(os.listdir(work)) == ['notes.txt']

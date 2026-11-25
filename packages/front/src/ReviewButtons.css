@@ -1,0 +1,71 @@
+/* The three review buttons joined into one group, like the cart button and its drop-down. */
+.review-buttons {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.review-buttons .review-button {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.review-buttons .review-button:not(:first-child) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: 1px solid var(--fp-brand-primary-active);
+}
+
+.review-buttons .review-button:not(:first-child):before {
+  border-bottom-left-radius: 0;
+}
+
+.review-buttons .review-button:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.review-buttons .review-button:not(:last-child):before {
+  border-bottom-right-radius: 0;
+}
+
+/* The pressed state uses the app's selected-tab blue. */
+.review-buttons .review-button[aria-pressed='true'] {
+  background-color: #5996e4;
+}
+
+.review-buttons .review-button[aria-pressed='true']:before {
+  background-color: #3f78c4;
+}
+
+.review-buttons__compact .review-button-label {
+  display: none;
+}
+
+/* A rejected track in the All tab: struck through and dimmed, except while it plays. */
+.track.track__rejected:not(.playing) > td:not(.review-cell) {
+  opacity: 0.45;
+}
+
+.track.track__rejected .title-cell {
+  text-decoration: line-through;
+}
+
+.review-cell {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+}
+
+@media (max-width: 768px) {
+  .review-cell {
+    padding: 4px;
+  }
+}
+
+@media (max-width: 1279px) {
+  .review-cell .review-button-label {
+    display: none;
+  }
+}

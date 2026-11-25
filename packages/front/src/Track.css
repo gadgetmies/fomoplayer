@@ -47,6 +47,12 @@
   pointer-events: none;
 }
 
+/* A left swipe (reject, in a cart under review) reveals the strip on the right. */
+.swipe-heard-reveal.swipe-heard-reveal__right {
+  left: auto;
+  right: 0;
+}
+
 .swipe-heard-indicator {
   flex: 1;
   min-width: 0;

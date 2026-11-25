@@ -37,3 +37,17 @@ module.exports.parseDate = (name, value) => {
   if (Number.isNaN(new Date(value).getTime())) throw new BadRequest(`${name} must be a date, got: ${value}`)
   return value
 }
+
+const REVIEW_FILTERS = ['to-review', 'accepted', 'rejected']
+
+/**
+ * The `review` query parameter of a cart page: one of `to-review`, `accepted` or `rejected`, or undefined when not
+ * given (all tracks).
+ */
+module.exports.parseReview = (value) => {
+  if (isMissing(value)) return undefined
+  if (!REVIEW_FILTERS.includes(value)) {
+    throw new BadRequest(`review must be one of ${REVIEW_FILTERS.join(', ')}, got: ${value}`)
+  }
+  return value
+}

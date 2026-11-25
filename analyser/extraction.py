@@ -635,12 +635,13 @@ def fingerprint_preview_subbatch(jobs):
     return results + fingerprint_prepared(prepared, cache_dir)
 
 
-def fingerprint_prepared(prepared, cache_dir):
+def fingerprint_prepared(prepared, cache_dir, upload=True):
     """Phases B and C of `fingerprint_preview_subbatch`: one batched Panako
     store+resolve over `prepared` (`{'id', 'audio_path'}` dicts) in
     `cache_dir`, then per-file `.tdb` read + upload. Returns one
     `{'id', 'fp_count', 'error'}` dict per prepared file. Also used by the
-    combined preview worker on WAVs it decoded itself."""
+    combined preview worker on WAVs it decoded itself, with `upload=False`:
+    it uploads them itself, and each result then carries `fingerprints`."""
     results = []
 
     # Phase B: one batched Panako store+resolve over the prepared files.
@@ -662,8 +663,12 @@ def fingerprint_prepared(prepared, cache_dir):
             time.sleep(0.1)
         try:
             fingerprints = read_tdb_file(tdb_path)
+            if not upload:
+                results.append({'id': p['id'], 'fp_count': len(fingerprints), 'error': None,
+                                'fingerprints': fingerprints})
+                continue
             upload_preview_fingerprints(p['id'], fingerprints)
             results.append({'id': p['id'], 'fp_count': len(fingerprints), 'error': None})
         except Exception as e:  # noqa: BLE001
-            results.append({'id': p['id'], 'fp_count': 0, 'error': f'upload: {e}'[:200]})
+            results.append({'id': p['id'], 'fp_count': 0, 'error': f'{"upload" if upload else "read"}: {e}'[:200]})
     return results

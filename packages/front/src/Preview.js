@@ -22,6 +22,7 @@ import { Link } from 'react-router-dom'
 import { isSample } from './playQueue'
 import { formatDuration } from './duration'
 import { hasAlignment } from './abTiming'
+import ReviewButtons from './ReviewButtons'
 
 const safePropEq = (prop, value) => R.pipe(R.defaultTo({}), R.propEq(value, prop))
 
@@ -597,6 +598,14 @@ class Preview extends Component {
     } = ctx
     const buttons = (
       <>
+        {this.props.mode === 'app' && this.props.reviewControls && (
+          <ReviewButtons
+            className="preview-review_buttons"
+            state={this.props.reviewControls.state}
+            onDecide={this.props.reviewControls.onDecide}
+            compact={include === 'buttons'}
+          />
+        )}
         {this.props.mode !== 'app' ? null : this.props.togglingCurrentInCart ? (
           <div
             style={{
