@@ -107,6 +107,13 @@ The canvas's button titles hint at A / U / R. They are not implemented, and no o
 
 Deciding a track on the To review tab (or moving it out of the Accepted/Rejected tab) removes it from the loaded list. The next page's `offset` is the number of rows still loaded, not the number ever loaded, so no track is skipped by the shrinking server-side set. Counts come from the decision route's response, so they never drift.
 
+### 11. Revisions after the owner's first review (2026-11-25)
+
+- The review-state tabs open on **All**, not To review. Both tab rows (and the cart search group chips) use one `TabSelector` component, on a `#111` strip inside the `#222` bar as the canvas draws them.
+- The decision buttons stay magenta (the decision is saved on the server); the pressed one uses a new pushed style for any `aria-pressed` push button (`--fp-brand-primary-active` with an inset shadow, no bottom edge), taken from the canvas's `.pb.sel`.
+- On phones the row's decision group moves above the cart button (it is rendered in both places and CSS shows one), and the panel's actions row is a container: below 420 px of width, with the review group present, Find similar, Follow, Ignore and Share are hidden (the canvas's `.acts` container rules). The panel offers review only in the reviewed cart's view.
+- **Open accepted** became **Modify accepted**: a click-to-open menu with "Open N in <store>" per store (desktops only: phone browsers open one tab per tap), **Mark as purchased** (the existing `POST /me/purchased` and `PATCH /me/carts` remove, both already taking lists) and **Move to**. Moving accepted tracks reuses the rejected-tracks bulk action, now `POST /me/carts/:id/{accepted|rejected}` with its `/undo`, restoring the state the tracks had. Modify rejected also opens on click only.
+
 ## Risks / Trade-offs
 
 - [Pop-up blocking stops "Open accepted" after the first tab] → detect blocked opens and tell the user how to allow pop-ups (decision 8); the per-row store links keep working.

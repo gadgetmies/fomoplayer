@@ -58,3 +58,16 @@
 
 - [x] 9.1 Run `yarn cascade-test` for the touched backend tests and `yarn workspace fomoplayer_front test` during the work, then the full `yarn test` before the pull request
 - [x] 9.2 Merge `master` into the branch, squash `wip:` commits into atomic ones, and open the pull request with the ```demo-test``` / ```demo-preview``` blocks and a list of where the implementation differs from the canvas (no review keyboard shortcuts, `<small>` counts instead of round pills, phone rows instead of cards)
+
+## 10. Revisions after the owner's first review
+
+- [x] 10.1 Keep the Filter box and the Review switch at the bar's left edge and `Tracks in cart` at its right edge
+- [x] 10.2 Centre the row's decision group vertically on desktops; on phones show it above the cart button with a top margin
+- [x] 10.3 Add a pushed style for pressed push buttons and use it for the magenta decision buttons
+- [x] 10.4 Add a shared `TabSelector` on a dark strip; use it for the review-state, store and cart search group tabs; open review on All
+- [x] 10.5 Offer review in the player panel only in the reviewed cart's view; hide Find similar, Follow, Ignore and Share when the panel's actions row runs out of room
+- [x] 10.6 Replace Open accepted with a click-to-open Modify accepted menu (Open N in <store> on desktops, Mark as purchased, Move to) and make Modify rejected click-to-open
+- [x] 10.7 Generalise the bulk action to `POST /me/carts/:id/{accepted|rejected}` and its undo; back-end test for moving accepted tracks
+- [x] 10.8 Swipe: same strip either way, label at full width, "Already accepted/rejected" when stopping short, a cancelled touch decides nothing
+- [x] 10.9 Load the accepted links with the review view just set (they were missed on a fresh page load)
+- [x] 10.10 Update the demo steps (All tab, menus, panel only in the cart view, stop-short swipe, Mark as purchased) and rerun the suites
