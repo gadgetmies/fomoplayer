@@ -216,3 +216,14 @@ button::-moz-focus-inner {
 
 @media (min-width: 1280px) {
 }
+
+/* A toggle button that is on (aria-pressed): pushed in, a darker magenta with an inset shadow and no bottom edge. */
+.button-push_button-primary[aria-pressed='true'] {
+  background-color: var(--fp-brand-primary-active);
+  border-color: var(--fp-brand-primary-border);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.55);
+}
+
+.button-push_button-primary[aria-pressed='true']:before {
+  display: none;
+}

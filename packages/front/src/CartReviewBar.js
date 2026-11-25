@@ -1,9 +1,10 @@
 import './CartReviewBar.css'
 import React, { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import DropDownButton from './DropDownButton'
+import { isMobile } from 'react-device-detect'
 import DropDown from './DropDown'
 import ToggleButton from './ToggleButton'
+import TabSelector from './TabSelector'
 import {
   REVIEW_TABS,
   acceptedStoreCounts,
@@ -30,39 +31,98 @@ export const CartReviewSwitch = ({ cartReview, disabled, onChange }) => (
   </span>
 )
 
-const TabRow = ({ name, label, options, selected, onSelect, disabled }) => (
-  <div
-    className="select-button select-button--container state-select-button--container noselect cart-review-tabs"
-    role="radiogroup"
-    aria-label={label}
+// A bar button that opens its menu on click (on every device, not on hover).
+const MenuButton = ({ open, onOpenChanged, disabled, testId, title, label, children }) => (
+  <DropDown
+    open={open}
+    openOnHover={false}
+    onOpenChanged={onOpenChanged}
+    disabled={disabled}
+    popupClassName="popup_content-right cart-review-popup"
+    anchor={
+      <button
+        type="button"
+        disabled={disabled}
+        data-testid={testId}
+        title={title}
+        className="button button-push_button button-push_button-small button-push_button-primary"
+      >
+        {label} <FontAwesomeIcon icon="caret-down" />
+      </button>
+    }
   >
-    {options.map(({ key, label: optionLabel, count }) => {
-      const id = `${name}-${key}`
-      return (
-        <React.Fragment key={key}>
-          <input
-            type="radio"
-            id={id}
-            name={name}
-            checked={selected === key}
-            disabled={disabled}
-            onChange={() => onSelect(key)}
-          />
-          <label className="select_button-button select_button-button__small cart-review-tab" htmlFor={id} data-testid={id}>
-            {optionLabel} <small>{count ?? ''}</small>
-          </label>
-        </React.Fragment>
-      )
-    })}
-  </div>
+    <div className="cart-review-popup-content" onClick={(e) => e.stopPropagation()}>
+      {children}
+    </div>
+  </DropDown>
 )
 
-// The review controls of a cart under review: the review-state tabs, the store tabs, Open accepted and Modify rejected.
-const CartReviewBar = ({ cartReview, carts, stores, disabled, onSetFilter, onSetStoreFocus, onModifyRejected, onShowNotice }) => {
-  const [excludedStores, setExcludedStores] = useState([])
-  const [modifyOpen, setModifyOpen] = useState(false)
+const MenuItem = ({ icon, testId, onClick, children }) => (
+  <button
+    type="button"
+    data-testid={testId}
+    className="button button-push_button button-push_button-small button-push_button-primary cart-button"
+    onClick={onClick}
+  >
+    <FontAwesomeIcon icon={icon} style={{ marginRight: 6 }} /> {children}
+  </button>
+)
+
+// Move to one of the user's other carts, or to a new cart named here.
+const MoveToCartItems = ({ carts, onMove }) => {
   const [newCartName, setNewCartName] = useState('')
-  const [modifying, setModifying] = useState(false)
+  return (
+    <>
+      <div>Move to:</div>
+      <div className="carts-list">
+        {carts.map(({ id, name }) => (
+          <MenuItem key={id} icon="arrow-right" onClick={() => onMove({ action: 'move', targetCartId: id })}>
+            {name}
+          </MenuItem>
+        ))}
+      </div>
+      <div className="input-layout">
+        <input
+          placeholder="New cart"
+          aria-label="New cart name"
+          style={{ flex: 1 }}
+          className="cart-popup-input text-input text-input-large text-input-dark"
+          value={newCartName}
+          onChange={(e) => setNewCartName(e.target.value)}
+        />
+        <button
+          type="button"
+          aria-label="Move to a new cart"
+          className="button button-push_button button-push_button-small button-push_button-primary"
+          disabled={newCartName.trim() === ''}
+          onClick={() => {
+            const name = newCartName.trim()
+            setNewCartName('')
+            onMove({ action: 'move', newCartName: name })
+          }}
+        >
+          <FontAwesomeIcon icon="plus" />
+        </button>
+      </div>
+    </>
+  )
+}
+
+// The review controls of a cart under review: the review-state tabs, the store tabs, Modify accepted and Modify
+// rejected.
+const CartReviewBar = ({
+  cartReview,
+  carts,
+  stores,
+  disabled,
+  onSetFilter,
+  onSetStoreFocus,
+  onModifyReviewed,
+  onMarkAcceptedPurchased,
+  onShowNotice,
+}) => {
+  const [openMenu, setOpenMenu] = useState(null)
+  const [busy, setBusy] = useState(false)
   if (!isReviewing(cartReview)) return null
 
   const counts = cartReview.counts || {}
@@ -72,38 +132,43 @@ const CartReviewBar = ({ cartReview, carts, stores, disabled, onSetFilter, onSet
     { key: 'all', label: 'All', count: storeCounts.reduce((sum, { count }) => sum + count, 0) },
     ...storeCounts.map(({ store, count }) => ({ key: store.toLowerCase(), label: store, count })),
   ]
-
   const acceptedPerStore = acceptedStoreCounts(cartReview.acceptedLinks).sort(
     (a, b) => appStores.indexOf(a.store) - appStores.indexOf(b.store),
   )
-  const includedStores = acceptedPerStore.map(({ store }) => store).filter((store) => !excludedStores.includes(store))
-  const { urls, skipped } = acceptedUrlsToOpen(cartReview.acceptedLinks, includedStores)
+  const acceptedCount = counts.accepted || 0
   const rejectedCount = counts.rejected || 0
   const otherCarts = (carts || []).filter(({ id, deleted }) => id !== cartReview.cartId && !deleted)
+  const menuProps = (name) => ({
+    open: openMenu === name,
+    onOpenChanged: (open) => setOpenMenu(open ? name : null),
+  })
 
-  const openAccepted = () => {
-    // Inside the click, so the browser lets the tabs open (when pop-ups are allowed for the site).
+  // Opens every accepted track carried by the store in a new tab, within the click so the browser lets them open.
+  // Phones open one tab per tap at most, so the option is offered on desktops only.
+  const openInStore = (store) => {
+    setOpenMenu(null)
+    const { urls } = acceptedUrlsToOpen(cartReview.acceptedLinks, [store])
     const { blocked } = openInNewTabs(urls)
-    const message = openAcceptedNotice({ blocked, skipped })
+    const message = openAcceptedNotice({ blocked, skipped: 0 })
     if (message) onShowNotice({ message })
   }
 
-  const modify = async (body) => {
-    setModifyOpen(false)
-    setModifying(true)
+  const run = async (action, failure) => {
+    setOpenMenu(null)
+    setBusy(true)
     try {
-      await onModifyRejected(body)
+      await action()
     } catch (e) {
-      console.error('Modifying rejected tracks failed', e)
-      onShowNotice({ message: 'Modifying the rejected tracks failed.' })
+      console.error(failure, e)
+      onShowNotice({ message: `${failure}.` })
     } finally {
-      setModifying(false)
+      setBusy(false)
     }
   }
 
   return (
     <>
-      <TabRow
+      <TabSelector
         name="cart-review-tab"
         label="Review state"
         options={REVIEW_TABS.map(({ key, label, count }) => ({ key, label, count: counts[count] }))}
@@ -111,7 +176,7 @@ const CartReviewBar = ({ cartReview, carts, stores, disabled, onSetFilter, onSet
         disabled={disabled}
         onSelect={onSetFilter}
       />
-      <TabRow
+      <TabSelector
         name="cart-review-store"
         label="Store"
         options={storeTabs}
@@ -120,114 +185,76 @@ const CartReviewBar = ({ cartReview, carts, stores, disabled, onSetFilter, onSet
         onSelect={(key) => onSetStoreFocus(key === 'all' ? null : key)}
       />
       <span className="cart-review-actions">
-        <DropDownButton
-          buttonClassName="cart-review-open"
-          data-testid="cart-review-open-accepted"
-          title="Open each accepted track in its store in a new tab"
-          icon="arrow-up-right-from-square"
-          disabled={urls.length === 0}
-          onClick={openAccepted}
-          popupClassName="popup_content-right cart-review-popup"
+        <MenuButton
+          {...menuProps('accepted')}
+          disabled={acceptedCount === 0 || busy}
+          testId="cart-review-modify-accepted"
+          title="Open the accepted tracks in their stores, mark them purchased or move them to another cart"
           label={
             <>
-              <span className="cart-review-label_long">Open accepted</span>
-              <span className="cart-review-label_short">Open</span> <small>{urls.length}</small>
+              <span className="cart-review-label_long">Modify accepted</span>
+              <span className="cart-review-label_short">
+                <FontAwesomeIcon icon="check" />
+              </span>{' '}
+              <small>{acceptedCount}</small>
             </>
           }
         >
-          <div className="cart-review-popup-content">
-            <div>Open in:</div>
-            {acceptedPerStore.map(({ store, count }) => {
-              const id = `cart-review-open-${store}`
-              return (
-                <div key={store} className="input-layout cart-review-popup-row">
-                  <label htmlFor={id} className="noselect">
-                    {store} <small>{count}</small>
-                  </label>
-                  <ToggleButton
-                    id={id}
-                    controlled
-                    checked={!excludedStores.includes(store)}
-                    onChange={(include) =>
-                      setExcludedStores((current) =>
-                        include ? current.filter((s) => s !== store) : current.concat(store),
-                      )
-                    }
-                  />
-                </div>
-              )
-            })}
-          </div>
-        </DropDownButton>
-        <DropDown
-          open={modifyOpen}
-          onOpenChanged={setModifyOpen}
-          disabled={rejectedCount === 0 || modifying}
-          popupClassName="popup_content-right cart-review-popup"
-          anchor={
-            <button
-              type="button"
-              disabled={rejectedCount === 0 || modifying}
-              data-testid="cart-review-modify-rejected"
-              title="Remove the rejected tracks from this cart or move them to another cart"
-              className="button button-push_button button-push_button-small button-push_button-primary"
-            >
+          {!isMobile &&
+            acceptedPerStore.map(({ store, count }) => (
+              <MenuItem
+                key={store}
+                icon="arrow-up-right-from-square"
+                testId={`cart-review-open-${store.toLowerCase()}`}
+                onClick={() => openInStore(store)}
+              >
+                Open {count} in {store}
+              </MenuItem>
+            ))}
+          {!isMobile && acceptedPerStore.length > 0 && <hr className="popup-divider" />}
+          <MenuItem
+            icon="cart-shopping"
+            testId="cart-review-mark-purchased"
+            onClick={() => run(onMarkAcceptedPurchased, 'Marking the accepted tracks purchased failed')}
+          >
+            Mark as purchased
+          </MenuItem>
+          <hr className="popup-divider" />
+          <MoveToCartItems
+            carts={otherCarts}
+            onMove={(body) => run(() => onModifyReviewed('accepted', body), 'Moving the accepted tracks failed')}
+          />
+        </MenuButton>
+        <MenuButton
+          {...menuProps('rejected')}
+          disabled={rejectedCount === 0 || busy}
+          testId="cart-review-modify-rejected"
+          title="Remove the rejected tracks from this cart or move them to another cart"
+          label={
+            <>
               <span className="cart-review-label_long">Modify rejected</span>
               <span className="cart-review-label_short">
                 <FontAwesomeIcon icon="xmark" />
               </span>{' '}
-              <small>{rejectedCount}</small> <FontAwesomeIcon icon="caret-down" />
-            </button>
+              <small>{rejectedCount}</small>
+            </>
           }
         >
-          <div className="cart-review-popup-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              data-testid="cart-review-remove-rejected"
-              className="button button-push_button button-push_button-small button-push_button-primary cart-button"
-              onClick={() => modify({ action: 'remove' })}
-            >
-              <FontAwesomeIcon icon="trash" style={{ marginRight: 6 }} /> Remove from this cart
-            </button>
-            <hr className="popup-divider" />
-            <div>Move to:</div>
-            <div className="carts-list">
-              {otherCarts.map(({ id, name }) => (
-                <button
-                  key={id}
-                  type="button"
-                  className="button button-push_button button-push_button-small button-push_button-primary cart-button"
-                  onClick={() => modify({ action: 'move', targetCartId: id })}
-                >
-                  <FontAwesomeIcon icon="arrow-right" style={{ marginRight: 6 }} /> {name}
-                </button>
-              ))}
-            </div>
-            <div className="input-layout">
-              <input
-                placeholder="New cart"
-                aria-label="New cart name"
-                style={{ flex: 1 }}
-                className="cart-popup-input text-input text-input-large text-input-dark"
-                value={newCartName}
-                onChange={(e) => setNewCartName(e.target.value)}
-              />
-              <button
-                type="button"
-                aria-label="Move to a new cart"
-                className="button button-push_button button-push_button-small button-push_button-primary"
-                disabled={newCartName.trim() === ''}
-                onClick={() => {
-                  const name = newCartName.trim()
-                  setNewCartName('')
-                  modify({ action: 'move', newCartName: name })
-                }}
-              >
-                <FontAwesomeIcon icon="plus" />
-              </button>
-            </div>
-          </div>
-        </DropDown>
+          <MenuItem
+            icon="trash"
+            testId="cart-review-remove-rejected"
+            onClick={() =>
+              run(() => onModifyReviewed('rejected', { action: 'remove' }), 'Modifying the rejected tracks failed')
+            }
+          >
+            Remove from this cart
+          </MenuItem>
+          <hr className="popup-divider" />
+          <MoveToCartItems
+            carts={otherCarts}
+            onMove={(body) => run(() => onModifyReviewed('rejected', body), 'Moving the rejected tracks failed')}
+          />
+        </MenuButton>
       </span>
     </>
   )

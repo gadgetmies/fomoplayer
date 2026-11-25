@@ -53,6 +53,21 @@
   right: 0;
 }
 
+/* A review swipe keeps its label at full width and slides it into view from the row's side, so the words are never
+   squeezed while the strip is still narrow. */
+.swipe-heard-reveal__review {
+  justify-content: flex-end;
+}
+
+.swipe-heard-reveal__review.swipe-heard-reveal__right {
+  justify-content: flex-start;
+}
+
+.swipe-heard-reveal__review .swipe-heard-indicator {
+  flex: 0 0 auto;
+  width: 96px;
+}
+
 .swipe-heard-indicator {
   flex: 1;
   min-width: 0;

@@ -7,7 +7,7 @@ import {
   isSkippedInReview,
   openAcceptedNotice,
   openInNewTabs,
-  rejectedNotice,
+  reviewedTracksNotice,
   reviewQuery,
   reviewRequestStores,
 } from './cartReview'
@@ -54,8 +54,9 @@ describe('the player while a cart is reviewed', () => {
 
 describe('a cart page under review', () => {
   it('asks for the selected review tab and only the selected store', () => {
-    expect(reviewQuery(reviewing())).toBe('&review=to-review')
-    expect(reviewQuery(reviewing({ reviewFilter: 'all' }))).toBe('')
+    // All is the default tab.
+    expect(reviewQuery(reviewing())).toBe('')
+    expect(reviewQuery(reviewing({ reviewFilter: 'to-review' }))).toBe('&review=to-review')
     expect(reviewRequestStores(reviewing({ storeFocus: 'bandcamp' }))).toEqual(['bandcamp'])
     expect(reviewRequestStores(reviewing())).toBe(undefined)
     expect(reviewQuery(reviewing({ enabled: false }))).toBe('')
@@ -109,9 +110,11 @@ describe('opening accepted tracks', () => {
   })
 })
 
-it('says how many rejected tracks were removed or moved, and where', () => {
-  expect(rejectedNotice({ count: 3, targetCart: null })).toBe('Removed 3 rejected tracks from this cart.')
-  expect(rejectedNotice({ count: 1, targetCart: { name: 'To check later' } })).toBe(
-    'Moved 1 rejected track to To check later.',
+it('says how many accepted or rejected tracks were removed or moved, and where', () => {
+  expect(reviewedTracksNotice('rejected', { count: 3, targetCart: null })).toBe(
+    'Removed 3 rejected tracks from this cart.',
+  )
+  expect(reviewedTracksNotice('accepted', { count: 1, targetCart: { name: 'To check later' } })).toBe(
+    'Moved 1 accepted track to To check later.',
   )
 })

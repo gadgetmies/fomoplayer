@@ -1,0 +1,18 @@
+/* The tabs sit on a darker strip than the #222 bars they are placed in. */
+.select-button--container.tab-selector {
+  background-color: #111;
+  align-items: center;
+}
+
+.tab-selector-tab {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap;
+  align-items: center;
+  flex: none;
+  gap: 6px;
+}
+
+.tab-selector-tab small {
+  opacity: 0.75;
+}
