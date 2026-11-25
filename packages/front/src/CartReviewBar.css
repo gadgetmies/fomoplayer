@@ -1,0 +1,66 @@
+.cart-review-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  padding: 0 4px;
+}
+
+.tracks-top_bar_group.cart-review-bar {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.cart-review-tab small {
+  opacity: 0.75;
+  margin-left: 2px;
+}
+
+.cart-review-actions {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.cart-review-popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  min-width: 12rem;
+  box-sizing: border-box;
+}
+
+.cart-review-popup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cart-review-label_short {
+  display: none;
+}
+
+.cart-review-empty {
+  display: block;
+  border-bottom: 1px solid black;
+  padding: 8px;
+  background: #222;
+}
+
+@media (max-width: 590px) {
+  .cart-review-label_long {
+    display: none;
+  }
+
+  .cart-review-label_short {
+    display: inline;
+  }
+
+  /* DropDownButton hides its label at phone width; the short label and count stay. */
+  .cart-review-actions .button-push_button_label {
+    display: inline;
+  }
+}

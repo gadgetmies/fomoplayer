@@ -4,6 +4,7 @@ import React, { Component } from 'react'
 import * as R from 'ramda'
 import { PlayerHelp } from './PlayerHelp'
 import { isSample, isViewingSource, listSource, queueTracks, stepInQueue } from './playQueue'
+import { isReviewing, isSkippedInReview, swipeNotice } from './cartReview'
 
 // Stop auto-skipping after this many tracks in a row fail to play, so a store
 // outage doesn't race through (and request previews for) the whole list.
@@ -167,8 +168,10 @@ class Player extends Component {
     return R.findIndex(R.propEq(track.id, 'id'), this.getTracks())
   }
 
+  // Whether next / previous / auto-advance may land on the track. Clicking a row plays it regardless.
   isPlayable(track) {
     if (isSample(track)) return true
+    if (isSkippedInReview(track, this.props.cartReview, this.props.playingFrom?.source?.key)) return false
     const storeSlugs = this.props.stores.map(({ storeName }) => storeName.toLowerCase())
     return (track.previews || []).some(({ store }) => storeSlugs.includes(store))
   }
@@ -189,6 +192,30 @@ class Player extends Component {
     }
 
     await this.props.onSetCurrentTrack(nextTrack)
+  }
+
+  // Whether the current track plays from the cart under review, so deciding it moves on and the panel offers review.
+  isPlayingFromReviewedCart() {
+    const { cartReview, playingFrom, currentTrack } = this.props
+    return Boolean(
+      currentTrack && isReviewing(cartReview) && playingFrom?.source?.key === `cart:${cartReview.cartUuid}`,
+    )
+  }
+
+  // Decides a track of the cart under review from a row, the panel or a swipe. Accepting or rejecting the playing track
+  // first moves on to the next track still to review; Undecided and decisions on other tracks leave playback alone.
+  // `undoNotice` (with the track's title) shows a notice with Undo, as a swipe does.
+  async decideCartTrack(trackId, state, { undoNotice } = {}) {
+    if (state && this.props.currentTrack?.id === trackId && this.isPlayingFromReviewedCart()) {
+      await this.playNextTrack()
+    }
+    const previous = await this.props.onDecideCartTrack(trackId, state)
+    if (undoNotice && previous !== undefined && previous !== state) {
+      this.props.onShowNotice({
+        message: swipeNotice(state, undoNotice.title),
+        onUndo: () => this.props.onDecideCartTrack(trackId, previous),
+      })
+    }
   }
 
   async playPreviousTrack() {
@@ -344,6 +371,16 @@ class Player extends Component {
     const defaultCart = this.props.carts.find(R.prop('isDefault'))
     const inDefaultCart = !!(defaultCart && currentTrack && currentCarts.some((c) => c && c.uuid === defaultCart.uuid))
     const inCurrentCart = inCarts.find(({ id }) => id === selectedCartId)
+    const cartReview = this.props.cartReview
+    const reviewControls =
+      this.props.mode === 'app' &&
+      this.isPlayingFromReviewedCart() &&
+      Object.prototype.hasOwnProperty.call(cartReview.states, currentTrack.id)
+        ? {
+            state: cartReview.states[currentTrack.id],
+            onDecide: (state) => this.decideCartTrack(currentTrack.id, state),
+          }
+        : null
 
     return (
       <div
@@ -400,6 +437,7 @@ class Player extends Component {
           onAddEntityToSearch={this.props.onAddEntityToSearch}
           docked={this.props.docked}
           playingFrom={this.getPlayingFromToShow()}
+          reviewControls={reviewControls}
         />
         <div style={{ display: this.props.docked || this.props.panelOnly ? 'none' : 'contents' }}>
           <Tracks
@@ -457,6 +495,15 @@ class Player extends Component {
             onMarkHeardButtonClick={this.markHeard.bind(this)}
             onToggleHeard={this.toggleHeard.bind(this)}
             onAddEntityToSearch={this.props.onAddEntityToSearch}
+            cartReview={this.props.mode === 'app' ? cartReview : undefined}
+            notice={this.props.notice}
+            onSetCartReviewEnabled={this.props.onSetCartReviewEnabled}
+            onSetCartReviewFilter={this.props.onSetCartReviewFilter}
+            onSetCartStoreFocus={this.props.onSetCartStoreFocus}
+            onDecideCartTrack={this.decideCartTrack.bind(this)}
+            onModifyRejectedTracks={this.props.onModifyRejectedTracks}
+            onShowNotice={this.props.onShowNotice}
+            onDismissNotice={this.props.onDismissNotice}
           />
         </div>
       </div>
