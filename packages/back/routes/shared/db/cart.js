@@ -278,8 +278,8 @@ AND meta_account_user_id = ${userId}
   return id
 }
 
-module.exports.insertCart = async (userId, cart) => {
-  const [createdCart] = await pg.queryRowsAsync(
+module.exports.insertCart = async (userId, cart, db = pg) => {
+  const [createdCart] = await db.queryRowsAsync(
     // language=PostgreSQL
     sql`--insertCart
 INSERT INTO cart
@@ -291,7 +291,7 @@ RETURNING cart_id AS id, cart_uuid AS uuid, cart_name AS name
   )
 
   if (cart.tracks) {
-    await pg.queryAsync(
+    await db.queryAsync(
       // language=PostgreSQL
       sql`--insertCart
 INSERT INTO track__cart
@@ -305,14 +305,14 @@ ON CONFLICT DO NOTHING
   return createdCart
 }
 
-module.exports.insertTracksToCart = async (cartId, items) => {
+module.exports.insertTracksToCart = async (cartId, items, db = pg) => {
   if (!items || items.length === 0) return
 
   const withDate = items.filter((i) => i.addedAt)
   const withoutDate = items.filter((i) => !i.addedAt)
 
   if (withoutDate.length > 0) {
-    await pg.queryRowsAsync(
+    await db.queryRowsAsync(
       // language=PostgreSQL
       sql`--insertTracksToCart (no date)
 INSERT INTO track__cart
@@ -327,7 +327,7 @@ ON CONFLICT ON CONSTRAINT track__cart_cart_id_track_id_key DO NOTHING`,
 
   if (withDate.length > 0) {
     const payload = withDate.map((i) => ({ track_id: i.trackId, added_at: i.addedAt }))
-    await pg.queryRowsAsync(
+    await db.queryRowsAsync(
       // language=PostgreSQL
       sql`--insertTracksToCart (with date)
 INSERT INTO track__cart
@@ -344,9 +344,9 @@ DO UPDATE SET track__cart_added = EXCLUDED.track__cart_added`,
   }
 }
 
-module.exports.queryCartTrackIds = async (cartId) =>
+module.exports.queryCartTrackIds = async (cartId, db = pg) =>
   (
-    await pg.queryRowsAsync(
+    await db.queryRowsAsync(
       // language=PostgreSQL
       sql`--queryCartTrackIds
 SELECT track_id AS id
@@ -356,8 +356,8 @@ WHERE cart_id = ${cartId}
     )
   ).map(({ id }) => id)
 
-module.exports.deleteTracksFromCart = async (cartId, trackIds) =>
-  pg.queryRowsAsync(
+module.exports.deleteTracksFromCart = async (cartId, trackIds, db = pg) =>
+  db.queryRowsAsync(
     // language=PostgreSQL
     sql`--deleteTracksFromCart
 DELETE

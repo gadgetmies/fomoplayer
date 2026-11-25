@@ -67,11 +67,8 @@ const getCartStoreDetails = async (cartId, storeName) => {
   return cartStoreDetails.find(({ storeName: cartStoreName }) => cartStoreName === storeName)
 }
 
-const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId, items) => {
-  await verifyCartOwnership(userId, cartId)
-  const trackIds = items.map((i) => i.trackId)
-  await insertTracksToCart(cartId, items)
-
+// Adds tracks to the cart's Spotify playlist when the cart is synced to one. Runs after the response.
+const syncAddedTracks = (userId, cartId, trackIds) =>
   setImmediate(async () => {
     const spotifyCartDetails = await getCartStoreDetails(cartId, spotifyStoreName)
     if (spotifyCartDetails) {
@@ -82,11 +79,9 @@ const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId,
       }
     }
   })
-})
 
-const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userId, cartId, trackIds) => {
-  await verifyCartOwnership(userId, cartId)
-  await deleteTracksFromCart(cartId, trackIds)
+// Removes tracks from the cart's Spotify playlist when the cart is synced to one.
+const syncRemovedTracks = async (userId, cartId, trackIds) => {
   const spotifyCartDetails = await getCartStoreDetails(cartId, spotifyStoreName)
   if (spotifyCartDetails) {
     const trackDetails = await getTrackDetails(trackIds)
@@ -95,6 +90,22 @@ const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userI
       await updateCartStoreVersionId(cartId, updatedVersionId)
     }
   }
+}
+
+const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId, items) => {
+  await verifyCartOwnership(userId, cartId)
+  await insertTracksToCart(cartId, items)
+  syncAddedTracks(
+    userId,
+    cartId,
+    items.map((i) => i.trackId),
+  )
+})
+
+const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userId, cartId, trackIds) => {
+  await verifyCartOwnership(userId, cartId)
+  await deleteTracksFromCart(cartId, trackIds)
+  await syncRemovedTracks(userId, cartId, trackIds)
 })
 
 module.exports.updateCartContents = async (userId, cartId, operations) => {
