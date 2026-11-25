@@ -56,5 +56,5 @@
 
 ## 9. Verification and hand-off
 
-- [ ] 9.1 Run `yarn cascade-test` for the touched backend tests and `yarn workspace fomoplayer_front test` during the work, then the full `yarn test` before the pull request
-- [ ] 9.2 Merge `master` into the branch, squash `wip:` commits into atomic ones, and open the pull request with the ```demo-test``` / ```demo-preview``` blocks and a list of where the implementation differs from the canvas (no review keyboard shortcuts, `<small>` counts instead of round pills, phone rows instead of cards)
+- [x] 9.1 Run `yarn cascade-test` for the touched backend tests and `yarn workspace fomoplayer_front test` during the work, then the full `yarn test` before the pull request
+- [x] 9.2 Merge `master` into the branch, squash `wip:` commits into atomic ones, and open the pull request with the ```demo-test``` / ```demo-preview``` blocks and a list of where the implementation differs from the canvas (no review keyboard shortcuts, `<small>` counts instead of round pills, phone rows instead of cards)
