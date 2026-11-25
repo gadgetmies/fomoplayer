@@ -33,6 +33,17 @@ import KeyboardShortcutsPopup from './KeyboardShortcutsPopup'
 
 import { isMobile } from 'react-device-detect'
 import { isSample } from './playQueue'
+import {
+  applyLocalDecisions,
+  countsAfterDecision,
+  emptyCartReview,
+  isReviewing,
+  matchesReviewFilter,
+  rejectedNotice,
+  reviewQuery,
+  reviewRequestStores,
+  reviewStatesOf,
+} from './cartReview'
 import NotificationsPage from './NotificationsPage'
 import { loadUnreadNotificationCount } from './audioSamplesApi'
 
@@ -128,6 +139,18 @@ export const patchTrackCartMembership = (slices, trackId, cartUuid, op) => {
   }
 }
 
+// The number of the cart's tracks the loaded rows cover on the server, i.e. the offset of the next page: rows kept on
+// screen after being removed from the cart are no longer in the cart on the server and do not count.
+export const loadedCartTrackCount = (tracks, cartUuid) =>
+  (tracks || []).filter((t) => t && (t.carts || []).some((c) => c && c.uuid === cartUuid)).length
+
+// Cart records from `/me/carts` (no tracks) keeping the tracks already loaded for each cart.
+export const mergeCartListPreservingTracks = (existingCarts, freshCarts) =>
+  freshCarts.map((cart) => {
+    const existing = (existingCarts || []).find(({ uuid }) => uuid === cart.uuid)
+    return existing && existing.tracks && !cart.tracks ? { ...cart, tracks: existing.tracks } : cart
+  })
+
 // A cart response ({ cart, tracks, page }) as the cart record kept in the state: the cart's fields with its tracks.
 export const cartRecord = ({ cart, tracks }) => ({ ...cart, tracks })
 
@@ -137,10 +160,17 @@ export const cartRecord = ({ cart, tracks }) => ({ ...cart, tracks })
 // extend past the first page after infinite-scroll) and splice the single
 // added/removed row in place. Top-level metadata (name, storeDetails,
 // trackCount, etc.) is taken from the PATCH response.
-export const mergeCartDetailsPreservingTracks = (existing, response, { addedTrackId, removedTrackId } = {}) => {
+// `keepRemovedRow` leaves a removed track's row in place (the cart on screen keeps listing it, with an add button,
+// until the cart is reloaded); otherwise the row is spliced out.
+export const mergeCartDetailsPreservingTracks = (
+  existing,
+  response,
+  { addedTrackId, removedTrackId, keepRemovedRow = false } = {},
+) => {
   const existingTracks = (existing && existing.tracks) || []
   let nextTracks = existingTracks
   if (removedTrackId != null) {
+    if (keepRemovedRow) return { ...existing, ...response, tracks: existingTracks }
     const idx = existingTracks.findIndex((t) => t && t.id === removedTrackId)
     if (idx !== -1) {
       nextTracks = existingTracks.slice(0, idx).concat(existingTracks.slice(idx + 1))
@@ -242,7 +272,13 @@ class App extends Component {
       pages: {},
       cartPagination: null,
       notHeardBefore: null,
+      // The review view of the selected cart (see cartReview.js).
+      cartReview: emptyCartReview,
+      // The one-line notice under the cart bar, with an optional Undo: { id, message, onUndo }.
+      notice: null,
     }
+    // Rows a review decision took out of the selected tab, by track id, so an Undo can put them back in place.
+    this.reviewDroppedRows = new Map()
 
     this.lastLocationSignature = ''
   }
@@ -277,30 +313,80 @@ class App extends Component {
       this.setState({ loadingMore: true })
       await this.updateTracks(true)
     } else if (listState === 'carts') {
-      if (!cartPagination || cartPagination.loadingMore || !selectedCartUuid || !selectedCart) return
-      this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
-      const nextOffset = cartPagination.offset + cartPagination.count
-      const { cart, tracks: appendedTracks, page } = await requestJSONwithCredentials({
-        path: `/carts/${selectedCartUuid}?offset=${nextOffset}&limit=${CART_TRACKS_PAGE_SIZE}`,
-      })
-      const carts = this.state.carts.slice()
-      const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
-      if (cartIndex !== -1) {
-        const existingTracks = carts[cartIndex].tracks || []
-        carts[cartIndex] = { ...carts[cartIndex], ...cart, tracks: existingTracks.concat(appendedTracks) }
+      // The flag is set synchronously: the state flag is only seen after a render, so a scroll and an auto-load in the
+      // same tick would both fetch the same page
+      if (!cartPagination || cartPagination.loadingMore || this.loadingMoreCartTracks || !selectedCartUuid || !selectedCart)
+        return
+      this.loadingMoreCartTracks = true
+      try {
+        this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
+        const generation = this.cartTracksGeneration
+        // The rows still loaded: review decisions take rows out of a review tab, and the server's filtered list
+        // shrinks with them.
+        const nextOffset = cartPagination.offset + cartPagination.count
+        const response = await this.fetchCartPage(selectedCartUuid, nextOffset, this.state.cartReview)
+        // Another cart was selected (or this one reloaded) meanwhile: the page belongs to a list no longer on screen
+        if (this.state.selectedCartUuid !== selectedCartUuid || this.cartTracksGeneration !== generation) {
+          return
+        }
+        const { cart, page } = response
+        const { cartReview, tracks: appendedTracks } = this.cartReviewFromResponse(response)
+        const carts = this.state.carts.slice()
+        const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
+        if (cartIndex !== -1) {
+          // Tracks added to the cart since the last page shift the offsets, so a page can repeat rows already listed
+          const existingTracks = carts[cartIndex].tracks || []
+          carts[cartIndex] = { ...carts[cartIndex], ...cart, tracks: deduplicateTracks(existingTracks, appendedTracks) }
+        }
+        const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
+        this.setState({
+          carts,
+          selectedCart: updatedSelectedCart,
+          cartReview,
+          cartPagination: {
+            offset: 0,
+            count: this.state.cartPagination.count + appendedTracks.length,
+            total: page.total - (response.tracks.length - appendedTracks.length),
+            loadingMore: false,
+          },
+        })
+      } catch (e) {
+        console.error('Loading more cart tracks failed', e)
+        if (this.state.cartPagination) {
+          this.setState({ cartPagination: { ...this.state.cartPagination, loadingMore: false } })
+        }
+      } finally {
+        this.loadingMoreCartTracks = false
       }
-      const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
-      this.setState({
-        carts,
-        selectedCart: updatedSelectedCart,
-        cartPagination: {
-          offset: 0,
-          count: cartPagination.count + appendedTracks.length,
-          total: page.total,
-          loadingMore: false,
-        },
-      })
     }
+  }
+
+  // One page of a cart, narrowed to the review tab and store tab when the cart is under review.
+  fetchCartPage(cartUuid, offset, cartReview) {
+    return requestJSONwithCredentials({
+      path: `/carts/${cartUuid}?offset=${offset}&limit=${CART_TRACKS_PAGE_SIZE}${reviewQuery(cartReview)}`,
+      stores: reviewRequestStores(cartReview),
+    })
+  }
+
+  // The review view and the rows to show after a cart page arrived. Decisions made here win over the page's rows.
+  cartReviewFromResponse(response, base = this.state.cartReview) {
+    const review = response.cart.review
+    if (!review) return { cartReview: { ...base, available: false, enabled: false }, tracks: response.tracks }
+    const cartReview = {
+      ...base,
+      cartUuid: response.cart.uuid,
+      cartId: response.cart.id,
+      available: true,
+      enabled: review.enabled,
+      counts: review.counts,
+      storeCounts: review.storeCounts,
+      states: { ...base.states, ...reviewStatesOf(response.tracks), ...base.localStates },
+    }
+    const tracks = review.enabled
+      ? applyLocalDecisions(response.tracks, base.localStates, base.reviewFilter)
+      : response.tracks
+    return { cartReview, tracks }
   }
 
   async updateStatesFromServer() {
@@ -481,7 +567,12 @@ class App extends Component {
     const carts = await requestJSONwithCredentials({
       path: `/me/carts`,
     })
-    const visibleCarts = carts.filter(({ deleted }) => !deleted)
+    // `/me/carts` lists carts without their tracks: keep the loaded ones, or the cart on screen (and the play queue
+    // stepping through it) would empty
+    const visibleCarts = mergeCartListPreservingTracks(
+      this.state.carts,
+      carts.filter(({ deleted }) => !deleted),
+    )
     const selectedCartUuid = this.state.selectedCartUuid || visibleCarts[0]?.uuid
     const selectedCart = selectedCartUuid ? visibleCarts.find(({ uuid }) => uuid === selectedCartUuid) : undefined
 
@@ -546,16 +637,16 @@ class App extends Component {
 
     if (cartIndex !== -1) {
       const existingCart = this.state.carts[cartIndex]
-      const existingTracksForMerge =
-        this.state.selectedCart && this.state.selectedCart.id === cartDetails.id
-          ? patched.selectedCartTracks
-          : existingCart.tracks
+      const isSelectedCart = Boolean(this.state.selectedCart && this.state.selectedCart.id === cartDetails.id)
+      const existingTracksForMerge = isSelectedCart ? patched.selectedCartTracks : existingCart.tracks
       const merged = mergeCartDetailsPreservingTracks(
         { ...existingCart, tracks: existingTracksForMerge },
         cartDetails,
         {
           addedTrackId: op === 'add' ? trackId : undefined,
           removedTrackId: op === 'remove' ? trackId : undefined,
+          // The cart on screen keeps listing a removed track, its button switched to add, until the cart reloads
+          keepRemovedRow: isSelectedCart,
         },
       )
       const clonedCarts = this.state.carts.slice()
@@ -568,7 +659,7 @@ class App extends Component {
             merged.trackCount != null
               ? merged.trackCount
               : this.state.cartPagination.total + (op === 'add' ? 1 : -1)
-          const count = merged.tracks ? merged.tracks.length : this.state.cartPagination.count
+          const count = merged.tracks ? loadedCartTrackCount(merged.tracks, merged.uuid) : this.state.cartPagination.count
           partialState.cartPagination = { ...this.state.cartPagination, total, count }
         }
       }
@@ -1160,11 +1251,24 @@ class App extends Component {
     })
   }
 
-  async selectCart(selectedCartUuid) {
-    this.setState({ selectedCartUuid, fetchingCartDetails: true, cartPagination: null })
-    const path = `/carts/${selectedCartUuid}?offset=0&limit=${CART_TRACKS_PAGE_SIZE}`
-    const response = await requestJSONwithCredentials({ path })
-    const cartDetails = cartRecord(response)
+  // `reviewView` is the review view to load the cart with, when the caller just changed it (this.state may not have it
+  // yet).
+  async selectCart(selectedCartUuid, reviewView = this.state.cartReview) {
+    this.cartTracksGeneration = (this.cartTracksGeneration || 0) + 1
+    // Reloading the cart under review keeps its tabs; another cart starts on its To review tab.
+    const sameCart = reviewView.cartUuid === selectedCartUuid
+    let requestedReview = sameCart ? reviewView : { ...emptyCartReview, cartUuid: selectedCartUuid }
+    if (!sameCart) this.reviewDroppedRows = new Map()
+    this.setState({ selectedCartUuid, fetchingCartDetails: true, cartPagination: null, cartReview: requestedReview })
+    let response = await this.fetchCartPage(selectedCartUuid, 0, requestedReview)
+    if (response.cart.review?.enabled && !isReviewing(requestedReview)) {
+      // The cart was left in review (here or on another device): show its To review tab.
+      requestedReview = { ...requestedReview, available: true, enabled: true }
+      response = await this.fetchCartPage(selectedCartUuid, 0, requestedReview)
+    }
+    if (this.state.selectedCartUuid !== selectedCartUuid) return
+    const { cartReview, tracks } = this.cartReviewFromResponse(response, requestedReview)
+    const cartDetails = cartRecord({ ...response, tracks })
     let updatedCarts = this.state.carts.slice()
     let cartIndex = updatedCarts.findIndex(({ uuid }) => uuid === selectedCartUuid)
     if (cartIndex === -1) {
@@ -1178,13 +1282,157 @@ class App extends Component {
       carts: updatedCarts,
       selectedCart: updatedCarts[cartIndex],
       fetchingCartDetails: false,
+      cartReview,
       cartPagination: {
         offset: 0,
-        count: response.tracks.length,
-        total: response.page.total,
+        count: tracks.length,
+        total: response.page.total - (response.tracks.length - tracks.length),
         loadingMore: false,
       },
     })
+    if (isReviewing(cartReview)) this.refreshAcceptedLinks()
+  }
+
+  async setCartReviewEnabled(enabled) {
+    const { cartReview } = this.state
+    await requestWithCredentials({ path: `/me/carts/${cartReview.cartId}/review`, method: 'PUT', body: { enabled } })
+    const next = { ...cartReview, enabled, reviewFilter: 'to-review', storeFocus: null }
+    await this.selectCart(next.cartUuid, next)
+  }
+
+  async setCartReviewFilter(reviewFilter) {
+    const next = { ...this.state.cartReview, reviewFilter }
+    await this.selectCart(next.cartUuid, next)
+  }
+
+  async setCartStoreFocus(storeFocus) {
+    const next = { ...this.state.cartReview, storeFocus }
+    await this.selectCart(next.cartUuid, next)
+  }
+
+  // The accepted tracks' store links, loaded ahead so Open accepted can open its tabs within the click.
+  async refreshAcceptedLinks() {
+    const { cartReview } = this.state
+    if (!isReviewing(cartReview)) return
+    const acceptedLinks = await requestJSONwithCredentials({
+      path: `/me/carts/${cartReview.cartId}/accepted`,
+      stores: reviewRequestStores(cartReview),
+    })
+    if (this.state.cartReview.cartUuid !== cartReview.cartUuid) return
+    this.setState(({ cartReview: current }) => ({ cartReview: { ...current, acceptedLinks } }))
+  }
+
+  // Saves a track's review state in the cart under review and updates the counts and the list at once. A track that
+  // no longer belongs in the selected tab leaves the list (and comes back in place if the decision is undone).
+  // Resolves to the track's previous state.
+  async decideCartTrack(trackId, state) {
+    const { cartReview } = this.state
+    if (!isReviewing(cartReview)) return undefined
+    const previous = Object.prototype.hasOwnProperty.call(cartReview.states, trackId)
+      ? cartReview.states[trackId]
+      : null
+    if (previous === state) return previous
+
+    const current = this.state
+    const partial = {
+      cartReview: {
+        ...cartReview,
+        states: { ...cartReview.states, [trackId]: state },
+        localStates: { ...cartReview.localStates, [trackId]: state },
+        counts: countsAfterDecision(cartReview.counts, previous, state),
+      },
+    }
+    const selectedCart = current.selectedCart
+    if (selectedCart?.uuid === cartReview.cartUuid) {
+      const tracks = selectedCart.tracks || []
+      const index = tracks.findIndex(({ id }) => id === trackId)
+      const fits = matchesReviewFilter(state, cartReview.reviewFilter)
+      let updatedTracks = tracks
+      let countChange = 0
+      if (index !== -1 && fits) {
+        updatedTracks = tracks.map((track) => (track.id === trackId ? { ...track, reviewState: state } : track))
+      } else if (index !== -1) {
+        this.reviewDroppedRows.set(trackId, { track: tracks[index], index })
+        updatedTracks = tracks.filter(({ id }) => id !== trackId)
+        countChange = -1
+      } else if (fits && this.reviewDroppedRows.has(trackId)) {
+        const dropped = this.reviewDroppedRows.get(trackId)
+        this.reviewDroppedRows.delete(trackId)
+        updatedTracks = tracks.slice()
+        updatedTracks.splice(Math.min(dropped.index, tracks.length), 0, { ...dropped.track, reviewState: state })
+        countChange = 1
+      }
+      if (updatedTracks !== tracks) {
+        const updatedCart = { ...selectedCart, tracks: updatedTracks }
+        partial.selectedCart = updatedCart
+        partial.carts = current.carts.map((cart) => (cart.uuid === updatedCart.uuid ? updatedCart : cart))
+        if (countChange && current.cartPagination) {
+          partial.cartPagination = {
+            ...current.cartPagination,
+            count: current.cartPagination.count + countChange,
+            total: current.cartPagination.total + countChange,
+          }
+        }
+      }
+    }
+    this.setState(partial)
+
+    try {
+      const { counts } = await requestJSONwithCredentials({
+        path: `/me/carts/${cartReview.cartId}/tracks/${trackId}/review`,
+        method: 'PUT',
+        body: { state },
+        stores: reviewRequestStores(cartReview),
+      })
+      if (this.state.cartReview.cartUuid === cartReview.cartUuid) {
+        this.setState(({ cartReview: current }) => ({ cartReview: { ...current, counts } }))
+      }
+      if (previous === 'accepted' || state === 'accepted') this.refreshAcceptedLinks()
+    } catch (e) {
+      console.error('Saving a review decision failed', e)
+      this.setState(({ cartReview: current }) => {
+        const { [trackId]: _, ...localStates } = current.localStates
+        return { cartReview: { ...current, localStates } }
+      })
+      this.showNotice({ message: 'Saving the decision failed. The cart was reloaded.' })
+      await this.selectCart(cartReview.cartUuid)
+    }
+    return previous
+  }
+
+  // Removes the cart's rejected tracks (within the store tab) or moves them to another cart: `{ action: 'remove' }`,
+  // `{ action: 'move', targetCartId }` or `{ action: 'move', newCartName }`. The notice offers Undo.
+  async modifyRejectedTracks(body) {
+    const { cartReview } = this.state
+    const stores = reviewRequestStores(cartReview)
+    const result = await requestJSONwithCredentials({
+      path: `/me/carts/${cartReview.cartId}/rejected`,
+      method: 'POST',
+      body,
+      stores,
+    })
+    const reload = () => Promise.all([this.selectCart(cartReview.cartUuid), this.updateCarts()])
+    this.showNotice({
+      message: rejectedNotice(result),
+      onUndo: async () => {
+        await requestWithCredentials({
+          path: `/me/carts/${cartReview.cartId}/rejected/undo`,
+          method: 'POST',
+          body: result.undo,
+        })
+        await reload()
+      },
+    })
+    await reload()
+  }
+
+  showNotice({ message, onUndo }) {
+    this.noticeId = (this.noticeId || 0) + 1
+    this.setState({ notice: { id: this.noticeId, message, onUndo } })
+  }
+
+  dismissNotice(id) {
+    this.setState(({ notice }) => (notice && (id === undefined || notice.id === id) ? { notice: null } : null))
   }
 
   // `playingFrom` ({ source, tracks }) is given when playback starts from a list; stepping within the queue keeps it.
@@ -1514,6 +1762,15 @@ class App extends Component {
                           onSaveCartSearchGroup={this.saveCartSearchGroup.bind(this)}
                           onFindSimilarToCart={this.findSimilarToCart.bind(this)}
                           selectedCart={this.state.listState === 'carts' ? this.state.selectedCart : undefined}
+                          cartReview={this.state.cartReview}
+                          notice={this.state.notice}
+                          onSetCartReviewEnabled={this.setCartReviewEnabled.bind(this)}
+                          onSetCartReviewFilter={this.setCartReviewFilter.bind(this)}
+                          onSetCartStoreFocus={this.setCartStoreFocus.bind(this)}
+                          onDecideCartTrack={this.decideCartTrack.bind(this)}
+                          onModifyRejectedTracks={this.modifyRejectedTracks.bind(this)}
+                          onShowNotice={this.showNotice.bind(this)}
+                          onDismissNotice={this.dismissNotice.bind(this)}
                           stores={this.state.stores}
                           totalTracks={this.state.tracksData.meta.totalTracks}
                           tracks={this.state.tracksData.tracks}

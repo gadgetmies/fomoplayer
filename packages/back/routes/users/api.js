@@ -58,9 +58,14 @@ const {
   updateCartContents,
   updateAllCartContents,
   setCartTracks,
+  setCartReview,
+  setCartTrackReviewState,
+  getAcceptedTrackLinks,
+  modifyRejectedTracks,
+  undoRejectedTracks,
   CART_TRACKS_PAGE,
 } = require('../shared/cart.js')
-const { parsePage, parseStores, parseDate } = require('../shared/request-params')
+const { parsePage, parseStores, parseDate, parseReview } = require('../shared/request-params')
 const { BadRequest, NotFound } = require('../shared/httpErrors')
 const {
   queryNotificationEvents,
@@ -443,9 +448,43 @@ router.get(
       if (!resolvedId) return res.status(404).send()
     }
     const filter = { since: parseDate('since', query.since), ...page }
-    res.send(await getCartDetails(userId, resolvedId, parseStores(query.store), filter))
+    res.send(await getCartDetails(userId, resolvedId, parseStores(query.store), filter, parseReview(query.review)))
   },
 )
+
+// Turns the cart's review on or off: `{ enabled: true | false }`.
+router.put('/carts/:id/review', async ({ user: { id: userId }, params: { id: cartId }, body }, res) => {
+  await setCartReview(userId, cartId, body?.enabled)
+  res.status(204).send()
+})
+
+// Sets a cart track's review state: `{ state: 'accepted' | 'rejected' | null }`. Answers with the cart's review counts
+// within the `store` query.
+router.put(
+  '/carts/:id/tracks/:trackId/review',
+  async ({ user: { id: userId }, params: { id: cartId, trackId }, body, query }, res) => {
+    if (!/^\d+$/.test(trackId)) throw new BadRequest('trackId must be a positive integer')
+    if (!body || !('state' in body)) throw new BadRequest('state is required')
+    res.send(await setCartTrackReviewState(userId, cartId, Number(trackId), body.state, parseStores(query.store)))
+  },
+)
+
+// Every accepted track of the cart within the `store` query, with its store links.
+router.get('/carts/:id/accepted', async ({ user: { id: userId }, params: { id: cartId }, query }, res) => {
+  res.send(await getAcceptedTrackLinks(userId, cartId, parseStores(query.store)))
+})
+
+// Removes the cart's rejected tracks within the `store` query, or moves them to another cart:
+// `{ action: 'remove' }`, `{ action: 'move', targetCartId }` or `{ action: 'move', newCartName }`.
+router.post('/carts/:id/rejected', async ({ user: { id: userId }, params: { id: cartId }, body, query }, res) => {
+  res.send(await modifyRejectedTracks(userId, cartId, body, parseStores(query.store)))
+})
+
+// Reverts a removal or move of rejected tracks; the body is the `undo` object the removal or move answered with.
+router.post('/carts/:id/rejected/undo', async ({ user: { id: userId }, params: { id: cartId }, body }, res) => {
+  await undoRejectedTracks(userId, cartId, body)
+  res.status(204).send()
+})
 
 router.delete('/carts/:id', async ({ user: { id: userId }, params: { id } }, res) => {
   await removeCart(userId, id)

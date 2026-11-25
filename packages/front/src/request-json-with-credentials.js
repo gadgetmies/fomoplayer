@@ -29,13 +29,23 @@ const resolveRequestUrl = (value) => {
   }
 }
 
-const requestWithCredentials = async ({ url: requestedUrl, path, method = 'GET', body, headers, signal }) => {
+// `stores` narrows the request to some of the app's stores (e.g. a cart's store tab); by default every request carries
+// the app's stores.
+const requestWithCredentials = async ({
+  url: requestedUrl,
+  path,
+  method = 'GET',
+  body,
+  headers,
+  signal,
+  stores: requestStores = stores,
+}) => {
   const resolvedUrl = requestedUrl ? requestedUrl : `${config.apiURL}${path}`
   let url = new URL(resolvedUrl, window.location.origin)
 
-  if (stores) {
+  if (requestStores) {
     const urlSearchParams = new URLSearchParams(url.search)
-    stores.forEach((s) => urlSearchParams.append('store', s))
+    requestStores.forEach((s) => urlSearchParams.append('store', s))
     url.search = urlSearchParams.toString()
   }
 

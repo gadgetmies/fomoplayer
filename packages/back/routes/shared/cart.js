@@ -12,11 +12,18 @@ const {
   deleteCartStoreDetails,
   queryCartStoreDetails,
   queryCartTrackIds,
+  queryCartReviewCounts,
+  updateCartIsInReview,
+  updateCartTrackReviewState,
+  queryCartTracksInReviewState,
+  restoreTracksToCart,
+  REVIEW_STATES,
 } = require('./db/cart.js')
 const BPromise = require('bluebird')
 const pg = require('fomoplayer_shared').db.pg
 const R = require('ramda')
-const { NotFound, Forbidden } = require('./httpErrors')
+const sql = require('sql-template-strings')
+const { NotFound, Forbidden, BadRequest } = require('./httpErrors')
 const {
   addTracksToSyncedCart,
   removeTracksFromSyncedCart,
@@ -67,11 +74,8 @@ const getCartStoreDetails = async (cartId, storeName) => {
   return cartStoreDetails.find(({ storeName: cartStoreName }) => cartStoreName === storeName)
 }
 
-const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId, items) => {
-  await verifyCartOwnership(userId, cartId)
-  const trackIds = items.map((i) => i.trackId)
-  await insertTracksToCart(cartId, items)
-
+// Adds tracks to the cart's Spotify playlist when the cart is synced to one. Runs after the response.
+const syncAddedTracks = (userId, cartId, trackIds) =>
   setImmediate(async () => {
     const spotifyCartDetails = await getCartStoreDetails(cartId, spotifyStoreName)
     if (spotifyCartDetails) {
@@ -82,11 +86,9 @@ const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId,
       }
     }
   })
-})
 
-const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userId, cartId, trackIds) => {
-  await verifyCartOwnership(userId, cartId)
-  await deleteTracksFromCart(cartId, trackIds)
+// Removes tracks from the cart's Spotify playlist when the cart is synced to one.
+const syncRemovedTracks = async (userId, cartId, trackIds) => {
   const spotifyCartDetails = await getCartStoreDetails(cartId, spotifyStoreName)
   if (spotifyCartDetails) {
     const trackDetails = await getTrackDetails(trackIds)
@@ -95,6 +97,22 @@ const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userI
       await updateCartStoreVersionId(cartId, updatedVersionId)
     }
   }
+}
+
+const addTracksToCart = (module.exports.addTracksToCart = async (userId, cartId, items) => {
+  await verifyCartOwnership(userId, cartId)
+  await insertTracksToCart(cartId, items)
+  syncAddedTracks(
+    userId,
+    cartId,
+    items.map((i) => i.trackId),
+  )
+})
+
+const removeTracksFromCart = (module.exports.removeTracksFromCart = async (userId, cartId, trackIds) => {
+  await verifyCartOwnership(userId, cartId)
+  await deleteTracksFromCart(cartId, trackIds)
+  await syncRemovedTracks(userId, cartId, trackIds)
 })
 
 module.exports.updateCartContents = async (userId, cartId, operations) => {
@@ -149,9 +167,130 @@ const verifyCartOwnership = async (userId, cartId) => {
   }
 }
 
-module.exports.getCartDetails = async (userId, cartId, stores, tracksFilter) => {
+// A cart of the user with its review fields; `review` filters the page by review state.
+module.exports.getCartDetails = async (userId, cartId, stores, tracksFilter, review = undefined) => {
   await verifyCartOwnership(userId, cartId)
-  return await queryCartDetails(cartId, stores, tracksFilter)
+  return await queryCartDetails(cartId, stores, tracksFilter, { includeReview: true, review })
+}
+
+module.exports.setCartReview = async (userId, cartId, enabled) => {
+  if (typeof enabled !== 'boolean') throw new BadRequest('enabled must be true or false')
+  await verifyCartOwnership(userId, cartId)
+  await updateCartIsInReview(cartId, enabled)
+}
+
+/**
+ * Sets a cart track's review state (null for to review) and resolves to the cart's review counts within the given
+ * stores, so the tabs can update without reloading the list.
+ */
+module.exports.setCartTrackReviewState = async (userId, cartId, trackId, state, stores) => {
+  if (state !== null && !REVIEW_STATES.includes(state)) {
+    throw new BadRequest(`state must be one of ${REVIEW_STATES.join(', ')} or null`)
+  }
+  await verifyCartOwnership(userId, cartId)
+  const updated = await updateCartTrackReviewState(cartId, trackId, state)
+  if (!updated) throw new NotFound(`Track ${trackId} is not in cart ${cartId}`)
+  return { trackId: Number(trackId), reviewState: state, counts: await queryCartReviewCounts(cartId, stores) }
+}
+
+/**
+ * Every accepted track of the cart within the given stores, newest first, with a link per store it is on (within the
+ * stores): the track's page on the store, or else its release's page. `[{ trackId, links: [{ store, url }] }]`
+ */
+module.exports.getAcceptedTrackLinks = async (userId, cartId, stores) => {
+  await verifyCartOwnership(userId, cartId)
+  const tracks = await queryCartTracksInReviewState(cartId, 'accepted', stores)
+  return tracks.map(({ trackId, stores: trackStores }) => ({
+    trackId,
+    links: (trackStores || [])
+      .filter(({ name }) => !stores || stores.includes(name.toLowerCase()))
+      .map(({ name, url, release }) => ({ store: name, url: url || release?.url || null }))
+      .filter(({ url }) => url),
+  }))
+}
+
+const verifyOwnCart = async (userId, cartId) => {
+  if (!Number.isInteger(Number(cartId))) throw new BadRequest(`Invalid cart id: ${cartId}`)
+  await verifyCartOwnership(userId, Number(cartId))
+}
+
+/**
+ * Removes every rejected track of the cart (within the given stores) and, for `move`, adds those not already there to
+ * another cart of the user, or to a new cart named `newCartName`. One transaction; Spotify-synced carts are updated
+ * after it. Resolves to `{ count, targetCart, undo }`, where `undo` is the body for undoRejectedTracks.
+ */
+module.exports.modifyRejectedTracks = async (userId, cartId, { action, targetCartId, newCartName } = {}, stores) => {
+  if (action !== 'remove' && action !== 'move') throw new BadRequest('action must be remove or move')
+  const isNewCart = action === 'move' && targetCartId === undefined
+  if (action === 'move') {
+    if (isNewCart && (typeof newCartName !== 'string' || newCartName.trim() === '')) {
+      throw new BadRequest('A move needs targetCartId or newCartName')
+    }
+    if (!isNewCart && Number(targetCartId) === Number(cartId)) {
+      throw new BadRequest('The target cart must differ from the cart')
+    }
+  }
+  await verifyCartOwnership(userId, cartId)
+  if (action === 'move' && !isNewCart) await verifyOwnCart(userId, targetCartId)
+
+  const { tracks, targetCart, addedToTarget } = await BPromise.using(pg.getTransaction(), async (tx) => {
+    const tracks = (await queryCartTracksInReviewState(cartId, 'rejected', stores, tx)).map(
+      ({ trackId, addedAt }) => ({ trackId, addedAt }),
+    )
+    const trackIds = tracks.map(({ trackId }) => trackId)
+    let targetCart = null
+    let addedToTarget = []
+    if (action === 'move') {
+      targetCart = isNewCart
+        ? await insertCart(userId, { name: newCartName.trim() }, tx)
+        : (
+            await tx.queryRowsAsync(
+              // language=PostgreSQL
+              sql`SELECT cart_id AS id, cart_uuid AS uuid, cart_name AS name FROM cart WHERE cart_id = ${targetCartId}`,
+            )
+          )[0]
+      const alreadyInTarget = new Set(await queryCartTrackIds(targetCart.id, tx))
+      addedToTarget = trackIds.filter((id) => !alreadyInTarget.has(id))
+      await insertTracksToCart(
+        targetCart.id,
+        addedToTarget.map((trackId) => ({ trackId })),
+        tx,
+      )
+    }
+    if (trackIds.length > 0) await deleteTracksFromCart(cartId, trackIds, tx)
+    return { tracks, targetCart, addedToTarget }
+  })
+
+  if (tracks.length > 0) await syncRemovedTracks(userId, cartId, tracks.map(({ trackId }) => trackId))
+  if (addedToTarget.length > 0) syncAddedTracks(userId, targetCart.id, addedToTarget)
+
+  return {
+    count: tracks.length,
+    targetCart,
+    undo: { sourceCartId: Number(cartId), tracks, targetCartId: targetCart?.id ?? null, addedToTarget },
+  }
+}
+
+/**
+ * Reverts modifyRejectedTracks: puts the tracks back into the cart with their original added date, rejected, and
+ * removes from the target cart only the tracks the move added. Tracks back in the cart meanwhile are left alone.
+ */
+module.exports.undoRejectedTracks = async (userId, cartId, { tracks, targetCartId, addedToTarget } = {}) => {
+  if (!Array.isArray(tracks) || !tracks.every(({ trackId, addedAt } = {}) => Number.isInteger(trackId) && addedAt)) {
+    throw new BadRequest('tracks must be a list of { trackId, addedAt }')
+  }
+  const removeFromTarget = targetCartId != null && Array.isArray(addedToTarget) ? addedToTarget.map(Number) : []
+  await verifyCartOwnership(userId, cartId)
+  if (targetCartId != null) await verifyOwnCart(userId, targetCartId)
+
+  const restored = await BPromise.using(pg.getTransaction(), async (tx) => {
+    const restored = await restoreTracksToCart(tx, cartId, tracks, 'rejected')
+    if (removeFromTarget.length > 0) await deleteTracksFromCart(targetCartId, removeFromTarget, tx)
+    return restored
+  })
+
+  if (restored.length > 0) syncAddedTracks(userId, Number(cartId), restored)
+  if (removeFromTarget.length > 0) await syncRemovedTracks(userId, Number(targetCartId), removeFromTarget)
 }
 
 module.exports.insertCartStoreDetails = insertCartStoreDetails

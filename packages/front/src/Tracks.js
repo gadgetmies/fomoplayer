@@ -14,6 +14,9 @@ import CartSearchControls from './CartSearchControls'
 import { isMobile } from 'react-device-detect'
 import { trackMatchesAllTerms } from './searchTerms'
 import { requestJSONwithCredentials } from './request-json-with-credentials'
+import CartReviewBar, { CartReviewSwitch } from './CartReviewBar'
+import UndoNotice from './UndoNotice'
+import { emptyReviewTabMessage, isReviewing, reviewStateOf } from './cartReview'
 
 const DESKTOP_REFRESH_MEDIA_QUERY = '(hover: hover) and (pointer: fine)'
 
@@ -113,16 +116,16 @@ class Tracks extends Component {
       const scrollTop = this.tbodyRef.current.scrollTop
       const clientHeight = this.tbodyRef.current.clientHeight
       const tracks = this.getCartFilteredTracks()
-      this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+      this.updateVisibleRange(scrollTop, clientHeight, tracks)
     }
 
     setTimeout(() => {
       const tracks = this.getCartFilteredTracks()
-      this.measureTrackHeights(tracks)
+      this.measureTrackHeights()
       if (this.tbodyRef.current) {
         const scrollTop = this.tbodyRef.current.scrollTop
         const clientHeight = this.tbodyRef.current.clientHeight
-        this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+        this.updateVisibleRange(scrollTop, clientHeight, tracks)
       }
       this.tryAutoLoadMoreWithoutScroll(tracks.length)
     }, 0)
@@ -149,11 +152,11 @@ class Tracks extends Component {
     ) {
       setTimeout(() => {
         const tracks = this.getCartFilteredTracks()
-        this.measureTrackHeights(tracks)
+        this.measureTrackHeights()
         if (this.tbodyRef.current) {
           const scrollTop = this.tbodyRef.current.scrollTop
           const clientHeight = this.tbodyRef.current.clientHeight
-          this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+          this.updateVisibleRange(scrollTop, clientHeight, tracks)
         }
         this.tryAutoLoadMoreWithoutScroll(tracks.length)
       }, 0)
@@ -191,93 +194,71 @@ class Tracks extends Component {
     }
   }
 
-  measureTrackHeights(tracks) {
+  // Records the space each rendered row takes in the list, keyed by track id so a row keeps its height when rows
+  // before it are added, removed or filtered out. The space includes the row's vertical margins: the spacers stand in
+  // for whole rows, and leaving the margins out made the content jump whenever rows moved in or out of the spacers.
+  measureTrackHeights() {
     if (!this.tbodyRef.current) return
-    
-    let totalMeasured = 0
-    let averageHeight = this.trackHeight
-    
-    const { visibleStartIndex, visibleEndIndex } = this.state
-    const tbody = this.tbodyRef.current
-    const trackElements = Array.from(tbody.querySelectorAll('tr.track'))
-    
-    trackElements.forEach((trackElement, localIndex) => {
-      const actualIndex = visibleStartIndex + localIndex
-      if (actualIndex < tracks.length) {
-        const height = trackElement.getBoundingClientRect().height
-        if (height > 0) {
-          this.trackHeights.set(actualIndex, height)
-          totalMeasured++
-        }
-      }
+
+    const trackElements = Array.from(this.tbodyRef.current.querySelectorAll('tr.track[data-track-id]'))
+    let measured = false
+    trackElements.forEach((trackElement) => {
+      const height = trackElement.getBoundingClientRect().height
+      if (height <= 0) return
+      const style = window.getComputedStyle(trackElement)
+      const margins = (parseFloat(style.marginTop) || 0) + (parseFloat(style.marginBottom) || 0)
+      this.trackHeights.set(trackElement.dataset.trackId, height + margins)
+      measured = true
     })
-    
-    if (totalMeasured > 0) {
+
+    if (measured) {
       const heights = Array.from(this.trackHeights.values())
-      averageHeight = heights.reduce((sum, h) => sum + h, 0) / heights.length
-      this.trackHeight = averageHeight
+      this.trackHeight = heights.reduce((sum, h) => sum + h, 0) / heights.length
     }
   }
 
-  getTrackHeight(index) {
-    return this.trackHeights.get(index) || this.trackHeight
+  getTrackHeight(track) {
+    return (track && this.trackHeights.get(String(track.id))) || this.trackHeight
   }
 
-  getTotalHeightUpToIndex(index, totalTracks) {
+  getTotalHeightUpToIndex(index, tracks) {
     let total = 0
-    let measuredCount = 0
-    let measuredTotal = 0
-    
-    for (let i = 0; i < index && i < totalTracks; i++) {
-      const height = this.trackHeights.get(i)
-      if (height) {
-        total += height
-        measuredCount++
-        measuredTotal += height
-      } else {
-        total += this.trackHeight
-      }
+    for (let i = 0; i < index && i < tracks.length; i++) {
+      total += this.getTrackHeight(tracks[i])
     }
-    
-    if (measuredCount > 0 && measuredCount < index) {
-      const averageMeasured = measuredTotal / measuredCount
-      if (Math.abs(averageMeasured - this.trackHeight) > 2) {
-        this.trackHeight = averageMeasured
-      }
-    }
-    
     return total
   }
 
-  findVisibleRange(scrollTop, clientHeight, totalTracks) {
+  findVisibleRange(scrollTop, clientHeight, tracks) {
+    const totalTracks = tracks.length
     let currentTop = 0
     let startIndex = 0
     let endIndex = totalTracks
     const overscanHeight = this.overscan * this.trackHeight
-    
+
     for (let i = 0; i < totalTracks; i++) {
-      const height = this.getTrackHeight(i)
+      const height = this.getTrackHeight(tracks[i])
       if (currentTop + height > scrollTop - overscanHeight) {
         startIndex = Math.max(0, i - this.overscan)
         break
       }
       currentTop += height
     }
-    
+
     currentTop = 0
     for (let i = 0; i < totalTracks; i++) {
-      currentTop += this.getTrackHeight(i)
+      currentTop += this.getTrackHeight(tracks[i])
       if (currentTop > scrollTop + clientHeight + overscanHeight) {
         endIndex = Math.min(totalTracks, i + this.overscan + 1)
         break
       }
     }
-    
+
     return { startIndex, endIndex }
   }
 
-  updateVisibleRange(scrollTop, clientHeight, totalTracks) {
-    const { startIndex, endIndex } = this.findVisibleRange(scrollTop, clientHeight, totalTracks)
+  updateVisibleRange(scrollTop, clientHeight, tracks) {
+    const { startIndex, endIndex } = this.findVisibleRange(scrollTop, clientHeight, tracks)
     
     if (
       startIndex !== this.state.visibleStartIndex ||
@@ -298,12 +279,12 @@ class Tracks extends Component {
     this.resizeTimeout = setTimeout(() => {
       this.trackHeights.clear()
       const tracks = this.getCartFilteredTracks()
-      this.measureTrackHeights(tracks)
+      this.measureTrackHeights()
 
       if (this.tbodyRef.current) {
         const scrollTop = this.tbodyRef.current.scrollTop
         const clientHeight = this.tbodyRef.current.clientHeight
-        this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+        this.updateVisibleRange(scrollTop, clientHeight, tracks)
         this.tryAutoLoadMoreWithoutScroll(tracks.length)
       }
     }, 100)
@@ -364,7 +345,7 @@ class Tracks extends Component {
 
     const tracks = this.getCartFilteredTracks()
 
-    this.updateVisibleRange(scrollTop, clientHeight, tracks.length)
+    this.updateVisibleRange(scrollTop, clientHeight, tracks)
 
     const preloadThreshold = clientHeight * 1.5
 
@@ -424,7 +405,7 @@ class Tracks extends Component {
     const index = tracks.findIndex(({ id }) => id === trackId)
     this.setState({ selectedTrack: trackId })
     if (index < 0 || !this.tbodyRef?.current) return
-    this.tbodyRef.current.scrollTo({ top: this.getTotalHeightUpToIndex(index, tracks.length), behavior: 'smooth' })
+    this.tbodyRef.current.scrollTo({ top: this.getTotalHeightUpToIndex(index, tracks), behavior: 'smooth' })
   }
 
   scrollCurrentIntoView() {
@@ -500,18 +481,40 @@ class Tracks extends Component {
     })
   }
 
+  // Whether the selected cart is under review here (owner, review switched on).
+  isReviewingSelectedCart() {
+    return (
+      this.props.listState === 'carts' &&
+      this.props.mode === 'app' &&
+      isReviewing(this.props.cartReview, this.props.selectedCart?.uuid)
+    )
+  }
+
+  // The review controls of a track row in the cart under review.
+  reviewPropsFor(track) {
+    if (!this.isReviewingSelectedCart()) return undefined
+    const cartReview = this.props.cartReview
+    const title = `${track.title}${track.version ? ` (${track.version})` : ''}`
+    return {
+      state: reviewStateOf(track, cartReview),
+      dimRejected: cartReview.reviewFilter === 'all',
+      onDecide: (state) => this.props.onDecideCartTrack(track.id, state),
+      onSwipeDecide: (state) => this.props.onDecideCartTrack(track.id, state, { undoNotice: { title } }),
+    }
+  }
+
   renderTracks(tracks) {
     const defaultCart = this.props.carts.find(R.prop('isDefault'))
     const { visibleStartIndex, visibleEndIndex } = this.state
     const visibleTracks = tracks.slice(visibleStartIndex, visibleEndIndex)
-    const topSpacerHeight = this.getTotalHeightUpToIndex(visibleStartIndex, tracks.length)
-    const bottomSpacerHeight = this.getTotalHeightUpToIndex(tracks.length, tracks.length) - 
-                                this.getTotalHeightUpToIndex(visibleEndIndex, tracks.length)
+    const topSpacerHeight = this.getTotalHeightUpToIndex(visibleStartIndex, tracks)
+    const bottomSpacerHeight =
+      this.getTotalHeightUpToIndex(tracks.length, tracks) - this.getTotalHeightUpToIndex(visibleEndIndex, tracks)
 
     return (
       <>
         {topSpacerHeight > 0 && (
-          <tr style={{ height: topSpacerHeight, display: 'block' }}>
+          <tr style={{ height: topSpacerHeight, display: 'block', margin: 0 }}>
             <td style={{ display: 'block', height: '100%' }} />
           </tr>
         )}
@@ -552,6 +555,7 @@ class Tracks extends Component {
                 mode={this.props.mode}
                 listState={this.props.listState}
                 cartUuid={this.props.selectedCart?.uuid}
+                review={this.reviewPropsFor(track)}
                 carts={this.props.carts}
                 cartFilter={this.state.cartFilter}
                 defaultCartId={this.props.carts.find(R.prop('isDefault'))?.id}
@@ -635,7 +639,7 @@ class Tracks extends Component {
             )
           })}
         {bottomSpacerHeight > 0 && (
-          <tr style={{ height: bottomSpacerHeight, display: 'block' }}>
+          <tr style={{ height: bottomSpacerHeight, display: 'block', margin: 0 }}>
             <td style={{ display: 'block', height: '100%' }} />
           </tr>
         )}
@@ -711,6 +715,11 @@ class Tracks extends Component {
         <th>{tracks.length} results</th>
       ) : null
 
+    const reviewing = this.isReviewingSelectedCart()
+    const cartReview = this.props.cartReview
+    const reviewAvailable =
+      this.props.mode === 'app' && cartReview?.available && cartReview.cartUuid === this.props.selectedCart?.uuid
+
     return (
       <div
         style={{
@@ -731,7 +740,7 @@ class Tracks extends Component {
             {this.props.listState === 'carts' && !listInfo && (
               <tr className={'top-bar input-layout'} style={{ width: '100%', background: 'rgb(34, 34, 34)' }}>
                 <td
-                  className="tracks-top_bar_group"
+                  className={`tracks-top_bar_group ${reviewing ? 'cart-review-bar' : ''}`}
                   style={{
                     padding: 4,
                   }}
@@ -749,10 +758,31 @@ class Tracks extends Component {
                         onSearch={this.handleTrackListFilterSearch.bind(this)}
                         onClearSearch={this.handleTrackListFilterClear.bind(this)}
                       />
-                      <span className={'cart-details'}>
-                        Tracks in cart: {this.props.selectedCart?.trackCount}
-                      </span>
-                      {this.props.onFindSimilarToCart && this.props.selectedCart?.uuid && (
+                      {reviewAvailable && (
+                        <CartReviewSwitch
+                          cartReview={cartReview}
+                          disabled={this.props.fetchingCartDetails}
+                          onChange={(enabled) => this.props.onSetCartReviewEnabled(enabled)}
+                        />
+                      )}
+                      {reviewing && (
+                        <CartReviewBar
+                          cartReview={cartReview}
+                          carts={this.props.carts}
+                          stores={this.props.stores}
+                          disabled={this.props.fetchingCartDetails}
+                          onSetFilter={this.props.onSetCartReviewFilter}
+                          onSetStoreFocus={this.props.onSetCartStoreFocus}
+                          onModifyRejected={this.props.onModifyRejectedTracks}
+                          onShowNotice={this.props.onShowNotice}
+                        />
+                      )}
+                      {!reviewing && (
+                        <span className={'cart-details'}>
+                          Tracks in cart: {this.props.selectedCart?.trackCount}
+                        </span>
+                      )}
+                      {!reviewing && this.props.onFindSimilarToCart && this.props.selectedCart?.uuid && (
                         <button
                           type="button"
                           className="button button-push_button button-push_button-small button-push_button-primary"
@@ -770,6 +800,18 @@ class Tracks extends Component {
                     </span>
                   )}
                 </td>
+              </tr>
+            )}
+            {this.props.listState === 'carts' && this.props.notice && (
+              <tr style={{ display: 'block' }}>
+                <td style={{ display: 'block', padding: 0 }}>
+                  <UndoNotice notice={this.props.notice} onDismiss={this.props.onDismissNotice} />
+                </td>
+              </tr>
+            )}
+            {reviewing && !listInfo && tracks.length === 0 && (
+              <tr className="cart-review-empty" data-testid="cart-review-empty">
+                <th>{emptyReviewTabMessage(cartReview.reviewFilter)}</th>
               </tr>
             )}
 
@@ -831,6 +873,11 @@ class Tracks extends Component {
                   <div className={'key-cell track-table-cell'}>Key</div>
                 </div>
               </th>
+              {reviewing && (
+                <th className={'review-cell tracks-cell'}>
+                  <div className={'track-table-cell'}>Review</div>
+                </th>
+              )}
               {this.props.mode === 'app' && (
                 <th className={'follow-ignore-cart-cell tracks-cell'}>
                   <div className={'score-cell track-table-cell'} style={this.props.cartSearch ? { textAlign: 'center' } : undefined}>
@@ -927,7 +974,7 @@ class Tracks extends Component {
           </thead>
           <tbody
             ref={this.tbodyRef}
-            style={{ overflow: 'scroll', display: 'block', flex: 1, overscrollBehaviorY: 'contain' }}
+            style={{ overflow: 'scroll', display: 'block', flex: 1, overscrollBehaviorY: 'contain', overflowAnchor: 'none' }}
             onScroll={this.handleScroll}
             onTouchStart={this.handleTouchStart}
             onTouchMove={this.handleTouchMove}
