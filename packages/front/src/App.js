@@ -39,7 +39,7 @@ import {
   emptyCartReview,
   isReviewing,
   matchesReviewFilter,
-  rejectedNotice,
+  reviewedTracksNotice,
   reviewQuery,
   reviewRequestStores,
   reviewStatesOf,
@@ -1290,13 +1290,13 @@ class App extends Component {
         loadingMore: false,
       },
     })
-    if (isReviewing(cartReview)) this.refreshAcceptedLinks()
+    if (isReviewing(cartReview)) this.refreshAcceptedLinks(cartReview)
   }
 
   async setCartReviewEnabled(enabled) {
     const { cartReview } = this.state
     await requestWithCredentials({ path: `/me/carts/${cartReview.cartId}/review`, method: 'PUT', body: { enabled } })
-    const next = { ...cartReview, enabled, reviewFilter: 'to-review', storeFocus: null }
+    const next = { ...cartReview, enabled, reviewFilter: 'all', storeFocus: null }
     await this.selectCart(next.cartUuid, next)
   }
 
@@ -1310,9 +1310,9 @@ class App extends Component {
     await this.selectCart(next.cartUuid, next)
   }
 
-  // The accepted tracks' store links, loaded ahead so Open accepted can open its tabs within the click.
-  async refreshAcceptedLinks() {
-    const { cartReview } = this.state
+  // The accepted tracks' store links, loaded ahead so Open in <store> can open its tabs within the click. `cartReview`
+  // is the review view just set, which this.state may not hold yet.
+  async refreshAcceptedLinks(cartReview = this.state.cartReview) {
     if (!isReviewing(cartReview)) return
     const acceptedLinks = await requestJSONwithCredentials({
       path: `/me/carts/${cartReview.cartId}/accepted`,
@@ -1400,23 +1400,24 @@ class App extends Component {
     return previous
   }
 
-  // Removes the cart's rejected tracks (within the store tab) or moves them to another cart: `{ action: 'remove' }`,
-  // `{ action: 'move', targetCartId }` or `{ action: 'move', newCartName }`. The notice offers Undo.
-  async modifyRejectedTracks(body) {
+  // Removes the cart's accepted or rejected tracks (within the store tab) or moves them to another cart:
+  // `{ action: 'remove' }`, `{ action: 'move', targetCartId }` or `{ action: 'move', newCartName }`. The notice
+  // offers Undo.
+  async modifyReviewedTracks(state, body) {
     const { cartReview } = this.state
     const stores = reviewRequestStores(cartReview)
     const result = await requestJSONwithCredentials({
-      path: `/me/carts/${cartReview.cartId}/rejected`,
+      path: `/me/carts/${cartReview.cartId}/${state}`,
       method: 'POST',
       body,
       stores,
     })
     const reload = () => Promise.all([this.selectCart(cartReview.cartUuid), this.updateCarts()])
     this.showNotice({
-      message: rejectedNotice(result),
+      message: reviewedTracksNotice(state, result),
       onUndo: async () => {
         await requestWithCredentials({
-          path: `/me/carts/${cartReview.cartId}/rejected/undo`,
+          path: `/me/carts/${cartReview.cartId}/${state}/undo`,
           method: 'POST',
           body: result.undo,
         })
@@ -1424,6 +1425,28 @@ class App extends Component {
       },
     })
     await reload()
+  }
+
+  // Marks the accepted tracks (within the store tab) purchased, which also removes them from every cart that is not
+  // a purchased cart, as marking one track purchased does.
+  async markAcceptedPurchased() {
+    const { cartReview } = this.state
+    const trackIds = (cartReview.acceptedLinks || []).map(({ trackId }) => trackId)
+    if (trackIds.length === 0) return
+    await requestJSONwithCredentials({
+      path: `/me/purchased/`,
+      method: 'POST',
+      body: trackIds.map((trackId) => ({ trackId })),
+    })
+    await requestWithCredentials({
+      path: `/me/carts/`,
+      method: 'PATCH',
+      body: trackIds.map((trackId) => ({ op: 'remove', trackId })),
+    })
+    this.showNotice({
+      message: `Marked ${trackIds.length} accepted ${trackIds.length === 1 ? 'track' : 'tracks'} purchased.`,
+    })
+    await Promise.all([this.selectCart(cartReview.cartUuid), this.updateCarts(), this.updateTracks()])
   }
 
   showNotice({ message, onUndo }) {
@@ -1768,7 +1791,8 @@ class App extends Component {
                           onSetCartReviewFilter={this.setCartReviewFilter.bind(this)}
                           onSetCartStoreFocus={this.setCartStoreFocus.bind(this)}
                           onDecideCartTrack={this.decideCartTrack.bind(this)}
-                          onModifyRejectedTracks={this.modifyRejectedTracks.bind(this)}
+                          onModifyReviewedTracks={this.modifyReviewedTracks.bind(this)}
+                          onMarkAcceptedPurchased={this.markAcceptedPurchased.bind(this)}
                           onShowNotice={this.showNotice.bind(this)}
                           onDismissNotice={this.dismissNotice.bind(this)}
                           stores={this.state.stores}

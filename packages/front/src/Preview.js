@@ -647,7 +647,7 @@ class Preview extends Component {
           aria-label="Find similar"
           title="Find similar"
           className={
-            'button button-push_button button-push_button-small button-push_button-primary preview-action_button no-style-link'
+            'button button-push_button button-push_button-small button-push_button-primary preview-action_button preview-action_extra no-style-link'
           }
           style={{ lineHeight: 'normal' }}
         >
@@ -667,7 +667,7 @@ class Preview extends Component {
               aria-label="Follow"
               title="Follow"
               className={
-                'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
+                'button button-push_button button-push_button-small button-push_button-primary preview-action_button preview-action_extra'
               }
             >
               <span className="button-push_button_icon">
@@ -678,7 +678,7 @@ class Preview extends Component {
             <button
               disabled={!currentTrack}
               className={
-                'button button-push_button button-push_button-small button-push_button-primary preview-action_button'
+                'button button-push_button button-push_button-small button-push_button-primary preview-action_button preview-action_extra'
               }
               onClick={() => {
                 this.props.onIgnoreClicked(currentTrack)
@@ -697,6 +697,7 @@ class Preview extends Component {
     )
     const share = (
       <Popup
+        className="preview-action_extra"
         anchor={
           <button
             className={'pill pill-button button-push_button-small popup-anchor'}
@@ -1367,7 +1368,12 @@ class Preview extends Component {
             })}
             <div className="button-wrapper">
               {this.renderPlaybackButtons()}
-              <div className="preview_actions_wrapper" style={{ display: isSample(currentTrack) ? 'none' : undefined }}>
+              <div
+                className={`preview_actions_wrapper preview_actions_wrapper--panel ${
+                  this.props.reviewControls ? 'preview_actions_wrapper--review' : ''
+                }`}
+                style={{ display: isSample(currentTrack) ? 'none' : undefined }}
+              >
                 {this.renderTrackActions(ctx, { popupAbove: false })}
               </div>
             </div>

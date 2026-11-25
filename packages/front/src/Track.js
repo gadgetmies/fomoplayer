@@ -21,8 +21,9 @@ const SWIPE_HEARD_THRESHOLD = 90 // px the row must travel right before a releas
 const SWIPE_HEARD_MAX = 140 // px the row is allowed to travel (resistance cap)
 const SWIPE_DIRECTION_LOCK = 8 // px of movement before we commit to horizontal vs. vertical
 const SWIPE_TAP_SLOP = 10 // px of horizontal travel beyond which a following click is suppressed
-// In a cart under review a swipe toward the state the track already has stops here, short of the threshold.
-const SWIPE_REVIEW_STOP_SHORT = 40
+// In a cart under review a swipe toward the state the track already has stops here, short of the threshold, with room
+// to say so.
+const SWIPE_REVIEW_STOP_SHORT = SWIPE_HEARD_THRESHOLD - 10
 
 // Only offer the swipe gesture on touch / coarse-pointer devices. On a desktop
 // with a mouse the dedicated "Mark heard" controls are visible instead, so the
@@ -60,6 +61,7 @@ class Track extends Component {
     this.handleSwipeTouchStart = this.handleSwipeTouchStart.bind(this)
     this.handleSwipeTouchMove = this.handleSwipeTouchMove.bind(this)
     this.handleSwipeTouchEnd = this.handleSwipeTouchEnd.bind(this)
+    this.handleSwipeTouchCancel = this.handleSwipeTouchCancel.bind(this)
   }
 
   // The right-swipe toggles a track's heard state, so it is offered on the
@@ -127,6 +129,15 @@ class Track extends Component {
     const max = state === 'accepted' ? SWIPE_REVIEW_STOP_SHORT : SWIPE_HEARD_MAX
     const min = state === 'rejected' ? -SWIPE_REVIEW_STOP_SHORT : -SWIPE_HEARD_MAX
     return Math.max(min, Math.min(max, deltaX))
+  }
+
+  // The browser took the touch over (a scroll, a system gesture): a review swipe slides back and decides nothing.
+  handleSwipeTouchCancel(event) {
+    if (!this.props.review) return this.handleSwipeTouchEnd(event)
+    this.swipeStartX = null
+    this.swipeStartY = null
+    this.swipeDirection = null
+    if (this.state.swipeOffset !== 0 || this.state.swiping) this.setState({ swipeOffset: 0, swiping: false })
   }
 
   handleSwipeTouchEnd() {
@@ -277,8 +288,16 @@ class Track extends Component {
     // Fixed two-line label: "Mark / heard" below the threshold, "Release to /
     // mark heard" above it (and the unheard equivalents). Review: "Swipe to /
     // accept", then "Release to / accept" (or reject).
-    const swipeLine1 = swipePastThreshold ? 'Release to' : review ? 'Swipe to' : 'Mark'
-    const swipeLine2 = review ? swipeActionVerb : swipePastThreshold ? `mark ${swipeActionVerb}` : swipeActionVerb
+    // Toward the state the track already has the swipe stops short: "Already / accepted".
+    const swipeAlready = review && review.state === (swipeLeft ? 'rejected' : 'accepted') && swipeOffset !== 0
+    const swipeLine1 = swipeAlready ? 'Already' : swipePastThreshold ? 'Release to' : review ? 'Swipe to' : 'Mark'
+    const swipeLine2 = swipeAlready
+      ? review.state
+      : review
+        ? swipeActionVerb
+        : swipePastThreshold
+          ? `mark ${swipeActionVerb}`
+          : swipeActionVerb
     // While swiping we follow the finger (no transition); on release we animate
     // the row sliding back. The reveal panel below animates in lock-step so the
     // strip it fills always tracks the row's slide (no off-colour gap appears).
@@ -308,13 +327,13 @@ class Track extends Component {
         onTouchStart={swipeEnabled ? this.handleSwipeTouchStart : undefined}
         onTouchMove={swipeEnabled ? this.handleSwipeTouchMove : undefined}
         onTouchEnd={swipeEnabled ? this.handleSwipeTouchEnd : undefined}
-        onTouchCancel={swipeEnabled ? this.handleSwipeTouchEnd : undefined}
+        onTouchCancel={swipeEnabled ? this.handleSwipeTouchCancel : undefined}
         className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''} ${noPreviews ? 'track__no-previews' : ''} ${this.props.playbackFailed ? 'track__playback-failed' : ''} ${this.props.cartSearch ? 'cart-search-track' : ''} ${review?.dimRejected && review.state === 'rejected' ? 'track__rejected' : ''}`}
         data-review-state={review ? review.state || 'to-review' : undefined}
       >
         {swipeEnabled && (
           <td
-            className={`swipe-heard-reveal ${swipeLeft ? 'swipe-heard-reveal__right' : ''}`}
+            className={`swipe-heard-reveal ${review ? 'swipe-heard-reveal__review' : ''} ${swipeLeft ? 'swipe-heard-reveal__right' : ''}`}
             aria-hidden="true"
             data-testid="swipe-reveal"
             style={{ width: swipeDistance, transform: `translateX(${-swipeOffset}px)`, transition: swipeTransition }}
@@ -473,7 +492,7 @@ class Track extends Component {
           </td>
         )}
         {review && (
-          <td className={'review-cell tracks-cell'}>
+          <td className={'review-cell review-cell--column tracks-cell'}>
             <ReviewButtons state={review.state} onDecide={review.onDecide} />
           </td>
         )}
@@ -571,6 +590,11 @@ class Track extends Component {
                     )}
                   </div>
                 </Popup>
+              </div>
+            )}
+            {review && (
+              <div className={'review-cell-inline'}>
+                <ReviewButtons state={review.state} onDecide={review.onDecide} compact />
               </div>
             )}
             <div

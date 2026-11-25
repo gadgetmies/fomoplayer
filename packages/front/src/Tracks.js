@@ -740,7 +740,7 @@ class Tracks extends Component {
             {this.props.listState === 'carts' && !listInfo && (
               <tr className={'top-bar input-layout'} style={{ width: '100%', background: 'rgb(34, 34, 34)' }}>
                 <td
-                  className={`tracks-top_bar_group ${reviewing ? 'cart-review-bar' : ''}`}
+                  className={`tracks-top_bar_group ${this.props.mode === 'app' ? 'cart-bar-group' : ''}`}
                   style={{
                     padding: 4,
                   }}
@@ -773,7 +773,8 @@ class Tracks extends Component {
                           disabled={this.props.fetchingCartDetails}
                           onSetFilter={this.props.onSetCartReviewFilter}
                           onSetStoreFocus={this.props.onSetCartStoreFocus}
-                          onModifyRejected={this.props.onModifyRejectedTracks}
+                          onModifyReviewed={this.props.onModifyReviewedTracks}
+                          onMarkAcceptedPurchased={this.props.onMarkAcceptedPurchased}
                           onShowNotice={this.props.onShowNotice}
                         />
                       )}

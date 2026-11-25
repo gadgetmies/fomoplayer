@@ -30,15 +30,6 @@
   border-bottom-right-radius: 0;
 }
 
-/* The pressed state uses the app's selected-tab blue. */
-.review-buttons .review-button[aria-pressed='true'] {
-  background-color: #5996e4;
-}
-
-.review-buttons .review-button[aria-pressed='true']:before {
-  background-color: #3f78c4;
-}
-
 .review-buttons__compact .review-button-label {
   display: none;
 }
@@ -55,17 +46,68 @@
 .review-cell {
   display: flex;
   align-items: center;
+  align-self: center;
   padding: 0 4px;
 }
 
+/* On phones the group sits above the cart button in the cart column instead of in a column of its own. */
+.review-cell-inline {
+  display: none;
+}
+
 @media (max-width: 768px) {
-  .review-cell {
-    padding: 4px;
+  /* The table's own cell rules come later in the bundle, hence the element and class pair. */
+  td.review-cell.review-cell--column {
+    display: none;
+  }
+
+  .review-cell-inline {
+    display: block;
+    margin-top: 8px;
+    overflow: visible;
+  }
+
+  .review-cell-inline .review-buttons {
+    display: flex;
+    width: 100%;
+  }
+
+  .review-cell-inline .review-button {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 0;
   }
 }
 
 @media (max-width: 1279px) {
   .review-cell .review-button-label {
+    display: none;
+  }
+}
+
+/* The player panel's actions with the review group: as the row narrows, the extra actions (Find similar, Follow,
+   Ignore, Share) first lose their labels, then the review labels go, and when even that does not fit the extra
+   actions are hidden. */
+/* Only with the review group, so the panel without it lays out as before. */
+.preview_actions_wrapper--panel.preview_actions_wrapper--review {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+@container (max-width: 700px) {
+  .preview_actions_wrapper--review .preview-action_extra .button-push_button_label {
+    display: none;
+  }
+}
+
+@container (max-width: 520px) {
+  .preview_actions_wrapper--review .review-button-label {
+    display: none;
+  }
+}
+
+@container (max-width: 420px) {
+  .preview_actions_wrapper--review .preview-action_extra {
     display: none;
   }
 }
