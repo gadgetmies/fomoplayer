@@ -328,7 +328,7 @@ class Track extends Component {
         onTouchMove={swipeEnabled ? this.handleSwipeTouchMove : undefined}
         onTouchEnd={swipeEnabled ? this.handleSwipeTouchEnd : undefined}
         onTouchCancel={swipeEnabled ? this.handleSwipeTouchCancel : undefined}
-        className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''} ${noPreviews ? 'track__no-previews' : ''} ${this.props.playbackFailed ? 'track__playback-failed' : ''} ${this.props.cartSearch ? 'cart-search-track' : ''} ${review?.dimRejected && review.state === 'rejected' ? 'track__rejected' : ''}`}
+        className={`track ${this.props.selected ? 'selected' : ''} ${this.props.playing ? 'playing' : ''} ${noPreviews ? 'track__no-previews' : ''} ${this.props.playbackFailed ? 'track__playback-failed' : ''} ${this.props.cartSearch ? 'cart-search-track' : ''} ${review ? 'track--review' : ''} ${review?.dimRejected && review.state === 'rejected' ? 'track__rejected' : ''}`}
         data-review-state={review ? review.state || 'to-review' : undefined}
       >
         {swipeEnabled && (
