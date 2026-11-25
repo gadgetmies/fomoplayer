@@ -215,11 +215,19 @@ const verifyOwnCart = async (userId, cartId) => {
 }
 
 /**
- * Removes every rejected track of the cart (within the given stores) and, for `move`, adds those not already there to
- * another cart of the user, or to a new cart named `newCartName`. One transaction; Spotify-synced carts are updated
- * after it. Resolves to `{ count, targetCart, undo }`, where `undo` is the body for undoRejectedTracks.
+ * Removes every track of the cart in one review state ('accepted' or 'rejected', within the given stores) and, for
+ * `move`, adds those not already there to another cart of the user, or to a new cart named `newCartName`, where they
+ * start to review. One transaction; Spotify-synced carts are updated after it. Resolves to
+ * `{ count, targetCart, undo }`, where `undo` is the body for undoReviewedTracks.
  */
-module.exports.modifyRejectedTracks = async (userId, cartId, { action, targetCartId, newCartName } = {}, stores) => {
+module.exports.modifyReviewedTracks = async (
+  userId,
+  cartId,
+  state,
+  { action, targetCartId, newCartName } = {},
+  stores,
+) => {
+  if (!REVIEW_STATES.includes(state)) throw new BadRequest(`Unknown review state: ${state}`)
   if (action !== 'remove' && action !== 'move') throw new BadRequest('action must be remove or move')
   const isNewCart = action === 'move' && targetCartId === undefined
   if (action === 'move') {
@@ -234,7 +242,7 @@ module.exports.modifyRejectedTracks = async (userId, cartId, { action, targetCar
   if (action === 'move' && !isNewCart) await verifyOwnCart(userId, targetCartId)
 
   const { tracks, targetCart, addedToTarget } = await BPromise.using(pg.getTransaction(), async (tx) => {
-    const tracks = (await queryCartTracksInReviewState(cartId, 'rejected', stores, tx)).map(
+    const tracks = (await queryCartTracksInReviewState(cartId, state, stores, tx)).map(
       ({ trackId, addedAt }) => ({ trackId, addedAt }),
     )
     const trackIds = tracks.map(({ trackId }) => trackId)
@@ -272,10 +280,11 @@ module.exports.modifyRejectedTracks = async (userId, cartId, { action, targetCar
 }
 
 /**
- * Reverts modifyRejectedTracks: puts the tracks back into the cart with their original added date, rejected, and
- * removes from the target cart only the tracks the move added. Tracks back in the cart meanwhile are left alone.
+ * Reverts modifyReviewedTracks: puts the tracks back into the cart with their original added date and review state,
+ * and removes from the target cart only the tracks the move added. Tracks back in the cart meanwhile are left alone.
  */
-module.exports.undoRejectedTracks = async (userId, cartId, { tracks, targetCartId, addedToTarget } = {}) => {
+module.exports.undoReviewedTracks = async (userId, cartId, state, { tracks, targetCartId, addedToTarget } = {}) => {
+  if (!REVIEW_STATES.includes(state)) throw new BadRequest(`Unknown review state: ${state}`)
   if (!Array.isArray(tracks) || !tracks.every(({ trackId, addedAt } = {}) => Number.isInteger(trackId) && addedAt)) {
     throw new BadRequest('tracks must be a list of { trackId, addedAt }')
   }
@@ -284,7 +293,7 @@ module.exports.undoRejectedTracks = async (userId, cartId, { tracks, targetCartI
   if (targetCartId != null) await verifyOwnCart(userId, targetCartId)
 
   const restored = await BPromise.using(pg.getTransaction(), async (tx) => {
-    const restored = await restoreTracksToCart(tx, cartId, tracks, 'rejected')
+    const restored = await restoreTracksToCart(tx, cartId, tracks, state)
     if (removeFromTarget.length > 0) await deleteTracksFromCart(targetCartId, removeFromTarget, tx)
     return restored
   })

@@ -61,8 +61,8 @@ const {
   setCartReview,
   setCartTrackReviewState,
   getAcceptedTrackLinks,
-  modifyRejectedTracks,
-  undoRejectedTracks,
+  modifyReviewedTracks,
+  undoReviewedTracks,
   CART_TRACKS_PAGE,
 } = require('../shared/cart.js')
 const { parsePage, parseStores, parseDate, parseReview } = require('../shared/request-params')
@@ -474,17 +474,19 @@ router.get('/carts/:id/accepted', async ({ user: { id: userId }, params: { id: c
   res.send(await getAcceptedTrackLinks(userId, cartId, parseStores(query.store)))
 })
 
-// Removes the cart's rejected tracks within the `store` query, or moves them to another cart:
+// Removes the cart's accepted or rejected tracks within the `store` query, or moves them to another cart:
 // `{ action: 'remove' }`, `{ action: 'move', targetCartId }` or `{ action: 'move', newCartName }`.
-router.post('/carts/:id/rejected', async ({ user: { id: userId }, params: { id: cartId }, body, query }, res) => {
-  res.send(await modifyRejectedTracks(userId, cartId, body, parseStores(query.store)))
-})
+for (const state of ['accepted', 'rejected']) {
+  router.post(`/carts/:id/${state}`, async ({ user: { id: userId }, params: { id: cartId }, body, query }, res) => {
+    res.send(await modifyReviewedTracks(userId, cartId, state, body, parseStores(query.store)))
+  })
 
-// Reverts a removal or move of rejected tracks; the body is the `undo` object the removal or move answered with.
-router.post('/carts/:id/rejected/undo', async ({ user: { id: userId }, params: { id: cartId }, body }, res) => {
-  await undoRejectedTracks(userId, cartId, body)
-  res.status(204).send()
-})
+  // Reverts a removal or move; the body is the `undo` object the removal or move answered with.
+  router.post(`/carts/:id/${state}/undo`, async ({ user: { id: userId }, params: { id: cartId }, body }, res) => {
+    await undoReviewedTracks(userId, cartId, state, body)
+    res.status(204).send()
+  })
+}
 
 router.delete('/carts/:id', async ({ user: { id: userId }, params: { id } }, res) => {
   await removeCart(userId, id)
