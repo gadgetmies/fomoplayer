@@ -59,19 +59,31 @@ module.exports.openCartAndTurnOnReview = async (page, cart) => {
   await pause(page)
   await clickReviewSwitch(page)
   await waitForCounts(page, { 'to-review': 7, accepted: 0, rejected: 0, all: 7 })
+  expect(await page.isChecked('#cart-review-tab-all'), 'review opens on the All tab').to.equal(true)
+  await pause(page)
+}
+
+module.exports.showToReview = async (page) => {
+  await page.click('[data-testid="cart-review-tab-to-review"]')
+  await waitFor(
+    page,
+    () => document.querySelector('#cart-review-tab-to-review')?.checked,
+    undefined,
+    'Select the To review tab.',
+  )
   await pause(page)
 }
 
 module.exports.reviewControlsReplaceFindSimilar = async ({ page }) => {
   expect(await page.$('[data-testid="cart-find-similar"]'), 'Find similar is hidden while reviewing').to.equal(null)
-  expect(await page.isDisabled('[data-testid="cart-review-open-accepted"]'), 'nothing accepted yet').to.equal(true)
+  expect(await page.isDisabled('[data-testid="cart-review-modify-accepted"]'), 'nothing accepted yet').to.equal(true)
   expect(await page.isDisabled('[data-testid="cart-review-modify-rejected"]'), 'nothing rejected yet').to.equal(true)
   expect(await tabCount(page, 'cart-review-store-beatport')).to.equal(4)
   expect(await tabCount(page, 'cart-review-store-bandcamp')).to.equal(3)
 }
 
 module.exports.acceptFromRow = async ({ page }) => {
-  await rowFor(page, 'BP2').locator('[data-testid="review-accept"]').click()
+  await rowFor(page, 'BP2').locator('[data-testid="review-accept"]:visible').click()
   await waitForCounts(page, { 'to-review': 6, accepted: 1 })
   expect(await rowTitles(page)).to.not.include(titleOf('BP2'))
   await pause(page)
@@ -98,9 +110,9 @@ module.exports.rejectPlayingTrackFromPlayer = async ({ page }) => {
 }
 
 module.exports.decideMoreFromRows = async ({ page }) => {
-  await rowFor(page, 'BC1').locator('[data-testid="review-reject"]').click()
+  await rowFor(page, 'BC1').locator('[data-testid="review-reject"]:visible').click()
   await waitForCounts(page, { 'to-review': 4, rejected: 2 })
-  await rowFor(page, 'BC2').locator('[data-testid="review-accept"]').click()
+  await rowFor(page, 'BC2').locator('[data-testid="review-accept"]:visible').click()
   await waitForCounts(page, { 'to-review': 3, accepted: 2 })
   await waitForRows(page, ['BP3', 'BP4', 'BC3'], 'Only the tracks still to review stay in the To review tab.')
   await pause(page)
@@ -116,18 +128,37 @@ module.exports.narrowToOneStore = async ({ page }) => {
   await pause(page)
 }
 
+module.exports.reviewOnlyInTheCartView = async ({ page }) => {
+  const reviewInPanel = '.preview-review_buttons'
+  expect(await page.$(reviewInPanel), 'the panel offers review in the cart view').to.not.equal(null)
+  await page.click('.menu_left a:has-text("Discover")')
+  await waitFor(
+    page,
+    (selector) => window.location.pathname.startsWith('/tracks') && !document.querySelector(selector),
+    reviewInPanel,
+    'Over Discover the player panel offers no review buttons.',
+  )
+  await pause(page, 1500)
+  await page.goBack()
+  await waitForWithTimeoutMessage(
+    () => page.waitForSelector(reviewInPanel, { timeout: 10000 }),
+    'Back in the cart view the panel offers review again.',
+  )
+}
+
 module.exports.reviewSurvivesReload = async ({ page }) => {
   await page.reload()
   await waitForCounts(page, { 'to-review': 3, accepted: 2, rejected: 2 })
   expect(await page.isChecked('[data-testid="cart-review-switch"]')).to.equal(true)
-  await waitForRows(page, ['BP3', 'BP4', 'BC3'], 'The cart reopens in review on its To review tab.')
+  expect(await page.isChecked('#cart-review-tab-all'), 'the cart reopens on the All tab').to.equal(true)
+  await waitForRows(page, ['BP1', 'BP2', 'BP3', 'BC1', 'BP4', 'BC2', 'BC3'], 'The cart reopens in review.')
 }
 
 module.exports.removeRejectedAndUndo = async ({ page }) => {
   await page.click('[data-testid="cart-review-tab-rejected"]')
   await waitForRows(page, ['BP1', 'BC1'], 'The Rejected tab lists the two rejected tracks.')
   await pause(page)
-  await page.hover('[data-testid="cart-review-modify-rejected"]')
+  await page.click('[data-testid="cart-review-modify-rejected"]')
   await page.click('[data-testid="cart-review-remove-rejected"]')
   await waitFor(
     page,
@@ -143,32 +174,48 @@ module.exports.removeRejectedAndUndo = async ({ page }) => {
   await pause(page)
 }
 
-module.exports.openAcceptedInTabs = async ({ page }) => {
+module.exports.openAcceptedInStores = async ({ page }) => {
   await page.click('[data-testid="cart-review-tab-accepted"]')
   await waitForRows(page, ['BP2', 'BC2'], 'The Accepted tab lists the two accepted tracks.')
-  await waitFor(
-    page,
-    () => document.querySelector('[data-testid="cart-review-open-accepted"]')?.disabled === false,
-    undefined,
-    'Open accepted is enabled once there are accepted tracks.',
-  )
   const opened = []
   const onPage = (popup) => opened.push(popup)
   page.context().on('page', onPage)
   await page.route(/(beatport\.com|bandcamp\.com)\//, (route) => route.fulfill({ status: 200, body: 'store page' }))
-  try {
-    await page.click('[data-testid="cart-review-open-accepted"]')
-    await waitForWithTimeoutMessage(async () => {
+  const waitForTabs = (count) =>
+    waitForWithTimeoutMessage(async () => {
       const deadline = Date.now() + 10000
-      while (opened.length < 2 && Date.now() < deadline) await page.waitForTimeout(100)
-      if (opened.length < 2) throw new Error(`only ${opened.length} tabs opened`)
-    }, 'Open accepted should open one tab per accepted track.')
+      while (opened.length < count && Date.now() < deadline) await page.waitForTimeout(100)
+      if (opened.length < count) throw new Error(`only ${opened.length} tabs opened`)
+    }, `Opening the accepted tracks should open ${count} tabs.`)
+  try {
+    await page.click('[data-testid="cart-review-modify-accepted"]')
+    await pause(page)
+    await page.click('[data-testid="cart-review-open-beatport"]')
+    await waitForTabs(1)
+    await page.click('[data-testid="cart-review-modify-accepted"]')
+    await pause(page)
+    await page.click('[data-testid="cart-review-open-bandcamp"]')
+    await waitForTabs(2)
     expect(opened).to.have.length(2)
   } finally {
     page.context().off('page', onPage)
     for (const popup of opened) await popup.close().catch(() => {})
     await page.unroute(/(beatport\.com|bandcamp\.com)\//)
   }
+}
+
+module.exports.markAcceptedPurchased = async ({ page }) => {
+  await page.click('[data-testid="cart-review-modify-accepted"]')
+  await pause(page)
+  await page.click('[data-testid="cart-review-mark-purchased"]')
+  await waitFor(
+    page,
+    () => document.querySelector('[data-testid="undo-notice"]')?.textContent.includes('Marked 2 accepted tracks purchased'),
+    undefined,
+    'A notice should say the two accepted tracks were marked purchased.',
+  )
+  await waitForCounts(page, { accepted: 0, all: 5 })
+  await pause(page, 1500)
 }
 
 // Phone: a synthetic touch swipe on a row, as in swipe-mark-heard.js.
@@ -214,6 +261,19 @@ const revealText = (page, key) =>
     .allTextContents()
     .then((lines) => lines.map((l) => l.trim()).join(' '))
 
+// Phones open one tab per tap at most, so Modify accepted offers no Open in <store> there.
+module.exports.noOpenInStoresOnPhones = async ({ page }) => {
+  await rowFor(page, 'BP3').locator('[data-testid="review-accept"]:visible').click()
+  await waitForCounts(page, { accepted: 1 })
+  await page.click('[data-testid="cart-review-modify-accepted"]')
+  await page.waitForSelector('[data-testid="cart-review-mark-purchased"]')
+  expect(await page.$$('[data-testid^="cart-review-open-"]')).to.have.length(0)
+  await pause(page)
+  await page.click('[data-testid="cart-review-modify-accepted"]', { force: true })
+  await rowFor(page, 'BP3').locator('[data-testid="review-undecided"]:visible').click()
+  await waitForCounts(page, { accepted: 0 })
+}
+
 module.exports.swipeRightAccepts = async ({ page }) => {
   const swipe = await swipeRow(page, 'BP1', 130)
   expect(await revealText(page, 'BP1')).to.equal('Release to accept')
@@ -227,6 +287,15 @@ module.exports.swipeRightAccepts = async ({ page }) => {
     'A notice names the accepted track, with Undo.',
   )
   await pause(page)
+}
+
+module.exports.swipeTowardTheCurrentStateStopsShort = async ({ page }) => {
+  const swipe = await swipeRow(page, 'BP1', 130)
+  expect(await revealText(page, 'BP1')).to.equal('Already accepted')
+  await pause(page)
+  await swipe.release()
+  await pause(page)
+  expect(await tabCount(page, 'cart-review-tab-accepted')).to.equal(1)
 }
 
 module.exports.shortSwipeChangesNothing = async ({ page }) => {
