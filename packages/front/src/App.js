@@ -139,6 +139,18 @@ export const patchTrackCartMembership = (slices, trackId, cartUuid, op) => {
   }
 }
 
+// The number of the cart's tracks the loaded rows cover on the server, i.e. the offset of the next page: rows kept on
+// screen after being removed from the cart are no longer in the cart on the server and do not count.
+export const loadedCartTrackCount = (tracks, cartUuid) =>
+  (tracks || []).filter((t) => t && (t.carts || []).some((c) => c && c.uuid === cartUuid)).length
+
+// Cart records from `/me/carts` (no tracks) keeping the tracks already loaded for each cart.
+export const mergeCartListPreservingTracks = (existingCarts, freshCarts) =>
+  freshCarts.map((cart) => {
+    const existing = (existingCarts || []).find(({ uuid }) => uuid === cart.uuid)
+    return existing && existing.tracks && !cart.tracks ? { ...cart, tracks: existing.tracks } : cart
+  })
+
 // A cart response ({ cart, tracks, page }) as the cart record kept in the state: the cart's fields with its tracks.
 export const cartRecord = ({ cart, tracks }) => ({ ...cart, tracks })
 
@@ -148,10 +160,17 @@ export const cartRecord = ({ cart, tracks }) => ({ ...cart, tracks })
 // extend past the first page after infinite-scroll) and splice the single
 // added/removed row in place. Top-level metadata (name, storeDetails,
 // trackCount, etc.) is taken from the PATCH response.
-export const mergeCartDetailsPreservingTracks = (existing, response, { addedTrackId, removedTrackId } = {}) => {
+// `keepRemovedRow` leaves a removed track's row in place (the cart on screen keeps listing it, with an add button,
+// until the cart is reloaded); otherwise the row is spliced out.
+export const mergeCartDetailsPreservingTracks = (
+  existing,
+  response,
+  { addedTrackId, removedTrackId, keepRemovedRow = false } = {},
+) => {
   const existingTracks = (existing && existing.tracks) || []
   let nextTracks = existingTracks
   if (removedTrackId != null) {
+    if (keepRemovedRow) return { ...existing, ...response, tracks: existingTracks }
     const idx = existingTracks.findIndex((t) => t && t.id === removedTrackId)
     if (idx !== -1) {
       nextTracks = existingTracks.slice(0, idx).concat(existingTracks.slice(idx + 1))
@@ -294,35 +313,51 @@ class App extends Component {
       this.setState({ loadingMore: true })
       await this.updateTracks(true)
     } else if (listState === 'carts') {
-      if (!cartPagination || cartPagination.loadingMore || !selectedCartUuid || !selectedCart) return
-      this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
-      // The rows still loaded: decisions take rows out of a review tab, and the server's filtered list shrinks with them.
-      const nextOffset = cartPagination.offset + cartPagination.count
-      const requestedReview = this.state.cartReview
-      const response = await this.fetchCartPage(selectedCartUuid, nextOffset, requestedReview)
-      if (this.state.selectedCartUuid !== selectedCartUuid) return
-      const { cart, page } = response
-      const { cartReview, tracks: pageTracks } = this.cartReviewFromResponse(response)
-      const carts = this.state.carts.slice()
-      const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
-      const existingTracks = (cartIndex !== -1 ? carts[cartIndex].tracks : this.state.selectedCart?.tracks) || []
-      const loadedIds = new Set(existingTracks.map(({ id }) => id))
-      const appendedTracks = pageTracks.filter(({ id }) => !loadedIds.has(id))
-      if (cartIndex !== -1) {
-        carts[cartIndex] = { ...carts[cartIndex], ...cart, tracks: existingTracks.concat(appendedTracks) }
+      // The flag is set synchronously: the state flag is only seen after a render, so a scroll and an auto-load in the
+      // same tick would both fetch the same page
+      if (!cartPagination || cartPagination.loadingMore || this.loadingMoreCartTracks || !selectedCartUuid || !selectedCart)
+        return
+      this.loadingMoreCartTracks = true
+      try {
+        this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
+        const generation = this.cartTracksGeneration
+        // The rows still loaded: review decisions take rows out of a review tab, and the server's filtered list
+        // shrinks with them.
+        const nextOffset = cartPagination.offset + cartPagination.count
+        const response = await this.fetchCartPage(selectedCartUuid, nextOffset, this.state.cartReview)
+        // Another cart was selected (or this one reloaded) meanwhile: the page belongs to a list no longer on screen
+        if (this.state.selectedCartUuid !== selectedCartUuid || this.cartTracksGeneration !== generation) {
+          return
+        }
+        const { cart, page } = response
+        const { cartReview, tracks: appendedTracks } = this.cartReviewFromResponse(response)
+        const carts = this.state.carts.slice()
+        const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
+        if (cartIndex !== -1) {
+          // Tracks added to the cart since the last page shift the offsets, so a page can repeat rows already listed
+          const existingTracks = carts[cartIndex].tracks || []
+          carts[cartIndex] = { ...carts[cartIndex], ...cart, tracks: deduplicateTracks(existingTracks, appendedTracks) }
+        }
+        const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
+        this.setState({
+          carts,
+          selectedCart: updatedSelectedCart,
+          cartReview,
+          cartPagination: {
+            offset: 0,
+            count: this.state.cartPagination.count + appendedTracks.length,
+            total: page.total - (response.tracks.length - appendedTracks.length),
+            loadingMore: false,
+          },
+        })
+      } catch (e) {
+        console.error('Loading more cart tracks failed', e)
+        if (this.state.cartPagination) {
+          this.setState({ cartPagination: { ...this.state.cartPagination, loadingMore: false } })
+        }
+      } finally {
+        this.loadingMoreCartTracks = false
       }
-      const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
-      this.setState({
-        carts,
-        selectedCart: updatedSelectedCart,
-        cartReview,
-        cartPagination: {
-          offset: 0,
-          count: cartPagination.count + appendedTracks.length,
-          total: page.total - (response.tracks.length - pageTracks.length),
-          loadingMore: false,
-        },
-      })
     }
   }
 
@@ -532,7 +567,12 @@ class App extends Component {
     const carts = await requestJSONwithCredentials({
       path: `/me/carts`,
     })
-    const visibleCarts = carts.filter(({ deleted }) => !deleted)
+    // `/me/carts` lists carts without their tracks: keep the loaded ones, or the cart on screen (and the play queue
+    // stepping through it) would empty
+    const visibleCarts = mergeCartListPreservingTracks(
+      this.state.carts,
+      carts.filter(({ deleted }) => !deleted),
+    )
     const selectedCartUuid = this.state.selectedCartUuid || visibleCarts[0]?.uuid
     const selectedCart = selectedCartUuid ? visibleCarts.find(({ uuid }) => uuid === selectedCartUuid) : undefined
 
@@ -597,16 +637,16 @@ class App extends Component {
 
     if (cartIndex !== -1) {
       const existingCart = this.state.carts[cartIndex]
-      const existingTracksForMerge =
-        this.state.selectedCart && this.state.selectedCart.id === cartDetails.id
-          ? patched.selectedCartTracks
-          : existingCart.tracks
+      const isSelectedCart = Boolean(this.state.selectedCart && this.state.selectedCart.id === cartDetails.id)
+      const existingTracksForMerge = isSelectedCart ? patched.selectedCartTracks : existingCart.tracks
       const merged = mergeCartDetailsPreservingTracks(
         { ...existingCart, tracks: existingTracksForMerge },
         cartDetails,
         {
           addedTrackId: op === 'add' ? trackId : undefined,
           removedTrackId: op === 'remove' ? trackId : undefined,
+          // The cart on screen keeps listing a removed track, its button switched to add, until the cart reloads
+          keepRemovedRow: isSelectedCart,
         },
       )
       const clonedCarts = this.state.carts.slice()
@@ -619,7 +659,7 @@ class App extends Component {
             merged.trackCount != null
               ? merged.trackCount
               : this.state.cartPagination.total + (op === 'add' ? 1 : -1)
-          const count = merged.tracks ? merged.tracks.length : this.state.cartPagination.count
+          const count = merged.tracks ? loadedCartTrackCount(merged.tracks, merged.uuid) : this.state.cartPagination.count
           partialState.cartPagination = { ...this.state.cartPagination, total, count }
         }
       }
@@ -1214,6 +1254,7 @@ class App extends Component {
   // `reviewView` is the review view to load the cart with, when the caller just changed it (this.state may not have it
   // yet).
   async selectCart(selectedCartUuid, reviewView = this.state.cartReview) {
+    this.cartTracksGeneration = (this.cartTracksGeneration || 0) + 1
     // Reloading the cart under review keeps its tabs; another cart starts on its To review tab.
     const sameCart = reviewView.cartUuid === selectedCartUuid
     let requestedReview = sameCart ? reviewView : { ...emptyCartReview, cartUuid: selectedCartUuid }

@@ -43,13 +43,13 @@ describe('deciding the playing track of the cart under review', () => {
     const { player, props } = makePlayer({ states: { 2: 'accepted' } })
     await player.decideCartTrack(1, 'accepted')
     expect(props.onDecideCartTrack).toHaveBeenCalledWith(1, 'accepted')
-    expect(props.onSetCurrentTrack).toHaveBeenCalledWith(T3)
+    expect(props.onSetCurrentTrack.mock.calls[0][0]).toBe(T3)
   })
 
   it('rejecting it plays the next track still to review', async () => {
     const { player, props } = makePlayer()
     await player.decideCartTrack(1, 'rejected')
-    expect(props.onSetCurrentTrack).toHaveBeenCalledWith(T2)
+    expect(props.onSetCurrentTrack.mock.calls[0][0]).toBe(T2)
   })
 
   it('marking it Undecided keeps it playing', async () => {
@@ -87,12 +87,12 @@ describe('stepping through the cart under review', () => {
   it('next skips accepted and rejected tracks', async () => {
     const { player, props } = makePlayer({ states: { 2: 'accepted', 3: 'rejected' } })
     await player.playNextTrack()
-    expect(props.onSetCurrentTrack).toHaveBeenCalledWith(T4)
+    expect(props.onSetCurrentTrack.mock.calls[0][0]).toBe(T4)
   })
 
   it('next steps through every track when review is off', async () => {
     const { player, props } = makePlayer({ enabled: false, states: { 2: 'accepted' } })
     await player.playNextTrack()
-    expect(props.onSetCurrentTrack).toHaveBeenCalledWith(T2)
+    expect(props.onSetCurrentTrack.mock.calls[0][0]).toBe(T2)
   })
 })
