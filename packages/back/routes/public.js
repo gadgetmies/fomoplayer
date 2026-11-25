@@ -5,7 +5,7 @@ const bodyParser = require('body-parser')
 const defaultConfig = require('../config')
 const logger = require('fomoplayer_shared').logger(__filename)
 const { verifyEmail, getCartDetails } = require('./logic.js')
-const { parsePage, parseStores, parseDate } = require('./shared/request-params')
+const { parsePage, parseStores, parseDate, parseReview } = require('./shared/request-params')
 const { CART_TRACKS_PAGE } = require('./shared/cart')
 const { queryAccountCount: defaultQueryAccountCount, addEmailToWaitingList: defaultAddEmailToWaitingList } = require('./db')
 
@@ -17,15 +17,18 @@ const createPublicRouter = ({
   const router = express.Router()
   router.use(bodyParser.json())
 
-  router.get('/carts/:uuid', async ({ params: { uuid }, user, query: { since, offset, limit, store: stores } }, res) => {
-    const page = parsePage({ offset, limit }, CART_TRACKS_PAGE)
-    const filter = { since: parseDate('since', since), ...page }
-    const cart = await getCartDetails(uuid, user?.id, parseStores(stores), filter)
-    if (cart === null) {
-      return res.status(404).send()
-    }
-    res.send(cart)
-  })
+  router.get(
+    '/carts/:uuid',
+    async ({ params: { uuid }, user, query: { since, offset, limit, store: stores, review } }, res) => {
+      const page = parsePage({ offset, limit }, CART_TRACKS_PAGE)
+      const filter = { since: parseDate('since', since), ...page }
+      const cart = await getCartDetails(uuid, user?.id, parseStores(stores), filter, parseReview(review))
+      if (cart === null) {
+        return res.status(404).send()
+      }
+      res.send(cart)
+    },
+  )
 
   router.use('/stores', require('./stores/index.js').router)
 

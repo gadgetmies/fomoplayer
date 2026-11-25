@@ -51,7 +51,9 @@ module.exports.getPreview = async (id, stores, format, offset) => {
   }
 }
 
-module.exports.getCartDetails = async (uuid, userId, stores = undefined, tracksFilter) => {
+// A cart by its uuid for its owner, or for anyone when it is public. Only the owner gets the review fields, and only
+// for the owner is the `review` filter applied.
+module.exports.getCartDetails = async (uuid, userId, stores = undefined, tracksFilter, review = undefined) => {
   logger.info(`Getting cart details for user: ${userId}, uuid: ${uuid}`)
   if (!/^[0-9a-f-]{36}$/i.test(String(uuid))) return null
   const details = await queryCartDetailsByUuid(uuid)
@@ -63,7 +65,8 @@ module.exports.getCartDetails = async (uuid, userId, stores = undefined, tracksF
   if (!isPublic && ownerUserId !== userId) {
     return null
   }
-  return await queryCartDetails(id, stores, tracksFilter)
+  const isOwner = userId !== undefined && ownerUserId === userId
+  return await queryCartDetails(id, stores, tracksFilter, { includeReview: isOwner, review })
 }
 
 module.exports.getEntityDetails = queryEntityDetails

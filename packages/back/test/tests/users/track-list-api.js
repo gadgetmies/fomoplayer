@@ -149,7 +149,8 @@ test({
   'the cart and the cart list rows have the same camelCase fields': async ({ req, cart }) => {
     const fields = ['id', 'name', 'isDefault', 'isPublic', 'isPurchased', 'uuid', 'storeDetails', 'trackCount']
     const { json } = await req('GET', `/api/me/carts/${cart.id}`)
-    expect(json.cart).to.have.all.keys(...fields)
+    // The owner's cart also carries its review switch and counts (see cart-review.js).
+    expect(json.cart).to.have.all.keys(...fields, 'review')
     const list = await req('GET', '/api/me/carts')
     expect(list.status).to.equal(200)
     const row = list.json.find(({ id }) => id === cart.id)

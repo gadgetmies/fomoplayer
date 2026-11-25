@@ -132,20 +132,32 @@ module.exports.queryUserCartDetailsWithTracks = async (userId, stores) =>
     `,
   )
 
+// The `review` filter values of a cart's tracks; `to-review` matches the tracks with no decision (NULL state).
+const REVIEW_FILTERS = (module.exports.REVIEW_FILTERS = ['to-review', 'accepted', 'rejected'])
+// The decisions a cart track can hold; null (to review) clears a decision.
+module.exports.REVIEW_STATES = ['accepted', 'rejected']
+
 /**
  * A cart and one page of its tracks, newest first: `{ cart, tracks, page: { offset, limit, total }, meta: {} }`.
  * `cart` has the same fields as a row of the user's cart list (`trackCount` counts the whole cart); `page.total`
- * counts the tracks matching the store and since filters. `all` (for internal callers such as the playlist sync)
- * returns every track.
+ * counts the tracks matching the store, since and review filters. `all` (for internal callers such as the playlist
+ * sync) returns every track.
+ *
+ * Review fields are for the cart's owner only: with `includeReview` each track carries `reviewState` (null, 'accepted'
+ * or 'rejected'), `cart.review` carries `{ enabled, counts, storeCounts }` (`counts` follow the store filter,
+ * `storeCounts` cover the whole cart), and `review` (one of REVIEW_FILTERS) filters the page. Without it `review` is
+ * ignored and no review field is returned.
  */
 module.exports.queryCartDetails = async (
   cartId,
   stores = undefined,
   tracksFilter = { since: undefined, offset: 0, limit: 200 },
+  { includeReview = false, review = undefined } = {},
 ) => {
   const limit = tracksFilter?.all ? null : parseInt(tracksFilter?.limit) || 200
   const offset = parseInt(tracksFilter?.offset) || 0
   const since = tracksFilter?.since || null
+  const reviewFilter = includeReview && REVIEW_FILTERS.includes(review) ? review : null
   logger.info(`Querying cart details for cartId: ${cartId}, limit: ${limit}, offset: ${offset}, since: ${since}`)
   const query =
     // language=PostgreSQL
@@ -156,12 +168,13 @@ module.exports.queryCartDetails = async (
                                , cart_is_public
                                , cart_is_purchased
                                , cart_uuid
+                               , cart_is_in_review
                                , COUNT(track_id) AS track_count
                           FROM
                             cart
                             NATURAL LEFT JOIN track__cart
                           WHERE cart_id = ${cartId}
-                          GROUP BY 1, 2, 3, 4, 5, 6)
+                          GROUP BY 1, 2, 3, 4, 5, 6, 7)
        , cart_store_details AS
       (SELECT cart_id
             , JSON_AGG(
@@ -180,6 +193,7 @@ module.exports.queryCartDetails = async (
                                   , track_details
                                   , cart_id
                                   , track__cart_added
+                                  , track__cart_review_state
                              FROM
                                track__cart
                                NATURAL JOIN track_details
@@ -187,7 +201,10 @@ module.exports.queryCartDetails = async (
                                NATURAL JOIN store
                              WHERE cart_id = ${cartId}
                                AND (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores}))
-                               AND (${since}::TIMESTAMPTZ IS NULL OR track__cart_added > ${since}::TIMESTAMPTZ))
+                               AND (${since}::TIMESTAMPTZ IS NULL OR track__cart_added > ${since}::TIMESTAMPTZ)
+                               AND (${reviewFilter}::TEXT IS NULL
+                                 OR (${reviewFilter} = 'to-review' AND track__cart_review_state IS NULL)
+                                 OR track__cart_review_state = ${reviewFilter}))
        , cart_tracks AS (SELECT *
                          FROM matching_tracks
                          ORDER BY track__cart_added DESC
@@ -203,6 +220,7 @@ module.exports.queryCartDetails = async (
                                             , user__track_heard AS heard
                                             , track_id          AS id
                                             , track__cart_added
+                                            , track__cart_review_state AS "reviewState"
                                             , COALESCE(user_track_carts.carts, '[]'::JSON) AS carts
                 FROM
                   cart_tracks
@@ -224,6 +242,7 @@ module.exports.queryCartDetails = async (
              , 'storeDetails', CASE WHEN store_details IS NULL THEN '[]'::JSON ELSE store_details END
              , 'trackCount', track_count :: INT
            )                                                                      AS cart
+         , cart_is_in_review                                                      AS "isInReview"
          , CASE WHEN tracks.tracks IS NULL THEN '[]'::JSON ELSE tracks.tracks END AS tracks
          , (SELECT COUNT(*) FROM matching_tracks) :: INT                          AS total
     FROM
@@ -235,9 +254,125 @@ module.exports.queryCartDetails = async (
   const [details] = await pg.queryRowsAsync(query)
   logger.info(`Querying finished for cartId: ${cartId}, limit: ${limit}, offset: ${offset}`)
   if (!details) return null
-  const { cart, tracks, total } = details
-  return { cart, tracks, page: { offset, limit, total }, meta: {} }
+  const { cart, tracks, total, isInReview } = details
+  if (!includeReview) {
+    return { cart, tracks: tracks.map(({ reviewState, ...track }) => track), page: { offset, limit, total }, meta: {} }
+  }
+  const [counts, storeCounts] = await Promise.all([queryCartReviewCounts(cartId, stores), queryCartStoreCounts(cartId)])
+  return {
+    cart: { ...cart, review: { enabled: isInReview, counts, storeCounts } },
+    tracks,
+    page: { offset, limit, total },
+    meta: {},
+  }
 }
+
+/**
+ * The number of the cart's tracks in each review state, counting only the tracks in the given stores (all when
+ * `stores` is null): `{ toReview, accepted, rejected, all }`.
+ */
+const queryCartReviewCounts = (module.exports.queryCartReviewCounts = async (cartId, stores = null) => {
+  const [counts] = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryCartReviewCounts
+    WITH store_tracks AS (SELECT DISTINCT track_id, track__cart_review_state
+                          FROM
+                            track__cart
+                            NATURAL JOIN track_details
+                            NATURAL JOIN store__track
+                            NATURAL JOIN store
+                          WHERE cart_id = ${cartId}
+                            AND (${stores}::TEXT IS NULL OR LOWER(store_name) = ANY(${stores})))
+    SELECT COUNT(*) FILTER (WHERE track__cart_review_state IS NULL) :: INT          AS "toReview"
+         , COUNT(*) FILTER (WHERE track__cart_review_state = 'accepted') :: INT    AS accepted
+         , COUNT(*) FILTER (WHERE track__cart_review_state = 'rejected') :: INT    AS rejected
+         , COUNT(*) :: INT                                                         AS "all"
+    FROM store_tracks
+    `,
+  )
+  return counts
+})
+
+// The number of the cart's tracks on each store that has any, by store name: `[{ store, count }]`.
+const queryCartStoreCounts = (module.exports.queryCartStoreCounts = async (cartId) =>
+  pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryCartStoreCounts
+    SELECT store_name AS store, COUNT(DISTINCT track_id) :: INT AS count
+    FROM
+      track__cart
+      NATURAL JOIN track_details
+      NATURAL JOIN store__track
+      NATURAL JOIN store
+    WHERE cart_id = ${cartId}
+    GROUP BY store_name
+    ORDER BY store_name
+    `,
+  ))
+
+module.exports.updateCartIsInReview = async (cartId, enabled) =>
+  pg.queryAsync(
+    // language=PostgreSQL
+    sql`--updateCartIsInReview
+    UPDATE cart SET cart_is_in_review = ${enabled} WHERE cart_id = ${cartId}
+    `,
+  )
+
+// Sets one cart track's review state (null for to review). Resolves to false when the track is not in the cart.
+module.exports.updateCartTrackReviewState = async (cartId, trackId, state) => {
+  const rows = await pg.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--updateCartTrackReviewState
+    UPDATE track__cart
+    SET track__cart_review_state = ${state}
+    WHERE cart_id = ${cartId} AND track_id = ${trackId}
+    RETURNING track_id
+    `,
+  )
+  return rows.length > 0
+}
+
+/**
+ * The cart's tracks in one review state within the given stores (all when null), newest first, with their added
+ * date (as text, to keep Postgres' microseconds for an exact restore) and the stores they are on:
+ * `[{ trackId, addedAt, stores: [{ name, url, release }] }]`.
+ */
+module.exports.queryCartTracksInReviewState = async (cartId, state, stores = null, db = pg) =>
+  db.queryRowsAsync(
+    // language=PostgreSQL
+    sql`--queryCartTracksInReviewState
+    SELECT track_id AS "trackId", track__cart_added :: TEXT AS "addedAt", track_details -> 'stores' AS stores
+    FROM
+      track__cart
+      NATURAL JOIN track_details
+    WHERE cart_id = ${cartId}
+      AND track__cart_review_state = ${state}
+      AND (${stores}::TEXT IS NULL OR EXISTS (SELECT 1
+                                              FROM store__track NATURAL JOIN store
+                                              WHERE store__track.track_id = track__cart.track_id
+                                                AND LOWER(store_name) = ANY(${stores})))
+    ORDER BY track__cart_added DESC
+    `,
+  )
+
+/**
+ * Puts tracks back into a cart with their original added date and the given review state. Tracks already in the cart
+ * are left as they are. Resolves to the ids of the tracks it put back.
+ */
+module.exports.restoreTracksToCart = async (tx, cartId, items, state) =>
+  (
+    await tx.queryRowsAsync(
+      // language=PostgreSQL
+      sql`--restoreTracksToCart
+      INSERT INTO track__cart (cart_id, track_id, track__cart_added, track__cart_review_state)
+      SELECT ${cartId}, t.track_id, t.added_at, ${state}
+      FROM JSONB_TO_RECORDSET(${JSON.stringify(items.map((i) => ({ track_id: i.trackId, added_at: i.addedAt })))} :: JSONB)
+        AS t(track_id INTEGER, added_at TIMESTAMPTZ)
+      ON CONFLICT ON CONSTRAINT track__cart_cart_id_track_id_key DO NOTHING
+      RETURNING track_id AS id
+      `,
+    )
+  ).map(({ id }) => id)
 
 module.exports.deleteCart = async (cartId) =>
   pg.queryRowsAsync(
