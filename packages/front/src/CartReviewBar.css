@@ -6,15 +6,15 @@
   padding: 0 4px;
 }
 
-.tracks-top_bar_group.cart-review-bar {
+/* The cart bar keeps the Filter box and the Review switch at its left edge, whatever follows them. */
+.tracks-top_bar_group.cart-bar-group {
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: center;
 }
 
-.cart-review-tab small {
-  opacity: 0.75;
-  margin-left: 2px;
+.cart-bar-group .cart-details {
+  margin-left: auto;
 }
 
 .cart-review-actions {
@@ -58,9 +58,18 @@
   .cart-review-label_short {
     display: inline;
   }
+}
 
-  /* DropDownButton hides its label at phone width; the short label and count stay. */
-  .cart-review-actions .button-push_button_label {
-    display: inline;
-  }
+/* Menu entries at the bar buttons' height, never squeezed when the menu scrolls. */
+.cart-review-popup-content > * {
+  flex-shrink: 0;
+}
+
+.cart-review-popup-content .cart-button {
+  min-height: 40px;
+  margin-bottom: 0;
+  padding-top: 10px;
+  padding-bottom: 12px;
+  white-space: normal;
+  overflow: visible;
 }

@@ -393,6 +393,27 @@ test({
     },
   },
 
+  'the accepted tracks can be moved to another cart, and Undo puts them back accepted': async (ctx) => {
+    const { req, cart, resetCart, ids, extraCarts } = ctx
+    await resetCart({ [ids.b0]: 'accepted', [ids.p1]: 'accepted', [ids.b1]: 'rejected' })
+    const target = await createCart(req, 'Buy next week')
+    extraCarts.push(target.id)
+    const before = await cartRows(cart.id)
+
+    const { status, json } = await req('POST', `/api/me/carts/${cart.id}/accepted`, {
+      action: 'move',
+      targetCartId: target.id,
+    })
+    expect(status).to.equal(200)
+    expect(json.count).to.equal(2)
+    expect(await cartTrackIds(cart.id)).to.deep.equal([ids.p0, ids.b1, ids.b2])
+    expect((await cartRows(target.id)).map(({ state }) => state)).to.deep.equal([null, null])
+
+    expect((await req('POST', `/api/me/carts/${cart.id}/accepted/undo`, json.undo)).status).to.equal(204)
+    expect(await cartRows(cart.id)).to.deep.equal(before)
+    expect(await cartRows(target.id)).to.deep.equal([])
+  },
+
   'the rejected tracks': {
     'can be removed from the cart and put back with Undo': async ({ req, cart, resetCart, ids }) => {
       await resetCart({ [ids.b0]: 'rejected', [ids.p1]: 'rejected', [ids.b2]: 'accepted' })

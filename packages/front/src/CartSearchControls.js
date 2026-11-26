@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import './CartSearchControls.css'
+import TabSelector from './TabSelector'
 
 // Group colours: warm tones that sit with the grey UI and stay clear of the brand purple and the blue used for the
 // playing row and active toggles.
@@ -238,50 +239,38 @@ const CartSearchControls = ({
       {groups.length > 0 && (
         <tr className="cart-search-row">
           <th className="cart-search-cell">
-            <div
-              className="select-button select-button--container state-select-button--container noselect cart-search-chips"
-              role="radiogroup"
-              aria-label="Groups"
-            >
-              <input
-                type="radio"
-                id="cart-search-chip-all"
-                name="cart-search-chip"
-                checked={chip === 'all'}
-                onChange={() => onChange({ chip: 'all' })}
-              />
-              <label
-                className="select_button-button select_button-button__small cart-search-chip"
-                htmlFor="cart-search-chip-all"
-                data-testid="cart-search-chip-all"
-              >
-                All <small>{result.tracks.length}</small>
-              </label>
-              {groups.map((group) => (
-                <React.Fragment key={group.index}>
-                  <input
-                    type="radio"
-                    id={`cart-search-chip-${group.index}`}
-                    name="cart-search-chip"
-                    checked={chip === group.index}
-                    onChange={() => onChange({ chip: group.index })}
-                  />
-                  <label
-                    className="select_button-button select_button-button__small cart-search-chip"
-                    htmlFor={`cart-search-chip-${group.index}`}
-                    data-testid="cart-search-chip"
-                    title={`${group.size} cart tracks`}
-                  >
-                    <GroupDot group={group.index} size={11} />
-                    <span className="cart-search-chip-name">{shortName(group.name)}</span>
-                    <small>{group.resultCount}</small>
-                    {saved.some((s) => s.k === k && s.group === group.index) && (
-                      <FontAwesomeIcon icon="cart-shopping" />
-                    )}
-                  </label>
-                </React.Fragment>
-              ))}
-            </div>
+            <TabSelector
+              name="cart-search-chip"
+              label="Groups"
+              className="cart-search-chips"
+              selected={chip}
+              onSelect={(key) => onChange({ chip: key })}
+              options={[
+                {
+                  key: 'all',
+                  label: 'All',
+                  count: result.tracks.length,
+                  testId: 'cart-search-chip-all',
+                  className: 'cart-search-chip',
+                },
+                ...groups.map((group) => ({
+                  key: group.index,
+                  label: (
+                    <>
+                      <GroupDot group={group.index} size={11} />
+                      <span className="cart-search-chip-name">{shortName(group.name)}</span>
+                    </>
+                  ),
+                  count: group.resultCount,
+                  suffix: saved.some((s) => s.k === k && s.group === group.index) && (
+                    <FontAwesomeIcon icon="cart-shopping" />
+                  ),
+                  testId: 'cart-search-chip',
+                  title: `${group.size} cart tracks`,
+                  className: 'cart-search-chip',
+                })),
+              ]}
+            />
             {savedGroup ? (
               <span className="cart-search-save cart-search-saved">
                 <FontAwesomeIcon icon="check" /> Saved as cart “{savedGroup.name}” · {selectedGroup.size} tracks

@@ -379,8 +379,13 @@ class Player extends Component {
     const inDefaultCart = !!(defaultCart && currentTrack && currentCarts.some((c) => c && c.uuid === defaultCart.uuid))
     const inCurrentCart = inCarts.find(({ id }) => id === selectedCartId)
     const cartReview = this.props.cartReview
+    // Only in the reviewed cart's own view: not over Discover, Notifications or the docked bar in Settings.
     const reviewControls =
       this.props.mode === 'app' &&
+      this.props.listState === 'carts' &&
+      !this.props.docked &&
+      !this.props.panelOnly &&
+      this.props.selectedCart?.uuid === cartReview?.cartUuid &&
       this.isPlayingFromReviewedCart() &&
       Object.prototype.hasOwnProperty.call(cartReview.states, currentTrack.id)
         ? {
@@ -508,7 +513,8 @@ class Player extends Component {
             onSetCartReviewFilter={this.props.onSetCartReviewFilter}
             onSetCartStoreFocus={this.props.onSetCartStoreFocus}
             onDecideCartTrack={this.decideCartTrack.bind(this)}
-            onModifyRejectedTracks={this.props.onModifyRejectedTracks}
+            onModifyReviewedTracks={this.props.onModifyReviewedTracks}
+            onMarkAcceptedPurchased={this.props.onMarkAcceptedPurchased}
             onShowNotice={this.props.onShowNotice}
             onDismissNotice={this.props.onDismissNotice}
           />

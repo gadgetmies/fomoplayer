@@ -25,7 +25,7 @@ export const emptyCartReview = {
   states: {},
   localStates: {},
   storeFocus: null,
-  reviewFilter: 'to-review',
+  reviewFilter: 'all',
   counts: null,
   storeCounts: [],
   acceptedLinks: [],
@@ -139,10 +139,13 @@ export const openAcceptedNotice = ({ blocked, skipped }) =>
     .filter(Boolean)
     .join(' ')
 
-const tracksText = (count) => `${count} rejected ${count === 1 ? 'track' : 'tracks'}`
+const tracksText = (state, count) => `${count} ${state} ${count === 1 ? 'track' : 'tracks'}`
 
-export const rejectedNotice = ({ count, targetCart }) =>
-  targetCart ? `Moved ${tracksText(count)} to ${targetCart.name}.` : `Removed ${tracksText(count)} from this cart.`
+// The notice after the accepted or rejected tracks were removed or moved.
+export const reviewedTracksNotice = (state, { count, targetCart }) =>
+  targetCart
+    ? `Moved ${tracksText(state, count)} to ${targetCart.name}.`
+    : `Removed ${tracksText(state, count)} from this cart.`
 
 export const swipeNotice = (state, title) => `${state === 'accepted' ? 'Accepted' : 'Rejected'} ${title}`
 

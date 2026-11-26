@@ -16,7 +16,9 @@ test({
     return { page, timeout: 60000 }
   },
 
+  'Modify accepted offers no Open in a store on a phone': steps.noOpenInStoresOnPhones,
   'swiping a row right past the threshold accepts it': steps.swipeRightAccepts,
+  'swiping an accepted row right stops short and says so': steps.swipeTowardTheCurrentStateStopsShort,
   'a short swipe changes nothing': steps.shortSwipeChangesNothing,
   'swiping a row left rejects it, and Undo puts it back': steps.swipeLeftRejectsAndUndo,
 })

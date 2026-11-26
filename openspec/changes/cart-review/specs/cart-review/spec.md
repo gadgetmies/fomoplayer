@@ -21,12 +21,12 @@ Every track in a cart SHALL have a review state for that cart: **to review**, **
 
 ### Requirement: Review is switched on per cart and remembered
 
-The bar above a cart's track table SHALL offer a **Review** switch to the cart's owner. Its state SHALL be stored with the cart, so it is the same after a reload and on another device. Turning review off SHALL hide all review controls and restore the cart view's current behaviour (`Tracks in cart: N`, `Find similar`, the player stepping through every track) while keeping the stored review states.
+The bar above a cart's track table SHALL offer a **Review** switch to the cart's owner, right after the Filter box at the bar's left edge, so it does not move when review is switched (`Tracks in cart: N` sits at the bar's right edge). Its state SHALL be stored with the cart, so it is the same after a reload and on another device. Turning review off SHALL hide all review controls and restore the cart view's current behaviour (`Tracks in cart: N`, `Find similar`, the player stepping through every track) while keeping the stored review states.
 
 #### Scenario: Turning review on
 
 - **WHEN** the owner opens a cart with review off and turns the Review switch on
-- **THEN** the review-state tabs, store tabs, the Review column, Open accepted and Modify rejected appear
+- **THEN** the review-state tabs, store tabs, the Review column, Modify accepted and Modify rejected appear
 - **AND** `Find similar` and `Tracks in cart: N` are hidden
 
 #### Scenario: Review persists across devices
@@ -56,7 +56,7 @@ Review states and the review switch SHALL be visible and changeable only by the 
 
 ### Requirement: Review-state and store tabs with counts
 
-While review is on, the bar SHALL show review-state tabs **To review**, **Accepted**, **Rejected** and **All**, each with the number of tracks in that state, and store tabs **All** plus one tab per store that has at least one track in the cart, each with that store's number of tracks. To review SHALL be selected when review is turned on. The selected store tab SHALL narrow the track list, the review-state counts, the player's stepping, Open accepted and Modify rejected to that store's tracks. Counts SHALL cover the whole cart, not only the loaded pages, and SHALL update immediately after every decision.
+While review is on, the bar SHALL show review-state tabs **To review**, **Accepted**, **Rejected** and **All**, each with the number of tracks in that state, and store tabs **All** plus one tab per store that has at least one track in the cart, each with that store's number of tracks. Both tab rows SHALL be the app's shared tab selector on a darker strip than the bar. All SHALL be selected when review is turned on and when the cart is opened. The selected store tab SHALL narrow the track list, the review-state counts, the player's stepping, Modify accepted and Modify rejected to that store's tracks. Counts SHALL cover the whole cart, not only the loaded pages, and SHALL update immediately after every decision.
 
 #### Scenario: Counts for a large cart
 
@@ -68,7 +68,7 @@ While review is on, the bar SHALL show review-state tabs **To review**, **Accept
 - **WHEN** a cart has 7 Beatport and 7 Bandcamp tracks and the owner selects the Beatport store tab
 - **THEN** the list shows only Beatport tracks
 - **AND** the review-state counts count only Beatport tracks
-- **AND** Open accepted and Modify rejected act only on Beatport tracks
+- **AND** Modify accepted and Modify rejected act only on Beatport tracks
 - **AND** the player steps only through Beatport tracks
 
 #### Scenario: Deciding updates the counts
@@ -78,7 +78,7 @@ While review is on, the bar SHALL show review-state tabs **To review**, **Accept
 
 ### Requirement: Deciding from a track row
 
-While review is on, every track row SHALL show an **Accept / Undecided / Reject** button group showing the track's current state as pressed. Pressing a button SHALL set that state. In the All tab a rejected track's title SHALL be struck through and its row dimmed (except the playing row, which keeps its playing colour).
+While review is on, every track row SHALL show an **Accept / Undecided / Reject** button group showing the track's current state as pressed: magenta buttons (the decision is saved), the pressed one pushed in (darker, with an inset shadow). On a desktop the group is vertically centred in its own Review column; on a phone it sits above the row's cart button, with a margin above it. Pressing a button SHALL set that state. In the All tab a rejected track's title SHALL be struck through and its row dimmed (except the playing row, which keeps its playing colour).
 
 #### Scenario: Accept from a row
 
@@ -92,7 +92,7 @@ While review is on, every track row SHALL show an **Accept / Undecided / Reject*
 
 ### Requirement: Accepting or rejecting the playing track advances to the next track to review
 
-When the playing track belongs to a cart under review and the player was started from that cart, the player panel SHALL show the same Accept / Undecided / Reject group next to the cart buttons. Whenever the playing track is accepted or rejected — from the player panel, from its row in the track table, or by a phone swipe — the state SHALL be saved and the player SHALL immediately play the next track still to review. Marking the playing track Undecided SHALL NOT change playback. Deciding a track that is not playing SHALL NOT change playback. No keyboard shortcuts SHALL be added for review; the existing keys keep their meaning.
+When the playing track belongs to a cart under review, the player was started from that cart and that cart's view is on screen, the player panel SHALL show the same Accept / Undecided / Reject group next to the cart buttons; over Discover, Notifications or Settings it SHALL NOT. When the panel's actions row runs out of room, Find similar, Follow, Ignore and Share SHALL be hidden before anything overflows. Whenever the playing track is accepted or rejected — from the player panel, from its row in the track table, or by a phone swipe — the state SHALL be saved and the player SHALL immediately play the next track still to review. Marking the playing track Undecided SHALL NOT change playback. Deciding a track that is not playing SHALL NOT change playback. No keyboard shortcuts SHALL be added for review; the existing keys keep their meaning.
 
 #### Scenario: Reject from the panel
 
@@ -130,6 +130,11 @@ When the playing track belongs to a cart under review and the player was started
 - **WHEN** the playing track was started from the New tracks list
 - **THEN** the player panel shows no review buttons
 
+#### Scenario: Not offered over other views
+
+- **WHEN** a track plays from the cart under review and the owner opens Discover or Notifications
+- **THEN** the player panel shows no review buttons until the cart view is back on screen
+
 ### Requirement: The player skips decided tracks while reviewing
 
 When the player was started from a cart under review, next, previous, auto-advance at the end of a preview, media keys and the playback-failure fallback SHALL skip tracks that are accepted, rejected or outside the selected store tab. Clicking a decided track's row SHALL still play it. When review is off the player SHALL step through every track as before.
@@ -149,33 +154,42 @@ When the player was started from a cart under review, next, previous, auto-advan
 - **WHEN** review is off and T1 finishes playing
 - **THEN** T2 starts playing even though it is accepted
 
-### Requirement: Open accepted tracks in their stores
+### Requirement: Modify the accepted tracks
 
-While review is on, the bar SHALL offer **Open accepted** with the number of accepted tracks it would open, and a drop-down listing each store with its accepted-track count and a switch to include or exclude it. Pressing Open accepted SHALL open every accepted track of the cart (all pages, within the store tab) in a new browser tab, once per track, in the first included store that carries it, using the track's store page or else its release page. The button SHALL be disabled when there is nothing to open. If the browser blocks some of the tabs, the page SHALL say how many were blocked and that pop-ups must be allowed for the site.
+While review is on, the bar SHALL offer **Modify accepted** with the number of accepted tracks, disabled when there are none. Pressing it SHALL open a menu (on click, on every device) that covers every accepted track of the cart (all pages, within the store tab) and offers:
 
-#### Scenario: Opening accepted tracks
+- **Open N in <store>**, one entry per store carrying accepted tracks, opening each of those tracks in a new browser tab on its store page, or else its release page. If the browser blocks some tabs, the page SHALL say how many and that pop-ups must be allowed for the site. Phones open at most one tab per tap, so these entries SHALL NOT be offered on phones.
+- **Mark as purchased**, which marks the tracks purchased and removes them from every cart that is not a purchased cart, as marking one track purchased does, and says how many were marked.
+- **Move to** another of the owner's carts or a new cart named in the menu, as for the rejected tracks (they arrive to review, tracks already there stay unchanged), with an Undo that puts them back accepted in their original position.
 
-- **WHEN** a cart has 3 accepted Beatport tracks and 2 accepted Bandcamp tracks, both stores are included, and pop-ups are allowed
-- **THEN** pressing Open accepted opens 5 tabs, each on that track's store page
+#### Scenario: Opening accepted tracks in one store
 
-#### Scenario: Excluding a store
-
-- **WHEN** the owner switches Bandcamp off in the Open accepted drop-down
-- **THEN** the button shows 3 and pressing it opens only the Beatport tracks
+- **WHEN** a cart has 3 accepted Beatport tracks and 2 accepted Bandcamp tracks and pop-ups are allowed
+- **THEN** the menu offers "Open 3 in Beatport" and "Open 2 in Bandcamp", and choosing the first opens 3 tabs on the tracks' Beatport pages
 
 #### Scenario: Pop-ups blocked
 
 - **WHEN** the browser blocks all but the first tab
-- **THEN** one tab opens and a notice says 4 tabs were blocked and pop-ups must be allowed for the site
+- **THEN** one tab opens and a notice says how many tabs were blocked and that pop-ups must be allowed for the site
+
+#### Scenario: On a phone
+
+- **WHEN** the owner opens Modify accepted on a phone
+- **THEN** the menu offers Mark as purchased and Move to, and no Open in a store
+
+#### Scenario: Mark as purchased
+
+- **WHEN** the owner chooses Mark as purchased with 2 accepted tracks
+- **THEN** both are marked purchased and leave the cart, and a notice says "Marked 2 accepted tracks purchased."
 
 #### Scenario: Nothing accepted
 
 - **WHEN** the cart has no accepted tracks in the selected store tab
-- **THEN** Open accepted is disabled
+- **THEN** Modify accepted is disabled
 
 ### Requirement: Remove or move rejected tracks with undo
 
-While review is on, the bar SHALL offer **Modify rejected** with the number of rejected tracks, opening a drop-down that can remove all rejected tracks (all pages, within the store tab) from the cart, move them to one of the owner's other carts, or move them to a new cart named in the drop-down. Moved tracks SHALL arrive in the target cart as to review; tracks already in the target cart SHALL stay there unchanged. After either action a notice SHALL say how many tracks were removed or moved and where, with an **Undo** button that puts the tracks back in the cart in their original position, rejected, and removes from the target cart only the tracks the move added. The button SHALL be disabled when there are no rejected tracks.
+While review is on, the bar SHALL offer **Modify rejected** with the number of rejected tracks, opening a menu on click (on every device) that can remove all rejected tracks (all pages, within the store tab) from the cart, move them to one of the owner's other carts, or move them to a new cart named in the drop-down. Moved tracks SHALL arrive in the target cart as to review; tracks already in the target cart SHALL stay there unchanged. After either action a notice SHALL say how many tracks were removed or moved and where, with an **Undo** button that puts the tracks back in the cart in their original position, rejected, and removes from the target cart only the tracks the move added. The button SHALL be disabled when there are no rejected tracks.
 
 #### Scenario: Remove rejected
 
@@ -200,7 +214,7 @@ While review is on, the bar SHALL offer **Modify rejected** with the number of r
 
 ### Requirement: Swiping to decide on a phone
 
-On touch devices, while review is on, swiping a cart track row right past the threshold SHALL accept the track and swiping left past the threshold SHALL reject it. Past the threshold the revealed area SHALL read "Release to accept" or "Release to reject". Releasing before the threshold SHALL change nothing, and a swipe toward the state the track already has SHALL stop short and change nothing. Each swipe decision SHALL show a notice naming the track with an Undo button that restores the previous state. The existing swipe that marks tracks heard in the New, Recent and Heard lists SHALL be unchanged.
+On touch devices, while review is on, swiping a cart track row right past the threshold SHALL accept the track and swiping left past the threshold SHALL reject it. The revealed strip SHALL be the same width either way and its label SHALL slide into view at full width rather than squeeze; past the threshold it SHALL read "Release to accept" or "Release to reject". Releasing before the threshold, or a touch the browser cancels, SHALL change nothing, and a swipe toward the state the track already has SHALL stop short of the threshold, read "Already accepted" or "Already rejected", and change nothing. Each swipe decision SHALL show a notice naming the track with an Undo button that restores the previous state. The existing swipe that marks tracks heard in the New, Recent and Heard lists SHALL be unchanged.
 
 #### Scenario: Swipe right accepts
 

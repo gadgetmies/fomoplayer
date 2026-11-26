@@ -542,6 +542,12 @@
     width: 64px;
   }
 
+  /* The cart button and its drop-down are a little wider than the column: centre them under the Cart heading. */
+  .cart-cell .table-cell-button-row {
+    display: flex;
+    justify-content: center;
+  }
+
   .follow-ignore-cart-cell {
     width: 128px;
     gap: 4px;
