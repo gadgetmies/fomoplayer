@@ -2,9 +2,11 @@
 
 Counts the previews of the prefetched stores (the ones the backend's
 prefetchPreviewAudio job stores in the bucket) from the production database:
-in total, not yet analysed, and not yet analysed with their audio in the
-bucket. "Analysed" mirrors `analysedCondition` in
-packages/back/routes/admin/preview-audio.js; keep the two in sync.
+in total, not yet analysed, not yet analysed with their audio in the bucket,
+and ignored: not analysed and never going to be downloaded, so they are left
+out of what is left. "Analysed" mirrors `analysedCondition` in
+packages/back/routes/admin/preview-audio.js and "ignored" mirrors the filters
+of `queryPreviewsToPrefetch` there; keep them in sync.
 
 `--part counts` and `--part rate` print one half each, for two short status
 lines. tmux runs this every status-interval, so the counts are cached in a file and
@@ -31,8 +33,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # Mirror PREFETCH_STORES, WAVEFORM_STORES and PRODUCTION_EMBEDDING_TYPE in preview-audio.js.
 COUNT_SQL = """
 SELECT count(*) AS total
-     , count(*) FILTER (WHERE NOT analysed) AS remaining
+     , count(*) FILTER (WHERE NOT analysed AND NOT ignored) AS remaining
      , count(*) FILTER (WHERE NOT analysed AND stored) AS in_bucket
+     , count(*) FILTER (WHERE NOT analysed AND ignored) AS ignored
 FROM (SELECT a.store__track_preview_audio_object_key IS NOT NULL AS stored
            , (p.store__track_preview_missing
               OR (EXISTS (SELECT 1 FROM store__track_preview_fingerprint_meta m
@@ -44,6 +47,20 @@ FROM (SELECT a.store__track_preview_audio_object_key IS NOT NULL AS stored
                        OR EXISTS (SELECT 1 FROM store__track_preview_waveform w
                                   WHERE w.store__track_preview_id = p.store__track_preview_id
                                     AND w.store__track_preview_waveform_url IS NOT NULL)))) AS analysed
+           -- Not in the bucket and never downloaded by the prefetch job:
+           , (a.store__track_preview_audio_object_key IS NULL
+              -- larger than its size limit (DJ mixes),
+              AND (a.store__track_preview_audio_last_error = 'Too large to prefetch'
+                   -- on a Bandcamp custom domain that redirects back and forth for
+                   -- non-browser clients (retried hourly, never marked missing),
+                   OR a.store__track_preview_audio_last_error LIKE '%redirect count exceeded%'
+                   -- or with nothing to download from.
+                   OR (s.store_name <> 'Bandcamp' AND p.store__track_preview_url IS NULL)
+                   OR (s.store_name = 'Bandcamp'
+                       AND NOT EXISTS (SELECT 1 FROM release__track rt
+                                         JOIN store__release sr ON sr.release_id = rt.release_id
+                                       WHERE rt.track_id = st.track_id
+                                         AND sr.store_id = s.store_id)))) AS ignored
       FROM store__track_preview p
         JOIN store__track st ON st.store__track_id = p.store__track_id
         JOIN store s ON s.store_id = st.store_id
@@ -82,9 +99,14 @@ def fetch_counts(url):
                           options="-c default_transaction_read_only=on -c statement_timeout=120000") as conn:
         with conn.cursor() as cur:
             cur.execute(COUNT_SQL)
-            total, remaining, in_bucket = cur.fetchone()
+            total, remaining, in_bucket, ignored = cur.fetchone()
     conn.close()
-    return {"total": total, "remaining": remaining, "in_bucket": in_bucket}
+    return {"total": total, "remaining": remaining, "in_bucket": in_bucket, "ignored": ignored}
+
+
+def analysed(counts):
+    """Previews analysed so far: ignored ones are neither left nor analysed."""
+    return counts["total"] - counts["remaining"] - counts.get("ignored", 0)
 
 
 def rate_per_hour(samples, now):
@@ -118,6 +140,8 @@ def status_parts(counts, rate):
     """`[counts, rate]` texts: short enough for two lines of a phone-width
     tmux client, joined with " · " on a wide one."""
     left = f"bucket {counts['in_bucket']} · left {counts['remaining']}/{counts['total']}"
+    if counts.get("ignored"):
+        left += f" · ignored {counts['ignored']}"
     if counts['remaining'] == 0:
         return [left, "done"]
     if rate is None:
@@ -162,7 +186,7 @@ def progress(cache_path, refresh_s, now=None, fetch=None):
                 return state["parts"][:-1] + [f"{state['parts'][-1]} (stale)"]
             return [f"progress: {str(e).splitlines()[0][:60] if str(e) else type(e).__name__}"]
         samples = [s for s in state.get("samples", []) if now - s[0] <= HISTORY_S]
-        samples.append([now, counts["total"] - counts["remaining"]])
+        samples.append([now, analysed(counts)])
         parts = status_parts(counts, rate_per_hour(samples, now))
         save(cache_path, {"fetched_at": now, "counts": counts, "samples": samples, "parts": parts})
         return parts

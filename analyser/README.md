@@ -173,7 +173,7 @@ last printed before closing the session.
 The session gets two extra tmux status lines from `analysis_progress.py`:
 
 ```
-bucket 960 · left 21417/139423
+bucket 960 · left 21417/139423 · ignored 274
 440/h · ETA 2d 1h
 ```
 
@@ -182,6 +182,15 @@ previews whose audio is in the bucket, unanalysed previews in total out of
 all previews, the analysis rate over about the last hour and the time left
 at that rate. "Analysed" is the backend's `analysedCondition`
 (`packages/back/routes/admin/preview-audio.js`); keep the query in sync.
+
+"Ignored" (shown only when there are any) counts unanalysed previews the
+prefetch job will never download, so the worker never sees them; they are
+not in "left" and the estimate does not wait for them: recordings over the
+prefetch size limit (`Too large to prefetch`, mostly DJ mixes), Bandcamp
+previews on custom domains whose pages redirect back and forth for
+non-browser clients (`redirect count exceeded`), and previews with nothing
+to download from (no URL, or a Bandcamp track without a release page).
+Mirror changes to `queryPreviewsToPrefetch` in the query.
 The rate counts previews that became analysed, so new previews arriving do
 not hide progress; it reads `…` for the first ten minutes.
 

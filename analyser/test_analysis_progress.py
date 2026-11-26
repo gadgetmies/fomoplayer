@@ -27,8 +27,8 @@ class Fetcher:
         return result
 
 
-def counts(total, remaining, in_bucket):
-    return {"total": total, "remaining": remaining, "in_bucket": in_bucket}
+def counts(total, remaining, in_bucket, ignored=0):
+    return {"total": total, "remaining": remaining, "in_bucket": in_bucket, "ignored": ignored}
 
 
 class ProgressTest(unittest.TestCase):
@@ -78,6 +78,17 @@ class ProgressTest(unittest.TestCase):
     def test_nothing_left_shows_done(self):
         line = progress(self.cache, 300, now=0, fetch=Fetcher(counts(1000, 0, 0)))
         self.assertEqual(line, "bucket 0 · left 0/1000 · done")
+
+    def test_previews_that_are_never_downloaded_show_as_ignored(self):
+        line = progress(self.cache, 300, now=0, fetch=Fetcher(counts(139483, 0, 0, ignored=274)))
+        self.assertEqual(line, "bucket 0 · left 0/139483 · ignored 274 · done")
+
+    def test_ignored_previews_do_not_count_as_analysed(self):
+        # 100 previews analysed in an hour while 50 more became ignored: the
+        # rate is 100/h, not 150/h.
+        progress(self.cache, 300, now=0, fetch=Fetcher(counts(1000, 600, 0, ignored=100)))
+        line = progress(self.cache, 300, now=3600, fetch=Fetcher(counts(1000, 450, 0, ignored=150)))
+        self.assertEqual(line, "bucket 0 · left 450/1000 · ignored 150 · 100/h · ETA 4h 30m")
 
     def test_failed_refresh_shows_the_last_line_as_stale(self):
         progress(self.cache, 300, now=0, fetch=Fetcher(counts(1000, 500, 10)))
