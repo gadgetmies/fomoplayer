@@ -34,7 +34,9 @@
   display: none;
 }
 
-/* A rejected track in the All tab: struck through and dimmed, except while it plays. */
+/* A decided (accepted or rejected) track in the All tab: dimmed, except while it plays. Rejected ones are also struck
+   through. */
+.track.track__accepted:not(.playing) > td:not(.review-cell),
 .track.track__rejected:not(.playing) > td:not(.review-cell) {
   opacity: 0.45;
 }

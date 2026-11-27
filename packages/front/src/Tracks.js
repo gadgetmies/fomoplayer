@@ -497,7 +497,8 @@ class Tracks extends Component {
     const title = `${track.title}${track.version ? ` (${track.version})` : ''}`
     return {
       state: reviewStateOf(track, cartReview),
-      dimRejected: cartReview.reviewFilter === 'all',
+      // The All tab dims the decided tracks, so the ones still to review stand out.
+      dimDecided: cartReview.reviewFilter === 'all',
       onDecide: (state) => this.props.onDecideCartTrack(track.id, state),
       onSwipeDecide: (state) => this.props.onDecideCartTrack(track.id, state, { undoNotice: { title } }),
     }
