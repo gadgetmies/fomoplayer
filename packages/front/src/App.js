@@ -665,6 +665,17 @@ class App extends Component {
       }
     }
 
+    // The rows of the cart on screen carry their own cart membership, which their cart menus show: a change to another
+    // cart must reach them too, or the menu keeps showing the track in (or out of) that cart.
+    const selectedCart = this.state.selectedCart
+    if (selectedCart && selectedCart.id !== cartDetails.id && patched.selectedCartTracks !== selectedCart.tracks) {
+      const withPatchedTracks = (cart) => ({ ...cart, tracks: patched.selectedCartTracks })
+      partialState.selectedCart = withPatchedTracks(selectedCart)
+      partialState.carts = (partialState.carts || this.state.carts).map((cart) =>
+        cart.id === selectedCart.id ? withPatchedTracks(cart) : cart,
+      )
+    }
+
     if (patched.new !== trackSlices.new || patched.heard !== trackSlices.heard || patched.recentlyAdded !== trackSlices.recentlyAdded) {
       partialState.tracksData = {
         ...this.state.tracksData,
