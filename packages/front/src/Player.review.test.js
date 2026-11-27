@@ -12,7 +12,13 @@ const T4 = track(4)
 const cartTracks = [T1, T2, T3, T4]
 const cartSource = { key: 'cart:cart-1', label: 'Cart · Gig', path: '/carts/cart-1' }
 
-const makePlayer = ({ currentTrack = T1, enabled = true, states = {}, source = cartSource } = {}) => {
+const makePlayer = ({
+  currentTrack = T1,
+  enabled = true,
+  states = {},
+  source = cartSource,
+  reviewFilter = 'all',
+} = {}) => {
   const props = {
     mode: 'app',
     listState: 'new',
@@ -28,6 +34,7 @@ const makePlayer = ({ currentTrack = T1, enabled = true, states = {}, source = c
       cartId: 11,
       available: true,
       enabled,
+      reviewFilter,
       states: { 1: null, 2: null, 3: null, 4: null, ...states },
     },
     onSetCurrentTrack: jest.fn(),
@@ -94,5 +101,94 @@ describe('stepping through the cart under review', () => {
     const { player, props } = makePlayer({ enabled: false, states: { 2: 'accepted' } })
     await player.playNextTrack()
     expect(props.onSetCurrentTrack.mock.calls[0][0]).toBe(T2)
+  })
+})
+
+describe('stepping through a review tab of the cart under review', () => {
+  const decided = { 1: 'accepted', 2: null, 3: 'rejected', 4: 'accepted' }
+
+  it('next on the Accepted tab plays the next accepted track', async () => {
+    const { player, props } = makePlayer({ reviewFilter: 'accepted', states: decided })
+    await player.playNextTrack()
+    expect(props.onSetCurrentTrack.mock.calls[0][0]).toBe(T4)
+  })
+
+  it('next on the Rejected tab plays the next rejected track', async () => {
+    const { player, props } = makePlayer({ reviewFilter: 'rejected', states: { ...decided, 1: 'rejected' } })
+    await player.playNextTrack()
+    expect(props.onSetCurrentTrack.mock.calls[0][0]).toBe(T3)
+  })
+
+  it('next on the To review tab plays the next track still to review', async () => {
+    const { player, props } = makePlayer({ reviewFilter: 'to-review', currentTrack: T2, states: { 3: 'accepted' } })
+    await player.playNextTrack()
+    expect(props.onSetCurrentTrack.mock.calls[0][0]).toBe(T4)
+  })
+
+  it('accepting the playing track again on the Accepted tab keeps it playing', async () => {
+    const { player, props } = makePlayer({ reviewFilter: 'accepted', states: decided })
+    await player.decideCartTrack(1, 'accepted')
+    expect(props.onSetCurrentTrack).not.toHaveBeenCalled()
+  })
+
+  it('rejecting the playing track on the Accepted tab plays the next accepted track', async () => {
+    const { player, props } = makePlayer({ reviewFilter: 'accepted', states: decided })
+    await player.decideCartTrack(1, 'rejected')
+    expect(props.onDecideCartTrack).toHaveBeenCalledWith(1, 'rejected')
+    expect(props.onSetCurrentTrack.mock.calls[0][0]).toBe(T4)
+  })
+
+  it('marking the playing track Undecided on the Accepted tab plays the next accepted track', async () => {
+    const { player, props } = makePlayer({ reviewFilter: 'accepted', states: decided })
+    await player.decideCartTrack(1, null)
+    expect(props.onSetCurrentTrack.mock.calls[0][0]).toBe(T4)
+  })
+})
+
+describe('stepping past the loaded tracks of the cart under review', () => {
+  const T5 = { ...track(5), reviewState: 'accepted' }
+  const T6 = { ...track(6), reviewState: null }
+  const allDecided = { 2: 'accepted', 3: 'rejected', 4: 'accepted' }
+  const withPages = (player, props, pages) => {
+    props.onLoadMoreCartTracks = jest.fn(async () => (pages.length ? pages.shift() : null))
+    const preview = { setPlaying: jest.fn() }
+    player.preview = { current: preview }
+    return preview
+  }
+
+  it('next loads more of the cart until a page has a track to review', async () => {
+    const { player, props } = makePlayer({ states: allDecided })
+    withPages(player, props, [[T5], [T6]])
+    await player.playNextTrack()
+    expect(props.onLoadMoreCartTracks).toHaveBeenCalledTimes(2)
+    expect(props.onLoadMoreCartTracks).toHaveBeenCalledWith('cart-1')
+    expect(props.onSetCurrentTrack).toHaveBeenCalledTimes(1)
+    const [played, playingFrom] = props.onSetCurrentTrack.mock.calls[0]
+    expect(played).toBe(T6)
+    expect(playingFrom.tracks.map(({ id }) => id)).toEqual([1, 2, 3, 4, 5, 6])
+  })
+
+  it('next stops at the end of the cart when no page has a track to review', async () => {
+    const { player, props } = makePlayer({ states: allDecided })
+    const preview = withPages(player, props, [[T5]])
+    await player.playNextTrack()
+    expect(props.onLoadMoreCartTracks).toHaveBeenCalledTimes(2)
+    expect(props.onSetCurrentTrack).not.toHaveBeenCalled()
+    expect(preview.setPlaying).toHaveBeenCalledWith(false)
+  })
+
+  it('next does not load more of the cart when review is off', async () => {
+    const { player, props } = makePlayer({ enabled: false, currentTrack: T4 })
+    const preview = withPages(player, props, [[T6]])
+    await player.playNextTrack()
+    expect(props.onLoadMoreCartTracks).not.toHaveBeenCalled()
+    expect(preview.setPlaying).toHaveBeenCalledWith(false)
+  })
+
+  it('previous does not load more of the cart', async () => {
+    const { player, props } = makePlayer({ states: { 1: 'accepted' }, currentTrack: T2 })
+    withPages(player, props, [[T6]])
+    await player.playPreviousTrack()
+    expect(props.onLoadMoreCartTracks).not.toHaveBeenCalled()
   })
 })
