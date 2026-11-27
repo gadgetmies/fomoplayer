@@ -4,7 +4,7 @@ import React, { Component } from 'react'
 import * as R from 'ramda'
 import { PlayerHelp } from './PlayerHelp'
 import { isSample, isViewingSource, listSource, queueTracks, stepInQueue } from './playQueue'
-import { isReviewing, isSkippedInReview, swipeNotice } from './cartReview'
+import { isOutsideReviewTab, isReviewing, isSkippedInReview, swipeNotice } from './cartReview'
 
 // Stop auto-skipping after this many tracks in a row fail to play, so a store
 // outage doesn't race through (and request previews for) the whole list.
@@ -209,11 +209,16 @@ class Player extends Component {
     )
   }
 
-  // Decides a track of the cart under review from a row, the panel or a swipe. Accepting or rejecting the playing track
-  // first moves on to the next track still to review; Undecided and decisions on other tracks leave playback alone.
+  // Decides a track of the cart under review from a row, the panel or a swipe. A decision that takes the playing track
+  // out of the selected review tab (on All and To review: accepting or rejecting it) first moves on to the next track
+  // of the tab; other decisions, and decisions on other tracks, leave playback alone.
   // `undoNotice` (with the track's title) shows a notice with Undo, as a swipe does.
   async decideCartTrack(trackId, state, { undoNotice } = {}) {
-    if (state && this.props.currentTrack?.id === trackId && this.isPlayingFromReviewedCart()) {
+    if (
+      this.props.currentTrack?.id === trackId &&
+      this.isPlayingFromReviewedCart() &&
+      isOutsideReviewTab(state, this.props.cartReview.reviewFilter)
+    ) {
       await this.playNextTrack()
     }
     const previous = await this.props.onDecideCartTrack(trackId, state)

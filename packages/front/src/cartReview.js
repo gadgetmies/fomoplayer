@@ -73,18 +73,23 @@ export const applyLocalDecisions = (tracks, localStates, reviewFilter) =>
 export const trackOnStore = (track, store) =>
   !store || (track.stores || []).some(({ name }) => name?.toLowerCase() === store.toLowerCase())
 
+// Whether a track in this review state is outside the selected review tab, for the player. The All tab lists decided
+// tracks too, but the player steps over them there, as on To review.
+export const isOutsideReviewTab = (state, reviewFilter) =>
+  !reviewFilter || reviewFilter === 'all' ? Boolean(state) : !matchesReviewFilter(state, reviewFilter)
+
 // Whether the row is still in the cart: the cart on screen keeps listing a track removed with its cart button, with the
 // cart taken out of the row's `carts`. A row without a `carts` list counts as in the cart.
 export const inCart = (track, cartUuid) =>
   !Array.isArray(track.carts) || track.carts.some((cart) => cart && cart.uuid === cartUuid)
 
-// Whether the player steps over the track: it plays from the cart under review and the track is decided, outside the
-// selected store tab or removed from the cart. Starting such a track by clicking its row is not stepping, so it still
-// plays.
+// Whether the player steps over the track: it plays from the cart under review and the track is outside the selected
+// review tab (on All: decided), outside the selected store tab or removed from the cart. Starting such a track by
+// clicking its row is not stepping, so it still plays.
 export const isSkippedInReview = (track, cartReview, sourceKey) => {
   if (!isReviewing(cartReview) || sourceKey !== `cart:${cartReview.cartUuid}`) return false
   return (
-    Boolean(reviewStateOf(track, cartReview)) ||
+    isOutsideReviewTab(reviewStateOf(track, cartReview), cartReview.reviewFilter) ||
     !trackOnStore(track, cartReview.storeFocus) ||
     !inCart(track, cartReview.cartUuid)
   )

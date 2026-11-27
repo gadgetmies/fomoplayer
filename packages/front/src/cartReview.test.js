@@ -38,6 +38,12 @@ describe('the player while a cart is reviewed', () => {
     expect(step(reviewing({ states: { 3: 'accepted' } }), 'cart:cart-1', 1)).toBe(5)
   })
 
+  it('steps through the tracks of the selected review tab', () => {
+    expect(step(reviewing({ reviewFilter: 'accepted' }), 'cart:cart-1', 1)).toBe(2)
+    expect(step(reviewing({ reviewFilter: 'rejected' }), 'cart:cart-1', 1)).toBe(4)
+    expect(step(reviewing({ reviewFilter: 'to-review' }), 'cart:cart-1', 1)).toBe(3)
+  })
+
   it('steps only through the selected store', () => {
     expect(step(reviewing({ storeFocus: 'beatport' }), 'cart:cart-1', 1)).toBe(5)
   })
@@ -62,6 +68,14 @@ describe('the player while a cart is reviewed', () => {
       )
       expect(next.id).toBe(3)
     }
+    const accepted = removed.map((track) => ({ ...track, reviewState: 'accepted' }))
+    const next = stepInQueue(
+      accepted,
+      1,
+      1,
+      (track) => !isSkippedInReview(track, reviewing({ reviewFilter: 'accepted' }), 'cart:cart-1'),
+    )
+    expect(next.id).toBe(3)
   })
 
   it('counts a row without its carts listed as in the cart', () => {
