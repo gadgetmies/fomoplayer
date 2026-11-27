@@ -46,6 +46,28 @@ describe('the player while a cart is reviewed', () => {
     expect(step(reviewing({ enabled: false }), 'cart:cart-1', 1)).toBe(2)
   })
 
+  it('steps past a track removed from the cart while it is reviewed, on every review tab', () => {
+    const inCart = (track, carts) => ({ ...track, carts })
+    const removed = [
+      inCart(beatport(1), [{ uuid: 'cart-1' }]),
+      inCart(beatport(2), [{ uuid: 'cart-2' }]),
+      inCart(beatport(3), [{ uuid: 'cart-1' }]),
+    ]
+    for (const reviewFilter of ['all', 'to-review']) {
+      const next = stepInQueue(
+        removed,
+        1,
+        1,
+        (track) => !isSkippedInReview(track, reviewing({ reviewFilter }), 'cart:cart-1'),
+      )
+      expect(next.id).toBe(3)
+    }
+  })
+
+  it('counts a row without its carts listed as in the cart', () => {
+    expect(isSkippedInReview(beatport(1), reviewing(), 'cart:cart-1')).toBe(false)
+  })
+
   it('steps through every track when playing from another list', () => {
     expect(step(reviewing(), 'new', 1)).toBe(2)
     expect(step(reviewing(), 'cart:cart-2', 1)).toBe(2)

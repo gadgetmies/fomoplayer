@@ -73,11 +73,21 @@ export const applyLocalDecisions = (tracks, localStates, reviewFilter) =>
 export const trackOnStore = (track, store) =>
   !store || (track.stores || []).some(({ name }) => name?.toLowerCase() === store.toLowerCase())
 
-// Whether the player steps over the track: it plays from the cart under review and the track is decided or outside the
-// selected store tab. Starting a decided track by clicking its row is not stepping, so it still plays.
+// Whether the row is still in the cart: the cart on screen keeps listing a track removed with its cart button, with the
+// cart taken out of the row's `carts`. A row without a `carts` list counts as in the cart.
+export const inCart = (track, cartUuid) =>
+  !Array.isArray(track.carts) || track.carts.some((cart) => cart && cart.uuid === cartUuid)
+
+// Whether the player steps over the track: it plays from the cart under review and the track is decided, outside the
+// selected store tab or removed from the cart. Starting such a track by clicking its row is not stepping, so it still
+// plays.
 export const isSkippedInReview = (track, cartReview, sourceKey) => {
   if (!isReviewing(cartReview) || sourceKey !== `cart:${cartReview.cartUuid}`) return false
-  return Boolean(reviewStateOf(track, cartReview)) || !trackOnStore(track, cartReview.storeFocus)
+  return (
+    Boolean(reviewStateOf(track, cartReview)) ||
+    !trackOnStore(track, cartReview.storeFocus) ||
+    !inCart(track, cartReview.cartUuid)
+  )
 }
 
 const COUNT_KEYS = { null: 'toReview', accepted: 'accepted', rejected: 'rejected' }

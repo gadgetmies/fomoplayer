@@ -69,3 +69,32 @@ describe('changing another cart from a row of the cart on screen', () => {
     expect(app.state.selectedCart.name).toBe('On screen')
   })
 })
+
+describe('removing a track from the cart it plays from', () => {
+  const source = { key: `cart:${shown.uuid}`, label: 'Cart · On screen', path: `/carts/${shown.uuid}` }
+
+  it('marks the track out of the cart in the play-queue snapshot and keeps it playing', async () => {
+    const snapshot = [
+      { id: 10, ...inBoth },
+      { id: 11, ...inShown },
+    ]
+    const app = makeApp({
+      listState: 'new',
+      currentTrack: snapshot[1],
+      playingFrom: { source, tracks: snapshot },
+    })
+    requestJSONwithCredentials.mockResolvedValue(serverCart(shown, [{ id: 10 }]))
+    await app.removeFromCart(shown.id, 11)
+    expect(membershipOf(app.state.playingFrom.tracks, 11)).toEqual([])
+    expect(membershipOf(app.state.playingFrom.tracks, 10)).toEqual([shown.uuid, other.uuid])
+    expect(app.state.playingFrom.source).toBe(source)
+    expect(app.state.currentTrack.id).toBe(11)
+  })
+
+  it('marks it back in the cart in the snapshot when it is added again', async () => {
+    const app = makeApp({ playingFrom: { source, tracks: [{ id: 11, carts: [] }] } })
+    requestJSONwithCredentials.mockResolvedValue(serverCart(shown, [{ id: 11 }]))
+    await app.addToCart(shown.id, 11)
+    expect(membershipOf(app.state.playingFrom.tracks, 11)).toEqual([shown.uuid])
+  })
+})

@@ -689,6 +689,15 @@ class App extends Component {
       partialState.currentTrack = patchTrackCarts(this.state.currentTrack, cartUuid, op)
     }
     if (patched.searchResults !== this.state.searchResults) partialState.searchResults = patched.searchResults
+    // Next steps through the snapshot once the list playback started from is off screen; in a cart under review it
+    // steps over the tracks removed from the cart, so the snapshot's rows need the change as well.
+    const playingFrom = this.state.playingFrom
+    if (playingFrom?.tracks?.some((track) => track && track.id === trackId)) {
+      const tracks = playingFrom.tracks.map((track) =>
+        track && track.id === trackId ? patchTrackCarts(track, cartUuid, op) : track,
+      )
+      partialState.playingFrom = { ...playingFrom, tracks }
+    }
 
     if (Object.keys(partialState).length > 0) this.setState(partialState)
   }
