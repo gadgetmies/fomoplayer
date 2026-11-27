@@ -181,9 +181,26 @@ class Player extends Component {
   }
 
   async jumpTracks(numberOfTracksToJump) {
-    const queue = this.getQueueTracks()
+    let queue = this.getQueueTracks()
     const currentId = this.props.currentTrack?.id
-    const nextTrack = stepInQueue(queue, currentId, numberOfTracksToJump, (track) => this.isPlayable(track))
+    const isPlayable = (track) => this.isPlayable(track)
+    let nextTrack = stepInQueue(queue, currentId, numberOfTracksToJump, isPlayable)
+    // The loaded rows of the cart under review can all be decided while later pages still hold tracks to review: load
+    // the cart's next pages until one has a track to play or the cart has no more. A track started meanwhile (a row
+    // clicked) ends the search.
+    while (
+      !nextTrack &&
+      numberOfTracksToJump > 0 &&
+      this.isPlayingFromReviewedCart() &&
+      this.props.onLoadMoreCartTracks
+    ) {
+      const appended = await this.props.onLoadMoreCartTracks(this.props.cartReview.cartUuid)
+      if (this.props.currentTrack?.id !== currentId) return
+      if (!appended) break
+      const queuedIds = new Set(queue.map(({ id }) => id))
+      queue = queue.concat(appended.filter(({ id }) => !queuedIds.has(id)))
+      nextTrack = stepInQueue(queue, currentId, numberOfTracksToJump, isPlayable)
+    }
     if (!nextTrack) {
       if (numberOfTracksToJump > 0) this.setPlaying(false)
       return

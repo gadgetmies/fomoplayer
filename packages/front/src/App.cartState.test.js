@@ -1,9 +1,11 @@
 import App from './App'
 import { requestJSONwithCredentials } from './request-json-with-credentials.js'
+import { emptyCartReview } from './cartReview'
 
-// What the app keeps after a track is added to or removed from a cart with a cart button: the rows of the cart on
-// screen and the play-queue snapshot carry each track's cart membership, which the cart menus and the player read.
-// The App is used without rendering; the server requests are the boundary.
+// The selected cart as the app keeps it: after a track is added to or removed from a cart with a cart button (the rows
+// of the cart on screen and the play-queue snapshot carry each track's cart membership, which the cart menus and the
+// player read), and when the player asks for more of the cart. The App is used without rendering; the server
+// requests are the boundary.
 
 jest.mock('./request-json-with-credentials.js', () => ({
   requestJSONwithCredentials: jest.fn(),
@@ -96,5 +98,49 @@ describe('removing a track from the cart it plays from', () => {
     requestJSONwithCredentials.mockResolvedValue(serverCart(shown, [{ id: 11 }]))
     await app.addToCart(shown.id, 11)
     expect(membershipOf(app.state.playingFrom.tracks, 11)).toEqual([shown.uuid])
+  })
+})
+
+describe('loading more of the cart under review for the player', () => {
+  const page = (tracks, total) => ({
+    cart: { ...shown, review: { enabled: true, counts: null, storeCounts: [] } },
+    tracks,
+    page: { total },
+  })
+  const reviewedApp = (state = {}) =>
+    makeApp({
+      cartPagination: { offset: 0, count: 2, total: 4, loadingMore: false },
+      cartReview: { ...emptyCartReview, cartUuid: shown.uuid, cartId: shown.id, available: true, enabled: true },
+      ...state,
+    })
+
+  it('resolves with the rows of the next page and lists them in the cart', async () => {
+    const app = reviewedApp({ listState: 'new' })
+    requestJSONwithCredentials.mockResolvedValue(page([{ id: 12, reviewState: null, ...inShown }], 4))
+    const appended = await app.loadMoreCartTracks(shown.uuid)
+    expect(appended.map(({ id }) => id)).toEqual([12])
+    expect(app.state.selectedCart.tracks.map(({ id }) => id)).toEqual([10, 11, 12])
+    expect(requestJSONwithCredentials.mock.calls[0][0].path).toContain(`/carts/${shown.uuid}?offset=2`)
+  })
+
+  it('shares a page that is already loading instead of asking for it twice', async () => {
+    const app = reviewedApp()
+    requestJSONwithCredentials.mockResolvedValue(page([{ id: 12, ...inShown }], 4))
+    const [first, second] = await Promise.all([app.loadMoreCartTracks(shown.uuid), app.loadMoreCartTracks(shown.uuid)])
+    expect(requestJSONwithCredentials).toHaveBeenCalledTimes(1)
+    expect(second).toBe(first)
+  })
+
+  it('resolves with nothing at the end of the cart or for another cart', async () => {
+    const app = reviewedApp({ cartPagination: { offset: 0, count: 2, total: 2, loadingMore: false } })
+    expect(await app.loadMoreCartTracks(shown.uuid)).toBe(null)
+    expect(await reviewedApp().loadMoreCartTracks(other.uuid)).toBe(null)
+    expect(requestJSONwithCredentials).not.toHaveBeenCalled()
+  })
+
+  it('resolves with nothing when the server has no more rows', async () => {
+    const app = reviewedApp()
+    requestJSONwithCredentials.mockResolvedValue(page([], 4))
+    expect(await app.loadMoreCartTracks(shown.uuid)).toBe(null)
   })
 })
