@@ -37,6 +37,9 @@ export const CartDropDownButton = ({
       popupStyle={{ overflow: 'hidden' }}
       loading={processingTrack}
       disabled={processingCart || disabled}
+      // Keep the popup open while a cart request runs, so a track can be put in several carts in a row; the buttons
+      // inside it disable themselves meanwhile.
+      popupDisabled={Boolean(disabled)}
       onClick={(e) => {
         e.stopPropagation()
         return onCartButtonClick(trackId, currentCartId, inCart)
@@ -97,7 +100,7 @@ export const CartDropDownButton = ({
               const { id: cartId } = await onCreateCartClick(newCartName)
               await onCartButtonClick(trackId, cartId, false)
             }}
-            disabled={newCartName === ''}
+            disabled={processingCart || newCartName === ''}
           >
             <FontAwesomeIcon icon="plus" />
           </button>
