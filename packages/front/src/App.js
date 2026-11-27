@@ -189,6 +189,7 @@ const Root = (props) => <div className="root" style={{ height: '100vh' }} {...pr
 
 class LocationWatcherBase extends Component {
   componentDidMount() {
+    this.props.onHistory?.(this.props.history)
     this.props.onLocationChange(this.props.location)
   }
 
@@ -204,6 +205,10 @@ class LocationWatcherBase extends Component {
 }
 
 const LocationWatcher = withRouter(LocationWatcherBase)
+
+// Views that replace an active search when navigated to (the track lists and Notifications); any other page
+// (Settings, Admin) keeps the search in the top bar
+const SEARCH_RESETTING_VIEWS = ['tracks', 'carts', 'notifications']
 
 class App extends Component {
   constructor(props) {
@@ -283,9 +288,22 @@ class App extends Component {
     this.lastLocationSignature = ''
   }
 
+  // Changes the URL through the router, so it knows the entry: links to the page it thought was open would otherwise
+  // replace the entry, and its history ignores going back to an entry pushed past it (whose state is undefined).
+  navigate(url, { replace = false } = {}) {
+    // The app's own state already matches this URL: the location sync must not act on it (e.g. search again or reset
+    // the search bar while the user types)
+    this.lastLocationSignature = url
+    if (this.routerHistory) {
+      replace ? this.routerHistory.replace(url) : this.routerHistory.push(url)
+    } else {
+      replace ? window.history.replaceState({}, '', url) : window.history.pushState({}, '', url)
+    }
+  }
+
   setListState(listState) {
     this.setState({ listState })
-    window.history.replaceState(undefined, undefined, `/${listState}`)
+    this.navigate(`/${listState}`, { replace: true })
   }
 
   hasMoreTracks() {
@@ -522,11 +540,16 @@ class App extends Component {
         nextState.searchTerms = searchTerms
         nextState.searchFilters = filters
         nextState.listState = 'search'
+        // Back / forward to a search: the bar shows that search's terms at once, typed text replaced
+        nextState.searchBarResetCount = this.state.searchBarResetCount + 1
         shouldSetState = true
         this.search(searchTerms, filters)
       }
-    } else if (this.state.searchTerms.length > 0) {
+    } else if (this.state.searchTerms.length > 0 && SEARCH_RESETTING_VIEWS.includes(pathname.split('/')[1])) {
+      // Another track list (Discover, a cart) or Notifications replaces the search: empty the bar, typed text too.
+      // Other pages (Settings, Admin) keep it, so the top bar can take the user back to the results.
       nextState.searchTerms = []
+      nextState.searchBarResetCount = this.state.searchBarResetCount + 1
       shouldSetState = true
     }
 
@@ -1034,7 +1057,10 @@ class App extends Component {
     const names = entityNamesToUrlParam(searchTerms)
     const parameters = `q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}&sort=${sort || ''}&addedSince=${addedSince || ''}&onlyNew=${onlyNew || ''}&limit=${limit || ''}&offset=${offset}`
     if (!append) {
-      window.history.pushState(undefined, undefined, `/search?${parameters}`)
+      // The same search already open (e.g. from the top bar's "Show results" link) only gets its full URL: no new entry
+      const current = new URLSearchParams(window.location.search)
+      const sameSearch = /^\/search\/?$/.test(window.location.pathname) && current.get('q') === query
+      this.navigate(`/search?${parameters}`, { replace: sameSearch })
     }
     try {
       const { tracks: searchResults, page } = await (
@@ -1088,11 +1114,7 @@ class App extends Component {
     const terms = searchTerms.map((term) => (term === cartTerm && name ? { ...term, name } : term))
     const query = searchTermsToQueryString(terms)
     const names = entityNamesToUrlParam(terms)
-    window.history.pushState(
-      undefined,
-      undefined,
-      `/search?q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}`,
-    )
+    this.navigate(`/search?q=${encodeURIComponent(query)}${names ? `&names=${encodeURIComponent(names)}` : ''}`)
     const cartSearch = {
       uuid: cartTerm.id,
       name,
@@ -1517,7 +1539,10 @@ class App extends Component {
           }}
         >
           <Router>
-            <LocationWatcher onLocationChange={this.syncStateWithLocation.bind(this)} />
+            <LocationWatcher
+              onHistory={(history) => (this.routerHistory = history)}
+              onLocationChange={this.syncStateWithLocation.bind(this)}
+            />
             {this.state.loading ? (
               <div className="loading-overlay">
                 <div className="loading-message">{this.state.launchMessage.text}</div>
