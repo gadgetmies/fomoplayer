@@ -15,6 +15,9 @@ const DropDownButton = (props) => {
     loading = false,
     loadingLabel,
     disabled = false,
+    // Whether the popup is unavailable too. Defaults to `disabled`; pass it separately to keep an open popup open
+    // (and usable) while only the buttons are disabled.
+    popupDisabled = disabled,
     children,
     size = 'small',
     style = {},
@@ -45,7 +48,7 @@ const DropDownButton = (props) => {
         open={open}
         openOnHover={openOnHover}
         onOpenChanged={onOpenChanged}
-        disabled={disabled}
+        disabled={popupDisabled}
         anchor={
           <button
             disabled={disabled || loading}
