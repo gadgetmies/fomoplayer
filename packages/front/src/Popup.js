@@ -23,6 +23,18 @@ const globalClickHandler = ({ e, open: isOpen, setOpen, onOpenChanged, closePrev
   }
 }
 
+// A popup opened from a track row is rendered inside the row, and on a phone the row swipes (mark heard, accept or
+// reject) on a sideways drag. Touches on the popup and on the overlay behind it belong to the popup, so they stop here
+// instead of bubbling to the row (or to the track list's pull-to-refresh). Only bubbling is stopped, not the browser's
+// default action, so scrolling and tapping inside the popup keep working.
+const stopTouchPropagation = (e) => e.stopPropagation()
+const touchHandlers = {
+  onTouchStart: stopTouchPropagation,
+  onTouchMove: stopTouchPropagation,
+  onTouchEnd: stopTouchPropagation,
+  onTouchCancel: stopTouchPropagation,
+}
+
 const Popup = ({
   open: defaultOpen,
   popupStyle,
@@ -67,12 +79,16 @@ const Popup = ({
           {anchor}
         </span>
         {!disabled && (openOnHover || open) && (
-          <div className={`popup_content ${popupClassName || ''} ${popupAbove ? 'popup_content__above' : ''}`} style={popupStyle}>
+          <div
+            className={`popup_content ${popupClassName || ''} ${popupAbove ? 'popup_content__above' : ''}`}
+            style={popupStyle}
+            {...touchHandlers}
+          >
             {children}
           </div>
         )}
       </div>
-      <div className="popup_overlay" onClick={clickHandler} onDoubleClick={clickHandler} />
+      <div className="popup_overlay" onClick={clickHandler} onDoubleClick={clickHandler} {...touchHandlers} />
     </>
   )
 }

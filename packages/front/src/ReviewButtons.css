@@ -34,9 +34,30 @@
   display: none;
 }
 
-/* A rejected track in the All tab: struck through and dimmed, except while it plays. */
+/* A decided (accepted or rejected) track in the All tab: dimmed, except while it plays. Rejected ones are also struck
+   through. */
+.track.track__accepted:not(.playing) > td:not(.review-cell),
 .track.track__rejected:not(.playing) > td:not(.review-cell) {
   opacity: 0.45;
+}
+
+/* Opacity below 1 makes the cell a stacking context, which would trap a popup opened from it (and its full-screen
+   backdrop) inside the cell: later rows and the player would paint over them, and the popup would be dimmed too. So a
+   cell is at full strength while its popup is open: by a click (phones), or by pointing at the anchor or the popup
+   itself (desktop hover popups, as Popup.css shows them). Pointing elsewhere in the cell leaves it dimmed. */
+.track.track__accepted:not(.playing) > td:not(.review-cell):has(.popup--open),
+.track.track__rejected:not(.playing) > td:not(.review-cell):has(.popup--open),
+.track.track__accepted:not(.playing)
+  > td:not(.review-cell):has(
+    .popup_container--open-on-hover .popup-anchor:hover,
+    .popup_container--open-on-hover .popup_content:hover
+  ),
+.track.track__rejected:not(.playing)
+  > td:not(.review-cell):has(
+    .popup_container--open-on-hover .popup-anchor:hover,
+    .popup_container--open-on-hover .popup_content:hover
+  ) {
+  opacity: 1;
 }
 
 .track.track__rejected .title-cell {

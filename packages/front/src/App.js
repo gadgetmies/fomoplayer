@@ -300,7 +300,7 @@ class App extends Component {
   }
 
   async loadMoreTracks() {
-    const { listState, loadingMore, cartPagination, selectedCartUuid, selectedCart } = this.state
+    const { listState, loadingMore, selectedCartUuid } = this.state
     if (!this.hasMoreTracks()) return
 
     if (listState === 'search') {
@@ -313,51 +313,68 @@ class App extends Component {
       this.setState({ loadingMore: true })
       await this.updateTracks(true)
     } else if (listState === 'carts') {
-      // The flag is set synchronously: the state flag is only seen after a render, so a scroll and an auto-load in the
-      // same tick would both fetch the same page
-      if (!cartPagination || cartPagination.loadingMore || this.loadingMoreCartTracks || !selectedCartUuid || !selectedCart)
-        return
-      this.loadingMoreCartTracks = true
-      try {
-        this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
-        const generation = this.cartTracksGeneration
-        // The rows still loaded: review decisions take rows out of a review tab, and the server's filtered list
-        // shrinks with them.
-        const nextOffset = cartPagination.offset + cartPagination.count
-        const response = await this.fetchCartPage(selectedCartUuid, nextOffset, this.state.cartReview)
-        // Another cart was selected (or this one reloaded) meanwhile: the page belongs to a list no longer on screen
-        if (this.state.selectedCartUuid !== selectedCartUuid || this.cartTracksGeneration !== generation) {
-          return
-        }
-        const { cart, page } = response
-        const { cartReview, tracks: appendedTracks } = this.cartReviewFromResponse(response)
-        const carts = this.state.carts.slice()
-        const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
-        if (cartIndex !== -1) {
-          // Tracks added to the cart since the last page shift the offsets, so a page can repeat rows already listed
-          const existingTracks = carts[cartIndex].tracks || []
-          carts[cartIndex] = { ...carts[cartIndex], ...cart, tracks: deduplicateTracks(existingTracks, appendedTracks) }
-        }
-        const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
-        this.setState({
-          carts,
-          selectedCart: updatedSelectedCart,
-          cartReview,
-          cartPagination: {
-            offset: 0,
-            count: this.state.cartPagination.count + appendedTracks.length,
-            total: page.total - (response.tracks.length - appendedTracks.length),
-            loadingMore: false,
-          },
-        })
-      } catch (e) {
-        console.error('Loading more cart tracks failed', e)
-        if (this.state.cartPagination) {
-          this.setState({ cartPagination: { ...this.state.cartPagination, loadingMore: false } })
-        }
-      } finally {
-        this.loadingMoreCartTracks = false
+      await this.loadMoreCartTracks(selectedCartUuid)
+    }
+  }
+
+  // Appends the next page of the selected cart (`cartUuid`) to its rows. Resolves to the rows it appended, or null when
+  // nothing was loaded: the cart has no more pages, another cart is selected, or the request failed. A call while a
+  // page is loading waits for that page, so a scroll and the player never fetch the same page twice.
+  loadMoreCartTracks(cartUuid) {
+    const { cartPagination, selectedCartUuid, selectedCart } = this.state
+    if (!selectedCart || selectedCartUuid !== cartUuid) return Promise.resolve(null)
+    if (this.cartPageRequest) return this.cartPageRequest
+    if (!cartPagination || cartPagination.loadingMore) return Promise.resolve(null)
+    if (cartPagination.offset + cartPagination.count >= cartPagination.total) return Promise.resolve(null)
+    this.cartPageRequest = this.appendCartPage(cartUuid).finally(() => {
+      this.cartPageRequest = null
+    })
+    return this.cartPageRequest
+  }
+
+  async appendCartPage(selectedCartUuid) {
+    const { cartPagination } = this.state
+    try {
+      this.setState({ cartPagination: { ...cartPagination, loadingMore: true } })
+      const generation = this.cartTracksGeneration
+      // The rows still loaded: review decisions take rows out of a review tab, and the server's filtered list
+      // shrinks with them.
+      const nextOffset = cartPagination.offset + cartPagination.count
+      const response = await this.fetchCartPage(selectedCartUuid, nextOffset, this.state.cartReview)
+      // Another cart was selected (or this one reloaded) meanwhile: the page belongs to a list no longer on screen
+      if (this.state.selectedCartUuid !== selectedCartUuid || this.cartTracksGeneration !== generation) {
+        return null
       }
+      const { cart, page } = response
+      const { cartReview, tracks: pageTracks } = this.cartReviewFromResponse(response)
+      const carts = this.state.carts.slice()
+      const cartIndex = carts.findIndex(({ uuid }) => uuid === selectedCartUuid)
+      // Tracks added to the cart since the last page shift the offsets, so a page can repeat rows already listed
+      const existingTracks = (cartIndex !== -1 ? carts[cartIndex].tracks : this.state.selectedCart.tracks) || []
+      const listedIds = new Set(existingTracks.map(({ id }) => id))
+      const appendedTracks = pageTracks.filter(({ id }) => !listedIds.has(id))
+      if (cartIndex !== -1) {
+        carts[cartIndex] = { ...carts[cartIndex], ...cart, tracks: deduplicateTracks(existingTracks, pageTracks) }
+      }
+      const updatedSelectedCart = cartIndex !== -1 ? carts[cartIndex] : this.state.selectedCart
+      this.setState({
+        carts,
+        selectedCart: updatedSelectedCart,
+        cartReview,
+        cartPagination: {
+          offset: 0,
+          count: this.state.cartPagination.count + pageTracks.length,
+          total: page.total - (response.tracks.length - pageTracks.length),
+          loadingMore: false,
+        },
+      })
+      return response.tracks.length ? appendedTracks : null
+    } catch (e) {
+      console.error('Loading more cart tracks failed', e)
+      if (this.state.cartPagination) {
+        this.setState({ cartPagination: { ...this.state.cartPagination, loadingMore: false } })
+      }
+      return null
     }
   }
 
@@ -665,6 +682,17 @@ class App extends Component {
       }
     }
 
+    // The rows of the cart on screen carry their own cart membership, which their cart menus show: a change to another
+    // cart must reach them too, or the menu keeps showing the track in (or out of) that cart.
+    const selectedCart = this.state.selectedCart
+    if (selectedCart && selectedCart.id !== cartDetails.id && patched.selectedCartTracks !== selectedCart.tracks) {
+      const withPatchedTracks = (cart) => ({ ...cart, tracks: patched.selectedCartTracks })
+      partialState.selectedCart = withPatchedTracks(selectedCart)
+      partialState.carts = (partialState.carts || this.state.carts).map((cart) =>
+        cart.id === selectedCart.id ? withPatchedTracks(cart) : cart,
+      )
+    }
+
     if (patched.new !== trackSlices.new || patched.heard !== trackSlices.heard || patched.recentlyAdded !== trackSlices.recentlyAdded) {
       partialState.tracksData = {
         ...this.state.tracksData,
@@ -678,6 +706,15 @@ class App extends Component {
       partialState.currentTrack = patchTrackCarts(this.state.currentTrack, cartUuid, op)
     }
     if (patched.searchResults !== this.state.searchResults) partialState.searchResults = patched.searchResults
+    // Next steps through the snapshot once the list playback started from is off screen; in a cart under review it
+    // steps over the tracks removed from the cart, so the snapshot's rows need the change as well.
+    const playingFrom = this.state.playingFrom
+    if (playingFrom?.tracks?.some((track) => track && track.id === trackId)) {
+      const tracks = playingFrom.tracks.map((track) =>
+        track && track.id === trackId ? patchTrackCarts(track, cartUuid, op) : track,
+      )
+      partialState.playingFrom = { ...playingFrom, tracks }
+    }
 
     if (Object.keys(partialState).length > 0) this.setState(partialState)
   }
@@ -1816,6 +1853,7 @@ class App extends Component {
                           onIgnoreLabel={this.ignoreLabel.bind(this)}
                           onIgnoreRelease={this.ignoreRelease.bind(this)}
                           onLoadMore={this.loadMoreTracks.bind(this)}
+                          onLoadMoreCartTracks={this.loadMoreCartTracks.bind(this)}
                           onMarkPurchased={this.onMarkPurchased.bind(this)}
                           onOpenFollowPopup={this.openFollowPopup.bind(this)}
                           onOpenIgnorePopup={this.openIgnorePopup.bind(this)}

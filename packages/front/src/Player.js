@@ -4,7 +4,7 @@ import React, { Component } from 'react'
 import * as R from 'ramda'
 import { PlayerHelp } from './PlayerHelp'
 import { isSample, isViewingSource, listSource, queueTracks, stepInQueue } from './playQueue'
-import { isReviewing, isSkippedInReview, swipeNotice } from './cartReview'
+import { isOutsideReviewTab, isReviewing, isSkippedInReview, swipeNotice } from './cartReview'
 
 // Stop auto-skipping after this many tracks in a row fail to play, so a store
 // outage doesn't race through (and request previews for) the whole list.
@@ -181,9 +181,26 @@ class Player extends Component {
   }
 
   async jumpTracks(numberOfTracksToJump) {
-    const queue = this.getQueueTracks()
+    let queue = this.getQueueTracks()
     const currentId = this.props.currentTrack?.id
-    const nextTrack = stepInQueue(queue, currentId, numberOfTracksToJump, (track) => this.isPlayable(track))
+    const isPlayable = (track) => this.isPlayable(track)
+    let nextTrack = stepInQueue(queue, currentId, numberOfTracksToJump, isPlayable)
+    // The loaded rows of the cart under review can all be decided while later pages still hold tracks to review: load
+    // the cart's next pages until one has a track to play or the cart has no more. A track started meanwhile (a row
+    // clicked) ends the search.
+    while (
+      !nextTrack &&
+      numberOfTracksToJump > 0 &&
+      this.isPlayingFromReviewedCart() &&
+      this.props.onLoadMoreCartTracks
+    ) {
+      const appended = await this.props.onLoadMoreCartTracks(this.props.cartReview.cartUuid)
+      if (this.props.currentTrack?.id !== currentId) return
+      if (!appended) break
+      const queuedIds = new Set(queue.map(({ id }) => id))
+      queue = queue.concat(appended.filter(({ id }) => !queuedIds.has(id)))
+      nextTrack = stepInQueue(queue, currentId, numberOfTracksToJump, isPlayable)
+    }
     if (!nextTrack) {
       if (numberOfTracksToJump > 0) this.setPlaying(false)
       return
@@ -209,11 +226,16 @@ class Player extends Component {
     )
   }
 
-  // Decides a track of the cart under review from a row, the panel or a swipe. Accepting or rejecting the playing track
-  // first moves on to the next track still to review; Undecided and decisions on other tracks leave playback alone.
+  // Decides a track of the cart under review from a row, the panel or a swipe. A decision that takes the playing track
+  // out of the selected review tab (on All and To review: accepting or rejecting it) first moves on to the next track
+  // of the tab; other decisions, and decisions on other tracks, leave playback alone.
   // `undoNotice` (with the track's title) shows a notice with Undo, as a swipe does.
   async decideCartTrack(trackId, state, { undoNotice } = {}) {
-    if (state && this.props.currentTrack?.id === trackId && this.isPlayingFromReviewedCart()) {
+    if (
+      this.props.currentTrack?.id === trackId &&
+      this.isPlayingFromReviewedCart() &&
+      isOutsideReviewTab(state, this.props.cartReview.reviewFilter)
+    ) {
       await this.playNextTrack()
     }
     const previous = await this.props.onDecideCartTrack(trackId, state)
